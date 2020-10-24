@@ -15,7 +15,11 @@ static PluginHandle g_pluginHandle = kPluginHandle_Invalid;
 
 void PatchBody() {
 	_MESSAGE("Patch Body In");
+	_MESSAGE("addr = %016I64X", RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr());
 	SafeWrite8(RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr(), 0x74);
+	// now for existing games to update
+
+	SafeWrite32(RelocAddr<uintptr_t>(0xf29ac8), 0x9090D231);   // This was movzx EDX,R14B.   Want to just zero out EDX with an xor instead
 	_MESSAGE("Patch Body Succeeded");
 }
 

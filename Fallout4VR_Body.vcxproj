@@ -135,7 +135,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "C:\Fallout VR Essentials\mods\Fallout 4 VR Body\F4SE\Plugins" /Y</Command>
+      <Command>copy "$(TargetPath)" "C:\Fallout VR Essentials\mods\f4vrbody\F4SE\Plugins" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
