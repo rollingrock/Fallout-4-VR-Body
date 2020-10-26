@@ -10,19 +10,39 @@
 #include "f4se/GameData.h"
 
 #include "version.h"
+#include "hook.h"
+#include "F4VRBody.h"
 
 static PluginHandle g_pluginHandle = kPluginHandle_Invalid;
+
+void* g_moduleHandle = nullptr;
+
+static F4SEMessagingInterface* g_messaging = NULL;
+
 
 void PatchBody() {
 	_MESSAGE("Patch Body In");
 	_MESSAGE("addr = %016I64X", RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr());
+	
+	// For new game
 	SafeWrite8(RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr(), 0x74);
+	
 	// now for existing games to update
-
 	SafeWrite32(RelocAddr<uintptr_t>(0xf29ac8), 0x9090D231);   // This was movzx EDX,R14B.   Want to just zero out EDX with an xor instead
 	_MESSAGE("Patch Body Succeeded");
 }
 
+//Listener for F4SE Messages
+void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
+{
+	if (msg)
+	{
+		if (msg->type == F4SEMessagingInterface::kMessage_GameLoaded)
+		{
+			F4VRBody::startUp();
+		}
+	}
+}
 
 extern "C" {
 	bool F4SEPlugin_Query(const F4SEInterface* a_f4se, PluginInfo* a_info)
@@ -31,6 +51,7 @@ extern "C" {
 		gLog.SetPrintLevel(IDebugLog::kLevel_DebugMessage);
 		gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
 
+		g_moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("SkyrimUncapper.dll"));
 
 		_MESSAGE("F4VRBODY v%s", F4VRBODY_VERSION_VERSTRING);
 
@@ -44,7 +65,7 @@ extern "C" {
 		}
 
 		a_f4se->runtimeVersion;
-		if (a_f4se->runtimeVersion <= RUNTIME_VR_VERSION_1_2_72)
+		if (a_f4se->runtimeVersion < RUNTIME_VR_VERSION_1_2_72)
 		{
 			_FATALERROR("Unsupported runtime version %s!\n", a_f4se->runtimeVersion);
 			return false;
@@ -64,6 +85,21 @@ extern "C" {
 			return false;
 		}
 
+		g_messaging = (F4SEMessagingInterface*)a_f4se->QueryInterface(kInterface_Messaging);
+		g_messaging->RegisterListener(g_pluginHandle, "F4SE", OnF4SEMessage);
+
+		if (!g_branchTrampoline.Create(1024 * 64))
+		{
+			_ERROR("couldn't create branch trampoline. this is fatal. skipping remainder of init process.");
+			return false;
+		}
+
+		//if (!g_localTrampoline.Create(1024 * 64, g_moduleHandle))
+		//{
+		//	_ERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
+		//	return false;
+		//}
+
 		//if (config::LoadConfig(R"(.\Data\F4SE\plugins\F4VRBody.ini)"))
 		//{
 		//	_MESSAGE("loaded config successfully");
@@ -74,6 +110,8 @@ extern "C" {
 		//}
 
 		PatchBody();
+
+		hookMain();
 
 		_MESSAGE("F4VRBody Loaded");
 

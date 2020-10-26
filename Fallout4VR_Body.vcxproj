@@ -155,9 +155,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="F4VRBody.cpp" />
+    <ClCompile Include="hook.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="F4VRBody.h" />
+    <ClInclude Include="hook.h" />
     <ClInclude Include="include\version.h" />
   </ItemGroup>
   <ItemGroup>
