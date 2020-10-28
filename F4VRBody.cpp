@@ -19,7 +19,10 @@ namespace F4VRBody {
 
 		void printChildren(NiNode *child, std::string padding) {
 			padding += "....";
-			_MESSAGE("%s%s : children = %d : local z = %f : world z = %f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart, child->m_localTransform.pos.z, child->m_worldTransform.pos.z);
+			_MESSAGE("%s%s : children = %d : local x = %f : world x = %f : local y = %f : world y = %f : local z = %f : world z = %f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart,
+				child->m_localTransform.pos.x, child->m_worldTransform.pos.x,
+				child->m_localTransform.pos.y, child->m_worldTransform.pos.y,
+				child->m_localTransform.pos.z, child->m_worldTransform.pos.z);
 
 			for (auto i = 0; i < child->m_children.m_emptyRunStart; ++i) {
 				auto nextNode = child->m_children.m_data[i] ? child->m_children.m_data[i]->GetAsNiNode() : nullptr;
@@ -31,7 +34,10 @@ namespace F4VRBody {
 
 		void printNodes() {
 			// print root node info first
-			_MESSAGE("%s : children = %d : local z = %f : world z = %f", _root->m_name.c_str(), _root->m_children.m_emptyRunStart, _root->m_localTransform.pos.z, _root->m_worldTransform.pos.z);
+			_MESSAGE("%s : children = %d : local x = %f : world x = %f : local y = %f : world y = %f : local z = %f : world z = %f", _root->m_name.c_str(), _root->m_children.m_emptyRunStart, 
+				_root->m_localTransform.pos.x, _root->m_worldTransform.pos.x,
+				_root->m_localTransform.pos.y, _root->m_worldTransform.pos.y,
+				_root->m_localTransform.pos.z, _root->m_worldTransform.pos.z);
 
 			std::string padding = "";
 
@@ -39,6 +45,29 @@ namespace F4VRBody {
 				auto nextNode = _root->m_children.m_data[i] ? _root->m_children.m_data[i]->GetAsNiNode() : nullptr;
 				if (nextNode) {
 					this->printChildren(nextNode, padding);
+				}
+			}
+		}
+
+		void updateZ(NiNode* nde) {
+		//	if (!strcmp(nde->m_name.c_str(), "LLeg_Foot") || !strcmp(nde->m_name.c_str(), "LLeg_Calf")) {
+				//nde->m_localTransform.pos.x = nde->m_localTransform.pos.x + 20.0;
+				//nde->m_localTransform.pos.y = nde->m_localTransform.pos.y + 20.0;
+				//nde->m_localTransform.pos.z = nde->m_localTransform.pos.z + 100.0;
+
+				nde->m_worldTransform.pos.x = nde->m_worldTransform.pos.x + 10.0;
+				nde->m_worldTransform.pos.y = nde->m_worldTransform.pos.y + 10.0;
+				nde->m_worldTransform.pos.z = nde->m_worldTransform.pos.z + 5.0;
+
+				//uint64_t flag = 0x200000000;
+
+				//nde->flags = nde->flags | flag;
+			//}
+
+			for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+				auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
+				if (nextNode) {
+					this->updateZ(nextNode);
 				}
 			}
 		}
@@ -66,7 +95,7 @@ namespace F4VRBody {
 		}
 	}
 
-	void update() {
+	void update(uint64_t a_addr) {
 		if (!isLoaded) {
 			return;
 		}
@@ -80,6 +109,10 @@ namespace F4VRBody {
 		}
 
 		// do stuff now
+
+		playerSkelly->updateZ((NiNode*)playerSkelly->getRoot());
+
+		//playerSkelly->printNodes();
 	}
 
 
