@@ -35,6 +35,9 @@ namespace F4VRBody
 		void rotateWorld(NiNode* nde);
 		void updatePos(NiNode* nde, NiPoint3 offset);
 		void projectSkelly(float offsetOutFront);
+		void updateDown(NiNode* nde);
+		NiNode* getNode(const char* nodeName, NiNode *nde);
+		void setupHead(NiNode* headNode);
 
 		// Fallout Function Hooking
 		static Matrix44 *matrixMultiply(NiMatrix43* worldMat, Matrix44* retMat, Matrix44* localMat);

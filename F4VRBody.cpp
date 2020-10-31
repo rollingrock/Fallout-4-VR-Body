@@ -41,9 +41,11 @@ namespace F4VRBody {
 
 		//playerSkelly->printNodes();
 
-	//	playerSkelly->projectSkelly(30.0f);   // project out in front of the players view by 30 units
+		playerSkelly->projectSkelly(120.0f);   // project out in front of the players view by 30 units
 
-		playerSkelly->rotateWorld(playerSkelly->getRoot());
+		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
+
+		playerSkelly->setupHead(headNode);
 	}
 
 
