@@ -3,12 +3,11 @@
 
 #include "xbyak/xbyak.h"
 
-//RelocAddr<uintptr_t> hookBeforeRenderer(0xd844bc);
-RelocAddr<uintptr_t> hookBeforeRenderer(0x1C21156);
+//RelocAddr<uintptr_t> hookBeforeRenderer(0xd844bc);   // this hook didn't work as only a few nodes get moved
+RelocAddr<uintptr_t> hookBeforeRenderer(0x1C21156);    // This hook is in member function 0x33 for BSFlattenedBoneTree right before it updates it's own data buffer of all the skeleton world transforms.   I think that buffer is what actually gets rendered
 
 
 typedef void(*_hookedFunc)(uint64_t param1, uint64_t param2, uint64_t param3);
-//RelocAddr<_hookedFunc> hookedFunc(0xd831f0);
 RelocAddr<_hookedFunc> hookedFunc(0x1C18620);
 
 
