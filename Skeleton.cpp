@@ -126,7 +126,14 @@ namespace F4VRBody
 
 		this->rotateWorld(_root);
 		this->updatePos(_root, playerLook);   // offset all positions in the skeleton
+		
+		// offset up the z-axis some;
 
+		playerLook.x = 0.0;    // offset vector pointing up.
+		playerLook.y = 0.0;
+		playerLook.z = 15.0;
+
+		this->updatePos(_root, playerLook);   // offset all positions in the skeleton
 
 //		this->updateDown(_root);
 
