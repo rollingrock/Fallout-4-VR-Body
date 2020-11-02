@@ -15,6 +15,8 @@ namespace F4VRBody {
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 			playerSkelly = new Skeleton((BSFadeNode*)(*g_player)->unkF0->rootNode);
 			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
+			playerSkelly->setNodes();
+			playerSkelly->printNodes(playerSkelly->getPlayerNodes()->HmdNode);
 			return true;
 		}
 		else {
@@ -31,7 +33,7 @@ namespace F4VRBody {
 			if (!setSkelly()) {
 				return;
 			}
-			playerSkelly->printNodes();
+	//		playerSkelly->printNodes(playerSkelly->getRoot());
 			
 		}
 
@@ -41,11 +43,15 @@ namespace F4VRBody {
 
 		//playerSkelly->printNodes();
 
-		playerSkelly->projectSkelly(120.0f);   // project out in front of the players view by 30 units
+		//playerSkelly->projectSkelly(120.0f);   // project out in front of the players view by 30 units
 
-		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
+		//NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
 
-		playerSkelly->setupHead(headNode);
+		//playerSkelly->setupHead(headNode);
+
+//		playerSkelly->positionDiff();
+
+		playerSkelly->setUnderHMD();
 	}
 
 

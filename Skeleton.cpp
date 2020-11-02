@@ -16,6 +16,25 @@ namespace F4VRBody
 		}
 	}
 
+	void Matrix44::getEulerAngles(float *heading, float *roll, float *attitude) {
+		
+		*heading = asin(data[1][0]);
+		if (data[1][0] >= 0.998) {
+			*roll = atan2(data[0][2], data[2][2]);
+			*attitude = 0.0;
+		}
+		else if (data[1][0] <= -0.998) {
+			*roll = atan2(data[0][2], data[2][2]);
+			*attitude = 0.0;
+			*heading *= -1.0;
+		}
+		else {
+			*roll = atan2(-data[2][0], data[0][0]);
+			*attitude = atan2(-data[1][2], data[1][1]);
+		}
+	}
+
+
 	void Skeleton::printChildren(NiNode* child, std::string padding) {
 		padding += "....";
 		_MESSAGE("%s%s : children = %d : local x = %f : world x = %f : local y = %f : world y = %f : local z = %f : world z = %f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart,
@@ -31,17 +50,17 @@ namespace F4VRBody
 		}
 	}
 
-	void Skeleton::printNodes() {
+	void Skeleton::printNodes(NiNode* nde) {
 		// print root node info first
-		_MESSAGE("%s : children = %d : local x = %f : world x = %f : local y = %f : world y = %f : local z = %f : world z = %f", _root->m_name.c_str(), _root->m_children.m_emptyRunStart,
-			_root->m_localTransform.pos.x, _root->m_worldTransform.pos.x,
-			_root->m_localTransform.pos.y, _root->m_worldTransform.pos.y,
-			_root->m_localTransform.pos.z, _root->m_worldTransform.pos.z);
+		_MESSAGE("%s : children = %d : local x = %f : world x = %f : local y = %f : world y = %f : local z = %f : world z = %f", nde->m_name.c_str(), nde->m_children.m_emptyRunStart,
+			nde->m_localTransform.pos.x, nde->m_worldTransform.pos.x,
+			nde->m_localTransform.pos.y, nde->m_worldTransform.pos.y,
+			nde->m_localTransform.pos.z, nde->m_worldTransform.pos.z);
 
 		std::string padding = "";
 
-		for (auto i = 0; i < _root->m_children.m_emptyRunStart; ++i) {
-			auto nextNode = _root->m_children.m_data[i] ? _root->m_children.m_data[i]->GetAsNiNode() : nullptr;
+		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
 			if (nextNode) {
 				this->printChildren(nextNode, padding);
 			}
@@ -69,7 +88,7 @@ namespace F4VRBody
 		mat.data[3][2] = 0.0;
 		mat.data[3][3] = 0.0;
 
-		NiMatrix43 *local = (NiMatrix43*)&nde->m_worldTransform.rot;
+		Matrix44 *local = (Matrix44*)&nde->m_worldTransform.rot;
 
 		result = matrixMultiply(local, result, &mat);
 		
@@ -99,13 +118,17 @@ namespace F4VRBody
 		}
 	}
 
-	void Skeleton::updateDown(NiNode* nde) {
+	void Skeleton::updateDown(NiNode* nde, bool updateSelf) {
 		NiAVObject::NiUpdateData* ud = nullptr;
+
+		if (updateSelf) {
+			nde->UpdateWorldData(ud);
+		}
 
 		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
 			if (nextNode) {
-				nde->UpdateWorldData(ud);
+				this->updateDown(nextNode, true);
 			}
 		}
 
@@ -119,7 +142,7 @@ namespace F4VRBody
 
 		NiPoint3 playerLook;
 		playerLook.x = _root->m_worldTransform.rot.data[1][0];   // get unit vector pointing straight out in front of the player in player space.   y is forward axis  x is horizontal   since 2x2 rotation z is not used
-		playerLook.y = _root->m_worldTransform.rot.data[0][0];
+		playerLook.y = _root->m_worldTransform.rot.data[1][1];
 		playerLook.z = 0;
 
 		playerLook *= offsetOutFront;
@@ -139,7 +162,7 @@ namespace F4VRBody
 
 	}
 
-	Matrix44* Skeleton::matrixMultiply(NiMatrix43* worldMat, Matrix44* retMat, Matrix44* localMat) {
+	Matrix44* Skeleton::matrixMultiply(Matrix44* worldMat, Matrix44* retMat, Matrix44* localMat) {
 		using func_t = decltype(&Skeleton::matrixMultiply);
 		RelocAddr<func_t> func(0x1a8d60);
 
@@ -183,5 +206,66 @@ namespace F4VRBody
 		NiAVObject::NiUpdateData* ud = nullptr;
 
 		headNode->UpdateWorldData(ud);
+	}
+
+	void Skeleton::setNodes() {
+		_playerNodes = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
+
+		_common = this->getNode("Root", _root);
+
+		
+		_MESSAGE("common node = %016I64X", _common);
+	}
+
+	void Skeleton::positionDiff() {
+		NiPoint3 firstpos = _playerNodes->HmdNode->m_worldTransform.pos;
+		NiPoint3 skellypos = _root->m_worldTransform.pos;
+
+		_MESSAGE("difference = %f %f %f", (firstpos.x - skellypos.x), (firstpos.y - skellypos.y), (firstpos.z - skellypos.z));
+
+	}
+
+	void Skeleton::setUnderHMD() {
+		Matrix44 mat;
+		Matrix44* result = new Matrix44();
+		
+		mat = 0.0;
+
+		float y = _playerNodes->HmdNode->m_worldTransform.rot.data[1][1];
+		float x = _playerNodes->HmdNode->m_worldTransform.rot.data[1][0];
+
+		float mag = sqrt(y * y + x * x);
+
+		x /= mag;
+		y /= mag;
+
+
+		mat.data[0][0] = y;
+		mat.data[0][1] = -x;
+		mat.data[1][0] = x;
+		mat.data[1][1] = y;
+		mat.data[2][2] = 1.0;
+
+		mat.setPosition(_playerNodes->HmdNode->m_worldTransform.pos);
+
+		_common->m_localTransform.pos.y += 50.0;
+
+		matrixMultiply(&mat, result, (Matrix44*)&(_common->m_localTransform.rot));
+
+
+		for (auto i = 0; i < 3; i++) {
+			for (auto j = 0; j < 3; j++) {
+				_common->m_worldTransform.rot.data[i][j] = result->data[i][j];
+
+			}
+		}
+
+		_common->m_worldTransform.pos.x = result->data[3][0];
+		_common->m_worldTransform.pos.y = result->data[3][1];
+		_common->m_worldTransform.pos.z = result->data[3][2] - 95.0;
+
+		updateDown(_common, false);
+
+		delete result;
 	}
 }
