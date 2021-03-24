@@ -4,6 +4,7 @@
 
 #define PI 3.14159265358979323846
 
+#define DEFAULT_HEIGHT 56.0;
 
 namespace F4VRBody
 {
@@ -129,7 +130,18 @@ namespace F4VRBody
 		{}
 
 		Skeleton(BSFadeNode* a_node) : _root(a_node)
-		{}
+		{
+		}
+
+		void setDirection() {
+			_cury = _playerNodes->HmdNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
+			_curx = _playerNodes->HmdNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
+
+			float mag = sqrt(_cury * _cury + _curx * _curx);
+
+			_curx /= mag;
+			_cury /= mag;
+		}
 
 		BSFadeNode* getRoot() {
 			return _root;
@@ -154,6 +166,8 @@ namespace F4VRBody
 		void projectSkelly(float offsetOutFront);
 		void setupHead(NiNode* headNode);
 		void setUnderHMD();
+		void setHandPos();
+		NiPoint3 getPosition();
 
 		// utility
 		NiNode* getNode(const char* nodeName, NiNode *nde);
@@ -168,5 +182,11 @@ namespace F4VRBody
 		NiNode* _common;
 		NiPoint3   _lastPos;
 		PlayerNodes* _playerNodes;
+		NiNode* _rightHand;
+		NiNode* _leftHand;
+		NiNode* _wandRight;
+		NiNode* _wandLeft;
+		float _curx;
+		float _cury;
 	};
 }

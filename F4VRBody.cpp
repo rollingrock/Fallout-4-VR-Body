@@ -3,8 +3,6 @@
 
 #define PI 3.14159265358979323846
 
-
-
 namespace F4VRBody {
 
 	Skeleton *playerSkelly = nullptr;
@@ -16,7 +14,7 @@ namespace F4VRBody {
 			playerSkelly = new Skeleton((BSFadeNode*)(*g_player)->unkF0->rootNode);
 			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
 			playerSkelly->setNodes();
-			playerSkelly->printNodes(playerSkelly->getPlayerNodes()->HmdNode);
+			playerSkelly->setDirection();
 			return true;
 		}
 		else {
@@ -33,8 +31,8 @@ namespace F4VRBody {
 			if (!setSkelly()) {
 				return;
 			}
-	//		playerSkelly->printNodes(playerSkelly->getRoot());
-			
+			//		playerSkelly->printNodes(playerSkelly->getRoot());
+
 		}
 
 		// do stuff now
@@ -43,15 +41,20 @@ namespace F4VRBody {
 
 		//playerSkelly->printNodes();
 
-		//playerSkelly->projectSkelly(120.0f);   // project out in front of the players view by 30 units
+	//	playerSkelly->projectSkelly(120.0f);   // project out in front of the players view by 30 units
 
-		//NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
+		auto wand = playerSkelly->getPlayerNodes()->primaryWandandTouchPad;
 
-		//playerSkelly->setupHead(headNode);
+//		wand->RemoveChild(wand->m_children.m_data[0]);
+
+		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
+
+		playerSkelly->setupHead(headNode);
 
 //		playerSkelly->positionDiff();
 
 		playerSkelly->setUnderHMD();
+//		playerSkelly->setHandPos();
 	}
 
 

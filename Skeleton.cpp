@@ -42,13 +42,18 @@ namespace F4VRBody
 			child->m_localTransform.pos.y, child->m_worldTransform.pos.y,
 			child->m_localTransform.pos.z, child->m_worldTransform.pos.z);
 
-		for (auto i = 0; i < child->m_children.m_emptyRunStart; ++i) {
-			auto nextNode = child->m_children.m_data[i] ? child->m_children.m_data[i]->GetAsNiNode() : nullptr;
-			if (nextNode) {
-				this->printChildren(nextNode, padding);
+		if (child->GetAsNiNode())
+		{
+			for (auto i = 0; i < child->m_children.m_emptyRunStart; ++i) {
+				//auto nextNode = child->m_children.m_data[i] ? child->m_children.m_data[i]->GetAsNiNode() : nullptr;
+				auto nextNode = child->m_children.m_data[i];
+				if (nextNode) {
+					this->printChildren((NiNode*)nextNode, padding);
+				}
 			}
 		}
 	}
+
 
 	void Skeleton::printNodes(NiNode* nde) {
 		// print root node info first
@@ -60,9 +65,10 @@ namespace F4VRBody
 		std::string padding = "";
 
 		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
+		//	auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
+			auto nextNode = nde->m_children.m_data[i];
 			if (nextNode) {
-				this->printChildren(nextNode, padding);
+				this->printChildren((NiNode*)nextNode, padding);
 			}
 		}
 	}
@@ -202,6 +208,8 @@ namespace F4VRBody
 		headNode->m_localTransform.rot.data[2][0] = -0.058;
 		headNode->m_localTransform.rot.data[2][1] = -0.037;
 		headNode->m_localTransform.rot.data[2][2] =  0.998;
+		headNode->m_localTransform.pos.y = -20.0;
+		headNode->m_localTransform.pos.x = 20.0;
 
 		NiAVObject::NiUpdateData* ud = nullptr;
 
@@ -211,10 +219,19 @@ namespace F4VRBody
 	void Skeleton::setNodes() {
 		_playerNodes = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
 
-		_common = this->getNode("Root", _root);
+		setCommonNode();
+		_rightHand = this->getNode("RArm_Hand", _root);
+		_leftHand = this->getNode("LArm_Hand", _root);
 
+		_wandRight = getNode("fist_M_Right", _playerNodes->primaryWandNode);
+		_wandLeft = getNode("LeftHand", _playerNodes->SecondaryWandNode);
+
+		_wandRight = _playerNodes->primaryWandNode;
+		_wandLeft = _playerNodes->SecondaryWandNode;
 		
 		_MESSAGE("common node = %016I64X", _common);
+		_MESSAGE("righthand node = %016I64X", _rightHand);
+		_MESSAGE("lefthand node = %016I64X", _leftHand);
 	}
 
 	void Skeleton::positionDiff() {
@@ -225,20 +242,42 @@ namespace F4VRBody
 
 	}
 
+	NiPoint3 Skeleton::getPosition() {
+		NiPoint3 curPos = _playerNodes->HmdNode->m_worldTransform.pos;
+		
+		float dist = sqrt(pow((curPos.x - _lastPos.x),2) + pow((curPos.y - _lastPos.y),2) + pow((curPos.z - _lastPos.z),2));
+
+		//if (dist > 50.0) {
+			_lastPos = curPos;
+		//}
+
+		return _lastPos;
+	}
+
 	void Skeleton::setUnderHMD() {
 		Matrix44 mat;
 		Matrix44* result = new Matrix44();
 		
 		mat = 0.0;
 
-		float y = _playerNodes->HmdNode->m_worldTransform.rot.data[1][1];
-		float x = _playerNodes->HmdNode->m_worldTransform.rot.data[1][0];
+		float y = _playerNodes->UprightHmdNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
+		float x = _playerNodes->UprightHmdNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
 
 		float mag = sqrt(y * y + x * x);
 
 		x /= mag;
 		y /= mag;
 
+		float dot = (_curx * x) + (_cury * y);
+
+		if (dot < 0.5) {
+			_curx = x;
+			_cury = y;
+		}
+		else {
+			x = _curx;
+			y = _cury;
+		}
 
 		mat.data[0][0] = y;
 		mat.data[0][1] = -x;
@@ -246,11 +285,15 @@ namespace F4VRBody
 		mat.data[1][1] = y;
 		mat.data[2][2] = 1.0;
 
-		mat.setPosition(_playerNodes->HmdNode->m_worldTransform.pos);
+		mat.setPosition(this->getPosition());
+		mat.data[3][3] = 1.0;
 
-		_common->m_localTransform.pos.y += 50.0;
+		_common->m_localTransform.pos.y = -10.0;
+		_common->m_localTransform.pos.z = 0.0;
 
-		matrixMultiply(&mat, result, (Matrix44*)&(_common->m_localTransform.rot));
+		Matrix44* loc = (Matrix44*)&(_common->m_localTransform.rot);
+
+		matrixMultiply(&mat, result, loc);
 
 
 		for (auto i = 0; i < 3; i++) {
@@ -262,9 +305,38 @@ namespace F4VRBody
 
 		_common->m_worldTransform.pos.x = result->data[3][0];
 		_common->m_worldTransform.pos.y = result->data[3][1];
-		_common->m_worldTransform.pos.z = result->data[3][2] - 95.0;
+		_common->m_worldTransform.pos.z = _root->m_worldTransform.pos.z + DEFAULT_HEIGHT;
 
 		updateDown(_common, false);
+
+		delete result;
+	}
+
+	void Skeleton::setHandPos() {
+
+		_rightHand->m_worldTransform.rot = _wandRight->m_worldTransform.rot;
+		_rightHand->m_worldTransform.pos = _wandRight->m_worldTransform.pos;
+		_leftHand->m_worldTransform.rot = _wandLeft->m_worldTransform.rot;
+		_leftHand->m_worldTransform.pos = _wandLeft->m_worldTransform.pos;
+
+		Matrix44 mat;
+		Matrix44* result = new Matrix44();
+		mat.makeIdentity();
+
+		mat.data[0][0] = -1.0;
+		mat.data[2][2] = -1.0;
+
+		matrixMultiply((Matrix44*)&(_rightHand->m_worldTransform.rot), result, &mat);
+
+		for (auto i = 0; i < 3; i++) {
+			for (auto j = 0; j < 3; j++) {
+				_rightHand->m_worldTransform.rot.data[i][j] = result->data[i][j];
+
+			}
+		}
+
+		updateDown(_rightHand, false);
+		updateDown(_leftHand, false);
 
 		delete result;
 	}

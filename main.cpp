@@ -47,6 +47,7 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
 extern "C" {
 	bool F4SEPlugin_Query(const F4SEInterface* a_f4se, PluginInfo* a_info)
 	{
+		Sleep(5000);
 		gLog.OpenRelative(CSIDL_MYDOCUMENTS, R"(\\My Games\\Fallout4VR\\F4SE\\Fallout4VRBody.log)");
 		gLog.SetPrintLevel(IDebugLog::kLevel_DebugMessage);
 		gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
