@@ -17,21 +17,43 @@ namespace F4VRBody
 	}
 
 	void Matrix44::getEulerAngles(float *heading, float *roll, float *attitude) {
-		
-		*heading = asin(data[1][0]);
-		if (data[1][0] >= 0.998) {
-			*roll = atan2(data[0][2], data[2][2]);
-			*attitude = 0.0;
-		}
-		else if (data[1][0] <= -0.998) {
-			*roll = atan2(data[0][2], data[2][2]);
-			*attitude = 0.0;
-			*heading *= -1.0;
+
+		if (data[2][0] < 1.0) {
+			if (data[2][0] > -1.0) {
+				*heading = atan2(-data[2][1], data[2][2]);
+				*attitude = asin(data[2][0]);
+				*roll = atan2(-data[1][0], data[0][0]);
+			}
+			else {
+				*heading = -atan2(-data[0][1], data[1][1]);
+				*attitude = -PI / 2;
+				*roll = 0.0;
+			}
 		}
 		else {
-			*roll = atan2(-data[2][0], data[0][0]);
-			*attitude = atan2(-data[1][2], data[1][1]);
+			*heading = atan2(data[0][1], data[1][1]);
+			*attitude = PI / 2;
+			*roll = 0.0;
 		}
+	}
+
+	void Matrix44::setEulerAngles(float heading, float roll, float attitude) {
+		float sinX = sin(heading);
+		float cosX = cos(heading);
+		float sinY = sin(attitude);
+		float cosY = cos(attitude);
+		float sinZ = sin(roll);
+		float cosZ = cos(roll);
+
+		data[0][0] = cosY * cosZ;
+		data[0][1] = sinX * sinY * cosZ + sinZ * cosX;
+		data[0][2] = sinX * sinZ - cosX * sinY * cosZ;
+		data[1][0] = -cosY * sinZ;
+		data[1][1] = cosX * cosZ - sinX * sinY * sinZ;
+		data[1][2] = cosX * sinY * sinZ + sinX * cosZ;
+		data[2][0] = sinY;
+		data[2][1] = -sinX * cosY;
+		data[2][2] = cosX * cosY;
 	}
 
 
@@ -226,8 +248,8 @@ namespace F4VRBody
 		_wandRight = getNode("fist_M_Right", _playerNodes->primaryWandNode);
 		_wandLeft = getNode("LeftHand", _playerNodes->SecondaryWandNode);
 
-		_wandRight = _playerNodes->primaryWandNode;
-		_wandLeft = _playerNodes->SecondaryWandNode;
+		_wandRight = _playerNodes->primaryWandNode->m_children.m_data[8]->GetAsNiNode();
+		_wandLeft = _playerNodes->SecondaryWandNode->m_children.m_data[5]->GetAsNiNode();
 		
 		_MESSAGE("common node = %016I64X", _common);
 		_MESSAGE("righthand node = %016I64X", _rightHand);
@@ -337,6 +359,30 @@ namespace F4VRBody
 
 		updateDown(_rightHand, false);
 		updateDown(_leftHand, false);
+
+		//for (auto i = 0; i < 3; i++) {
+		//	for (auto j = 0; j < 3; j++) {
+		//		mat.data[i][j] = _rightHand->m_localTransform.rot.data[i][j];
+		//	}
+		//}
+
+		//float yaw, pitch, roll;
+
+		//mat.getEulerAngles(&yaw, &roll, &pitch);
+
+
+		//mat.setEulerAngles(yaw, roll, pitch);
+		//
+		//_MESSAGE("%f %f %f", mat.data[0][0], mat.data[0][1], mat.data[0][2]);
+		//_MESSAGE("%f %f %f", mat.data[1][0], mat.data[1][1], mat.data[1][2]);
+		//_MESSAGE("%f %f %f", mat.data[2][0], mat.data[2][1], mat.data[2][2]);
+		//_MESSAGE(" ");
+
+
+		// Hide wands
+
+		_wandRight->flags |= 0x1;
+		_wandLeft->flags |= 0x1;
 
 		delete result;
 	}

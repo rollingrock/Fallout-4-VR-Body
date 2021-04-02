@@ -120,6 +120,7 @@ namespace F4VRBody
 		}
 
 		void getEulerAngles(float *heading, float *roll, float *attitude);
+		void setEulerAngles(float heading, float roll, float attitude);
 
 		float data[4][4];
 	};

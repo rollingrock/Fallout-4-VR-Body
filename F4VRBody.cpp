@@ -54,7 +54,7 @@ namespace F4VRBody {
 //		playerSkelly->positionDiff();
 
 		playerSkelly->setUnderHMD();
-//		playerSkelly->setHandPos();
+		playerSkelly->setHandPos();
 	}
 
 
