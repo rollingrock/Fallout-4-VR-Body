@@ -16,45 +16,7 @@ namespace F4VRBody
 		}
 	}
 
-	void Matrix44::getEulerAngles(float *heading, float *roll, float *attitude) {
 
-		if (data[2][0] < 1.0) {
-			if (data[2][0] > -1.0) {
-				*heading = atan2(-data[2][1], data[2][2]);
-				*attitude = asin(data[2][0]);
-				*roll = atan2(-data[1][0], data[0][0]);
-			}
-			else {
-				*heading = -atan2(-data[0][1], data[1][1]);
-				*attitude = -PI / 2;
-				*roll = 0.0;
-			}
-		}
-		else {
-			*heading = atan2(data[0][1], data[1][1]);
-			*attitude = PI / 2;
-			*roll = 0.0;
-		}
-	}
-
-	void Matrix44::setEulerAngles(float heading, float roll, float attitude) {
-		float sinX = sin(heading);
-		float cosX = cos(heading);
-		float sinY = sin(attitude);
-		float cosY = cos(attitude);
-		float sinZ = sin(roll);
-		float cosZ = cos(roll);
-
-		data[0][0] = cosY * cosZ;
-		data[0][1] = sinX * sinY * cosZ + sinZ * cosX;
-		data[0][2] = sinX * sinZ - cosX * sinY * cosZ;
-		data[1][0] = -cosY * sinZ;
-		data[1][1] = cosX * cosZ - sinX * sinY * sinZ;
-		data[1][2] = cosX * sinY * sinZ + sinX * cosZ;
-		data[2][0] = sinY;
-		data[2][1] = -sinX * cosY;
-		data[2][2] = cosX * cosY;
-	}
 
 
 	void Skeleton::printChildren(NiNode* child, std::string padding) {
@@ -254,6 +216,40 @@ namespace F4VRBody
 		_MESSAGE("common node = %016I64X", _common);
 		_MESSAGE("righthand node = %016I64X", _rightHand);
 		_MESSAGE("lefthand node = %016I64X", _leftHand);
+
+
+		// Setup Arms
+		BSFixedString rCollar("RArm_Collarbone");
+		BSFixedString rUpper("RArm_UpperArm");
+		BSFixedString rUpper1("RArm_UpperTwist1");
+		BSFixedString rForearm("RArm_ForeArm1");
+		BSFixedString rForearm1("RArm_ForeArm2");
+		BSFixedString rForearm2("RArm_ForeArm3");
+		BSFixedString rHand("RArm_Hand");
+		BSFixedString lCollar("LArm_Collarbone");
+		BSFixedString lUpper("LArm_UpperArm");
+		BSFixedString lUpper1("LArm_UpperTwist1");
+		BSFixedString lForearm("LArm_ForeArm1");
+		BSFixedString lForearm1("LArm_ForeArm2");
+		BSFixedString lForearm2("LArm_ForeArm3");
+		BSFixedString lHand("LArm_Hand");
+
+		rightArm.shoulder  = _common->GetObjectByName(&rCollar);
+		rightArm.upper     = _common->GetObjectByName(&rUpper);
+		rightArm.upperT1   = _common->GetObjectByName(&rUpper1);
+		rightArm.forearm   = _common->GetObjectByName(&rForearm);
+		rightArm.forearmT1 = _common->GetObjectByName(&rForearm1);
+		rightArm.forearmT2 = _common->GetObjectByName(&rForearm2);
+		rightArm.hand      = _common->GetObjectByName(&rHand);
+
+		leftArm.shoulder  = _common->GetObjectByName(&lCollar);
+		leftArm.upper     = _common->GetObjectByName(&lUpper);
+		leftArm.upperT1   = _common->GetObjectByName(&lUpper1);
+		leftArm.forearm   = _common->GetObjectByName(&lForearm);
+		leftArm.forearmT1 = _common->GetObjectByName(&lForearm1);
+		leftArm.forearmT2 = _common->GetObjectByName(&lForearm2);
+		leftArm.hand      = _common->GetObjectByName(&lHand);
+
 	}
 
 	void Skeleton::positionDiff() {
@@ -386,4 +382,68 @@ namespace F4VRBody
 
 		delete result;
 	}
+
+	void Skeleton::removeHands() {
+		//NiNode* node = (*g_player)->GetObjectRootNode();
+
+		_wandRight->flags |= 0x1;
+		_wandLeft->flags |= 0x1;
+
+		BSFixedString nodeName("RArm_Hand");
+
+		NiAVObject* node = _common->GetObjectByName(&nodeName);
+
+		if (node) {
+			node->m_worldTransform.scale = 0.000001;
+		}
+
+
+
+		return;
+
+	}
+
+	// This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
+	void Skeleton::setArms(bool isLeft) {
+		ArmNodes arm;
+
+		arm = isLeft ? leftArm : rightArm;
+
+		NiPoint3 handPos = isLeft ? _leftHand->m_worldTransform.pos : _rightHand->m_worldTransform.pos;
+		NiMatrix43 handRot = isLeft ? _leftHand->m_worldTransform.rot : _rightHand->m_worldTransform.rot;
+
+		// Detect if the 1st person hand position is invalid.  This can happen when a controller loses tracking.
+		// If it is, do not handle IK and let Fallout use its normal animations for that arm instead.
+
+		if (isnan(handPos.x) || isnan(handPos.y) || isnan(handPos.z) ||
+			isinf(handPos.x) || isinf(handPos.y) || isinf(handPos.z) ||
+			vec3_len(arm.upper->m_worldTransform.pos - handPos) > 250.0)
+		{
+			return;
+		}
+
+		// Shoulder IK is done in a very simple way
+
+		NiPoint3 shoulderToHand = handPos - arm.upper->m_worldTransform.pos;
+		float armLength = 36.74;
+		double lo = 0.0f;
+		double hi = armLength * 0.75f;
+		float adjustAmount = (std::clamp)(vec3_len(shoulderToHand) - armLength * 0.5f, lo, hi) / (armLength * 0.75f);
+		NiPoint3 shoulderOffset = vec3_norm(shoulderToHand) * (adjustAmount * armLength * 0.225f);
+
+		if (shoulderOffset.z < 0) {
+			shoulderOffset *= 0.4;
+		}
+
+		NiPoint3 clavicalToNewShoulder = vec3_norm(arm.upper->m_worldTransform.pos + shoulderOffset - arm.shoulder->m_worldTransform.pos);
+		NiPoint3 sLocalDir = arm.shoulder->m_worldTransform.rot.Transpose() * clavicalToNewShoulder;
+	//	arm.shoulder->m_localTransform.rot = arm.shoulder->m_localTransform.rot * getRotation(NiPoint3(0, 0, 1), sLocalDir);
+	//	updateTransformsUpTo(arm.upper, arm.shoulder, true);
+
+		return;
+	}
+
+
+
+
 }

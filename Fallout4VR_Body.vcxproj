@@ -171,13 +171,17 @@
     <ClCompile Include="F4VRBody.cpp" />
     <ClCompile Include="hook.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="matrix.cpp" />
     <ClCompile Include="Skeleton.cpp" />
+    <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="F4VRBody.h" />
     <ClInclude Include="hook.h" />
     <ClInclude Include="include\version.h" />
+    <ClInclude Include="matrix.h" />
     <ClInclude Include="Skeleton.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />
