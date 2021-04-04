@@ -13,7 +13,7 @@ RelocAddr<_hookedFunc> hookedFunc(0x1C18620);
 
 void hookIt(uint64_t rcx_, uint64_t rdx_, uint64_t r8d_) {
 
-	F4VRBody::update(rdx_);
+	F4VRBody::update();
 
 	hookedFunc(rcx_,rdx_,r8d_);
 

@@ -3,6 +3,7 @@
 #include "f4se/NiNodes.h"
 
 #include <algorithm>
+#include <array>
 
 #include "utils.h"
 #include "matrix.h"
@@ -73,7 +74,8 @@ namespace F4VRBody
 	class Skeleton {
 	public:
 		Skeleton() : _root(nullptr)
-		{}
+		{
+		}
 
 		Skeleton(BSFadeNode* a_node) : _root(a_node)
 		{
@@ -120,10 +122,9 @@ namespace F4VRBody
 		// utility
 		NiNode* getNode(const char* nodeName, NiNode *nde);
 		void updateDown(NiNode* nde, bool updateSelf);
+		void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 		void setNodes();
 
-		// Fallout Function Hooking
-		static Matrix44 *matrixMultiply(Matrix44* worldMat, Matrix44* retMat, Matrix44* localMat);
 
 	private:
 		BSFadeNode* _root;
@@ -134,6 +135,7 @@ namespace F4VRBody
 		NiNode* _leftHand;
 		NiNode* _wandRight;
 		NiNode* _wandLeft;
+		NiNode* _spine;
 		ArmNodes rightArm;
 		ArmNodes leftArm;
 		float _curx;

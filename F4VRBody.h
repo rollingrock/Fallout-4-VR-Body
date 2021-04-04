@@ -7,6 +7,6 @@ namespace F4VRBody {
 
 
 
-	void update(uint64_t a_addr);
+	void update();
 	void startUp();
 }

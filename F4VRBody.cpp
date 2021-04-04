@@ -22,7 +22,7 @@ namespace F4VRBody {
 		}
 	}
 
-	void update(uint64_t a_addr) {
+	void update() {
 		if (!isLoaded) {
 			return;
 		}
@@ -54,8 +54,12 @@ namespace F4VRBody {
 //		playerSkelly->positionDiff();
 
 		playerSkelly->setUnderHMD();
-		playerSkelly->setHandPos();
-		playerSkelly->removeHands();
+	//	playerSkelly->setHandPos();
+	//	playerSkelly->removeHands();
+
+		// do arm IK - Right then Left
+		playerSkelly->setArms(false);
+	//	playerSkelly->setArms(true);
 	}
 
 

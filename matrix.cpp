@@ -45,8 +45,7 @@ namespace F4VRBody {
 		data[2][2] = cosX * cosY;
 	}
 
-	Matrix44 Matrix44::rotateVectoVec(NiPoint3 toVec, NiPoint3 fromVec) {
-		Matrix44 mat;
+	void Matrix44::rotateVectoVec(NiPoint3 toVec, NiPoint3 fromVec) {
 
 		toVec = vec3_norm(toVec);
 		fromVec = vec3_norm(fromVec);
@@ -54,8 +53,8 @@ namespace F4VRBody {
 		double dotP = vec3_dot(fromVec, toVec);
 
 		if (dotP >= 0.99999) {
-			mat.makeIdentity();
-			return mat;
+			this->makeIdentity();
+			return;
 		}
 
 		NiPoint3 crossP = vec3_cross(toVec, fromVec);
@@ -66,16 +65,62 @@ namespace F4VRBody {
 		float rsin = sin(phi);
 
 		// Build the matrix
-		mat.data[0][0] = rcos + crossP.x * crossP.x * (1.0 - rcos);
-		mat.data[0][1] = -crossP.z * rsin + crossP.x * crossP.y * (1.0 - rcos);
-		mat.data[0][2] = crossP.y * rsin + crossP.x * crossP.z * (1.0 - rcos);
-		mat.data[1][0] = crossP.z * rsin + crossP.y * crossP.x * (1.0 - rcos);
-		mat.data[1][1] = rcos + crossP.y * crossP.y * (1.0 - rcos);
-		mat.data[1][2] = -crossP.x * rsin + crossP.y * crossP.z * (1.0 - rcos);
-		mat.data[2][0] = -crossP.y * rsin + crossP.z * crossP.x * (1.0 - rcos);
-		mat.data[2][1] = crossP.x * rsin + crossP.z * crossP.y * (1.0 - rcos);
-		mat.data[2][2] = rcos + crossP.z * crossP.z * (1.0 - rcos);
-
-		return mat;
+		data[0][0] = rcos + crossP.x * crossP.x * (1.0 - rcos);
+		data[0][1] = -crossP.z * rsin + crossP.x * crossP.y * (1.0 - rcos);
+		data[0][2] = crossP.y * rsin + crossP.x * crossP.z * (1.0 - rcos);
+		data[1][0] = crossP.z * rsin + crossP.y * crossP.x * (1.0 - rcos);
+		data[1][1] = rcos + crossP.y * crossP.y * (1.0 - rcos);
+		data[1][2] = -crossP.x * rsin + crossP.y * crossP.z * (1.0 - rcos);
+		data[2][0] = -crossP.y * rsin + crossP.z * crossP.x * (1.0 - rcos);
+		data[2][1] = crossP.x * rsin + crossP.z * crossP.y * (1.0 - rcos);
+		data[2][2] = rcos + crossP.z * crossP.z * (1.0 - rcos);
 	}
+
+	NiMatrix43 Matrix44::multiply43Left(NiMatrix43 mat) {
+		NiMatrix43 retMat;
+		Matrix44* result = new Matrix44;
+
+		matrixMultiply((Matrix44*)&(mat), result, this);
+
+		for (auto i = 0; i < 3; i++) {
+			for (auto j = 0; j < 3; j++) {
+				retMat.data[i][j] = result->data[i][j];
+
+			}
+		}
+
+		retMat.data[0][3] = 0.0f;
+		retMat.data[1][3] = 0.0f;
+		retMat.data[2][3] = 0.0f;
+
+		return retMat;
+	}
+
+	NiMatrix43 Matrix44::multiply43Right(NiMatrix43 mat) {
+		NiMatrix43 retMat;
+		Matrix44* result = new Matrix44;
+
+		matrixMultiply(this, result, (Matrix44*)&(mat));
+
+		for (auto i = 0; i < 3; i++) {
+			for (auto j = 0; j < 3; j++) {
+				retMat.data[i][j] = result->data[i][j];
+
+			}
+		}
+
+		retMat.data[0][3] = 0.0f;
+		retMat.data[1][3] = 0.0f;
+		retMat.data[2][3] = 0.0f;
+
+		return retMat;
+	}
+
+	void Matrix44::matrixMultiply(Matrix44* worldMat, Matrix44* retMat, Matrix44* localMat) {
+		using func_t = decltype(&Matrix44::matrixMultiply);
+		RelocAddr<func_t> func(0x1a8d60);
+
+		return func(worldMat, retMat, localMat);
+	}
+
 }
