@@ -13,6 +13,20 @@ namespace F4VRBody {
 
 		double mag = vec3_len(v1);
 
+		if (mag < 0.000001) {
+			float maxX = abs(v1.x);
+			float maxY = abs(v1.y);
+			float maxZ = abs(v1.z);
+
+			if (maxX >= maxY && maxX >= maxZ) {
+				return (v1.x >= 0 ? NiPoint3(1, 0, 0) : NiPoint3(-1, 0, 0));
+			}
+			else if (maxY > maxZ) {
+				return (v1.y >= 0 ? NiPoint3(0, 1, 0) : NiPoint3(0, -1, 0));
+			}
+			return (v1.z >= 0 ? NiPoint3(0, 0, 1) : NiPoint3(0, 0, -1));
+
+		}
 		v1.x /= mag;
 		v1.y /= mag;
 		v1.z /= mag;

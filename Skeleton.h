@@ -1,5 +1,6 @@
 #pragma once
 #include "f4se/GameReferences.h"
+#include "f4se/GameCamera.h"
 #include "f4se/NiNodes.h"
 
 #include <algorithm>
@@ -10,6 +11,8 @@
 
 
 #define DEFAULT_HEIGHT 56.0;
+
+extern uint64_t g_mainLoopCounter;
 
 namespace F4VRBody
 {
@@ -123,6 +126,7 @@ namespace F4VRBody
 		NiNode* getNode(const char* nodeName, NiNode *nde);
 		void updateDown(NiNode* nde, bool updateSelf);
 		void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
+		void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 		void setNodes();
 
 

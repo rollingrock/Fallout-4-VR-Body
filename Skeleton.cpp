@@ -142,6 +142,25 @@ namespace F4VRBody
 		}
 	}
 
+	void Skeleton::updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateTarget) {
+		NiAVObject::NiUpdateData* ud = nullptr;
+
+
+		if (!strcmp(toNode->m_name.c_str(), fromNode->m_name.c_str())) {
+			if (updateTarget) {
+				fromNode->UpdateWorldData(ud);
+			}
+			return;
+		}
+
+		fromNode->UpdateWorldData(ud);
+		NiNode* parent = fromNode->m_parent ? fromNode->m_parent->GetAsNiNode() : 0;
+		if (!parent) {
+			return;
+		}
+		updateUpTo(toNode, parent, true);
+	}
+
 	void Skeleton::projectSkelly(float offsetOutFront) {    // Projects the 3rd person body out in front of the player by offset amount
 
 
@@ -212,8 +231,9 @@ namespace F4VRBody
 		_playerNodes = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
 
 		setCommonNode();
-		_rightHand = this->getNode("RArm_Hand", _root);
-		_leftHand = this->getNode("LArm_Hand", _root);
+
+		_rightHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		_leftHand  = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 		_wandRight = getNode("fist_M_Right", _playerNodes->primaryWandNode);
 		_wandLeft = getNode("LeftHand", _playerNodes->SecondaryWandNode);
@@ -271,9 +291,9 @@ namespace F4VRBody
 	}
 
 	NiPoint3 Skeleton::getPosition() {
-		NiPoint3 curPos = _playerNodes->HmdNode->m_worldTransform.pos;
+		NiPoint3 curPos = (*g_playerCamera)->cameraNode->m_worldTransform.pos;
 		
-		float dist = sqrt(pow((curPos.x - _lastPos.x),2) + pow((curPos.y - _lastPos.y),2) + pow((curPos.z - _lastPos.z),2));
+		float dist = vec3_len(curPos);
 
 		//if (dist > 50.0) {
 			_lastPos = curPos;
@@ -285,11 +305,12 @@ namespace F4VRBody
 	void Skeleton::setUnderHMD() {
 		Matrix44 mat;
 		Matrix44* result = new Matrix44();
-		
+
 		mat = 0.0;
 
-		float y = _playerNodes->UprightHmdNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
-		float x = _playerNodes->UprightHmdNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
+		float y = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
+		float x = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
+		float z = _root->m_worldTransform.pos.z + _common->m_localTransform.pos.z;
 
 		float mag = sqrt(y * y + x * x);
 
@@ -314,28 +335,28 @@ namespace F4VRBody
 		mat.data[2][2] = 1.0;
 
 		mat.setPosition(this->getPosition());
+		mat.data[3][2] = z;
 		mat.data[3][3] = 1.0;
 
-		_common->m_localTransform.pos.y = -10.0;
-		_common->m_localTransform.pos.z = 0.0;
+		_common->m_localTransform.pos.y = 15.0;
 
-		Matrix44* loc = (Matrix44*)&(_common->m_localTransform.rot);
+		Matrix44* loc = (Matrix44*)&(_root->m_localTransform.rot);
 
 		Matrix44::matrixMultiply(&mat, result, loc);
 
 
 		for (auto i = 0; i < 3; i++) {
 			for (auto j = 0; j < 3; j++) {
-				_common->m_worldTransform.rot.data[i][j] = result->data[i][j];
+				_root->m_worldTransform.rot.data[i][j] = result->data[i][j];
 
 			}
 		}
 
-		_common->m_worldTransform.pos.x = result->data[3][0];
-		_common->m_worldTransform.pos.y = result->data[3][1];
-		_common->m_worldTransform.pos.z = _root->m_worldTransform.pos.z + DEFAULT_HEIGHT;
+		_root->m_worldTransform.pos.x = result->data[3][0];
+		_root->m_worldTransform.pos.y = result->data[3][1];
+	//	_common->m_worldTransform.pos.z = z;
 
-		updateDown(_common, false);
+		_root->UpdateDownwardPass(nullptr, 0);
 
 		delete result;
 	}
@@ -419,15 +440,15 @@ namespace F4VRBody
 
 		arm = isLeft ? leftArm : rightArm;
 
-		NiPoint3 handPos = isLeft ? _wandLeft->m_worldTransform.pos : _wandRight->m_worldTransform.pos;
-		NiMatrix43 handRot = isLeft ? _wandLeft->m_worldTransform.rot : _wandRight->m_worldTransform.rot;
+		NiPoint3 handPos = isLeft ? _leftHand->m_worldTransform.pos : _rightHand->m_worldTransform.pos;
+		NiMatrix43 handRot = isLeft ? _leftHand->m_worldTransform.rot : _rightHand->m_worldTransform.rot;
 
 		// Detect if the 1st person hand position is invalid.  This can happen when a controller loses tracking.
 		// If it is, do not handle IK and let Fallout use its normal animations for that arm instead.
 
 		if (isnan(handPos.x) || isnan(handPos.y) || isnan(handPos.z) ||
 			isinf(handPos.x) || isinf(handPos.y) || isinf(handPos.z) ||
-			vec3_len(arm.upper->m_worldTransform.pos - handPos) > 250.0)
+			vec3_len(arm.upper->m_worldTransform.pos - handPos) > 50.0)
 		{
 			return;
 		}
@@ -455,8 +476,24 @@ namespace F4VRBody
 
 		arm.shoulder->m_localTransform.rot = rotatedM.multiply43Left(arm.shoulder->m_localTransform.rot);
 
-		updateDownTo(arm.upper->GetAsNiNode(), arm.shoulder->GetAsNiNode(), true);
-		updateDown(arm.shoulder->GetAsNiNode(), true);
+
+
+
+		//_MESSAGE("");
+		//_MESSAGE("========== Frame %d ============", g_mainLoopCounter);
+		//_MESSAGE("handPos               {%5f %5f %5f}", handPos.x, handPos.y, handPos.z);
+		//_MESSAGE("shoulderToHand        {%5f %5f %5f}", shoulderToHand.x, shoulderToHand.y, shoulderToHand.z);
+		//_MESSAGE("clavicalToNewShoulder {%5f %5f %5f}", clavicalToNewShoulder.x, clavicalToNewShoulder.y, clavicalToNewShoulder.z);
+		//_MESSAGE("shoulderOffest        {%5f %5f %5f}", shoulderOffset.x, shoulderOffset.y, shoulderOffset.z);
+		//_MESSAGE("sLocalDir             {%5f %5f %5f}", sLocalDir.x, sLocalDir.y, sLocalDir.z);
+		//_MESSAGE("adjustAmount           %5f", adjustAmount);
+		//_MESSAGE("rotatedM[0]           {%5f %5f %5f}", rotatedM.data[0][0], rotatedM.data[0][1], rotatedM.data[0][2]);
+		//_MESSAGE("rotatedM[1]           {%5f %5f %5f}", rotatedM.data[1][0], rotatedM.data[1][1], rotatedM.data[1][2]);
+		//_MESSAGE("rotatedM[2]           {%5f %5f %5f}", rotatedM.data[2][0], rotatedM.data[2][1], rotatedM.data[2][2]);
+		//_MESSAGE("arm.shoulder->m_localTransform.rot[0]           {%5f %5f %5f}", arm.shoulder->m_localTransform.rot.data[0][0], arm.shoulder->m_localTransform.rot.data[0][1], arm.shoulder->m_localTransform.rot.data[0][2]);
+		//_MESSAGE("arm.shoulder->m_localTransform.rot[1]           {%5f %5f %5f}", arm.shoulder->m_localTransform.rot.data[1][0], arm.shoulder->m_localTransform.rot.data[1][1], arm.shoulder->m_localTransform.rot.data[1][2]);
+		//_MESSAGE("arm.shoulder->m_localTransform.rot[2]           {%5f %5f %5f}", arm.shoulder->m_localTransform.rot.data[2][0], arm.shoulder->m_localTransform.rot.data[2][1], arm.shoulder->m_localTransform.rot.data[2][2]);
+
 /*
 		// The bend of the arm depends on its distance to the body.  Its distance as well as the lengths of
 		// the upper arm and forearm define the sides of a triangle:

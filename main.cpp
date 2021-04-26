@@ -19,6 +19,8 @@ void* g_moduleHandle = nullptr;
 
 static F4SEMessagingInterface* g_messaging = NULL;
 
+uint64_t g_mainLoopCounter = 0;
+
 
 void PatchBody() {
 	_MESSAGE("Patch Body In");
@@ -94,6 +96,7 @@ extern "C" {
 			_ERROR("couldn't create branch trampoline. this is fatal. skipping remainder of init process.");
 			return false;
 		}
+
 
 		//if (!g_localTrampoline.Create(1024 * 64, g_moduleHandle))
 		//{
