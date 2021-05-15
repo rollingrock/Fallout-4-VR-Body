@@ -15,9 +15,12 @@ namespace F4VRBody {
 	 NiPoint3 vec3_cross(NiPoint3 v1, NiPoint3 v2);
 
 	 float degrees_to_rads(float deg);
+	 float rads_to_degrees(float deg);
 
 	 NiPoint3 rotateXY(NiPoint3 vec, float angle);
 
 	 NiMatrix43 getRotationAxisAngle(NiPoint3 axis, float theta);
+
+	 void updateTransforms(NiNode* node);
 
 }

@@ -28,7 +28,7 @@ RelocAddr<_hookedf10ed0> hookedf10ed0(0xf10ed0);
 
 void hookIt() {
 	F4VRBody::update();
-//	hookedf10ed0((uint64_t)(*g_player));
+	hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.   
 	return;
 }
 
@@ -46,7 +46,7 @@ void hookMain() {
 	int bytesToNOP = 0x1FF;
 
 	for (int i = 0; i < bytesToNOP; ++i) {
-		SafeWrite8(hookAnimationVFunc.GetUIntPtr() + i, 0x90);
+		SafeWrite8(hookAnimationVFunc.GetUIntPtr() + i, 0x90);    // this block resets the body pose to hang off the camera.    Blocking this off so body height is correct.
 	}
 
 //	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&F4VRBody::update);

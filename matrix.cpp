@@ -76,51 +76,77 @@ namespace F4VRBody {
 		data[2][2] = rcos + crossP.z * crossP.z * (1.0 - rcos);
 	}
 
-	NiMatrix43 Matrix44::multiply43Left(NiMatrix43 mat) {
-		NiMatrix43 retMat;
-		Matrix44* result = new Matrix44;
-
-		matrixMultiply((Matrix44*)&(mat), result, this);
-
+	NiMatrix43 Matrix44::make43() {
+		NiMatrix43 ret;
 		for (auto i = 0; i < 3; i++) {
 			for (auto j = 0; j < 3; j++) {
-				retMat.data[i][j] = result->data[i][j];
-
+				ret.data[i][j] = this->data[i][j];
 			}
 		}
+		ret.data[0][3] = 0.0f;
+		ret.data[1][3] = 0.0f;
+		ret.data[2][3] = 0.0f;
+		return ret;
+	}
 
-		retMat.data[0][3] = 0.0f;
-		retMat.data[1][3] = 0.0f;
-		retMat.data[2][3] = 0.0f;
-
-		return retMat;
+	NiMatrix43 Matrix44::multiply43Left(NiMatrix43 mat) {
+		return this->mult(mat, this->make43());
 	}
 
 	NiMatrix43 Matrix44::multiply43Right(NiMatrix43 mat) {
-		NiMatrix43 retMat;
-		Matrix44* result = new Matrix44;
-
-		matrixMultiply(this, result, (Matrix44*)&(mat));
-
-		for (auto i = 0; i < 3; i++) {
-			for (auto j = 0; j < 3; j++) {
-				retMat.data[i][j] = result->data[i][j];
-
-			}
-		}
-
-		retMat.data[0][3] = 0.0f;
-		retMat.data[1][3] = 0.0f;
-		retMat.data[2][3] = 0.0f;
-
-		return retMat;
+		return this->mult(this->make43(), mat);
 	}
 
-	void Matrix44::matrixMultiply(Matrix44* worldMat, Matrix44* retMat, Matrix44* localMat) {
+	void Matrix44::matrixMultiply(Matrix44* worldMat, Matrix44* retMat, Matrix44* localMat) {   // This uses the native transform function that the updateWorld call makes
 		using func_t = decltype(&Matrix44::matrixMultiply);
 		RelocAddr<func_t> func(0x1a8d60);
 
 		return func(worldMat, retMat, localMat);
+	}
+
+	NiMatrix43 Matrix44::mult(NiMatrix43 left, NiMatrix43 right) {
+		NiMatrix43 tmp;
+		// shamelessly taken from skse
+		tmp.data[0][0] = 
+			left.data[0][0] * right.data[0][0] +
+		    left.data[0][1] * right.data[1][0] +
+		    left.data[0][2] * right.data[2][0];
+		tmp.data[1][0] =
+			left.data[1][0] * right.data[0][0] +
+			left.data[1][1] * right.data[1][0] +
+			left.data[1][2] * right.data[2][0];
+		tmp.data[2][0] =
+			left.data[2][0] * right.data[0][0] +
+			left.data[2][1] * right.data[1][0] +
+			left.data[2][2] * right.data[2][0];
+		tmp.data[0][1] =
+			left.data[0][0] * right.data[0][1] +
+			left.data[0][1] * right.data[1][1] +
+			left.data[0][2] * right.data[2][1];
+		tmp.data[1][1] =
+			left.data[1][0] * right.data[0][1] +
+			left.data[1][1] * right.data[1][1] +
+			left.data[1][2] * right.data[2][1];
+		tmp.data[2][1] =
+			left.data[2][0] * right.data[0][1] +
+			left.data[2][1] * right.data[1][1] +
+			left.data[2][2] * right.data[2][1];
+		tmp.data[0][2] =
+			left.data[0][0] * right.data[0][2] +
+			left.data[0][1] * right.data[1][2] +
+			left.data[0][2] * right.data[2][2];
+		tmp.data[1][2] =
+			left.data[1][0] * right.data[0][2] +
+			left.data[1][1] * right.data[1][2] +
+			left.data[1][2] * right.data[2][2];
+		tmp.data[2][2] =
+			left.data[2][0] * right.data[0][2] +
+			left.data[2][1] * right.data[1][2] +
+			left.data[2][2] * right.data[2][2];
+		tmp.data[0][3] = 0.0f;
+		tmp.data[1][3] = 0.0f;
+		tmp.data[2][3] = 0.0f;
+		return tmp;
 	}
 
 }

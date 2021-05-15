@@ -113,6 +113,7 @@ namespace F4VRBody
 
 		if (updateSelf) {
 			nde->UpdateWorldData(ud);
+		//	updateTransforms(nde);
 		}
 
 		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
@@ -227,6 +228,43 @@ namespace F4VRBody
 		headNode->UpdateWorldData(ud);
 	}
 
+	void Skeleton::saveStatesTree(NiNode* node) {
+
+		std::string name(node->m_name.c_str());
+
+		if (savedStates.find(name) == savedStates.end()) {
+			savedStates.insert({ std::string(node->m_name.c_str()), node->m_localTransform });
+		}
+		else {
+			savedStates[name] = node->m_localTransform;
+		}
+
+		for (auto i = 0; i < node->m_children.m_emptyRunStart; ++i) {
+			auto nextNode = node->m_children.m_data[i] ? node->m_children.m_data[i]->GetAsNiNode() : nullptr;
+			if (nextNode) {
+				this->saveStatesTree(nextNode);
+			}
+		}
+	}
+
+	void Skeleton::restoreLocals(NiNode* node) {
+
+		std::string name(node->m_name.c_str());
+
+		if (savedStates.find(name) == savedStates.end()) {
+			return;
+		}
+
+		node->m_localTransform = savedStates[name];
+
+		for (auto i = 0; i < node->m_children.m_emptyRunStart; ++i) {
+			auto nextNode = node->m_children.m_data[i] ? node->m_children.m_data[i]->GetAsNiNode() : nullptr;
+			if (nextNode) {
+				this->restoreLocals(nextNode);
+			}
+		}
+	}
+
 	void Skeleton::setNodes() {
 		_playerNodes = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
 
@@ -280,6 +318,7 @@ namespace F4VRBody
 		leftArm.forearmT2 = _common->GetObjectByName(&lForearm2);
 		leftArm.hand      = _common->GetObjectByName(&lHand);
 
+		saveStatesTree(_root->m_parent->GetAsNiNode());
 	}
 
 	void Skeleton::positionDiff() {
@@ -293,72 +332,65 @@ namespace F4VRBody
 	NiPoint3 Skeleton::getPosition() {
 		NiPoint3 curPos = (*g_playerCamera)->cameraNode->m_worldTransform.pos;
 		
-		float dist = vec3_len(curPos);
+		float dist = vec3_len(curPos - _lastPos);
 
-		//if (dist > 50.0) {
+		if (dist > 10.0) {
 			_lastPos = curPos;
-		//}
+		}
 
 		return _lastPos;
 	}
 
 	void Skeleton::setUnderHMD() {
 		Matrix44 mat;
-		Matrix44* result = new Matrix44();
 
 		mat = 0.0;
 
 		float y = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
 		float x = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
-		float z = _root->m_worldTransform.pos.z + _common->m_localTransform.pos.z;
-
-		float mag = sqrt(y * y + x * x);
-
-		x /= mag;
-		y /= mag;
+		float z = _root->m_localTransform.pos.z;
 
 		float dot = (_curx * x) + (_cury * y);
+		_MESSAGE("dot %5f", dot);
 
-		if (dot < 0.01) {
-			_curx = x;
-			_cury = y;
-		}
-		else {
+		if (dot < 0.4) {
 			x = _curx;
 			y = _cury;
 		}
-
-		mat.data[0][0] = y;
-		mat.data[0][1] = -x;
-		mat.data[1][0] = x;
-		mat.data[1][1] = y;
-		mat.data[2][2] = 1.0;
-
-		mat.setPosition(this->getPosition());
-		mat.data[3][2] = z;
-		mat.data[3][3] = 1.0;
-
-		_common->m_localTransform.pos.y = 15.0;
-
-		Matrix44* loc = (Matrix44*)&(_root->m_localTransform.rot);
-
-		Matrix44::matrixMultiply(&mat, result, loc);
-
-
-		for (auto i = 0; i < 3; i++) {
-			for (auto j = 0; j < 3; j++) {
-				_root->m_worldTransform.rot.data[i][j] = result->data[i][j];
-
-			}
+		else {
+			_curx = x;
+			_cury = y;
 		}
 
-		_root->m_worldTransform.pos.x = result->data[3][0];
-		_root->m_worldTransform.pos.y = result->data[3][1];
-	//	_common->m_worldTransform.pos.z = z;
+		_forwardDir = NiPoint3(x, y, 0);
+		_sidewaysRDir = NiPoint3(y, -x, 0);
 
-		_root->UpdateDownwardPass(nullptr, 0);
 
-		delete result;
+		NiNode* body = _root->m_parent->GetAsNiNode();
+		body->m_localTransform.pos *= 0.0f;
+		body->m_worldTransform.pos.x = this->getPosition().x;
+		body->m_worldTransform.pos.y = this->getPosition().y;
+
+		updateDown(_root, true);
+		NiNode::NiUpdateData ud;
+		ud.flags = 0x1;
+	//	_root->UpdateDownwardPass(&ud, 0);
+
+		NiPoint3 back = vec3_norm(NiPoint3(x, y, 0));
+		NiPoint3 bodydir = NiPoint3(0, 1, 0);
+
+		mat.rotateVectoVec(back, bodydir);
+		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
+		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
+		_root->m_localTransform.pos.y += -10.0f;
+		_root->m_localTransform.pos.z = z;
+		_root->m_localTransform.scale = 0.9f;
+
+		body->m_worldBound.m_kCenter = this->getPosition();
+
+	//	_root->UpdateDownwardPass(nullptr, 0);
+	//	updateDown(_root, true);
+
 	}
 
 	void Skeleton::setHandPos() {
@@ -434,8 +466,25 @@ namespace F4VRBody
 
 	}
 
-	// This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
-	void Skeleton::setArms(bool isLeft) {
+	void Skeleton::makeArmsT(bool isLeft) {
+		ArmNodes arm;
+
+		arm = isLeft ? leftArm : rightArm;
+		Matrix44 mat;
+		mat.makeIdentity();
+
+		arm.forearm->m_localTransform.rot = mat.make43();
+		arm.forearmT1->m_localTransform.rot = mat.make43();
+		arm.forearmT2->m_localTransform.rot = mat.make43();
+		arm.hand->m_localTransform.rot = mat.make43();
+		arm.upper->m_localTransform.rot = mat.make43();
+//		arm.shoulder->m_localTransform.rot = mat.make43();
+
+		return;
+	}
+
+
+	void Skeleton::setArms_wp(bool isLeft) {
 		ArmNodes arm;
 
 		arm = isLeft ? leftArm : rightArm;
@@ -448,11 +497,86 @@ namespace F4VRBody
 
 		if (isnan(handPos.x) || isnan(handPos.y) || isnan(handPos.z) ||
 			isinf(handPos.x) || isinf(handPos.y) || isinf(handPos.z) ||
-			vec3_len(arm.upper->m_worldTransform.pos - handPos) > 50.0)
+			vec3_len(arm.upper->m_worldTransform.pos - handPos) > 200.0)
 		{
 			return;
 		}
 
+		float upperArmLength = vec3_len(arm.forearm->m_worldTransform.pos - arm.upper->m_worldTransform.pos);
+		float lowerArmLength = vec3_len(arm.hand->m_worldTransform.pos - arm.forearm->m_worldTransform.pos);
+		float armLength = upperArmLength + lowerArmLength;
+		float armLengthScale = 0.75;
+
+		float negLeft = isLeft ? -1 : 1;
+
+		NiPoint3 forwardDir = _forwardDir;
+		NiPoint3 sidewaysDir = _sidewaysRDir * negLeft;
+		NiPoint3 upDir = NiPoint3(0, 0, 1);
+
+		// Shoulder first.    Solve for a yaw and roll if hand position exceeds a threshold given by
+		//              (shoudlerToHand dot forwardUnitVec)
+		// yaw = c *  -------------------------------------  - d
+		//                       armlength
+		// roll is the same except upVec instead of forward
+
+		NiPoint3 shoulderToHand = handPos - arm.upper->m_worldTransform.pos;
+
+		float dotF = vec3_dot(shoulderToHand, forwardDir);
+		float dotU = vec3_dot(shoulderToHand, upDir);
+		float c = degrees_to_rads(30.0);
+		
+		float yaw  = c * (dotF / (armLength * armLengthScale)) - 0.5;
+		float roll = c * (dotU / (armLength * armLengthScale)) - 0.5;
+		yaw = std::clamp(yaw, 0.0f, degrees_to_rads(33.0));
+		roll = std::clamp(roll, 0.0f, degrees_to_rads(33.0));
+
+
+		Matrix44 rotate;
+		rotate.setEulerAngles(yaw, roll, 0);
+
+		arm.shoulder->m_localTransform.rot = rotate.multiply43Left(arm.shoulder->m_localTransform.rot);
+
+		// now elbow
+
+
+
+
+		_MESSAGE("");
+		_MESSAGE("========== Frame %d ============", g_mainLoopCounter);
+		_MESSAGE("armLength       %5f", armLength);
+		_MESSAGE("yaw             %5f", rads_to_degrees(yaw));
+		_MESSAGE("roll            %5f", rads_to_degrees(roll));
+	}
+
+	// This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
+	void Skeleton::setArms(bool isLeft) {
+		ArmNodes arm;
+
+		arm = isLeft ? leftArm : rightArm;
+
+//		updateTransforms(arm.shoulder->m_parent->GetAsNiNode());
+//		updateTransforms(arm.shoulder->GetAsNiNode());
+//		updateTransforms(arm.upper->GetAsNiNode());
+		//updateTransforms(arm.forearm->GetAsNiNode());
+		//updateTransforms(arm.forearmT1->GetAsNiNode());
+		//updateTransforms(arm.forearmT2->GetAsNiNode());
+		//updateTransforms(arm.hand->GetAsNiNode());
+
+		NiPoint3 handPos = isLeft ? _leftHand->m_worldTransform.pos : _rightHand->m_worldTransform.pos;
+		NiMatrix43 handRot = isLeft ? _leftHand->m_worldTransform.rot : _rightHand->m_worldTransform.rot;
+
+		// Detect if the 1st person hand position is invalid.  This can happen when a controller loses tracking.
+		// If it is, do not handle IK and let Fallout use its normal animations for that arm instead.
+
+		if (isnan(handPos.x) || isnan(handPos.y) || isnan(handPos.z) ||
+			isinf(handPos.x) || isinf(handPos.y) || isinf(handPos.z) ||
+			vec3_len(arm.upper->m_worldTransform.pos - handPos) > 200.0)
+		{
+			return;
+		}
+
+		_MESSAGE("");
+		_MESSAGE("========== Frame %d ============", g_mainLoopCounter);
 		double adjustedArmLength = 1.0f;
 
 		// Shoulder IK is done in a very simple way
@@ -462,39 +586,50 @@ namespace F4VRBody
 		float adjustAmount = (std::clamp)(vec3_len(shoulderToHand) - armLength * 0.5f, 0.0f, armLength * 0.75f) / (armLength * 0.75f);
 		NiPoint3 shoulderOffset = vec3_norm(shoulderToHand) * (adjustAmount * armLength * 0.225f);
 
+		_MESSAGE("handPos               {%5f %5f %5f}", handPos.x, handPos.y, handPos.z);
+		_MESSAGE("wandPos               {%5f %5f %5f}", _wandRight->m_worldTransform.pos.x, _wandRight->m_worldTransform.pos.y, _wandRight->m_worldTransform.pos.z);
+		_MESSAGE("shoulderPos           {%5f %5f %5f}", arm.shoulder->m_worldTransform.pos.x, arm.shoulder->m_worldTransform.pos.y, arm.shoulder->m_worldTransform.pos.z);
+		_MESSAGE("upperPos              {%5f %5f %5f}", arm.upper->m_worldTransform.pos.x, arm.upper->m_worldTransform.pos.y, arm.upper->m_worldTransform.pos.z);
+		_MESSAGE("shoulderToHand        {%5f %5f %5f}", shoulderToHand.x, shoulderToHand.y, shoulderToHand.z);
+		_MESSAGE("shoulderToHandLen     %5f", vec3_len(shoulderToHand));
+		_MESSAGE("adjustAmount           %5f", adjustAmount);
+		_MESSAGE("shoulderOffest        {%5f %5f %5f}", shoulderOffset.x, shoulderOffset.y, shoulderOffset.z);
+
+
+
 		if (shoulderOffset.z < 0) {
 			shoulderOffset *= 0.4;
 		}
 
 		NiPoint3 clavicalToNewShoulder = vec3_norm(arm.upper->m_worldTransform.pos + shoulderOffset - arm.shoulder->m_worldTransform.pos);
+		NiPoint3 clavicalToShoulder = vec3_norm(arm.upper->m_worldTransform.pos - arm.shoulder->m_worldTransform.pos);
 		NiPoint3 sLocalDir = arm.shoulder->m_worldTransform.rot.Transpose() * clavicalToNewShoulder;
+		_MESSAGE("clavicalToNewShoulder    {%5f %5f %5f}", clavicalToNewShoulder.x, clavicalToNewShoulder.y, clavicalToNewShoulder.z);
+		_MESSAGE("clavicalToShoulder       {%5f %5f %5f}", clavicalToShoulder.x, clavicalToShoulder.y, clavicalToShoulder.z);
+		_MESSAGE("sLocalDir                {%5f %5f %5f}", sLocalDir.x, sLocalDir.y, sLocalDir.z);
 	//	arm.shoulder->m_localTransform.rot = arm.shoulder->m_localTransform.rot * getRotation(NiPoint3(0, 0, 1), sLocalDir);
 	//	updateTransformsUpTo(arm.upper, arm.shoulder, true);
 
 		Matrix44 rotatedM;
-		rotatedM.rotateVectoVec(NiPoint3(0, 0, 1), sLocalDir);
+		rotatedM = 0.0;
+		rotatedM.rotateVectoVec(NiPoint3(1, 0, 0), sLocalDir);
 
-		arm.shoulder->m_localTransform.rot = rotatedM.multiply43Left(arm.shoulder->m_localTransform.rot);
+		NiMatrix43 result = rotatedM.multiply43Left(arm.shoulder->m_localTransform.rot);
+		arm.shoulder->m_localTransform.rot = result;
 
+//		arm.shoulder->UpdateWorldData(nullptr);
+//		arm.upper->UpdateWorldData(nullptr);
 
-
-
-		//_MESSAGE("");
-		//_MESSAGE("========== Frame %d ============", g_mainLoopCounter);
-		//_MESSAGE("handPos               {%5f %5f %5f}", handPos.x, handPos.y, handPos.z);
-		//_MESSAGE("shoulderToHand        {%5f %5f %5f}", shoulderToHand.x, shoulderToHand.y, shoulderToHand.z);
-		//_MESSAGE("clavicalToNewShoulder {%5f %5f %5f}", clavicalToNewShoulder.x, clavicalToNewShoulder.y, clavicalToNewShoulder.z);
-		//_MESSAGE("shoulderOffest        {%5f %5f %5f}", shoulderOffset.x, shoulderOffset.y, shoulderOffset.z);
-		//_MESSAGE("sLocalDir             {%5f %5f %5f}", sLocalDir.x, sLocalDir.y, sLocalDir.z);
-		//_MESSAGE("adjustAmount           %5f", adjustAmount);
 		//_MESSAGE("rotatedM[0]           {%5f %5f %5f}", rotatedM.data[0][0], rotatedM.data[0][1], rotatedM.data[0][2]);
 		//_MESSAGE("rotatedM[1]           {%5f %5f %5f}", rotatedM.data[1][0], rotatedM.data[1][1], rotatedM.data[1][2]);
 		//_MESSAGE("rotatedM[2]           {%5f %5f %5f}", rotatedM.data[2][0], rotatedM.data[2][1], rotatedM.data[2][2]);
+		//_MESSAGE("result[0]           {%5f %5f %5f}", result.data[0][0], result.data[0][1], result.data[0][2]);
+		//_MESSAGE("result[1]           {%5f %5f %5f}", result.data[1][0], result.data[1][1], result.data[1][2]);
+		//_MESSAGE("result[2]           {%5f %5f %5f}", result.data[2][0], result.data[2][1], result.data[2][2]);
 		//_MESSAGE("arm.shoulder->m_localTransform.rot[0]           {%5f %5f %5f}", arm.shoulder->m_localTransform.rot.data[0][0], arm.shoulder->m_localTransform.rot.data[0][1], arm.shoulder->m_localTransform.rot.data[0][2]);
 		//_MESSAGE("arm.shoulder->m_localTransform.rot[1]           {%5f %5f %5f}", arm.shoulder->m_localTransform.rot.data[1][0], arm.shoulder->m_localTransform.rot.data[1][1], arm.shoulder->m_localTransform.rot.data[1][2]);
 		//_MESSAGE("arm.shoulder->m_localTransform.rot[2]           {%5f %5f %5f}", arm.shoulder->m_localTransform.rot.data[2][0], arm.shoulder->m_localTransform.rot.data[2][1], arm.shoulder->m_localTransform.rot.data[2][2]);
 
-/*
 		// The bend of the arm depends on its distance to the body.  Its distance as well as the lengths of
 		// the upper arm and forearm define the sides of a triangle:
 		//                 ^
@@ -520,10 +655,14 @@ namespace F4VRBody
 		NiPoint3 Uwp = arm.upper->m_worldTransform.pos;
 		NiPoint3 handToShoulder = Uwp - handPos;
 		float hsLen = (std::max)(vec3_len(handToShoulder), 0.1f);
-
+		
+		_MESSAGE("handPos               {%5f %5f %5f}", handPos.x, handPos.y, handPos.z);
+		_MESSAGE("handToShoulder        {%5f %5f %5f}", handToShoulder.x, handToShoulder.y, handToShoulder.z);
+		_MESSAGE("hslen                  %5f", hsLen);
 		if (hsLen > (upperLen + forearmLen) * 2.25) {
-			return;
+		//	return;
 		}
+
 
 		// Stretch the upper arm and forearm proportionally when the hand distance exceeds the arm length
 		if (hsLen > upperLen + forearmLen) {
@@ -533,27 +672,35 @@ namespace F4VRBody
 			upperLen += (1.0 - ratio) * diff + 0.1;
 		}
 
-		// Use the spine direction as the body facing angle on X, Y --- This vector has spine twist applied already
-		NiPoint3 forwardDir = vec3_norm(_spine->m_worldTransform.rot * NiPoint3(0, 1, 0));
-		NiPoint3 sidewaysDir = NiPoint3(forwardDir.y, -forwardDir.x, 0) * negLeft;
+		_MESSAGE("upperLen               %5f", upperLen);
+		_MESSAGE("forearmLen             %5f", forearmLen);
+		// Use the spine direction as the body facing angle on X, Y --- This vector has spine twist applied already -- ****NOT DONE NOW******
+		NiPoint3 forwardDir = _forwardDir;
+		NiPoint3 sidewaysDir = _sidewaysRDir * negLeft;
 
+		_MESSAGE("forwardDir            {%5f %5f %5f}", forwardDir.x, forwardDir.y, forwardDir.z);
+		_MESSAGE("sidewaysDir           {%5f %5f %5f}", sidewaysDir.x, sidewaysDir.y, sidewaysDir.z);
 		// The primary twist angle comes from the direction the wrist is pointing into the forearm
-		NiPoint3 handBack = handRot * NiPoint3(0, 0, -1);
+		NiPoint3 handBack = handRot * NiPoint3(-1, 0, 0);
 		float twistAngle = asin((std::clamp)(handBack.z, -0.999f, 0.999f));
+		_MESSAGE("handback              {%5f %5f %5f}", handBack.x, handBack.y, handBack.z);
+		_MESSAGE("twistangle             %5f", rads_to_degrees(twistAngle));
 
 		// The second twist angle comes from a side vector pointing "outward" from the side of the wrist
-		NiPoint3 handSide = handRot * NiPoint3(-1 * negLeft, 0, 0);
+		NiPoint3 handSide = handRot * NiPoint3(0, 1 * negLeft, 0);
 		float twistAngle2 = asin((std::clamp)(handSide.z, -0.999f, 0.999f));
+		_MESSAGE("handSide              {%5f %5f %5f}", handSide.x, handSide.y, handSide.z);
+		_MESSAGE("twistangle2            %5f", rads_to_degrees(twistAngle2));
 
 		// Blend the two twist angles together, using the primary angle more when the wrist is pointing downward
 		//float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.25f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
 		float interpTwist = (std::clamp)((handBack.z + 0.9f), 0.2f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
 		twistAngle = twistAngle + interpTwist * (twistAngle2 - twistAngle);
 		// Wonkiness is bad.  Interpolate twist angle towards zero to correct it when the angles are pointed a certain way.
-		float fixWonkiness1 = (std::clamp)(vec3_dot(handSide, vec3_norm(-sidewaysDir - forwardDir * 0.25f + NiPoint3(0, 0, -0.25))), 0.0f, 1.0f);
-		float fixWonkiness2 = 1.0f - (std::clamp)(vec3_dot(handBack, vec3_norm(forwardDir + sidewaysDir)), 0.0f, 1.0f);
-		twistAngle = twistAngle + fixWonkiness1 * fixWonkiness2 * (-PI / 2.0f - twistAngle);
-
+		//float fixWonkiness1 = (std::clamp)(vec3_dot(handSide, vec3_norm(-sidewaysDir - forwardDir * 0.25f + NiPoint3(0, -0.25, 0))), 0.0f, 1.0f);
+		//float fixWonkiness2 = 1.0f - (std::clamp)(vec3_dot(handBack, vec3_norm(forwardDir + sidewaysDir)), 0.0f, 1.0f);
+		twistAngle = twistAngle + /*fixWonkiness1 * fixWonkiness2 * */(-PI / 2.0f - twistAngle);
+		
 		// Smooth out sudden changes in the twist angle over time to reduce elbow shake
 		static std::array<float, 2> prevAngle = { 0, 0 };
 		twistAngle = prevAngle[isLeft ? 0 : 1] + (twistAngle - prevAngle[isLeft ? 0 : 1]) * 0.25f;
@@ -632,7 +779,7 @@ namespace F4VRBody
 		NiMatrix43 Uwr = arm.upper->m_worldTransform.rot;
 		NiPoint3 uLocalDir = Uwr.Transpose() * vec3_norm(elbowWorld - Uwp);
 
-		rotatedM.rotateVectoVec(NiPoint3(0, 0, 1), uLocalDir);
+		rotatedM.rotateVectoVec(NiPoint3(1, 0, 0), uLocalDir);
 		arm.upper->m_localTransform.rot = rotatedM.multiply43Left(arm.upper->m_localTransform.rot);
 
 		rotatedM.makeTransformMatrix(arm.upper->m_localTransform.rot, arm.upper->m_localTransform.pos);
@@ -642,16 +789,16 @@ namespace F4VRBody
 		// Find the angle of the forearm twisted around the upper arm and twist the upper arm to align it
 		//    Uwr * twist = Cwr * Ulr   ===>   Ulr = Cwr' * Uwr * twist
 		NiPoint3 uLocalTwist = Uwr.Transpose() * vec3_norm(handPos - elbowWorld);
-		NiPoint3 forearmProjection = vec3_norm(NiPoint3(uLocalTwist.x, uLocalTwist.y, 0)); //uLocalTwist - NiPoint3(0,0,1) * dot(uLocalTwist, NiPoint3(0,0,1)));
-		float upperAngle = acos(vec3_dot(forearmProjection, NiPoint3(1, 0, 0))) * (forearmProjection.y > 0 ? 1 : -1) - degrees_to_rads(90);
+		NiPoint3 forearmProjection = vec3_norm(uLocalTwist - NiPoint3(1, 0, 0) * vec3_dot(uLocalTwist, NiPoint3(1, 0, 0))); //uLocalTwist - NiPoint3(0,0,1) * dot(uLocalTwist, NiPoint3(0,0,1)));
+		float upperAngle = acos(vec3_dot(forearmProjection, NiPoint3(0, -1, 0))) * (forearmProjection.z*-1 > 0 ? 1 : -1) - degrees_to_rads(90);
 		if (upperAngle < -degrees_to_rads(180)) {
 			upperAngle += degrees_to_rads(360);
 		}
 		Matrix44 twist;
-		twist.setEulerAngles(0, upperAngle * 1.0, 0);
-		arm.upper->m_localTransform.rot = twist.multiply43Left(arm.upper->m_localTransform.rot);
-		twist.setEulerAngles(0, -upperAngle * 0.7, 0);
-		arm.upperT1->m_localTransform.rot = twist.multiply43Right(arm.upperT1->m_localTransform.rot);
+		//twist.setEulerAngles(0, upperAngle * 1.0, 0);
+		//arm.upper->m_localTransform.rot = twist.multiply43Left(arm.upper->m_localTransform.rot);
+		//twist.setEulerAngles(0, -upperAngle * 0.7, 0);
+		//arm.upperT1->m_localTransform.rot = twist.multiply43Right(arm.upperT1->m_localTransform.rot);
 
 		rotatedM.makeTransformMatrix(arm.upper->m_localTransform.rot, arm.upper->m_localTransform.pos);
 		Uwr = rotatedM.multiply43Left(arm.shoulder->m_worldTransform.rot);
@@ -662,7 +809,7 @@ namespace F4VRBody
 		NiMatrix43 Fwr = rotatedM.multiply43Left(Uwr);
 		NiPoint3 fLocalDir = Fwr.Transpose() * vec3_norm(handPos - elbowWorld);
 
-		rotatedM.rotateVectoVec(NiPoint3(0, 0, 1), fLocalDir);
+		rotatedM.rotateVectoVec(NiPoint3(1, 0, 0), fLocalDir);
 		arm.forearm->m_localTransform.rot = rotatedM.multiply43Left(arm.forearm->m_localTransform.rot);
 		rotatedM.makeTransformMatrix(arm.forearm->m_localTransform.rot, arm.forearm->m_localTransform.pos);
 		Fwr = rotatedM.multiply43Left(Uwr);
@@ -670,7 +817,7 @@ namespace F4VRBody
 		// Find the angle of the hand twisted around the forearm and twist the forearm to align it
 		//    Fwr * twist = Uwr * Flr   ===>   Flr = (Uwr' * Fwr) * twist = (Flr) * twist
 		NiPoint3 fLocalTwist = Fwr.Transpose() * handSide;
-		NiPoint3 handProjection = vec3_norm(NiPoint3(fLocalTwist.x, fLocalTwist.y, 0));
+		NiPoint3 handProjection = vec3_norm(fLocalTwist - NiPoint3(1, 0, 0) * vec3_dot(fLocalTwist, NiPoint3(1, 0, 0)));
 		float forearmAngle = acos(vec3_dot(handProjection, NiPoint3(1, 0, 0))) * (handProjection.y > 0 ? 1 : -1) + (isLeft ? degrees_to_rads(60) : degrees_to_rads(105));
 
 		//if (isLeft == false && vlibClassifyHeldWeapon(true) == WeaponClass::Large) {
@@ -679,9 +826,9 @@ namespace F4VRBody
 		//else if (isLeft == true && vlibGetWeaponType((*g_thePlayer)->GetEquippedObject(true)) == 9) {
 		//	forearmAngle += DEG_TO_RAD(75);
 		//}
-		//if (forearmAngle > DEG_TO_RAD(180)) {
-		//	forearmAngle -= DEG_TO_RAD(360);
-		//}
+		if (forearmAngle > degrees_to_rads(180)) {
+			forearmAngle -= degrees_to_rads(360);
+		}
 
 		twist.setEulerAngles(0, forearmAngle * 0.1, 0);
 		arm.forearm->m_localTransform.rot = twist.multiply43Left(arm.forearm->m_localTransform.rot);
@@ -713,7 +860,6 @@ namespace F4VRBody
 		arm.forearmT1->m_localTransform.pos = arm.forearmT1->m_localTransform.pos * ((lengthF1 * forearmLen) / (lengthF1 * originalForearmLen));
 		arm.forearmT2->m_localTransform.pos = arm.forearmT2->m_localTransform.pos * ((lengthF2 * forearmLen) / (lengthF2 * originalForearmLen));
 
-*/
 		return;
 	}
 

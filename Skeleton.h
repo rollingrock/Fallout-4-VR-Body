@@ -5,9 +5,11 @@
 
 #include <algorithm>
 #include <array>
+#include <map>
 
 #include "utils.h"
 #include "matrix.h"
+
 
 
 #define DEFAULT_HEIGHT 56.0;
@@ -85,8 +87,8 @@ namespace F4VRBody
 		}
 
 		void setDirection() {
-			_cury = _playerNodes->HmdNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
-			_curx = _playerNodes->HmdNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
+			_cury = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
+			_curx = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
 
 			float mag = sqrt(_cury * _cury + _curx * _curx);
 
@@ -116,11 +118,15 @@ namespace F4VRBody
 		void updatePos(NiNode* nde, NiPoint3 offset);
 		void projectSkelly(float offsetOutFront);
 		void setupHead(NiNode* headNode);
+		void saveStatesTree(NiNode* node);
+		void restoreLocals(NiNode* node);
 		void setUnderHMD();
 		void setHandPos();
 		void removeHands();
 		void setArms(bool isLeft);
+		void setArms_wp(bool isLeft);
 		NiPoint3 getPosition();
+		void makeArmsT(bool);
 
 		// utility
 		NiNode* getNode(const char* nodeName, NiNode *nde);
@@ -134,6 +140,9 @@ namespace F4VRBody
 		BSFadeNode* _root;
 		NiNode* _common;
 		NiPoint3   _lastPos;
+		NiPoint3   _forwardDir;
+		NiPoint3   _sidewaysRDir;
+		NiPoint3   _upDir;
 		PlayerNodes* _playerNodes;
 		NiNode* _rightHand;
 		NiNode* _leftHand;
@@ -144,5 +153,6 @@ namespace F4VRBody
 		ArmNodes leftArm;
 		float _curx;
 		float _cury;
+		std::map<std::string, NiTransform> savedStates;
 	};
 }

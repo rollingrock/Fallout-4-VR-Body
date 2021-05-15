@@ -65,6 +65,7 @@ namespace F4VRBody {
 			data[3][2] = pos.z;
 		}
 
+		NiMatrix43 make43();
 
 		void getEulerAngles(float *heading, float *roll, float *attitude);
 		void setEulerAngles(float heading, float roll, float attitude);
@@ -73,6 +74,7 @@ namespace F4VRBody {
 
 		NiMatrix43 multiply43Left(NiMatrix43 mat);
 		NiMatrix43 multiply43Right(NiMatrix43 mat);
+		NiMatrix43 mult(NiMatrix43 left, NiMatrix43 right);
 
 		// Fallout Func
 		static void matrixMultiply(Matrix44* worldMat, Matrix44* retMat, Matrix44* localMat);

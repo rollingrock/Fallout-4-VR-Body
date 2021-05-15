@@ -3,6 +3,8 @@
 
 #define PI 3.14159265358979323846
 
+bool firstTime = true;
+
 namespace F4VRBody {
 
 	Skeleton* playerSkelly = nullptr;
@@ -46,9 +48,15 @@ namespace F4VRBody {
 		}
 
 		if (!playerSkelly) {
-			if (!setSkelly()) {
-				return;
+			if (firstTime) {
+				if (!setSkelly()) {
+					return;
+				}
 			}
+
+			firstTime = false;
+		//	playerSkelly->getRoot()->UpdateDownwardPass(nullptr, 0);   // update BSFlattenedBoneTree render buffer
+			return;
 			//		playerSkelly->printNodes(playerSkelly->getRoot());
 
 		}
@@ -63,18 +71,23 @@ namespace F4VRBody {
 
 		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
 
+
+		playerSkelly->restoreLocals(playerSkelly->getRoot());
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);
 		playerSkelly->setupHead(headNode);
 
 		playerSkelly->setUnderHMD();
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);
 	//	playerSkelly->setHandPos();
 	//	playerSkelly->removeHands();
 
 		// do arm IK - Right then Left
 		playerSkelly->setArms(false);
-//		playerSkelly->setArms(true);
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);
+
+//		playerSkelly->getRoot()->UpdateDownwardPass(nullptr, 0x0);
 
 
-		playerSkelly->getRoot()->UpdateDownwardPass(nullptr, 0);   // update BSFlattenedBoneTree render buffer
 	}
 
 

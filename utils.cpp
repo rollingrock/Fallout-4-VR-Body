@@ -52,6 +52,10 @@ namespace F4VRBody {
 		return (deg * PI) / 180;
 	 }
 
+	float rads_to_degrees(float rad) {
+		return (rad * 180) / PI;
+	 }
+
 
 	NiPoint3 rotateXY(NiPoint3 vec, float angle) {
 		NiPoint3 retV;
@@ -88,5 +92,17 @@ namespace F4VRBody {
 		result.data[1][2] = tmp1 - tmp2;
 		return result;
 	}
+
+	void updateTransforms(NiNode* node) {
+		node->m_worldTransform.pos = node->m_parent->m_worldTransform.pos + (node->m_parent->m_worldTransform.rot * (node->m_localTransform.pos * node->m_parent->m_worldTransform.scale));
+		
+		Matrix44 loc;
+		loc.makeTransformMatrix(node->m_localTransform.rot, NiPoint3(0, 0, 0));
+
+		node->m_worldTransform.rot = loc.multiply43Left(node->m_parent->m_worldTransform.rot);
+
+		node->m_worldTransform.scale = node->m_parent->m_worldTransform.scale * node->m_localTransform.scale;
+		return;
+	 }
 
 }
