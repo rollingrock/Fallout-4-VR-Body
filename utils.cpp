@@ -94,7 +94,11 @@ namespace F4VRBody {
 	}
 
 	void updateTransforms(NiNode* node) {
-		node->m_worldTransform.pos = node->m_parent->m_worldTransform.pos + (node->m_parent->m_worldTransform.rot * (node->m_localTransform.pos * node->m_parent->m_worldTransform.scale));
+		NiPoint3 pos = node->m_localTransform.pos;
+		pos = (node->m_parent->m_worldTransform.rot * (pos * node->m_parent->m_worldTransform.scale));
+		pos.z *= -1;
+
+		node->m_worldTransform.pos = node->m_parent->m_worldTransform.pos + pos;
 		
 		Matrix44 loc;
 		loc.makeTransformMatrix(node->m_localTransform.rot, NiPoint3(0, 0, 0));

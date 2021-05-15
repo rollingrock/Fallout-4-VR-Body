@@ -113,7 +113,7 @@ namespace F4VRBody
 
 		if (updateSelf) {
 			nde->UpdateWorldData(ud);
-		//	updateTransforms(nde);
+	//		updateTransforms(nde);
 		}
 
 		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
@@ -163,30 +163,19 @@ namespace F4VRBody
 	}
 
 	void Skeleton::projectSkelly(float offsetOutFront) {    // Projects the 3rd person body out in front of the player by offset amount
+		float z = _root->m_localTransform.pos.z;
+		NiNode* body = _root->m_parent->GetAsNiNode();
 
+		NiPoint3 back = vec3_norm(NiPoint3(-1*_forwardDir.x, -1*_forwardDir.y, 0));
+		NiPoint3 bodydir = NiPoint3(0, 1, 0);
 
-//		this->updateDown(_root);
-
-		NiPoint3 playerLook;
-		playerLook.x = _root->m_worldTransform.rot.data[1][0];   // get unit vector pointing straight out in front of the player in player space.   y is forward axis  x is horizontal   since 2x2 rotation z is not used
-		playerLook.y = _root->m_worldTransform.rot.data[1][1];
-		playerLook.z = 0;
-
-		playerLook *= offsetOutFront;
-
-		this->rotateWorld(_root);
-		this->updatePos(_root, playerLook);   // offset all positions in the skeleton
-		
-		// offset up the z-axis some;
-
-		playerLook.x = 0.0;    // offset vector pointing up.
-		playerLook.y = 0.0;
-		playerLook.z = 15.0;
-
-		this->updatePos(_root, playerLook);   // offset all positions in the skeleton
-
-//		this->updateDown(_root);
-
+		Matrix44 mat;
+		mat = 0.0f;
+		mat.rotateVectoVec(back, bodydir);
+		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
+		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
+		_root->m_localTransform.pos.y += offsetOutFront;
+		_root->m_localTransform.pos.z = z;
 	}
 
 	NiNode* Skeleton::getNode(const char* nodeName, NiNode* nde) {
@@ -334,7 +323,7 @@ namespace F4VRBody
 		
 		float dist = vec3_len(curPos - _lastPos);
 
-		if (dist > 10.0) {
+		if (dist > 40.0) {
 			_lastPos = curPos;
 		}
 
@@ -353,7 +342,7 @@ namespace F4VRBody
 		float dot = (_curx * x) + (_cury * y);
 		_MESSAGE("dot %5f", dot);
 
-		if (dot < 0.4) {
+		if (dot > 0.3) {
 			x = _curx;
 			y = _cury;
 		}
@@ -382,9 +371,9 @@ namespace F4VRBody
 		mat.rotateVectoVec(back, bodydir);
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
 		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
-		_root->m_localTransform.pos.y += -10.0f;
+		_root->m_localTransform.pos.y += -5.0f;
 		_root->m_localTransform.pos.z = z;
-		_root->m_localTransform.scale = 0.9f;
+		_root->m_localTransform.scale = 0.87f;
 
 		body->m_worldBound.m_kCenter = this->getPosition();
 
@@ -554,9 +543,12 @@ namespace F4VRBody
 
 		arm = isLeft ? leftArm : rightArm;
 
+		_MESSAGE("");
+		_MESSAGE("========== Frame %d ============", g_mainLoopCounter);
+		
 //		updateTransforms(arm.shoulder->m_parent->GetAsNiNode());
-//		updateTransforms(arm.shoulder->GetAsNiNode());
-//		updateTransforms(arm.upper->GetAsNiNode());
+		updateTransforms(arm.shoulder->GetAsNiNode());
+		updateTransforms(arm.upper->GetAsNiNode());
 		//updateTransforms(arm.forearm->GetAsNiNode());
 		//updateTransforms(arm.forearmT1->GetAsNiNode());
 		//updateTransforms(arm.forearmT2->GetAsNiNode());
@@ -575,8 +567,6 @@ namespace F4VRBody
 			return;
 		}
 
-		_MESSAGE("");
-		_MESSAGE("========== Frame %d ============", g_mainLoopCounter);
 		double adjustedArmLength = 1.0f;
 
 		// Shoulder IK is done in a very simple way
@@ -586,14 +576,15 @@ namespace F4VRBody
 		float adjustAmount = (std::clamp)(vec3_len(shoulderToHand) - armLength * 0.5f, 0.0f, armLength * 0.75f) / (armLength * 0.75f);
 		NiPoint3 shoulderOffset = vec3_norm(shoulderToHand) * (adjustAmount * armLength * 0.225f);
 
-		_MESSAGE("handPos               {%5f %5f %5f}", handPos.x, handPos.y, handPos.z);
-		_MESSAGE("wandPos               {%5f %5f %5f}", _wandRight->m_worldTransform.pos.x, _wandRight->m_worldTransform.pos.y, _wandRight->m_worldTransform.pos.z);
-		_MESSAGE("shoulderPos           {%5f %5f %5f}", arm.shoulder->m_worldTransform.pos.x, arm.shoulder->m_worldTransform.pos.y, arm.shoulder->m_worldTransform.pos.z);
-		_MESSAGE("upperPos              {%5f %5f %5f}", arm.upper->m_worldTransform.pos.x, arm.upper->m_worldTransform.pos.y, arm.upper->m_worldTransform.pos.z);
-		_MESSAGE("shoulderToHand        {%5f %5f %5f}", shoulderToHand.x, shoulderToHand.y, shoulderToHand.z);
-		_MESSAGE("shoulderToHandLen     %5f", vec3_len(shoulderToHand));
-		_MESSAGE("adjustAmount           %5f", adjustAmount);
-		_MESSAGE("shoulderOffest        {%5f %5f %5f}", shoulderOffset.x, shoulderOffset.y, shoulderOffset.z);
+		//_MESSAGE("handPos               {%5f %5f %5f}", handPos.x, handPos.y, handPos.z);
+		//_MESSAGE("wandPos               {%5f %5f %5f}", _wandRight->m_worldTransform.pos.x, _wandRight->m_worldTransform.pos.y, _wandRight->m_worldTransform.pos.z);
+		//_MESSAGE("shoulderPos           {%5f %5f %5f}", arm.shoulder->m_worldTransform.pos.x, arm.shoulder->m_worldTransform.pos.y, arm.shoulder->m_worldTransform.pos.z);
+		//_MESSAGE("upperPos              {%5f %5f %5f}", arm.upper->m_worldTransform.pos.x, arm.upper->m_worldTransform.pos.y, arm.upper->m_worldTransform.pos.z);
+		//_MESSAGE("shoulderToHand        {%5f %5f %5f}", shoulderToHand.x, shoulderToHand.y, shoulderToHand.z);
+		//_MESSAGE("shoulderToHandLen      %5f", vec3_len(shoulderToHand));
+		//_MESSAGE("adjustAmount           %5f", adjustAmount);
+		//_MESSAGE("shoulderOffet         {%5f %5f %5f}", shoulderOffset.x, shoulderOffset.y, shoulderOffset.z);
+		//_MESSAGE("shoulderOffetLen       %5f", vec3_len(shoulderOffset));
 
 
 
@@ -601,24 +592,23 @@ namespace F4VRBody
 			shoulderOffset *= 0.4;
 		}
 
-		NiPoint3 clavicalToNewShoulder = vec3_norm(arm.upper->m_worldTransform.pos + shoulderOffset - arm.shoulder->m_worldTransform.pos);
-		NiPoint3 clavicalToShoulder = vec3_norm(arm.upper->m_worldTransform.pos - arm.shoulder->m_worldTransform.pos);
-		NiPoint3 sLocalDir = arm.shoulder->m_worldTransform.rot.Transpose() * clavicalToNewShoulder;
-		_MESSAGE("clavicalToNewShoulder    {%5f %5f %5f}", clavicalToNewShoulder.x, clavicalToNewShoulder.y, clavicalToNewShoulder.z);
-		_MESSAGE("clavicalToShoulder       {%5f %5f %5f}", clavicalToShoulder.x, clavicalToShoulder.y, clavicalToShoulder.z);
-		_MESSAGE("sLocalDir                {%5f %5f %5f}", sLocalDir.x, sLocalDir.y, sLocalDir.z);
-	//	arm.shoulder->m_localTransform.rot = arm.shoulder->m_localTransform.rot * getRotation(NiPoint3(0, 0, 1), sLocalDir);
-	//	updateTransformsUpTo(arm.upper, arm.shoulder, true);
+		NiPoint3 clavicalToNewShoulder = arm.upper->m_worldTransform.pos + shoulderOffset - arm.shoulder->m_worldTransform.pos;
+		clavicalToNewShoulder.z *= -1;    // Bethesda is for some reason inverting the z axis in the final world space translation calculation
+
+		NiPoint3 sLocalDir = (arm.shoulder->m_worldTransform.rot.Transpose() * clavicalToNewShoulder) / arm.shoulder->m_worldTransform.scale;
+
+		//_MESSAGE("clavicalToNewShoulder    {%5f %5f %5f}", clavicalToNewShoulder.x, clavicalToNewShoulder.y, clavicalToNewShoulder.z);
+		//_MESSAGE("sLocalDir                {%5f %5f %5f}", sLocalDir.x, sLocalDir.y, sLocalDir.z);
 
 		Matrix44 rotatedM;
 		rotatedM = 0.0;
-		rotatedM.rotateVectoVec(NiPoint3(1, 0, 0), sLocalDir);
+		rotatedM.rotateVectoVec(arm.upper->m_localTransform.pos, sLocalDir);
 
 		NiMatrix43 result = rotatedM.multiply43Left(arm.shoulder->m_localTransform.rot);
 		arm.shoulder->m_localTransform.rot = result;
 
-//		arm.shoulder->UpdateWorldData(nullptr);
-//		arm.upper->UpdateWorldData(nullptr);
+		updateTransforms(arm.shoulder->GetAsNiNode());
+		updateTransforms(arm.upper->GetAsNiNode());
 
 		//_MESSAGE("rotatedM[0]           {%5f %5f %5f}", rotatedM.data[0][0], rotatedM.data[0][1], rotatedM.data[0][2]);
 		//_MESSAGE("rotatedM[1]           {%5f %5f %5f}", rotatedM.data[1][0], rotatedM.data[1][1], rotatedM.data[1][2]);
@@ -629,6 +619,8 @@ namespace F4VRBody
 		//_MESSAGE("arm.shoulder->m_localTransform.rot[0]           {%5f %5f %5f}", arm.shoulder->m_localTransform.rot.data[0][0], arm.shoulder->m_localTransform.rot.data[0][1], arm.shoulder->m_localTransform.rot.data[0][2]);
 		//_MESSAGE("arm.shoulder->m_localTransform.rot[1]           {%5f %5f %5f}", arm.shoulder->m_localTransform.rot.data[1][0], arm.shoulder->m_localTransform.rot.data[1][1], arm.shoulder->m_localTransform.rot.data[1][2]);
 		//_MESSAGE("arm.shoulder->m_localTransform.rot[2]           {%5f %5f %5f}", arm.shoulder->m_localTransform.rot.data[2][0], arm.shoulder->m_localTransform.rot.data[2][1], arm.shoulder->m_localTransform.rot.data[2][2]);
+
+		return;
 
 		// The bend of the arm depends on its distance to the body.  Its distance as well as the lengths of
 		// the upper arm and forearm define the sides of a triangle:

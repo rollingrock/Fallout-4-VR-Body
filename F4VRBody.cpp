@@ -63,31 +63,30 @@ namespace F4VRBody {
 
 		// do stuff now
 
-		//playerSkelly->updateZ((NiNode*)playerSkelly->getRoot());
+		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
+		playerSkelly->restoreLocals(playerSkelly->getRoot());
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);
 
 		//playerSkelly->printNodes();
 
-	//	playerSkelly->projectSkelly(120.0f);   // project out in front of the players view by 30 units
-
+		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
 		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
-
-
-		playerSkelly->restoreLocals(playerSkelly->getRoot());
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);
 		playerSkelly->setupHead(headNode);
 
+		// set up the body underneath the headset in a proper scale and orientation
 		playerSkelly->setUnderHMD();
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);
-	//	playerSkelly->setHandPos();
-	//	playerSkelly->removeHands();
+
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// do arm IK - Right then Left
 		playerSkelly->setArms(false);
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);
-
-//		playerSkelly->getRoot()->UpdateDownwardPass(nullptr, 0x0);
 
 
+		// project body out in front of the camera for debug purposes
+		playerSkelly->projectSkelly(120.0f);
+
+
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 	}
 
 
