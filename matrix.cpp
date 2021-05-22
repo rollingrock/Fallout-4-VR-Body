@@ -108,41 +108,41 @@ namespace F4VRBody {
 		NiMatrix43 tmp;
 		// shamelessly taken from skse
 		tmp.data[0][0] = 
-			left.data[0][0] * right.data[0][0] +
-		    left.data[0][1] * right.data[1][0] +
-		    left.data[0][2] * right.data[2][0];
+			right.data[0][0] * left.data[0][0] +
+		    right.data[0][1] * left.data[1][0] +
+		    right.data[0][2] * left.data[2][0];
 		tmp.data[1][0] =
-			left.data[1][0] * right.data[0][0] +
-			left.data[1][1] * right.data[1][0] +
-			left.data[1][2] * right.data[2][0];
+			right.data[1][0] * left.data[0][0] +
+			right.data[1][1] * left.data[1][0] +
+			right.data[1][2] * left.data[2][0];
 		tmp.data[2][0] =
-			left.data[2][0] * right.data[0][0] +
-			left.data[2][1] * right.data[1][0] +
-			left.data[2][2] * right.data[2][0];
+			right.data[2][0] * left.data[0][0] +
+			right.data[2][1] * left.data[1][0] +
+			right.data[2][2] * left.data[2][0];
 		tmp.data[0][1] =
-			left.data[0][0] * right.data[0][1] +
-			left.data[0][1] * right.data[1][1] +
-			left.data[0][2] * right.data[2][1];
+			right.data[0][0] * left.data[0][1] +
+			right.data[0][1] * left.data[1][1] +
+			right.data[0][2] * left.data[2][1];
 		tmp.data[1][1] =
-			left.data[1][0] * right.data[0][1] +
-			left.data[1][1] * right.data[1][1] +
-			left.data[1][2] * right.data[2][1];
+			right.data[1][0] * left.data[0][1] +
+			right.data[1][1] * left.data[1][1] +
+			right.data[1][2] * left.data[2][1];
 		tmp.data[2][1] =
-			left.data[2][0] * right.data[0][1] +
-			left.data[2][1] * right.data[1][1] +
-			left.data[2][2] * right.data[2][1];
+			right.data[2][0] * left.data[0][1] +
+			right.data[2][1] * left.data[1][1] +
+			right.data[2][2] * left.data[2][1];
 		tmp.data[0][2] =
-			left.data[0][0] * right.data[0][2] +
-			left.data[0][1] * right.data[1][2] +
-			left.data[0][2] * right.data[2][2];
+			right.data[0][0] * left.data[0][2] +
+			right.data[0][1] * left.data[1][2] +
+			right.data[0][2] * left.data[2][2];
 		tmp.data[1][2] =
-			left.data[1][0] * right.data[0][2] +
-			left.data[1][1] * right.data[1][2] +
-			left.data[1][2] * right.data[2][2];
+			right.data[1][0] * left.data[0][2] +
+			right.data[1][1] * left.data[1][2] +
+			right.data[1][2] * left.data[2][2];
 		tmp.data[2][2] =
-			left.data[2][0] * right.data[0][2] +
-			left.data[2][1] * right.data[1][2] +
-			left.data[2][2] * right.data[2][2];
+			right.data[2][0] * left.data[0][2] +
+			right.data[2][1] * left.data[1][2] +
+			right.data[2][2] * left.data[2][2];
 		tmp.data[0][3] = 0.0f;
 		tmp.data[1][3] = 0.0f;
 		tmp.data[2][3] = 0.0f;

@@ -69,9 +69,9 @@ namespace F4VRBody
 		NiAVObject* shoulder;
 		NiAVObject* upper;
 		NiAVObject* upperT1;
-		NiAVObject* forearm;
-		NiAVObject* forearmT1;
-		NiAVObject* forearmT2;
+		NiAVObject* forearm1;
+		NiAVObject* forearm2;
+		NiAVObject* forearm3;
 		NiAVObject* hand;
 	};
 
@@ -149,6 +149,7 @@ namespace F4VRBody
 		NiNode* _wandRight;
 		NiNode* _wandLeft;
 		NiNode* _spine;
+		NiNode* _chest;
 		ArmNodes rightArm;
 		ArmNodes leftArm;
 		float _curx;
