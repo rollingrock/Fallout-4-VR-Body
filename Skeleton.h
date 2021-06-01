@@ -128,12 +128,20 @@ namespace F4VRBody
 		NiPoint3 getPosition();
 		void makeArmsT(bool);
 
+		void hideWands() {
+			_wandRight->flags |= 0x1;
+			_wandLeft->flags |= 0x1;
+		};
+		void hideWeapon();
+
 		// utility
 		NiNode* getNode(const char* nodeName, NiNode *nde);
 		void updateDown(NiNode* nde, bool updateSelf);
 		void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 		void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 		void setNodes();
+		ArmNodes getArm(bool isLeft);
+		void set1stPersonArm(NiNode* weapon, NiNode* offsetNode);
 
 
 	private:

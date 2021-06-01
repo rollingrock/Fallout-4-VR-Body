@@ -54,7 +54,7 @@ void hookMain() {
 	g_branchTrampoline.Write5Call(hookBoneTreeUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
 
 	_MESSAGE("hooking main loop function");
-	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);
+//	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);
 	_MESSAGE("successfully hooked main loop");
 }
 

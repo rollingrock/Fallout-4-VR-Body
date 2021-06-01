@@ -29,6 +29,8 @@ namespace F4VRBody {
 	}
 
 	void update() {
+
+
 		//if (prevCounter != g_mainLoopCounter) {
 		//	prevCounter = g_mainLoopCounter;
 		//	localCounter = 0;
@@ -71,7 +73,7 @@ namespace F4VRBody {
 
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
 		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
-//		playerSkelly->setupHead(headNode);
+		playerSkelly->setupHead(headNode);
 
 		//// set up the body underneath the headset in a proper scale and orientation
 		playerSkelly->setUnderHMD();
@@ -80,15 +82,18 @@ namespace F4VRBody {
 
 		// do arm IK - Right then Left
 		playerSkelly->setArms(false);
-//		playerSkelly->setArms(true);
+		playerSkelly->setArms(true);
 
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
+
+		// Hide wands
+
+		playerSkelly->hideWands();
+		playerSkelly->hideWeapon();
 
 		// project body out in front of the camera for debug purposes
-		playerSkelly->projectSkelly(120.0f);
-
-
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
+		//playerSkelly->projectSkelly(120.0f);
+		//playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 	}
 
 

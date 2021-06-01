@@ -47,6 +47,13 @@ namespace F4VRBody {
 
 		return crossP;
 	}
+	
+	// the determinant is proportional to the sin of the angle between two vectors.   In 3d case find the sin of the angle between v1 and v2
+	// along their angle of rotation with unit vector n
+	// https://stackoverflow.com/questions/14066933/direct-way-of-computing-clockwise-angle-between-2-vectors/16544330#16544330
+	float vec3_det(NiPoint3 v1, NiPoint3 v2, NiPoint3 n) {
+		return (v1.x * v2.y * n.z) + (v2.x * n.y * v1.z) + (n.x * v1.y * v2.z) - (v1.z * v2.y * n.x) - (v2.z * n.y * v1.x) - (n.z * v1.y * v2.x);
+	}
 
 	float degrees_to_rads(float deg) {
 		return (deg * PI) / 180;
@@ -90,7 +97,7 @@ namespace F4VRBody {
 		tmp2 = axis.x * s;
 		result.data[2][1] = tmp1 + tmp2;
 		result.data[1][2] = tmp1 - tmp2;
-		return result;
+		return result.Transpose();
 	}
 
 	void updateTransforms(NiNode* node) {

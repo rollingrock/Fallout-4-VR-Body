@@ -14,6 +14,8 @@ namespace F4VRBody {
 	 
 	 NiPoint3 vec3_cross(NiPoint3 v1, NiPoint3 v2);
 
+	 float vec3_det(NiPoint3 v1, NiPoint3 v2, NiPoint3 n);
+
 	 float degrees_to_rads(float deg);
 	 float rads_to_degrees(float deg);
 

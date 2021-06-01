@@ -26,22 +26,22 @@ namespace F4VRBody {
 		}
 	}
 
-	void Matrix44::setEulerAngles(float heading, float roll, float attitude) {
-		float sinX = sin(heading);
-		float cosX = cos(heading);
-		float sinY = sin(attitude);
-		float cosY = cos(attitude);
-		float sinZ = sin(roll);
-		float cosZ = cos(roll);
+	void Matrix44::setEulerAngles(float x, float y, float z) {
+		float sinX = sin(x);
+		float cosX = cos(x);
+		float sinY = sin(y);
+		float cosY = cos(y);
+		float sinZ = sin(z);
+		float cosZ = cos(z);
 
 		data[0][0] = cosY * cosZ;
-		data[0][1] = sinX * sinY * cosZ + sinZ * cosX;
-		data[0][2] = sinX * sinZ - cosX * sinY * cosZ;
-		data[1][0] = -cosY * sinZ;
+		data[1][0] = sinX * sinY * cosZ + sinZ * cosX;
+		data[2][0] = sinX * sinZ - cosX * sinY * cosZ;
+		data[0][1] = -cosY * sinZ;
 		data[1][1] = cosX * cosZ - sinX * sinY * sinZ;
-		data[1][2] = cosX * sinY * sinZ + sinX * cosZ;
-		data[2][0] = sinY;
-		data[2][1] = -sinX * cosY;
+		data[2][1] = cosX * sinY * sinZ + sinX * cosZ;
+		data[0][2] = sinY;
+		data[1][2] = -sinX * cosY;
 		data[2][2] = cosX * cosY;
 	}
 
