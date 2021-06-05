@@ -351,14 +351,14 @@ namespace F4VRBody
 		float dot = (_curx * x) + (_cury * y);
 		_MESSAGE("dot %5f", dot);
 
-//		if (dot > 0.2) {
+		if (dot > 0.2) {
 			x = _curx;
 			y = _cury;
-		//}
-		//else {
-		//	_curx = x;
-		//	_cury = y;
-		//}
+		}
+		else {
+			_curx = x;
+			_cury = y;
+		}
 
 		_forwardDir = NiPoint3(x, y, 0);
 		_sidewaysRDir = NiPoint3(y, -x, 0);
@@ -431,7 +431,7 @@ namespace F4VRBody
 		//mat.setEulerAngles(yaw, roll, pitch);
 		//
 		//_MESSAGE("%f %f %f", mat.data[0][0], mat.data[0][1], mat.data[0][2]);
-		//_MESSAGE("%f %f %f", mat.data[1][0], mat.data[1][1], mat.data[1][2]);
+		//_MESSAGE("%f %f %f", mat.data[1][0], mat.data[1][1], mat.data[1][2]); 
 		//_MESSAGE("%f %f %f", mat.data[2][0], mat.data[2][1], mat.data[2][2]);
 		//_MESSAGE(" ");
 
@@ -473,6 +473,11 @@ namespace F4VRBody
 		if (weapon != nullptr) {
 			weapon->flags |= 0x1;
 			weapon->m_localTransform.scale = 0.0;
+			for (auto i = 0; i < weapon->GetAsNiNode()->m_children.m_emptyRunStart; ++i) {
+				auto nextNode = weapon->GetAsNiNode()->m_children.m_data[i]->GetAsNiNode();
+				nextNode->flags |= 0x1;
+				nextNode->m_localTransform.scale = 0.0;
+			}
 		}
 
 	}
@@ -598,11 +603,20 @@ namespace F4VRBody
 		arm = isLeft ? leftArm : rightArm;
 
 		NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-		NiNode* leftWeapon = getNode("WeaponLeft", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+	//	NiNode* leftWeapon = getNode("WeaponLeft", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
 
 		NiNode* weaponNode = isLeft ? leftWeapon : rightWeapon;
-		NiNode* offsetNode = isLeft ? _playerNodes->SecondaryMeleeWeaponOffsetNode : _playerNodes->primaryWeaponOffsetNOde;
+		NiNode* offsetNode = isLeft ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
 
+		if (isLeft) {
+			_playerNodes->SecondaryMeleeWeaponOffsetNode2->m_localTransform = _playerNodes->primaryWeaponOffsetNOde->m_localTransform;
+			Matrix44 lr;
+			lr.setEulerAngles(0, degrees_to_rads(180), 0);
+			_playerNodes->SecondaryMeleeWeaponOffsetNode2->m_localTransform.rot = lr.multiply43Right(_playerNodes->SecondaryMeleeWeaponOffsetNode2->m_localTransform.rot);
+			_playerNodes->SecondaryMeleeWeaponOffsetNode2->m_localTransform.pos = NiPoint3(-2, -9, 2);
+			updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
+		}
 
 		Matrix44 w;
 		w.data[0][0] = -0.120;
@@ -617,18 +631,18 @@ namespace F4VRBody
 		weaponNode->m_localTransform.rot = w.make43();
 
 		if (isLeft) {
-			w.setEulerAngles(degrees_to_rads(-75.0f), 0, 0);
+			w.setEulerAngles(degrees_to_rads(0), degrees_to_rads(45), degrees_to_rads(0));
 			weaponNode->m_localTransform.rot = w.multiply43Right(weaponNode->m_localTransform.rot);
-			w.setEulerAngles(0, degrees_to_rads(40.0f), 0);
-			weaponNode->m_localTransform.rot = w.multiply43Right(weaponNode->m_localTransform.rot);
+			//w.setEulerAngles(0, degrees_to_rads(40.0f), 0);
+			//weaponNode->m_localTransform.rot = w.multiply43Right(weaponNode->m_localTransform.rot);
 		}
+		
+	    weaponNode->m_localTransform.pos = isLeft ? NiPoint3(0, 0, 0) : NiPoint3(6.389, -2.099, -3.133);
 
-		NiPoint3 wp = NiPoint3(6.389, -2.099, -3.133);
-		weaponNode->m_localTransform.pos = wp;
 
 		weaponNode->IncRef();
 		set1stPersonArm(weaponNode, offsetNode);
-		
+
 		NiPoint3 handPos = isLeft ? _leftHand->m_worldTransform.pos : _rightHand->m_worldTransform.pos;
 		NiMatrix43 handRot = isLeft ? _leftHand->m_worldTransform.rot : _rightHand->m_worldTransform.rot;
 
