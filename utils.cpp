@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "f4se/GameSettings.h"
 
 #define PI 3.14159265358979323846
 
@@ -114,5 +115,45 @@ namespace F4VRBody {
 		node->m_worldTransform.scale = node->m_parent->m_worldTransform.scale * node->m_localTransform.scale;
 		return;
 	 }
+
+	void turnPipBoyOn() {
+/*  From IdleHands
+    Utility.SetINIFloat("fHMDToPipboyScaleOuterAngle:VRPipboy", 0.0000)
+    Utility.SetINIFloat("fHMDToPipboyScaleInnerAngle:VRPipboy", 0.0000) 
+    Utility.SetINIFloat("fPipboyScaleOuterAngle:VRPipboy", 0.0000) 
+    Utility.SetINIFloat("fPipboyScaleInnerAngle:VRPipboy", 0.0000) 
+*/
+		Setting* set = GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
+		set->SetDouble(0.0);
+
+		set = GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
+		set->SetDouble(0.0);
+
+		set = GetINISetting("fPipboyScaleOuterAngle:VRPipboy");
+		set->SetDouble(0.0);
+
+		set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
+		set->SetDouble(0.0);
+	}
+
+	void turnPipBoyOff() {
+		/*  From IdleHands
+	Utility.SetINIFloat("fHMDToPipboyScaleOuterAngle:VRPipboy", 20.0000)
+	Utility.SetINIFloat("fHMDToPipboyScaleInnerAngle:VRPipboy", 5.0000)
+	Utility.SetINIFloat("fPipboyScaleOuterAngle:VRPipboy", 20.0000)
+	Utility.SetINIFloat("fPipboyScaleInnerAngle:VRPipboy", 5.0000)
+		*/
+		Setting* set = GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
+		set->SetDouble(20.0);
+
+		set = GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
+		set->SetDouble(5.0);
+
+		set = GetINISetting("fPipboyScaleOuterAngle:VRPipboy");
+		set->SetDouble(20.0);
+
+		set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
+		set->SetDouble(5.0);
+	}
 
 }

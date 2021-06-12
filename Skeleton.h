@@ -1,5 +1,6 @@
 #pragma once
 #include "f4se/GameReferences.h"
+#include "f4se/GameObjects.h"
 #include "f4se/GameCamera.h"
 #include "f4se/NiNodes.h"
 
@@ -18,6 +19,25 @@ extern uint64_t g_mainLoopCounter;
 
 namespace F4VRBody
 {
+	enum WeaponType
+	{
+		kWeaponType_Hand_To_Hand_Melee,
+		kWeaponType_One_Hand_Sword,
+		kWeaponType_One_Hand_Dagger,
+		kWeaponType_One_Hand_Axe,
+		kWeaponType_One_Hand_Mace,
+		kWeaponType_Two_Hand_Sword,
+		kWeaponType_Two_Hand_Axe,
+		kWeaponType_Bow,
+		kWeaponType_Staff,
+		kWeaponType_Gun,
+		kWeaponType_Grenade,
+		kWeaponType_Mine,
+		kWeaponType_Spell,
+		kWeaponType_Shield,
+		kWeaponType_Torch
+	};
+
      // part of PlayerCharacter object but making useful struct below since not mapped in F4SE
 	struct PlayerNodes {
 		NiNode* playerworldnode; //0x06E0
@@ -133,6 +153,12 @@ namespace F4VRBody
 			_wandLeft->flags |= 0x1;
 		};
 		void hideWeapon();
+		void swapPipboy();
+		void positionPipboy();
+		void fixMelee();
+		void hideFistHelpers();
+
+		void operatePipBoy();
 
 		// utility
 		NiNode* getNode(const char* nodeName, NiNode *nde);
@@ -163,5 +189,10 @@ namespace F4VRBody
 		float _curx;
 		float _cury;
 		std::map<std::string, NiTransform> savedStates;
+
+		NiMatrix43 originalPipboyRotation;
+		bool _pipboyStatus;
+		int _pipTimer;
+		bool _stickypip;
 	};
 }

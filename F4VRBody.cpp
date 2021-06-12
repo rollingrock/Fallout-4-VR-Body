@@ -21,6 +21,7 @@ namespace F4VRBody {
 			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
 			playerSkelly->setNodes();
 			playerSkelly->setDirection();
+		    playerSkelly->swapPipboy();
 			return true;
 		}
 		else {
@@ -86,11 +87,15 @@ namespace F4VRBody {
 
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 
-		// Hide wands
-
-		playerSkelly->hideWands();
 		playerSkelly->hideWeapon();
+		playerSkelly->positionPipboy();
+		playerSkelly->fixMelee();
+		playerSkelly->hideWands();
+		playerSkelly->hideFistHelpers();
 
+		playerSkelly->operatePipBoy();
+
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 		// project body out in front of the camera for debug purposes
 		//playerSkelly->projectSkelly(120.0f);
 		//playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.

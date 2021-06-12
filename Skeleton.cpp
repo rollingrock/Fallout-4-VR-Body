@@ -349,7 +349,6 @@ namespace F4VRBody
 		float z = _root->m_localTransform.pos.z;
 
 		float dot = (_curx * x) + (_cury * y);
-		_MESSAGE("dot %5f", dot);
 
 		if (dot > 0.2) {
 			x = _curx;
@@ -392,6 +391,7 @@ namespace F4VRBody
 	}
 
 	void Skeleton::setHandPos() {
+			//		updateTransforms(wNode->GetAsNiNode());
 
 		_rightHand->m_worldTransform.rot = _wandRight->m_worldTransform.rot;
 		_rightHand->m_worldTransform.pos = _wandRight->m_worldTransform.pos;
@@ -482,6 +482,53 @@ namespace F4VRBody
 
 	}
 
+	void Skeleton::swapPipboy() {
+		BSFixedString nodeName("PipboyBone");
+
+		NiAVObject* pipboyBone = leftArm.forearm3->GetObjectByName(&nodeName);
+		NiAVObject* child = pipboyBone->GetAsNiNode()->m_children.m_data[0];
+		pipboyBone->GetAsNiNode()->RemoveChild(child);
+
+		_pipboyStatus = false;
+		_pipTimer = 0;
+	    turnPipBoyOff();
+		
+		//BSFixedString wandPipName("PipboyParent");
+		//NiAVObject* wandPip = _playerNodes->SecondaryWandNode->GetObjectByName(&wandPipName);
+
+	//	wandPip->m_parent->GetAsNiNode()->RemoveChild(wandPip);
+
+//		pipboyBone->GetAsNiNode()->AttachChild(wandPip, true);
+
+	}
+
+	void Skeleton::positionPipboy() {
+		BSFixedString wandPipName("PipboyRoot_NIF_ONLY");
+		NiAVObject* wandPip = _playerNodes->SecondaryWandNode->GetObjectByName(&wandPipName);
+		
+		BSFixedString nodeName("PipboyBone");
+		NiAVObject* pipboyBone = leftArm.forearm3->GetObjectByName(&nodeName);
+
+		NiPoint3 locpos = NiPoint3(0, 0, 0);
+
+		locpos = (pipboyBone->m_worldTransform.rot * (locpos * pipboyBone->m_worldTransform.scale));
+
+		NiPoint3 wandWP = pipboyBone->m_worldTransform.pos + locpos;
+
+		NiPoint3 delta = wandWP - wandPip->m_parent->m_worldTransform.pos;
+
+		wandPip->m_localTransform.pos = wandPip->m_parent->m_worldTransform.rot.Transpose() * (delta / wandPip->m_parent->m_worldTransform.scale);
+
+		// Slr = LHwr' * RHwr * Slr 
+		Matrix44 loc;
+		loc.setEulerAngles(degrees_to_rads(30), 0, 0);
+
+		NiMatrix43 wandWROT = loc.multiply43Left(pipboyBone->m_worldTransform.rot);
+
+		loc.makeTransformMatrix(wandWROT, NiPoint3(0, 0, 0));
+		wandPip->m_localTransform.rot = loc.multiply43Left(wandPip->m_parent->m_worldTransform.rot.Transpose());
+	}
+
 	void Skeleton::makeArmsT(bool isLeft) {
 		ArmNodes arm;
 
@@ -501,6 +548,97 @@ namespace F4VRBody
 
 	ArmNodes Skeleton::getArm(bool isLeft) {
 		return isLeft ? leftArm : rightArm;
+	}
+
+	void Skeleton::fixMelee() {
+		BGSInventoryList* inventory = (*g_player)->inventoryList;
+
+		if (!inventory) {
+			return;
+		}
+
+		for (int i = 0; i < inventory->items.count; i++) {
+			BGSInventoryItem item;
+
+			inventory->items.GetNthItem(i, item);
+
+			if (!item.form) {
+				continue;
+			}
+
+			if ((item.form->formType == FormType::kFormType_WEAP) && (item.stack->flags & 0x3))   {
+				TESObjectWEAP* weap = static_cast<TESObjectWEAP*>(item.form);
+
+				uint8_t type = weap->weapData.unk137; // unk137 is the weapon type that maps to WeaponType enum
+
+				if ((type == WeaponType::kWeaponType_One_Hand_Axe) || 
+					(type == WeaponType::kWeaponType_One_Hand_Dagger) ||
+					(type == WeaponType::kWeaponType_One_Hand_Mace) || 
+					(type == WeaponType::kWeaponType_One_Hand_Sword) ||
+					(type == WeaponType::kWeaponType_Two_Hand_Axe) || 
+					(type == WeaponType::kWeaponType_Two_Hand_Sword)) {
+
+					NiAVObject* wNode = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+
+					Matrix44 rot;
+					rot.setEulerAngles(1, degrees_to_rads(-90), 1);
+
+					wNode->m_localTransform.rot = rot.multiply43Right(wNode->m_localTransform.rot);
+
+					updateDown(wNode->GetAsNiNode(), true);
+
+					(*g_player)->Update(0.0f);
+
+				}
+			}
+		}
+	}
+
+	void Skeleton::hideFistHelpers() {
+		NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->primaryWandNode);
+		node->flags |= 0x1;   // first bit sets the cull flag so it will be hidden;
+
+		node = getNode("fist_F_Right_HELPER", _playerNodes->primaryWandNode);
+		node->flags |= 0x1;
+
+		node = getNode("PA_fist_R_HELPER", _playerNodes->primaryWandNode);
+		node->flags |= 0x1;
+	}
+
+	void Skeleton::operatePipBoy() {
+
+		NiAVObject* finger = getNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		NiAVObject* pipboy = getNode("PipboyRoot", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+
+		float distance = vec3_len(finger->m_worldTransform.pos - pipboy->m_worldTransform.pos);
+
+		if (distance > 10.0f) {
+			_pipTimer = 0;
+			_stickypip = false;
+			return;
+		}
+		else {
+			if (_stickypip) {
+				return;
+			}
+
+			if (_pipTimer < 10) {
+				_pipTimer++;
+			}
+			else {
+				_pipTimer = 0;
+				_stickypip = true;
+
+				if (_pipboyStatus) {
+					_pipboyStatus = false;
+					turnPipBoyOff();
+				}
+				else {
+					_pipboyStatus = true;
+					turnPipBoyOn();
+				}
+			}
+		}
 	}
 
 	void Skeleton::set1stPersonArm(NiNode* weapon, NiNode* offsetNode) {
@@ -732,7 +870,7 @@ namespace F4VRBody
 
 		// Blend the two twist angles together, using the primary angle more when the wrist is pointing downward
 		//float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.25f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
-		float interpTwist = (std::clamp)((handBack.z + 0.9f), 0.2f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
+		float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.25f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
 		twistAngle = twistAngle + interpTwist * (twistAngle2 - twistAngle);
 		// Wonkiness is bad.  Interpolate twist angle towards zero to correct it when the angles are pointed a certain way.
 		float fixWonkiness1 = (std::clamp)(vec3_dot(handSide, vec3_norm(-sidewaysDir - forwardDir * 0.25f + NiPoint3(0, 0, -0.25))), 0.0f, 1.0f);
@@ -757,8 +895,8 @@ namespace F4VRBody
 
 		// The arm lift limits how much the crossing amount can influence minimum elbow rotation
 		// The maximum rotation is also decreased as hands lift higher (elbows point further downward)
-		float armLiftLimitZ = _chest->m_worldTransform.pos.z - 5.0f * size;
-		float armLiftThreshold = 60.0f * size;
+		float armLiftLimitZ = _chest->m_worldTransform.pos.z * size;
+		float armLiftThreshold = 70.0f * size;
 		float armLiftLimit = (std::clamp)((armLiftLimitZ + armLiftThreshold - handPos.z) / armLiftThreshold, 0.0f, 1.0f); // 1 at bottom, 0 at top
 		float upLimit = (std::clamp)((1.0f - armLiftLimit) * 1.4f, 0.0f, 1.0f); // 0 at bottom, 1 at a much lower top
 
