@@ -9,6 +9,8 @@ extern PapyrusVRAPI* g_papyrusvr;
 namespace F4VRBody
 {
 
+	float defaultCameraHeight = 120.4828;
+
 	void printMatrix(Matrix44* mat) {
 		_MESSAGE("Dump matrix:");
 		std::string row = "";
@@ -344,6 +346,44 @@ namespace F4VRBody
 		return _lastPos;
 	}
 
+	float Skeleton::getNeckYaw() {
+		NiPoint3 hmdToLeft  = vec3_norm(_playerNodes->SecondaryWandNode->m_worldTransform.pos  - _playerNodes->HmdNode->m_worldTransform.pos);
+		NiPoint3 hmdToRight = vec3_norm(_playerNodes->primaryWandNode->m_worldTransform.pos - _playerNodes->HmdNode->m_worldTransform.pos);
+
+		NiPoint3 planeNormal = vec3_cross(hmdToLeft, hmdToRight);
+
+		NiPoint3 sum = hmdToRight + hmdToLeft;
+		sum.z = 0;
+		sum = vec3_norm(sum);
+
+		NiPoint3 hmdForward = _playerNodes->HmdNode->m_worldTransform.rot * NiPoint3(0, 1, 0);
+		hmdForward.z = 0;
+		hmdForward = vec3_norm(hmdForward);
+
+		float dot = vec3_dot(hmdForward, sum);
+		NiPoint3 cross = vec3_cross(sum, hmdForward);
+		
+		int sign = 1;
+		if (vec3_dot(cross, planeNormal) < 0) {
+			sign = -1;
+		}
+
+		return std::clamp(sign * acosf(dot), degrees_to_rads(-90.0f), degrees_to_rads(90.0f));
+	}
+
+	float Skeleton::getNeckPitch() {
+		float basePitch = 135.3;
+		float weight = 0.333;
+
+		float heightCalc = (c_playerHeight - _playerNodes->HmdNode->m_localTransform.pos.z) / c_playerHeight;
+
+		NiPoint3 lookDir = _playerNodes->HmdNode->m_worldTransform.rot * NiPoint3(0, 1, 0);
+		float pitchAngle = asinf(lookDir.z);
+		float angle = heightCalc * (basePitch + weight * rads_to_degrees(pitchAngle));
+
+		return degrees_to_rads(angle);
+	}
+
 	void Skeleton::setUnderHMD() {
 		Matrix44 mat;
 
@@ -367,6 +407,10 @@ namespace F4VRBody
 		_forwardDir = NiPoint3(x, y, 0);
 		_sidewaysRDir = NiPoint3(y, -x, 0);
 
+		float neckPitch = getNeckPitch();
+		float neckYaw   = getNeckYaw();
+
+		_MESSAGE("neckYaw = %f", rads_to_degrees(neckYaw));
 
 		NiNode* body = _root->m_parent->GetAsNiNode();
 		body->m_localTransform.pos *= 0.0f;
@@ -386,86 +430,12 @@ namespace F4VRBody
 		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
 		_root->m_localTransform.pos.y += -8.0f;
 		_root->m_localTransform.pos.z = z;
-		_root->m_localTransform.scale = c_playerHeight / 68.911301;    // set scale based off specified user height
+		_root->m_localTransform.scale = c_playerHeight / defaultCameraHeight;    // set scale based off specified user height
 
 		body->m_worldBound.m_kCenter = this->getPosition();
 
 	//	_root->UpdateDownwardPass(nullptr, 0);
 	//	updateDown(_root, true);
-
-	}
-
-	void Skeleton::setHandPos() {
-			//		updateTransforms(wNode->GetAsNiNode());
-
-		_rightHand->m_worldTransform.rot = _wandRight->m_worldTransform.rot;
-		_rightHand->m_worldTransform.pos = _wandRight->m_worldTransform.pos;
-		_leftHand->m_worldTransform.rot = _wandLeft->m_worldTransform.rot;
-		_leftHand->m_worldTransform.pos = _wandLeft->m_worldTransform.pos;
-
-		Matrix44 mat;
-		Matrix44* result = new Matrix44();
-		mat.makeIdentity();
-
-		mat.data[0][0] = -1.0;
-		mat.data[2][2] = -1.0;
-
-		Matrix44::matrixMultiply((Matrix44*)&(_rightHand->m_worldTransform.rot), result, &mat);
-
-		for (auto i = 0; i < 3; i++) {
-			for (auto j = 0; j < 3; j++) {
-				_rightHand->m_worldTransform.rot.data[i][j] = result->data[i][j];
-
-			}
-		}
-
-		updateDown(_rightHand, false);
-		updateDown(_leftHand, false);
-
-		//for (auto i = 0; i < 3; i++) {
-		//	for (auto j = 0; j < 3; j++) {
-		//		mat.data[i][j] = _rightHand->m_localTransform.rot.data[i][j];
-		//	}
-		//}
-
-		//float yaw, pitch, roll;
-
-		//mat.getEulerAngles(&yaw, &roll, &pitch);
-
-
-		//mat.setEulerAngles(yaw, roll, pitch);
-		//
-		//_MESSAGE("%f %f %f", mat.data[0][0], mat.data[0][1], mat.data[0][2]);
-		//_MESSAGE("%f %f %f", mat.data[1][0], mat.data[1][1], mat.data[1][2]); 
-		//_MESSAGE("%f %f %f", mat.data[2][0], mat.data[2][1], mat.data[2][2]);
-		//_MESSAGE(" ");
-
-
-		// Hide wands
-
-		_wandRight->flags |= 0x1;
-		_wandLeft->flags |= 0x1;
-
-		delete result;
-	}
-
-	void Skeleton::removeHands() {
-		//NiNode* node = (*g_player)->GetObjectRootNode();
-
-		_wandRight->flags |= 0x1;
-		_wandLeft->flags |= 0x1;
-
-		BSFixedString nodeName("RArm_Hand");
-
-		NiAVObject* node = _common->GetObjectByName(&nodeName);
-
-		if (node) {
-			node->m_worldTransform.scale = 0.000001;
-		}
-
-
-
-		return;
 
 	}
 

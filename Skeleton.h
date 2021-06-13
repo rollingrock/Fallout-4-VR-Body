@@ -141,8 +141,6 @@ namespace F4VRBody
 		void saveStatesTree(NiNode* node);
 		void restoreLocals(NiNode* node);
 		void setUnderHMD();
-		void setHandPos();
-		void removeHands();
 		void setArms(bool isLeft);
 		void setArms_wp(bool isLeft);
 		NiPoint3 getPosition();
@@ -168,6 +166,10 @@ namespace F4VRBody
 		void setNodes();
 		ArmNodes getArm(bool isLeft);
 		void set1stPersonArm(NiNode* weapon, NiNode* offsetNode);
+
+		// Body Positioning
+		float getNeckYaw();
+		float getNeckPitch();
 
 
 	private:

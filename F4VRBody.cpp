@@ -1,5 +1,6 @@
 #include "F4VRBody.h"
 #include "Skeleton.h"
+#include "f4se/GameSettings.h"
 
 #define PI 3.14159265358979323846
 
@@ -16,6 +17,8 @@ namespace F4VRBody {
 	uint64_t localCounter = 0;
 
 	float c_playerHeight = 0.0;
+	bool  c_setScale = false;
+	float c_fVrScale = 70.0;
 
 	
 
@@ -27,7 +30,9 @@ namespace F4VRBody {
 			return false;
 		}
 
-		c_playerHeight = ini.GetReal("Fallout4VRBody", "PlayerHeight", 68.0f);
+		c_playerHeight = ini.GetReal("Fallout4VRBody", "PlayerHeight", 120.4828f);
+		c_setScale     = ini.GetBoolean("Fallout4VRBody", "setScale", false);
+		c_fVrScale     = ini.GetReal("Fallout4VRBody", "fVrScale", 70.0);
 
 		return true;
 	}
@@ -39,6 +44,11 @@ namespace F4VRBody {
 			playerSkelly->setNodes();
 			playerSkelly->setDirection();
 		    playerSkelly->swapPipboy();
+
+			if (c_setScale) {
+				Setting* set = GetINISetting("fVrScale:VR");
+				set->SetDouble(c_fVrScale);
+			}
 			return true;
 		}
 		else {
