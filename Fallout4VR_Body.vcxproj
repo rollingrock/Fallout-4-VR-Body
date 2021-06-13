@@ -131,7 +131,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>f4sevr_1_2_72.lib;f4se_common.lib;common_vc11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>f4sevr_1_2_72.lib;f4se_common.lib;common_vc11.lib;openvr_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -176,10 +176,14 @@
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="api\PapyrusVRAPI.h" />
+    <ClInclude Include="api\VRManagerAPI.h" />
     <ClInclude Include="F4VRBody.h" />
     <ClInclude Include="hook.h" />
+    <ClInclude Include="include\INIReader.h" />
     <ClInclude Include="include\version.h" />
     <ClInclude Include="matrix.h" />
+    <ClInclude Include="openvr\openvr.h" />
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>

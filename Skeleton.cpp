@@ -1,5 +1,10 @@
 #include "Skeleton.h"
+#include "F4VRBody.h"
 
+#include "api/PapyrusVRAPI.h"
+#include "api/VRManagerAPI.h"
+
+extern PapyrusVRAPI* g_papyrusvr;
 
 namespace F4VRBody
 {
@@ -381,7 +386,7 @@ namespace F4VRBody
 		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
 		_root->m_localTransform.pos.y += -8.0f;
 		_root->m_localTransform.pos.z = z;
-		_root->m_localTransform.scale = 0.95f;
+		_root->m_localTransform.scale = c_playerHeight / 68.911301;    // set scale based off specified user height
 
 		body->m_worldBound.m_kCenter = this->getPosition();
 
@@ -621,6 +626,12 @@ namespace F4VRBody
 			if (_stickypip) {
 				return;
 			}
+			else {
+				OpenVRHookManagerAPI* vrhook = RequestOpenVRHookManagerObject();
+				if (vrhook != nullptr) {
+					vrhook->StartHaptics(2, 0.05, 0.3);
+				}
+			}
 
 			if (_pipTimer < 10) {
 				_pipTimer++;
@@ -740,8 +751,15 @@ namespace F4VRBody
 
 		arm = isLeft ? leftArm : rightArm;
 
+		// This first part is to handle the game calculating the first person hand based off two offset nodes
+		// PrimaryWeaponOffset and PrimaryMeleeoffset
+		// Unfortunately neither of these two nodes are that close to each other so when you equip a melee or ranged weapon
+		// the hand will jump which compeltely messes up the solver and looks bad to boot.
+		// So this code below does a similar operation as the in game function that solves the first person arm by forcing
+		// everything to go to the PrimaryWeaponNode.  I have hardcoded a rotation below based off one of the guns that 
+		// matches my real life hand pose with an index controller very well.   I use this as the baseline for everything
+
 		NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-	//	NiNode* leftWeapon = getNode("WeaponLeft", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
 
 		NiNode* weaponNode = isLeft ? leftWeapon : rightWeapon;

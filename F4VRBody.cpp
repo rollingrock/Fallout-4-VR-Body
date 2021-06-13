@@ -15,6 +15,23 @@ namespace F4VRBody {
 	uint64_t prevCounter = 0;
 	uint64_t localCounter = 0;
 
+	float c_playerHeight = 0.0;
+
+	
+
+	bool loadConfig() {
+		INIReader ini(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
+
+		if (ini.ParseError() < 0) {
+			_MESSAGE("ERROR: cannot read Fallout4VR_Body.ini");
+			return false;
+		}
+
+		c_playerHeight = ini.GetReal("Fallout4VRBody", "PlayerHeight", 68.0f);
+
+		return true;
+	}
+
 	bool setSkelly() {
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 			playerSkelly = new Skeleton((BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());

@@ -34,6 +34,7 @@ void PatchBody() {
 	_MESSAGE("Patch Body Succeeded");
 }
 
+
 //Listener for F4SE Messages
 void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
 {
@@ -112,6 +113,11 @@ extern "C" {
 		//{
 		//	_MESSAGE("config load failed, using default config");
 		//}
+
+		if (!F4VRBody::loadConfig()) {
+			_ERROR("could not open ini config file");
+			return false;
+		}
 
 		PatchBody();
 
