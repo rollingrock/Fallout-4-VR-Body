@@ -4,12 +4,16 @@ Developing mod to add full body support with IK for Fallout 4 VR!
 Note this is a work in progress....
 
 Current status:
-- Body positioned under camera appropriately though code that lets you move the camera around a bit needs work
-- Arm IK coming closer.    Skyrim and Fallout skeletons are different in the local space of nodes so can't just reuse lessons learnt from vrik.   
+- Arm IK 95% complete.   Not completely happy with elbow position and twisting so will need to make one more pass
+- Body positioning almost complete.   Posture working nice.  Annoying positioning when you bend over enough your camera looks backwards.   But very close to complete
+- leg IK work started.   hope to be quick from already done the harder IK with the arms.    Will need to figure out some kind of walking animation
+- Power armor "works" however there are issues.
+- bulk weapon repositioning mostly done.     Need to rotate some melee still and grenade are offset
+- Pipboy now working with haptics.    Only really works with static scale.     this can certainly be improved but it is functional
 
 Next Steps:
 - Finish Arm IK
-- Work on body position and scale under camera
+- finish body positioning
 - Implement some form of walking animation and IK
 - ???
 - Profit
