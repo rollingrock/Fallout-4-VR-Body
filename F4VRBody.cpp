@@ -19,6 +19,7 @@ namespace F4VRBody {
 	float c_playerHeight = 0.0;
 	bool  c_setScale = false;
 	float c_fVrScale = 70.0;
+	float c_playerOffset = 1.5;
 
 	
 
@@ -33,6 +34,7 @@ namespace F4VRBody {
 		c_playerHeight = ini.GetReal("Fallout4VRBody", "PlayerHeight", 120.4828f);
 		c_setScale     = ini.GetBoolean("Fallout4VRBody", "setScale", false);
 		c_fVrScale     = ini.GetReal("Fallout4VRBody", "fVrScale", 70.0);
+		c_playerOffset = ini.GetReal("Fallout4VRBody", "playerOffset", 1.5);
 
 		return true;
 	}
@@ -49,6 +51,8 @@ namespace F4VRBody {
 				Setting* set = GetINISetting("fVrScale:VR");
 				set->SetDouble(c_fVrScale);
 			}
+
+			playerSkelly->setBodyLen();
 			return true;
 		}
 		else {
@@ -100,20 +104,26 @@ namespace F4VRBody {
 		//playerSkelly->printNodes();
 
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
-		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
-		playerSkelly->setupHead(headNode);
+		//NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
+		//playerSkelly->setupHead(headNode);
 
 		//// set up the body underneath the headset in a proper scale and orientation
 		playerSkelly->setUnderHMD();
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
+		// Now Set up body Posture and hook up the legs
+		playerSkelly->setBodyPosture();
+		playerSkelly->setLegs();
+
+		// Do another update before setting arms
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// do arm IK - Right then Left
 		playerSkelly->setArms(false);
 		playerSkelly->setArms(true);
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
-
+		// Misc stuff to show/hide things and also setup the wrist pipboy
 		playerSkelly->hideWeapon();
 		playerSkelly->positionPipboy();
 		playerSkelly->fixMelee();
@@ -123,6 +133,10 @@ namespace F4VRBody {
 		playerSkelly->operatePipBoy();
 
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
+
+
+
+
 		// project body out in front of the camera for debug purposes
 		//playerSkelly->projectSkelly(120.0f);
 		//playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.

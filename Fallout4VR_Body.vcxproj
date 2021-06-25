@@ -172,6 +172,7 @@
     <ClCompile Include="hook.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matrix.cpp" />
+    <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="Skeleton.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
@@ -184,6 +185,7 @@
     <ClInclude Include="include\version.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="openvr\openvr.h" />
+    <ClInclude Include="Quaternion.h" />
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>

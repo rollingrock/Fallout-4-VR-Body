@@ -346,40 +346,65 @@ namespace F4VRBody
 		return _lastPos;
 	}
 
+	// below takes the two vectors from hmd to each hand and sums them to determine a center axis in which to see how much the hmd has rotated
+	// A secondary angle is also calculated which is 90 degrees on the z axis up to handle when the hands are approaching the z plane of the hmd
+	// this helps keep the body stable through a wide range of hand poses
+	// this still struggles with hands close to the face and with one hand low and one hand high.    Will need to take progs advice to add weights 
+	// to these positions which i'll do at a later date.
+
+
 	float Skeleton::getNeckYaw() {
-		NiPoint3 hmdToLeft  = vec3_norm(_playerNodes->SecondaryWandNode->m_worldTransform.pos  - _playerNodes->HmdNode->m_worldTransform.pos);
-		NiPoint3 hmdToRight = vec3_norm(_playerNodes->primaryWandNode->m_worldTransform.pos - _playerNodes->HmdNode->m_worldTransform.pos);
+		NiPoint3 pos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
+		NiPoint3 hmdToLeft  = _playerNodes->SecondaryWandNode->m_worldTransform.pos  - pos;
+		NiPoint3 hmdToRight = _playerNodes->primaryWandNode->m_worldTransform.pos - pos;
 
-		NiPoint3 planeNormal = vec3_cross(hmdToLeft, hmdToRight);
-
-		NiPoint3 sum = hmdToRight + hmdToLeft;
-		sum.z = 0;
-		sum = vec3_norm(sum);
-
-		NiPoint3 hmdForward = _playerNodes->HmdNode->m_worldTransform.rot * NiPoint3(0, 1, 0);
-		hmdForward.z = 0;
-		hmdForward = vec3_norm(hmdForward);
-
-		float dot = vec3_dot(hmdForward, sum);
-		NiPoint3 cross = vec3_cross(sum, hmdForward);
-		
-		int sign = 1;
-		if (vec3_dot(cross, planeNormal) < 0) {
-			sign = -1;
+		if ((vec3_len(hmdToLeft) < 10.0f) || (vec3_len(hmdToRight) < 10.0f)) {
+			return 0.0;
 		}
 
-		return std::clamp(sign * acosf(dot), degrees_to_rads(-90.0f), degrees_to_rads(90.0f));
+		hmdToLeft = vec3_norm(hmdToLeft);
+		hmdToRight = vec3_norm(hmdToRight);
+
+		NiPoint3 sum = hmdToRight + hmdToLeft;
+
+		NiPoint3 forwardDir = vec3_norm(_playerNodes->HmdNode->m_worldTransform.rot.Transpose() * vec3_norm(sum));  // rotate sum to local hmd space to get the proper angle
+		NiPoint3 hmdForwardDir = vec3_norm(_playerNodes->HmdNode->m_worldTransform.rot.Transpose() * _playerNodes->HmdNode->m_localTransform.pos);
+
+		float anglePrime = atan2f(forwardDir.x, forwardDir.y);
+
+		float angleSec = atan2f(forwardDir.x, forwardDir.z);
+
+		float angleFinal;
+
+		sum = vec3_norm(sum);
+
+		float pitchDiff = atan2f(hmdForwardDir.y, hmdForwardDir.z) - atan2f(forwardDir.z, forwardDir.y);
+		
+		if (fabs(pitchDiff) > degrees_to_rads(80.0f)){
+			angleFinal = angleSec;
+		}
+		else {
+			angleFinal = anglePrime;
+		}
+
+		return std::clamp(-angleFinal, degrees_to_rads(-90.0f), degrees_to_rads(90.0f));
 	}
 
 	float Skeleton::getNeckPitch() {
+
+		NiPoint3 lookDir = vec3_norm(_playerNodes->HmdNode->m_worldTransform.rot.Transpose() * _playerNodes->HmdNode->m_localTransform.pos);
+		float pitchAngle = atan2f(lookDir.y, lookDir.z);
+
+		return pitchAngle;
+	}
+
+	float Skeleton::getBodyPitch() {
 		float basePitch = 135.3;
 		float weight = 0.333;
 
-		float heightCalc = (c_playerHeight - _playerNodes->HmdNode->m_localTransform.pos.z) / c_playerHeight;
+		float heightCalc = (c_playerHeight - _playerNodes->UprightHmdNode->m_localTransform.pos.z) / c_playerHeight;
 
-		NiPoint3 lookDir = _playerNodes->HmdNode->m_worldTransform.rot * NiPoint3(0, 1, 0);
-		float pitchAngle = asinf(lookDir.z);
-		float angle = heightCalc * (basePitch + weight * rads_to_degrees(pitchAngle));
+		float angle = heightCalc * (basePitch + weight * rads_to_degrees(getNeckPitch()));
 
 		return degrees_to_rads(angle);
 	}
@@ -389,28 +414,29 @@ namespace F4VRBody
 
 		mat = 0.0;
 
-		float y = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
-		float x = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
+//		float y    = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
+	//	float x    = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
+		float x = _playerNodes->UprightHmdNode->m_worldTransform.rot.data[1][0];
+		float y = _playerNodes->UprightHmdNode->m_worldTransform.rot.data[1][1];
 		float z = _root->m_localTransform.pos.z;
 
-		float dot = (_curx * x) + (_cury * y);
-
-		if (dot > 0.2) {
-			x = _curx;
-			y = _cury;
-		}
-		else {
-			_curx = x;
-			_cury = y;
-		}
-
-		_forwardDir = NiPoint3(x, y, 0);
-		_sidewaysRDir = NiPoint3(y, -x, 0);
-
-		float neckPitch = getNeckPitch();
 		float neckYaw   = getNeckYaw();
+		float neckPitch   = getNeckPitch();
 
-		_MESSAGE("neckYaw = %f", rads_to_degrees(neckYaw));
+
+		_MESSAGE("");
+		_MESSAGE("%5f %5f", neckPitch, rads_to_degrees(neckPitch));
+		_MESSAGE("%5f %5f", x, y);
+		
+		Quaternion qa;
+		qa.setAngleAxis(-neckPitch, NiPoint3(-1, 0, 0));
+		 
+		mat = qa.getRot();
+		NiMatrix43 newRot = mat.multiply43Left(_playerNodes->HmdNode->m_localTransform.rot);
+		_MESSAGE("%5f %5f", newRot.data[1][0], newRot.data[1][1]);
+
+		_forwardDir = rotateXY(NiPoint3(newRot.data[1][0], newRot.data[1][1], 0), neckYaw);
+		_sidewaysRDir = NiPoint3(_forwardDir.y, -_forwardDir.x, 0);
 
 		NiNode* body = _root->m_parent->GetAsNiNode();
 		body->m_localTransform.pos *= 0.0f;
@@ -420,28 +446,69 @@ namespace F4VRBody
 		updateDown(_root, true);
 		NiNode::NiUpdateData ud;
 		ud.flags = 0x1;
-	//	_root->UpdateDownwardPass(&ud, 0);
 
-		NiPoint3 back = vec3_norm(NiPoint3(x, y, 0));
+		NiPoint3 back = vec3_norm(NiPoint3(_forwardDir.x, _forwardDir.y, 0));
 		NiPoint3 bodydir = NiPoint3(0, 1, 0);
 
 		mat.rotateVectoVec(back, bodydir);
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
 		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
-		_root->m_localTransform.pos.y += -8.0f;
+		_root->m_localTransform.pos.y -= c_playerOffset;
 		_root->m_localTransform.pos.z = z;
 		_root->m_localTransform.scale = c_playerHeight / defaultCameraHeight;    // set scale based off specified user height
 
 		body->m_worldBound.m_kCenter = this->getPosition();
+	}
 
-	//	_root->UpdateDownwardPass(nullptr, 0);
-	//	updateDown(_root, true);
+	void Skeleton::setBodyPosture() {
+		float neckPitch = getNeckPitch();
+		float bodyPitch = getBodyPitch();
 
+		NiNode* camera = _playerNodes->UprightHmdNode;
+		NiNode* com = getNode("COM", _root);
+		NiNode* spine = getNode("SPINE1", _root);
+
+		NiPoint3 hmdToHip = camera->m_worldTransform.pos - com->m_worldTransform.pos;
+		NiPoint3 dir = NiPoint3(-_forwardDir.x, -_forwardDir.y, 0);
+
+		float dist = tanf(bodyPitch) * vec3_len(hmdToHip);
+		NiPoint3 tmpHipPos = com->m_worldTransform.pos + dir * (dist / vec3_len(dir));
+		tmpHipPos.z = com->m_worldTransform.pos.z;
+
+		NiPoint3 hmdtoNewHip = tmpHipPos - camera->m_worldTransform.pos;
+		NiPoint3 newHipPos = camera->m_worldTransform.pos + hmdtoNewHip * (_torsoLen / vec3_len(hmdtoNewHip));
+
+		//_MESSAGE("newHipPos    = %5f %5f %5f", newHipPos.x, newHipPos.y, newHipPos.z);
+		//_MESSAGE("com          = %5f %5f %5f", com->m_worldTransform.pos.x, com->m_worldTransform.pos.y, com->m_worldTransform.pos.z);
+		//_MESSAGE("new len      = %f", vec3_len(newHipPos - camera->m_worldTransform.pos));
+
+		com->m_localTransform.pos += _root->m_worldTransform.rot.Transpose() * ((newHipPos - com->m_worldTransform.pos) / _root->m_localTransform.scale);
+
+		Matrix44 rot;
+		rot.rotateVectoVec(camera->m_worldTransform.pos - tmpHipPos, hmdToHip);
+		NiMatrix43 mat = rot.multiply43Left(spine->m_parent->m_worldTransform.rot.Transpose());
+		rot.makeTransformMatrix(mat, NiPoint3(0, 0, 0));
+		spine->m_localTransform.rot = rot.multiply43Right(spine->m_worldTransform.rot);
+		
+	}
+
+	void Skeleton::setLegs() {
+
+	}
+
+	void Skeleton::setBodyLen() {
+		_torsoLen = vec3_len(getNode("Camera", _root)->m_worldTransform.pos - getNode("COM", _root)->m_worldTransform.pos);
+		_torsoLen *= c_playerHeight / defaultCameraHeight;
+
+		_legLen =  vec3_len(getNode("LLeg_Thigh", _root)->m_worldTransform.pos -  getNode("Pelvis", _root)->m_worldTransform.pos);
+		_legLen += vec3_len(getNode("LLeg_Calf", _root)->m_worldTransform.pos - getNode("LLeg_Thigh", _root)->m_worldTransform.pos);
+		_legLen += vec3_len(getNode("LLeg_Foot", _root)->m_worldTransform.pos - getNode("LLeg_Calf", _root)->m_worldTransform.pos);
+		_legLen *= c_playerHeight / defaultCameraHeight;
 	}
 
 	void Skeleton::hideWeapon() {
 
-		BSFixedString nodeName("Weapon");
+		static BSFixedString nodeName("Weapon");
 
 		NiAVObject* weapon = rightArm.hand->GetObjectByName(&nodeName);
 
@@ -458,7 +525,7 @@ namespace F4VRBody
 	}
 
 	void Skeleton::swapPipboy() {
-		BSFixedString nodeName("PipboyBone");
+		static BSFixedString nodeName("PipboyBone");
 
 		NiAVObject* pipboyBone = leftArm.forearm3->GetObjectByName(&nodeName);
 		NiAVObject* child = pipboyBone->GetAsNiNode()->m_children.m_data[0];
@@ -478,10 +545,10 @@ namespace F4VRBody
 	}
 
 	void Skeleton::positionPipboy() {
-		BSFixedString wandPipName("PipboyRoot_NIF_ONLY");
+		static BSFixedString wandPipName("PipboyRoot_NIF_ONLY");
 		NiAVObject* wandPip = _playerNodes->SecondaryWandNode->GetObjectByName(&wandPipName);
 		
-		BSFixedString nodeName("PipboyBone");
+		static BSFixedString nodeName("PipboyBone");
 		NiAVObject* pipboyBone = leftArm.forearm3->GetObjectByName(&nodeName);
 
 		NiPoint3 locpos = NiPoint3(0, 0, 0);

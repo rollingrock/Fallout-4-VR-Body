@@ -10,6 +10,7 @@
 
 #include "utils.h"
 #include "matrix.h"
+#include "Quaternion.h"
 
 
 
@@ -141,6 +142,8 @@ namespace F4VRBody
 		void saveStatesTree(NiNode* node);
 		void restoreLocals(NiNode* node);
 		void setUnderHMD();
+		void setBodyPosture();
+		void setLegs();
 		void setArms(bool isLeft);
 		void setArms_wp(bool isLeft);
 		NiPoint3 getPosition();
@@ -166,10 +169,12 @@ namespace F4VRBody
 		void setNodes();
 		ArmNodes getArm(bool isLeft);
 		void set1stPersonArm(NiNode* weapon, NiNode* offsetNode);
+		void setBodyLen();
 
 		// Body Positioning
 		float getNeckYaw();
 		float getNeckPitch();
+		float getBodyPitch();
 
 
 	private:
@@ -186,8 +191,12 @@ namespace F4VRBody
 		NiNode* _wandLeft;
 		NiNode* _spine;
 		NiNode* _chest;
+		float _torsoLen;
+		float _legLen;
 		ArmNodes rightArm;
 		ArmNodes leftArm;
+		NiPoint3 _leftFootPos;
+		NiPoint3 _RightFootPos;
 		float _curx;
 		float _cury;
 		std::map<std::string, NiTransform> savedStates;

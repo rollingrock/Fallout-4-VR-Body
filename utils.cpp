@@ -68,11 +68,20 @@ namespace F4VRBody {
 	NiPoint3 rotateXY(NiPoint3 vec, float angle) {
 		NiPoint3 retV;
 
-		retV.x = vec.x * cos(angle) - vec.y * sin(angle);
-		retV.y = vec.x * sin(angle) + vec.y * cos(angle);
+		retV.x = vec.x * cosf(angle) - vec.y * sinf(angle);
+		retV.y = vec.x * sinf(angle) + vec.y * cosf(angle);
 		retV.z = vec.z;
 
 		return retV;
+	}
+
+	NiPoint3 pitchVec(NiPoint3 vec, float angle) {
+		NiPoint3 rotAxis = NiPoint3(vec.y, -vec.x, 0);
+		Matrix44 rot;
+
+		rot.makeTransformMatrix(getRotationAxisAngle(vec3_norm(rotAxis), angle), NiPoint3(0, 0, 0));
+
+		return rot.make43() * vec;
 	}
 
 	// Gets a rotation matrix from an axis and an angle
