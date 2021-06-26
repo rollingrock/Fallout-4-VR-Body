@@ -335,7 +335,7 @@ namespace F4VRBody
 	}
 
 	NiPoint3 Skeleton::getPosition() {
-		NiPoint3 curPos = (*g_playerCamera)->cameraNode->m_worldTransform.pos;
+		NiPoint3 curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
 		
 		float dist = vec3_len(curPos - _lastPos);
 
@@ -399,7 +399,7 @@ namespace F4VRBody
 	}
 
 	float Skeleton::getBodyPitch() {
-		float basePitch = 135.3;
+		float basePitch = 125.3;
 		float weight = 0.333;
 
 		float heightCalc = (c_playerHeight - _playerNodes->UprightHmdNode->m_localTransform.pos.z) / c_playerHeight;
@@ -416,26 +416,18 @@ namespace F4VRBody
 
 //		float y    = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
 	//	float x    = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
-		float x = _playerNodes->UprightHmdNode->m_worldTransform.rot.data[1][0];
-		float y = _playerNodes->UprightHmdNode->m_worldTransform.rot.data[1][1];
 		float z = _root->m_localTransform.pos.z;
 
 		float neckYaw   = getNeckYaw();
 		float neckPitch   = getNeckPitch();
 
-
-		_MESSAGE("");
-		_MESSAGE("%5f %5f", neckPitch, rads_to_degrees(neckPitch));
-		_MESSAGE("%5f %5f", x, y);
-		
 		Quaternion qa;
 		qa.setAngleAxis(-neckPitch, NiPoint3(-1, 0, 0));
 		 
 		mat = qa.getRot();
 		NiMatrix43 newRot = mat.multiply43Left(_playerNodes->HmdNode->m_localTransform.rot);
-		_MESSAGE("%5f %5f", newRot.data[1][0], newRot.data[1][1]);
 
-		_forwardDir = rotateXY(NiPoint3(newRot.data[1][0], newRot.data[1][1], 0), neckYaw);
+		_forwardDir = rotateXY(NiPoint3(newRot.data[1][0], newRot.data[1][1], 0), neckYaw * 0.7);
 		_sidewaysRDir = NiPoint3(_forwardDir.y, -_forwardDir.x, 0);
 
 		NiNode* body = _root->m_parent->GetAsNiNode();
@@ -444,16 +436,13 @@ namespace F4VRBody
 		body->m_worldTransform.pos.y = this->getPosition().y;
 
 		updateDown(_root, true);
-		NiNode::NiUpdateData ud;
-		ud.flags = 0x1;
 
 		NiPoint3 back = vec3_norm(NiPoint3(_forwardDir.x, _forwardDir.y, 0));
 		NiPoint3 bodydir = NiPoint3(0, 1, 0);
 
 		mat.rotateVectoVec(back, bodydir);
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
-		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
-		_root->m_localTransform.pos.y -= c_playerOffset;
+		_root->m_localTransform.pos = body->m_worldTransform.pos - getPosition();
 		_root->m_localTransform.pos.z = z;
 		_root->m_localTransform.scale = c_playerHeight / defaultCameraHeight;    // set scale based off specified user height
 
@@ -464,7 +453,13 @@ namespace F4VRBody
 		float neckPitch = getNeckPitch();
 		float bodyPitch = getBodyPitch();
 
-		NiNode* camera = _playerNodes->UprightHmdNode;
+		// save leg positions before moving COM node
+		_leftFootPos  = getNode("LLeg_Foot", _root)->m_worldTransform.pos;
+		_rightFootPos = getNode("RLeg_Foot", _root)->m_worldTransform.pos;
+		_leftKneePos  = getNode("LLeg_Calf", _root)->m_worldTransform.pos;
+		_rightKneePos = getNode("RLeg_Calf", _root)->m_worldTransform.pos;
+
+		NiNode* camera = (*g_playerCamera)->cameraNode;
 		NiNode* com = getNode("COM", _root);
 		NiNode* spine = getNode("SPINE1", _root);
 
@@ -478,11 +473,9 @@ namespace F4VRBody
 		NiPoint3 hmdtoNewHip = tmpHipPos - camera->m_worldTransform.pos;
 		NiPoint3 newHipPos = camera->m_worldTransform.pos + hmdtoNewHip * (_torsoLen / vec3_len(hmdtoNewHip));
 
-		//_MESSAGE("newHipPos    = %5f %5f %5f", newHipPos.x, newHipPos.y, newHipPos.z);
-		//_MESSAGE("com          = %5f %5f %5f", com->m_worldTransform.pos.x, com->m_worldTransform.pos.y, com->m_worldTransform.pos.z);
-		//_MESSAGE("new len      = %f", vec3_len(newHipPos - camera->m_worldTransform.pos));
-
-		com->m_localTransform.pos += _root->m_worldTransform.rot.Transpose() * ((newHipPos - com->m_worldTransform.pos) / _root->m_localTransform.scale);
+		NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * ((newHipPos - com->m_worldTransform.pos) / _root->m_localTransform.scale);
+		com->m_localTransform.pos.y += newPos.y - c_playerOffset;
+		com->m_localTransform.pos.z = newPos.z;
 
 		Matrix44 rot;
 		rot.rotateVectoVec(camera->m_worldTransform.pos - tmpHipPos, hmdToHip);
@@ -493,7 +486,42 @@ namespace F4VRBody
 	}
 
 	void Skeleton::setLegs() {
+		Matrix44 rotatedM;
 
+
+		NiNode* lHip =  getNode("LLeg_Thigh", _root);
+		NiNode* rHip =  getNode("RLeg_Thigh", _root);
+		NiNode* lKnee = getNode("LLeg_Calf", lHip);
+		NiNode* rKnee = getNode("RLeg_Calf", rHip);
+		NiNode* lFoot = getNode("LLeg_Foot", lHip);
+		NiNode* rFoot = getNode("RLeg_Foot", rHip);
+
+		_leftFootPos  = lFoot->m_worldTransform.pos;
+		_rightFootPos = rFoot->m_worldTransform.pos;
+
+		NiPoint3 pos = _leftKneePos - lHip->m_worldTransform.pos;
+		NiPoint3 uLocalDir = lHip->m_worldTransform.rot.Transpose() * vec3_norm(pos) / lHip->m_worldTransform.scale;
+		rotatedM.rotateVectoVec(uLocalDir, lKnee->m_localTransform.pos);
+		lHip->m_localTransform.rot = rotatedM.multiply43Left(lHip->m_localTransform.rot);
+
+		pos = _rightKneePos - rHip->m_worldTransform.pos;
+		uLocalDir = rHip->m_worldTransform.rot.Transpose() * vec3_norm(pos) / rHip->m_worldTransform.scale;
+		rotatedM.rotateVectoVec(uLocalDir, rKnee->m_localTransform.pos);
+		rHip->m_localTransform.rot = rotatedM.multiply43Left(rHip->m_localTransform.rot);
+
+		updateDown(lHip, true);
+		updateDown(rHip, true);
+
+		// now calves
+		pos = _leftFootPos - lKnee->m_worldTransform.pos;
+		uLocalDir = lKnee->m_worldTransform.rot.Transpose() * vec3_norm(pos) / lKnee->m_worldTransform.scale;
+		rotatedM.rotateVectoVec(uLocalDir, lFoot->m_localTransform.pos);
+		lKnee->m_localTransform.rot = rotatedM.multiply43Left(lKnee->m_localTransform.rot);
+
+		pos = _rightFootPos - rKnee->m_worldTransform.pos;
+		uLocalDir = rKnee->m_worldTransform.rot.Transpose() * vec3_norm(pos) / rKnee->m_worldTransform.scale;
+		rotatedM.rotateVectoVec(uLocalDir, rFoot->m_localTransform.pos);
+		rKnee->m_localTransform.rot = rotatedM.multiply43Left(rKnee->m_localTransform.rot);
 	}
 
 	void Skeleton::setBodyLen() {

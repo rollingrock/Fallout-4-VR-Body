@@ -104,8 +104,8 @@ namespace F4VRBody {
 		//playerSkelly->printNodes();
 
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
-		//NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
-		//playerSkelly->setupHead(headNode);
+		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
+		playerSkelly->setupHead(headNode);
 
 		//// set up the body underneath the headset in a proper scale and orientation
 		playerSkelly->setUnderHMD();
@@ -113,6 +113,8 @@ namespace F4VRBody {
 
 		// Now Set up body Posture and hook up the legs
 		playerSkelly->setBodyPosture();
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
+
 		playerSkelly->setLegs();
 
 		// Do another update before setting arms

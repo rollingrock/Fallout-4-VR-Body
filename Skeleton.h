@@ -196,7 +196,9 @@ namespace F4VRBody
 		ArmNodes rightArm;
 		ArmNodes leftArm;
 		NiPoint3 _leftFootPos;
-		NiPoint3 _RightFootPos;
+		NiPoint3 _rightFootPos;
+		NiPoint3 _leftKneePos;
+		NiPoint3 _rightKneePos;
 		float _curx;
 		float _cury;
 		std::map<std::string, NiTransform> savedStates;
