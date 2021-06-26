@@ -40,7 +40,9 @@ namespace F4VRBody {
 	}
 
 	bool setSkelly() {
+		_MESSAGE("1");
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
+		_MESSAGE("2");
 			playerSkelly = new Skeleton((BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
 			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
 			playerSkelly->setNodes();
@@ -53,6 +55,7 @@ namespace F4VRBody {
 			}
 
 			playerSkelly->setBodyLen();
+			_MESSAGE("initialized");
 			return true;
 		}
 		else {
@@ -74,8 +77,9 @@ namespace F4VRBody {
 		//}
 
 	//	localCounter++;
-		updateCounter++;
+//		updateCounter++;
 		//_MESSAGE("mainLoopCounter = %d; UpdateCounter = %d", g_mainLoopCounter, updateCounter);
+	//	_MESSAGE("start of update");
 
 		if (!isLoaded) {
 			return;
@@ -97,9 +101,13 @@ namespace F4VRBody {
 
 		// do stuff now
 
+		//_MESSAGE("start update");
+
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
 		playerSkelly->restoreLocals(playerSkelly->getRoot());
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);
+
+		//_MESSAGE("locals saved");
 
 		//playerSkelly->printNodes();
 
@@ -107,32 +115,45 @@ namespace F4VRBody {
 		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
 		playerSkelly->setupHead(headNode);
 
+	//	_MESSAGE("head setup");
+
 		//// set up the body underneath the headset in a proper scale and orientation
 		playerSkelly->setUnderHMD();
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
+		//_MESSAGE("body init");
 
 		// Now Set up body Posture and hook up the legs
 		playerSkelly->setBodyPosture();
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
+
+	//	_MESSAGE("posture");
 
 		playerSkelly->setLegs();
 
 		// Do another update before setting arms
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
+	//	_MESSAGE("legs");
 		// do arm IK - Right then Left
 		playerSkelly->setArms(false);
 		playerSkelly->setArms(true);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
+	//	_MESSAGE("arms");
 		// Misc stuff to show/hide things and also setup the wrist pipboy
 		playerSkelly->hideWeapon();
+	//	_MESSAGE("hide weapon");
 		playerSkelly->positionPipboy();
+//		_MESSAGE("pip boy position");
 		playerSkelly->fixMelee();
+//		_MESSAGE("melee");
 		playerSkelly->hideWands();
+	//	_MESSAGE("wands hidden");
 		playerSkelly->hideFistHelpers();
+	//	_MESSAGE("helpers hidden");
 
 		playerSkelly->operatePipBoy();
+	//	_MESSAGE("pip boy operated");
 
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 

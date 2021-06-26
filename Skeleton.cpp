@@ -680,6 +680,10 @@ namespace F4VRBody
 		NiAVObject* finger = getNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		NiAVObject* pipboy = getNode("PipboyRoot", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
+		if ((finger == nullptr) || (pipboy == nullptr)) {
+			return;
+		}
+
 		float distance = vec3_len(finger->m_worldTransform.pos - pipboy->m_worldTransform.pos);
 
 		if (distance > 10.0f) {
@@ -944,19 +948,19 @@ namespace F4VRBody
 
 		// The primary twist angle comes from the direction the wrist is pointing into the forearm
 		NiPoint3 handBack = handRot * NiPoint3(-1, 0, 0);
-		float twistAngle = asin((std::clamp)(handBack.z, -0.999f, 0.999f));
+		float twistAngle = asinf((std::clamp)(handBack.x, -0.999f, 0.999f));
 
 		// The second twist angle comes from a side vector pointing "outward" from the side of the wrist
-		NiPoint3 handSide = handRot * NiPoint3(0, negLeft, 0);
-		NiPoint3 handinSide = handSide * -1;
-		float twistAngle2 = asin((std::clamp)(handSide.z, -0.999f, 0.999f));
+		NiPoint3 handSide = handRot * NiPoint3(0, -1, 0);
+		NiPoint3 handinSide = handSide * negLeft;
+		float twistAngle2 = asinf((std::clamp)(handSide.x, -0.999f, 0.999f));
 
 		// Blend the two twist angles together, using the primary angle more when the wrist is pointing downward
 		//float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.25f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
 		float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.25f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
 		twistAngle = twistAngle + interpTwist * (twistAngle2 - twistAngle);
 		// Wonkiness is bad.  Interpolate twist angle towards zero to correct it when the angles are pointed a certain way.
-		float fixWonkiness1 = (std::clamp)(vec3_dot(handSide, vec3_norm(-sidewaysDir - forwardDir * 0.25f + NiPoint3(0, 0, -0.25))), 0.0f, 1.0f);
+		float fixWonkiness1 = (std::clamp)(vec3_dot(handSide, vec3_norm(-sidewaysDir - forwardDir * 0.25f + NiPoint3(-0.25, 0, 0))), 0.0f, 1.0f);
 		float fixWonkiness2 = 1.0f - (std::clamp)(vec3_dot(handBack, vec3_norm(forwardDir + sidewaysDir)), 0.0f, 1.0f);
 		twistAngle = twistAngle + fixWonkiness1 * fixWonkiness2 * (-PI / 2.0f - twistAngle);
 
@@ -979,7 +983,7 @@ namespace F4VRBody
 		// The arm lift limits how much the crossing amount can influence minimum elbow rotation
 		// The maximum rotation is also decreased as hands lift higher (elbows point further downward)
 		float armLiftLimitZ = _chest->m_worldTransform.pos.z * size;
-		float armLiftThreshold = 70.0f * size;
+		float armLiftThreshold = 60.0f * size;
 		float armLiftLimit = (std::clamp)((armLiftLimitZ + armLiftThreshold - handPos.z) / armLiftThreshold, 0.0f, 1.0f); // 1 at bottom, 0 at top
 		float upLimit = (std::clamp)((1.0f - armLiftLimit) * 1.4f, 0.0f, 1.0f); // 0 at bottom, 1 at a much lower top
 
@@ -988,7 +992,7 @@ namespace F4VRBody
 
 		// Get the minimum and maximum angles at which the elbow is allowed to twist
 		float twistMinAngle = degrees_to_rads(-85.0) + degrees_to_rads(50) * adjustMinAmount;
-		float twistMaxAngle = degrees_to_rads(55.0) - (std::max)(degrees_to_rads(90) * armCrossAmount, degrees_to_rads(80) * upLimit);
+		float twistMaxAngle = degrees_to_rads(55.0) - (std::max)(degrees_to_rads(90) * armCrossAmount, degrees_to_rads(70) * upLimit);
 
 		// Twist angle ranges from -PI/2 to +PI/2; map that range to go from the minimum to the maximum instead
 		float twistLimitAngle = twistMinAngle + ((twistAngle + PI / 2.0f) / PI) * (twistMaxAngle - twistMinAngle);
@@ -1056,16 +1060,16 @@ namespace F4VRBody
 		NiPoint3 upperSide = arm.upper->m_worldTransform.rot * NiPoint3(0, 1, 0);
 		NiPoint3 uloc = arm.shoulder->m_worldTransform.rot.Transpose() * upperSide;
 		uloc.x = 0;
-		float upperAngle = -1 * negLeft * acosf(vec3_dot(vec3_norm(uLocalTwist), vec3_norm(uloc)));
+		float upperAngle = acosf(vec3_dot(vec3_norm(uLocalTwist), vec3_norm(uloc))) * (uLocalTwist.z > 0 ? 1 : -1);
 
 		Matrix44 twist;
-		twist.setEulerAngles(upperAngle, 0, 0);
+		twist.setEulerAngles(-upperAngle, 0, 0);
 		arm.upper->m_localTransform.rot = twist.multiply43Left(arm.upper->m_localTransform.rot);    
 
 		rotatedM.makeTransformMatrix(arm.upper->m_localTransform.rot, arm.upper->m_localTransform.pos);
 		Uwr = rotatedM.multiply43Left(arm.shoulder->m_worldTransform.rot);
 
-		twist.setEulerAngles(upperAngle, 0, 0);
+		twist.setEulerAngles(-upperAngle, 0, 0);
 		arm.forearm1->m_localTransform.rot = twist.multiply43Left(arm.forearm1->m_localTransform.rot);    
 
 		// The forearm arm bone must be rotated from its forward vector to its elbow-to-hand vector in its local space
