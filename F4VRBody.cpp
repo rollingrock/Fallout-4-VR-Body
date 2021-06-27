@@ -19,7 +19,8 @@ namespace F4VRBody {
 	float c_playerHeight = 0.0;
 	bool  c_setScale = false;
 	float c_fVrScale = 70.0;
-	float c_playerOffset = 1.5;
+	float c_playerOffset_forward = -4.0;
+	float c_playerOffset_up = -2.0;
 	float c_pipboyDetectionRange = 15.0f;
 	float c_armLength = 36.74;
 
@@ -33,20 +34,19 @@ namespace F4VRBody {
 			return false;
 		}
 
-		c_playerHeight = ini.GetReal("Fallout4VRBody", "PlayerHeight", 120.4828f);
-		c_setScale     = ini.GetBoolean("Fallout4VRBody", "setScale", false);
-		c_fVrScale     = ini.GetReal("Fallout4VRBody", "fVrScale", 70.0);
-		c_playerOffset = ini.GetReal("Fallout4VRBody", "playerOffset", 1.5);
+		c_playerHeight =         ini.GetReal("Fallout4VRBody", "PlayerHeight", 120.4828f);
+		c_setScale     =         ini.GetBoolean("Fallout4VRBody", "setScale", false);
+		c_fVrScale     =         ini.GetReal("Fallout4VRBody", "fVrScale", 70.0);
+		c_playerOffset_forward = ini.GetReal("Fallout4VRBody", "playerOffset_forward", -4.0);
+		c_playerOffset_up =      ini.GetReal("Fallout4VRBody", "playerOffset_up", -2.0);
 		c_pipboyDetectionRange = ini.GetReal("Fallout4VRBody", "pipboyDetectionRange", 15.0);
-		c_armLength = ini.GetReal("FalloutVRBody", "armLength", 36.74);
+		c_armLength =            ini.GetReal("FalloutVRBody", "armLength", 36.74);
 
 		return true;
 	}
 
 	bool setSkelly() {
-		_MESSAGE("1");
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-		_MESSAGE("2");
 			playerSkelly = new Skeleton((BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
 			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
 			playerSkelly->setNodes();

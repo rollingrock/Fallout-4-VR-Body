@@ -463,22 +463,26 @@ namespace F4VRBody
 		NiNode* com = getNode("COM", _root);
 		NiNode* spine = getNode("SPINE1", _root);
 
-		NiPoint3 hmdToHip = camera->m_worldTransform.pos - com->m_worldTransform.pos;
+		float z_adjust = c_playerOffset_up + sinf(-neckPitch) * 3.5;
+		NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * c_playerOffset_forward / 2, -_forwardDir.y * c_playerOffset_forward / 2, z_adjust);
+		NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
+
+		NiPoint3 hmdToHip = neckPos - com->m_worldTransform.pos;
 		NiPoint3 dir = NiPoint3(-_forwardDir.x, -_forwardDir.y, 0);
 
 		float dist = tanf(bodyPitch) * vec3_len(hmdToHip);
 		NiPoint3 tmpHipPos = com->m_worldTransform.pos + dir * (dist / vec3_len(dir));
 		tmpHipPos.z = com->m_worldTransform.pos.z;
 
-		NiPoint3 hmdtoNewHip = tmpHipPos - camera->m_worldTransform.pos;
-		NiPoint3 newHipPos = camera->m_worldTransform.pos + hmdtoNewHip * (_torsoLen / vec3_len(hmdtoNewHip));
+		NiPoint3 hmdtoNewHip = tmpHipPos - neckPos;
+		NiPoint3 newHipPos = neckPos + hmdtoNewHip * (_torsoLen / vec3_len(hmdtoNewHip));
 
 		NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * ((newHipPos - com->m_worldTransform.pos) / _root->m_localTransform.scale);
-		com->m_localTransform.pos.y += newPos.y - c_playerOffset;
+		com->m_localTransform.pos.y += newPos.y + c_playerOffset_forward;
 		com->m_localTransform.pos.z = newPos.z;
 
 		Matrix44 rot;
-		rot.rotateVectoVec(camera->m_worldTransform.pos - tmpHipPos, hmdToHip);
+		rot.rotateVectoVec(neckPos - tmpHipPos, hmdToHip);
 		NiMatrix43 mat = rot.multiply43Left(spine->m_parent->m_worldTransform.rot.Transpose());
 		rot.makeTransformMatrix(mat, NiPoint3(0, 0, 0));
 		spine->m_localTransform.rot = rot.multiply43Right(spine->m_worldTransform.rot);
@@ -677,7 +681,12 @@ namespace F4VRBody
 
 	void Skeleton::operatePipBoy() {
 
-		NiAVObject* finger = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		NiAVObject* finger = getNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+
+		if (finger == nullptr) {
+			finger = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		}
+
 		NiAVObject* pipboy = getNode("PipboyRoot", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 		if ((finger == nullptr) || (pipboy == nullptr)) {
@@ -686,7 +695,7 @@ namespace F4VRBody
 
 		float distance = vec3_len(finger->m_worldTransform.pos - pipboy->m_worldTransform.pos);
 
-		if (distance > 10.0f) {
+		if (distance > c_pipboyDetectionRange) {
 			_pipTimer = 0;
 			_stickypip = false;
 			return;
@@ -702,7 +711,7 @@ namespace F4VRBody
 				}
 			}
 
-			if (_pipTimer < c_pipboyDetectionRange) {
+			if (_pipTimer < 10) {
 				_pipTimer++;
 			}
 			else {
@@ -882,7 +891,7 @@ namespace F4VRBody
 		}
 
 
-		double adjustedArmLength = 36.74 / c_armLength;
+		double adjustedArmLength = c_armLength / 36.74;
 
 		// Shoulder IK is done in a very simple way
 
@@ -948,21 +957,24 @@ namespace F4VRBody
 
 		// The primary twist angle comes from the direction the wrist is pointing into the forearm
 		NiPoint3 handBack = handRot * NiPoint3(-1, 0, 0);
-		float twistAngle = asinf((std::clamp)(handBack.x, -0.999f, 0.999f));
+		float twistAngle = asinf((std::clamp)(handBack.z, -0.999f, 0.999f));
 
 		// The second twist angle comes from a side vector pointing "outward" from the side of the wrist
 		NiPoint3 handSide = handRot * NiPoint3(0, -1, 0);
 		NiPoint3 handinSide = handSide * negLeft;
-		float twistAngle2 = asinf((std::clamp)(handSide.x, -0.999f, 0.999f));
-
+		float twistAngle2 = -1 * asinf((std::clamp)(handSide.z, -0.599f, 0.999f));
+		
 		// Blend the two twist angles together, using the primary angle more when the wrist is pointing downward
 		//float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.25f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
-		float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.25f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
+		float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.45f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
+//		_MESSAGE("%2f %2f %2f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), interpTwist);
 		twistAngle = twistAngle + interpTwist * (twistAngle2 - twistAngle);
 		// Wonkiness is bad.  Interpolate twist angle towards zero to correct it when the angles are pointed a certain way.
-		float fixWonkiness1 = (std::clamp)(vec3_dot(handSide, vec3_norm(-sidewaysDir - forwardDir * 0.25f + NiPoint3(-0.25, 0, 0))), 0.0f, 1.0f);
+	/*	float fixWonkiness1 = (std::clamp)(vec3_dot(handSide, vec3_norm(-sidewaysDir - forwardDir * 0.25f + NiPoint3(0, 0, -0.25))), 0.0f, 1.0f);
 		float fixWonkiness2 = 1.0f - (std::clamp)(vec3_dot(handBack, vec3_norm(forwardDir + sidewaysDir)), 0.0f, 1.0f);
-		twistAngle = twistAngle + fixWonkiness1 * fixWonkiness2 * (-PI / 2.0f - twistAngle);
+		twistAngle = twistAngle + fixWonkiness1 * fixWonkiness2 * (-PI / 2.0f - twistAngle);*/
+
+//		_MESSAGE("final angle %2f", rads_to_degrees(twistAngle));
 
 		// Smooth out sudden changes in the twist angle over time to reduce elbow shake
 		static std::array<float, 2> prevAngle = { 0, 0 };

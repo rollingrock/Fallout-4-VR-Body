@@ -7,7 +7,8 @@ extern uint64_t g_mainLoopCounter;
 namespace F4VRBody {
 
 	extern float c_playerHeight;
-	extern float c_playerOffset;
+	extern float c_playerOffset_forward;
+	extern float c_playerOffset_up;
 	extern float c_pipboyDetectionRange;
 	extern float c_armLength;
 
