@@ -20,6 +20,8 @@ namespace F4VRBody {
 	bool  c_setScale = false;
 	float c_fVrScale = 70.0;
 	float c_playerOffset = 1.5;
+	float c_pipboyDetectionRange = 15.0f;
+	float c_armLength = 36.74;
 
 	
 
@@ -35,6 +37,8 @@ namespace F4VRBody {
 		c_setScale     = ini.GetBoolean("Fallout4VRBody", "setScale", false);
 		c_fVrScale     = ini.GetReal("Fallout4VRBody", "fVrScale", 70.0);
 		c_playerOffset = ini.GetReal("Fallout4VRBody", "playerOffset", 1.5);
+		c_pipboyDetectionRange = ini.GetReal("Fallout4VRBody", "pipboyDetectionRange", 15.0);
+		c_armLength = ini.GetReal("FalloutVRBody", "armLength", 36.74);
 
 		return true;
 	}

@@ -651,9 +651,9 @@ namespace F4VRBody
 					NiAVObject* wNode = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 					Matrix44 rot;
-					rot.setEulerAngles(1, degrees_to_rads(-90), 1);
-
+					rot.setEulerAngles(degrees_to_rads(85.0f), degrees_to_rads(-70.0f), degrees_to_rads(0.0f));
 					wNode->m_localTransform.rot = rot.multiply43Right(wNode->m_localTransform.rot);
+					wNode->m_localTransform.pos.z += 1.5f;
 
 					updateDown(wNode->GetAsNiNode(), true);
 
@@ -677,7 +677,7 @@ namespace F4VRBody
 
 	void Skeleton::operatePipBoy() {
 
-		NiAVObject* finger = getNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		NiAVObject* finger = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		NiAVObject* pipboy = getNode("PipboyRoot", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 		if ((finger == nullptr) || (pipboy == nullptr)) {
@@ -702,7 +702,7 @@ namespace F4VRBody
 				}
 			}
 
-			if (_pipTimer < 10) {
+			if (_pipTimer < c_pipboyDetectionRange) {
 				_pipTimer++;
 			}
 			else {
@@ -882,12 +882,12 @@ namespace F4VRBody
 		}
 
 
-		double adjustedArmLength = 1.0f;
+		double adjustedArmLength = 36.74 / c_armLength;
 
 		// Shoulder IK is done in a very simple way
 
 		NiPoint3 shoulderToHand = handPos - arm.upper->m_worldTransform.pos;
-		float armLength = 36.74;
+		float armLength = c_armLength;
 		float adjustAmount = (std::clamp)(vec3_len(shoulderToHand) - armLength * 0.5f, 0.0f, armLength * 0.75f) / (armLength * 0.75f);
 		NiPoint3 shoulderOffset = vec3_norm(shoulderToHand) * (adjustAmount * armLength * 0.225f);
 
