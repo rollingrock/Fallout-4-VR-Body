@@ -65,10 +65,10 @@
     <ClInclude Include="api\VRManagerAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\INIReader.h">
+    <ClInclude Include="Quaternion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Quaternion.h">
+    <ClInclude Include="include\SimpleIni.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

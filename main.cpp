@@ -14,6 +14,7 @@
 #include "F4VRBody.h"
 
 static PluginHandle g_pluginHandle = kPluginHandle_Invalid;
+static F4SEPapyrusInterface* g_papyrus = NULL;
 
 void* g_moduleHandle = nullptr;
 
@@ -98,24 +99,17 @@ extern "C" {
 			return false;
 		}
 
-
-		//if (!g_localTrampoline.Create(1024 * 64, g_moduleHandle))
-		//{
-		//	_ERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
-		//	return false;
-		//}
-
-		//if (config::LoadConfig(R"(.\Data\F4SE\plugins\F4VRBody.ini)"))
-		//{
-		//	_MESSAGE("loaded config successfully");
-		//}
-		//else
-		//{
-		//	_MESSAGE("config load failed, using default config");
-		//}
-
 		if (!F4VRBody::loadConfig()) {
 			_ERROR("could not open ini config file");
+			return false;
+		}
+
+		g_papyrus = (F4SEPapyrusInterface*)a_f4se->QueryInterface(kInterface_Papyrus);
+
+		_MESSAGE("register papyrus funcs");
+
+		if (!g_papyrus->Register(F4VRBody::RegisterFuncs)) {
+			_MESSAGE("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
 			return false;
 		}
 

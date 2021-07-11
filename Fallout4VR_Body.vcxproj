@@ -181,7 +181,7 @@
     <ClInclude Include="api\VRManagerAPI.h" />
     <ClInclude Include="F4VRBody.h" />
     <ClInclude Include="hook.h" />
-    <ClInclude Include="include\INIReader.h" />
+    <ClInclude Include="include\SimpleIni.h" />
     <ClInclude Include="include\version.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="openvr\openvr.h" />

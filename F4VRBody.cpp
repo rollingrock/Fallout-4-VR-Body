@@ -1,6 +1,9 @@
 #include "F4VRBody.h"
 #include "Skeleton.h"
+
 #include "f4se/GameSettings.h"
+#include "f4se/GameMenus.h"
+
 
 #define PI 3.14159265358979323846
 
@@ -27,20 +30,23 @@ namespace F4VRBody {
 	
 
 	bool loadConfig() {
-		INIReader ini(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
+		//INIReader ini(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
 
-		if (ini.ParseError() < 0) {
+		CSimpleIniA ini;
+		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
+
+		if (rc < 0) {
 			_MESSAGE("ERROR: cannot read Fallout4VR_Body.ini");
 			return false;
 		}
 
-		c_playerHeight =         ini.GetReal("Fallout4VRBody", "PlayerHeight", 120.4828f);
-		c_setScale     =         ini.GetBoolean("Fallout4VRBody", "setScale", false);
-		c_fVrScale     =         ini.GetReal("Fallout4VRBody", "fVrScale", 70.0);
-		c_playerOffset_forward = ini.GetReal("Fallout4VRBody", "playerOffset_forward", -4.0);
-		c_playerOffset_up =      ini.GetReal("Fallout4VRBody", "playerOffset_up", -2.0);
-		c_pipboyDetectionRange = ini.GetReal("Fallout4VRBody", "pipboyDetectionRange", 15.0);
-		c_armLength =            ini.GetReal("FalloutVRBody", "armLength", 36.74);
+		c_playerHeight =         (float) ini.GetDoubleValue("Fallout4VRBody", "PlayerHeight", 120.4828f);
+		c_setScale     =         ini.GetBoolValue("Fallout4VRBody", "setScale", false);
+		c_fVrScale     =         (float) ini.GetDoubleValue("Fallout4VRBody", "fVrScale", 70.0);
+		c_playerOffset_forward = (float) ini.GetDoubleValue("Fallout4VRBody", "playerOffset_forward", -4.0);
+		c_playerOffset_up =      (float) ini.GetDoubleValue("Fallout4VRBody", "playerOffset_up", -2.0);
+		c_pipboyDetectionRange = (float) ini.GetDoubleValue("Fallout4VRBody", "pipboyDetectionRange", 15.0);
+		c_armLength =            (float) ini.GetDoubleValue("FalloutVRBody", "armLength", 36.74);
 
 		return true;
 	}
@@ -104,6 +110,10 @@ namespace F4VRBody {
 		}
 
 		// do stuff now
+
+		//NiPoint3 pos;
+		//(*g_player)->actorState.Unk_03(pos);
+		//_MESSAGE("pos = %5f %5f %5f", pos.x, pos.y, pos.z);
 
 		//_MESSAGE("start update");
 
@@ -175,4 +185,136 @@ namespace F4VRBody {
 		isLoaded = true;
 		return;
 	}
+
+	// Papyrus Native Funcs
+
+	void saveStates(StaticFunctionTag* base) {
+		CSimpleIniA ini;
+		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
+
+		rc = ini.SetDoubleValue("Fallout4VRBody", "PlayerHeight", (double)c_playerHeight);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "fVrScale", (double)c_fVrScale);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "playerOffset_forward", (double)c_playerOffset_forward);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "playerOffset_up", (double)c_playerOffset_up);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "armLength", (double)c_armLength);
+
+		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
+
+		if (rc < 0) {
+			_MESSAGE("Failed to write out INI config file");
+		}
+		else {
+			_MESSAGE("successfully wrote config file");
+		}
+
+	}
+
+	void calibrate(StaticFunctionTag* base) {
+
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		Sleep(2000);
+		PlayerNodes* pn = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
+
+		c_playerHeight = pn->UprightHmdNode->m_localTransform.pos.z;
+		c_armLength = (vec3_len(pn->primaryWandNode->m_worldTransform.pos - pn->SecondaryWandNode->m_worldTransform.pos) / 2) - 20.0f;
+
+		_MESSAGE("Calibrated Height: %f  Calibrated arm length: %f", c_playerHeight, c_armLength);
+	}
+
+	void makeTaller(StaticFunctionTag* base){ 
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_playerHeight += 2.0f;
+	}
+
+	void makeShorter(StaticFunctionTag* base){ 
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_playerHeight -= 2.0f;
+	}
+
+	void moveUp(StaticFunctionTag* base){ 
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_playerOffset_up += 1.0f;
+	}
+
+	void moveDown(StaticFunctionTag* base){ 
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_playerOffset_up -= 1.0f;
+	}
+
+	void moveForward(StaticFunctionTag* base){ 
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_playerOffset_forward += 1.0f;
+	}
+
+	void moveBackward(StaticFunctionTag* base){ 
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_playerOffset_forward -= 1.0f;
+	}
+
+	void increaseScale(StaticFunctionTag* base){ 
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_fVrScale += 1.0f;
+		Setting* set = GetINISetting("fVrScale:VR");
+		set->SetDouble(c_fVrScale);
+	}
+
+	void decreaseScale(StaticFunctionTag* base){ 
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_fVrScale -= 1.0f;
+		Setting* set = GetINISetting("fVrScale:VR");
+		set->SetDouble(c_fVrScale);
+	}
+
+	bool RegisterFuncs(VirtualMachine* vm) {
+
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("saveStates", "FRIK:FRIK", F4VRBody::saveStates, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Calibrate", "FRIK:FRIK", F4VRBody::calibrate, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeTaller", "FRIK:FRIK", F4VRBody::makeTaller, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeShorter", "FRIK:FRIK", F4VRBody::makeShorter, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveUp", "FRIK:FRIK", F4VRBody::moveUp, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveDown", "FRIK:FRIK", F4VRBody::moveDown, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveForward", "FRIK:FRIK", F4VRBody::moveForward, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", F4VRBody::moveBackward, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("increaseScale", "FRIK:FRIK", F4VRBody::increaseScale, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("decreaseScale", "FRIK:FRIK", F4VRBody::decreaseScale, vm));
+
+		return true;
+	}
+
 }

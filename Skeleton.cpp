@@ -224,8 +224,7 @@ namespace F4VRBody
 		headNode->m_localTransform.rot.data[2][0] = -0.058;
 		headNode->m_localTransform.rot.data[2][1] = -0.037;
 		headNode->m_localTransform.rot.data[2][2] =  0.998;
-		headNode->m_localTransform.pos.y = -20.0;
-		headNode->m_localTransform.pos.x = 20.0;
+		headNode->m_localTransform.pos.y = -4.0;
 
 		NiAVObject::NiUpdateData* ud = nullptr;
 
@@ -463,7 +462,7 @@ namespace F4VRBody
 		NiNode* com = getNode("COM", _root);
 		NiNode* spine = getNode("SPINE1", _root);
 
-		float z_adjust = c_playerOffset_up + sinf(-neckPitch) * 3.5;
+		float z_adjust = c_playerOffset_up + sinf(-neckPitch) * 4.5;
 		NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * c_playerOffset_forward / 2, -_forwardDir.y * c_playerOffset_forward / 2, z_adjust);
 		NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
 
