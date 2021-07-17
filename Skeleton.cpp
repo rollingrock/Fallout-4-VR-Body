@@ -11,6 +11,9 @@ namespace F4VRBody
 
 	float defaultCameraHeight = 120.4828;
 
+	UInt32 KeywordPowerArmor = 0x4D8A1;
+	UInt32 KeywordPowerArmorFrame = 0x15503F;
+
 	void printMatrix(Matrix44* mat) {
 		_MESSAGE("Dump matrix:");
 		std::string row = "";
@@ -36,10 +39,13 @@ namespace F4VRBody
 
 	void Skeleton::printChildren(NiNode* child, std::string padding) {
 		padding += "....";
-		_MESSAGE("%s%s : children = %d : local x = %f : world x = %f : local y = %f : world y = %f : local z = %f : world z = %f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart,
-			child->m_localTransform.pos.x, child->m_worldTransform.pos.x,
-			child->m_localTransform.pos.y, child->m_worldTransform.pos.y,
-			child->m_localTransform.pos.z, child->m_worldTransform.pos.z);
+		_MESSAGE("%s%s : children = %d : %2f %2f %2f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart,
+			child->m_worldTransform.pos.x,
+			child->m_worldTransform.pos.y,
+			child->m_worldTransform.pos.z);
+
+		//_MESSAGE("%s%s : children = %d : worldbound %f %f %f %f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart,
+		//	child->m_worldBound.m_kCenter.x, child->m_worldBound.m_kCenter.y, child->m_worldBound.m_kCenter.z, child->m_worldBound.m_fRadius);
 
 		if (child->GetAsNiNode())
 		{
@@ -56,10 +62,8 @@ namespace F4VRBody
 
 	void Skeleton::printNodes(NiNode* nde) {
 		// print root node info first
-		_MESSAGE("%s : children = %d : local x = %f : world x = %f : local y = %f : world y = %f : local z = %f : world z = %f", nde->m_name.c_str(), nde->m_children.m_emptyRunStart,
-			nde->m_localTransform.pos.x, nde->m_worldTransform.pos.x,
-			nde->m_localTransform.pos.y, nde->m_worldTransform.pos.y,
-			nde->m_localTransform.pos.z, nde->m_worldTransform.pos.z);
+		_MESSAGE("%s : children = %d : worldbound %f %f %f %f", nde->m_name.c_str(), nde->m_children.m_emptyRunStart,
+			nde->m_worldBound.m_kCenter.x, nde->m_worldBound.m_kCenter.y, nde->m_worldBound.m_kCenter.z, nde->m_worldBound.m_fRadius);
 
 		std::string padding = "";
 
@@ -276,9 +280,6 @@ namespace F4VRBody
 		_rightHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		_leftHand  = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
-		_wandRight = getNode("fist_M_Right", _playerNodes->primaryWandNode);
-		_wandLeft = getNode("LeftHand", _playerNodes->SecondaryWandNode);
-
 		_wandRight = (NiNode*)_playerNodes->primaryWandNode->m_children.m_data[8];
 		_wandLeft  = (NiNode*)_playerNodes->SecondaryWandNode->m_children.m_data[5];
 
@@ -398,10 +399,12 @@ namespace F4VRBody
 	}
 
 	float Skeleton::getBodyPitch() {
-		float basePitch = 125.3;
-		float weight = 0.333;
+		float basePitch = 115.3;
+		float weight = 0.2;
 
-		float heightCalc = (c_playerHeight - _playerNodes->UprightHmdNode->m_localTransform.pos.z) / c_playerHeight;
+		float offset = inPowerArmor ? (10.0f + c_cameraHeight) : c_cameraHeight;
+		float curHeight = c_playerHeight + offset;
+		float heightCalc = abs((curHeight - _playerNodes->UprightHmdNode->m_localTransform.pos.z) / curHeight);
 
 		float angle = heightCalc * (basePitch + weight * rads_to_degrees(getNeckPitch()));
 
@@ -409,8 +412,12 @@ namespace F4VRBody
 	}
 
 	void Skeleton::setUnderHMD() {
-		Matrix44 mat;
 
+		detectInPowerArmor();
+
+		_playerNodes->playerworldnode->m_localTransform.pos.z = inPowerArmor ? (10.0f + c_cameraHeight) : c_cameraHeight;
+
+		Matrix44 mat;
 		mat = 0.0;
 
 //		float y    = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
@@ -443,7 +450,7 @@ namespace F4VRBody
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
 		_root->m_localTransform.pos = body->m_worldTransform.pos - getPosition();
 		_root->m_localTransform.pos.z = z;
-		_root->m_localTransform.scale = c_playerHeight / defaultCameraHeight;    // set scale based off specified user height
+		_root->m_localTransform.scale = c_playerHeight / (inPowerArmor ? (defaultCameraHeight + 10.0f) : defaultCameraHeight);    // set scale based off specified user height
 
 		body->m_worldBound.m_kCenter = this->getPosition();
 	}
@@ -451,6 +458,7 @@ namespace F4VRBody
 	void Skeleton::setBodyPosture() {
 		float neckPitch = getNeckPitch();
 		float bodyPitch = getBodyPitch();
+
 
 		// save leg positions before moving COM node
 		_leftFootPos  = getNode("LLeg_Foot", _root)->m_worldTransform.pos;
@@ -461,6 +469,8 @@ namespace F4VRBody
 		NiNode* camera = (*g_playerCamera)->cameraNode;
 		NiNode* com = getNode("COM", _root);
 		NiNode* spine = getNode("SPINE1", _root);
+
+		float comZ = com->m_localTransform.pos.z;
 
 		float z_adjust = c_playerOffset_up + sinf(-neckPitch) * 4.5;
 		NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * c_playerOffset_forward / 2, -_forwardDir.y * c_playerOffset_forward / 2, z_adjust);
@@ -479,6 +489,7 @@ namespace F4VRBody
 		NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * ((newHipPos - com->m_worldTransform.pos) / _root->m_localTransform.scale);
 		com->m_localTransform.pos.y += newPos.y + c_playerOffset_forward;
 		com->m_localTransform.pos.z = newPos.z;
+		com->m_localTransform.pos.z -= inPowerArmor ? 15.0f : 0.0f;
 
 		Matrix44 rot;
 		rot.rotateVectoVec(neckPos - tmpHipPos, hmdToHip);
@@ -486,6 +497,19 @@ namespace F4VRBody
 		rot.makeTransformMatrix(mat, NiPoint3(0, 0, 0));
 		spine->m_localTransform.rot = rot.multiply43Right(spine->m_worldTransform.rot);
 		
+	}
+
+	void Skeleton::fixArmor() {
+		NiNode* lPauldron = getNode("L_Pauldron", _root);
+		NiNode* rPauldron = getNode("R_Pauldron", _root);
+		float delta  = getNode("LArm_Collarbone", _root)->m_worldTransform.pos.z - _root->m_worldTransform.pos.z;
+
+		if (lPauldron) {
+			lPauldron->m_localTransform.pos.z = delta - 15.0f;
+		}
+		if (rPauldron) {
+			rPauldron->m_localTransform.pos.z = delta - 15.0f;
+		}
 	}
 
 	void Skeleton::setLegs() {
@@ -564,7 +588,7 @@ namespace F4VRBody
 
 		_pipboyStatus = false;
 		_pipTimer = 0;
-	    turnPipBoyOff();
+//	    turnPipBoyOff();
 		
 		//BSFixedString wandPipName("PipboyParent");
 		//NiAVObject* wandPip = _playerNodes->SecondaryWandNode->GetObjectByName(&wandPipName);
@@ -578,9 +602,17 @@ namespace F4VRBody
 	void Skeleton::positionPipboy() {
 		static BSFixedString wandPipName("PipboyRoot_NIF_ONLY");
 		NiAVObject* wandPip = _playerNodes->SecondaryWandNode->GetObjectByName(&wandPipName);
+
+		if (wandPip == nullptr) {
+			return;
+		}
 		
 		static BSFixedString nodeName("PipboyBone");
 		NiAVObject* pipboyBone = leftArm.forearm3->GetObjectByName(&nodeName);
+
+		if (pipboyBone == nullptr) {
+			return;
+		}
 
 		NiPoint3 locpos = NiPoint3(0, 0, 0);
 
@@ -667,15 +699,94 @@ namespace F4VRBody
 		}
 	}
 
+
+		// Thanks Shizof and SmoothtMovementVR for below code
+	bool HasKeyword(TESObjectARMO* armor, UInt32 keywordFormId)
+	{
+		if (armor)
+		{
+			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++)
+			{
+				if (armor->keywordForm.keywords[i])
+				{
+					if (armor->keywordForm.keywords[i]->formID == keywordFormId)
+					{
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	void Skeleton::detectInPowerArmor() {
+
+		// Thanks Shizof and SmoothtMovementVR for below code
+		if ((*g_player)->equipData) {
+			if ((*g_player)->equipData->slots[0x03].item != nullptr)
+			{
+				TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item;
+				if (equippedForm)
+				{
+					if (equippedForm->formType == TESObjectARMO::kTypeID)
+					{
+						TESObjectARMO* armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO);
+
+						if (armor)
+						{
+							if (HasKeyword(armor, KeywordPowerArmor) || HasKeyword(armor, KeywordPowerArmorFrame))
+							{
+								inPowerArmor = true;
+							}
+							else
+							{
+								inPowerArmor = false;
+							}
+						}
+					}
+				}
+			}
+		}
+
+	}
+
+	void Skeleton::hideWands() {
+		_wandRight = (NiNode*)_playerNodes->primaryWandNode->m_children.m_data[8];
+		_wandLeft  = (NiNode*)_playerNodes->SecondaryWandNode->m_children.m_data[5];
+		_wandRight->flags |= 0x1;
+		_wandLeft->flags |= 0x1;
+	}
+
 	void Skeleton::hideFistHelpers() {
 		NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->primaryWandNode);
-		node->flags |= 0x1;   // first bit sets the cull flag so it will be hidden;
+		if (node != nullptr) {
+			node->flags |= 0x1;   // first bit sets the cull flag so it will be hidden;
+		}
 
 		node = getNode("fist_F_Right_HELPER", _playerNodes->primaryWandNode);
-		node->flags |= 0x1;
+		if (node != nullptr) {
+			node->flags |= 0x1;
+		}
 
 		node = getNode("PA_fist_R_HELPER", _playerNodes->primaryWandNode);
-		node->flags |= 0x1;
+		if (node != nullptr) {
+			node->flags |= 0x1;
+		}
+
+		node = getNode("fist_M_Left_HELPER", _playerNodes->SecondaryWandNode);
+		if (node != nullptr) {
+			node->flags |= 0x1;   // first bit sets the cull flag so it will be hidden;
+		}
+
+		node = getNode("fist_F_Left_HELPER", _playerNodes->SecondaryWandNode);
+		if (node != nullptr) {
+			node->flags |= 0x1;
+		}
+
+		node = getNode("PA_fist_L_HELPER", _playerNodes->SecondaryWandNode);
+		if (node != nullptr) {
+			node->flags |= 0x1;
+		}
 	}
 
 	void Skeleton::operatePipBoy() {
@@ -735,6 +846,15 @@ namespace F4VRBody
 		NiNode** op = &offsetNode;
 
 		update1stPersonArm(*g_player, wp, op);
+	}
+
+	void Skeleton::showHidePAHUD() {
+		NiNode* hud = getNode("PowerArmorHelmetRoot", _playerNodes->roomnode);
+
+		if (hud) {
+			hud->m_localTransform.scale = c_showPAHUD ? 1.0 : 0.0;
+			return;
+		}
 	}
 
 	void Skeleton::setArms_wp(bool isLeft) {

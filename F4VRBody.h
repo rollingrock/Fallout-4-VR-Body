@@ -14,6 +14,8 @@ namespace F4VRBody {
 	extern float c_playerOffset_up;
 	extern float c_pipboyDetectionRange;
 	extern float c_armLength;
+	extern float c_cameraHeight;
+	extern bool  c_showPAHUD;
 
 	bool loadConfig();
 

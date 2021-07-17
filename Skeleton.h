@@ -2,6 +2,7 @@
 #include "f4se/GameReferences.h"
 #include "f4se/GameObjects.h"
 #include "f4se/GameCamera.h"
+#include "f4se/GameRTTI.h"
 #include "f4se/NiNodes.h"
 
 #include <algorithm>
@@ -148,11 +149,10 @@ namespace F4VRBody
 		void setArms_wp(bool isLeft);
 		NiPoint3 getPosition();
 		void makeArmsT(bool);
+		void fixArmor();
+		void showHidePAHUD();
 
-		void hideWands() {
-			_wandRight->flags |= 0x1;
-			_wandLeft->flags |= 0x1;
-		};
+		void hideWands();
 		void hideWeapon();
 		void swapPipboy();
 		void positionPipboy();
@@ -170,6 +170,7 @@ namespace F4VRBody
 		ArmNodes getArm(bool isLeft);
 		void set1stPersonArm(NiNode* weapon, NiNode* offsetNode);
 		void setBodyLen();
+		void detectInPowerArmor();
 
 		// Body Positioning
 		float getNeckYaw();
@@ -207,5 +208,7 @@ namespace F4VRBody
 		bool _pipboyStatus;
 		int _pipTimer;
 		bool _stickypip;
+
+		bool inPowerArmor;
 	};
 }

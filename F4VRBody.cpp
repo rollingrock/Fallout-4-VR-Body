@@ -26,6 +26,8 @@ namespace F4VRBody {
 	float c_playerOffset_up = -2.0;
 	float c_pipboyDetectionRange = 15.0f;
 	float c_armLength = 36.74;
+	float c_cameraHeight = 0.0;
+	bool  c_showPAHUD = false;
 
 	
 
@@ -47,6 +49,8 @@ namespace F4VRBody {
 		c_playerOffset_up =      (float) ini.GetDoubleValue("Fallout4VRBody", "playerOffset_up", -2.0);
 		c_pipboyDetectionRange = (float) ini.GetDoubleValue("Fallout4VRBody", "pipboyDetectionRange", 15.0);
 		c_armLength =            (float) ini.GetDoubleValue("FalloutVRBody", "armLength", 36.74);
+		c_cameraHeight =         (float)ini.GetDoubleValue("FalloutVRBody", "cameraHeightOffset", 0.0);
+		c_showPAHUD =            ini.GetBoolValue("FalloutVRBody", "showPAHUD", false);
 
 		return true;
 	}
@@ -111,6 +115,7 @@ namespace F4VRBody {
 
 		// do stuff now
 
+		playerSkelly->hideWands();
 		//NiPoint3 pos;
 		//(*g_player)->actorState.Unk_03(pos);
 		//_MESSAGE("pos = %5f %5f %5f", pos.x, pos.y, pos.z);
@@ -153,30 +158,20 @@ namespace F4VRBody {
 		playerSkelly->setArms(true);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
-	//	_MESSAGE("arms");
 		// Misc stuff to show/hide things and also setup the wrist pipboy
 		playerSkelly->hideWeapon();
-	//	_MESSAGE("hide weapon");
 		playerSkelly->positionPipboy();
-//		_MESSAGE("pip boy position");
 		playerSkelly->fixMelee();
-//		_MESSAGE("melee");
-		playerSkelly->hideWands();
-	//	_MESSAGE("wands hidden");
 		playerSkelly->hideFistHelpers();
-	//	_MESSAGE("helpers hidden");
+		playerSkelly->showHidePAHUD();
 
 		playerSkelly->operatePipBoy();
-	//	_MESSAGE("pip boy operated");
 
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
-
-
-
+		playerSkelly->fixArmor();
 
 		// project body out in front of the camera for debug purposes
-		//playerSkelly->projectSkelly(120.0f);
-		//playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
+	//	playerSkelly->projectSkelly(120.0f);
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 	}
 
 
@@ -197,6 +192,8 @@ namespace F4VRBody {
 		rc = ini.SetDoubleValue("Fallout4VRBody", "playerOffset_forward", (double)c_playerOffset_forward);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "playerOffset_up", (double)c_playerOffset_up);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "armLength", (double)c_armLength);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "cameraHeightOffset", (double)c_cameraHeight);
+		rc = ini.SetBoolValue("FalloutVRBody", "showPAHUD", c_showPAHUD);
 
 		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
 
@@ -220,9 +217,36 @@ namespace F4VRBody {
 		PlayerNodes* pn = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
 
 		c_playerHeight = pn->UprightHmdNode->m_localTransform.pos.z;
-		c_armLength = (vec3_len(pn->primaryWandNode->m_worldTransform.pos - pn->SecondaryWandNode->m_worldTransform.pos) / 2) - 20.0f;
+	//	c_armLength = (vec3_len(pn->primaryWandNode->m_worldTransform.pos - pn->SecondaryWandNode->m_worldTransform.pos) / 2) - 20.0f;
 
-		_MESSAGE("Calibrated Height: %f  Calibrated arm length: %f", c_playerHeight, c_armLength);
+		_MESSAGE("Calibrated Height: %f  arm length: %f", c_playerHeight, c_armLength);
+	}
+
+	void togglePAHUD(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_showPAHUD = !c_showPAHUD;
+	}
+
+	void moveCameraUp(StaticFunctionTag* base){ 
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_cameraHeight += 2.0f;
+	}
+
+	void moveCameraDown(StaticFunctionTag* base){ 
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_cameraHeight -= 2.0f;
 	}
 
 	void makeTaller(StaticFunctionTag* base){ 
@@ -305,6 +329,9 @@ namespace F4VRBody {
 
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("saveStates", "FRIK:FRIK", F4VRBody::saveStates, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Calibrate", "FRIK:FRIK", F4VRBody::calibrate, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePAHud", "FRIK:FRIK", F4VRBody::togglePAHUD, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraUp", "FRIK:FRIK", F4VRBody::moveCameraUp, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraDown", "FRIK:FRIK", F4VRBody::moveCameraDown, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeTaller", "FRIK:FRIK", F4VRBody::makeTaller, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeShorter", "FRIK:FRIK", F4VRBody::makeShorter, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveUp", "FRIK:FRIK", F4VRBody::moveUp, vm));

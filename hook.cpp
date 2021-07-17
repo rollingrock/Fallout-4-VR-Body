@@ -15,6 +15,8 @@ RelocAddr<uintptr_t> hookPlayerUpdate(0xf1004c);
 
 RelocAddr<uintptr_t> hookBoneTreeUpdate(0xd84ee4);
 
+RelocAddr<uintptr_t> hookEndUpdate(0xd84f2c);
+
 
 typedef void(*_hookedFunc)(uint64_t param1, uint64_t param2, uint64_t param3);
 RelocAddr<_hookedFunc> hookedFunc(0x1C18620);
@@ -25,10 +27,30 @@ RelocAddr<_hookedMainLoop> hookedMainLoop(0xd83ac0);
 typedef void(*_hookedf10ed0)(uint64_t pc);
 RelocAddr<_hookedf10ed0> hookedf10ed0(0xf10ed0);
 
+typedef void(*_hookedda09a0)(uint64_t parm);
+RelocAddr<_hookedda09a0> hookedda09a0(0xda09a0);
 
-void hookIt() {
+typedef void(*_hooked1c22fb0)(uint64_t a, uint64_t b);
+RelocAddr<_hooked1c22fb0> hooked1c22fb0(0x1c22fb0);
+
+void hookIt(uint64_t rcx) {
+	uint64_t parm = rcx;
 	F4VRBody::update();
-	hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.   
+	//hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.   
+
+	// so all of this below is an attempt to bypass the functionality in game around my hook at resets the root parent node's world pos which screws up armor
+	// we still need to call the fucntion i hooked below to get some things ready for the renderer however starting with the named "Root" node instead of it's parent preseves locations
+	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
+		uint64_t arr[5] = { 0, 0, 0, 0, 0 };
+		uint64_t body = (uint64_t)&(*(*g_player)->unkF0->rootNode->m_children.m_data[0]);
+		arr[1] = body + 0x180;
+		arr[2] = 0x800;
+		arr[3] = 2;
+		arr[4] = 0x3c0c1400;
+		hooked1c22fb0(body, (uint64_t)&arr);
+	}
+
+	hookedda09a0(parm);
 	return;
 }
 
@@ -51,7 +73,7 @@ void hookMain() {
 
 //	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&F4VRBody::update);
 
-	g_branchTrampoline.Write5Call(hookBoneTreeUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
+	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
 
 	_MESSAGE("hooking main loop function");
 //	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);
