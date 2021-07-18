@@ -17,6 +17,33 @@ namespace F4VRBody {
 	extern float c_cameraHeight;
 	extern bool  c_showPAHUD;
 
+	class BoneSphere {
+	public:
+		BoneSphere() {
+			radius = 0;
+			bone = nullptr;
+			sticky = false;
+			offset.x = 0;
+			offset.y = 0;
+			offset.z = 0;
+		}
+
+		BoneSphere(float a_radius, NiNode* a_bone, NiPoint3 a_offset) : radius(a_radius), bone(a_bone), offset(a_offset) { 
+			sticky = false; 
+		}
+
+		float radius;
+		NiNode* bone;
+		NiPoint3 offset;
+		bool sticky;
+	};
+
+	enum BoneSphereEvent {
+		BoneSphereEvent_None = 0,
+		BoneSphereEvent_Enter = 1,
+		BoneSphereEvent_Exit = 2
+	};
+
 	bool loadConfig();
 
 	void update();

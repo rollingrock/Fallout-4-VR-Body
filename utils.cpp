@@ -165,4 +165,24 @@ namespace F4VRBody {
 		set->SetDouble(5.0);
 	}
 
+	NiNode* getChildNode(const char* nodeName, NiNode* nde) {
+
+		if (!strcmp(nodeName, nde->m_name.c_str())) {
+			return nde;
+		}
+
+		NiNode* ret = nullptr;
+
+		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
+			if (nextNode) {
+				ret = getChildNode(nodeName, nextNode);
+				if (ret) {
+					return ret;
+				}
+			}
+		}
+
+		return nullptr;
+	}
 }

@@ -29,4 +29,6 @@ namespace F4VRBody {
 	 void turnPipBoyOn();
 	 void turnPipBoyOff();
 
+	 NiNode* getChildNode(const char* nodeName, NiNode* nde);
+
 }

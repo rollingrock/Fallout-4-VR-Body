@@ -489,7 +489,7 @@ namespace F4VRBody
 		NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * ((newHipPos - com->m_worldTransform.pos) / _root->m_localTransform.scale);
 		com->m_localTransform.pos.y += newPos.y + c_playerOffset_forward;
 		com->m_localTransform.pos.z = newPos.z;
-		com->m_localTransform.pos.z -= inPowerArmor ? 15.0f : 0.0f;
+		com->m_localTransform.pos.z -= inPowerArmor ? 12.0f : 0.0f;
 
 		Matrix44 rot;
 		rot.rotateVectoVec(neckPos - tmpHipPos, hmdToHip);
@@ -580,22 +580,16 @@ namespace F4VRBody
 	}
 
 	void Skeleton::swapPipboy() {
-		static BSFixedString nodeName("PipboyBone");
-
-		NiAVObject* pipboyBone = leftArm.forearm3->GetObjectByName(&nodeName);
-		NiAVObject* child = pipboyBone->GetAsNiNode()->m_children.m_data[0];
-		pipboyBone->GetAsNiNode()->RemoveChild(child);
-
 		_pipboyStatus = false;
 		_pipTimer = 0;
-//	    turnPipBoyOff();
-		
-		//BSFixedString wandPipName("PipboyParent");
-		//NiAVObject* wandPip = _playerNodes->SecondaryWandNode->GetObjectByName(&wandPipName);
+		BSFixedString nodeName("PipboyBone");
 
-	//	wandPip->m_parent->GetAsNiNode()->RemoveChild(wandPip);
-
-//		pipboyBone->GetAsNiNode()->AttachChild(wandPip, true);
+		NiAVObject* pipboyBone = leftArm.forearm1->GetObjectByName(&nodeName);
+		if (!pipboyBone) {
+			return;
+		}
+		NiAVObject* child = pipboyBone->GetAsNiNode()->m_children.m_data[0];
+		pipboyBone->GetAsNiNode()->RemoveChild(child);
 
 	}
 
@@ -608,7 +602,7 @@ namespace F4VRBody
 		}
 		
 		static BSFixedString nodeName("PipboyBone");
-		NiAVObject* pipboyBone = leftArm.forearm3->GetObjectByName(&nodeName);
+		NiAVObject* pipboyBone = leftArm.forearm1->GetObjectByName(&nodeName);
 
 		if (pipboyBone == nullptr) {
 			return;
@@ -751,10 +745,27 @@ namespace F4VRBody
 	}
 
 	void Skeleton::hideWands() {
-		_wandRight = (NiNode*)_playerNodes->primaryWandNode->m_children.m_data[8];
-		_wandLeft  = (NiNode*)_playerNodes->SecondaryWandNode->m_children.m_data[5];
-		_wandRight->flags |= 0x1;
-		_wandLeft->flags |= 0x1;
+		int i;
+
+		for (i = 0; i < _playerNodes->primaryWandNode->m_children.m_emptyRunStart; i++) {
+			if (_playerNodes->primaryWandNode->m_children.m_data[i]) {
+				auto right = _playerNodes->primaryWandNode->m_children.m_data[i]->GetAsBSTriShape();
+				if (right) {
+					NiAVObject* n1 = (NiAVObject*)right;
+					n1->flags |= 0x1;
+				}
+			}
+		}
+
+		for (i = 0; i < _playerNodes->SecondaryWandNode->m_children.m_emptyRunStart; i++) {
+			if (_playerNodes->SecondaryWandNode->m_children.m_data[i]) {
+				auto left = _playerNodes->SecondaryWandNode->m_children.m_data[i]->GetAsBSTriShape();
+				if (left) {
+					NiAVObject* n2 = (NiAVObject*)left;
+					n2->flags |= 0x1;
+				}
+			}
+		}
 	}
 
 	void Skeleton::hideFistHelpers() {
@@ -790,6 +801,10 @@ namespace F4VRBody
 	}
 
 	void Skeleton::operatePipBoy() {
+
+		if ((*g_player)->firstPersonSkeleton == nullptr) {
+			return;
+		}
 
 		NiAVObject* finger = getNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
@@ -956,6 +971,10 @@ namespace F4VRBody
 		// everything to go to the PrimaryWeaponNode.  I have hardcoded a rotation below based off one of the guns that 
 		// matches my real life hand pose with an index controller very well.   I use this as the baseline for everything
 
+		if ((*g_player)->firstPersonSkeleton == nullptr) {
+			return;
+		}
+
 		NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
 
@@ -1050,7 +1069,15 @@ namespace F4VRBody
 		float negLeft = isLeft ? -1 : 1;
 
 		float originalUpperLen = vec3_len(arm.forearm1->m_localTransform.pos);
-		float originalForearmLen = vec3_len(arm.hand->m_localTransform.pos) + vec3_len(arm.forearm2->m_localTransform.pos) + vec3_len(arm.forearm3->m_localTransform.pos);
+		float originalForearmLen;
+
+		//sometimes powerarmor or other things detach or do not even load all forearm nodes so just keeping this check in to preserve functionality without crashing.
+		if ((arm.forearm2 == nullptr) || (arm.forearm3 == nullptr)) {
+			originalForearmLen = vec3_len(arm.hand->m_localTransform.pos);
+		}
+		else {
+			originalForearmLen = vec3_len(arm.hand->m_localTransform.pos) + vec3_len(arm.forearm2->m_localTransform.pos) + vec3_len(arm.forearm3->m_localTransform.pos);
+		}
 		float upperLen = originalUpperLen * adjustedArmLength;
 		float forearmLen = originalForearmLen * adjustedArmLength;
 
@@ -1214,58 +1241,73 @@ namespace F4VRBody
 		arm.forearm1->m_localTransform.rot = rotatedM.multiply43Left(arm.forearm1->m_localTransform.rot);
 		rotatedM.makeTransformMatrix(arm.forearm1->m_localTransform.rot, arm.forearm1->m_localTransform.pos);
 		Fwr = rotatedM.multiply43Left(Uwr);
-		rotatedM.makeTransformMatrix(arm.forearm2->m_localTransform.rot, arm.forearm2->m_localTransform.pos);
-		NiMatrix43 Fwr2 = rotatedM.multiply43Left(Fwr);
-		rotatedM.makeTransformMatrix(arm.forearm3->m_localTransform.rot, arm.forearm3->m_localTransform.pos);
-		NiMatrix43 Fwr3 = rotatedM.multiply43Left(Fwr2);
+
+		NiMatrix43 Fwr2, Fwr3;
+
+		if ((arm.forearm2 != nullptr) && (arm.forearm3 != nullptr)) {
+			rotatedM.makeTransformMatrix(arm.forearm2->m_localTransform.rot, arm.forearm2->m_localTransform.pos);
+			Fwr2 = rotatedM.multiply43Left(Fwr);
+			rotatedM.makeTransformMatrix(arm.forearm3->m_localTransform.rot, arm.forearm3->m_localTransform.pos);
+			Fwr3 = rotatedM.multiply43Left(Fwr2);
 
 
 
-		// Find the angle the wrist is pointing and twist forearm3 appropriately
-		//    Fwr * twist = Uwr * Flr   ===>   Flr = (Uwr' * Fwr) * twist = (Flr) * twist
 
-		NiPoint3 wLocalDir = Fwr3.Transpose() * vec3_norm(handinSide);
-		wLocalDir.x = 0;
-		NiPoint3 forearm3Side = Fwr3 * NiPoint3(0, 0, -1);   // forearm is rotated 90 degrees already from hand so need this vector instead of 0,-1,0
-		NiPoint3 floc = Fwr2.Transpose() * vec3_norm(forearm3Side);
-		floc.x = 0;
-		float fcos = vec3_dot(vec3_norm(wLocalDir), vec3_norm(floc));
-		float fsin = vec3_det(vec3_norm(wLocalDir), vec3_norm(floc), NiPoint3(-1, 0, 0));
-		float forearmAngle = -1 * negLeft * atan2f(fsin, fcos);
+			// Find the angle the wrist is pointing and twist forearm3 appropriately
+			//    Fwr * twist = Uwr * Flr   ===>   Flr = (Uwr' * Fwr) * twist = (Flr) * twist
 
-		// old way of doing this
-		//NiPoint3 cross = vec3_cross(vec3_norm(floc), vec3_norm(wLocalDir));
+			NiPoint3 wLocalDir = Fwr3.Transpose() * vec3_norm(handinSide);
+			wLocalDir.x = 0;
+			NiPoint3 forearm3Side = Fwr3 * NiPoint3(0, 0, -1);   // forearm is rotated 90 degrees already from hand so need this vector instead of 0,-1,0
+			NiPoint3 floc = Fwr2.Transpose() * vec3_norm(forearm3Side);
+			floc.x = 0;
+			float fcos = vec3_dot(vec3_norm(wLocalDir), vec3_norm(floc));
+			float fsin = vec3_det(vec3_norm(wLocalDir), vec3_norm(floc), NiPoint3(-1, 0, 0));
+			float forearmAngle = -1 * negLeft * atan2f(fsin, fcos);
 
-		//float forearmAngle = acosf(fcos) - degrees_to_rads(90.0f);
+			// old way of doing this
+			//NiPoint3 cross = vec3_cross(vec3_norm(floc), vec3_norm(wLocalDir));
 
-		//if (cross.x < 0) {
-		//	float d = forearmAngle >= 0 ? degrees_to_rads(180.0f) : -1 * degrees_to_rads(180.0f);
-		//	forearmAngle = d - forearmAngle;
-		//}
-		 
-		twist.setEulerAngles(negLeft * forearmAngle/2, 0, 0);
-		arm.forearm2->m_localTransform.rot = twist.multiply43Left(arm.forearm2->m_localTransform.rot);
+			//float forearmAngle = acosf(fcos) - degrees_to_rads(90.0f);
 
-		twist.setEulerAngles(negLeft * forearmAngle/2, 0, 0);
-		arm.forearm3->m_localTransform.rot = twist.multiply43Left(arm.forearm3->m_localTransform.rot);
+			//if (cross.x < 0) {
+			//	float d = forearmAngle >= 0 ? degrees_to_rads(180.0f) : -1 * degrees_to_rads(180.0f);
+			//	forearmAngle = d - forearmAngle;
+			//}
 
-		rotatedM.makeTransformMatrix(arm.forearm2->m_localTransform.rot, arm.forearm2->m_localTransform.pos);
-		Fwr2 = rotatedM.multiply43Left(Fwr);
-		rotatedM.makeTransformMatrix(arm.forearm3->m_localTransform.rot, arm.forearm3->m_localTransform.pos);
-		Fwr3 = rotatedM.multiply43Left(Fwr2);
+			twist.setEulerAngles(negLeft * forearmAngle / 2, 0, 0);
+			arm.forearm2->m_localTransform.rot = twist.multiply43Left(arm.forearm2->m_localTransform.rot);
+
+			twist.setEulerAngles(negLeft * forearmAngle / 2, 0, 0);
+			arm.forearm3->m_localTransform.rot = twist.multiply43Left(arm.forearm3->m_localTransform.rot);
+
+			rotatedM.makeTransformMatrix(arm.forearm2->m_localTransform.rot, arm.forearm2->m_localTransform.pos);
+			Fwr2 = rotatedM.multiply43Left(Fwr);
+			rotatedM.makeTransformMatrix(arm.forearm3->m_localTransform.rot, arm.forearm3->m_localTransform.pos);
+			Fwr3 = rotatedM.multiply43Left(Fwr2);
+		}
 
 		// Calculate Hlr:  Fwr * Hlr = handRot   ===>   Hlr = Fwr' * handRot
 		rotatedM.makeTransformMatrix(handRot, handPos);
-		arm.hand->m_localTransform.rot = rotatedM.multiply43Left(Fwr3.Transpose());
+		if (arm.forearm3) {
+			arm.hand->m_localTransform.rot = rotatedM.multiply43Left(Fwr3.Transpose());
+		}
+		else {
+			arm.hand->m_localTransform.rot = rotatedM.multiply43Left(Fwr.Transpose());
+		}
 
 		// Calculate Flp:  Fwp = Uwp + Uwr * (Flp * Uws) = elbowWorld   ===>   Flp = Uwr' * (elbowWorld - Uwp) / Uws
 		arm.forearm1->m_localTransform.pos = Uwr.Transpose() * ((elbowWorld - Uwp) / arm.upper->m_worldTransform.scale);
 
 		float origEHLen = vec3_len(arm.hand->m_worldTransform.pos - arm.forearm1->m_worldTransform.pos);
-		float forearmRatio = forearmLen / origEHLen;
-		arm.forearm2->m_localTransform.pos * forearmRatio;
-		arm.forearm3->m_localTransform.pos * forearmRatio;
-		arm.hand->m_localTransform.pos     * forearmRatio;
+		float forearmRatio = (forearmLen / origEHLen) * _root->m_localTransform.scale;
+
+		forearmRatio *= inPowerArmor ? 1.27 : 1.0;
+		if (arm.forearm2) {
+			arm.forearm2->m_localTransform.pos *= forearmRatio;
+			arm.forearm3->m_localTransform.pos *= forearmRatio;
+		}
+		arm.hand->m_localTransform.pos     *= forearmRatio;
 
 		return;
 	}

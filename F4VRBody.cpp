@@ -27,9 +27,16 @@ namespace F4VRBody {
 	float c_pipboyDetectionRange = 15.0f;
 	float c_armLength = 36.74;
 	float c_cameraHeight = 0.0;
-	bool  c_showPAHUD = false;
+	bool  c_showPAHUD = true;
 
+	// Papyrus
+
+	const char* boneSphereEventName = "OnBoneSphereEvent";
+	RegistrationSetHolder<NullParameters>      g_boneSphereEventRegs;
 	
+	std::map<UInt32, BoneSphere*> boneSphereRegisteredObjects;
+	UInt32 nextBoneSphereHandle;
+	UInt32 curDevice;
 
 	bool loadConfig() {
 		//INIReader ini(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
@@ -50,9 +57,104 @@ namespace F4VRBody {
 		c_pipboyDetectionRange = (float) ini.GetDoubleValue("Fallout4VRBody", "pipboyDetectionRange", 15.0);
 		c_armLength =            (float) ini.GetDoubleValue("FalloutVRBody", "armLength", 36.74);
 		c_cameraHeight =         (float)ini.GetDoubleValue("FalloutVRBody", "cameraHeightOffset", 0.0);
-		c_showPAHUD =            ini.GetBoolValue("FalloutVRBody", "showPAHUD", false);
+		c_showPAHUD =            ini.GetBoolValue("FalloutVRBody", "showPAHUD");
 
 		return true;
+	}
+
+	// Bone sphere detection
+	
+	void detectBoneSphere() {
+
+		if ((*g_player)->firstPersonSkeleton == nullptr) {
+			return;
+		}
+
+		// prefer to use fingers but these aren't always rendered.    so default to hand if nothing else
+
+		NiAVObject* rFinger = getChildNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		NiAVObject* lFinger = getChildNode("LArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+
+		if (rFinger == nullptr) {
+			rFinger = getChildNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		}
+
+		if (lFinger == nullptr) {
+			lFinger = getChildNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		}
+
+		if ((lFinger == nullptr) || (rFinger == nullptr)) {
+			return;
+		}
+
+		NiPoint3 offset;
+
+		for (auto const& element : boneSphereRegisteredObjects) {
+			offset = element.second->bone->m_worldTransform.pos + element.second->offset;
+
+			float dist = vec3_len(rFinger->m_worldTransform.pos - offset);
+
+			if (dist < element.second->radius) {
+				if (element.second->sticky) {
+					continue;
+				}
+				element.second->sticky = true;
+
+				SInt32 evt = BoneSphereEvent_Enter;
+				UInt32 handle = element.first;
+				UInt32 device = 1;
+				curDevice = device;
+
+				if (g_boneSphereEventRegs.m_data.size() > 0) {
+					g_boneSphereEventRegs.ForEach(
+						[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
+						SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+					}
+					);
+				}
+				continue;
+			}
+
+			dist = vec3_len(lFinger->m_worldTransform.pos - offset);
+
+			if (dist < element.second->radius) {
+				if (element.second->sticky) {
+					continue;
+				}
+				element.second->sticky = true;
+
+				SInt32 evt = BoneSphereEvent_Enter;
+				UInt32 handle = element.first;
+				UInt32 device = 2;
+				curDevice = device;
+
+				if (g_boneSphereEventRegs.m_data.size() > 0) {
+					g_boneSphereEventRegs.ForEach(
+						[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
+						SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+					}
+					);
+				}
+				continue;
+			}
+
+			if (element.second->sticky) {
+				element.second->sticky = false;
+
+				SInt32 evt = BoneSphereEvent_Exit;
+				UInt32 handle = element.first;
+				UInt32 device = curDevice;
+				curDevice = 0;
+
+				if (g_boneSphereEventRegs.m_data.size() > 0) {
+					g_boneSphereEventRegs.ForEach(
+						[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
+						SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+					}
+					);
+				}
+			}
+		}
 	}
 
 	bool setSkelly() {
@@ -107,18 +209,16 @@ namespace F4VRBody {
 			}
 
 			firstTime = false;
-		//	playerSkelly->getRoot()->UpdateDownwardPass(nullptr, 0);   // update BSFlattenedBoneTree render buffer
 			return;
-			//		playerSkelly->printNodes(playerSkelly->getRoot());
+		}
 
+		if ((*g_player)->firstPersonSkeleton == nullptr) {
+			return;
 		}
 
 		// do stuff now
 
 		playerSkelly->hideWands();
-		//NiPoint3 pos;
-		//(*g_player)->actorState.Unk_03(pos);
-		//_MESSAGE("pos = %5f %5f %5f", pos.x, pos.y, pos.z);
 
 		//_MESSAGE("start update");
 
@@ -172,15 +272,20 @@ namespace F4VRBody {
 		// project body out in front of the camera for debug purposes
 	//	playerSkelly->projectSkelly(120.0f);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
+
+		detectBoneSphere();
 	}
 
 
 	void startUp() {
 		_MESSAGE("Starting up F4Body");
 		isLoaded = true;
+		nextBoneSphereHandle = 1;
+		curDevice = 0;
 		return;
 	}
 
+	
 	// Papyrus Native Funcs
 
 	void saveStates(StaticFunctionTag* base) {
@@ -325,6 +430,83 @@ namespace F4VRBody {
 		set->SetDouble(c_fVrScale);
 	}
 
+	// Sphere bone detection funcs
+
+	UInt32 RegisterBoneSphere(StaticFunctionTag* base, float radius, BSFixedString bone) {
+		if (radius == 0.0) {
+			return 0;
+		}
+
+		NiNode* boneNode = getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsNiNode();
+
+		if (!boneNode) {
+			_MESSAGE("RegisterBoneSphere: BONE DOES NOT EXIST!!");
+			return 0;
+		}
+
+		BoneSphere* sphere = new BoneSphere(radius, boneNode, NiPoint3(0,0,0));
+		UInt32 handle = nextBoneSphereHandle++;
+
+		boneSphereRegisteredObjects[handle] = sphere;
+
+		return handle;
+	}
+
+	UInt32 RegisterBoneSphereOffset(StaticFunctionTag* base, float radius, BSFixedString bone, VMArray<float> pos) {
+		if (radius == 0.0) {
+			return 0;
+		}
+		
+		if (pos.Length() != 3) {
+			return 0;
+		}
+
+		NiNode* boneNode = getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsNiNode();
+
+		if (!boneNode) {
+			_MESSAGE("RegisterBoneSphere: BONE DOES NOT EXIST!!");
+			return 0;
+		}
+
+		NiPoint3 offsetVec;
+
+		pos.Get(&(offsetVec.x), 0);
+		pos.Get(&(offsetVec.y), 1);
+		pos.Get(&(offsetVec.z), 2);
+
+		BoneSphere* sphere = new BoneSphere(radius, boneNode, offsetVec);
+		UInt32 handle = nextBoneSphereHandle++;
+
+		boneSphereRegisteredObjects[handle] = sphere;
+
+		return handle;
+	}
+
+	void DestroyBoneSphere(StaticFunctionTag* base, UInt32 handle) {
+		if (boneSphereRegisteredObjects.count(handle)) {
+			delete boneSphereRegisteredObjects[handle];
+			boneSphereRegisteredObjects.erase(handle);
+		}
+	}
+
+	void RegisterForBoneSphereEvents(StaticFunctionTag* base, VMObject* thisObject) {
+		_MESSAGE("RegisterForBoneSphereEvents");
+		if (!thisObject) {
+			return;
+		}
+
+		g_boneSphereEventRegs.Register(thisObject->GetHandle(), thisObject->GetObjectType());
+	}
+
+	void UnRegisterForBoneSphereEvents(StaticFunctionTag* base, VMObject* thisObject) {
+		if (!thisObject) {
+			return;
+		}
+
+		_MESSAGE("UnRegisterForBoneSphereEvents");
+		g_boneSphereEventRegs.Unregister(thisObject->GetHandle(), thisObject->GetObjectType());
+	}
+
 	bool RegisterFuncs(VirtualMachine* vm) {
 
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("saveStates", "FRIK:FRIK", F4VRBody::saveStates, vm));
@@ -340,6 +522,11 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", F4VRBody::moveBackward, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("increaseScale", "FRIK:FRIK", F4VRBody::increaseScale, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("decreaseScale", "FRIK:FRIK", F4VRBody::decreaseScale, vm));
+		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, UInt32, float, BSFixedString>("RegisterBoneSphere", "FRIK:FRIK", F4VRBody::RegisterBoneSphere, vm));
+		vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, UInt32, float, BSFixedString, VMArray<float> >("RegisterBoneSphereOffset", "FRIK:FRIK", F4VRBody::RegisterBoneSphereOffset, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("DestroyBoneSphere", "FRIK:FRIK", F4VRBody::DestroyBoneSphere, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("RegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::RegisterForBoneSphereEvents, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("UnRegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::UnRegisterForBoneSphereEvents, vm));
 
 		return true;
 	}
