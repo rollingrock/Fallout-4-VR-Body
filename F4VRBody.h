@@ -1,6 +1,11 @@
 #pragma once
 #include "f4se/GameReferences.h"
 #include "f4se/NiNodes.h"
+#include "f4se/NiObjects.h"
+#include "NiCloneProcess.h"
+#include "f4se/BSGeometry.h"
+#include "f4se/GameSettings.h"
+#include "f4se/GameMenus.h"
 #include "f4se/PapyrusNativeFunctions.h"
 #include "f4se/PapyrusEvents.h"
 #include "f4se/PapyrusVM.h"
@@ -23,19 +28,25 @@ namespace F4VRBody {
 			radius = 0;
 			bone = nullptr;
 			sticky = false;
+			turnOnDebugSpheres = false;
 			offset.x = 0;
 			offset.y = 0;
 			offset.z = 0;
+			debugSphere = nullptr;
 		}
 
 		BoneSphere(float a_radius, NiNode* a_bone, NiPoint3 a_offset) : radius(a_radius), bone(a_bone), offset(a_offset) { 
 			sticky = false; 
+			turnOnDebugSpheres = false;
+			debugSphere = nullptr;
 		}
 
 		float radius;
 		NiNode* bone;
 		NiPoint3 offset;
 		bool sticky;
+		bool turnOnDebugSpheres;
+		NiNode* debugSphere;
 	};
 
 	enum BoneSphereEvent {
@@ -44,6 +55,9 @@ namespace F4VRBody {
 		BoneSphereEvent_Exit = 2
 	};
 
+
+	NiNode* loadNifFromFile(char* path);
+		
 	bool loadConfig();
 
 	void update();

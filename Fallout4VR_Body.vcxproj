@@ -184,6 +184,7 @@
     <ClInclude Include="include\SimpleIni.h" />
     <ClInclude Include="include\version.h" />
     <ClInclude Include="matrix.h" />
+    <ClInclude Include="NiCloneProcess.h" />
     <ClInclude Include="openvr\openvr.h" />
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="Skeleton.h" />

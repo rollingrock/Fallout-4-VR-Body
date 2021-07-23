@@ -121,6 +121,10 @@ namespace F4VRBody
 		BSFadeNode* getRoot() {
 			return _root;
 		}
+
+		void updateRoot(BSFadeNode* node) {
+			_root = node;
+		}
 		
 		PlayerNodes* getPlayerNodes() {
 			return _playerNodes;

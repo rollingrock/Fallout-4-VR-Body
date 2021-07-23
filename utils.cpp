@@ -185,4 +185,18 @@ namespace F4VRBody {
 
 		return nullptr;
 	}
+
+	NiNode* get1stChildNode(const char* nodeName, NiNode* nde) {
+
+		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
+			if (nextNode) {
+				if (!strcmp(nodeName, nextNode->m_name.c_str())) {
+					return nextNode;
+				}
+			}
+		}
+
+		return nullptr;
+	}
 }

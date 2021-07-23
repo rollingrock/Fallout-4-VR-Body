@@ -71,6 +71,9 @@
     <ClInclude Include="include\SimpleIni.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NiCloneProcess.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">

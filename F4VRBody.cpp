@@ -1,8 +1,7 @@
 #include "F4VRBody.h"
 #include "Skeleton.h"
 
-#include "f4se/GameSettings.h"
-#include "f4se/GameMenus.h"
+
 
 
 #define PI 3.14159265358979323846
@@ -29,6 +28,31 @@ namespace F4VRBody {
 	float c_cameraHeight = 0.0;
 	bool  c_showPAHUD = true;
 
+	// loadNif native func
+	//typedef int(*_loadNif)(const char* path, uint64_t parentNode, uint64_t flags);
+	typedef int(*_loadNif)(uint64_t path, uint64_t mem, uint64_t flags);
+	RelocAddr<_loadNif> loadNif(0x1d0dee0);
+	//RelocAddr<_loadNif> loadNif(0x1d0dd80);
+
+	typedef NiNode*(*_cloneNode)(NiNode* node, NiCloneProcess* obj);
+	RelocAddr<_cloneNode> cloneNode(0x1c13ff0);
+
+	typedef NiNode* (*_addNode)(uint64_t attachNode, NiAVObject* node);
+	RelocAddr<_addNode> addNode(0xada20);
+
+	RelocAddr<UInt64*> cloneAddr1(0x36ff560);
+	RelocAddr<UInt64*> cloneAddr2(0x36ff564);
+
+	NiNode* loadNifFromFile(char* path) {
+		uint64_t flags[2];
+		flags[0] = 0x0;
+		flags[1] = 0xed | 0x2d;
+		uint64_t mem = 0;
+		int ret = loadNif((uint64_t)&(*path), (uint64_t)&mem, (uint64_t)&flags);
+
+		return (NiNode*)mem;
+	}
+
 	// Papyrus
 
 	const char* boneSphereEventName = "OnBoneSphereEvent";
@@ -39,8 +63,6 @@ namespace F4VRBody {
 	UInt32 curDevice;
 
 	bool loadConfig() {
-		//INIReader ini(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
-
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
 
@@ -90,7 +112,8 @@ namespace F4VRBody {
 		NiPoint3 offset;
 
 		for (auto const& element : boneSphereRegisteredObjects) {
-			offset = element.second->bone->m_worldTransform.pos + element.second->offset;
+			offset = element.second->bone->m_worldTransform.rot * element.second->offset;
+			offset = element.second->bone->m_worldTransform.pos + offset;
 
 			float dist = vec3_len(rFinger->m_worldTransform.pos - offset);
 
@@ -157,13 +180,88 @@ namespace F4VRBody {
 		}
 	}
 
+	void handleDebugBoneSpheres() {
+
+		for (auto const& element : boneSphereRegisteredObjects) {
+			NiNode* bone = element.second->bone;
+			NiNode* sphere = element.second->debugSphere;
+
+			if (element.second->turnOnDebugSpheres && !element.second->debugSphere) {
+				NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/1x1Sphere.nif");
+				NiCloneProcess proc;
+				proc.unk18 = cloneAddr1;
+				proc.unk48 = cloneAddr2;
+
+				sphere = cloneNode(retNode, &proc);
+				if (sphere) {
+					sphere->m_name = BSFixedString("Sphere01");
+
+					bone->AttachChild((NiAVObject*)sphere, true);
+					sphere->m_localTransform.scale = (element.second->radius * 2);
+					element.second->debugSphere = sphere;
+				}
+			}
+			else if (sphere && !element.second->turnOnDebugSpheres) {
+				sphere->flags |= 0x1;
+				sphere->m_localTransform.scale = 0;
+			}
+			else if (sphere && element.second->turnOnDebugSpheres) {
+				sphere->flags |= 0x0;
+				sphere->m_localTransform.scale = (element.second->radius * 2);
+			}
+
+			if (sphere) {
+				NiPoint3 offset;
+
+				offset = bone->m_worldTransform.rot * element.second->offset;
+				offset = bone->m_worldTransform.pos + offset;
+
+				// wp = parWp + parWr * lp =>   lp = (wp - parWp) * parWr'
+				sphere->m_localTransform.pos = bone->m_worldTransform.rot.Transpose() * (offset - bone->m_worldTransform.pos);
+			}
+		}
+
+	}
+
+	void replaceMeshes(PlayerNodes* pn) {
+		NiNode* ui = pn->primaryUIAttachNode;
+		NiNode* wand = get1stChildNode("world_primaryWand.nif", ui);
+		NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/world_primaryWand.nif");
+
+		if (retNode) {
+			ui->RemoveChild(wand);
+			ui->AttachChild(retNode, true);
+		}
+
+		wand = pn->SecondaryWandNode;
+		NiNode* pipParent = get1stChildNode("PipboyParent", wand);
+		wand = get1stChildNode("PipboyRoot_NIF_ONLY", pipParent);
+		retNode = loadNifFromFile("Data/Meshes/FRIK/PipboyVR.nif");
+
+		if (retNode && wand) {
+			BSFixedString screenName("Screen:0");
+			NiAVObject* newScreen = retNode->GetObjectByName(&screenName)->m_parent;
+			pipParent->RemoveChild(wand);
+			pipParent->AttachChild(retNode, true);
+
+			pn->ScreenNode->RemoveChildAt(0);
+			// using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
+			NiNode* rn = addNode((uint64_t)&pn->ScreenNode, newScreen);
+			pn->PipboyRoot_nif_only_node = retNode;
+		}
+
+	}
+
 	bool setSkelly() {
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 			playerSkelly = new Skeleton((BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
 			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
 			playerSkelly->setNodes();
+			replaceMeshes(playerSkelly->getPlayerNodes());
 			playerSkelly->setDirection();
 		    playerSkelly->swapPipboy();
+			turnPipBoyOff();
+
 
 			if (c_setScale) {
 				Setting* set = GetINISetting("fVrScale:VR");
@@ -213,6 +311,21 @@ namespace F4VRBody {
 		}
 
 		if ((*g_player)->firstPersonSkeleton == nullptr) {
+			firstTime = true;
+			return;
+		}
+		if (!((*g_player)->unkF0 && (*g_player)->unkF0->rootNode)) {
+			firstTime = true;
+			return;
+		}
+
+		if (playerSkelly->getRoot() != (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode()) {
+			playerSkelly->updateRoot((BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
+			playerSkelly->setNodes();
+			playerSkelly->setDirection();
+		    playerSkelly->swapPipboy();
+			playerSkelly->setBodyLen();
+			_MESSAGE("initialized");
 			return;
 		}
 
@@ -274,6 +387,7 @@ namespace F4VRBody {
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 
 		detectBoneSphere();
+		handleDebugBoneSpheres();
 	}
 
 
@@ -474,6 +588,7 @@ namespace F4VRBody {
 		pos.Get(&(offsetVec.y), 1);
 		pos.Get(&(offsetVec.z), 2);
 
+		
 		BoneSphere* sphere = new BoneSphere(radius, boneNode, offsetVec);
 		UInt32 handle = nextBoneSphereHandle++;
 
@@ -507,6 +622,20 @@ namespace F4VRBody {
 		g_boneSphereEventRegs.Unregister(thisObject->GetHandle(), thisObject->GetObjectType());
 	}
 
+	void toggleDebugBoneSpheres(StaticFunctionTag* base, bool turnOn) {
+		for (auto const& element : boneSphereRegisteredObjects) {
+			element.second->turnOnDebugSpheres = turnOn;
+		}
+	}
+
+	void toggleDebugBoneSpheresAtBone(StaticFunctionTag* base, BSFixedString bone, bool turnOn) {
+		for (auto const& element : boneSphereRegisteredObjects) {
+			if (!strcmp(bone.c_str(), element.second->bone->m_name.c_str())) {
+				element.second->turnOnDebugSpheres = turnOn;
+			}
+		}
+	}
+
 	bool RegisterFuncs(VirtualMachine* vm) {
 
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("saveStates", "FRIK:FRIK", F4VRBody::saveStates, vm));
@@ -527,6 +656,8 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("DestroyBoneSphere", "FRIK:FRIK", F4VRBody::DestroyBoneSphere, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("RegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::RegisterForBoneSphereEvents, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("UnRegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::UnRegisterForBoneSphereEvents, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("toggleDebugBoneSpheres", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheres, vm));
+		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, BSFixedString, bool>("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheresAtBone, vm));
 
 		return true;
 	}

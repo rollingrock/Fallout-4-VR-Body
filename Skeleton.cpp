@@ -255,6 +255,9 @@ namespace F4VRBody
 	}
 
 	void Skeleton::restoreLocals(NiNode* node) {
+		if (node->m_name == nullptr) {
+			return;
+		}
 
 		std::string name(node->m_name.c_str());
 
@@ -323,6 +326,7 @@ namespace F4VRBody
 		leftArm.forearm3   = _common->GetObjectByName(&lForearm3);
 		leftArm.hand       = _common->GetObjectByName(&lHand);
 
+		savedStates.clear();
 		saveStatesTree(_root->m_parent->GetAsNiNode());
 	}
 
@@ -357,9 +361,30 @@ namespace F4VRBody
 		NiPoint3 pos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
 		NiPoint3 hmdToLeft  = _playerNodes->SecondaryWandNode->m_worldTransform.pos  - pos;
 		NiPoint3 hmdToRight = _playerNodes->primaryWandNode->m_worldTransform.pos - pos;
+		float weight = 1.0f;
 
 		if ((vec3_len(hmdToLeft) < 10.0f) || (vec3_len(hmdToRight) < 10.0f)) {
 			return 0.0;
+		}
+
+		// handle excessive angles when hand is above the head.
+		if (hmdToLeft.z > 0) {
+			weight = (std::max)((float)(weight - (0.05 * hmdToLeft.z)), 0.0f);
+		}
+
+		if (hmdToRight.z > 0) {
+			weight = (std::max)((float)(weight - (0.05 * hmdToRight.z)), 0.0f);
+		}
+
+
+		// hands moving across the chest rotate too much.   try to handle with below
+		// wp = parWp + parWr * lp =>   lp = (wp - parWp) * parWr'
+		NiPoint3 locLeft  = _playerNodes->HmdNode->m_worldTransform.rot.Transpose() * hmdToLeft;
+		NiPoint3 locRight = _playerNodes->HmdNode->m_worldTransform.rot.Transpose() * hmdToRight;
+
+		if (locLeft.x > locRight.x) {
+			float delta = locRight.x - locLeft.x;
+			weight = (std::max)((float)(weight + (0.02 * delta)), 0.0f);
 		}
 
 		hmdToLeft = vec3_norm(hmdToLeft);
@@ -387,7 +412,7 @@ namespace F4VRBody
 			angleFinal = anglePrime;
 		}
 
-		return std::clamp(-angleFinal, degrees_to_rads(-90.0f), degrees_to_rads(90.0f));
+		return std::clamp(-angleFinal * weight, degrees_to_rads(-90.0f), degrees_to_rads(90.0f));
 	}
 
 	float Skeleton::getNeckPitch() {
@@ -399,8 +424,8 @@ namespace F4VRBody
 	}
 
 	float Skeleton::getBodyPitch() {
-		float basePitch = 115.3;
-		float weight = 0.2;
+		float basePitch = 105.3;
+		float weight = 0.1;
 
 		float offset = inPowerArmor ? (10.0f + c_cameraHeight) : c_cameraHeight;
 		float curHeight = c_playerHeight + offset;
@@ -472,7 +497,7 @@ namespace F4VRBody
 
 		float comZ = com->m_localTransform.pos.z;
 
-		float z_adjust = c_playerOffset_up + sinf(-neckPitch) * 4.5;
+		float z_adjust = c_playerOffset_up + sinf(-neckPitch) * 6.5;
 		NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * c_playerOffset_forward / 2, -_forwardDir.y * c_playerOffset_forward / 2, z_adjust);
 		NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
 
@@ -749,20 +774,36 @@ namespace F4VRBody
 
 		for (i = 0; i < _playerNodes->primaryWandNode->m_children.m_emptyRunStart; i++) {
 			if (_playerNodes->primaryWandNode->m_children.m_data[i]) {
+				NiNode* n = (NiNode*)(_playerNodes->primaryWandNode->m_children.m_data[i]);
 				auto right = _playerNodes->primaryWandNode->m_children.m_data[i]->GetAsBSTriShape();
 				if (right) {
 					NiAVObject* n1 = (NiAVObject*)right;
 					n1->flags |= 0x1;
+					break;
+				}
+				else if (!strcmp(n->m_name.c_str(), "")) {
+					n->flags |= 0x1;
+					NiAVObject* n1 = (NiAVObject*)n->m_children.m_data[0];
+					n1->flags |= 0x1;
+					break;
 				}
 			}
 		}
 
 		for (i = 0; i < _playerNodes->SecondaryWandNode->m_children.m_emptyRunStart; i++) {
 			if (_playerNodes->SecondaryWandNode->m_children.m_data[i]) {
+				NiNode* n = (NiNode*)(_playerNodes->SecondaryWandNode->m_children.m_data[i]);
 				auto left = _playerNodes->SecondaryWandNode->m_children.m_data[i]->GetAsBSTriShape();
 				if (left) {
 					NiAVObject* n2 = (NiAVObject*)left;
 					n2->flags |= 0x1;
+					break;
+				}
+				else if (n->m_name.data == NULL) {
+					n->flags |= 0x1;
+					NiAVObject* n2 = (NiAVObject*)n->m_children.m_data[0];
+					n2->flags |= 0x1;
+					break;
 				}
 			}
 		}
