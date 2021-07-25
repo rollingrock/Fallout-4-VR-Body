@@ -153,6 +153,7 @@ namespace F4VRBody
 		void setUnderHMD();
 		void setBodyPosture();
 		void setLegs();
+		void setSingleLeg(bool isLeft);
 		void setArms(bool isLeft);
 		void setArms_wp(bool isLeft);
 		NiPoint3 getPosition();
@@ -183,6 +184,7 @@ namespace F4VRBody
 		void set1stPersonArm(NiNode* weapon, NiNode* offsetNode);
 		void setBodyLen();
 		void detectInPowerArmor();
+		void setKneePos();
 
 		void setTime();
 
@@ -244,5 +246,7 @@ namespace F4VRBody
 		NiPoint3 _rightKneeStart;
 		NiPoint3 _leftKneeStart;
 		int _footStepping;
+		NiPoint3 _stepDir;
+		double _prevSpeed;
 	};
 }

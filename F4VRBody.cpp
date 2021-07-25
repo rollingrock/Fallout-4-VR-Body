@@ -79,7 +79,7 @@ namespace F4VRBody {
 		c_pipboyDetectionRange = (float) ini.GetDoubleValue("Fallout4VRBody", "pipboyDetectionRange", 15.0);
 		c_armLength =            (float) ini.GetDoubleValue("FalloutVRBody", "armLength", 36.74);
 		c_cameraHeight =         (float)ini.GetDoubleValue("FalloutVRBody", "cameraHeightOffset", 0.0);
-		c_showPAHUD =            ini.GetBoolValue("FalloutVRBody", "showPAHUD");
+		c_showPAHUD =            ini.GetBoolValue("Fallout4VRBody", "showPAHUD");
 
 		return true;
 	}
@@ -367,8 +367,11 @@ namespace F4VRBody {
 		playerSkelly->setBodyPosture();
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
+		playerSkelly->setKneePos();
 		playerSkelly->walk();
-		playerSkelly->setLegs();
+		//playerSkelly->setLegs();
+		playerSkelly->setSingleLeg(false);
+		playerSkelly->setSingleLeg(true);
 
 		// Do another update before setting arms
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
@@ -390,7 +393,7 @@ namespace F4VRBody {
 		playerSkelly->fixArmor();
 
 		// project body out in front of the camera for debug purposes
-	//	playerSkelly->projectSkelly(120.0f);
+		playerSkelly->projectSkelly(120.0f);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 
 		detectBoneSphere();
@@ -422,7 +425,7 @@ namespace F4VRBody {
 		rc = ini.SetDoubleValue("Fallout4VRBody", "playerOffset_up", (double)c_playerOffset_up);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "armLength", (double)c_armLength);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "cameraHeightOffset", (double)c_cameraHeight);
-		rc = ini.SetBoolValue("FalloutVRBody", "showPAHUD", c_showPAHUD);
+		rc = ini.SetBoolValue("Fallout4VRBody", "showPAHUD", c_showPAHUD);
 
 		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
 

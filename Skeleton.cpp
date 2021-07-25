@@ -242,7 +242,7 @@ namespace F4VRBody
 		headNode->m_localTransform.rot.data[2][0] = -0.058;
 		headNode->m_localTransform.rot.data[2][1] = -0.037;
 		headNode->m_localTransform.rot.data[2][2] =  0.998;
-		headNode->m_localTransform.pos.y = -8.0;
+		headNode->m_localTransform.pos.y = -0.0;
 
 		NiAVObject::NiUpdateData* ud = nullptr;
 
@@ -294,6 +294,9 @@ namespace F4VRBody
 		QueryPerformanceCounter(&timer);
 
 		std::srand(time(NULL));
+
+		_prevSpeed = 0.0;
+
 		_playerNodes = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
 
 		setCommonNode();
@@ -497,13 +500,12 @@ namespace F4VRBody
 		float neckPitch = getNeckPitch();
 		float bodyPitch = getBodyPitch();
 
-
-		_leftKneePosture = getNode("LLeg_Calf", _root)->m_worldTransform.pos;
-		_rightKneePosture = getNode("RLeg_Calf", _root)->m_worldTransform.pos;
-
 		NiNode* camera = (*g_playerCamera)->cameraNode;
 		NiNode* com = getNode("COM", _root);
 		NiNode* spine = getNode("SPINE1", _root);
+
+		_leftKneePos = getNode("LLeg_Calf", com)->m_worldTransform.pos;
+		_rightKneePos = getNode("RLeg_Calf", com)->m_worldTransform.pos;
 
 		float comZ = com->m_localTransform.pos.z;
 
@@ -532,6 +534,20 @@ namespace F4VRBody
 		rot.makeTransformMatrix(mat, NiPoint3(0, 0, 0));
 		spine->m_localTransform.rot = rot.multiply43Right(spine->m_worldTransform.rot);
 
+	}
+
+	void Skeleton::setKneePos() {
+		NiNode* lKnee = getNode("LLeg_Calf", _root);
+		NiNode* rKnee = getNode("RLeg_Calf", _root);
+
+		lKnee->m_worldTransform.pos.z = _leftKneePos.z;
+		rKnee->m_worldTransform.pos.z = _rightKneePos.z;
+
+		_leftKneePos = lKnee->m_worldTransform.pos;
+		_rightKneePos = rKnee->m_worldTransform.pos;
+
+		updateDown(lKnee, false);
+		updateDown(rKnee, false);
 	}
 
 	void Skeleton::fixArmor() {
@@ -566,11 +582,14 @@ namespace F4VRBody
 		NiPoint3 dir = curPos - lastPos;
 		double curSpeed;
 
-		curSpeed = (vec3_len(dir) / frameTime);
+		curSpeed = std::clamp((abs(vec3_len(dir)) / frameTime), 0.0, 350.0);
+		if (_prevSpeed > 20.0) {
+			curSpeed = (curSpeed + _prevSpeed) / 2;
+		}
+		_prevSpeed = curSpeed;
 
-		double stepTime = 0.3;
+		double stepTime = std::clamp(cos(curSpeed / 140.0), 0.28, 0.55);
 		dir = vec3_norm(dir);
-	//	_MESSAGE("%f %f %f", stepTime, curSpeed, vec3_len(vec3_norm(dir) * curSpeed * stepTime));
 
 		// setup current walking state based on velocity and previous state
 		switch (_walkingState) {
@@ -578,26 +597,19 @@ namespace F4VRBody
 				if (curSpeed >= 20.0) {
 					_walkingState = 1;          // start walking
 					_footStepping = std::rand() % 2 + 1;    // pick a random foot to take a step
+					_stepDir = dir;
 
 					if (_footStepping == 1) {
-						_rightFootTarget = rFoot->m_worldTransform.pos + dir * (curSpeed * stepTime);
-						_rightFootStart = rFoot->m_worldTransform.pos - dir * (curSpeed * stepTime);
+						_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.8);
+						_rightFootStart = rFoot->m_worldTransform.pos - _stepDir * (curSpeed * stepTime);
 						_leftFootTarget  = lFoot->m_worldTransform.pos;
 						_leftFootStart  = lFoot->m_worldTransform.pos;
-						_rightKneeTarget = _rightKneePosture + dir * (curSpeed * stepTime);
-						_rightKneeStart = _rightKneePosture - dir * (curSpeed * stepTime);
-						_leftKneeTarget  = _leftKneePosture;
-						_leftKneeStart  = _leftKneePosture;
 					}
 					else {
 						_rightFootTarget = rFoot->m_worldTransform.pos;
 						_rightFootStart = rFoot->m_worldTransform.pos;
-						_leftFootTarget = lFoot->m_worldTransform.pos + dir * (curSpeed * stepTime);
-						_leftFootStart  = lFoot->m_worldTransform.pos - dir * (curSpeed * stepTime);
-						_rightKneeTarget = _rightKneePosture;
-						_rightKneeStart = _rightKneePosture;
-						_leftKneeTarget = _leftKneePosture + dir * (curSpeed * stepTime);
-						_leftKneeStart  = _leftKneePosture - dir * (curSpeed * stepTime);
+						_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.8);
+						_leftFootStart  = lFoot->m_worldTransform.pos - _stepDir * (curSpeed * stepTime);
 					}
 					currentStepTime = 0.0;
 					break;
@@ -630,45 +642,36 @@ namespace F4VRBody
 			// we're standing still so just set foot positions accordingly.
 			_leftFootPos = lFoot->m_worldTransform.pos;
 			_rightFootPos = rFoot->m_worldTransform.pos;
-			_leftKneePos = _leftKneePosture;
-			_rightKneePos = _rightKneePosture;
 			return;
 		}
 		else if (_walkingState == 1) {
 			currentStepTime += frameTime;
 
-			double frameStep = frameTime / (stepTime/2);
+			double frameStep = frameTime / (stepTime);
 			double interp = std::clamp(frameStep * (currentStepTime / frameTime), 0.0, 1.0);
-			double interpKnee = std::clamp(interp, 0.2, 0.9);
-
 
 			if (_footStepping == 1) {
 				_rightFootPos = _rightFootStart + ((_rightFootTarget - _rightFootStart) * interp);
-				_rightKneePos = _rightKneeStart + ((_rightKneeTarget - _rightKneeStart) * interpKnee);
 			}
 			else {
 				_leftFootPos = _leftFootStart + ((_leftFootTarget - _leftFootStart) * interp);
-				_leftKneePos = _leftKneeStart + ((_leftKneeTarget - _leftKneeStart) * interpKnee);
 			}
-
-
 
 			if (currentStepTime > stepTime) {
 				currentStepTime = 0.0;
+				_stepDir = dir;
+
+				//_MESSAGE("%2f %2f", curSpeed, stepTime);
 
 				if (_footStepping == 1) {
-					_footStepping = 2;
-					_leftFootTarget = lFoot->m_worldTransform.pos + dir * (curSpeed * stepTime);
-					_leftFootStart  = _leftFootPos;
-					_leftKneeTarget = _leftKneePosture + dir * (curSpeed * stepTime);
-					_leftKneeStart  = _leftKneePos;
+					_footStepping = 2; 
+					_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
+					_leftFootStart = _leftFootPos;
 				}
 				else {
 					_footStepping = 1;
-					_rightFootTarget = rFoot->m_worldTransform.pos + dir * (curSpeed * stepTime);
+					_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
 					_rightFootStart = _rightFootPos;
-					_rightKneeTarget = _rightKneePosture + dir * (curSpeed * stepTime);
-					_rightKneeStart = _rightKneePos;
 				}
 			}
 			return;
@@ -676,8 +679,6 @@ namespace F4VRBody
 		else if (_walkingState == 2) {
 			_leftFootPos = lFoot->m_worldTransform.pos;
 			_rightFootPos = rFoot->m_worldTransform.pos;
-			_leftKneePos = _leftKneePosture;
-			_rightKneePos = _rightKneePosture;
 			_walkingState = 0;
 			return;
 
@@ -719,6 +720,86 @@ namespace F4VRBody
 		uLocalDir = rKnee->m_worldTransform.rot.Transpose() * vec3_norm(pos) / rKnee->m_worldTransform.scale;
 		rotatedM.rotateVectoVec(uLocalDir, rFoot->m_localTransform.pos);
 		rKnee->m_localTransform.rot = rotatedM.multiply43Left(rKnee->m_localTransform.rot);
+	}
+	
+	// adapted solver from VRIK.  Thanks prog!
+	void Skeleton::setSingleLeg(bool isLeft) {
+		Matrix44 rotMat;
+
+		NiNode* footNode = isLeft ? getNode("LLeg_Foot", _root) : getNode("RLeg_Foot", _root);
+		NiNode* kneeNode = isLeft ? getNode("LLeg_Calf", _root) : getNode("RLeg_Calf", _root);
+		NiNode* hipNode  = isLeft ? getNode("LLeg_Thigh", _root) : getNode("RLeg_Thigh", _root);
+
+		NiPoint3 footPos = isLeft ? _leftFootPos : _rightFootPos;
+		NiPoint3 kneePos = isLeft ? _leftKneePos : _rightKneePos;
+		NiPoint3 hipPos = hipNode->m_worldTransform.pos;
+
+		NiPoint3 footToHip = hipNode->m_worldTransform.pos - footPos;
+		NiPoint3 hipDir = hipNode->m_worldTransform.rot * NiPoint3(0, 1, 0);
+		NiPoint3 xDir = vec3_norm(footToHip);
+		NiPoint3 yDir = vec3_norm(hipDir - xDir * vec3_dot(hipDir, xDir));
+
+		float thighLenOrig = vec3_len(kneeNode->m_localTransform.pos);
+		float calfLenOrig = vec3_len(footNode->m_localTransform.pos);
+		float thighLen = thighLenOrig;
+		float calfLen = calfLenOrig;
+
+		float ftLen = vec3_len(footToHip);
+		if (ftLen < 0.1) {
+			ftLen = 0.1;
+		}
+
+		if (ftLen > thighLen + calfLen) {
+			float diff = ftLen - thighLen - calfLen;
+			float ratio = calfLen / (calfLen + thighLen);
+			calfLen += ratio * diff + 0.1;
+			thighLen += (1.0 - ratio) * diff + 0.1;
+		}
+
+		// Use the law of cosines to calculate the angle the calf must bend to reach the knee position
+		// In cases where this is impossible (foot too close to thigh), then set calfLen = thighLen so
+		// there is always a solution
+		float footAngle = acosf((calfLen * calfLen + ftLen * ftLen - thighLen * thighLen) / (2 * calfLen * ftLen));
+		if (isnan(footAngle) || isinf(footAngle)) {
+			calfLen = thighLen = (thighLenOrig + calfLenOrig) / 2.0;
+			footAngle = acosf((calfLen * calfLen + ftLen * ftLen - thighLen * thighLen) / (2 * calfLen * ftLen));
+		}
+
+		// Get the desired world coordinate of the knee
+		float xDist = cosf(footAngle) * calfLen;
+		float yDist = sinf(footAngle) * calfLen;
+		kneePos = footPos + xDir * xDist + yDir * yDist;
+
+		NiPoint3 pos = kneePos - hipNode->m_worldTransform.pos;
+		NiPoint3 uLocalDir = hipNode->m_worldTransform.rot.Transpose() * vec3_norm(pos) / hipNode->m_worldTransform.scale;
+		rotMat.rotateVectoVec(uLocalDir, kneeNode->m_localTransform.pos);
+		hipNode->m_localTransform.rot = rotMat.multiply43Left(hipNode->m_localTransform.rot);
+
+		NiMatrix43 hipWR;
+		rotMat.makeTransformMatrix(hipNode->m_localTransform.rot, NiPoint3(0, 0, 0));
+		hipWR = rotMat.multiply43Left(hipNode->m_parent->m_worldTransform.rot);
+	
+		NiMatrix43 calfWR;
+		rotMat.makeTransformMatrix(kneeNode->m_localTransform.rot, NiPoint3(0, 0, 0));
+		calfWR = rotMat.multiply43Left(hipWR);
+
+		uLocalDir = calfWR.Transpose() * vec3_norm(footPos - kneePos) / kneeNode->m_worldTransform.scale;
+		rotMat.rotateVectoVec(uLocalDir, footNode->m_localTransform.pos);
+		kneeNode->m_localTransform.rot = rotMat.multiply43Left(kneeNode->m_localTransform.rot);
+
+		rotMat.makeTransformMatrix(kneeNode->m_localTransform.rot, NiPoint3(0, 0, 0));
+		calfWR = rotMat.multiply43Left(hipWR);
+
+		// Calculate Flr:  Cwr * Flr = footRot   ===>   Flr = Cwr' * footRot
+		//LROT(nodeFoot) = Cwr.Transpose() * footRot;
+
+		// Calculate Clp:  Cwp = Twp + Twr * (Clp * Tws) = kneePos   ===>   Clp = Twr' * (kneePos - Twp) / Tws
+		//LPOS(nodeCalf) = Twr.Transpose() * (kneePos - thighPos) / WSCL(nodeThigh);
+		kneeNode->m_localTransform.pos = hipWR.Transpose() * (kneePos - hipPos) / hipNode->m_worldTransform.scale;
+
+		// Calculate Flp:  Fwp = Cwp + Cwr * (Flp * Cws) = footPos   ===>   Flp = Cwr' * (footPos - Cwp) / Cws
+		//LPOS(nodeFoot) = Cwr.Transpose() * (footPos - kneePos) / WSCL(nodeCalf);
+		footNode->m_localTransform.pos = calfWR.Transpose() * (footPos - kneePos) / kneeNode->m_worldTransform.scale;
 	}
 
 	void Skeleton::setBodyLen() {
