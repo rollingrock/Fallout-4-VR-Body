@@ -64,7 +64,7 @@ namespace F4VRBody {
 
 	bool loadConfig() {
 		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
+		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
 
 		if (rc < 0) {
 			_MESSAGE("ERROR: cannot read Fallout4VR_Body.ini");
@@ -252,6 +252,22 @@ namespace F4VRBody {
 
 	}
 
+	void fixMissingScreen(PlayerNodes* pn) {
+		NiNode* screenNode = pn->ScreenNode;
+
+		if (screenNode) {
+			BSFixedString screenName("Screen:0");
+			NiAVObject* newScreen = screenNode->GetObjectByName(&screenName);
+
+			if (!newScreen) {
+				pn->ScreenNode->RemoveChildAt(0);
+
+				newScreen = pn->PipboyRoot_nif_only_node->GetObjectByName(&screenName)->m_parent;
+				NiNode* rn = addNode((uint64_t)&pn->ScreenNode, newScreen);
+			}
+		}
+	}
+
 	bool setSkelly() {
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 			playerSkelly = new Skeleton((BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
@@ -331,41 +347,32 @@ namespace F4VRBody {
 
 		// do stuff now
 
-		playerSkelly->hideWands();
+		playerSkelly->setTime();
 
-		//_MESSAGE("start update");
+		playerSkelly->hideWands();
 
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
 		playerSkelly->restoreLocals(playerSkelly->getRoot());
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);
 
-		//_MESSAGE("locals saved");
-
-		//playerSkelly->printNodes();
-
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
 		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
 		playerSkelly->setupHead(headNode);
 
-	//	_MESSAGE("head setup");
-
 		//// set up the body underneath the headset in a proper scale and orientation
 		playerSkelly->setUnderHMD();
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
-		//_MESSAGE("body init");
 
 		// Now Set up body Posture and hook up the legs
 		playerSkelly->setBodyPosture();
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
-	//	_MESSAGE("posture");
-
+		playerSkelly->walk();
 		playerSkelly->setLegs();
 
 		// Do another update before setting arms
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
-	//	_MESSAGE("legs");
 		// do arm IK - Right then Left
 		playerSkelly->setArms(false);
 		playerSkelly->setArms(true);
@@ -388,6 +395,9 @@ namespace F4VRBody {
 
 		detectBoneSphere();
 		handleDebugBoneSpheres();
+
+		fixMissingScreen(playerSkelly->getPlayerNodes());
+
 	}
 
 
@@ -575,6 +585,11 @@ namespace F4VRBody {
 			return 0;
 		}
 
+		if (!(*g_player)->unkF0) {
+			_MESSAGE("can't register yet as new game");
+			return 0;
+		}
+
 		NiNode* boneNode = getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsNiNode();
 
 		if (!boneNode) {
@@ -599,6 +614,14 @@ namespace F4VRBody {
 
 	void DestroyBoneSphere(StaticFunctionTag* base, UInt32 handle) {
 		if (boneSphereRegisteredObjects.count(handle)) {
+			NiNode* sphere = boneSphereRegisteredObjects[handle]->debugSphere;
+			
+			if (sphere) {
+				sphere->flags |= 0x1;
+				sphere->m_localTransform.scale = 0;
+				sphere->m_parent->RemoveChild(sphere);
+			}
+
 			delete boneSphereRegisteredObjects[handle];
 			boneSphereRegisteredObjects.erase(handle);
 		}

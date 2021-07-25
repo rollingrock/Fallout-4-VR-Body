@@ -4,6 +4,8 @@
 #include "api/PapyrusVRAPI.h"
 #include "api/VRManagerAPI.h"
 
+#include <time.h>
+
 extern PapyrusVRAPI* g_papyrusvr;
 
 namespace F4VRBody
@@ -13,6 +15,7 @@ namespace F4VRBody
 
 	UInt32 KeywordPowerArmor = 0x4D8A1;
 	UInt32 KeywordPowerArmorFrame = 0x15503F;
+
 
 	void printMatrix(Matrix44* mat) {
 		_MESSAGE("Dump matrix:");
@@ -181,6 +184,17 @@ namespace F4VRBody
 		updateUpTo(toNode, parent, true);
 	}
 
+	void Skeleton::setTime() {
+		prevTime = timer;
+		QueryPerformanceFrequency(&freqCounter);
+		QueryPerformanceCounter(&timer);
+
+		frameTime = (double)(timer.QuadPart - prevTime.QuadPart) / freqCounter.QuadPart;
+
+		//also save last position at this time for anyone doing speed calcs
+		_lastPos = _curPos;
+	}
+
 	void Skeleton::projectSkelly(float offsetOutFront) {    // Projects the 3rd person body out in front of the player by offset amount
 		float z = _root->m_localTransform.pos.z;
 		NiNode* body = _root->m_parent->GetAsNiNode();
@@ -228,7 +242,7 @@ namespace F4VRBody
 		headNode->m_localTransform.rot.data[2][0] = -0.058;
 		headNode->m_localTransform.rot.data[2][1] = -0.037;
 		headNode->m_localTransform.rot.data[2][2] =  0.998;
-		headNode->m_localTransform.pos.y = -4.0;
+		headNode->m_localTransform.pos.y = -8.0;
 
 		NiAVObject::NiUpdateData* ud = nullptr;
 
@@ -276,6 +290,10 @@ namespace F4VRBody
 	}
 
 	void Skeleton::setNodes() {
+		QueryPerformanceFrequency(&freqCounter);
+		QueryPerformanceCounter(&timer);
+
+		std::srand(time(NULL));
 		_playerNodes = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
 
 		setCommonNode();
@@ -339,15 +357,10 @@ namespace F4VRBody
 	}
 
 	NiPoint3 Skeleton::getPosition() {
-		NiPoint3 curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
+		_curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
 		
-		float dist = vec3_len(curPos - _lastPos);
 
-	//	if (dist > 40.0) {
-			_lastPos = curPos;
-		//}
-
-		return _lastPos;
+		return _curPos;
 	}
 
 	// below takes the two vectors from hmd to each hand and sums them to determine a center axis in which to see how much the hmd has rotated
@@ -485,11 +498,8 @@ namespace F4VRBody
 		float bodyPitch = getBodyPitch();
 
 
-		// save leg positions before moving COM node
-		_leftFootPos  = getNode("LLeg_Foot", _root)->m_worldTransform.pos;
-		_rightFootPos = getNode("RLeg_Foot", _root)->m_worldTransform.pos;
-		_leftKneePos  = getNode("LLeg_Calf", _root)->m_worldTransform.pos;
-		_rightKneePos = getNode("RLeg_Calf", _root)->m_worldTransform.pos;
+		_leftKneePosture = getNode("LLeg_Calf", _root)->m_worldTransform.pos;
+		_rightKneePosture = getNode("RLeg_Calf", _root)->m_worldTransform.pos;
 
 		NiNode* camera = (*g_playerCamera)->cameraNode;
 		NiNode* com = getNode("COM", _root);
@@ -521,13 +531,13 @@ namespace F4VRBody
 		NiMatrix43 mat = rot.multiply43Left(spine->m_parent->m_worldTransform.rot.Transpose());
 		rot.makeTransformMatrix(mat, NiPoint3(0, 0, 0));
 		spine->m_localTransform.rot = rot.multiply43Right(spine->m_worldTransform.rot);
-		
+
 	}
 
 	void Skeleton::fixArmor() {
 		NiNode* lPauldron = getNode("L_Pauldron", _root);
 		NiNode* rPauldron = getNode("R_Pauldron", _root);
-		float delta  = getNode("LArm_Collarbone", _root)->m_worldTransform.pos.z - _root->m_worldTransform.pos.z;
+		float delta = getNode("LArm_Collarbone", _root)->m_worldTransform.pos.z - _root->m_worldTransform.pos.z;
 
 		if (lPauldron) {
 			lPauldron->m_localTransform.pos.z = delta - 15.0f;
@@ -536,6 +546,144 @@ namespace F4VRBody
 			rPauldron->m_localTransform.pos.z = delta - 15.0f;
 		}
 	}
+
+	void Skeleton::walk() {
+
+		NiNode* lHip = getNode("LLeg_Thigh", _root);
+		NiNode* rHip = getNode("RLeg_Thigh", _root);
+		NiNode* lKnee = getNode("LLeg_Calf", lHip);
+		NiNode* rKnee = getNode("RLeg_Calf", rHip);
+		NiNode* lFoot = getNode("LLeg_Foot", lHip);
+		NiNode* rFoot = getNode("RLeg_Foot", rHip);
+
+		// want to calculate direction vector first.     Will only concern with x-y vector to start.
+		NiPoint3 lastPos = _lastPos;
+		NiPoint3 curPos = _curPos;
+
+		lastPos.z = 0;
+		curPos.z = 0;
+
+		NiPoint3 dir = curPos - lastPos;
+		double curSpeed;
+
+		curSpeed = (vec3_len(dir) / frameTime);
+
+		double stepTime = 0.3;
+		dir = vec3_norm(dir);
+	//	_MESSAGE("%f %f %f", stepTime, curSpeed, vec3_len(vec3_norm(dir) * curSpeed * stepTime));
+
+		// setup current walking state based on velocity and previous state
+		switch (_walkingState) {
+			case 0: {
+				if (curSpeed >= 20.0) {
+					_walkingState = 1;          // start walking
+					_footStepping = std::rand() % 2 + 1;    // pick a random foot to take a step
+
+					if (_footStepping == 1) {
+						_rightFootTarget = rFoot->m_worldTransform.pos + dir * (curSpeed * stepTime);
+						_rightFootStart = rFoot->m_worldTransform.pos - dir * (curSpeed * stepTime);
+						_leftFootTarget  = lFoot->m_worldTransform.pos;
+						_leftFootStart  = lFoot->m_worldTransform.pos;
+						_rightKneeTarget = _rightKneePosture + dir * (curSpeed * stepTime);
+						_rightKneeStart = _rightKneePosture - dir * (curSpeed * stepTime);
+						_leftKneeTarget  = _leftKneePosture;
+						_leftKneeStart  = _leftKneePosture;
+					}
+					else {
+						_rightFootTarget = rFoot->m_worldTransform.pos;
+						_rightFootStart = rFoot->m_worldTransform.pos;
+						_leftFootTarget = lFoot->m_worldTransform.pos + dir * (curSpeed * stepTime);
+						_leftFootStart  = lFoot->m_worldTransform.pos - dir * (curSpeed * stepTime);
+						_rightKneeTarget = _rightKneePosture;
+						_rightKneeStart = _rightKneePosture;
+						_leftKneeTarget = _leftKneePosture + dir * (curSpeed * stepTime);
+						_leftKneeStart  = _leftKneePosture - dir * (curSpeed * stepTime);
+					}
+					currentStepTime = 0.0;
+					break;
+				}
+				currentStepTime = 0.0;
+				_footStepping = 0;
+				break;
+			}
+			case 1: {
+				if (curSpeed < 20.0) {
+					_walkingState = 2;          // begin process to stop walking
+					currentStepTime = 0.0;
+				}
+				break;
+			}
+			case 2: {
+				if (curSpeed >= 20.0) {
+					_walkingState = 1;         // resume walking
+					currentStepTime = 0.0;
+				}
+				break;
+			}
+			default: {
+				_walkingState = 0;
+				break;
+			}
+		}
+
+		if (_walkingState == 0) {
+			// we're standing still so just set foot positions accordingly.
+			_leftFootPos = lFoot->m_worldTransform.pos;
+			_rightFootPos = rFoot->m_worldTransform.pos;
+			_leftKneePos = _leftKneePosture;
+			_rightKneePos = _rightKneePosture;
+			return;
+		}
+		else if (_walkingState == 1) {
+			currentStepTime += frameTime;
+
+			double frameStep = frameTime / (stepTime/2);
+			double interp = std::clamp(frameStep * (currentStepTime / frameTime), 0.0, 1.0);
+			double interpKnee = std::clamp(interp, 0.2, 0.9);
+
+
+			if (_footStepping == 1) {
+				_rightFootPos = _rightFootStart + ((_rightFootTarget - _rightFootStart) * interp);
+				_rightKneePos = _rightKneeStart + ((_rightKneeTarget - _rightKneeStart) * interpKnee);
+			}
+			else {
+				_leftFootPos = _leftFootStart + ((_leftFootTarget - _leftFootStart) * interp);
+				_leftKneePos = _leftKneeStart + ((_leftKneeTarget - _leftKneeStart) * interpKnee);
+			}
+
+
+
+			if (currentStepTime > stepTime) {
+				currentStepTime = 0.0;
+
+				if (_footStepping == 1) {
+					_footStepping = 2;
+					_leftFootTarget = lFoot->m_worldTransform.pos + dir * (curSpeed * stepTime);
+					_leftFootStart  = _leftFootPos;
+					_leftKneeTarget = _leftKneePosture + dir * (curSpeed * stepTime);
+					_leftKneeStart  = _leftKneePos;
+				}
+				else {
+					_footStepping = 1;
+					_rightFootTarget = rFoot->m_worldTransform.pos + dir * (curSpeed * stepTime);
+					_rightFootStart = _rightFootPos;
+					_rightKneeTarget = _rightKneePosture + dir * (curSpeed * stepTime);
+					_rightKneeStart = _rightKneePos;
+				}
+			}
+			return;
+		}
+		else if (_walkingState == 2) {
+			_leftFootPos = lFoot->m_worldTransform.pos;
+			_rightFootPos = rFoot->m_worldTransform.pos;
+			_leftKneePos = _leftKneePosture;
+			_rightKneePos = _rightKneePosture;
+			_walkingState = 0;
+			return;
+
+		}
+	}
+
 
 	void Skeleton::setLegs() {
 		Matrix44 rotatedM;
@@ -547,9 +695,6 @@ namespace F4VRBody
 		NiNode* rKnee = getNode("RLeg_Calf", rHip);
 		NiNode* lFoot = getNode("LLeg_Foot", lHip);
 		NiNode* rFoot = getNode("RLeg_Foot", rHip);
-
-		_leftFootPos  = lFoot->m_worldTransform.pos;
-		_rightFootPos = rFoot->m_worldTransform.pos;
 
 		NiPoint3 pos = _leftKneePos - lHip->m_worldTransform.pos;
 		NiPoint3 uLocalDir = lHip->m_worldTransform.rot.Transpose() * vec3_norm(pos) / lHip->m_worldTransform.scale;
@@ -607,14 +752,20 @@ namespace F4VRBody
 	void Skeleton::swapPipboy() {
 		_pipboyStatus = false;
 		_pipTimer = 0;
-		BSFixedString nodeName("PipboyBone");
 
-		NiAVObject* pipboyBone = leftArm.forearm1->GetObjectByName(&nodeName);
-		if (!pipboyBone) {
-			return;
-		}
-		NiAVObject* child = pipboyBone->GetAsNiNode()->m_children.m_data[0];
-		pipboyBone->GetAsNiNode()->RemoveChild(child);
+		
+		//BSFixedString nodeName("PipboyBone");
+
+		//NiAVObject* pipboyBone = leftArm.forearm1->GetObjectByName(&nodeName);
+		//if (!pipboyBone) {
+		//	return;
+		//}
+
+		//if (pipboyBone->GetAsNiNode()->m_children.m_emptyRunStart == 0) {
+		//	return;
+		//}
+		//NiAVObject* child = pipboyBone->GetAsNiNode()->m_children.m_data[0];
+		//pipboyBone->GetAsNiNode()->RemoveChild(child);
 
 	}
 
@@ -887,9 +1038,11 @@ namespace F4VRBody
 				if (_pipboyStatus) {
 					_pipboyStatus = false;
 					turnPipBoyOff();
+					_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				}
 				else {
 					_pipboyStatus = true;
+					_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
 					turnPipBoyOn();
 				}
 			}

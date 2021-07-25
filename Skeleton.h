@@ -102,10 +102,14 @@ namespace F4VRBody
 	public:
 		Skeleton() : _root(nullptr)
 		{
+			_curPos = NiPoint3(0, 0, 0);
+			_walkingState = 0;
 		}
 
 		Skeleton(BSFadeNode* a_node) : _root(a_node)
 		{
+			_curPos = NiPoint3(0, 0, 0);
+			_walkingState = 0;
 		}
 
 		void setDirection() {
@@ -156,6 +160,10 @@ namespace F4VRBody
 		void fixArmor();
 		void showHidePAHUD();
 
+		// movement
+		void walk();
+		
+
 		void hideWands();
 		void hideWeapon();
 		void swapPipboy();
@@ -176,6 +184,8 @@ namespace F4VRBody
 		void setBodyLen();
 		void detectInPowerArmor();
 
+		void setTime();
+
 		// Body Positioning
 		float getNeckYaw();
 		float getNeckPitch();
@@ -186,6 +196,7 @@ namespace F4VRBody
 		BSFadeNode* _root;
 		NiNode* _common;
 		NiPoint3   _lastPos;
+		NiPoint3   _curPos;
 		NiPoint3   _forwardDir;
 		NiPoint3   _sidewaysRDir;
 		NiPoint3   _upDir;
@@ -200,10 +211,6 @@ namespace F4VRBody
 		float _legLen;
 		ArmNodes rightArm;
 		ArmNodes leftArm;
-		NiPoint3 _leftFootPos;
-		NiPoint3 _rightFootPos;
-		NiPoint3 _leftKneePos;
-		NiPoint3 _rightKneePos;
 		float _curx;
 		float _cury;
 		std::map<std::string, NiTransform> savedStates;
@@ -214,5 +221,28 @@ namespace F4VRBody
 		bool _stickypip;
 
 		bool inPowerArmor;
+
+		LARGE_INTEGER freqCounter;
+		LARGE_INTEGER timer;
+		LARGE_INTEGER prevTime;
+		double frameTime;
+
+		int _walkingState;
+		double currentStepTime;
+		NiPoint3 _leftFootPos;
+		NiPoint3 _rightFootPos;
+		NiPoint3 _rightFootTarget;
+		NiPoint3 _leftFootTarget;
+		NiPoint3 _rightFootStart;
+		NiPoint3 _leftFootStart;
+		NiPoint3 _leftKneePosture;
+		NiPoint3 _rightKneePosture;
+		NiPoint3 _leftKneePos;
+		NiPoint3 _rightKneePos;
+		NiPoint3 _rightKneeTarget;
+		NiPoint3 _leftKneeTarget;
+		NiPoint3 _rightKneeStart;
+		NiPoint3 _leftKneeStart;
+		int _footStepping;
 	};
 }

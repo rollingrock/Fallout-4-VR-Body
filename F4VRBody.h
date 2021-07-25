@@ -11,6 +11,8 @@
 #include "f4se/PapyrusVM.h"
 #include "include/SimpleIni.h"
 
+#include <windows.h>
+
 extern uint64_t g_mainLoopCounter;
 namespace F4VRBody {
 
