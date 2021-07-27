@@ -241,12 +241,9 @@ namespace F4VRBody
 		NiPoint3 _rightKneePosture;
 		NiPoint3 _leftKneePos;
 		NiPoint3 _rightKneePos;
-		NiPoint3 _rightKneeTarget;
-		NiPoint3 _leftKneeTarget;
-		NiPoint3 _rightKneeStart;
-		NiPoint3 _leftKneeStart;
 		int _footStepping;
 		NiPoint3 _stepDir;
 		double _prevSpeed;
+		double _stepTimeinStep;
 	};
 }

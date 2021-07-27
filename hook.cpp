@@ -33,6 +33,8 @@ RelocAddr<_hookedda09a0> hookedda09a0(0xda09a0);
 typedef void(*_hooked1c22fb0)(uint64_t a, uint64_t b);
 RelocAddr<_hooked1c22fb0> hooked1c22fb0(0x1c22fb0);
 
+RelocAddr<uint64_t> wandMesh(0x2d686d8);
+
 void hookIt(uint64_t rcx) {
 	uint64_t parm = rcx;
 	F4VRBody::update();
@@ -65,6 +67,14 @@ void hookMain() {
 //	g_branchTrampoline.Write5Call(hookBeforeRenderer.GetUIntPtr(), (uintptr_t)hookIt);
 	//_MESSAGE("Successfully hooked before main renderer");
 
+
+	// replace mesh pointer string
+	const char* mesh = "Data\\Meshes\\FRIK\\_primaryWand.nif";
+	
+	for (int i = 0; i < strlen(mesh); ++i) {
+		SafeWrite8(wandMesh.GetUIntPtr() + i, mesh[i]);
+	}
+
 	int bytesToNOP = 0x1FF;
 
 	for (int i = 0; i < bytesToNOP; ++i) {
@@ -75,9 +85,9 @@ void hookMain() {
 
 	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
 
-	_MESSAGE("hooking main loop function");
+//	_MESSAGE("hooking main loop function");
 //	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);
-	_MESSAGE("successfully hooked main loop");
+//	_MESSAGE("successfully hooked main loop");
 }
 
 

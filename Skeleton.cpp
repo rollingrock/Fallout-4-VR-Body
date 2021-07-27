@@ -242,7 +242,7 @@ namespace F4VRBody
 		headNode->m_localTransform.rot.data[2][0] = -0.058;
 		headNode->m_localTransform.rot.data[2][1] = -0.037;
 		headNode->m_localTransform.rot.data[2][2] =  0.998;
-		headNode->m_localTransform.pos.y = -0.0;
+		headNode->m_localTransform.pos.y = -4.0;
 
 		NiAVObject::NiUpdateData* ud = nullptr;
 
@@ -572,14 +572,19 @@ namespace F4VRBody
 		NiNode* lFoot = getNode("LLeg_Foot", lHip);
 		NiNode* rFoot = getNode("RLeg_Foot", rHip);
 
+		// move feet closer togther
+		NiPoint3 leftToRight = (rFoot->m_worldTransform.pos - lFoot->m_worldTransform.pos) * 0.3;
+		lFoot->m_worldTransform.pos += leftToRight;
+		rFoot->m_worldTransform.pos -= leftToRight;
+
 		// want to calculate direction vector first.     Will only concern with x-y vector to start.
 		NiPoint3 lastPos = _lastPos;
 		NiPoint3 curPos = _curPos;
-
-		lastPos.z = 0;
 		curPos.z = 0;
+		lastPos.z = 0;
 
 		NiPoint3 dir = curPos - lastPos;
+
 		double curSpeed;
 
 		curSpeed = std::clamp((abs(vec3_len(dir)) / frameTime), 0.0, 350.0);
@@ -588,16 +593,17 @@ namespace F4VRBody
 		}
 		_prevSpeed = curSpeed;
 
-		double stepTime = std::clamp(cos(curSpeed / 140.0), 0.28, 0.55);
+		double stepTime = std::clamp(cos(curSpeed / 140.0), 0.28, 0.50);
 		dir = vec3_norm(dir);
 
 		// setup current walking state based on velocity and previous state
 		switch (_walkingState) {
 			case 0: {
-				if (curSpeed >= 20.0) {
+				if (curSpeed >= 35.0) {
 					_walkingState = 1;          // start walking
 					_footStepping = std::rand() % 2 + 1;    // pick a random foot to take a step
 					_stepDir = dir;
+					_stepTimeinStep = stepTime;
 
 					if (_footStepping == 1) {
 						_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.8);
@@ -647,20 +653,32 @@ namespace F4VRBody
 		else if (_walkingState == 1) {
 			currentStepTime += frameTime;
 
-			double frameStep = frameTime / (stepTime);
+			double frameStep = frameTime / (_stepTimeinStep);
 			double interp = std::clamp(frameStep * (currentStepTime / frameTime), 0.0, 1.0);
 
 			if (_footStepping == 1) {
+				_rightFootTarget.z = _root->m_worldTransform.pos.z;
+				_rightFootStart.z = _root->m_worldTransform.pos.z;
 				_rightFootPos = _rightFootStart + ((_rightFootTarget - _rightFootStart) * interp);
+				double stepAmount = std::clamp(vec3_len(_rightFootTarget - _rightFootStart) / 150.0, 0.0, 1.0);
+				double stepHeight = (std::max)(stepAmount * 9.0, 1.0);
+				float up = sinf(interp * PI) * stepHeight;
+				_rightFootPos.z += up;
 			}
 			else {
+				_leftFootTarget.z = _root->m_worldTransform.pos.z;
+				_leftFootStart.z = _root->m_worldTransform.pos.z;
 				_leftFootPos = _leftFootStart + ((_leftFootTarget - _leftFootStart) * interp);
+				double stepAmount = std::clamp(vec3_len(_leftFootTarget - _leftFootStart) / 150.0, 0.0, 1.0);
+				double stepHeight = (std::max)(stepAmount * 9.0, 1.0);
+				float up = sinf(interp * PI) * stepHeight;
+				_leftFootPos.z += up;
 			}
 
 			if (currentStepTime > stepTime) {
 				currentStepTime = 0.0;
 				_stepDir = dir;
-
+				_stepTimeinStep = stepTime;
 				//_MESSAGE("%2f %2f", curSpeed, stepTime);
 
 				if (_footStepping == 1) {

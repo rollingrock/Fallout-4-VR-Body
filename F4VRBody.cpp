@@ -226,11 +226,11 @@ namespace F4VRBody {
 	void replaceMeshes(PlayerNodes* pn) {
 		NiNode* ui = pn->primaryUIAttachNode;
 		NiNode* wand = get1stChildNode("world_primaryWand.nif", ui);
-		NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/world_primaryWand.nif");
+		NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
 
 		if (retNode) {
-			ui->RemoveChild(wand);
-			ui->AttachChild(retNode, true);
+//			ui->RemoveChild(wand);
+	//		ui->AttachChild(retNode, true);
 		}
 
 		wand = pn->SecondaryWandNode;
@@ -393,7 +393,7 @@ namespace F4VRBody {
 		playerSkelly->fixArmor();
 
 		// project body out in front of the camera for debug purposes
-		playerSkelly->projectSkelly(120.0f);
+		//playerSkelly->projectSkelly(120.0f);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 
 		detectBoneSphere();
