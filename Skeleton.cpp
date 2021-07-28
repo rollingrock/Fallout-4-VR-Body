@@ -604,20 +604,25 @@ namespace F4VRBody
 					_footStepping = std::rand() % 2 + 1;    // pick a random foot to take a step
 					_stepDir = dir;
 					_stepTimeinStep = stepTime;
+					delayFrame = 2;
 
 					if (_footStepping == 1) {
-						_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.8);
-						_rightFootStart = rFoot->m_worldTransform.pos - _stepDir * (curSpeed * stepTime);
+						_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
+						_rightFootStart = rFoot->m_worldTransform.pos;
 						_leftFootTarget  = lFoot->m_worldTransform.pos;
 						_leftFootStart  = lFoot->m_worldTransform.pos;
+						_leftFootPos = _leftFootStart;
+						_rightFootPos = _rightFootStart;
 					}
 					else {
 						_rightFootTarget = rFoot->m_worldTransform.pos;
 						_rightFootStart = rFoot->m_worldTransform.pos;
-						_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.8);
-						_leftFootStart  = lFoot->m_worldTransform.pos - _stepDir * (curSpeed * stepTime);
+						_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
+						_leftFootStart  = lFoot->m_worldTransform.pos;
+						_leftFootPos = _leftFootStart;
+						_rightFootPos = _rightFootStart;
 					}
-					currentStepTime = 0.0;
+					currentStepTime = stepTime / 2;
 					break;
 				}
 				currentStepTime = 0.0;
@@ -651,12 +656,30 @@ namespace F4VRBody
 			return;
 		}
 		else if (_walkingState == 1) {
+			NiPoint3 dirOffset = dir - _stepDir;
+			float dot = vec3_dot(dir, _stepDir);
+			double scale = (std::min)(curSpeed * stepTime * 1.5, 140.0);
+			dirOffset = dirOffset * scale;
+
 			currentStepTime += frameTime;
 
 			double frameStep = frameTime / (_stepTimeinStep);
 			double interp = std::clamp(frameStep * (currentStepTime / frameTime), 0.0, 1.0);
 
 			if (_footStepping == 1) {
+				if (dot < 0.9) {
+					if (!delayFrame) {
+						_rightFootTarget += dirOffset;
+						_stepDir = dir;
+						delayFrame = 2;
+					}
+					else {
+						delayFrame--;
+					}
+				}
+				else {
+					delayFrame = delayFrame == 2 ? delayFrame : delayFrame + 1;
+				}
 				_rightFootTarget.z = _root->m_worldTransform.pos.z;
 				_rightFootStart.z = _root->m_worldTransform.pos.z;
 				_rightFootPos = _rightFootStart + ((_rightFootTarget - _rightFootStart) * interp);
@@ -666,6 +689,19 @@ namespace F4VRBody
 				_rightFootPos.z += up;
 			}
 			else {
+				if (dot < 0.9) {
+					if (!delayFrame) {
+						_leftFootTarget += dirOffset;
+						_stepDir = dir;
+						delayFrame = 2;
+					}
+					else {
+						delayFrame--;
+					}
+				}
+				else {
+					delayFrame = delayFrame == 2 ? delayFrame : delayFrame + 1;
+				}
 				_leftFootTarget.z = _root->m_worldTransform.pos.z;
 				_leftFootStart.z = _root->m_worldTransform.pos.z;
 				_leftFootPos = _leftFootStart + ((_leftFootTarget - _leftFootStart) * interp);
@@ -683,12 +719,12 @@ namespace F4VRBody
 
 				if (_footStepping == 1) {
 					_footStepping = 2; 
-					_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
+					_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * scale;
 					_leftFootStart = _leftFootPos;
 				}
 				else {
 					_footStepping = 1;
-					_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
+					_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * scale;
 					_rightFootStart = _rightFootPos;
 				}
 			}

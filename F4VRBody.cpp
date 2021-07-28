@@ -596,8 +596,13 @@ namespace F4VRBody {
 		NiNode* boneNode = getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsNiNode();
 
 		if (!boneNode) {
-			_MESSAGE("RegisterBoneSphere: BONE DOES NOT EXIST!!");
-			return 0;
+
+			boneNode = getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode->m_parent->m_parent->m_parent->GetAsNiNode());  // ObjectLODRoot
+
+			if (!boneNode) {
+				_MESSAGE("RegisterBoneSphere: BONE DOES NOT EXIST!!");
+				return 0;
+			}
 		}
 
 		NiPoint3 offsetVec;

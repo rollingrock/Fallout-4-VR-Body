@@ -245,5 +245,6 @@ namespace F4VRBody
 		NiPoint3 _stepDir;
 		double _prevSpeed;
 		double _stepTimeinStep;
+		int delayFrame;
 	};
 }
