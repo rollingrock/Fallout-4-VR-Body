@@ -238,7 +238,7 @@ namespace SmoothMovementVR
 							}
 						//	_MESSAGE("playerPos: %g %g %g  --hmd local:  %g %g %g  --appliedLocal: %g %g %g", curPos.x, curPos.y, curPos.z, hmdNode->m_localTransform.pos.x, hmdNode->m_localTransform.pos.y, hmdNode->m_localTransform.pos.z, playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
-							_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
+						//	_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 						}
 						else
 						{
