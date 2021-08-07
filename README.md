@@ -19,6 +19,7 @@ Next Steps
 
 Credits
 - prog - I wouldn't get anywhere with this if not for the fine example of Skyrim VRIK.   Thanks for all of the advice and code samples
+- Shizof - Thanks for letting me adapt Smooth Movement directly into the mod
 - Gingas
 - CylonSurfer
 - Atom
