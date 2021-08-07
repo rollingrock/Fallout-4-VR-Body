@@ -172,6 +172,7 @@ namespace F4VRBody
 		void fixMelee();
 		void hideFistHelpers();
 
+		bool isLookingAtPipBoy();
 		void operatePipBoy();
 
 		// utility

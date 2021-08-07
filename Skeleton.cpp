@@ -1127,6 +1127,26 @@ namespace F4VRBody
 		}
 	}
 
+	bool Skeleton::isLookingAtPipBoy() {
+		BSFixedString wandPipName("PipboyRoot_NIF_ONLY");
+		NiAVObject* pipboy = _playerNodes->SecondaryWandNode->GetObjectByName(&wandPipName);
+
+		if (pipboy == nullptr) {
+			return false;
+		}
+
+		BSFixedString screenName("Screen:0");
+		NiAVObject* screen = pipboy->GetObjectByName(&screenName);
+
+		NiPoint3 pipBoyOut = screen->m_worldTransform.rot * NiPoint3(0, -1, 0);
+		NiPoint3 lookDir = (*g_playerCamera)->cameraNode->m_worldTransform.rot * NiPoint3(0, 1, 0);
+
+		float dot = vec3_dot(vec3_norm(pipBoyOut), vec3_norm(lookDir));
+
+		return (dot < -0.7 ? true : false);
+
+	}
+
 	void Skeleton::operatePipBoy() {
 
 		if ((*g_player)->firstPersonSkeleton == nullptr) {
@@ -1142,6 +1162,10 @@ namespace F4VRBody
 		NiAVObject* pipboy = getNode("PipboyRoot", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 		if ((finger == nullptr) || (pipboy == nullptr)) {
+			return;
+		}
+
+		if (!isLookingAtPipBoy()) {
 			return;
 		}
 
