@@ -456,7 +456,7 @@ namespace F4VRBody
 
 		detectInPowerArmor();
 
-		_playerNodes->playerworldnode->m_localTransform.pos.z = inPowerArmor ? (10.0f + c_cameraHeight) : c_cameraHeight;
+		_playerNodes->playerworldnode->m_localTransform.pos.z += inPowerArmor ? (10.0f + c_cameraHeight) : c_cameraHeight;
 
 		Matrix44 mat;
 		mat = 0.0;
@@ -481,6 +481,8 @@ namespace F4VRBody
 		body->m_localTransform.pos *= 0.0f;
 		body->m_worldTransform.pos.x = this->getPosition().x;
 		body->m_worldTransform.pos.y = this->getPosition().y;
+		body->m_worldTransform.pos.z += _playerNodes->playerworldnode->m_localTransform.pos.z;
+	//	_MESSAGE("%2f", _playerNodes->playerworldnode->m_localTransform.pos.z);
 
 		updateDown(_root, true);
 

@@ -26,6 +26,8 @@ namespace F4VRBody {
 
 	 void updateTransforms(NiNode* node);
 
+	 void updateTransformsDown(NiNode* nde, bool updateSelf);
+
 	 void turnPipBoyOn();
 	 void turnPipBoyOff();
 

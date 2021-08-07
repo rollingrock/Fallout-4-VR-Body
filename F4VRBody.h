@@ -9,7 +9,9 @@
 #include "f4se/PapyrusNativeFunctions.h"
 #include "f4se/PapyrusEvents.h"
 #include "f4se/PapyrusVM.h"
+
 #include "include/SimpleIni.h"
+#include "SmoothMovementVR.h"
 
 #include <windows.h>
 

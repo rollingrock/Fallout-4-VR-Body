@@ -125,6 +125,22 @@ namespace F4VRBody {
 		return;
 	 }
 
+	void updateTransformsDown(NiNode* nde, bool updateSelf) {
+		NiAVObject::NiUpdateData* ud = nullptr;
+
+		if (updateSelf) {
+			//			nde->UpdateWorldData(ud);
+			updateTransforms(nde);
+		}
+
+		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
+			if (nextNode) {
+				updateTransformsDown(nextNode, true);
+			}
+		}
+	}
+
 	void turnPipBoyOn() {
 /*  From IdleHands
     Utility.SetINIFloat("fHMDToPipboyScaleOuterAngle:VRPipboy", 0.0000)

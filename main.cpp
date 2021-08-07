@@ -12,6 +12,7 @@
 #include "version.h"
 #include "hook.h"
 #include "F4VRBody.h"
+#include "SmoothMovementVR.h"
 
 static PluginHandle g_pluginHandle = kPluginHandle_Invalid;
 static F4SEPapyrusInterface* g_papyrus = NULL;
@@ -44,6 +45,9 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
 		if (msg->type == F4SEMessagingInterface::kMessage_GameLoaded)
 		{
 			F4VRBody::startUp();
+			SmoothMovementVR::StartFunctions();
+
+			SmoothMovementVR::MenuOpenCloseHandler::Register();
 		}
 	}
 }

@@ -8,6 +8,16 @@
 
 bool firstTime = true;
 
+//Smooth Movement
+float smoothingAmount = 10.0f;
+float smoothingAmountHorizontal = 0;
+float dampingMultiplier = 1.0f;
+float dampingMultiplierHorizontal = 0;
+float stoppingMultiplier = 0.2f;
+float stoppingMultiplierHorizontal = 0.2f;
+int disableInteriorSmoothing = 1;
+int disableInteriorSmoothingHorizontal = 1;
+
 namespace F4VRBody {
 
 	Skeleton* playerSkelly = nullptr;
@@ -27,6 +37,8 @@ namespace F4VRBody {
 	float c_armLength = 36.74;
 	float c_cameraHeight = 0.0;
 	bool  c_showPAHUD = true;
+
+
 
 	// loadNif native func
 	//typedef int(*_loadNif)(const char* path, uint64_t parentNode, uint64_t flags);
@@ -67,7 +79,7 @@ namespace F4VRBody {
 		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
 
 		if (rc < 0) {
-			_MESSAGE("ERROR: cannot read Fallout4VR_Body.ini");
+			_MESSAGE("ERROR: cannot read FRIK.ini");
 			return false;
 		}
 
@@ -78,9 +90,18 @@ namespace F4VRBody {
 		c_playerOffset_up =      (float) ini.GetDoubleValue("Fallout4VRBody", "playerOffset_up", -2.0);
 		c_pipboyDetectionRange = (float) ini.GetDoubleValue("Fallout4VRBody", "pipboyDetectionRange", 15.0);
 		c_armLength =            (float) ini.GetDoubleValue("FalloutVRBody", "armLength", 36.74);
-		c_cameraHeight =         (float)ini.GetDoubleValue("FalloutVRBody", "cameraHeightOffset", 0.0);
+		c_cameraHeight =         (float) ini.GetDoubleValue("FalloutVRBody", "cameraHeightOffset", 0.0);
 		c_showPAHUD =            ini.GetBoolValue("Fallout4VRBody", "showPAHUD");
-
+		
+		//Smooth Movement
+		smoothingAmount                    = (float) ini.GetDoubleValue("SmoothMovementVR", "SmoothAmount", 15.0);
+		smoothingAmountHorizontal          = (float) ini.GetDoubleValue("SmoothMovementVR", "SmoothAmountHorizontal", 5.0);
+		dampingMultiplier                  = (float) ini.GetDoubleValue("SmoothMovementVR", "Damping", 1.0);
+		dampingMultiplierHorizontal        = (float) ini.GetDoubleValue("SmoothMovementVR", "DampingHorizontal", 1.0);
+		stoppingMultiplier                 = (float) ini.GetDoubleValue("SmoothMovementVR", "StoppingMultiplier", 0.6);
+		stoppingMultiplierHorizontal       = (float) ini.GetDoubleValue("SmoothMovementVR", "StoppingMultiplierHorizontal", 0.6);
+		disableInteriorSmoothing           = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothing", 1);
+		disableInteriorSmoothingHorizontal = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothingHorizontal", 1);
 		return true;
 	}
 
@@ -296,20 +317,6 @@ namespace F4VRBody {
 	void update() {
 
 
-		//if (prevCounter != g_mainLoopCounter) {
-		//	prevCounter = g_mainLoopCounter;
-		//	localCounter = 0;
-		//	return;
-		//}
-		//else if (localCounter != 3) {
-		//	localCounter++;
-		//	return;
-		//}
-
-	//	localCounter++;
-//		updateCounter++;
-		//_MESSAGE("mainLoopCounter = %d; UpdateCounter = %d", g_mainLoopCounter, updateCounter);
-	//	_MESSAGE("start of update");
 
 		if (!isLoaded) {
 			return;
@@ -346,6 +353,8 @@ namespace F4VRBody {
 		}
 
 		// do stuff now
+		SmoothMovementVR::everyFrame();
+		updateTransformsDown(playerSkelly->getPlayerNodes()->playerworldnode, true);
 
 		playerSkelly->setTime();
 
