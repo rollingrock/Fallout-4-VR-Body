@@ -6,7 +6,7 @@ Note this is a work in progress....
 Current status:
 - Arm IK 100%
 - Body positioning 95%.   Needs some refinement on body rotation
-- leg IK work started.   hope to be quick from already done the harder IK with the arms.    Will need to figure out some kind of walking animation
+- leg IK work mostly done.   Walking added.    Body is a little "stiff" so need to see how to make it a bit more natural
 - Power armor 90%.    Works well generally but needs some help with consistent height scaling as well as some nodes are not attached to the body.
 - bulk weapon repositioning mostly done.     Need to rotate some melee still and grenade are offset
 - Pipboy now working with haptics.    Only really works with static scale.     this can certainly be improved but it is functional
@@ -14,8 +14,7 @@ Current status:
 - added support for attached detection spheres for papyrus events to the skeleton bones
 
 Next Steps
-- Implement some form of walking animation and IK
-- ???
+- Polish
 - Profit
 
 Credits
