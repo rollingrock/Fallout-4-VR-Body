@@ -38,6 +38,8 @@ namespace F4VRBody {
 	float c_cameraHeight = 0.0;
 	bool  c_showPAHUD = true;
 
+	bool meshesReplaced = false;
+
 
 
 	// loadNif native func
@@ -256,12 +258,25 @@ namespace F4VRBody {
 
 		wand = pn->SecondaryWandNode;
 		NiNode* pipParent = get1stChildNode("PipboyParent", wand);
+
+		if (!pipParent) {
+			meshesReplaced = false;
+			return;
+		}
+
 		wand = get1stChildNode("PipboyRoot_NIF_ONLY", pipParent);
 		retNode = loadNifFromFile("Data/Meshes/FRIK/PipboyVR.nif");
+
 
 		if (retNode && wand) {
 			BSFixedString screenName("Screen:0");
 			NiAVObject* newScreen = retNode->GetObjectByName(&screenName)->m_parent;
+
+			if (!newScreen) {
+				meshesReplaced = false;
+				return;
+			}
+
 			pipParent->RemoveChild(wand);
 			pipParent->AttachChild(retNode, true);
 
@@ -270,6 +285,8 @@ namespace F4VRBody {
 			NiNode* rn = addNode((uint64_t)&pn->ScreenNode, newScreen);
 			pn->PipboyRoot_nif_only_node = retNode;
 		}
+
+			meshesReplaced = true;
 
 	}
 
@@ -294,9 +311,12 @@ namespace F4VRBody {
 			playerSkelly = new Skeleton((BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
 			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
 			playerSkelly->setNodes();
-			replaceMeshes(playerSkelly->getPlayerNodes());
-			playerSkelly->setDirection();
+			//replaceMeshes(playerSkelly->getPlayerNodes());
+			//playerSkelly->setDirection();
 		    playerSkelly->swapPipboy();
+
+			_MESSAGE("handle pipboy init");
+
 			turnPipBoyOff();
 
 
@@ -304,6 +324,7 @@ namespace F4VRBody {
 				Setting* set = GetINISetting("fVrScale:VR");
 				set->SetDouble(c_fVrScale);
 			}
+			_MESSAGE("scale set");
 
 			playerSkelly->setBodyLen();
 			_MESSAGE("initialized");
@@ -348,11 +369,16 @@ namespace F4VRBody {
 			playerSkelly->setDirection();
 		    playerSkelly->swapPipboy();
 			playerSkelly->setBodyLen();
-			_MESSAGE("initialized");
+			replaceMeshes(playerSkelly->getPlayerNodes());
+			_MESSAGE("initialized for real");
 			return;
 		}
 
 		// do stuff now
+		if (!meshesReplaced) {
+			replaceMeshes(playerSkelly->getPlayerNodes());
+		}
+
 		SmoothMovementVR::everyFrame();
 		updateTransformsDown(playerSkelly->getPlayerNodes()->playerworldnode, true);
 

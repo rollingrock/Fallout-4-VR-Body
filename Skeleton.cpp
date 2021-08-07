@@ -331,6 +331,8 @@ namespace F4VRBody
 		BSFixedString lForearm3("LArm_ForeArm3");
 		BSFixedString lHand("LArm_Hand");
 
+		_MESSAGE("set arm nodes");
+
 		rightArm.shoulder  = _common->GetObjectByName(&rCollar);
 		rightArm.upper     = _common->GetObjectByName(&rUpper);
 		rightArm.upperT1   = _common->GetObjectByName(&rUpper1);
@@ -347,8 +349,11 @@ namespace F4VRBody
 		leftArm.forearm3   = _common->GetObjectByName(&lForearm3);
 		leftArm.hand       = _common->GetObjectByName(&lHand);
 
+		_MESSAGE("finished set arm nodes");
+
 		savedStates.clear();
 		saveStatesTree(_root->m_parent->GetAsNiNode());
+		_MESSAGE("finished saving tree");
 	}
 
 	void Skeleton::positionDiff() {
@@ -598,6 +603,8 @@ namespace F4VRBody
 		double stepTime = std::clamp(cos(curSpeed / 140.0), 0.28, 0.50);
 		dir = vec3_norm(dir);
 
+		static float spineAngle = 0.0;
+
 		// setup current walking state based on velocity and previous state
 		switch (_walkingState) {
 			case 0: {
@@ -629,6 +636,7 @@ namespace F4VRBody
 				}
 				currentStepTime = 0.0;
 				_footStepping = 0;
+				spineAngle = 0.0;
 				break;
 			}
 			case 1: {
@@ -663,12 +671,15 @@ namespace F4VRBody
 			double scale = (std::min)(curSpeed * stepTime * 1.5, 140.0);
 			dirOffset = dirOffset * scale;
 
+			int sign = 1;
+
 			currentStepTime += frameTime;
 
 			double frameStep = frameTime / (_stepTimeinStep);
 			double interp = std::clamp(frameStep * (currentStepTime / frameTime), 0.0, 1.0);
 
 			if (_footStepping == 1) {
+				sign = -1;
 				if (dot < 0.9) {
 					if (!delayFrame) {
 						_rightFootTarget += dirOffset;
@@ -712,6 +723,12 @@ namespace F4VRBody
 				float up = sinf(interp * PI) * stepHeight;
 				_leftFootPos.z += up;
 			}
+
+			spineAngle = sign * sinf(interp * PI) * 3.0;
+			Matrix44 rot;
+
+			rot.setEulerAngles(degrees_to_rads(spineAngle), 0.0, 0.0);
+			_spine->m_localTransform.rot = rot.multiply43Left(_spine->m_localTransform.rot);
 
 			if (currentStepTime > stepTime) {
 				currentStepTime = 0.0;

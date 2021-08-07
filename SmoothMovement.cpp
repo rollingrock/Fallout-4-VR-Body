@@ -1,3 +1,5 @@
+// From Shizof's mod with permission.  Thanks Shizof!!
+
 #include "SmoothMovementVR.h"
 #include "f4se/NiExtraData.h"
 #include <atomic>

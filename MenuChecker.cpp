@@ -1,5 +1,7 @@
 #include "MenuChecker.h"
 
+// From Shizof's mod with permission.  Thanks Shizof!!
+
 
 namespace SmoothMovementVR
 {

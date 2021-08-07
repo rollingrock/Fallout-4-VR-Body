@@ -4,6 +4,8 @@
 #include "f4se/PapyrusVM.h"
 #include <unordered_map>
 
+// From Shizof's mod with permission.  Thanks Shizof!!
+
 
 namespace SmoothMovementVR
 {

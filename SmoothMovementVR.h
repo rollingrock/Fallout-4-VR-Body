@@ -1,4 +1,7 @@
 #pragma once
+
+// From Shizof's mod with permission.  Thanks Shizof!!
+
 #include "f4se/PapyrusNativeFunctions.h"
 #include "f4se\GameReferences.h"
 #include "f4se\GameRTTI.h"
