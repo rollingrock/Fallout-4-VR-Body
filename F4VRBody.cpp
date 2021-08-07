@@ -597,7 +597,13 @@ namespace F4VRBody {
 
 		if (!boneNode) {
 
-			boneNode = getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode->m_parent->m_parent->m_parent->GetAsNiNode());  // ObjectLODRoot
+			auto n = (*g_player)->unkF0->rootNode->GetAsNiNode();
+
+			while (n->m_parent) {
+				n = n->m_parent->GetAsNiNode();
+			}
+
+			boneNode = getChildNode(bone.c_str(), n);  // ObjectLODRoot
 
 			if (!boneNode) {
 				_MESSAGE("RegisterBoneSphere: BONE DOES NOT EXIST!!");
