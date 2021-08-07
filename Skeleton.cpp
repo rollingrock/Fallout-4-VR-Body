@@ -1087,7 +1087,7 @@ namespace F4VRBody
 					n2->flags |= 0x1;
 					break;
 				}
-				else if (n->m_name.data == NULL) {
+				else if (!strcmp(n->m_name.c_str(), "")) {
 					n->flags |= 0x1;
 					NiAVObject* n2 = (NiAVObject*)n->m_children.m_data[0];
 					n2->flags |= 0x1;
