@@ -37,6 +37,7 @@ namespace F4VRBody {
 	float c_armLength = 36.74;
 	float c_cameraHeight = 0.0;
 	bool  c_showPAHUD = true;
+	bool  c_hidePipboy = false;
 
 	bool meshesReplaced = false;
 
@@ -94,6 +95,7 @@ namespace F4VRBody {
 		c_armLength =            (float) ini.GetDoubleValue("FalloutVRBody", "armLength", 36.74);
 		c_cameraHeight =         (float) ini.GetDoubleValue("FalloutVRBody", "cameraHeightOffset", 0.0);
 		c_showPAHUD =            ini.GetBoolValue("Fallout4VRBody", "showPAHUD");
+		c_hidePipboy =           ini.GetBoolValue("Fallout4VRBody", "hidePipboy");
 		
 		//Smooth Movement
 		smoothingAmount                    = (float) ini.GetDoubleValue("SmoothMovementVR", "SmoothAmount", 15.0);
@@ -220,6 +222,7 @@ namespace F4VRBody {
 					sphere->m_name = BSFixedString("Sphere01");
 
 					bone->AttachChild((NiAVObject*)sphere, true);
+					sphere->flags &= 0xfffffffffffffffe;
 					sphere->m_localTransform.scale = (element.second->radius * 2);
 					element.second->debugSphere = sphere;
 				}
@@ -229,7 +232,7 @@ namespace F4VRBody {
 				sphere->m_localTransform.scale = 0;
 			}
 			else if (sphere && element.second->turnOnDebugSpheres) {
-				sphere->flags |= 0x0;
+				sphere->flags &= 0xfffffffffffffffe;
 				sphere->m_localTransform.scale = (element.second->radius * 2);
 			}
 
@@ -287,6 +290,7 @@ namespace F4VRBody {
 		}
 
 			meshesReplaced = true;
+			_MESSAGE("Meshes replaced!");
 
 	}
 
@@ -419,6 +423,7 @@ namespace F4VRBody {
 		// Misc stuff to show/hide things and also setup the wrist pipboy
 		playerSkelly->hideWeapon();
 		playerSkelly->positionPipboy();
+		playerSkelly->hidePipboy();
 		playerSkelly->fixMelee();
 		playerSkelly->hideFistHelpers();
 		playerSkelly->showHidePAHUD();
@@ -461,6 +466,7 @@ namespace F4VRBody {
 		rc = ini.SetDoubleValue("Fallout4VRBody", "armLength", (double)c_armLength);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "cameraHeightOffset", (double)c_cameraHeight);
 		rc = ini.SetBoolValue("Fallout4VRBody", "showPAHUD", c_showPAHUD);
+		rc = ini.SetBoolValue("Fallout4VRBody", "hidePipboy", c_hidePipboy);
 
 		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
 
@@ -496,6 +502,16 @@ namespace F4VRBody {
 		}
 
 		c_showPAHUD = !c_showPAHUD;
+	}
+	
+	void togglePipboyVis(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_hidePipboy = !c_hidePipboy;
+
 	}
 
 	void moveCameraUp(StaticFunctionTag* base){ 
@@ -628,7 +644,7 @@ namespace F4VRBody {
 			return 0;
 		}
 
-		NiNode* boneNode = getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsNiNode();
+		NiNode* boneNode = (NiNode*)getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode);
 
 		if (!boneNode) {
 
@@ -713,6 +729,7 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("saveStates", "FRIK:FRIK", F4VRBody::saveStates, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Calibrate", "FRIK:FRIK", F4VRBody::calibrate, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePAHud", "FRIK:FRIK", F4VRBody::togglePAHUD, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePipboyVis", "FRIK:FRIK", F4VRBody::togglePipboyVis, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraUp", "FRIK:FRIK", F4VRBody::moveCameraUp, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraDown", "FRIK:FRIK", F4VRBody::moveCameraDown, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeTaller", "FRIK:FRIK", F4VRBody::makeTaller, vm));

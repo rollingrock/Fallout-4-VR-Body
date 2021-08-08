@@ -141,6 +141,26 @@ namespace F4VRBody {
 		}
 	}
 
+	void toggleVis(NiNode* nde, bool hide, bool updateSelf) {
+
+		if (updateSelf) {
+			if (hide) {
+				nde->flags |= 0x1;
+			}
+			else {
+				nde->flags &= 0xfffffffffffffffe;
+			}
+		}
+
+		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
+			if (nextNode) {
+				toggleVis(nextNode, hide, true);
+			}
+		}
+	}
+
+
 	void turnPipBoyOn() {
 /*  From IdleHands
     Utility.SetINIFloat("fHMDToPipboyScaleOuterAngle:VRPipboy", 0.0000)

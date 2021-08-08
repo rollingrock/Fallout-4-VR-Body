@@ -28,6 +28,8 @@ namespace F4VRBody {
 
 	 void updateTransformsDown(NiNode* nde, bool updateSelf);
 
+	 void toggleVis(NiNode* nde, bool hide, bool updateSelf);
+
 	 void turnPipBoyOn();
 	 void turnPipBoyOff();
 

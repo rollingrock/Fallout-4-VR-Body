@@ -1166,6 +1166,36 @@ namespace F4VRBody
 
 	}
 
+	void Skeleton::hidePipboy() {
+		BSFixedString pipName("PipboyBone");
+		NiAVObject* pipboy = leftArm.upper->GetObjectByName(&pipName);
+
+		if (!pipboy) {
+			_MESSAGE("can't find pipboyroot in hidePipBoy function");
+			return;
+		}
+
+		if (!c_hidePipboy) {
+			if (pipboy->m_localTransform.scale = 1.0) {
+				return;
+			}
+			else {
+				pipboy->m_localTransform.scale = 1.0;
+				toggleVis(pipboy->GetAsNiNode(), false, true);
+			}
+		}
+		else {
+			if (pipboy->m_localTransform.scale = 0.0) {
+				return;
+			}
+			else {
+				pipboy->m_localTransform.scale = 0.0;
+				toggleVis(pipboy->GetAsNiNode(), true, true);
+			}
+
+		}
+	}
+
 	void Skeleton::operatePipBoy() {
 
 		if ((*g_player)->firstPersonSkeleton == nullptr) {
