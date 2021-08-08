@@ -38,6 +38,8 @@ namespace F4VRBody {
 	float c_cameraHeight = 0.0;
 	bool  c_showPAHUD = true;
 	bool  c_hidePipboy = false;
+	bool  c_selfieMode = false;
+	bool  c_verbose = false;
 
 	bool meshesReplaced = false;
 
@@ -92,10 +94,11 @@ namespace F4VRBody {
 		c_playerOffset_forward = (float) ini.GetDoubleValue("Fallout4VRBody", "playerOffset_forward", -4.0);
 		c_playerOffset_up =      (float) ini.GetDoubleValue("Fallout4VRBody", "playerOffset_up", -2.0);
 		c_pipboyDetectionRange = (float) ini.GetDoubleValue("Fallout4VRBody", "pipboyDetectionRange", 15.0);
-		c_armLength =            (float) ini.GetDoubleValue("FalloutVRBody", "armLength", 36.74);
-		c_cameraHeight =         (float) ini.GetDoubleValue("FalloutVRBody", "cameraHeightOffset", 0.0);
+		c_armLength =            (float) ini.GetDoubleValue("Fallout4VRBody", "armLength", 36.74);
+		c_cameraHeight =         (float) ini.GetDoubleValue("Fallout4VRBody", "cameraHeightOffset", 0.0);
 		c_showPAHUD =            ini.GetBoolValue("Fallout4VRBody", "showPAHUD");
 		c_hidePipboy =           ini.GetBoolValue("Fallout4VRBody", "hidePipboy");
+		c_verbose =              ini.GetBoolValue("Fallout4VRBody", "VerboseLogging");
 		
 		//Smooth Movement
 		smoothingAmount                    = (float) ini.GetDoubleValue("SmoothMovementVR", "SmoothAmount", 15.0);
@@ -379,36 +382,48 @@ namespace F4VRBody {
 		}
 
 		// do stuff now
+
+		if (c_verbose) { _MESSAGE("Start of Frame"); }
+
 		if (!meshesReplaced) {
 			replaceMeshes(playerSkelly->getPlayerNodes());
 		}
 
+		if (c_verbose) { _MESSAGE("Smooth Movement"); }
 		SmoothMovementVR::everyFrame();
 		updateTransformsDown(playerSkelly->getPlayerNodes()->playerworldnode, true);
 
 		playerSkelly->setTime();
 
+		if (c_verbose) { _MESSAGE("Hide Wands"); }
 		playerSkelly->hideWands();
 
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
+		if (c_verbose) { _MESSAGE("restore locals of skeleton"); }
 		playerSkelly->restoreLocals(playerSkelly->getRoot());
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);
 
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
+		if (c_verbose) { _MESSAGE("Setup Head"); }
 		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
 		playerSkelly->setupHead(headNode);
 
 		//// set up the body underneath the headset in a proper scale and orientation
+		if (c_verbose) { _MESSAGE("Set body under HMD"); }
 		playerSkelly->setUnderHMD();
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// Now Set up body Posture and hook up the legs
+		if (c_verbose) { _MESSAGE("Set body posture"); }
 		playerSkelly->setBodyPosture();
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
+		if (c_verbose) { _MESSAGE("Set Knee Posture"); }
 		playerSkelly->setKneePos();
+		if (c_verbose) { _MESSAGE("Set Walk"); }
 		playerSkelly->walk();
 		//playerSkelly->setLegs();
+		if (c_verbose) { _MESSAGE("Set Legs"); }
 		playerSkelly->setSingleLeg(false);
 		playerSkelly->setSingleLeg(true);
 
@@ -416,11 +431,13 @@ namespace F4VRBody {
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// do arm IK - Right then Left
+		if (c_verbose) { _MESSAGE("Set Arms"); }
 		playerSkelly->setArms(false);
 		playerSkelly->setArms(true);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
-		// Misc stuff to show/hide things and also setup the wrist pipboy
+		// Misc stuff to showahide things and also setup the wrist pipboy
+		if (c_verbose) { _MESSAGE("Pipboy and Weapons"); }
 		playerSkelly->hideWeapon();
 		playerSkelly->positionPipboy();
 		playerSkelly->hidePipboy();
@@ -428,17 +445,22 @@ namespace F4VRBody {
 		playerSkelly->hideFistHelpers();
 		playerSkelly->showHidePAHUD();
 
+		if (c_verbose) { _MESSAGE("Operate Pipboy"); }
 		playerSkelly->operatePipBoy();
 
+		if (c_verbose) { _MESSAGE("Fix the Armor"); }
 		playerSkelly->fixArmor();
 
 		// project body out in front of the camera for debug purposes
-		//playerSkelly->projectSkelly(120.0f);
+		if (c_verbose) { _MESSAGE("Selfie Time"); }
+		playerSkelly->selfieSkelly(70.0f);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 
+		if (c_verbose) { _MESSAGE("bone sphere stuff"); }
 		detectBoneSphere();
 		handleDebugBoneSpheres();
 
+		if (c_verbose) { _MESSAGE("fix the missing screen"); }
 		fixMissingScreen(playerSkelly->getPlayerNodes());
 
 	}
@@ -513,6 +535,16 @@ namespace F4VRBody {
 		c_hidePipboy = !c_hidePipboy;
 
 	}
+
+	void toggleSelfieMode(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_selfieMode = !c_selfieMode;
+	}
+
 
 	void moveCameraUp(StaticFunctionTag* base){ 
 		BSFixedString menuName("BookMenu");
@@ -730,6 +762,7 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Calibrate", "FRIK:FRIK", F4VRBody::calibrate, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePAHud", "FRIK:FRIK", F4VRBody::togglePAHUD, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePipboyVis", "FRIK:FRIK", F4VRBody::togglePipboyVis, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", F4VRBody::toggleSelfieMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraUp", "FRIK:FRIK", F4VRBody::moveCameraUp, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraDown", "FRIK:FRIK", F4VRBody::moveCameraDown, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeTaller", "FRIK:FRIK", F4VRBody::makeTaller, vm));

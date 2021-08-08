@@ -138,6 +138,10 @@ namespace F4VRBody {
 			if (nextNode) {
 				updateTransformsDown(nextNode, true);
 			}
+			auto triNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsBSTriShape() : nullptr;
+			if (triNode) {
+				updateTransforms((NiNode*)triNode);
+			}
 		}
 	}
 

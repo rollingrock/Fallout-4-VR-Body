@@ -146,7 +146,7 @@ namespace F4VRBody
 		// reposition stuff
 		void rotateWorld(NiNode* nde);
 		void updatePos(NiNode* nde, NiPoint3 offset);
-		void projectSkelly(float offsetOutFront);
+		void selfieSkelly(float offsetOutFront);
 		void setupHead(NiNode* headNode);
 		void saveStatesTree(NiNode* node);
 		void restoreLocals(NiNode* node);

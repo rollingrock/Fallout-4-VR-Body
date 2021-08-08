@@ -143,6 +143,10 @@ namespace F4VRBody
 			if (nextNode) {
 				this->updateDown(nextNode, true);
 			}
+			auto triNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsBSTriShape() : nullptr;
+			if (triNode) {
+				updateTransforms((NiNode*)triNode);
+			}
 		}
 	}
 
@@ -195,7 +199,12 @@ namespace F4VRBody
 		_lastPos = _curPos;
 	}
 
-	void Skeleton::projectSkelly(float offsetOutFront) {    // Projects the 3rd person body out in front of the player by offset amount
+	void Skeleton::selfieSkelly(float offsetOutFront) {    // Projects the 3rd person body out in front of the player by offset amount
+
+		if (!c_selfieMode) {
+			return;
+		}
+
 		float z = _root->m_localTransform.pos.z;
 		NiNode* body = _root->m_parent->GetAsNiNode();
 
@@ -209,6 +218,7 @@ namespace F4VRBody
 		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
 		_root->m_localTransform.pos.y += offsetOutFront;
 		_root->m_localTransform.pos.z = z;
+
 	}
 
 	NiNode* Skeleton::getNode(const char* nodeName, NiNode* nde) {
@@ -242,7 +252,11 @@ namespace F4VRBody
 		headNode->m_localTransform.rot.data[2][0] = -0.058;
 		headNode->m_localTransform.rot.data[2][1] = -0.037;
 		headNode->m_localTransform.rot.data[2][2] =  0.998;
-		headNode->m_localTransform.pos.y = -4.0;
+
+		if (!c_selfieMode) {
+			headNode->m_localTransform.pos.y = -6.0;
+		}
+
 
 		NiAVObject::NiUpdateData* ud = nullptr;
 
@@ -298,6 +312,7 @@ namespace F4VRBody
 		_prevSpeed = 0.0;
 
 		_playerNodes = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
+		_curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
 
 		setCommonNode();
 
@@ -365,8 +380,8 @@ namespace F4VRBody
 	}
 
 	NiPoint3 Skeleton::getPosition() {
-		_curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
-		
+
+			_curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
 
 		return _curPos;
 	}
@@ -461,7 +476,9 @@ namespace F4VRBody
 
 		detectInPowerArmor();
 
-		_playerNodes->playerworldnode->m_localTransform.pos.z += inPowerArmor ? (10.0f + c_cameraHeight) : c_cameraHeight;
+		_playerNodes->playerworldnode->m_localTransform.pos.z += inPowerArmor ? (12.0f + c_cameraHeight) : c_cameraHeight;
+
+		updateDown(_playerNodes->playerworldnode, true);
 
 		Matrix44 mat;
 		mat = 0.0;
@@ -516,7 +533,7 @@ namespace F4VRBody
 
 		float comZ = com->m_localTransform.pos.z;
 
-		float z_adjust = c_playerOffset_up + sinf(-neckPitch) * 6.5;
+		float z_adjust = c_playerOffset_up + sinf(-neckPitch) * 15.0;
 		NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * c_playerOffset_forward / 2, -_forwardDir.y * c_playerOffset_forward / 2, z_adjust);
 		NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
 

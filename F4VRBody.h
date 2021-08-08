@@ -26,6 +26,8 @@ namespace F4VRBody {
 	extern float c_cameraHeight;
 	extern bool  c_showPAHUD;
 	extern bool  c_hidePipboy;
+	extern bool  c_selfieMode;
+	extern bool  c_verbose;
 
 	class BoneSphere {
 	public:
@@ -73,6 +75,7 @@ namespace F4VRBody {
 	void saveStates(StaticFunctionTag* base);
 	void calibrate(StaticFunctionTag* base);
 	void togglePipboyVis(StaticFunctionTag* base);
+	void toggleSelfieMode(StaticFunctionTag* base);
 	void makeTaller(StaticFunctionTag* base);
 	void makeShorter(StaticFunctionTag* base);
 	void moveUp(StaticFunctionTag* base);
