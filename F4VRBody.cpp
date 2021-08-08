@@ -315,7 +315,12 @@ namespace F4VRBody {
 
 	bool setSkelly() {
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-			playerSkelly = new Skeleton((BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
+			auto node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
+			if (!node) {
+				return false;
+			}
+
+			playerSkelly = new Skeleton(node);
 			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
 			playerSkelly->setNodes();
 			//replaceMeshes(playerSkelly->getPlayerNodes());
@@ -371,7 +376,12 @@ namespace F4VRBody {
 		}
 
 		if (playerSkelly->getRoot() != (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode()) {
-			playerSkelly->updateRoot((BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
+			auto node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
+			if (!node) {
+				return;
+			}
+
+			playerSkelly->updateRoot(node);
 			playerSkelly->setNodes();
 			playerSkelly->setDirection();
 		    playerSkelly->swapPipboy();
