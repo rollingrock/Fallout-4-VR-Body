@@ -367,8 +367,13 @@ namespace SmoothMovementVR
 		QueryPerformanceFrequency(&m_hpcFrequency);
 		QueryPerformanceCounter(&m_prevTime);
 
+
+		_MESSAGE("Starting armor thread");
+
 		std::thread t6(ArmorCheck);
 		t6.detach();
+
+		_MESSAGE("Armor Thread Started");
 	}
 
 }

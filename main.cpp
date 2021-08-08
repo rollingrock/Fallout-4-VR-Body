@@ -48,6 +48,7 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
 			SmoothMovementVR::StartFunctions();
 
 			SmoothMovementVR::MenuOpenCloseHandler::Register();
+			_MESSAGE("kMessage_GameLoaded Completed");
 		}
 	}
 }

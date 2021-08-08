@@ -315,8 +315,10 @@ namespace F4VRBody {
 
 	bool setSkelly() {
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
+			_MESSAGE("set root");
 			auto node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
 			if (!node) {
+				_MESSAGE("root node not found");
 				return false;
 			}
 
@@ -355,11 +357,9 @@ namespace F4VRBody {
 			return;
 		}
 
-		if (!playerSkelly) {
-			if (firstTime) {
-				if (!setSkelly()) {
-					return;
-				}
+		if (!playerSkelly || firstTime) {
+			if (!setSkelly()) {
+				return;
 			}
 
 			firstTime = false;
