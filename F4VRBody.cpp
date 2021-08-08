@@ -7,6 +7,7 @@
 #define PI 3.14159265358979323846
 
 bool firstTime = true;
+bool printPlayerOnce = true;
 
 //Smooth Movement
 float smoothingAmount = 10.0f;
@@ -355,6 +356,15 @@ namespace F4VRBody {
 
 		if (!isLoaded) {
 			return;
+		}
+
+		if (!(*g_player)) {
+			return;
+		}
+
+		if (printPlayerOnce) {
+			_MESSAGE("g_player = %016I64X", (*g_player));
+			printPlayerOnce = false;
 		}
 
 		if (!playerSkelly || firstTime) {
