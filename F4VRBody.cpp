@@ -41,6 +41,7 @@ namespace F4VRBody {
 	bool  c_hidePipboy = false;
 	bool  c_selfieMode = false;
 	bool  c_verbose = false;
+	bool  c_armsOnly = false;
 
 	bool meshesReplaced = false;
 
@@ -100,6 +101,7 @@ namespace F4VRBody {
 		c_showPAHUD =            ini.GetBoolValue("Fallout4VRBody", "showPAHUD");
 		c_hidePipboy =           ini.GetBoolValue("Fallout4VRBody", "hidePipboy");
 		c_verbose =              ini.GetBoolValue("Fallout4VRBody", "VerboseLogging");
+		c_armsOnly =             ini.GetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode");
 		
 		//Smooth Movement
 		smoothingAmount                    = (float) ini.GetDoubleValue("SmoothMovementVR", "SmoothAmount", 15.0);
@@ -315,6 +317,21 @@ namespace F4VRBody {
 	}
 
 	bool setSkelly() {
+		_MESSAGE("setSkelly Start");
+		if (!(*g_player)->unkF0) {
+			_MESSAGE("loaded Data Not Set Yet");
+			return false;
+		}
+
+		_MESSAGE("loadedData = %016I64X", (*g_player)->unkF0);
+
+		if (!(*g_player)->unkF0->rootNode) {
+			_MESSAGE("rootnode not set yet!");
+			return false;
+		}
+
+		_MESSAGE("rootnode   = %016I64X", (*g_player)->unkF0->rootNode);
+
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 			_MESSAGE("set root");
 			auto node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
@@ -351,8 +368,6 @@ namespace F4VRBody {
 	}
 
 	void update() {
-
-
 
 		if (!isLoaded) {
 			return;
@@ -441,7 +456,10 @@ namespace F4VRBody {
 		if (c_verbose) { _MESSAGE("Set Knee Posture"); }
 		playerSkelly->setKneePos();
 		if (c_verbose) { _MESSAGE("Set Walk"); }
-		playerSkelly->walk();
+		
+		if (!c_armsOnly) {
+			playerSkelly->walk();
+		}
 		//playerSkelly->setLegs();
 		if (c_verbose) { _MESSAGE("Set Legs"); }
 		playerSkelly->setSingleLeg(false);
@@ -483,6 +501,10 @@ namespace F4VRBody {
 		if (c_verbose) { _MESSAGE("fix the missing screen"); }
 		fixMissingScreen(playerSkelly->getPlayerNodes());
 
+		if (c_armsOnly) {
+			playerSkelly->showOnlyArms();
+		}
+
 	}
 
 
@@ -509,6 +531,7 @@ namespace F4VRBody {
 		rc = ini.SetDoubleValue("Fallout4VRBody", "cameraHeightOffset", (double)c_cameraHeight);
 		rc = ini.SetBoolValue("Fallout4VRBody", "showPAHUD", c_showPAHUD);
 		rc = ini.SetBoolValue("Fallout4VRBody", "hidePipboy", c_hidePipboy);
+		rc = ini.SetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode", c_armsOnly);
 
 		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
 
@@ -563,6 +586,15 @@ namespace F4VRBody {
 		}
 
 		c_selfieMode = !c_selfieMode;
+	}
+
+	void toggleArmsOnlyMode(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_armsOnly = !c_armsOnly;
 	}
 
 
@@ -768,11 +800,9 @@ namespace F4VRBody {
 		}
 	}
 
-	void toggleDebugBoneSpheresAtBone(StaticFunctionTag* base, BSFixedString bone, bool turnOn) {
-		for (auto const& element : boneSphereRegisteredObjects) {
-			if (!strcmp(bone.c_str(), element.second->bone->m_name.c_str())) {
-				element.second->turnOnDebugSpheres = turnOn;
-			}
+	void toggleDebugBoneSpheresAtBone(StaticFunctionTag* base, UInt32 handle, bool turnOn) {
+		if (boneSphereRegisteredObjects.count(handle)) {
+			boneSphereRegisteredObjects[handle]->turnOnDebugSpheres = turnOn;
 		}
 	}
 
@@ -783,6 +813,7 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePAHud", "FRIK:FRIK", F4VRBody::togglePAHUD, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePipboyVis", "FRIK:FRIK", F4VRBody::togglePipboyVis, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", F4VRBody::toggleSelfieMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleArmsOnlyMode", "FRIK:FRIK", F4VRBody::toggleArmsOnlyMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraUp", "FRIK:FRIK", F4VRBody::moveCameraUp, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraDown", "FRIK:FRIK", F4VRBody::moveCameraDown, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeTaller", "FRIK:FRIK", F4VRBody::makeTaller, vm));
@@ -799,7 +830,7 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("RegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::RegisterForBoneSphereEvents, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("UnRegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::UnRegisterForBoneSphereEvents, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("toggleDebugBoneSpheres", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheres, vm));
-		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, BSFixedString, bool>("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheresAtBone, vm));
+		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, UInt32, bool>("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheresAtBone, vm));
 
 		return true;
 	}

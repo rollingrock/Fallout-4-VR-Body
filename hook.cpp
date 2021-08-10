@@ -43,13 +43,17 @@ void hookIt(uint64_t rcx) {
 	// so all of this below is an attempt to bypass the functionality in game around my hook at resets the root parent node's world pos which screws up armor
 	// we still need to call the fucntion i hooked below to get some things ready for the renderer however starting with the named "Root" node instead of it's parent preseves locations
 	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-		uint64_t arr[5] = { 0, 0, 0, 0, 0 };
-		uint64_t body = (uint64_t)&(*(*g_player)->unkF0->rootNode->m_children.m_data[0]);
-		arr[1] = body + 0x180;
-		arr[2] = 0x800;
-		arr[3] = 2;
-		arr[4] = 0x3c0c1400;
-		hooked1c22fb0(body, (uint64_t)&arr);
+		if ((*g_player)->unkF0->rootNode->m_children.m_emptyRunStart > 0) {
+			if ((*g_player)->unkF0->rootNode->m_children.m_data[0]) {
+				uint64_t arr[5] = { 0, 0, 0, 0, 0 };
+				uint64_t body = (uint64_t) & (*(*g_player)->unkF0->rootNode->m_children.m_data[0]);
+				arr[1] = body + 0x180;
+				arr[2] = 0x800;
+				arr[3] = 2;
+				arr[4] = 0x3c0c1400;
+				hooked1c22fb0(body, (uint64_t)&arr);
+			}
+		}
 	}
 
 	hookedda09a0(parm);

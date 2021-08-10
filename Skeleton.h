@@ -187,6 +187,7 @@ namespace F4VRBody
 		void setBodyLen();
 		void detectInPowerArmor();
 		void setKneePos();
+		void showOnlyArms();
 
 		void setTime();
 

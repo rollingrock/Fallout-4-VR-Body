@@ -319,9 +319,6 @@ namespace F4VRBody
 		_rightHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		_leftHand  = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
-		_wandRight = (NiNode*)_playerNodes->primaryWandNode->m_children.m_data[8];
-		_wandLeft  = (NiNode*)_playerNodes->SecondaryWandNode->m_children.m_data[5];
-
 		_spine = this->getNode("SPINE2", _root);
 		_chest = this->getNode("Chest", _root);
 		
@@ -1731,5 +1728,28 @@ namespace F4VRBody
 		return;
 	}
 
+	void Skeleton::showOnlyArms() {
+		NiPoint3 rwp = rightArm.shoulder->m_worldTransform.pos;
+		NiPoint3 lwp = leftArm.shoulder->m_worldTransform.pos;
+		_root->m_localTransform.scale = 0.00001;
+		updateTransforms(_root);
+		_root->m_worldTransform.pos += _forwardDir * -10.0f;
+		_root->m_worldTransform.pos.z = rwp.z;
+		updateDown(_root, false);
+
+		rightArm.shoulder->m_localTransform.scale = 100000;
+		leftArm.shoulder->m_localTransform.scale = 100000;
+
+		updateTransforms((NiNode*)rightArm.shoulder);
+		updateTransforms((NiNode*)leftArm.shoulder);
+
+		rightArm.shoulder->m_worldTransform.pos = rwp;
+		leftArm.shoulder->m_worldTransform.pos = lwp;
+
+		updateDown((NiNode*)rightArm.shoulder, false);
+		updateDown((NiNode*)leftArm.shoulder, false);
+
+
+	}
 
 }
