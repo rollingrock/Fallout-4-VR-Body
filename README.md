@@ -1,7 +1,7 @@
 # Fallout 4 VR Body
 Developing mod to add full body support with IK for Fallout 4 VR!
 
-Note this is a work in progress....
+Now released on Nexus!!! https://www.nexusmods.com/fallout4/mods/53464/
 
 Current status:
 - Arm IK 100%
