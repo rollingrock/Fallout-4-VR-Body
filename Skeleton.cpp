@@ -1129,34 +1129,74 @@ namespace F4VRBody
 	}
 
 	void Skeleton::hideFistHelpers() {
-		NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->primaryWandNode);
-		if (node != nullptr) {
-			node->flags |= 0x1;   // first bit sets the cull flag so it will be hidden;
+		if (!c_leftHandedMode) {
+			NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->primaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;   // first bit sets the cull flag so it will be hidden;
+			}
+
+			node = getNode("fist_F_Right_HELPER", _playerNodes->primaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;
+			}
+
+			node = getNode("PA_fist_R_HELPER", _playerNodes->primaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;
+			}
+
+			node = getNode("fist_M_Left_HELPER", _playerNodes->SecondaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;   // first bit sets the cull flag so it will be hidden;
+			}
+
+			node = getNode("fist_F_Left_HELPER", _playerNodes->SecondaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;
+			}
+
+			node = getNode("PA_fist_L_HELPER", _playerNodes->SecondaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;
+			}
+
+		}
+		else {
+			NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->SecondaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;   // first bit sets the cull flag so it will be hidden;
+			}
+
+			node = getNode("fist_F_Right_HELPER", _playerNodes->SecondaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;
+			}
+
+			node = getNode("PA_fist_R_HELPER", _playerNodes->SecondaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;
+			}
+
+			node = getNode("fist_M_Left_HELPER", _playerNodes->primaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;   // first bit sets the cull flag so it will be hidden;
+			}
+
+			node = getNode("fist_F_Left_HELPER", _playerNodes->primaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;
+			}
+
+			node = getNode("PA_fist_L_HELPER", _playerNodes->primaryWandNode);
+			if (node != nullptr) {
+				node->flags |= 0x1;
+			}
 		}
 
-		node = getNode("fist_F_Right_HELPER", _playerNodes->primaryWandNode);
-		if (node != nullptr) {
-			node->flags |= 0x1;
-		}
+		NiAVObject* uiNode = getNode("Point002", _playerNodes->SecondaryWandNode);
 
-		node = getNode("PA_fist_R_HELPER", _playerNodes->primaryWandNode);
-		if (node != nullptr) {
-			node->flags |= 0x1;
-		}
-
-		node = getNode("fist_M_Left_HELPER", _playerNodes->SecondaryWandNode);
-		if (node != nullptr) {
-			node->flags |= 0x1;   // first bit sets the cull flag so it will be hidden;
-		}
-
-		node = getNode("fist_F_Left_HELPER", _playerNodes->SecondaryWandNode);
-		if (node != nullptr) {
-			node->flags |= 0x1;
-		}
-
-		node = getNode("PA_fist_L_HELPER", _playerNodes->SecondaryWandNode);
-		if (node != nullptr) {
-			node->flags |= 0x1;
+		if (uiNode) {
+			uiNode->m_localTransform.scale = 0.0;
 		}
 	}
 
@@ -1362,10 +1402,6 @@ namespace F4VRBody
 		arm.shoulder->m_localTransform.rot = rotate.multiply43Left(arm.shoulder->m_localTransform.rot);
 
 		// now elbow
-
-
-
-
 		_MESSAGE("");
 		_MESSAGE("========== Frame %d ============", g_mainLoopCounter);
 		_MESSAGE("armLength       %5f", armLength);
@@ -1373,11 +1409,50 @@ namespace F4VRBody
 		_MESSAGE("roll            %5f", rads_to_degrees(roll));
 	}
 
+	void Skeleton::setLeftHandedSticky() {
+		_leftHandedSticky = !c_leftHandedMode;
+	}
+
+
+	void Skeleton::handleWeaponNodes() {
+
+		if (_leftHandedSticky != c_leftHandedMode) {
+			NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+			NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
+
+			NiNode* rHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+			NiNode* lHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+
+			if (rightWeapon && rHand && leftWeapon && lHand) {
+				rHand->RemoveChild(rightWeapon);
+				rHand->RemoveChild(leftWeapon);
+				lHand->RemoveChild(rightWeapon);
+				lHand->RemoveChild(leftWeapon);
+			}
+			else {
+				if (c_verbose) { _MESSAGE("Cannot set up weapon nodes"); }
+				_leftHandedSticky = c_leftHandedMode;
+				return;
+			}
+
+			if (c_leftHandedMode) {
+				rHand->AttachChild(leftWeapon, true);
+				lHand->AttachChild(rightWeapon, true);
+			}
+			else {
+				rHand->AttachChild(rightWeapon, true);
+				lHand->AttachChild(leftWeapon, true);
+			}
+			_leftHandedSticky = c_leftHandedMode;
+		}
+	}
+
 	// This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
 	void Skeleton::setArms(bool isLeft) {
 		ArmNodes arm;
 
 		arm = isLeft ? leftArm : rightArm;
+
 
 		// This first part is to handle the game calculating the first person hand based off two offset nodes
 		// PrimaryWeaponOffset and PrimaryMeleeoffset
@@ -1394,10 +1469,12 @@ namespace F4VRBody
 		NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
 
-		NiNode* weaponNode = isLeft ? leftWeapon : rightWeapon;
-		NiNode* offsetNode = isLeft ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
+		bool handleLeftMode = c_leftHandedMode ^ isLeft;
 
-		if (isLeft) {
+		NiNode* weaponNode = handleLeftMode ? leftWeapon : rightWeapon;
+		NiNode* offsetNode = handleLeftMode ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
+
+		if (handleLeftMode) {
 			_playerNodes->SecondaryMeleeWeaponOffsetNode2->m_localTransform = _playerNodes->primaryWeaponOffsetNOde->m_localTransform;
 			Matrix44 lr;
 			lr.setEulerAngles(0, degrees_to_rads(180), 0);
@@ -1418,21 +1495,37 @@ namespace F4VRBody
 		w.data[2][2] = -0.991;
 		weaponNode->m_localTransform.rot = w.make43();
 
-		if (isLeft) {
-			w.setEulerAngles(degrees_to_rads(0), degrees_to_rads(45), degrees_to_rads(0));
+		if (c_leftHandedMode) {
+			w.setEulerAngles(degrees_to_rads(180), 0, 0);
 			weaponNode->m_localTransform.rot = w.multiply43Right(weaponNode->m_localTransform.rot);
-			//w.setEulerAngles(0, degrees_to_rads(40.0f), 0);
-			//weaponNode->m_localTransform.rot = w.multiply43Right(weaponNode->m_localTransform.rot);
 		}
-		
-	    weaponNode->m_localTransform.pos = isLeft ? NiPoint3(0, 0, 0) : NiPoint3(6.389, -2.099, -3.133);
+
+		if (handleLeftMode) {
+			if (isLeft) {
+				w.setEulerAngles(degrees_to_rads(0), degrees_to_rads(45), degrees_to_rads(0));
+			}
+			else {
+				w.setEulerAngles(degrees_to_rads(0), degrees_to_rads(-45), degrees_to_rads(0));
+			}
+			weaponNode->m_localTransform.rot = w.multiply43Right(weaponNode->m_localTransform.rot);
+		}
+
+		if (c_leftHandedMode) {
+			weaponNode->m_localTransform.pos = isLeft ? NiPoint3(6.389, -2.099, 3.133) : NiPoint3(0, 0, 0);
+		}
+		else {
+			weaponNode->m_localTransform.pos = isLeft ? NiPoint3(0, 0, 0) : NiPoint3(6.389, -2.099, -3.133);
+		}
 
 
 		weaponNode->IncRef();
 		set1stPersonArm(weaponNode, offsetNode);
 
-		NiPoint3 handPos = isLeft ? _leftHand->m_worldTransform.pos : _rightHand->m_worldTransform.pos;
-		NiMatrix43 handRot = isLeft ? _leftHand->m_worldTransform.rot : _rightHand->m_worldTransform.rot;
+		NiPoint3 handPos;
+		NiMatrix43 handRot;
+
+		handPos = isLeft ? _leftHand->m_worldTransform.pos : _rightHand->m_worldTransform.pos;
+		handRot = isLeft ? _leftHand->m_worldTransform.rot : _rightHand->m_worldTransform.rot;
 
 		// Detect if the 1st person hand position is invalid.  This can happen when a controller loses tracking.
 		// If it is, do not handle IK and let Fallout use its normal animations for that arm instead.

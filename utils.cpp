@@ -205,6 +205,12 @@ namespace F4VRBody {
 		set->SetDouble(5.0);
 	}
 
+	bool getLeftHandedMode() {
+		Setting* set = GetINISetting("bLeftHandedMode:VR");
+
+		return set->data.u8;
+	 }
+
 	NiNode* getChildNode(const char* nodeName, NiNode* nde) {
 
 		if (!strcmp(nodeName, nde->m_name.c_str())) {

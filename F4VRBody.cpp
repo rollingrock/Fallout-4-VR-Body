@@ -19,6 +19,8 @@ float stoppingMultiplierHorizontal = 0.2f;
 int disableInteriorSmoothing = 1;
 int disableInteriorSmoothingHorizontal = 1;
 
+RelocPtr<bool> iniLeftHandedMode(0x37d5e48);      // location of bLeftHandedMode:VR ini setting
+
 namespace F4VRBody {
 
 	Skeleton* playerSkelly = nullptr;
@@ -31,7 +33,7 @@ namespace F4VRBody {
 
 	float c_playerHeight = 0.0;
 	bool  c_setScale = false;
-	float c_fVrScale = 70.0;
+	float c_fVrScale = 72.0;
 	float c_playerOffset_forward = -4.0;
 	float c_playerOffset_up = -2.0;
 	float c_pipboyDetectionRange = 15.0f;
@@ -42,6 +44,7 @@ namespace F4VRBody {
 	bool  c_selfieMode = false;
 	bool  c_verbose = false;
 	bool  c_armsOnly = false;
+	bool  c_leftHandedMode = false;
 
 	bool meshesReplaced = false;
 
@@ -317,9 +320,15 @@ namespace F4VRBody {
 	}
 
 	bool setSkelly() {
-		_MESSAGE("setSkelly Start");
+
+		if (c_verbose) {
+			_MESSAGE("setSkelly Start");
+		}
+
 		if (!(*g_player)->unkF0) {
-			_MESSAGE("loaded Data Not Set Yet");
+			if (c_verbose) {
+				_MESSAGE("loaded Data Not Set Yet");
+			}
 			return false;
 		}
 
@@ -359,6 +368,8 @@ namespace F4VRBody {
 			_MESSAGE("scale set");
 
 			playerSkelly->setBodyLen();
+			c_leftHandedMode = *iniLeftHandedMode;
+			playerSkelly->setLeftHandedSticky();
 			_MESSAGE("initialized");
 			return true;
 		}
@@ -420,6 +431,8 @@ namespace F4VRBody {
 
 		if (c_verbose) { _MESSAGE("Start of Frame"); }
 
+		c_leftHandedMode = *iniLeftHandedMode;
+
 		if (!meshesReplaced) {
 			replaceMeshes(playerSkelly->getPlayerNodes());
 		}
@@ -470,6 +483,7 @@ namespace F4VRBody {
 
 		// do arm IK - Right then Left
 		if (c_verbose) { _MESSAGE("Set Arms"); }
+		playerSkelly->handleWeaponNodes();
 		playerSkelly->setArms(false);
 		playerSkelly->setArms(true);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
@@ -595,6 +609,15 @@ namespace F4VRBody {
 		}
 
 		c_armsOnly = !c_armsOnly;
+	}
+
+	bool isLeftHandedMode(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		return *iniLeftHandedMode;
 	}
 
 
@@ -814,6 +837,7 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePipboyVis", "FRIK:FRIK", F4VRBody::togglePipboyVis, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", F4VRBody::toggleSelfieMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleArmsOnlyMode", "FRIK:FRIK", F4VRBody::toggleArmsOnlyMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("isLeftHandedMode", "FRIK:FRIK", F4VRBody::isLeftHandedMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraUp", "FRIK:FRIK", F4VRBody::moveCameraUp, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraDown", "FRIK:FRIK", F4VRBody::moveCameraDown, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeTaller", "FRIK:FRIK", F4VRBody::makeTaller, vm));

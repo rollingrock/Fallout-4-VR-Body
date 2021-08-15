@@ -32,6 +32,8 @@ namespace F4VRBody {
 
 	 void turnPipBoyOn();
 	 void turnPipBoyOff();
+	 
+	 bool getLeftHandedMode();
 
 	 NiNode* getChildNode(const char* nodeName, NiNode* nde);
 	 NiNode* get1stChildNode(const char* nodeName, NiNode* nde);

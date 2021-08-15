@@ -29,6 +29,7 @@ namespace F4VRBody {
 	extern bool  c_selfieMode;
 	extern bool  c_verbose;
 	extern bool  c_armsOnly;
+	extern bool  c_leftHandedMode;
 
 	class BoneSphere {
 	public:

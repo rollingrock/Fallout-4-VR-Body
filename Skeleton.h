@@ -188,6 +188,10 @@ namespace F4VRBody
 		void detectInPowerArmor();
 		void setKneePos();
 		void showOnlyArms();
+		void handleWeaponNodes();
+		void setLeftHandedSticky();
+
+
 
 		void setTime();
 
@@ -224,6 +228,8 @@ namespace F4VRBody
 		bool _pipboyStatus;
 		int _pipTimer;
 		bool _stickypip;
+
+		bool _leftHandedSticky;
 
 		bool inPowerArmor;
 
