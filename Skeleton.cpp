@@ -133,6 +133,10 @@ namespace F4VRBody
 	void Skeleton::updateDown(NiNode* nde, bool updateSelf) {
 		NiAVObject::NiUpdateData* ud = nullptr;
 
+		if (!nde) {
+			return;
+		}
+
 		if (updateSelf) {
 //			nde->UpdateWorldData(ud);
 			updateTransforms(nde);
@@ -151,6 +155,11 @@ namespace F4VRBody
 	}
 
 	void Skeleton::updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf) {
+
+		if (!toNode || !fromNode) {
+			return;
+		}
+
 		NiAVObject::NiUpdateData* ud = nullptr;
 
 		if (updateSelf) {
@@ -170,6 +179,11 @@ namespace F4VRBody
 	}
 
 	void Skeleton::updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateTarget) {
+
+		if (!toNode || !fromNode) {
+			return;
+		}
+
 		NiAVObject::NiUpdateData* ud = nullptr;
 
 
@@ -205,6 +219,10 @@ namespace F4VRBody
 			return;
 		}
 
+		if (!_root) {
+			return;
+		}
+
 		float z = _root->m_localTransform.pos.z;
 		NiNode* body = _root->m_parent->GetAsNiNode();
 
@@ -222,6 +240,10 @@ namespace F4VRBody
 	}
 
 	NiNode* Skeleton::getNode(const char* nodeName, NiNode* nde) {
+
+		if (!nde) {
+			return nullptr;
+		}
 		
 		if (!strcmp(nodeName, nde->m_name.c_str())) {
 			return nde;
@@ -243,6 +265,11 @@ namespace F4VRBody
 	}
 
 	void Skeleton::setupHead(NiNode* headNode) {
+
+		if (!headNode) {
+			return;
+		}
+
 		headNode->m_localTransform.rot.data[0][0] =  0.967;
 		headNode->m_localTransform.rot.data[0][1] = -0.251;
 		headNode->m_localTransform.rot.data[0][2] =  0.047;
@@ -265,6 +292,11 @@ namespace F4VRBody
 
 	void Skeleton::saveStatesTree(NiNode* node) {
 
+		if (!node) {
+			_MESSAGE("Cannot save states Tree");
+			return;
+		}
+
 		std::string name(node->m_name.c_str());
 
 		if (savedStates.find(name) == savedStates.end()) {
@@ -283,7 +315,8 @@ namespace F4VRBody
 	}
 
 	void Skeleton::restoreLocals(NiNode* node) {
-		if (node->m_name == nullptr) {
+		if (!node || node->m_name == nullptr) {
+			_MESSAGE("cannot restore locals");
 			return;
 		}
 
@@ -312,6 +345,12 @@ namespace F4VRBody
 		_prevSpeed = 0.0;
 
 		_playerNodes = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
+
+		if (!_playerNodes) {
+			_MESSAGE("player nodes not set");
+			return;
+		}
+
 		_curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
 
 		setCommonNode();
@@ -391,6 +430,12 @@ namespace F4VRBody
 
 
 	float Skeleton::getNeckYaw() {
+
+		if (!_playerNodes) {
+			_MESSAGE("playernodes not set in neck yaw");
+			return 0.0;
+		}
+
 		NiPoint3 pos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
 		NiPoint3 hmdToLeft  = _playerNodes->SecondaryWandNode->m_worldTransform.pos  - pos;
 		NiPoint3 hmdToRight = _playerNodes->primaryWandNode->m_worldTransform.pos - pos;
@@ -473,7 +518,12 @@ namespace F4VRBody
 
 		detectInPowerArmor();
 
-		_playerNodes->playerworldnode->m_localTransform.pos.z += inPowerArmor ? (12.0f + c_cameraHeight) : c_cameraHeight;
+		if (c_disableSmoothMovement) {
+			_playerNodes->playerworldnode->m_localTransform.pos.z = inPowerArmor ? (12.0f + c_cameraHeight) : c_cameraHeight;
+		}
+		else {
+			_playerNodes->playerworldnode->m_localTransform.pos.z += inPowerArmor ? (12.0f + c_cameraHeight) : c_cameraHeight;
+		}
 
 		updateDown(_playerNodes->playerworldnode, true);
 
@@ -561,6 +611,10 @@ namespace F4VRBody
 		NiNode* lKnee = getNode("LLeg_Calf", _root);
 		NiNode* rKnee = getNode("RLeg_Calf", _root);
 
+		if (!lKnee || !rKnee) {
+			return;
+		}
+
 		lKnee->m_worldTransform.pos.z = _leftKneePos.z;
 		rKnee->m_worldTransform.pos.z = _rightKneePos.z;
 
@@ -574,6 +628,11 @@ namespace F4VRBody
 	void Skeleton::fixArmor() {
 		NiNode* lPauldron = getNode("L_Pauldron", _root);
 		NiNode* rPauldron = getNode("R_Pauldron", _root);
+
+		if (!lPauldron || !rPauldron) {
+			return;
+		}
+
 		float delta = getNode("LArm_Collarbone", _root)->m_worldTransform.pos.z - _root->m_worldTransform.pos.z;
 
 		if (lPauldron) {
@@ -588,10 +647,19 @@ namespace F4VRBody
 
 		NiNode* lHip = getNode("LLeg_Thigh", _root);
 		NiNode* rHip = getNode("RLeg_Thigh", _root);
+
+		if (!lHip || !rHip) {
+			return;
+		}
+
 		NiNode* lKnee = getNode("LLeg_Calf", lHip);
 		NiNode* rKnee = getNode("RLeg_Calf", rHip);
 		NiNode* lFoot = getNode("LLeg_Foot", lHip);
 		NiNode* rFoot = getNode("RLeg_Foot", rHip);
+		
+		if (!lKnee || !rKnee || !lFoot || !rFoot) {
+			return;
+		}
 
 		// move feet closer togther
 		NiPoint3 leftToRight = (rFoot->m_worldTransform.pos - lFoot->m_worldTransform.pos) * 0.3;
@@ -620,7 +688,8 @@ namespace F4VRBody
 		static float spineAngle = 0.0;
 
 		// setup current walking state based on velocity and previous state
-		switch (_walkingState) {
+		if (!c_jumping) {
+			switch (_walkingState) {
 			case 0: {
 				if (curSpeed >= 35.0) {
 					_walkingState = 1;          // start walking
@@ -632,8 +701,8 @@ namespace F4VRBody
 					if (_footStepping == 1) {
 						_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
 						_rightFootStart = rFoot->m_worldTransform.pos;
-						_leftFootTarget  = lFoot->m_worldTransform.pos;
-						_leftFootStart  = lFoot->m_worldTransform.pos;
+						_leftFootTarget = lFoot->m_worldTransform.pos;
+						_leftFootStart = lFoot->m_worldTransform.pos;
 						_leftFootPos = _leftFootStart;
 						_rightFootPos = _rightFootStart;
 					}
@@ -641,7 +710,7 @@ namespace F4VRBody
 						_rightFootTarget = rFoot->m_worldTransform.pos;
 						_rightFootStart = rFoot->m_worldTransform.pos;
 						_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
-						_leftFootStart  = lFoot->m_worldTransform.pos;
+						_leftFootStart = lFoot->m_worldTransform.pos;
 						_leftFootPos = _leftFootStart;
 						_rightFootPos = _rightFootStart;
 					}
@@ -671,6 +740,10 @@ namespace F4VRBody
 				_walkingState = 0;
 				break;
 			}
+			}
+		}
+		else {
+			_walkingState = 0;
 		}
 
 		if (_walkingState == 0) {
@@ -920,21 +993,6 @@ namespace F4VRBody
 	void Skeleton::swapPipboy() {
 		_pipboyStatus = false;
 		_pipTimer = 0;
-
-		
-		//BSFixedString nodeName("PipboyBone");
-
-		//NiAVObject* pipboyBone = leftArm.forearm1->GetObjectByName(&nodeName);
-		//if (!pipboyBone) {
-		//	return;
-		//}
-
-		//if (pipboyBone->GetAsNiNode()->m_children.m_emptyRunStart == 0) {
-		//	return;
-		//}
-		//NiAVObject* child = pipboyBone->GetAsNiNode()->m_children.m_data[0];
-		//pipboyBone->GetAsNiNode()->RemoveChild(child);
-
 	}
 
 	void Skeleton::positionPipboy() {

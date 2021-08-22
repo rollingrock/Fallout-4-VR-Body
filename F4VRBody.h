@@ -30,13 +30,16 @@ namespace F4VRBody {
 	extern bool  c_verbose;
 	extern bool  c_armsOnly;
 	extern bool  c_leftHandedMode;
+	extern bool  c_disableSmoothMovement;
+	extern bool  c_jumping;
 
 	class BoneSphere {
 	public:
 		BoneSphere() {
 			radius = 0;
 			bone = nullptr;
-			sticky = false;
+			stickyRight = false;
+			stickyLeft = false;
 			turnOnDebugSpheres = false;
 			offset.x = 0;
 			offset.y = 0;
@@ -45,7 +48,8 @@ namespace F4VRBody {
 		}
 
 		BoneSphere(float a_radius, NiNode* a_bone, NiPoint3 a_offset) : radius(a_radius), bone(a_bone), offset(a_offset) { 
-			sticky = false; 
+			stickyRight = false; 
+			stickyLeft = false; 
 			turnOnDebugSpheres = false;
 			debugSphere = nullptr;
 		}
@@ -53,7 +57,8 @@ namespace F4VRBody {
 		float radius;
 		NiNode* bone;
 		NiPoint3 offset;
-		bool sticky;
+		bool stickyRight;
+		bool stickyLeft;
 		bool turnOnDebugSpheres;
 		NiNode* debugSphere;
 	};

@@ -45,6 +45,9 @@ namespace SmoothMovementVR
 	float powerArmorHeight = 0.0f;
 	float papyrusDefaultHeight = 0.0f;
 
+	bool checkIfJumpingOrInAir() {
+		return IsInAir(*g_player);
+	}
 
 	float distanceNoSqrt(NiPoint3 po1, NiPoint3 po2)
 	{
@@ -227,6 +230,7 @@ namespace SmoothMovementVR
 								newPos.y = curPos.y;
 								smoothedX.store(newPos.x);
 								smoothedY.store(newPos.y);
+								playerWorldNode->m_localTransform.pos.z = newPos.z - curPos.z;
 							}
 							else
 							{

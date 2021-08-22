@@ -34,5 +34,6 @@ namespace SmoothMovementVR
 
 	void everyFrame();
 	void StartFunctions();
+	bool checkIfJumpingOrInAir();
 }
 

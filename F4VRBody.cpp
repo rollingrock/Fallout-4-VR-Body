@@ -45,6 +45,8 @@ namespace F4VRBody {
 	bool  c_verbose = false;
 	bool  c_armsOnly = false;
 	bool  c_leftHandedMode = false;
+	bool  c_disableSmoothMovement = false;
+	bool  c_jumping = false;
 
 	bool meshesReplaced = false;
 
@@ -107,6 +109,7 @@ namespace F4VRBody {
 		c_armsOnly =             ini.GetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode");
 		
 		//Smooth Movement
+		c_disableSmoothMovement            = ini.GetBoolValue("SmoothMovementVR", "DisableSmoothMovement");
 		smoothingAmount                    = (float) ini.GetDoubleValue("SmoothMovementVR", "SmoothAmount", 15.0);
 		smoothingAmountHorizontal          = (float) ini.GetDoubleValue("SmoothMovementVR", "SmoothAmountHorizontal", 5.0);
 		dampingMultiplier                  = (float) ini.GetDoubleValue("SmoothMovementVR", "Damping", 1.0);
@@ -149,66 +152,81 @@ namespace F4VRBody {
 			offset = element.second->bone->m_worldTransform.rot * element.second->offset;
 			offset = element.second->bone->m_worldTransform.pos + offset;
 
-			float dist = vec3_len(rFinger->m_worldTransform.pos - offset);
+			double dist = (double)vec3_len(rFinger->m_worldTransform.pos - offset);
 
-			if (dist < element.second->radius) {
-				if (element.second->sticky) {
-					continue;
-				}
-				element.second->sticky = true;
+			if (dist <= ((double)element.second->radius - 0.1)) {
+				if (!element.second->stickyRight) {
+					element.second->stickyRight = true;
 
-				SInt32 evt = BoneSphereEvent_Enter;
-				UInt32 handle = element.first;
-				UInt32 device = 1;
-				curDevice = device;
+					SInt32 evt = BoneSphereEvent_Enter;
+					UInt32 handle = element.first;
+					UInt32 device = 1;
+					curDevice = device;
 
-				if (g_boneSphereEventRegs.m_data.size() > 0) {
-					g_boneSphereEventRegs.ForEach(
-						[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-						SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+					if (g_boneSphereEventRegs.m_data.size() > 0) {
+						g_boneSphereEventRegs.ForEach(
+							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
+							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+						}
+						);
 					}
-					);
 				}
-				continue;
+			}
+			else if (dist >= ((double)element.second->radius + 0.1)) {
+				if (element.second->stickyRight) {
+					element.second->stickyRight = false;
+
+					SInt32 evt = BoneSphereEvent_Exit;
+					UInt32 handle = element.first;
+					UInt32 device = 1;
+					curDevice = 0;
+
+					if (g_boneSphereEventRegs.m_data.size() > 0) {
+						g_boneSphereEventRegs.ForEach(
+							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
+							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+						}
+						);
+					}
+				}
 			}
 
-			dist = vec3_len(lFinger->m_worldTransform.pos - offset);
+			dist = (double)vec3_len(lFinger->m_worldTransform.pos - offset);
 
-			if (dist < element.second->radius) {
-				if (element.second->sticky) {
-					continue;
-				}
-				element.second->sticky = true;
+			if (dist <= ((double)element.second->radius - 0.1)) {
+				if (!element.second->stickyLeft) {
+					element.second->stickyLeft = true;
 
-				SInt32 evt = BoneSphereEvent_Enter;
-				UInt32 handle = element.first;
-				UInt32 device = 2;
-				curDevice = device;
+					SInt32 evt = BoneSphereEvent_Enter;
+					UInt32 handle = element.first;
+					UInt32 device = 2;
+					curDevice = device;
 
-				if (g_boneSphereEventRegs.m_data.size() > 0) {
-					g_boneSphereEventRegs.ForEach(
-						[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-						SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+					if (g_boneSphereEventRegs.m_data.size() > 0) {
+						g_boneSphereEventRegs.ForEach(
+							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
+							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+						}
+						);
 					}
-					);
 				}
-				continue;
 			}
+			else if (dist >= ((double)element.second->radius + 0.1)) {
+				if (element.second->stickyLeft) {
+					element.second->stickyLeft = false;
 
-			if (element.second->sticky) {
-				element.second->sticky = false;
+					SInt32 evt = BoneSphereEvent_Exit;
+					UInt32 handle = element.first;
+					UInt32 device = 2;
+					curDevice = 0;
 
-				SInt32 evt = BoneSphereEvent_Exit;
-				UInt32 handle = element.first;
-				UInt32 device = curDevice;
-				curDevice = 0;
-
-				if (g_boneSphereEventRegs.m_data.size() > 0) {
-					g_boneSphereEventRegs.ForEach(
-						[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-						SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+					if (g_boneSphereEventRegs.m_data.size() > 0) {
+						g_boneSphereEventRegs.ForEach(
+							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
+							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+						}
+						);
 					}
-					);
 				}
 			}
 		}
@@ -437,9 +455,15 @@ namespace F4VRBody {
 			replaceMeshes(playerSkelly->getPlayerNodes());
 		}
 
-		if (c_verbose) { _MESSAGE("Smooth Movement"); }
-		SmoothMovementVR::everyFrame();
-		updateTransformsDown(playerSkelly->getPlayerNodes()->playerworldnode, true);
+		if (!c_disableSmoothMovement) {
+			if (c_verbose) { _MESSAGE("Smooth Movement"); }
+			SmoothMovementVR::everyFrame();
+			updateTransformsDown(playerSkelly->getPlayerNodes()->playerworldnode, true);
+		}
+
+		// check if jumping or in air;
+
+		c_jumping = SmoothMovementVR::checkIfJumpingOrInAir();
 
 		playerSkelly->setTime();
 
