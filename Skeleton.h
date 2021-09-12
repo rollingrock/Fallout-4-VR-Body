@@ -168,6 +168,7 @@ namespace F4VRBody
 		void hideWands();
 		void hideWeapon();
 		void swapPipboy();
+		void leftHandedModePipboy();
 		void positionPipboy();
 		void fixMelee();
 		void hideFistHelpers();

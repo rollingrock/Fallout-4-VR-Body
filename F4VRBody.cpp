@@ -41,6 +41,7 @@ namespace F4VRBody {
 	float c_cameraHeight = 0.0;
 	bool  c_showPAHUD = true;
 	bool  c_hidePipboy = false;
+	bool  c_leftHandedPipBoy = false;
 	bool  c_selfieMode = false;
 	bool  c_verbose = false;
 	bool  c_armsOnly = false;
@@ -49,6 +50,8 @@ namespace F4VRBody {
 	bool  c_jumping = false;
 
 	bool meshesReplaced = false;
+
+	float headDefaultHeight = 125.0;
 
 
 
@@ -105,6 +108,7 @@ namespace F4VRBody {
 		c_cameraHeight =         (float) ini.GetDoubleValue("Fallout4VRBody", "cameraHeightOffset", 0.0);
 		c_showPAHUD =            ini.GetBoolValue("Fallout4VRBody", "showPAHUD");
 		c_hidePipboy =           ini.GetBoolValue("Fallout4VRBody", "hidePipboy");
+		c_leftHandedPipBoy =     ini.GetBoolValue("Fallout4VRBody", "PipboyRightArmLeftHandedMode");
 		c_verbose =              ini.GetBoolValue("Fallout4VRBody", "VerboseLogging");
 		c_armsOnly =             ini.GetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode");
 		
@@ -510,6 +514,7 @@ namespace F4VRBody {
 		playerSkelly->handleWeaponNodes();
 		playerSkelly->setArms(false);
 		playerSkelly->setArms(true);
+		playerSkelly->leftHandedModePipboy();
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// Misc stuff to showahide things and also setup the wrist pipboy
@@ -593,9 +598,8 @@ namespace F4VRBody {
 		PlayerNodes* pn = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
 
 		c_playerHeight = pn->UprightHmdNode->m_localTransform.pos.z;
-	//	c_armLength = (vec3_len(pn->primaryWandNode->m_worldTransform.pos - pn->SecondaryWandNode->m_worldTransform.pos) / 2) - 20.0f;
 
-		_MESSAGE("Calibrated Height: %f  arm length: %f", c_playerHeight, c_armLength);
+		_MESSAGE("Calibrated Height: %f  arm length: %f %f", c_playerHeight, c_armLength);
 	}
 
 	void togglePAHUD(StaticFunctionTag* base) {

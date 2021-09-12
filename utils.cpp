@@ -213,6 +213,10 @@ namespace F4VRBody {
 
 	NiNode* getChildNode(const char* nodeName, NiNode* nde) {
 
+		if (!nde->m_name) {
+			return nullptr;
+		}
+
 		if (!strcmp(nodeName, nde->m_name.c_str())) {
 			return nde;
 		}

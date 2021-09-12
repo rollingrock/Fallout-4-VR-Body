@@ -562,7 +562,7 @@ namespace F4VRBody
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
 		_root->m_localTransform.pos = body->m_worldTransform.pos - getPosition();
 		_root->m_localTransform.pos.z = z;
-		_root->m_localTransform.scale = c_playerHeight / (inPowerArmor ? (defaultCameraHeight + 10.0f) : defaultCameraHeight);    // set scale based off specified user height
+		_root->m_localTransform.scale = c_playerHeight / defaultCameraHeight;    // set scale based off specified user height
 
 		body->m_worldBound.m_kCenter = this->getPosition();
 	}
@@ -573,6 +573,7 @@ namespace F4VRBody
 
 		NiNode* camera = (*g_playerCamera)->cameraNode;
 		NiNode* com = getNode("COM", _root);
+		NiNode* neck = getNode("Neck", _root);
 		NiNode* spine = getNode("SPINE1", _root);
 
 		_leftKneePos = getNode("LLeg_Calf", com)->m_worldTransform.pos;
@@ -580,9 +581,11 @@ namespace F4VRBody
 
 		float comZ = com->m_localTransform.pos.z;
 
-		float z_adjust = c_playerOffset_up + sinf(-neckPitch) * 15.0;
+		float z_adjust = c_playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
 		NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * c_playerOffset_forward / 2, -_forwardDir.y * c_playerOffset_forward / 2, z_adjust);
 		NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
+
+		_torsoLen = vec3_len(neck->m_worldTransform.pos - com->m_worldTransform.pos);
 
 		NiPoint3 hmdToHip = neckPos - com->m_worldTransform.pos;
 		NiPoint3 dir = NiPoint3(-_forwardDir.x, -_forwardDir.y, 0);
@@ -594,7 +597,7 @@ namespace F4VRBody
 		NiPoint3 hmdtoNewHip = tmpHipPos - neckPos;
 		NiPoint3 newHipPos = neckPos + hmdtoNewHip * (_torsoLen / vec3_len(hmdtoNewHip));
 
-		NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * ((newHipPos - com->m_worldTransform.pos) / _root->m_localTransform.scale);
+		NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * (newHipPos - com->m_worldTransform.pos);
 		com->m_localTransform.pos.y += newPos.y + c_playerOffset_forward;
 		com->m_localTransform.pos.z = newPos.z;
 		com->m_localTransform.pos.z -= inPowerArmor ? 12.0f : 0.0f;
@@ -1004,7 +1007,13 @@ namespace F4VRBody
 		}
 		
 		static BSFixedString nodeName("PipboyBone");
-		NiAVObject* pipboyBone = leftArm.forearm1->GetObjectByName(&nodeName);
+		NiAVObject* pipboyBone;
+		if (c_leftHandedPipBoy) {
+			pipboyBone = rightArm.forearm1->GetObjectByName(&nodeName);
+		}
+		else {
+			pipboyBone = leftArm.forearm1->GetObjectByName(&nodeName);
+		}
 
 		if (pipboyBone == nullptr) {
 			return;
@@ -1028,6 +1037,30 @@ namespace F4VRBody
 
 		loc.makeTransformMatrix(wandWROT, NiPoint3(0, 0, 0));
 		wandPip->m_localTransform.rot = loc.multiply43Left(wandPip->m_parent->m_worldTransform.rot.Transpose());
+	}
+
+	void Skeleton::leftHandedModePipboy() {
+
+		if (c_leftHandedPipBoy) {
+			NiNode* pipbone = getNode("PipboyBone", rightArm.forearm1->GetAsNiNode());
+
+			if (!pipbone) {
+				pipbone = getNode("PipboyBone", leftArm.forearm1->GetAsNiNode());
+
+				if (!pipbone) {
+					return;
+				}
+
+				pipbone->m_parent->RemoveChild(pipbone);
+				rightArm.forearm3->GetAsNiNode()->AttachChild(pipbone, true);
+			}
+
+			Matrix44 rot;
+			rot.setEulerAngles(0, degrees_to_rads(180.0), 0);
+
+			pipbone->m_localTransform.rot = rot.multiply43Left(pipbone->m_localTransform.rot);
+			pipbone->m_localTransform.pos *= -1.5;
+		}
 	}
 
 	void Skeleton::makeArmsT(bool isLeft) {
@@ -1280,7 +1313,15 @@ namespace F4VRBody
 
 	void Skeleton::hidePipboy() {
 		BSFixedString pipName("PipboyBone");
-		NiAVObject* pipboy = leftArm.upper->GetObjectByName(&pipName);
+		NiAVObject* pipboy;
+		
+		if (!c_leftHandedPipBoy) {
+			pipboy = leftArm.forearm3->GetObjectByName(&pipName);
+		}
+		else {
+			pipboy = rightArm.forearm3->GetObjectByName(&pipName);
+
+		}
 
 		if (!pipboy) {
 			_MESSAGE("can't find pipboyroot in hidePipBoy function");
@@ -1313,14 +1354,29 @@ namespace F4VRBody
 		if ((*g_player)->firstPersonSkeleton == nullptr) {
 			return;
 		}
+		
+		NiAVObject* finger;
+		NiAVObject* pipboy;
 
-		NiAVObject* finger = getNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		if (!c_leftHandedPipBoy) {
+			finger = getNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
-		if (finger == nullptr) {
-			finger = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+			if (finger == nullptr) {
+				finger = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+			}
+
+			pipboy = getNode("PipboyRoot", leftArm.forearm3->GetAsNiNode());
 		}
+		else {
+			finger = getNode("LArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
-		NiAVObject* pipboy = getNode("PipboyRoot", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+			if (finger == nullptr) {
+				finger = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+			}
+
+			pipboy = getNode("PipboyRoot", rightArm.forearm3->GetAsNiNode());
+
+		}
 
 		if ((finger == nullptr) || (pipboy == nullptr)) {
 			return;
@@ -1510,7 +1566,6 @@ namespace F4VRBody
 		ArmNodes arm;
 
 		arm = isLeft ? leftArm : rightArm;
-
 
 		// This first part is to handle the game calculating the first person hand based off two offset nodes
 		// PrimaryWeaponOffset and PrimaryMeleeoffset

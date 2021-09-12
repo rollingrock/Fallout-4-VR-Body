@@ -22,6 +22,7 @@ namespace F4VRBody {
 	extern float c_playerOffset_forward;
 	extern float c_playerOffset_up;
 	extern float c_pipboyDetectionRange;
+	extern float c_fVrScale;
 	extern float c_armLength;
 	extern float c_cameraHeight;
 	extern bool  c_showPAHUD;
@@ -32,6 +33,7 @@ namespace F4VRBody {
 	extern bool  c_leftHandedMode;
 	extern bool  c_disableSmoothMovement;
 	extern bool  c_jumping;
+	extern bool  c_leftHandedPipBoy;
 
 	class BoneSphere {
 	public:
