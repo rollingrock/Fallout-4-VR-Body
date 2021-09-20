@@ -1,5 +1,6 @@
 #include "F4VRBody.h"
 #include "Skeleton.h"
+#include "HandPose.h"
 
 
 
@@ -52,6 +53,9 @@ namespace F4VRBody {
 	bool meshesReplaced = false;
 
 	float headDefaultHeight = 125.0;
+
+	std::map<std::string, NiTransform> handClosed;
+	std::map<std::string, NiTransform> handOpen;
 
 
 
@@ -124,6 +128,10 @@ namespace F4VRBody {
 		disableInteriorSmoothingHorizontal = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothingHorizontal", 1);
 		return true;
 	}
+
+
+
+
 
 	// Bone sphere detection
 	
@@ -371,6 +379,8 @@ namespace F4VRBody {
 				return false;
 			}
 
+			initHandPoses();
+
 			playerSkelly = new Skeleton(node);
 			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
 			playerSkelly->setNodes();
@@ -381,6 +391,7 @@ namespace F4VRBody {
 			_MESSAGE("handle pipboy init");
 
 			turnPipBoyOff();
+
 
 
 			if (c_setScale) {
@@ -517,6 +528,7 @@ namespace F4VRBody {
 		playerSkelly->leftHandedModePipboy();
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
+
 		// Misc stuff to showahide things and also setup the wrist pipboy
 		if (c_verbose) { _MESSAGE("Pipboy and Weapons"); }
 		playerSkelly->hideWeapon();
@@ -548,6 +560,7 @@ namespace F4VRBody {
 			playerSkelly->showOnlyArms();
 		}
 
+		playerSkelly->setHandPose();
 	}
 
 

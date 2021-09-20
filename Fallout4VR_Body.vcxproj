@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -171,6 +171,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="F4VRBody.cpp" />
+    <ClCompile Include="HandPose.cpp" />
     <ClCompile Include="hook.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matrix.cpp" />
@@ -183,7 +184,9 @@
   <ItemGroup>
     <ClInclude Include="api\PapyrusVRAPI.h" />
     <ClInclude Include="api\VRManagerAPI.h" />
+    <ClInclude Include="BSFlattenedBoneTree.h" />
     <ClInclude Include="F4VRBody.h" />
+    <ClInclude Include="HandPose.h" />
     <ClInclude Include="hook.h" />
     <ClInclude Include="include\SimpleIni.h" />
     <ClInclude Include="include\version.h" />

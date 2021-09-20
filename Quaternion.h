@@ -34,22 +34,37 @@ namespace F4VRBody {
 			z = 0.0;
 		}
 
+		Quaternion get() {
+			Quaternion q;
+			q.w = w;
+			q.x = x;
+			q.y = y;
+			q.z = z;
+
+			return q;
+		}
+
 		Quaternion conjugate();
 
 		float getMag();
 		Quaternion getNorm();
 		void normalize();
 
+		double dot(Quaternion q);
+
 		void setAngleAxis(float angle, NiPoint3 axis);
 
 		Matrix44 getRot();
 		void fromRot(NiMatrix43 rot);
+
+		void slerp(float interp, Quaternion target);
 
 		//overload
 		Quaternion  operator* (const float& f) const;
 		Quaternion  operator* (const Quaternion& qr) const;
 		Quaternion& operator*= (const float& f);
 		Quaternion& operator*= (const Quaternion& qr);
+		void operator= (const Quaternion& q);
 
 	public:
 		float w;

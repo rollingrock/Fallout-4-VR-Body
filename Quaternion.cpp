@@ -21,6 +21,10 @@ namespace F4VRBody {
 		z /= mag;
 	}
 
+	double Quaternion::dot(Quaternion q) {
+		return w*q.w + x*q.x + y*q.y + z*q.z;
+	}
+
 	Quaternion Quaternion::conjugate() {
 		Quaternion q;
 		q.w = w;
@@ -89,6 +93,42 @@ namespace F4VRBody {
 		*this = q;
 	}
 
+	// slerp function adapted from VRIK - credit prog for math
+
+	void Quaternion::slerp(float interp, Quaternion target) {
+		Quaternion save = this->get();
+
+		double dotp = this->dot(target);
+
+		if (dotp < 0.0f) {
+			w = -w;
+			x = -x;
+			y = -y;
+			z = -z;
+			dotp = -dotp;
+		}
+
+		if (dotp > 0.9995) {
+			w = save.w;
+			x = save.x;
+			y = save.y;
+			z = save.z;
+			return;
+		}
+		else {
+			float theta_0 = acosf(dotp);        // theta_0 = angle between input vectors
+			float theta = theta_0 * interp;    // theta = angle between q1 and result
+			float sin_theta = sinf(theta);     // compute this value only once
+			float sin_theta_0 = sinf(theta_0); // compute this value only once
+			float s0 = cosf(theta) - dotp * sin_theta / sin_theta_0;  // == sin(theta_0 - theta) / sin(theta_0)
+			float s1 = sin_theta / sin_theta_0;
+
+			w = s0 * w + s1 * target.w;
+			x = s0 * x + s1 * target.x;
+			y = s0 * y + s1 * target.y;
+			z = s0 * z + s1 * target.z;
+		}
+	}
 
 	Quaternion Quaternion::operator* (const Quaternion& qr) const {
 		Quaternion q;
@@ -133,5 +173,12 @@ namespace F4VRBody {
 		z *= f;
 
 		return *this;
+	}
+
+	void Quaternion::operator= (const Quaternion& q)  {
+		w = q.w;
+		x = q.x;
+		y = q.y;
+		z = q.z;
 	}
 }

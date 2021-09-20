@@ -85,6 +85,7 @@ void hookMain() {
 		SafeWrite8(hookAnimationVFunc.GetUIntPtr() + i, 0x90);    // this block resets the body pose to hang off the camera.    Blocking this off so body height is correct.
 	}
 
+
 //	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&F4VRBody::update);
 
 	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);

@@ -4,6 +4,7 @@
 #include "f4se/GameCamera.h"
 #include "f4se/GameRTTI.h"
 #include "f4se/NiNodes.h"
+#include "f4se/BSSkin.h"
 
 #include <algorithm>
 #include <array>
@@ -12,6 +13,7 @@
 #include "utils.h"
 #include "matrix.h"
 #include "Quaternion.h"
+#include "BSFlattenedBoneTree.h"
 
 
 
@@ -97,6 +99,46 @@ namespace F4VRBody
 		NiAVObject* hand;
 	};
 
+	struct HandMeshBoneTransforms {
+		NiTransform* LArm_ForeArm1_skin;
+		NiTransform* LArm_ForeArm2_skin;
+		NiTransform* LArm_ForeArm3_skin;
+		NiTransform* LArm_Hand;
+		NiTransform* RArm_ForeArm2_skin;
+		NiTransform* RArm_ForeArm3_skin;
+		NiTransform* RArm_Hand;
+		NiTransform* LArm_Finger11;
+		NiTransform* LArm_Finger12;
+		NiTransform* LArm_Finger13;
+		NiTransform* LArm_Finger21;
+		NiTransform* LArm_Finger22;
+		NiTransform* LArm_Finger23;
+		NiTransform* LArm_Finger31;
+		NiTransform* LArm_Finger32;
+		NiTransform* LArm_Finger33;
+		NiTransform* LArm_Finger41;
+		NiTransform* LArm_Finger42;
+		NiTransform* LArm_Finger43;
+		NiTransform* LArm_Finger51;
+		NiTransform* LArm_Finger52;
+		NiTransform* LArm_Finger53;
+		NiTransform* RArm_Finger11;
+		NiTransform* RArm_Finger12;
+		NiTransform* RArm_Finger13;
+		NiTransform* RArm_Finger21;
+		NiTransform* RArm_Finger22;
+		NiTransform* RArm_Finger23;
+		NiTransform* RArm_Finger31;
+		NiTransform* RArm_Finger32;
+		NiTransform* RArm_Finger33;
+		NiTransform* RArm_Finger41;
+		NiTransform* RArm_Finger42;
+		NiTransform* RArm_Finger43;
+		NiTransform* RArm_Finger51;
+		NiTransform* RArm_Finger52;
+		NiTransform* RArm_Finger53;
+	};
+
 
 	class Skeleton {
 	public:
@@ -156,6 +198,7 @@ namespace F4VRBody
 		void setSingleLeg(bool isLeft);
 		void setArms(bool isLeft);
 		void setArms_wp(bool isLeft);
+		void setHandPose();
 		NiPoint3 getPosition();
 		void makeArmsT(bool);
 		void fixArmor();
@@ -191,8 +234,8 @@ namespace F4VRBody
 		void showOnlyArms();
 		void handleWeaponNodes();
 		void setLeftHandedSticky();
-
-
+		void calculateHandPose(std::string bone);
+		void debug();
 
 		void setTime();
 
@@ -232,15 +275,15 @@ namespace F4VRBody
 
 		bool _leftHandedSticky;
 
-		bool inPowerArmor;
+		bool _inPowerArmor;
 
 		LARGE_INTEGER freqCounter;
 		LARGE_INTEGER timer;
 		LARGE_INTEGER prevTime;
-		double frameTime;
+		double _frameTime;
 
 		int _walkingState;
-		double currentStepTime;
+		double _currentStepTime;
 		NiPoint3 _leftFootPos;
 		NiPoint3 _rightFootPos;
 		NiPoint3 _rightFootTarget;
@@ -256,5 +299,11 @@ namespace F4VRBody
 		double _prevSpeed;
 		double _stepTimeinStep;
 		int delayFrame;
+
+		HandMeshBoneTransforms* _boneTransforms;
+
+
+		std::map<std::string, NiTransform> _handBones;
+		bool _openHand;
 	};
 }
