@@ -1996,12 +1996,12 @@ namespace F4VRBody
 
 		qc.fromRot(_handBones[bone].rot);
 
-		float blend = std::clamp(_frameTime, 0.0, 1.0);
+		float blend = std::clamp(_frameTime*2, 0.0, 1.0);
 
 		qc.slerp(blend, qt);
 
 		Matrix44 rot;
-		rot = qt.getRot();
+		rot = qc.getRot();
 
 		_handBones[bone].rot = rot.make43();
 	}
@@ -2010,7 +2010,7 @@ namespace F4VRBody
 
 		static int count = 0;
 
-		if (count >= 120) {
+		if (count >= 240) {
 			_openHand = !_openHand;
 			count = 0;
 		}

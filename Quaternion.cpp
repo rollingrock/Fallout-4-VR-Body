@@ -66,31 +66,44 @@ namespace F4VRBody {
 
 	void Quaternion::fromRot(NiMatrix43 rot) {
 		Quaternion q;
-		float tr = 0.0f;
+		//float tr = 0.0f;
 
-		if (rot.data[2][2] < 0) {
-			if (rot.data[0][0] > rot.data[1][1]) {
-				tr = 1 + rot.data[0][0] - rot.data[1][1] - rot.data[2][2];
-				q = Quaternion(tr, rot.data[0][1] + rot.data[1][0], rot.data[2][0] + rot.data[0][2], rot.data[2][1] - rot.data[1][2]);
-			}
-			else {
-				tr = 1 - rot.data[0][0] + rot.data[1][1] - rot.data[2][2];
-				q = Quaternion(rot.data[0][1] + rot.data[1][0], tr, rot.data[1][2] + rot.data[2][1], rot.data[0][2] - rot.data[2][0]);
-			}
-		}
-		else {
-			if (rot.data[0][0] < -rot.data[1][1]) {
-				tr = 1 - rot.data[0][0] - rot.data[1][1] + rot.data[2][2];
-				q = Quaternion(rot.data[2][0] + rot.data[0][2], rot.data[1][2] + rot.data[2][1], tr, rot.data[1][0] - rot.data[0][1]);
-			}
-			else {
-				tr = 1 + rot.data[0][0] + rot.data[1][1] + rot.data[2][2];
-				q = Quaternion(rot.data[2][1] - rot.data[1][2], rot.data[2][0] - rot.data[0][2], rot.data[1][0] - rot.data[0][1], tr);
-			}
-		}
+		//if (rot.data[2][2] < 0) {
+		//	if (rot.data[0][0] > rot.data[1][1]) {
+		//		tr = 1 + rot.data[0][0] - rot.data[1][1] - rot.data[2][2];
+		//		q = Quaternion(tr, rot.data[0][1] + rot.data[1][0], rot.data[2][0] + rot.data[0][2], rot.data[2][1] - rot.data[1][2]);
+		//	}
+		//	else {
+		//		tr = 1 - rot.data[0][0] + rot.data[1][1] - rot.data[2][2];
+		//		q = Quaternion(rot.data[0][1] + rot.data[1][0], tr, rot.data[1][2] + rot.data[2][1], rot.data[0][2] - rot.data[2][0]);
+		//	}
+		//}
+		//else {
+		//	if (rot.data[0][0] < -rot.data[1][1]) {
+		//		tr = 1 - rot.data[0][0] - rot.data[1][1] + rot.data[2][2];
+		//		q = Quaternion(rot.data[2][0] + rot.data[0][2], rot.data[1][2] + rot.data[2][1], tr, rot.data[1][0] - rot.data[0][1]);
+		//	}
+		//	else {
+		//		tr = 1 + rot.data[0][0] + rot.data[1][1] + rot.data[2][2];
+		//		q = Quaternion(rot.data[2][1] - rot.data[1][2], rot.data[2][0] - rot.data[0][2], rot.data[1][0] - rot.data[0][1], tr);
+		//	}
+		//}
 
-		q *= 0.5 / sqrtf(tr);
-		*this = q;
+		//q *= 0.5 / sqrtf(tr);
+		//w = q.w;
+		//x = q.x;
+		//y = q.y;
+		//z = q.z;
+
+		q.w = sqrtf(((std::max)(0.0f, 1 + rot.data[0][0] + rot.data[1][1] + rot.data[2][2]))) / 2;
+		q.x = sqrtf(((std::max)(0.0f, 1 + rot.data[0][0] - rot.data[1][1] - rot.data[2][2]))) / 2;
+		q.y = sqrtf(((std::max)(0.0f, 1 - rot.data[0][0] + rot.data[1][1] - rot.data[2][2]))) / 2;
+		q.z = sqrtf(((std::max)(0.0f, 1 - rot.data[0][0] - rot.data[1][1] + rot.data[2][2]))) / 2;
+
+		w = q.w;
+		x = _copysign(q.x, rot.data[2][1] - rot.data[1][2]);
+		y = _copysign(q.y, rot.data[0][2] - rot.data[2][0]);
+		z = _copysign(q.z, rot.data[1][0] - rot.data[0][1]);
 	}
 
 	// slerp function adapted from VRIK - credit prog for math
