@@ -5,6 +5,8 @@
 #include "f4se/GameRTTI.h"
 #include "f4se/NiNodes.h"
 #include "f4se/BSSkin.h"
+#include "api/PapyrusVRAPI.h"
+#include "api/VRManagerAPI.h"
 
 #include <algorithm>
 #include <array>
@@ -304,6 +306,7 @@ namespace F4VRBody
 
 
 		std::map<std::string, NiTransform> _handBones;
-		bool _openHand;
+		std::map<std::string, bool> _closedHand;
+		std::map<std::string, vr::EVRButtonId> _handBonesButton;
 	};
 }

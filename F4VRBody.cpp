@@ -2,6 +2,8 @@
 #include "Skeleton.h"
 #include "HandPose.h"
 
+#include "api/PapyrusVRAPI.h"
+#include "api/VRManagerAPI.h"
 
 
 
@@ -21,6 +23,8 @@ int disableInteriorSmoothing = 1;
 int disableInteriorSmoothingHorizontal = 1;
 
 RelocPtr<bool> iniLeftHandedMode(0x37d5e48);      // location of bLeftHandedMode:VR ini setting
+
+OpenVRHookManagerAPI* vrhook;
 
 namespace F4VRBody {
 
@@ -57,7 +61,10 @@ namespace F4VRBody {
 	std::map<std::string, NiTransform> handClosed;
 	std::map<std::string, NiTransform> handOpen;
 
-
+	vr::VRControllerState_t rightControllerState;
+	vr::VRControllerState_t leftControllerState;
+	vr::TrackedDevicePose_t renderPoses[64]; //Used to store available poses
+	vr::TrackedDevicePose_t gamePoses[64]; //Used to store available poses
 
 	// loadNif native func
 	//typedef int(*_loadNif)(const char* path, uint64_t parentNode, uint64_t flags);
@@ -349,6 +356,24 @@ namespace F4VRBody {
 		}
 	}
 
+	void getVRControllerState() {
+		static uint32_t leftpacket = 0;
+		static uint32_t rightpacket = 0;
+		if (vrhook != nullptr) {
+
+			vr::TrackedDeviceIndex_t lefthand = vrhook->GetVRSystem()->GetTrackedDeviceIndexForControllerRole(vr::ETrackedControllerRole::TrackedControllerRole_LeftHand);
+			vr::TrackedDeviceIndex_t righthand = vrhook->GetVRSystem()->GetTrackedDeviceIndexForControllerRole(vr::ETrackedControllerRole::TrackedControllerRole_RightHand);
+
+			vrhook->GetVRSystem()->GetControllerState(lefthand, &leftControllerState, sizeof(vr::VRControllerState_t));
+			vrhook->GetVRSystem()->GetControllerState(righthand, &rightControllerState, sizeof(vr::VRControllerState_t));
+
+			if (rightControllerState.unPacketNum != rightpacket) {
+			}
+			if (leftControllerState.unPacketNum != leftpacket) {
+			}
+		}
+	}
+
 	bool setSkelly() {
 
 		if (c_verbose) {
@@ -393,6 +418,7 @@ namespace F4VRBody {
 			turnPipBoyOff();
 
 
+			vrhook = RequestOpenVRHookManagerObject();
 
 			if (c_setScale) {
 				Setting* set = GetINISetting("fVrScale:VR");
@@ -481,6 +507,8 @@ namespace F4VRBody {
 		c_jumping = SmoothMovementVR::checkIfJumpingOrInAir();
 
 		playerSkelly->setTime();
+
+		getVRControllerState();
 
 		if (c_verbose) { _MESSAGE("Hide Wands"); }
 		playerSkelly->hideWands();

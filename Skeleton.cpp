@@ -2,12 +2,11 @@
 #include "F4VRBody.h"
 #include "HandPose.h"
 
-#include "api/PapyrusVRAPI.h"
-#include "api/VRManagerAPI.h"
 
 #include <time.h>
 
 extern PapyrusVRAPI* g_papyrusvr;
+extern OpenVRHookManagerAPI* vrhook;
 
 namespace F4VRBody
 {
@@ -17,6 +16,8 @@ namespace F4VRBody
 	UInt32 KeywordPowerArmor = 0x4D8A1;
 	UInt32 KeywordPowerArmorFrame = 0x15503F;
 
+	extern vr::VRControllerState_t rightControllerState;
+	extern vr::VRControllerState_t leftControllerState;
 
 	void printMatrix(Matrix44* mat) {
 		_MESSAGE("Dump matrix:");
@@ -353,8 +354,6 @@ namespace F4VRBody
 			return;
 		}
 
-		_openHand = false;
-
 		_curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
 
 		setCommonNode();
@@ -406,26 +405,58 @@ namespace F4VRBody
 
 		_MESSAGE("finished set arm nodes");
 
-		BSSubIndexTriShape* handMesh = nullptr;
-		for (int i = 0; i < _root->m_parent->m_children.m_emptyRunStart; i++) {
-			BSSubIndexTriShape* node = _root->m_parent->m_children.m_data[i]->GetAsBSSubIndexTriShape();
-			if (node) {
-				handMesh = node;
-				break;
-			}
-		}
+		//BSSubIndexTriShape* handMesh = nullptr;
+		//for (int i = 0; i < _root->m_parent->m_children.m_emptyRunStart; i++) {
+		//	BSSubIndexTriShape* node = _root->m_parent->m_children.m_data[i]->GetAsBSSubIndexTriShape();
+		//	if (node) {
+		//		handMesh = node;
+		//		break;
+		//	}
+		//}
 
-		if (handMesh) {
-			BSSkin::Instance* handSkin = (BSSkin::Instance*)(handMesh->numIndices);
-			_boneTransforms = (HandMeshBoneTransforms*)(handSkin->worldTransforms.entries);
-			_MESSAGE("bonetransforms   = %016I64X", _boneTransforms);
-		}
-		else {
-			_boneTransforms = nullptr;
-			_MESSAGE("can't get bonetransforms for the hand");
-		}
+		//if (handMesh) {
+		//	BSSkin::Instance* handSkin = (BSSkin::Instance*)(handMesh->numIndices);
+		//	_boneTransforms = (HandMeshBoneTransforms*)(handSkin->worldTransforms.entries);
+		//	_MESSAGE("bonetransforms   = %016I64X", _boneTransforms);
+		//}
+		//else {
+		//	_boneTransforms = nullptr;
+		//	_MESSAGE("can't get bonetransforms for the hand");
+		//}
 
 		_handBones = handOpen;
+
+		// setup hand bones to openvr button mapping
+		_handBonesButton["LArm_Finger11"] = vr::k_EButton_SteamVR_Touchpad;
+		_handBonesButton["LArm_Finger12"] = vr::k_EButton_SteamVR_Touchpad;
+		_handBonesButton["LArm_Finger13"] = vr::k_EButton_SteamVR_Touchpad;
+		_handBonesButton["LArm_Finger21"] = vr::k_EButton_SteamVR_Trigger;
+		_handBonesButton["LArm_Finger22"] = vr::k_EButton_SteamVR_Trigger;
+		_handBonesButton["LArm_Finger23"] = vr::k_EButton_SteamVR_Trigger;
+		_handBonesButton["LArm_Finger31"] = vr::k_EButton_Grip;
+		_handBonesButton["LArm_Finger32"] = vr::k_EButton_Grip;
+		_handBonesButton["LArm_Finger33"] = vr::k_EButton_Grip;
+		_handBonesButton["LArm_Finger41"] = vr::k_EButton_Grip;
+		_handBonesButton["LArm_Finger42"] = vr::k_EButton_Grip;
+		_handBonesButton["LArm_Finger43"] = vr::k_EButton_Grip;
+		_handBonesButton["LArm_Finger51"] = vr::k_EButton_Grip;
+		_handBonesButton["LArm_Finger52"] = vr::k_EButton_Grip;
+		_handBonesButton["LArm_Finger53"] = vr::k_EButton_Grip;
+		_handBonesButton["RArm_Finger11"] = vr::k_EButton_SteamVR_Touchpad;
+		_handBonesButton["RArm_Finger12"] = vr::k_EButton_SteamVR_Touchpad;
+		_handBonesButton["RArm_Finger13"] = vr::k_EButton_SteamVR_Touchpad;
+		_handBonesButton["RArm_Finger21"] = vr::k_EButton_SteamVR_Trigger;
+		_handBonesButton["RArm_Finger22"] = vr::k_EButton_SteamVR_Trigger;
+		_handBonesButton["RArm_Finger23"] = vr::k_EButton_SteamVR_Trigger;
+		_handBonesButton["RArm_Finger31"] = vr::k_EButton_Grip;
+		_handBonesButton["RArm_Finger32"] = vr::k_EButton_Grip;
+		_handBonesButton["RArm_Finger33"] = vr::k_EButton_Grip;
+		_handBonesButton["RArm_Finger41"] = vr::k_EButton_Grip;
+		_handBonesButton["RArm_Finger42"] = vr::k_EButton_Grip;
+		_handBonesButton["RArm_Finger43"] = vr::k_EButton_Grip;
+		_handBonesButton["RArm_Finger51"] = vr::k_EButton_Grip;
+		_handBonesButton["RArm_Finger52"] = vr::k_EButton_Grip;
+		_handBonesButton["RArm_Finger53"] = vr::k_EButton_Grip;
 
 		savedStates.clear();
 		saveStatesTree(_root->m_parent->GetAsNiNode());
@@ -1423,7 +1454,6 @@ namespace F4VRBody
 				return;
 			}
 			else {
-				OpenVRHookManagerAPI* vrhook = RequestOpenVRHookManagerObject();
 				if (vrhook != nullptr) {
 					vrhook->StartHaptics(2, 0.05, 0.3);
 				}
@@ -1987,16 +2017,16 @@ namespace F4VRBody
 		Quaternion qc;
 		Quaternion qt;
 
-		if (_openHand) {
-			qt.fromRot(handOpen[bone].rot);
+		if (_closedHand[bone]) {
+			qt.fromRot(handClosed[bone].rot);
 		}
 		else {
-			qt.fromRot(handClosed[bone].rot);
+			qt.fromRot(handOpen[bone].rot);
 		}
 
 		qc.fromRot(_handBones[bone].rot);
 
-		float blend = std::clamp(_frameTime*2, 0.0, 1.0);
+		float blend = std::clamp(_frameTime*6, 0.0, 1.0);
 
 		qc.slerp(blend, qt);
 
@@ -2008,21 +2038,20 @@ namespace F4VRBody
 
 	void Skeleton::setHandPose() {
 
-		static int count = 0;
-
-		if (count >= 240) {
-			_openHand = !_openHand;
-			count = 0;
-		}
-		count++;
-
 		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
+		bool isLeft = false;
 
 		for (auto i = rt->numTransforms; i != 0; i--) {
 			if (rt->bonePositions[i].name && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
 				int pos = rt->bonePositions[i].position;
 
 				if(strstr(rt->bonePositions[i].name->data, "Finger")) {
+
+					isLeft = strncmp(rt->bonePositions[i].name->data, "L", 1) ? false : true;
+
+					uint64_t reg = isLeft ? leftControllerState.ulButtonTouched : rightControllerState.ulButtonTouched;
+
+					_closedHand[rt->bonePositions[i].name->data] = reg & vr::ButtonMaskFromId(_handBonesButton[rt->bonePositions[i].name->data]);
 
 					this->calculateHandPose(rt->bonePositions[i].name->data);
 
