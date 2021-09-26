@@ -236,7 +236,7 @@ namespace F4VRBody
 		void showOnlyArms();
 		void handleWeaponNodes();
 		void setLeftHandedSticky();
-		void calculateHandPose(std::string bone);
+		void calculateHandPose(std::string bone, float gripProx, bool thumbUp, bool isLeft);
 		void debug();
 
 		void setTime();

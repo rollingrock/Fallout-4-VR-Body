@@ -283,7 +283,7 @@ namespace F4VRBody
 		headNode->m_localTransform.rot.data[2][2] =  0.998;
 
 		if (!c_selfieMode) {
-			headNode->m_localTransform.pos.y = -6.0;
+			headNode->m_localTransform.pos.y = -10.0;
 		}
 
 
@@ -636,6 +636,8 @@ namespace F4VRBody
 		_rightKneePos = getNode("RLeg_Calf", com)->m_worldTransform.pos;
 
 		float comZ = com->m_localTransform.pos.z;
+		com->m_localTransform.pos.x = 0.0;
+		com->m_localTransform.pos.y = 0.0;
 
 		float z_adjust = c_playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
 		NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * c_playerOffset_forward / 2, -_forwardDir.y * c_playerOffset_forward / 2, z_adjust);
@@ -2013,20 +2015,49 @@ namespace F4VRBody
 
 	}
 
-	void Skeleton::calculateHandPose(std::string bone) {
+	void Skeleton::calculateHandPose(std::string bone, float gripProx, bool thumbUp, bool isLeft) {
 		Quaternion qc;
 		Quaternion qt;
 
-		if (_closedHand[bone]) {
+		int sign = isLeft ? -1 : 1;
+
+		// thumbUp pose
+		if (thumbUp && (bone.find("Finger1") != std::string::npos)) {
+			if (bone.find("Finger11") != std::string::npos) {
+				Matrix44 rot;
+				rot.setEulerAngles(sign * 0.5, sign * 0.4, -0.3);
+
+				NiMatrix43 wr = handOpen[bone].rot;
+				wr = rot.multiply43Left(wr);
+
+				qt.fromRot(wr);
+			}
+			else if (bone.find("Finger13") != std::string::npos) {
+				Matrix44 rot;
+				rot.setEulerAngles(0, 0, degrees_to_rads(-35.0));
+
+				NiMatrix43 wr = handOpen[bone].rot;
+				wr = rot.multiply43Left(wr);
+
+				qt.fromRot(wr);
+			}
+		}
+		else if (_closedHand[bone]) {
 			qt.fromRot(handClosed[bone].rot);
 		}
 		else {
 			qt.fromRot(handOpen[bone].rot);
+			if (_handBonesButton[bone] == vr::k_EButton_Grip) {
+				Quaternion qo;
+				qo.fromRot(handClosed[bone].rot);
+				qo.slerp(1.0 - gripProx, qt);
+				qt = qo;
+			}
 		}
 
 		qc.fromRot(_handBones[bone].rot);
 
-		float blend = std::clamp(_frameTime*6, 0.0, 1.0);
+		float blend = std::clamp(_frameTime*7, 0.0, 1.0);
 
 		qc.slerp(blend, qt);
 
@@ -2051,9 +2082,13 @@ namespace F4VRBody
 
 					uint64_t reg = isLeft ? leftControllerState.ulButtonTouched : rightControllerState.ulButtonTouched;
 
+					float gripProx = isLeft ? leftControllerState.rAxis[2].x : rightControllerState.rAxis[2].x;
+
+					bool thumbUp = (reg & vr::ButtonMaskFromId(vr::k_EButton_Grip)) && (reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)) && (!(reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
+
 					_closedHand[rt->bonePositions[i].name->data] = reg & vr::ButtonMaskFromId(_handBonesButton[rt->bonePositions[i].name->data]);
 
-					this->calculateHandPose(rt->bonePositions[i].name->data);
+					this->calculateHandPose(rt->bonePositions[i].name->data, gripProx, thumbUp, isLeft);
 
 					NiTransform trans = _handBones[rt->bonePositions[i].name->data];
 
