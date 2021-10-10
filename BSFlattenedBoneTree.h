@@ -10,7 +10,7 @@ public:
 		NiTransform local;
 		NiTransform world;
 		short parPos;
-		short pad;
+		short childPos;
 		uint32_t unk8c;
 		NiNode* refNode;
 		uint64_t unk90;

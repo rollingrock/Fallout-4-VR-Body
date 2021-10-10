@@ -237,6 +237,7 @@ namespace F4VRBody
 		void handleWeaponNodes();
 		void setLeftHandedSticky();
 		void calculateHandPose(std::string bone, float gripProx, bool thumbUp, bool isLeft);
+		void copy1stPerson(std::string bone, bool isLeft, int offset);
 		void debug();
 
 		void setTime();
@@ -308,5 +309,8 @@ namespace F4VRBody
 		std::map<std::string, NiTransform> _handBones;
 		std::map<std::string, bool> _closedHand;
 		std::map<std::string, vr::EVRButtonId> _handBonesButton;
+
+		bool _weaponEquipped;
+		NiTransform _weapSave;
 	};
 }

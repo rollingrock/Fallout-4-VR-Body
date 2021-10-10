@@ -368,6 +368,7 @@ namespace F4VRBody
 		_MESSAGE("righthand node = %016I64X", _rightHand);
 		_MESSAGE("lefthand node = %016I64X", _leftHand);
 
+		_weaponEquipped = false;
 
 		// Setup Arms
 		BSFixedString rCollar("RArm_Collarbone");
@@ -1143,6 +1144,9 @@ namespace F4VRBody
 	}
 
 	void Skeleton::fixMelee() {
+
+		_weaponEquipped = false;
+
 		BGSInventoryList* inventory = (*g_player)->inventoryList;
 
 		if (!inventory) {
@@ -1159,6 +1163,11 @@ namespace F4VRBody
 			}
 
 			if ((item.form->formType == FormType::kFormType_WEAP) && (item.stack->flags & 0x3))   {
+				// check if weapon is sheathed or not
+				if ((*g_player)->actorState.IsWeaponDrawn()) {
+					_weaponEquipped = true;
+				}
+
 				TESObjectWEAP* weap = static_cast<TESObjectWEAP*>(item.form);
 
 				uint8_t type = weap->weapData.unk137; // unk137 is the weapon type that maps to WeaponType enum
@@ -1663,6 +1672,10 @@ namespace F4VRBody
 		w.data[0][2] = 0.064;
 		w.data[1][2] = 0.116;
 		w.data[2][2] = -0.991;
+
+		if (!isLeft) {
+			_weapSave = rightWeapon->m_localTransform;
+		}
 		weaponNode->m_localTransform.rot = w.make43();
 
 		if (c_leftHandedMode) {
@@ -1691,6 +1704,7 @@ namespace F4VRBody
 		weaponNode->IncRef();
 		set1stPersonArm(weaponNode, offsetNode);
 
+		
 		NiPoint3 handPos;
 		NiMatrix43 handRot;
 
@@ -2067,28 +2081,55 @@ namespace F4VRBody
 		_handBones[bone].rot = rot.make43();
 	}
 
+	void Skeleton::copy1stPerson(std::string bone, bool isLeft, int offset) {
+
+		static int firstPos = 68;
+
+		BSFlattenedBoneTree* fpTree = (BSFlattenedBoneTree*)(*g_player)->firstPersonSkeleton->m_children.m_data[0]->GetAsNiNode();
+
+		if (firstPos == 0) {
+			for (auto i = fpTree->numTransforms; i != 0; i--) {
+				int pos = fpTree->bonePositions[i].position;
+
+				if (fpTree->bonePositions[i].name && (fpTree->bonePositions[i].position != 0) && ((uint64_t)fpTree->bonePositions[i].name > 0x1000)) {
+
+					if (strstr(fpTree->bonePositions[i].name->data, "RArm_Hand")) {
+						firstPos = fpTree->transforms[pos].childPos;
+					}
+				}
+			}
+		}
+		
+		if (firstPos != 0) {
+			_handBones[bone].rot = fpTree->transforms[firstPos+offset].local.rot;
+		}
+	}
+
 	void Skeleton::setHandPose() {
 
 		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
 		bool isLeft = false;
 
 		for (auto i = rt->numTransforms; i != 0; i--) {
-			if (rt->bonePositions[i].name && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
-				int pos = rt->bonePositions[i].position;
-
+			int pos = rt->bonePositions[i].position;
+			if (rt->bonePositions[i].name && (rt->bonePositions[i].position != 0) && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
 				if(strstr(rt->bonePositions[i].name->data, "Finger")) {
 
 					isLeft = strncmp(rt->bonePositions[i].name->data, "L", 1) ? false : true;
-
 					uint64_t reg = isLeft ? leftControllerState.ulButtonTouched : rightControllerState.ulButtonTouched;
-
 					float gripProx = isLeft ? leftControllerState.rAxis[2].x : rightControllerState.rAxis[2].x;
-
 					bool thumbUp = (reg & vr::ButtonMaskFromId(vr::k_EButton_Grip)) && (reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)) && (!(reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
-
 					_closedHand[rt->bonePositions[i].name->data] = reg & vr::ButtonMaskFromId(_handBonesButton[rt->bonePositions[i].name->data]);
 
-					this->calculateHandPose(rt->bonePositions[i].name->data, gripProx, thumbUp, isLeft);
+					if ((*g_player)->actorState.IsWeaponDrawn() && !isLeft) {
+						int dig1 = rt->bonePositions[i].name->data[11] - '0';
+						int dig2 = rt->bonePositions[i].name->data[12] - '0';
+						int arrOff = (dig2 - 1) + ((dig1 - 1) * 3);
+						this->copy1stPerson(rt->bonePositions[i].name->data, isLeft, arrOff);
+					}
+					else {
+						this->calculateHandPose(rt->bonePositions[i].name->data, gripProx, thumbUp, isLeft);
+					}
 
 					NiTransform trans = _handBones[rt->bonePositions[i].name->data];
 
@@ -2115,6 +2156,17 @@ namespace F4VRBody
 
 					rt->transforms[pos].world.rot = rot.multiply43Left(rt->transforms[parent].world.rot);
 				}
+			}
+		}
+
+		if ((*g_player)->actorState.IsWeaponDrawn()) {
+			NiNode* weap = getNode("Weapon", (*g_player)->firstPersonSkeleton);
+
+			if (weap) {
+				weap->m_localTransform = _weapSave;
+				NiPoint3 offset = NiPoint3(-0.94, 0, 0);
+				weap->m_localTransform.pos += offset;
+				updateDown(weap, true);
 			}
 		}
 
