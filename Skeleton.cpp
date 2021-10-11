@@ -2101,7 +2101,12 @@ namespace F4VRBody
 		}
 		
 		if (firstPos != 0) {
-			_handBones[bone].rot = fpTree->transforms[firstPos+offset].local.rot;
+			if (fpTree->transforms[firstPos + offset].refNode) {
+				_handBones[bone].rot = fpTree->transforms[firstPos + offset].refNode->m_localTransform.rot;
+			}
+			else {
+				_handBones[bone].rot = fpTree->transforms[firstPos + offset].local.rot;
+			}
 		}
 	}
 
@@ -2112,6 +2117,11 @@ namespace F4VRBody
 
 		for (auto i = rt->numTransforms; i != 0; i--) {
 			int pos = rt->bonePositions[i].position;
+
+			if (pos > rt->numTransforms) {
+				continue;
+			}
+
 			if (rt->bonePositions[i].name && (rt->bonePositions[i].position != 0) && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
 				if(strstr(rt->bonePositions[i].name->data, "Finger")) {
 
@@ -2136,8 +2146,8 @@ namespace F4VRBody
 					rt->transforms[pos].local.rot = trans.rot;
 
 					if (rt->transforms[pos].refNode) {
-						rt->transforms[pos].refNode->m_parent->RemoveChild(rt->transforms[pos].refNode);
-						rt->transforms[pos].refNode = nullptr;
+						rt->transforms[pos].refNode->m_localTransform = rt->transforms[pos].local;
+						updateTransforms(rt->transforms[pos].refNode);
 					}
 				}
 
@@ -2165,6 +2175,12 @@ namespace F4VRBody
 			if (weap) {
 				weap->m_localTransform = _weapSave;
 				NiPoint3 offset = NiPoint3(-0.94, 0, 0);
+				NiNode* weapOffset = getNode("WeaponOffset", weap);
+
+				if (weapOffset) {
+					offset.x -= weapOffset->m_localTransform.pos.y;
+					offset.y -= -2.099;
+				}
 				weap->m_localTransform.pos += offset;
 				updateDown(weap, true);
 			}
@@ -2174,54 +2190,76 @@ namespace F4VRBody
 
 	void Skeleton::debug() {
 
+		static int fc = 0;
+
 		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
 
 		for (auto i = 0; i < rt->numTransforms; i++) {
-			if (rt->bonePositions[i].name) {
+			if (rt->bonePositions[i].name && (rt->bonePositions[i].position != 0) && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
 				int pos = rt->bonePositions[i].position;
-				//_MESSAGE("%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", rt->bonePositions[i].name->data, 
-				//					rt->bonePositions[i].position,
-				//					rt->transforms[pos].local.rot.arr[0],
-				//					rt->transforms[pos].local.rot.arr[1],
-				//					rt->transforms[pos].local.rot.arr[2],
-				//					rt->transforms[pos].local.rot.arr[3],
-				//					rt->transforms[pos].local.rot.arr[4],
-				//					rt->transforms[pos].local.rot.arr[5],
-				//					rt->transforms[pos].local.rot.arr[6],
-				//					rt->transforms[pos].local.rot.arr[7],
-				//					rt->transforms[pos].local.rot.arr[8],
-				//					rt->transforms[pos].local.rot.arr[9],
-				//					rt->transforms[pos].local.rot.arr[10],
-				//					rt->transforms[pos].local.rot.arr[11],
-				//					rt->transforms[pos].local.pos.x,
-				//					rt->transforms[pos].local.pos.y,
-				//					rt->transforms[pos].local.pos.z
-				//);
-
-				if(strstr(rt->bonePositions[i].name->data, "Finger")) {
-					Matrix44 rot;
-					rot.makeIdentity();
-					rt->transforms[pos].local.rot = rot.make43();
-
-					if (rt->transforms[pos].refNode) {
-						rt->transforms[pos].refNode->m_localTransform.rot = rot.make43();
-					}
-
-					rot.makeTransformMatrix(rt->transforms[pos].local.rot, NiPoint3(0, 0, 0));
-
-					short parent = rt->transforms[pos].parPos;
-					rt->transforms[pos].world.rot = rot.multiply43Left(rt->transforms[parent].world.rot);
-
-					if (rt->transforms[pos].refNode) {
-						rt->transforms[pos].refNode->m_worldTransform.rot = rt->transforms[pos].world.rot;
-					}
-
+				if (pos > rt->numTransforms) {
+					continue;
 				}
+				_MESSAGE("%d,%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", fc, rt->bonePositions[i].name->data, 
+									rt->bonePositions[i].position,
+									rt->transforms[pos].local.rot.arr[0],
+									rt->transforms[pos].local.rot.arr[1],
+									rt->transforms[pos].local.rot.arr[2],
+									rt->transforms[pos].local.rot.arr[3],
+									rt->transforms[pos].local.rot.arr[4],
+									rt->transforms[pos].local.rot.arr[5],
+									rt->transforms[pos].local.rot.arr[6],
+									rt->transforms[pos].local.rot.arr[7],
+									rt->transforms[pos].local.rot.arr[8],
+									rt->transforms[pos].local.rot.arr[9],
+									rt->transforms[pos].local.rot.arr[10],
+									rt->transforms[pos].local.rot.arr[11],
+									rt->transforms[pos].local.pos.x,
+									rt->transforms[pos].local.pos.y,
+									rt->transforms[pos].local.pos.z,
+									rt->transforms[pos].world.rot.arr[0],
+									rt->transforms[pos].world.rot.arr[1],
+									rt->transforms[pos].world.rot.arr[2],
+									rt->transforms[pos].world.rot.arr[3],
+									rt->transforms[pos].world.rot.arr[4],
+									rt->transforms[pos].world.rot.arr[5],
+									rt->transforms[pos].world.rot.arr[6],
+									rt->transforms[pos].world.rot.arr[7],
+									rt->transforms[pos].world.rot.arr[8],
+									rt->transforms[pos].world.rot.arr[9],
+									rt->transforms[pos].world.rot.arr[10],
+									rt->transforms[pos].world.rot.arr[11],
+									rt->transforms[pos].world.pos.x,
+									rt->transforms[pos].world.pos.y,
+									rt->transforms[pos].world.pos.z
+				);
+
+
+			//	if(strstr(rt->bonePositions[i].name->data, "Finger")) {
+			//		Matrix44 rot;
+			//		rot.makeIdentity();
+			//		rt->transforms[pos].local.rot = rot.make43();
+
+			//		if (rt->transforms[pos].refNode) {
+			//			rt->transforms[pos].refNode->m_localTransform.rot = rot.make43();
+			//		}
+
+			//		rot.makeTransformMatrix(rt->transforms[pos].local.rot, NiPoint3(0, 0, 0));
+
+			//		short parent = rt->transforms[pos].parPos;
+			//		rt->transforms[pos].world.rot = rot.multiply43Left(rt->transforms[parent].world.rot);
+
+			//		if (rt->transforms[pos].refNode) {
+			//			rt->transforms[pos].refNode->m_worldTransform.rot = rt->transforms[pos].world.rot;
+			//		}
+
+			//	}
 			}
 
-			rt->UpdateWorldBound();
+			//rt->UpdateWorldBound();
 		}
 
+		fc++;
 	}
 
 }

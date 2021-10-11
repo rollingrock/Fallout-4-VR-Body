@@ -589,6 +589,7 @@ namespace F4VRBody {
 		}
 
 		playerSkelly->setHandPose();
+	//	playerSkelly->debug();
 	}
 
 
