@@ -79,13 +79,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>lib_debug;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
-    <IncludePath>C:\Users\rolli\source\repos\f4sevr\src\f4sevr;C:\Users\rolli\source\repos\f4sevr\src;include;$(IncludePath)</IncludePath>
+    <IncludePath>E:\Vortex Mods\Manual\Fallout4VR\f4sevr_0_6_20\src\f4sevr;E:\Vortex Mods\Manual\Fallout4VR\f4sevr_0_6_20\src;include;$(IncludePath)</IncludePath>
     <TargetName>FRIK</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
-    <IncludePath>C:\Users\rolli\source\repos\f4sevr\src\f4sevr;C:\Users\rolli\source\repos\f4sevr\src;include;$(IncludePath) </IncludePath>
+    <IncludePath>E:\Vortex Mods\Manual\Fallout4VR\f4sevr_0_6_20\src\f4sevr;E:\Vortex Mods\Manual\Fallout4VR\f4sevr_0_6_20\src;include;$(IncludePath)</IncludePath>
     <TargetName>FRIK</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -139,7 +139,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "E:\fvre\mods\FRIK\F4SE\Plugins" /Y</Command>
+      <Command>copy "$(TargetPath)" "E:\Steam\SteamApps\common\Fallout 4 VR\Data\F4SE\Plugins" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -166,7 +166,7 @@
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "E:\fvre\mods\FRIK\F4SE\Plugins" /Y</Command>
+      <Command>copy "$(TargetPath)" "E:\Steam\SteamApps\common\Fallout 4 VR\Data\F4SE\Plugins" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
