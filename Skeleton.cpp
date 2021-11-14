@@ -2173,7 +2173,7 @@ namespace F4VRBody
 			NiNode* weap = getNode("Weapon", (*g_player)->firstPersonSkeleton);
 
 			if (weap) {
-				weap->m_localTransform = _weapSave;
+				//weap->m_localTransform = _weapSave;
 				NiPoint3 offset = NiPoint3(-0.94, 0, 0);
 				NiNode* weapOffset = getNode("WeaponOffset", weap);
 

@@ -606,7 +606,7 @@ namespace F4VRBody {
 
 	void saveStates(StaticFunctionTag* base) {
 		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
+		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
 
 		rc = ini.SetDoubleValue("Fallout4VRBody", "PlayerHeight", (double)c_playerHeight);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "fVrScale", (double)c_fVrScale);
@@ -618,7 +618,7 @@ namespace F4VRBody {
 		rc = ini.SetBoolValue("Fallout4VRBody", "hidePipboy", c_hidePipboy);
 		rc = ini.SetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode", c_armsOnly);
 
-		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\Fallout4VR_Body.ini");
+		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
 
 		if (rc < 0) {
 			_MESSAGE("Failed to write out INI config file");
