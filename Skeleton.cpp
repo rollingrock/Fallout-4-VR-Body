@@ -2035,8 +2035,16 @@ namespace F4VRBody
 
 		int sign = isLeft ? -1 : 1;
 
+		// if a mod is using the papyrus interface to manually set finger poses
+		if (handPapyrusHasControl[bone]) {
+			Quaternion qo;
+			qt.fromRot(handOpen[bone].rot);
+			qo.fromRot(handClosed[bone].rot);
+			qo.slerp(std::clamp(handPapyrusPose[bone], 0.0f, 1.0f), qt);
+			qt = qo;
+		}
 		// thumbUp pose
-		if (thumbUp && (bone.find("Finger1") != std::string::npos)) {
+		else if (thumbUp && (bone.find("Finger1") != std::string::npos)) {
 			if (bone.find("Finger11") != std::string::npos) {
 				Matrix44 rot;
 				rot.setEulerAngles(sign * 0.5, sign * 0.4, -0.3);
