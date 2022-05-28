@@ -566,10 +566,14 @@ namespace F4VRBody
 		return nullptr;
 	}
 
-	void Skeleton::setupHead(NiNode* headNode) {
+	void Skeleton::setupHead(NiNode* headNode, bool hideHead) {
 
 		if (!headNode) {
 			return;
+		}
+
+		if (hideHead) {
+			headNode->m_localTransform.scale = 0.0000001;
 		}
 
 		headNode->m_localTransform.rot.data[0][0] =  0.967;
@@ -584,6 +588,10 @@ namespace F4VRBody
 
 		if (!c_selfieMode) {
 			headNode->m_localTransform.pos.y = -4.0;
+		}
+		else {
+			// always show the head in selfie mode
+			headNode->m_localTransform.scale = 1.0;
 		}
 
 
@@ -1909,6 +1917,19 @@ namespace F4VRBody
 	}
 
 	void Skeleton::showHidePAHUD() {
+		NiNode* wand = this->getPlayerNodes()->primaryUIAttachNode;
+
+		BSFixedString bname = "BackOfHand";
+		NiNode* node = (NiNode*)wand->GetObjectByName(&bname);
+
+		if (node && _inPowerArmor) {
+			node->m_worldTransform.pos += NiPoint3(-5.0, -7.0, 2.0);
+
+			updateTransformsDown(node, false);
+		}
+
+
+
 		NiNode* hud = getNode("PowerArmorHelmetRoot", _playerNodes->roomnode);
 
 		if (hud) {

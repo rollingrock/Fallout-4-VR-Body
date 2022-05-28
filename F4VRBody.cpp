@@ -57,6 +57,10 @@ namespace F4VRBody {
 	float c_powerArmor_forward = 0.0f;
 	float c_powerArmor_up = 0.0f;
 	bool  c_staticGripping = false;
+	float c_handUI_X = 0.0;
+	float c_handUI_Y = 0.0;
+	float c_handUI_Z = 0.0;
+	bool  c_hideHead = false;
 
 	bool meshesReplaced = false;
 
@@ -133,6 +137,10 @@ namespace F4VRBody {
 		c_verbose =              ini.GetBoolValue("Fallout4VRBody", "VerboseLogging");
 		c_armsOnly =             ini.GetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode");
 		c_staticGripping         = ini.GetBoolValue("Fallout4VRBody", "EnableStaticGripping");
+		c_handUI_X = ini.GetDoubleValue("Fallout4VRBody", "handUI_X", 0.0);
+		c_handUI_Y = ini.GetDoubleValue("Fallout4VRBody", "handUI_Y", 0.0);
+		c_handUI_Z = ini.GetDoubleValue("Fallout4VRBody", "handUI_Z", 0.0);
+		c_hideHead = ini.GetBoolValue("Fallout4VRBody", "HideTheHead");
 		
 		//Smooth Movement
 		c_disableSmoothMovement            = ini.GetBoolValue("SmoothMovementVR", "DisableSmoothMovement");
@@ -385,6 +393,20 @@ namespace F4VRBody {
 		}
 	}
 
+	void setHandUI(PlayerNodes* pn) {
+		NiNode* wand = pn->primaryUIAttachNode;
+		BSFixedString bname = "BackOfHand";
+		NiNode* node = (NiNode*)wand->GetObjectByName(&bname);
+
+		if (!node) {
+			return;
+		}
+
+		node->m_worldTransform.pos += NiPoint3(c_handUI_X, c_handUI_Y, c_handUI_Z);
+
+		updateTransformsDown(node, false);
+	}
+
 	bool setSkelly() {
 
 		if (c_verbose) {
@@ -529,10 +551,15 @@ namespace F4VRBody {
 		playerSkelly->restoreLocals(playerSkelly->getRoot()->m_parent->GetAsNiNode());
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);
 
+		BSFixedString menuName("ScopeMenu");
+		if ((*g_ui)->IsMenuOpen(menuName)) {
+			return;
+		}
+
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
 		if (c_verbose) { _MESSAGE("Setup Head"); }
 		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
-		playerSkelly->setupHead(headNode);
+		playerSkelly->setupHead(headNode, c_hideHead);
 
 		//// set up the body underneath the headset in a proper scale and orientation
 		if (c_verbose) { _MESSAGE("Set body under HMD"); }
@@ -597,6 +624,8 @@ namespace F4VRBody {
 		if (c_verbose) { _MESSAGE("fix the missing screen"); }
 		fixMissingScreen(playerSkelly->getPlayerNodes());
 
+		setHandUI(playerSkelly->getPlayerNodes());
+
 		if (c_armsOnly) {
 			playerSkelly->showOnlyArms();
 		}
@@ -634,6 +663,10 @@ namespace F4VRBody {
 		rc = ini.SetBoolValue("Fallout4VRBody", "hidePipboy", c_hidePipboy);
 		rc = ini.SetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode", c_armsOnly);
 		rc = ini.SetBoolValue("Fallout4VRBody", "EnableStaticGripping", c_staticGripping);
+		rc = ini.SetBoolValue("Fallout4VRBody", "HideTheHead", c_hideHead);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_X", c_handUI_X);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_Y", c_handUI_Y);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_Z", c_handUI_Z);
 
 		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
 
@@ -773,6 +806,15 @@ namespace F4VRBody {
 		c_showPAHUD = !c_showPAHUD;
 	}
 	
+	void toggleHeadVis(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_hideHead = !c_hideHead;
+	}
+
 	void togglePipboyVis(StaticFunctionTag* base) {
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
@@ -914,6 +956,30 @@ namespace F4VRBody {
 		set->SetDouble(c_fVrScale);
 	}
 
+	void handUiXUp(StaticFunctionTag* base) {
+		c_handUI_X += 1.0f;
+	}
+
+	void handUiXDown(StaticFunctionTag* base) {
+		c_handUI_X -= 1.0f;
+	}
+	
+	void handUiYUp(StaticFunctionTag* base) {
+		c_handUI_Y += 1.0f;
+	}
+
+	void handUiYDown(StaticFunctionTag* base) {
+		c_handUI_Y -= 1.0f;
+	}
+
+	void handUiZUp(StaticFunctionTag* base) {
+		c_handUI_Z += 1.0f;
+	}
+
+	void handUiZDown(StaticFunctionTag* base) {
+		c_handUI_Z -= 1.0f;
+	}
+
 	// Sphere bone detection funcs
 
 	UInt32 RegisterBoneSphere(StaticFunctionTag* base, float radius, BSFixedString bone) {
@@ -1034,6 +1100,7 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("saveStates", "FRIK:FRIK", F4VRBody::saveStates, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Calibrate", "FRIK:FRIK", F4VRBody::calibrate, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePAHud", "FRIK:FRIK", F4VRBody::togglePAHUD, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleHeadVis", "FRIK:FRIK", F4VRBody::toggleHeadVis, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePipboyVis", "FRIK:FRIK", F4VRBody::togglePipboyVis, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", F4VRBody::toggleSelfieMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleArmsOnlyMode", "FRIK:FRIK", F4VRBody::toggleArmsOnlyMode, vm));
@@ -1049,6 +1116,12 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", F4VRBody::moveBackward, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("increaseScale", "FRIK:FRIK", F4VRBody::increaseScale, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("decreaseScale", "FRIK:FRIK", F4VRBody::decreaseScale, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiXUp", "FRIK:FRIK", F4VRBody::handUiXUp, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiXDown", "FRIK:FRIK", F4VRBody::handUiXDown, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiYUp", "FRIK:FRIK", F4VRBody::handUiYUp, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiYDown", "FRIK:FRIK", F4VRBody::handUiYDown, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiZUp", "FRIK:FRIK", F4VRBody::handUiZUp, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiZDown", "FRIK:FRIK", F4VRBody::handUiZDown, vm));
 		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, UInt32, float, BSFixedString>("RegisterBoneSphere", "FRIK:FRIK", F4VRBody::RegisterBoneSphere, vm));
 		vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, UInt32, float, BSFixedString, VMArray<float> >("RegisterBoneSphereOffset", "FRIK:FRIK", F4VRBody::RegisterBoneSphereOffset, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("DestroyBoneSphere", "FRIK:FRIK", F4VRBody::DestroyBoneSphere, vm));

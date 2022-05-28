@@ -190,7 +190,7 @@ namespace F4VRBody
 		void rotateWorld(NiNode* nde);
 		void updatePos(NiNode* nde, NiPoint3 offset);
 		void selfieSkelly(float offsetOutFront);
-		void setupHead(NiNode* headNode);
+		void setupHead(NiNode* headNode, bool hideHead);
 		void saveStatesTree(NiNode* node);
 		void restoreLocals(NiNode* node);
 		void setUnderHMD();
