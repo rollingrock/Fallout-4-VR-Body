@@ -176,6 +176,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="MenuChecker.cpp" />
+    <ClCompile Include="patches.cpp" />
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="Skeleton.cpp" />
     <ClCompile Include="SmoothMovement.cpp" />
@@ -194,6 +195,7 @@
     <ClInclude Include="MenuChecker.h" />
     <ClInclude Include="NiCloneProcess.h" />
     <ClInclude Include="openvr\openvr.h" />
+    <ClInclude Include="patches.h" />
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SmoothMovementVR.h" />

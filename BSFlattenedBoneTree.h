@@ -36,3 +36,7 @@ public:
 };
 
 STATIC_ASSERT(sizeof(BSFlattenedBoneTree) == 0x1C0);
+
+
+
+

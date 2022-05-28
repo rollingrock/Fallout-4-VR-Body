@@ -18,7 +18,6 @@
 #include "BSFlattenedBoneTree.h"
 
 
-
 #define DEFAULT_HEIGHT 56.0;
 
 extern uint64_t g_mainLoopCounter;
@@ -217,6 +216,7 @@ namespace F4VRBody
 		void positionPipboy();
 		void fixMelee();
 		void hideFistHelpers();
+		void fixPAArmor();
 
 		bool isLookingAtPipBoy();
 		void hidePipboy();
@@ -238,6 +238,8 @@ namespace F4VRBody
 		void setLeftHandedSticky();
 		void calculateHandPose(std::string bone, float gripProx, bool thumbUp, bool isLeft);
 		void copy1stPerson(std::string bone, bool isLeft, int offset);
+		void insertSaveState(std::string name, NiNode* node);
+		void rotateLeg(uint32_t pos, float angle);
 		void debug();
 
 		void setTime();

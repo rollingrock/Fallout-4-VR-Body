@@ -44,6 +44,7 @@ namespace F4VRBody {
 	float c_pipboyDetectionRange = 15.0f;
 	float c_armLength = 36.74;
 	float c_cameraHeight = 0.0;
+	float c_PACameraHeight = 0.0;
 	bool  c_showPAHUD = true;
 	bool  c_hidePipboy = false;
 	bool  c_leftHandedPipBoy = false;
@@ -53,6 +54,9 @@ namespace F4VRBody {
 	bool  c_leftHandedMode = false;
 	bool  c_disableSmoothMovement = false;
 	bool  c_jumping = false;
+	float c_powerArmor_forward = 0.0f;
+	float c_powerArmor_up = 0.0f;
+	bool  c_staticGripping = false;
 
 	bool meshesReplaced = false;
 
@@ -117,14 +121,18 @@ namespace F4VRBody {
 		c_fVrScale     =         (float) ini.GetDoubleValue("Fallout4VRBody", "fVrScale", 70.0);
 		c_playerOffset_forward = (float) ini.GetDoubleValue("Fallout4VRBody", "playerOffset_forward", -4.0);
 		c_playerOffset_up =      (float) ini.GetDoubleValue("Fallout4VRBody", "playerOffset_up", -2.0);
+		c_powerArmor_forward = (float) ini.GetDoubleValue("Fallout4VRBody", "powerArmor_forward", 0.0);
+		c_powerArmor_up =      (float) ini.GetDoubleValue("Fallout4VRBody", "powerArmor_up", 0.0);
 		c_pipboyDetectionRange = (float) ini.GetDoubleValue("Fallout4VRBody", "pipboyDetectionRange", 15.0);
 		c_armLength =            (float) ini.GetDoubleValue("Fallout4VRBody", "armLength", 36.74);
 		c_cameraHeight =         (float) ini.GetDoubleValue("Fallout4VRBody", "cameraHeightOffset", 0.0);
+		c_PACameraHeight =         (float) ini.GetDoubleValue("Fallout4VRBody", "powerArmor_cameraHeightOffset", 0.0);
 		c_showPAHUD =            ini.GetBoolValue("Fallout4VRBody", "showPAHUD");
 		c_hidePipboy =           ini.GetBoolValue("Fallout4VRBody", "hidePipboy");
 		c_leftHandedPipBoy =     ini.GetBoolValue("Fallout4VRBody", "PipboyRightArmLeftHandedMode");
 		c_verbose =              ini.GetBoolValue("Fallout4VRBody", "VerboseLogging");
 		c_armsOnly =             ini.GetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode");
+		c_staticGripping         = ini.GetBoolValue("Fallout4VRBody", "EnableStaticGripping");
 		
 		//Smooth Movement
 		c_disableSmoothMovement            = ini.GetBoolValue("SmoothMovementVR", "DisableSmoothMovement");
@@ -518,7 +526,7 @@ namespace F4VRBody {
 
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
 		if (c_verbose) { _MESSAGE("restore locals of skeleton"); }
-		playerSkelly->restoreLocals(playerSkelly->getRoot());
+		playerSkelly->restoreLocals(playerSkelly->getRoot()->m_parent->GetAsNiNode());
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);
 
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
@@ -547,6 +555,8 @@ namespace F4VRBody {
 		if (c_verbose) { _MESSAGE("Set Legs"); }
 		playerSkelly->setSingleLeg(false);
 		playerSkelly->setSingleLeg(true);
+
+		playerSkelly->fixPAArmor();
 
 		// Do another update before setting arms
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
@@ -615,11 +625,15 @@ namespace F4VRBody {
 		rc = ini.SetDoubleValue("Fallout4VRBody", "fVrScale", (double)c_fVrScale);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "playerOffset_forward", (double)c_playerOffset_forward);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "playerOffset_up", (double)c_playerOffset_up);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "powerArmor_forward", (double)c_powerArmor_forward);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "powerArmor_up", (double)c_powerArmor_up);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "armLength", (double)c_armLength);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "cameraHeightOffset", (double)c_cameraHeight);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "powerArmor_cameraHeightOffset", (double)c_PACameraHeight);
 		rc = ini.SetBoolValue("Fallout4VRBody", "showPAHUD", c_showPAHUD);
 		rc = ini.SetBoolValue("Fallout4VRBody", "hidePipboy", c_hidePipboy);
 		rc = ini.SetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode", c_armsOnly);
+		rc = ini.SetBoolValue("Fallout4VRBody", "EnableStaticGripping", c_staticGripping);
 
 		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
 
@@ -785,6 +799,15 @@ namespace F4VRBody {
 		}
 
 		c_armsOnly = !c_armsOnly;
+	}
+
+	void toggleStaticGripping(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_staticGripping = !c_staticGripping;
 	}
 
 	bool isLeftHandedMode(StaticFunctionTag* base) {
@@ -1014,6 +1037,7 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePipboyVis", "FRIK:FRIK", F4VRBody::togglePipboyVis, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", F4VRBody::toggleSelfieMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleArmsOnlyMode", "FRIK:FRIK", F4VRBody::toggleArmsOnlyMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleStaticGripping", "FRIK:FRIK", F4VRBody::toggleStaticGripping, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("isLeftHandedMode", "FRIK:FRIK", F4VRBody::isLeftHandedMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraUp", "FRIK:FRIK", F4VRBody::moveCameraUp, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraDown", "FRIK:FRIK", F4VRBody::moveCameraDown, vm));

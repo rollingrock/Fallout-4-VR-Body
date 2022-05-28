@@ -34,6 +34,10 @@ namespace F4VRBody {
 	extern bool  c_disableSmoothMovement;
 	extern bool  c_jumping;
 	extern bool  c_leftHandedPipBoy;
+	extern float c_powerArmor_forward;
+	extern float c_powerArmor_up;
+	extern float c_PACameraHeight;
+	extern bool  c_staticGripping;
 
 	class BoneSphere {
 	public:

@@ -13,6 +13,7 @@
 #include "hook.h"
 #include "F4VRBody.h"
 #include "SmoothMovementVR.h"
+#include "patches.h";
 
 static PluginHandle g_pluginHandle = kPluginHandle_Invalid;
 static F4SEPapyrusInterface* g_papyrus = NULL;
@@ -104,6 +105,12 @@ extern "C" {
 			return false;
 		}
 
+		if (!g_localTrampoline.Create(1024 * 64, g_moduleHandle))
+		{
+			_ERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
+			return false;
+		}
+
 		if (!F4VRBody::loadConfig()) {
 			_ERROR("could not open ini config file");
 			return false;
@@ -119,6 +126,11 @@ extern "C" {
 		}
 
 		PatchBody();
+		
+		if (!patches::patchAll()) {
+			_MESSAGE("error loading misc patches");
+			return false;
+		}
 
 		hookMain();
 
