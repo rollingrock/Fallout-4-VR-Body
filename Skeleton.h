@@ -222,6 +222,9 @@ namespace F4VRBody
 		void hidePipboy();
 		void operatePipBoy();
 
+		// two handed
+		void offHandToBarrel();
+
 		// utility
 		NiNode* getNode(const char* nodeName, NiNode *nde);
 		void updateDown(NiNode* nde, bool updateSelf);
@@ -240,6 +243,8 @@ namespace F4VRBody
 		void copy1stPerson(std::string bone, bool isLeft, int offset);
 		void insertSaveState(std::string name, NiNode* node);
 		void rotateLeg(uint32_t pos, float angle);
+		void moveBack();
+		void alignScope();
 		void debug();
 
 		void setTime();
@@ -314,5 +319,8 @@ namespace F4VRBody
 
 		bool _weaponEquipped;
 		NiTransform _weapSave;
+
+		bool _offHandGripping;
+		Quaternion _aimAdjust;
 	};
 }

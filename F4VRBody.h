@@ -1,5 +1,6 @@
 #pragma once
 #include "f4se/GameReferences.h"
+#include "f4se/GameObjects.h"
 #include "f4se/NiNodes.h"
 #include "f4se/NiObjects.h"
 #include "NiCloneProcess.h"
@@ -38,6 +39,8 @@ namespace F4VRBody {
 	extern float c_powerArmor_up;
 	extern float c_PACameraHeight;
 	extern bool  c_staticGripping;
+	extern float c_pipBoyLookAtGate;
+	extern float c_scopeSize;
 
 	class BoneSphere {
 	public:

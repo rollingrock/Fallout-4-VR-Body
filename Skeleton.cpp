@@ -1,6 +1,7 @@
 #include "Skeleton.h"
 #include "F4VRBody.h"
 #include "HandPose.h"
+#include "f4se/GameForms.h"
 
 
 #include <time.h>
@@ -679,6 +680,14 @@ namespace F4VRBody
 				this->restoreLocals(nextNode);
 			}
 		}
+
+
+		NiNode* room = _playerNodes->playerworldnode;
+
+		Matrix44 rot;
+		rot.makeIdentity();
+
+		room->m_localTransform.rot = rot.make43();
 	}
 
 	void Skeleton::setNodes() {
@@ -686,6 +695,8 @@ namespace F4VRBody
 		QueryPerformanceCounter(&timer);
 
 		std::srand(time(NULL));
+
+		_offHandGripping = false;
 
 		_prevSpeed = 0.0;
 
@@ -1791,7 +1802,7 @@ namespace F4VRBody
 
 		float dot = vec3_dot(vec3_norm(pipBoyOut), vec3_norm(lookDir));
 
-		return (dot < -0.7 ? true : false);
+		return (dot < -(c_pipBoyLookAtGate) ? true : false);
 
 	}
 
@@ -1838,31 +1849,25 @@ namespace F4VRBody
 		if ((*g_player)->firstPersonSkeleton == nullptr) {
 			return;
 		}
+
+		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
 		
-		NiAVObject* finger;
+		NiPoint3 finger;
 		NiAVObject* pipboy;
 
 		if (!c_leftHandedPipBoy) {
-			finger = getNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-
-			if (finger == nullptr) {
-				finger = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-			}
+			finger = rt->transforms[boneTreeMap["RArm_Finger23"]].world.pos;
 
 			pipboy = getNode("PipboyRoot", leftArm.forearm3->GetAsNiNode());
 		}
 		else {
-			finger = getNode("LArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-
-			if (finger == nullptr) {
-				finger = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-			}
+			finger = rt->transforms[boneTreeMap["LArm_Finger23"]].world.pos;
 
 			pipboy = getNode("PipboyRoot", rightArm.forearm3->GetAsNiNode());
 
 		}
 
-		if ((finger == nullptr) || (pipboy == nullptr)) {
+		if (pipboy == nullptr) {
 			return;
 		}
 
@@ -1870,7 +1875,7 @@ namespace F4VRBody
 			return;
 		}
 
-		float distance = vec3_len(finger->m_worldTransform.pos - pipboy->m_worldTransform.pos);
+		float distance = vec3_len(finger - pipboy->m_worldTransform.pos);
 
 		if (distance > c_pipboyDetectionRange) {
 			_pipTimer = 0;
@@ -2528,10 +2533,10 @@ namespace F4VRBody
 		
 		if (firstPos != 0) {
 			if (fpTree->transforms[firstPos + offset].refNode) {
-				_handBones[bone].rot = fpTree->transforms[firstPos + offset].refNode->m_localTransform.rot;
+				_handBones[bone] = fpTree->transforms[firstPos + offset].refNode->m_localTransform;
 			}
 			else {
-				_handBones[bone].rot = fpTree->transforms[firstPos + offset].local.rot;
+				_handBones[bone] = fpTree->transforms[firstPos + offset].local;
 			}
 		}
 	}
@@ -2606,36 +2611,122 @@ namespace F4VRBody
 				}
 				weap->m_localTransform.pos += offset;
 				updateDown(weap, true);
+
+				// handle offhand gripping
+
+				if (_offHandGripping) {
+					NiPoint3 barrelVec = NiPoint3(0, 1, 0);
+					NiPoint3 oH2Bar = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - weap->m_worldTransform.pos;
+
+					oH2Bar = weap->m_worldTransform.rot.Transpose() * vec3_norm(oH2Bar) / weap->m_worldTransform.scale;
+
+			       _MESSAGE("forward %f, %f %f    ->    barrel %f, %f, %f", _forwardDir.x, _forwardDir.y, _forwardDir.z, oH2Bar.x, oH2Bar.y, oH2Bar.z);
+					Matrix44 rot;
+					//rot.rotateVectoVec(oH2Bar, barrelVec);
+
+					_aimAdjust.vec2vec(vec3_norm(oH2Bar), vec3_norm(barrelVec));
+					rot = _aimAdjust.getRot();
+					weap->m_localTransform.rot = rot.multiply43Left(weap->m_localTransform.rot);
+				}
+
+
+				updateDown(weap, true);
 			}
 		}
 
+	}
+
+	void Skeleton::offHandToBarrel() {
+		NiNode* weap = getNode("Weapon", (*g_player)->firstPersonSkeleton);
+
+		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
+
+		if (weap && (*g_player)->actorState.IsWeaponDrawn()) {
+			NiPoint3 barrelVec = NiPoint3(0, 1, 0);
+
+			NiPoint3 oH2Bar = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - weap->m_worldTransform.pos;
+			
+			float len = vec3_len(oH2Bar);
+
+			oH2Bar = weap->m_worldTransform.rot.Transpose() * vec3_norm(oH2Bar) / weap->m_worldTransform.scale;
+			
+			float dotP = vec3_dot(vec3_norm(oH2Bar), barrelVec);
+
+		//	_MESSAGE("dotP = %f", dotP);
+
+			//_MESSAGE("forward %f, %f %f    ->    barrel %f, %f, %f", _forwardDir.x, _forwardDir.y, _forwardDir.z, barrelVec.x, barrelVec.y, barrelVec.z);
+
+			if ((dotP > 0.975) && (len > 10.0)) {
+				_offHandGripping = true;
+			}
+		}
+		else {
+			_offHandGripping = false;
+		}
+	}
+
+	void Skeleton::alignScope() {
+		BSFixedString sn = "world_scope.nif";
+
+		NiAVObject* scope = _playerNodes->primaryUIAttachNode->GetObjectByName(&sn);
+
+
+		if (!scope) {
+			return;
+		}
+
+		Matrix44 rot;
+		rot.makeIdentity();
+
+		scope->m_localTransform.rot = rot.make43();
+		scope->m_localTransform.scale = c_scopeSize;
+
+		rot = _aimAdjust.getRot();
+//		scope->m_localTransform.rot = rot.multiply43Left(scope->m_localTransform.rot);
+	//	updateDown((NiNode*)scope, true);
+	}
+
+	void Skeleton::moveBack() {
+		NiNode* body = _root->m_parent->GetAsNiNode();
+
+		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
+		_root->m_localTransform.pos.y -= 50.0;
 	}
 
 	void Skeleton::debug() {
 
 		static int fc = 0;
 
-		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
+	//	for (auto i = 0; i < (*g_player)->inventoryList->items.count; i++) {
+		//	_MESSAGE("%d,%d,%x,%x,%s", fc, i, (*g_player)->inventoryList->items[i].form->formID, (*g_player)->inventoryList->items[i].form->formType, (*g_player)->inventoryList->items[i].form->GetFullName());
+		//}
 
-		for (auto i = 0; i < rt->numTransforms; i++) {
+		//if (fc < 1) {
+		//	tHashSet<ObjectModMiscPair, BGSMod::Attachment::Mod*> *map = g_modAttachmentMap.GetPtr();
+		//	map->Dump();
+		//}
 
-			if (rt->transforms[i].refNode) {
-				_MESSAGE("%d,%s,%d,%d", fc, rt->transforms[i].refNode->m_name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
-			}
-			else {
-				_MESSAGE("%d,%s,%d,%d", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
-			}
-		}
-			
-		for (auto i = 0; i < rt->numTransforms; i++) {
-			int pos = rt->bonePositions[i].position;
+		//BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
+
+		//for (auto i = 0; i < rt->numTransforms; i++) {
+
+		//	if (rt->transforms[i].refNode) {
+		//		_MESSAGE("%d,%s,%d,%d", fc, rt->transforms[i].refNode->m_name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
+		//	}
+		//	else {
+		//		_MESSAGE("%d,%s,%d,%d", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
+		//	}
+		//}
+		//	
+		//for (auto i = 0; i < rt->numTransforms; i++) {
+		//	int pos = rt->bonePositions[i].position;
 		//	if (rt->bonePositions[i].name && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
 		//		_MESSAGE("%d,%d,%s", fc, pos, rt->bonePositions[i].name->data);
 		//	}
 		//	else {
 		//		_MESSAGE("%d,%d", fc, pos);
 		//	}
-		}
+		//}
 
 			//if (rt->bonePositions[i].name && (rt->bonePositions[i].position != 0) && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
 			//	int pos = rt->bonePositions[i].position;

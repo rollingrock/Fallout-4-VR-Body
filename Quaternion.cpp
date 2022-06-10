@@ -1,5 +1,7 @@
 #include "Quaternion.h"
 
+#include <math.h>
+
 
 namespace F4VRBody {
 
@@ -141,6 +143,35 @@ namespace F4VRBody {
 			y = s0 * y + s1 * target.y;
 			z = s0 * z + s1 * target.z;
 		}
+	}
+
+
+	void Quaternion::vec2vec(NiPoint3 v1, NiPoint3 v2) {
+		NiPoint3 cross = vec3_cross(vec3_norm(v1), vec3_norm(v2));
+
+		float dotP = vec3_dot(vec3_norm(v1), vec3_norm(v2));
+
+		if (dotP > 0.999) {
+			this->makeIdentity();
+			return;
+		}
+		else if (dotP < -0.999) {
+			// reverse it
+			cross = vec3_norm(vec3_cross(NiPoint3(0, 1, 0), v1));
+			if (vec3_len(cross) < 0.000001) {
+				cross = vec3_norm(vec3_cross(NiPoint3(1, 0, 0), v1));
+			}
+			this->setAngleAxis(PI, cross);
+			this->normalize();
+			return;
+		}
+
+		w = sqrt(pow(vec3_len(v1), 2) * pow(vec3_len(v2), 2)) + dotP;
+		x = cross.x;
+		y = cross.y;
+		z = cross.z;
+
+		this->normalize();
 	}
 
 	Quaternion Quaternion::operator* (const Quaternion& qr) const {

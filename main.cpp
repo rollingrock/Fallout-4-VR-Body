@@ -13,7 +13,7 @@
 #include "hook.h"
 #include "F4VRBody.h"
 #include "SmoothMovementVR.h"
-#include "patches.h";
+#include "patches.h"
 
 static PluginHandle g_pluginHandle = kPluginHandle_Invalid;
 static F4SEPapyrusInterface* g_papyrus = NULL;

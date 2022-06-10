@@ -59,6 +59,8 @@ namespace F4VRBody {
 
 		void slerp(float interp, Quaternion target);
 
+		void vec2vec(NiPoint3 v1, NiPoint3 v2);
+
 		//overload
 		Quaternion  operator* (const float& f) const;
 		Quaternion  operator* (const Quaternion& qr) const;
