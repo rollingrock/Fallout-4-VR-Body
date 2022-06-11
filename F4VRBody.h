@@ -40,7 +40,7 @@ namespace F4VRBody {
 	extern float c_PACameraHeight;
 	extern bool  c_staticGripping;
 	extern float c_pipBoyLookAtGate;
-	extern float c_scopeSize;
+	extern float c_gripLetGoThreshold;
 
 	class BoneSphere {
 	public:

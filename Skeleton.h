@@ -244,7 +244,6 @@ namespace F4VRBody
 		void insertSaveState(std::string name, NiNode* node);
 		void rotateLeg(uint32_t pos, float angle);
 		void moveBack();
-		void alignScope();
 		void debug();
 
 		void setTime();

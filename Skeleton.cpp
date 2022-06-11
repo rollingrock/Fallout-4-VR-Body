@@ -2614,19 +2614,31 @@ namespace F4VRBody
 
 				// handle offhand gripping
 
+				static NiPoint3 fingerBonePos = NiPoint3(0, 0, 0);
+
 				if (_offHandGripping) {
-					NiPoint3 barrelVec = NiPoint3(0, 1, 0);
-					NiPoint3 oH2Bar = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - weap->m_worldTransform.pos;
 
-					oH2Bar = weap->m_worldTransform.rot.Transpose() * vec3_norm(oH2Bar) / weap->m_worldTransform.scale;
+					if (vec3_len(rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - fingerBonePos) > c_gripLetGoThreshold) {
+						_offHandGripping = false;
+					}
+					else {
 
-			       _MESSAGE("forward %f, %f %f    ->    barrel %f, %f, %f", _forwardDir.x, _forwardDir.y, _forwardDir.z, oH2Bar.x, oH2Bar.y, oH2Bar.z);
-					Matrix44 rot;
-					//rot.rotateVectoVec(oH2Bar, barrelVec);
+						NiPoint3 barrelVec = NiPoint3(0, 1, 0);
+						NiPoint3 oH2Bar = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - weap->m_worldTransform.pos;
 
-					_aimAdjust.vec2vec(vec3_norm(oH2Bar), vec3_norm(barrelVec));
-					rot = _aimAdjust.getRot();
-					weap->m_localTransform.rot = rot.multiply43Left(weap->m_localTransform.rot);
+						oH2Bar = weap->m_worldTransform.rot.Transpose() * vec3_norm(oH2Bar) / weap->m_worldTransform.scale;
+
+						Matrix44 rot;
+						//rot.rotateVectoVec(oH2Bar, barrelVec);
+
+						// use Quaternion to rotate the vector onto the other vector to avoid issues with the poles
+						_aimAdjust.vec2vec(vec3_norm(oH2Bar), vec3_norm(barrelVec));
+						rot = _aimAdjust.getRot();
+						weap->m_localTransform.rot = rot.multiply43Left(weap->m_localTransform.rot);
+					}
+				}
+				else {
+					fingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos;
 				}
 
 
@@ -2663,27 +2675,6 @@ namespace F4VRBody
 		else {
 			_offHandGripping = false;
 		}
-	}
-
-	void Skeleton::alignScope() {
-		BSFixedString sn = "world_scope.nif";
-
-		NiAVObject* scope = _playerNodes->primaryUIAttachNode->GetObjectByName(&sn);
-
-
-		if (!scope) {
-			return;
-		}
-
-		Matrix44 rot;
-		rot.makeIdentity();
-
-		scope->m_localTransform.rot = rot.make43();
-		scope->m_localTransform.scale = c_scopeSize;
-
-		rot = _aimAdjust.getRot();
-//		scope->m_localTransform.rot = rot.multiply43Left(scope->m_localTransform.rot);
-	//	updateDown((NiNode*)scope, true);
 	}
 
 	void Skeleton::moveBack() {

@@ -62,7 +62,8 @@ namespace F4VRBody {
 	float c_handUI_Z = 0.0;
 	bool  c_hideHead = false;
 	float c_pipBoyLookAtGate = 0.7;
-	float c_scopeSize = 1.0;
+	float c_gripLetGoThreshold = 45.0f;
+
 
 	bool meshesReplaced = false;
 
@@ -144,7 +145,7 @@ namespace F4VRBody {
 		c_handUI_Z = ini.GetDoubleValue("Fallout4VRBody", "handUI_Z", 0.0);
 		c_hideHead = ini.GetBoolValue("Fallout4VRBody", "HideTheHead");
 		c_pipBoyLookAtGate = ini.GetDoubleValue("Fallout4VRBody", "PipBoyLookAtThreshold", 0.7);
-		c_scopeSize = ini.GetDoubleValue("Fallout4VRBody", "ScopeSize", 1.0);
+		c_gripLetGoThreshold = ini.GetDoubleValue("Fallout4VRBody", "GripLeftGoThreshold", 45.0f);
 		
 		//Smooth Movement
 		c_disableSmoothMovement            = ini.GetBoolValue("SmoothMovementVR", "DisableSmoothMovement");
@@ -634,13 +635,7 @@ namespace F4VRBody {
 		playerSkelly->setHandPose();
 
 		playerSkelly->offHandToBarrel();
-		playerSkelly->debug();
-		
-		BSFixedString menuName("ScopeMenu");
-		if ((*g_ui)->IsMenuOpen(menuName)) {
-			playerSkelly->alignScope();
-			playerSkelly->moveBack();
-		}
+	//	playerSkelly->debug();
 	}
 
 
