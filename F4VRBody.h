@@ -17,6 +17,10 @@
 #include <windows.h>
 
 extern uint64_t g_mainLoopCounter;
+extern PluginHandle g_pluginHandle;
+extern F4SEPapyrusInterface* g_papyrus;
+extern F4SEMessagingInterface* g_messaging;
+
 namespace F4VRBody {
 
 	extern float c_playerHeight;
@@ -41,6 +45,12 @@ namespace F4VRBody {
 	extern bool  c_staticGripping;
 	extern float c_pipBoyLookAtGate;
 	extern float c_gripLetGoThreshold;
+	extern bool c_isLookingThroughScope;
+	extern bool c_pipBoyButtonMode;
+	extern int c_pipBoyButtonArm;
+	extern int c_pipBoyButtonID;
+	extern int c_gripButtonID;
+	extern bool c_enableOffHandGripping;
 
 	class BoneSphere {
 	public:

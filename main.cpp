@@ -15,12 +15,10 @@
 #include "SmoothMovementVR.h"
 #include "patches.h"
 
-static PluginHandle g_pluginHandle = kPluginHandle_Invalid;
-static F4SEPapyrusInterface* g_papyrus = NULL;
+
 
 void* g_moduleHandle = nullptr;
 
-static F4SEMessagingInterface* g_messaging = NULL;
 
 uint64_t g_mainLoopCounter = 0;
 
@@ -38,6 +36,15 @@ void PatchBody() {
 }
 
 
+void OnBetterScopesMessage(F4SEMessagingInterface::Message* msg) {
+	if (msg) {
+		if (msg->type == 15) {
+			F4VRBody::c_isLookingThroughScope = (bool)msg->data;
+		}
+	}
+}
+
+
 //Listener for F4SE Messages
 void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
 {
@@ -50,6 +57,12 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
 
 			SmoothMovementVR::MenuOpenCloseHandler::Register();
 			_MESSAGE("kMessage_GameLoaded Completed");
+		}
+		if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
+			bool gripConfig = !F4VRBody::c_staticGripping;
+			g_messaging->Dispatch(g_pluginHandle, 15, (void*) gripConfig, sizeof(bool), "FO4VRBETTERSCOPES");
+
+			g_messaging->RegisterListener(g_pluginHandle, "FO4VRBETTERSCOPES", OnBetterScopesMessage);
 		}
 	}
 }
@@ -117,6 +130,7 @@ extern "C" {
 		}
 
 		g_papyrus = (F4SEPapyrusInterface*)a_f4se->QueryInterface(kInterface_Papyrus);
+
 
 		_MESSAGE("register papyrus funcs");
 

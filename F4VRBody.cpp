@@ -12,6 +12,10 @@
 bool firstTime = true;
 bool printPlayerOnce = true;
 
+PluginHandle g_pluginHandle = kPluginHandle_Invalid;
+F4SEPapyrusInterface* g_papyrus = NULL;
+F4SEMessagingInterface* g_messaging = NULL;
+
 //Smooth Movement
 float smoothingAmount = 10.0f;
 float smoothingAmountHorizontal = 0;
@@ -62,7 +66,13 @@ namespace F4VRBody {
 	float c_handUI_Z = 0.0;
 	bool  c_hideHead = false;
 	float c_pipBoyLookAtGate = 0.7;
-	float c_gripLetGoThreshold = 45.0f;
+	float c_gripLetGoThreshold = 15.0f;
+	bool c_isLookingThroughScope = false;
+	bool c_pipBoyButtonMode = false;
+	int c_pipBoyButtonArm = 0;   // 0 for left 1 for right
+	int c_pipBoyButtonID = 2; // grip button is 2
+	int c_gripButtonID = 2;
+	bool c_enableOffHandGripping = true;
 
 
 	bool meshesReplaced = false;
@@ -145,7 +155,12 @@ namespace F4VRBody {
 		c_handUI_Z = ini.GetDoubleValue("Fallout4VRBody", "handUI_Z", 0.0);
 		c_hideHead = ini.GetBoolValue("Fallout4VRBody", "HideTheHead");
 		c_pipBoyLookAtGate = ini.GetDoubleValue("Fallout4VRBody", "PipBoyLookAtThreshold", 0.7);
-		c_gripLetGoThreshold = ini.GetDoubleValue("Fallout4VRBody", "GripLeftGoThreshold", 45.0f);
+		c_gripLetGoThreshold = ini.GetDoubleValue("Fallout4VRBody", "GripLetGoThreshold", 15.0f);
+		c_pipBoyButtonMode =             ini.GetBoolValue("Fallout4VRBody", "OperatePipboyWithButton");
+		c_pipBoyButtonArm = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonArm", 0);
+		c_pipBoyButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonID", 2);
+		c_gripButtonID = (int)ini.GetLongValue("Fallout4VRBody", "GripButtonID", 0);
+		c_enableOffHandGripping = ini.GetBoolValue("Fallout4VRBody", "EnableOffHandGripping", true);
 		
 		//Smooth Movement
 		c_disableSmoothMovement            = ini.GetBoolValue("SmoothMovementVR", "DisableSmoothMovement");
@@ -854,6 +869,9 @@ namespace F4VRBody {
 		}
 
 		c_staticGripping = !c_staticGripping;
+
+		bool gripConfig = !F4VRBody::c_staticGripping;
+		g_messaging->Dispatch(g_pluginHandle, 15, (void*)gripConfig, sizeof(bool), "FO4VRBETTERSCOPES");
 	}
 
 	bool isLeftHandedMode(StaticFunctionTag* base) {
