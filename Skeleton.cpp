@@ -697,6 +697,7 @@ namespace F4VRBody
 		std::srand(time(NULL));
 
 		_offHandGripping = false;
+		_hasLetGoGripButton = false;
 
 		_prevSpeed = 0.0;
 
@@ -1904,20 +1905,20 @@ namespace F4VRBody
 			return;
 		}
 		else {
-			if (_stickypip) {
-				return;
-			}
-			else {
+			if (!_stickypip) {
 				if (vrhook != nullptr) {
 					vrhook->StartHaptics(2, 0.05, 0.3);
 				}
 			}
+			else {
+				return;
+			}
 
-			if (_pipTimer < 10) {
+			if (_pipTimer < 2) {
+				_stickypip = false;
 				_pipTimer++;
 			}
 			else {
-				_pipTimer = 0;
 				_stickypip = true;
 
 				if (_pipboyStatus) {
@@ -2636,6 +2637,7 @@ namespace F4VRBody
 				// handle offhand gripping
 
 				static NiPoint3 fingerBonePos = NiPoint3(0, 0, 0);
+				static NiPoint3 bodyPos = NiPoint3(0, 0, 0);
 				static float avgHandV[3] = {0.0f, 0.0f, 0.0f};
 				static int fc = 0;
 				float handV = 0.0f;
@@ -2643,7 +2645,8 @@ namespace F4VRBody
 				if (_offHandGripping && c_enableOffHandGripping) {
 
 					float handFrameMovement = vec3_len(rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - fingerBonePos);
-					avgHandV[fc] = handFrameMovement;
+					float bodyFrameMovement = vec3_len(_curPos - bodyPos);
+					avgHandV[fc] = abs(handFrameMovement - bodyFrameMovement);
 
 					fc = fc == 2 ? 0 : fc + 1;
 
@@ -2655,10 +2658,21 @@ namespace F4VRBody
 
 					handV = sum / 3;
 					
-					if ((handV > c_gripLetGoThreshold) && !c_isLookingThroughScope) {
+					if (c_onePressGripButton && _hasLetGoGripButton) {
 						_offHandGripping = false;
 					}
-					else {
+					else if (c_enableGripButtonToLetGo && _hasLetGoGripButton) {
+						uint64_t reg = leftControllerState.ulButtonPressed;
+						if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_gripButtonID)) {
+							_offHandGripping = false;
+							_hasLetGoGripButton = false;
+						}
+					}
+					else if ((handV > c_gripLetGoThreshold) && !c_isLookingThroughScope) {
+						_offHandGripping = false;
+					}
+					
+					if (_offHandGripping) {
 
 						NiPoint3 oH2Bar;
 						oH2Bar = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - weap->m_worldTransform.pos;
@@ -2676,10 +2690,12 @@ namespace F4VRBody
 						weap->m_localTransform.rot = rot.multiply43Left(weap->m_localTransform.rot);
 
 						fingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos;
+						bodyPos = _curPos;
 					}
 				}
 				else {
 					fingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos;
+					bodyPos = _curPos;
 
 					if (fc != 0) {
 						for (int i = 0; i < 3; i++) {
@@ -2712,12 +2728,23 @@ namespace F4VRBody
 			oH2Bar = weap->m_worldTransform.rot.Transpose() * vec3_norm(oH2Bar) / weap->m_worldTransform.scale;
 			
 			float dotP = vec3_dot(vec3_norm(oH2Bar), barrelVec);
+			uint64_t reg = leftControllerState.ulButtonPressed;
+
+			if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_gripButtonID))) {
+				_hasLetGoGripButton = true;
+			}
 
 			if ((dotP > 0.955) && (len > 10.0)) {
-				uint64_t reg = leftControllerState.ulButtonPressed;
 
-				if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_gripButtonID)) {
+				if (!c_enableGripButtonToGrap) {
 					_offHandGripping = true;
+				}
+				else if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_gripButtonID)) {
+					if (_offHandGripping || !_hasLetGoGripButton) {
+						return;
+					}
+					_offHandGripping = true;
+					_hasLetGoGripButton = false;
 				}
 			}
 		}

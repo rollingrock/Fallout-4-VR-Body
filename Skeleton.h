@@ -320,6 +320,7 @@ namespace F4VRBody
 		NiTransform _weapSave;
 
 		bool _offHandGripping;
+		bool _hasLetGoGripButton;
 		Quaternion _aimAdjust;
 	};
 }

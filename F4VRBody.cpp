@@ -73,6 +73,9 @@ namespace F4VRBody {
 	int c_pipBoyButtonID = 2; // grip button is 2
 	int c_gripButtonID = 2;
 	bool c_enableOffHandGripping = true;
+	bool c_enableGripButtonToGrap = true;
+	bool c_enableGripButtonToLetGo = true;
+	bool c_onePressGripButton = false;
 
 
 	bool meshesReplaced = false;
@@ -156,11 +159,15 @@ namespace F4VRBody {
 		c_hideHead = ini.GetBoolValue("Fallout4VRBody", "HideTheHead");
 		c_pipBoyLookAtGate = ini.GetDoubleValue("Fallout4VRBody", "PipBoyLookAtThreshold", 0.7);
 		c_gripLetGoThreshold = ini.GetDoubleValue("Fallout4VRBody", "GripLetGoThreshold", 15.0f);
-		c_pipBoyButtonMode =             ini.GetBoolValue("Fallout4VRBody", "OperatePipboyWithButton");
+		c_pipBoyButtonMode =             ini.GetBoolValue("Fallout4VRBody", "OperatePipboyWithButton", false);
 		c_pipBoyButtonArm = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonArm", 0);
 		c_pipBoyButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonID", 2);
 		c_gripButtonID = (int)ini.GetLongValue("Fallout4VRBody", "GripButtonID", 0);
 		c_enableOffHandGripping = ini.GetBoolValue("Fallout4VRBody", "EnableOffHandGripping", true);
+		c_enableGripButtonToGrap = ini.GetBoolValue("Fallout4VRBody", "EnableGripButton", true);
+		c_enableGripButtonToLetGo = ini.GetBoolValue("Fallout4VRBody", "EnableGripButtonToLetGo", true);
+		c_onePressGripButton = ini.GetBoolValue("Fallout4VRBody", "EnableGripButtonOnePress", true);
+
 		
 		//Smooth Movement
 		c_disableSmoothMovement            = ini.GetBoolValue("SmoothMovementVR", "DisableSmoothMovement");
@@ -622,8 +629,6 @@ namespace F4VRBody {
 		playerSkelly->hideFistHelpers();
 		playerSkelly->showHidePAHUD();
 
-		if (c_verbose) { _MESSAGE("Operate Pipboy"); }
-		playerSkelly->operatePipBoy();
 
 		if (c_verbose) { _MESSAGE("Fix the Armor"); }
 		playerSkelly->fixArmor();
@@ -632,10 +637,6 @@ namespace F4VRBody {
 		if (c_verbose) { _MESSAGE("Selfie Time"); }
 		playerSkelly->selfieSkelly(70.0f);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
-
-		if (c_verbose) { _MESSAGE("bone sphere stuff"); }
-		detectBoneSphere();
-		handleDebugBoneSpheres();
 
 		if (c_verbose) { _MESSAGE("fix the missing screen"); }
 		fixMissingScreen(playerSkelly->getPlayerNodes());
@@ -648,6 +649,12 @@ namespace F4VRBody {
 
 
 		playerSkelly->setHandPose();
+		if (c_verbose) { _MESSAGE("Operate Pipboy"); }
+		playerSkelly->operatePipBoy();
+		if (c_verbose) { _MESSAGE("bone sphere stuff"); }
+		detectBoneSphere();
+		handleDebugBoneSpheres();
+
 
 		playerSkelly->offHandToBarrel();
 	//	playerSkelly->debug();
