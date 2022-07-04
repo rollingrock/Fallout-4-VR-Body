@@ -181,6 +181,7 @@
     <ClCompile Include="Skeleton.cpp" />
     <ClCompile Include="SmoothMovement.cpp" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="weaponOffset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="api\PapyrusVRAPI.h" />
@@ -200,6 +201,7 @@
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SmoothMovementVR.h" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="weaponOffset.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />

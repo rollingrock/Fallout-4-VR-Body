@@ -1,9 +1,11 @@
 #include "F4VRBody.h"
 #include "Skeleton.h"
 #include "HandPose.h"
+#include "weaponOffset.h"
 
 #include "api/PapyrusVRAPI.h"
 #include "api/VRManagerAPI.h"
+
 
 
 
@@ -179,6 +181,11 @@ namespace F4VRBody {
 		stoppingMultiplierHorizontal       = (float) ini.GetDoubleValue("SmoothMovementVR", "StoppingMultiplierHorizontal", 0.6);
 		disableInteriorSmoothing           = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothing", 1);
 		disableInteriorSmoothingHorizontal = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothingHorizontal", 1);
+
+
+		// now load weapon offset JSON
+		readOffsetJson();
+
 		return true;
 	}
 
@@ -695,6 +702,9 @@ namespace F4VRBody {
 		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_Z", c_handUI_Z);
 
 		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
+
+		// save off any weapon offsets
+		writeOffsetJson();
 
 		if (rc < 0) {
 			_MESSAGE("Failed to write out INI config file");
