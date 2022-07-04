@@ -10,21 +10,14 @@ namespace F4VRBody {
 	class WeaponOffset {
 	public:
 
-		struct Data {
-			float pitch;
-			float roll;
-			float yaw;
-			NiPoint3 offset;
-		};
-
 		WeaponOffset() {
 			offsets.clear();
 		}
 
-		Data getOffset(std::string name);
-		void addOffset(std::string name, Data someData);
+		NiTransform getOffset(std::string name);
+		void addOffset(std::string name, NiTransform someData);
 
-		std::map<std::string, Data> offsets;
+		std::map<std::string, NiTransform> offsets;
 	};
 
 	void readOffsetJson();

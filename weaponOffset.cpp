@@ -12,15 +12,14 @@ namespace F4VRBody {
 
 	WeaponOffset* g_weaponOffsets = nullptr;
 
-	WeaponOffset::Data WeaponOffset::getOffset(std::string name) {
+	NiTransform WeaponOffset::getOffset(std::string name) {
 
-		Data data;
 
-		return data;
+		return offsets[name];
 
 	}
 
-	void WeaponOffset::addOffset(std::string name, Data someData) {
+	void WeaponOffset::addOffset(std::string name, NiTransform someData) {
 		offsets[name] = someData;
 	}
 		
@@ -43,15 +42,15 @@ namespace F4VRBody {
 		inF >> weaponJson;
 		inF.close();
 
-		WeaponOffset::Data data;
+		NiTransform data;
 
 		for (auto& [key, value] : weaponJson.items()) {
-			data.pitch = value["pitch"].get<double>();
-			data.roll = value["roll"].get<double>();
-			data.yaw = value["yaw"].get<double>();
-			data.offset.x = value["x"].get<double>();
-			data.offset.y = value["y"].get<double>();
-			data.offset.z = value["z"].get<double>();
+			for (int i = 0; i < 12; i++) {
+				data.rot.arr[i] = value["rotation"][i].get<double>();
+			}
+			data.pos.x = value["x"].get<double>();
+			data.pos.y = value["y"].get<double>();
+			data.pos.z = value["z"].get<double>();
 
 			g_weaponOffsets->addOffset(key, data);
 
@@ -71,12 +70,10 @@ namespace F4VRBody {
 		}
 
 		for (auto& item : g_weaponOffsets->offsets) {
-			weaponJson[item.first]["pitch"] = item.second.pitch;
-			weaponJson[item.first]["roll"] = item.second.roll;
-			weaponJson[item.first]["yaw"] = item.second.yaw;
-			weaponJson[item.first]["x"] = item.second.offset.x;
-			weaponJson[item.first]["y"] = item.second.offset.y;
-			weaponJson[item.first]["z"] = item.second.offset.z;
+			weaponJson[item.first]["rotation"] = item.second.rot.arr;
+			weaponJson[item.first]["x"] = item.second.pos.x;
+			weaponJson[item.first]["y"] = item.second.pos.y;
+			weaponJson[item.first]["z"] = item.second.pos.z;
 		}
 
 		outF << weaponJson;
