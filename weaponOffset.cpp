@@ -14,11 +14,12 @@ namespace F4VRBody {
 
 	std::optional<NiTransform> WeaponOffset::getOffset(const std::string &name) {
 
-		if (offsets.find(name) == offsets.end()) {
+		auto it = offsets.find(name);
+		if (it == offsets.end()) {
 			return { };
 		}
 
-		return offsets[name];
+		return it->second;
 	}
 
 	void WeaponOffset::addOffset(const std::string &name, NiTransform someData) {
