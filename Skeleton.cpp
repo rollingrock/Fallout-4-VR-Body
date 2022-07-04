@@ -2704,10 +2704,10 @@ namespace F4VRBody
 						weap->m_localTransform.rot = rot.multiply43Left(weap->m_localTransform.rot);
 
 						if (c_leftHandedMode) {
-							fingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos;
+							fingerBonePos = rt->transforms[boneTreeMap["RArm_Finger31"]].world.pos;
 						}
 						else {
-							fingerBonePos = rt->transforms[boneTreeMap["RArm_Finger31"]].world.pos;
+							fingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos;
 						}
 						bodyPos = _curPos;
 					}
