@@ -1,6 +1,7 @@
 #pragma once
 
 #include "f4se/NiObjects.h"
+#include <optional>
 
 
 
@@ -14,8 +15,9 @@ namespace F4VRBody {
 			offsets.clear();
 		}
 
-		NiTransform getOffset(std::string name);
-		void addOffset(std::string name, NiTransform someData);
+		std::optional<NiTransform> getOffset(const std::string &name);
+		void addOffset(const std::string &name, NiTransform someData);
+		void deleteOffset(const std::string& name);
 
 		std::map<std::string, NiTransform> offsets;
 	};

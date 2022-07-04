@@ -12,15 +12,22 @@ namespace F4VRBody {
 
 	WeaponOffset* g_weaponOffsets = nullptr;
 
-	NiTransform WeaponOffset::getOffset(std::string name) {
+	std::optional<NiTransform> WeaponOffset::getOffset(const std::string &name) {
 
+		if (offsets.find(name) == offsets.end()) {
+			return { };
+		}
 
 		return offsets[name];
-
 	}
 
-	void WeaponOffset::addOffset(std::string name, NiTransform someData) {
+	void WeaponOffset::addOffset(const std::string &name, NiTransform someData) {
 		offsets[name] = someData;
+	}
+
+
+	void WeaponOffset::deleteOffset(const std::string& name) {
+		offsets.erase(name);
 	}
 		
 	void readOffsetJson() {
