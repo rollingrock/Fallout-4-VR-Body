@@ -30,7 +30,11 @@ namespace F4VRBody {
 	void WeaponOffset::deleteOffset(const std::string& name) {
 		offsets.erase(name);
 	}
-		
+
+	std::size_t WeaponOffset::getSize() {
+		return offsets.size();
+	}
+
 	void readOffsetJson() {
 		if (g_weaponOffsets) {
 			delete g_weaponOffsets;
@@ -43,11 +47,20 @@ namespace F4VRBody {
 		inF.open(".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets.json", std::ios::in);
 
 		if (inF.fail()) {
-			_MESSAGE("cannot open FRIK_weapon_offsets.ini!!!");
+			_MESSAGE("cannot open FRIK_weapon_offsets.json!!!");
+			inF.close();
 			return;
 		}
-
-		inF >> weaponJson;
+		try
+		{
+			inF >> weaponJson;
+		}
+		catch (json::parse_error& ex)
+		{
+			_MESSAGE("cannot open FRIK_weapon_offsets.json: parse error at byte %d", ex.byte);
+			inF.close();
+			return;
+		}
 		inF.close();
 
 		NiTransform data;
@@ -59,10 +72,12 @@ namespace F4VRBody {
 			data.pos.x = value["x"].get<double>();
 			data.pos.y = value["y"].get<double>();
 			data.pos.z = value["z"].get<double>();
+			data.scale = value["scale"].get<double>();
 
 			g_weaponOffsets->addOffset(key, data);
 
 		}
+		_MESSAGE("Successfully loaded %d offsets from FRIK_weapon_offsets.json", g_weaponOffsets->getSize());
 	}
 
 	void writeOffsetJson() {
@@ -82,6 +97,7 @@ namespace F4VRBody {
 			weaponJson[item.first]["x"] = item.second.pos.x;
 			weaponJson[item.first]["y"] = item.second.pos.y;
 			weaponJson[item.first]["z"] = item.second.pos.z;
+			weaponJson[item.first]["scale"] = item.second.scale;
 		}
 
 		outF << weaponJson;
