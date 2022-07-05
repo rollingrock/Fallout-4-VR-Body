@@ -43,11 +43,20 @@ namespace F4VRBody {
 		inF.open(".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets.json", std::ios::in);
 
 		if (inF.fail()) {
-			_MESSAGE("cannot open FRIK_weapon_offsets.ini!!!");
+			_MESSAGE("cannot open FRIK_weapon_offsets.json!!!");
+			inF.close();
 			return;
 		}
-
-		inF >> weaponJson;
+		try
+		{
+			inF >> weaponJson;
+		}
+		catch (json::parse_error& ex)
+		{
+			_MESSAGE("cannot open FRIK_weapon_offsets.json: parse error at byte %d", ex.byte);
+			inF.close();
+			return;
+		}
 		inF.close();
 
 		NiTransform data;
