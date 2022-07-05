@@ -18,6 +18,7 @@ namespace F4VRBody {
 		std::optional<NiTransform> getOffset(const std::string &name);
 		void addOffset(const std::string &name, NiTransform someData);
 		void deleteOffset(const std::string& name);
+		std::size_t getSize();
 
 		std::map<std::string, NiTransform> offsets;
 	};

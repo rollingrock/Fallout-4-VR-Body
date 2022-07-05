@@ -30,7 +30,11 @@ namespace F4VRBody {
 	void WeaponOffset::deleteOffset(const std::string& name) {
 		offsets.erase(name);
 	}
-		
+
+	std::size_t WeaponOffset::getSize() {
+		return offsets.size();
+	}
+
 	void readOffsetJson() {
 		if (g_weaponOffsets) {
 			delete g_weaponOffsets;
@@ -73,6 +77,7 @@ namespace F4VRBody {
 			g_weaponOffsets->addOffset(key, data);
 
 		}
+		_MESSAGE("Successfully loaded %d offsets from FRIK_weapon_offsets.json", g_weaponOffsets->getSize());
 	}
 
 	void writeOffsetJson() {
