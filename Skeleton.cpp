@@ -2628,6 +2628,7 @@ namespace F4VRBody
 				auto newWeapon = weapname != _lastWeapon;
 				if (newWeapon) {
 					_lastWeapon = weapname;
+					_updated = false;
 					auto lookup = g_weaponOffsets->getOffset(weapname);
 					if (lookup.has_value()) {
 						_updated = true;
