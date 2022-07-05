@@ -318,9 +318,17 @@ namespace F4VRBody
 
 		bool _weaponEquipped;
 		NiTransform _weapSave;
+		NiTransform _updatedTransform;
+		bool _updated = false;
 
 		bool _offHandGripping;
+		bool _triggerGripping = false;
+		uint64_t _triggerGripStart = 0;
+		NiPoint3 _startFingerBonePos = NiPoint3(0, 0, 0);
+		NiPoint3 _endFingerBonePos = NiPoint3(0, 0, 0);
 		bool _hasLetGoGripButton;
+		bool _hasLetGoTriggerButton = false;
+		std::string _lastWeapon = "";
 		Quaternion _aimAdjust;
 	};
 }

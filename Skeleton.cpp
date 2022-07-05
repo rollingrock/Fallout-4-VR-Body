@@ -1,14 +1,16 @@
 #include "Skeleton.h"
 #include "F4VRBody.h"
 #include "HandPose.h"
+#include "weaponOffset.h"
 #include "f4se/GameForms.h"
 
-
+#include <chrono>
 #include <time.h>
 
 extern PapyrusVRAPI* g_papyrusvr;
 extern OpenVRHookManagerAPI* vrhook;
 
+using namespace std::chrono;
 namespace F4VRBody
 {
 
@@ -2618,11 +2620,25 @@ namespace F4VRBody
 
 		if ((*g_player)->actorState.IsWeaponDrawn()) {
 			NiNode* weap = getNode("Weapon", (*g_player)->firstPersonSkeleton);
-
+			auto weapname = (*g_player)->middleProcess->unk08->equipData->item->GetFullName();
 			if (weap) {
 				if (!c_staticGripping) {
 					weap->m_localTransform = _weapSave;
 				}
+				auto newWeapon = weapname != _lastWeapon;
+				if (newWeapon) {
+					_lastWeapon = weapname;
+					auto lookup = g_weaponOffsets->getOffset(weapname);
+					if (lookup.has_value()) {
+						_updated = true;
+						_updatedTransform = lookup.value();
+						_MESSAGE("Found json offset for %s", weapname);
+					}
+				}
+				if (_updated) {
+					weap->m_localTransform = _updatedTransform;
+				}else
+				_updatedTransform = weap->m_localTransform;
 
 				NiPoint3 offset = NiPoint3(-0.94, 0, 0);
 				NiNode* weapOffset = getNode("WeaponOffset", weap);
@@ -2630,6 +2646,8 @@ namespace F4VRBody
 				if (weapOffset) {
 					offset.x -= weapOffset->m_localTransform.pos.y;
 					offset.y -= -2.099;
+					_MESSAGE("%s: WeaponOffset pos (%f, %f, %f) scale %f", weapname, weapOffset->m_localTransform.pos.x, weapOffset->m_localTransform.pos.y, weapOffset->m_localTransform.pos.z,
+						weapOffset->m_localTransform.scale);
 				}
 				weap->m_localTransform.pos += offset;
 				updateDown(weap, true);
@@ -2666,11 +2684,11 @@ namespace F4VRBody
 
 					handV = sum / 3;
 					
+					uint64_t reg = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
 					if (c_onePressGripButton && _hasLetGoGripButton) {
 						_offHandGripping = false;
 					}
 					else if (c_enableGripButtonToLetGo && _hasLetGoGripButton) {
-						uint64_t reg = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
 						if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_gripButtonID)) {
 							_offHandGripping = false;
 							_hasLetGoGripButton = false;
@@ -2679,7 +2697,28 @@ namespace F4VRBody
 					else if ((handV > c_gripLetGoThreshold) && !c_isLookingThroughScope) {
 						_offHandGripping = false;
 					}
-					
+					uint64_t _pressLength = 0;
+					if (!_triggerGripping) {
+						if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)vr::EVRButtonId::k_EButton_SteamVR_Trigger)) {
+							_triggerGripping = true;
+							_hasLetGoTriggerButton = false;
+							_triggerGripStart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+							_startFingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - _curPos;
+							_MESSAGE("Trigger grip start: weapon %s", weapname);
+						}
+					}
+					else{
+						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _triggerGripStart;
+						if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)vr::EVRButtonId::k_EButton_SteamVR_Trigger) && _pressLength > 1000) {
+							vrhook->StartHaptics(1, 0.05, 0.3);
+						} else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)vr::EVRButtonId::k_EButton_SteamVR_Trigger))) {
+							_triggerGripping = false;
+							_hasLetGoTriggerButton = true;
+							_endFingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - _curPos;
+							_MESSAGE("Trigger grip stop: weapon %s %d ms", weapname, _pressLength);
+						}
+					}
+
 					if (_offHandGripping) {
 
 						NiPoint3 oH2Bar;
@@ -2710,6 +2749,44 @@ namespace F4VRBody
 							fingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos;
 						}
 						bodyPos = _curPos;
+						if (_triggerGripping) {
+							auto end = fingerBonePos - _curPos;
+							auto change = end - _startFingerBonePos;
+							if (vec3_len(end) > vec3_len(_startFingerBonePos)) {
+								weap->m_localTransform.pos.x += vec3_len(change);
+								_MESSAGE("Updating x translation for %s by %f to %f", weapname, vec3_len(change), weap->m_localTransform.pos.x);
+							}
+							else {
+								weap->m_localTransform.pos.x -= vec3_len(change);
+								_MESSAGE("Updating x translation for %s by -%f to %f", weapname, vec3_len(change), weap->m_localTransform.pos.x);
+							}
+						}
+						if (_hasLetGoTriggerButton && _pressLength > 0 && _pressLength < 1000) {
+							_MESSAGE("Updating grip rotation for %s", weapname);
+							_updatedTransform.rot = weap->m_localTransform.rot;
+							_hasLetGoTriggerButton = false;
+							_updated = true;
+							g_weaponOffsets->addOffset(weapname, _updatedTransform);
+							writeOffsetJson();
+						}else if (_hasLetGoTriggerButton && _pressLength > 0 && _pressLength > 1000) {
+							if (vec3_len(_endFingerBonePos) > vec3_len(_startFingerBonePos)) {
+								weap->m_localTransform.pos.x += vec3_len(_endFingerBonePos - _startFingerBonePos);
+							}
+							else {
+								weap->m_localTransform.pos.x -= vec3_len(_endFingerBonePos - _startFingerBonePos);
+							}
+							_MESSAGE("Saving position translation for %s from %f -> %f", weapname, _updatedTransform.pos.x, weap->m_localTransform.pos.x);
+							_updatedTransform.pos.x = weap->m_localTransform.pos.x;
+							_hasLetGoTriggerButton = false;
+							_updated = true;
+							g_weaponOffsets->addOffset(weapname, _updatedTransform);
+							writeOffsetJson();
+						}else if (_updated && reg & vr::ButtonMaskFromId((vr::EVRButtonId)vr::EVRButtonId::k_EButton_A)) {
+							_MESSAGE("Resetting grip to defaults for %s", weapname);
+							_updated = false;
+							g_weaponOffsets->deleteOffset(weapname);
+							writeOffsetJson();
+						}
 					}
 				}
 				else {
