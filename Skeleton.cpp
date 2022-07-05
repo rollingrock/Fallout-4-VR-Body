@@ -2633,7 +2633,7 @@ namespace F4VRBody
 					if (lookup.has_value()) {
 						_updated = true;
 						_updatedTransform = lookup.value();
-						_MESSAGE("Found json offset for %s", weapname);
+						_MESSAGE("Found json offset for %s pos (%f, %f, %f) scale %f", weapname, _updatedTransform.pos.x, _updatedTransform.pos.y, _updatedTransform.pos.z, _updatedTransform.scale);
 					}
 				}
 				if (_updated) {
@@ -2756,11 +2756,11 @@ namespace F4VRBody
 							auto change = end - _startFingerBonePos;
 							if (vec3_len(end) > vec3_len(_startFingerBonePos)) {
 								weap->m_localTransform.pos.x += vec3_len(change);
-								_MESSAGE("Updating x translation for %s by %f to %f", weapname, vec3_len(change), weap->m_localTransform.pos.x);
+								_DMESSAGE("Updating x translation for %s by %f to %f", weapname, vec3_len(change), weap->m_localTransform.pos.x);
 							}
 							else {
 								weap->m_localTransform.pos.x -= vec3_len(change);
-								_MESSAGE("Updating x translation for %s by -%f to %f", weapname, vec3_len(change), weap->m_localTransform.pos.x);
+								_DMESSAGE("Updating x translation for %s by -%f to %f", weapname, vec3_len(change), weap->m_localTransform.pos.x);
 							}
 						}
 						if (_hasLetGoTriggerButton && _pressLength > 0 && _pressLength < 1000) {
