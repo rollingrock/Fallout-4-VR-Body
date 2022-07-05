@@ -172,7 +172,7 @@ namespace F4VRBody
 		void updateRoot(BSFadeNode* node) {
 			_root = node;
 		}
-		
+
 		PlayerNodes* getPlayerNodes() {
 			return _playerNodes;
 		}
@@ -207,7 +207,7 @@ namespace F4VRBody
 
 		// movement
 		void walk();
-		
+
 
 		void hideWands();
 		void hideWeapon();
@@ -226,7 +226,7 @@ namespace F4VRBody
 		void offHandToBarrel();
 
 		// utility
-		NiNode* getNode(const char* nodeName, NiNode *nde);
+		NiNode* getNode(const char* nodeName, NiNode* nde);
 		void updateDown(NiNode* nde, bool updateSelf);
 		void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 		void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);

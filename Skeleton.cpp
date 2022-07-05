@@ -342,7 +342,7 @@ namespace F4VRBody
 
 		return func(pc, weapon, offsetNode);
 	}
-	
+
 
 
 	void Skeleton::printChildren(NiNode* child, std::string padding) {
@@ -408,7 +408,7 @@ namespace F4VRBody
 		Matrix44 *local = (Matrix44*)&nde->m_worldTransform.rot;
 
 		Matrix44::matrixMultiply(local, result, &mat);
-		
+
 		for (auto i = 0; i < 3; i++) {
 			for (auto j = 0; j < 3; j++) {
 				nde->m_worldTransform.rot.data[i][j] = result->data[i][j];
@@ -549,7 +549,7 @@ namespace F4VRBody
 		if (!nde || !nde->m_name) {
 			return nullptr;
 		}
-		
+
 		if (!strcmp(nodeName, nde->m_name.c_str())) {
 			return nde;
 		}
@@ -660,7 +660,7 @@ namespace F4VRBody
 	}
 
 	void Skeleton::restoreLocals(NiNode* node) {
-		
+
 		if (!node || node->m_name == nullptr) {
 			_MESSAGE("cannot restore locals");
 			return;
@@ -719,7 +719,7 @@ namespace F4VRBody
 
 		_spine = this->getNode("SPINE2", _root);
 		_chest = this->getNode("Chest", _root);
-		
+
 		_MESSAGE("common node = %016I64X", _common);
 		_MESSAGE("righthand node = %016I64X", _rightHand);
 		_MESSAGE("lefthand node = %016I64X", _leftHand);
@@ -840,7 +840,7 @@ namespace F4VRBody
 	// below takes the two vectors from hmd to each hand and sums them to determine a center axis in which to see how much the hmd has rotated
 	// A secondary angle is also calculated which is 90 degrees on the z axis up to handle when the hands are approaching the z plane of the hmd
 	// this helps keep the body stable through a wide range of hand poses
-	// this still struggles with hands close to the face and with one hand low and one hand high.    Will need to take progs advice to add weights 
+	// this still struggles with hands close to the face and with one hand low and one hand high.    Will need to take progs advice to add weights
 	// to these positions which i'll do at a later date.
 
 
@@ -897,7 +897,7 @@ namespace F4VRBody
 		sum = vec3_norm(sum);
 
 		float pitchDiff = atan2f(hmdForwardDir.y, hmdForwardDir.z) - atan2f(forwardDir.z, forwardDir.y);
-		
+
 		if (fabs(pitchDiff) > degrees_to_rads(80.0f)){
 			angleFinal = angleSec;
 		}
@@ -954,7 +954,7 @@ namespace F4VRBody
 
 		Quaternion qa;
 		qa.setAngleAxis(-neckPitch, NiPoint3(-1, 0, 0));
-		 
+
 		mat = qa.getRot();
 		NiMatrix43 newRot = mat.multiply43Left(_playerNodes->HmdNode->m_localTransform.rot);
 
@@ -1078,7 +1078,7 @@ namespace F4VRBody
 		NiNode* rKnee = getNode("RLeg_Calf", rHip);
 		NiNode* lFoot = getNode("LLeg_Foot", lHip);
 		NiNode* rFoot = getNode("RLeg_Foot", rHip);
-		
+
 		if (!lKnee || !rKnee || !lFoot || !rFoot) {
 			return;
 		}
@@ -1246,7 +1246,7 @@ namespace F4VRBody
 				//_MESSAGE("%2f %2f", curSpeed, stepTime);
 
 				if (_footStepping == 1) {
-					_footStepping = 2; 
+					_footStepping = 2;
 					_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * scale;
 					_leftFootStart = _leftFootPos;
 				}
@@ -1303,7 +1303,7 @@ namespace F4VRBody
 		rotatedM.rotateVectoVec(uLocalDir, rFoot->m_localTransform.pos);
 		rKnee->m_localTransform.rot = rotatedM.multiply43Left(rKnee->m_localTransform.rot);
 	}
-	
+
 	// adapted solver from VRIK.  Thanks prog!
 	void Skeleton::setSingleLeg(bool isLeft) {
 		Matrix44 rotMat;
@@ -1357,7 +1357,7 @@ namespace F4VRBody
 		NiPoint3 uLocalDir = hipNode->m_worldTransform.rot.Transpose() * vec3_norm(pos) / hipNode->m_worldTransform.scale;
 		rotMat.rotateVectoVec(uLocalDir, kneeNode->m_localTransform.pos);
 		hipNode->m_localTransform.rot = rotMat.multiply43Left(hipNode->m_localTransform.rot);
-		
+
 		if (_inPowerArmor) {
 			//power armor for some reason twists the legs.  twist them back!
 			Matrix44 twist;
@@ -1369,7 +1369,7 @@ namespace F4VRBody
 		NiMatrix43 hipWR;
 		rotMat.makeTransformMatrix(hipNode->m_localTransform.rot, NiPoint3(0, 0, 0));
 		hipWR = rotMat.multiply43Left(hipNode->m_parent->m_worldTransform.rot);
-	
+
 		NiMatrix43 calfWR;
 		rotMat.makeTransformMatrix(kneeNode->m_localTransform.rot, NiPoint3(0, 0, 0));
 		calfWR = rotMat.multiply43Left(hipWR);
@@ -1495,7 +1495,7 @@ namespace F4VRBody
 		if (wandPip == nullptr) {
 			return;
 		}
-		
+
 		static BSFixedString nodeName("PipboyBone");
 		NiAVObject* pipboyBone;
 		if (c_leftHandedPipBoy) {
@@ -1519,7 +1519,7 @@ namespace F4VRBody
 
 		wandPip->m_localTransform.pos = wandPip->m_parent->m_worldTransform.rot.Transpose() * (delta / wandPip->m_parent->m_worldTransform.scale);
 
-		// Slr = LHwr' * RHwr * Slr 
+		// Slr = LHwr' * RHwr * Slr
 		Matrix44 loc;
 		loc.setEulerAngles(degrees_to_rads(30), 0, 0);
 
@@ -1603,11 +1603,11 @@ namespace F4VRBody
 
 				uint8_t type = weap->weapData.unk137; // unk137 is the weapon type that maps to WeaponType enum
 
-				if ((type == WeaponType::kWeaponType_One_Hand_Axe) || 
+				if ((type == WeaponType::kWeaponType_One_Hand_Axe) ||
 					(type == WeaponType::kWeaponType_One_Hand_Dagger) ||
-					(type == WeaponType::kWeaponType_One_Hand_Mace) || 
+					(type == WeaponType::kWeaponType_One_Hand_Mace) ||
 					(type == WeaponType::kWeaponType_One_Hand_Sword) ||
-					(type == WeaponType::kWeaponType_Two_Hand_Axe) || 
+					(type == WeaponType::kWeaponType_Two_Hand_Axe) ||
 					(type == WeaponType::kWeaponType_Two_Hand_Sword)) {
 
 					NiAVObject* wNode = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
@@ -1812,7 +1812,7 @@ namespace F4VRBody
 	void Skeleton::hidePipboy() {
 		BSFixedString pipName("PipboyBone");
 		NiAVObject* pipboy;
-		
+
 		if (!c_leftHandedPipBoy) {
 			pipboy = leftArm.forearm3->GetObjectByName(&pipName);
 		}
@@ -1854,7 +1854,7 @@ namespace F4VRBody
 		}
 
 		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
-		
+
 		NiPoint3 finger;
 		NiAVObject* pipboy;
 
@@ -1987,7 +1987,7 @@ namespace F4VRBody
 
 		NiPoint3 handSide = arm.hand->m_worldTransform.rot * NiPoint3(0, 1, 0);
 		NiPoint3 handinSide = handSide * -1;
-		
+
 		NiPoint3 wLocalDir = arm.forearm3->m_worldTransform.rot.Transpose() * vec3_norm(handinSide);
 		wLocalDir.x = 0;
 		NiPoint3 forearm3Side = arm.forearm3->m_worldTransform.rot * NiPoint3(0, -1 * 1, 0);
@@ -2028,7 +2028,7 @@ namespace F4VRBody
 		float dotF = vec3_dot(shoulderToHand, forwardDir);
 		float dotU = vec3_dot(shoulderToHand, upDir);
 		float c = degrees_to_rads(30.0);
-		
+
 		float yaw  = c * (dotF / (armLength * armLengthScale)) - 0.5;
 		float roll = c * (dotU / (armLength * armLengthScale)) - 0.5;
 		yaw = std::clamp(yaw, 0.0f, degrees_to_rads(33.0));
@@ -2097,7 +2097,7 @@ namespace F4VRBody
 		// Unfortunately neither of these two nodes are that close to each other so when you equip a melee or ranged weapon
 		// the hand will jump which compeltely messes up the solver and looks bad to boot.
 		// So this code below does a similar operation as the in game function that solves the first person arm by forcing
-		// everything to go to the PrimaryWeaponNode.  I have hardcoded a rotation below based off one of the guns that 
+		// everything to go to the PrimaryWeaponNode.  I have hardcoded a rotation below based off one of the guns that
 		// matches my real life hand pose with an index controller very well.   I use this as the baseline for everything
 
 		if ((*g_player)->firstPersonSkeleton == nullptr) {
@@ -2163,7 +2163,7 @@ namespace F4VRBody
 		weaponNode->IncRef();
 		set1stPersonArm(weaponNode, offsetNode);
 
-		
+
 		NiPoint3 handPos;
 		NiMatrix43 handRot;
 
@@ -2236,7 +2236,7 @@ namespace F4VRBody
 		NiPoint3 Uwp = arm.upper->m_worldTransform.pos;
 		NiPoint3 handToShoulder = Uwp - handPos;
 		float hsLen = (std::max)(vec3_len(handToShoulder), 0.1f);
-		
+
 		if (hsLen > (upperLen + forearmLen) * 2.25) {
 			return;
 		}
@@ -2261,7 +2261,7 @@ namespace F4VRBody
 		NiPoint3 handSide = handRot * NiPoint3(0, -1, 0);
 		NiPoint3 handinSide = handSide * negLeft;
 		float twistAngle2 = -1 * asinf((std::clamp)(handSide.z, -0.599f, 0.999f));
-		
+
 		// Blend the two twist angles together, using the primary angle more when the wrist is pointing downward
 		//float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.25f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
 		float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.45f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
@@ -2359,9 +2359,9 @@ namespace F4VRBody
 		arm.upper->m_localTransform.rot = rotatedM.multiply43Left(arm.upper->m_localTransform.rot);
 
 		rotatedM.makeTransformMatrix(arm.upper->m_localTransform.rot, arm.upper->m_localTransform.pos);
-		
+
 		Uwr = rotatedM.multiply43Left(arm.shoulder->m_worldTransform.rot);
-		
+
 		// Find the angle of the forearm twisted around the upper arm and twist the upper arm to align it
 		//    Uwr * twist = Cwr * Ulr   ===>   Ulr = Cwr' * Uwr * twist
 		pos = handPos - elbowWorld;
@@ -2374,13 +2374,13 @@ namespace F4VRBody
 
 		Matrix44 twist;
 		twist.setEulerAngles(-upperAngle, 0, 0);
-		arm.upper->m_localTransform.rot = twist.multiply43Left(arm.upper->m_localTransform.rot);    
+		arm.upper->m_localTransform.rot = twist.multiply43Left(arm.upper->m_localTransform.rot);
 
 		rotatedM.makeTransformMatrix(arm.upper->m_localTransform.rot, arm.upper->m_localTransform.pos);
 		Uwr = rotatedM.multiply43Left(arm.shoulder->m_worldTransform.rot);
 
 		twist.setEulerAngles(-upperAngle, 0, 0);
-		arm.forearm1->m_localTransform.rot = twist.multiply43Left(arm.forearm1->m_localTransform.rot);    
+		arm.forearm1->m_localTransform.rot = twist.multiply43Left(arm.forearm1->m_localTransform.rot);
 
 		// The forearm arm bone must be rotated from its forward vector to its elbow-to-hand vector in its local space
 		// Calculate Flr:  Fwr * rotTowardHand = Uwr * Flr   ===>   Flr = Uwr' * Fwr * rotTowardHand
@@ -2554,7 +2554,7 @@ namespace F4VRBody
 
 		BSFlattenedBoneTree* fpTree = (BSFlattenedBoneTree*)(*g_player)->firstPersonSkeleton->m_children.m_data[0]->GetAsNiNode();
 
-		
+
 		if (firstPos != 0) {
 			if (fpTree->transforms[firstPos + offset].refNode) {
 				_handBones[bone] = fpTree->transforms[firstPos + offset].refNode->m_localTransform;
@@ -2683,7 +2683,7 @@ namespace F4VRBody
 					}
 
 					handV = sum / 3;
-					
+
 					uint64_t reg = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
 					if (c_onePressGripButton && _hasLetGoGripButton) {
 						_offHandGripping = false;
@@ -2818,11 +2818,11 @@ namespace F4VRBody
 			NiPoint3 barrelVec = NiPoint3(0, 1, 0);
 
 			NiPoint3 oH2Bar = c_leftHandedMode ? rt->transforms[boneTreeMap["RArm_Finger31"]].world.pos - weap->m_worldTransform.pos : rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - weap->m_worldTransform.pos;
-			
+
 			float len = vec3_len(oH2Bar);
 
 			oH2Bar = weap->m_worldTransform.rot.Transpose() * vec3_norm(oH2Bar) / weap->m_worldTransform.scale;
-			
+
 			float dotP = vec3_dot(vec3_norm(oH2Bar), barrelVec);
 			uint64_t reg = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
 
@@ -2880,7 +2880,7 @@ namespace F4VRBody
 		//		_MESSAGE("%d,%s,%d,%d", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
 		//	}
 		//}
-		//	
+		//
 		//for (auto i = 0; i < rt->numTransforms; i++) {
 		//	int pos = rt->bonePositions[i].position;
 		//	if (rt->bonePositions[i].name && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
@@ -2896,7 +2896,7 @@ namespace F4VRBody
 			//	if (pos > rt->numTransforms) {
 			//		continue;
 			//	}
-			//	_MESSAGE("%d,%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", fc, rt->bonePositions[i].name->data, 
+			//	_MESSAGE("%d,%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", fc, rt->bonePositions[i].name->data,
 			//						rt->bonePositions[i].position,
 			//						rt->transforms[pos].local.rot.arr[0],
 			//						rt->transforms[pos].local.rot.arr[1],
