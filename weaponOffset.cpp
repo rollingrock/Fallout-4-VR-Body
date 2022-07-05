@@ -68,6 +68,7 @@ namespace F4VRBody {
 			data.pos.x = value["x"].get<double>();
 			data.pos.y = value["y"].get<double>();
 			data.pos.z = value["z"].get<double>();
+			data.scale = value["scale"].get<double>();
 
 			g_weaponOffsets->addOffset(key, data);
 
@@ -91,6 +92,7 @@ namespace F4VRBody {
 			weaponJson[item.first]["x"] = item.second.pos.x;
 			weaponJson[item.first]["y"] = item.second.pos.y;
 			weaponJson[item.first]["z"] = item.second.pos.z;
+			weaponJson[item.first]["scale"] = item.second.scale;
 		}
 
 		outF << weaponJson;
