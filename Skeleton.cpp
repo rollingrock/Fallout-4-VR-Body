@@ -2646,7 +2646,8 @@ namespace F4VRBody
 				if (weapOffset) {
 					offset.x -= weapOffset->m_localTransform.pos.y;
 					offset.y -= -2.099;
-					_MESSAGE("%s: WeaponOffset pos (%f, %f, %f) scale %f", weapname, weapOffset->m_localTransform.pos.x, weapOffset->m_localTransform.pos.y, weapOffset->m_localTransform.pos.z,
+					if (newWeapon)
+						_MESSAGE("%s: WeaponOffset pos (%f, %f, %f) scale %f", weapname, weapOffset->m_localTransform.pos.x, weapOffset->m_localTransform.pos.y, weapOffset->m_localTransform.pos.z,
 						weapOffset->m_localTransform.scale);
 				}
 				weap->m_localTransform.pos += offset;
