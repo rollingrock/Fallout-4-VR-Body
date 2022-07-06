@@ -2708,7 +2708,7 @@ namespace F4VRBody
 					else{
 						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _triggerGripStart;
 						if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)vr::EVRButtonId::k_EButton_SteamVR_Trigger) && _pressLength > 1000) {
-							vrhook->StartHaptics(1, 0.05, 0.3);
+							vrhook->StartHaptics(c_leftHandedMode? 0 : 1, 0.05, 0.3);
 						} else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)vr::EVRButtonId::k_EButton_SteamVR_Trigger))) {
 							_triggerGripping = false;
 							_hasLetGoTriggerButton = true;
