@@ -2662,16 +2662,12 @@ namespace F4VRBody
 				static int fc = 0;
 				float handV = 0.0f;
 
+				static auto offHandBone = c_leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
 				if (_offHandGripping && c_enableOffHandGripping) {
 
 					float handFrameMovement;
 
-					if (c_leftHandedMode) {
-						handFrameMovement = vec3_len(rt->transforms[boneTreeMap["RArm_Finger31"]].world.pos - fingerBonePos);
-					}
-					else {
-						handFrameMovement = vec3_len(rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - fingerBonePos);
-					}
+					handFrameMovement = vec3_len(rt->transforms[boneTreeMap[offHandBone]].world.pos - fingerBonePos);
 
 					float bodyFrameMovement = vec3_len(_curPos - bodyPos);
 					avgHandV[fc] = abs(handFrameMovement - bodyFrameMovement);
@@ -2705,7 +2701,7 @@ namespace F4VRBody
 							_triggerGripping = true;
 							_hasLetGoTriggerButton = false;
 							_triggerGripStart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-							_startFingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - _curPos;
+							_startFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos - _curPos;
 							_MESSAGE("Trigger grip start: weapon %s", weapname);
 						}
 					}
@@ -2716,7 +2712,7 @@ namespace F4VRBody
 						} else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)vr::EVRButtonId::k_EButton_SteamVR_Trigger))) {
 							_triggerGripping = false;
 							_hasLetGoTriggerButton = true;
-							_endFingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - _curPos;
+							_endFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos - _curPos;
 							_MESSAGE("Trigger grip stop: weapon %s %d ms", weapname, _pressLength);
 						}
 					}
@@ -2725,12 +2721,7 @@ namespace F4VRBody
 
 						NiPoint3 oH2Bar;
 
-						if (c_leftHandedMode) {
-							oH2Bar = rt->transforms[boneTreeMap["RArm_Finger31"]].world.pos - weap->m_worldTransform.pos;
-						}
-						else {
-							oH2Bar = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - weap->m_worldTransform.pos;
-						}
+						oH2Bar = rt->transforms[boneTreeMap[offHandBone]].world.pos - weap->m_worldTransform.pos;
 
 						NiPoint3 barrelVec = NiPoint3(0, 1, 0);
 
@@ -2744,12 +2735,7 @@ namespace F4VRBody
 						rot = _aimAdjust.getRot();
 						weap->m_localTransform.rot = rot.multiply43Left(weap->m_localTransform.rot);
 
-						if (c_leftHandedMode) {
-							fingerBonePos = rt->transforms[boneTreeMap["RArm_Finger31"]].world.pos;
-						}
-						else {
-							fingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos;
-						}
+						fingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
 						bodyPos = _curPos;
 						if (_triggerGripping) {
 							auto end = fingerBonePos - _curPos;
@@ -2792,7 +2778,7 @@ namespace F4VRBody
 					}
 				}
 				else {
-					fingerBonePos = c_leftHandedMode ? rt->transforms[boneTreeMap["RArm_Finger31"]].world.pos : rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos;
+					fingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
 					bodyPos = _curPos;
 
 					if (fc != 0) {
