@@ -2628,30 +2628,30 @@ namespace F4VRBody
 				auto newWeapon = weapname != _lastWeapon;
 				if (newWeapon) {
 					_lastWeapon = weapname;
-					_updated = false;
+					_useCustomWeaponOffset = false;
 					auto lookup = g_weaponOffsets->getOffset(weapname);
 					if (lookup.has_value()) {
-						_updated = true;
-						_updatedTransform = lookup.value();
-						_MESSAGE("Found json offset for %s pos (%f, %f, %f) scale %f", weapname, _updatedTransform.pos.x, _updatedTransform.pos.y, _updatedTransform.pos.z, _updatedTransform.scale);
+						_useCustomWeaponOffset = true;
+						_customTransform = lookup.value();
+						_MESSAGE("Found json offset for %s pos (%f, %f, %f) scale %f", weapname, _customTransform.pos.x, _customTransform.pos.y, _customTransform.pos.z, _customTransform.scale);
+					}else { // offsets should already be applied if not already saved
+						NiPoint3 offset = NiPoint3(-0.94, 0, 0); // apply static VR offset
+						NiNode* weapOffset = getNode("WeaponOffset", weap);
+
+						if (weapOffset) {
+							offset.x -= weapOffset->m_localTransform.pos.y;
+							offset.y -= -2.099;
+							_MESSAGE("%s: WeaponOffset pos (%f, %f, %f) scale %f", weapname, weapOffset->m_localTransform.pos.x, weapOffset->m_localTransform.pos.y, weapOffset->m_localTransform.pos.z,
+									weapOffset->m_localTransform.scale);
+						}
+						weap->m_localTransform.pos += offset;
 					}
 				}
-				if (_updated) {
-					weap->m_localTransform = _updatedTransform;
-				}else
-				_updatedTransform = weap->m_localTransform;
-
-				NiPoint3 offset = NiPoint3(-0.94, 0, 0);
-				NiNode* weapOffset = getNode("WeaponOffset", weap);
-
-				if (weapOffset) {
-					offset.x -= weapOffset->m_localTransform.pos.y;
-					offset.y -= -2.099;
-					if (newWeapon)
-						_MESSAGE("%s: WeaponOffset pos (%f, %f, %f) scale %f", weapname, weapOffset->m_localTransform.pos.x, weapOffset->m_localTransform.pos.y, weapOffset->m_localTransform.pos.z,
-						weapOffset->m_localTransform.scale);
+				if (_useCustomWeaponOffset) { // load custom transform
+					weap->m_localTransform = _customTransform;
 				}
-				weap->m_localTransform.pos += offset;
+				else // save transform to manipulate
+					_customTransform = weap->m_localTransform;
 				updateDown(weap, true);
 
 				// handle offhand gripping
@@ -2662,16 +2662,12 @@ namespace F4VRBody
 				static int fc = 0;
 				float handV = 0.0f;
 
+				static auto offHandBone = c_leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
 				if (_offHandGripping && c_enableOffHandGripping) {
 
 					float handFrameMovement;
 
-					if (c_leftHandedMode) {
-						handFrameMovement = vec3_len(rt->transforms[boneTreeMap["RArm_Finger31"]].world.pos - fingerBonePos);
-					}
-					else {
-						handFrameMovement = vec3_len(rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - fingerBonePos);
-					}
+					handFrameMovement = vec3_len(rt->transforms[boneTreeMap[offHandBone]].world.pos - fingerBonePos);
 
 					float bodyFrameMovement = vec3_len(_curPos - bodyPos);
 					avgHandV[fc] = abs(handFrameMovement - bodyFrameMovement);
@@ -2700,24 +2696,24 @@ namespace F4VRBody
 						_offHandGripping = false;
 					}
 					uint64_t _pressLength = 0;
-					if (!_triggerGripping) {
-						if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)vr::EVRButtonId::k_EButton_SteamVR_Trigger)) {
-							_triggerGripping = true;
-							_hasLetGoTriggerButton = false;
-							_triggerGripStart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-							_startFingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - _curPos;
-							_MESSAGE("Trigger grip start: weapon %s", weapname);
+					if (!_repositionButtonHolding) {
+						if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID)) {
+							_repositionButtonHolding = true;
+							_hasLetGoRepositionButton = false;
+							_repositionButtonHoldStart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+							_startFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos - _curPos;
+							_MESSAGE("Reposition Button Hold start: weapon %s", weapname);
 						}
 					}
 					else{
-						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _triggerGripStart;
-						if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)vr::EVRButtonId::k_EButton_SteamVR_Trigger) && _pressLength > 1000) {
-							vrhook->StartHaptics(1, 0.05, 0.3);
-						} else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)vr::EVRButtonId::k_EButton_SteamVR_Trigger))) {
-							_triggerGripping = false;
-							_hasLetGoTriggerButton = true;
-							_endFingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - _curPos;
-							_MESSAGE("Trigger grip stop: weapon %s %d ms", weapname, _pressLength);
+						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
+						if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
+							vrhook->StartHaptics(c_leftHandedMode? 0 : 1, 0.05, 0.3);
+						} else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
+							_repositionButtonHolding = false;
+							_hasLetGoRepositionButton = true;
+							_endFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos - _curPos;
+							_MESSAGE("Reposition Button Hold stop: weapon %s %d ms", weapname, _pressLength);
 						}
 					}
 
@@ -2725,12 +2721,7 @@ namespace F4VRBody
 
 						NiPoint3 oH2Bar;
 
-						if (c_leftHandedMode) {
-							oH2Bar = rt->transforms[boneTreeMap["RArm_Finger31"]].world.pos - weap->m_worldTransform.pos;
-						}
-						else {
-							oH2Bar = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos - weap->m_worldTransform.pos;
-						}
+						oH2Bar = rt->transforms[boneTreeMap[offHandBone]].world.pos - weap->m_worldTransform.pos;
 
 						NiPoint3 barrelVec = NiPoint3(0, 1, 0);
 
@@ -2744,55 +2735,44 @@ namespace F4VRBody
 						rot = _aimAdjust.getRot();
 						weap->m_localTransform.rot = rot.multiply43Left(weap->m_localTransform.rot);
 
-						if (c_leftHandedMode) {
-							fingerBonePos = rt->transforms[boneTreeMap["RArm_Finger31"]].world.pos;
-						}
-						else {
-							fingerBonePos = rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos;
-						}
+						fingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
 						bodyPos = _curPos;
-						if (_triggerGripping) {
+						if (_repositionButtonHolding) {
 							auto end = fingerBonePos - _curPos;
-							auto change = end - _startFingerBonePos;
-							if (vec3_len(end) > vec3_len(_startFingerBonePos)) {
-								weap->m_localTransform.pos.x += vec3_len(change);
-								_DMESSAGE("Updating x translation for %s by %f to %f", weapname, vec3_len(change), weap->m_localTransform.pos.x);
-							}
-							else {
-								weap->m_localTransform.pos.x -= vec3_len(change);
-								_DMESSAGE("Updating x translation for %s by -%f to %f", weapname, vec3_len(change), weap->m_localTransform.pos.x);
+							auto change = vec3_len(end) > vec3_len(_startFingerBonePos)? vec3_len(end - _startFingerBonePos) : -vec3_len(end - _startFingerBonePos);
+							if (change != 0) {
+								weap->m_localTransform.pos.x += change;
+								_DMESSAGE("Updating x translation for %s by %f to %f", weapname, change, weap->m_localTransform.pos.x);
 							}
 						}
-						if (_hasLetGoTriggerButton && _pressLength > 0 && _pressLength < 1000) {
+						//_hasLetGoRepositionButton is always one frame after _repositionButtonHolding
+						if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength < c_holdDelay) {
 							_MESSAGE("Updating grip rotation for %s", weapname);
-							_updatedTransform.rot = weap->m_localTransform.rot;
-							_hasLetGoTriggerButton = false;
-							_updated = true;
-							g_weaponOffsets->addOffset(weapname, _updatedTransform);
+							_customTransform.rot = weap->m_localTransform.rot;
+							_hasLetGoRepositionButton = false;
+							_useCustomWeaponOffset = true;
+							g_weaponOffsets->addOffset(weapname, _customTransform);
 							writeOffsetJson();
-						}else if (_hasLetGoTriggerButton && _pressLength > 0 && _pressLength > 1000) {
-							if (vec3_len(_endFingerBonePos) > vec3_len(_startFingerBonePos)) {
-								weap->m_localTransform.pos.x += vec3_len(_endFingerBonePos - _startFingerBonePos);
-							}
-							else {
-								weap->m_localTransform.pos.x -= vec3_len(_endFingerBonePos - _startFingerBonePos);
-							}
-							_MESSAGE("Saving position translation for %s from %f -> %f", weapname, _updatedTransform.pos.x, weap->m_localTransform.pos.x);
-							_updatedTransform.pos.x = weap->m_localTransform.pos.x;
-							_hasLetGoTriggerButton = false;
-							_updated = true;
-							g_weaponOffsets->addOffset(weapname, _updatedTransform);
+						}else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > c_holdDelay) {
+							auto change = vec3_len(_endFingerBonePos) > vec3_len(_startFingerBonePos) ? vec3_len(_endFingerBonePos - _startFingerBonePos) : -vec3_len(_endFingerBonePos - _startFingerBonePos);
+							weap->m_localTransform.pos.x += change;
+							_MESSAGE("Saving position translation for %s from %f -> %f", weapname, _customTransform.pos.x, weap->m_localTransform.pos.x);
+							_customTransform.pos.x = weap->m_localTransform.pos.x;
+							_hasLetGoRepositionButton = false;
+							_useCustomWeaponOffset = true;
+							g_weaponOffsets->addOffset(weapname, _customTransform);
 							writeOffsetJson();
-						}else if (_updated && reg & vr::ButtonMaskFromId((vr::EVRButtonId)vr::EVRButtonId::k_EButton_A)) {
+						}
+						else if (_useCustomWeaponOffset && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID)) {
 							_MESSAGE("Resetting grip to defaults for %s", weapname);
-							_updated = false;
+							_useCustomWeaponOffset = false;
 							g_weaponOffsets->deleteOffset(weapname);
 							writeOffsetJson();
 						}
 					}
 				}
 				else {
-					fingerBonePos = c_leftHandedMode ? rt->transforms[boneTreeMap["RArm_Finger31"]].world.pos : rt->transforms[boneTreeMap["LArm_Finger31"]].world.pos;
+					fingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
 					bodyPos = _curPos;
 
 					if (fc != 0) {

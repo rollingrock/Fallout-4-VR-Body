@@ -72,8 +72,11 @@ namespace F4VRBody {
 	bool c_isLookingThroughScope = false;
 	bool c_pipBoyButtonMode = false;
 	int c_pipBoyButtonArm = 0;   // 0 for left 1 for right
-	int c_pipBoyButtonID = 2; // grip button is 2
-	int c_gripButtonID = 2;
+	int c_pipBoyButtonID = vr::EVRButtonId::k_EButton_Grip; // grip button is 2
+	int c_gripButtonID = vr::EVRButtonId::k_EButton_Grip; // 2
+	int c_holdDelay = 1000; // 1000 ms
+	int c_repositionButtonID = vr::EVRButtonId::k_EButton_SteamVR_Trigger; //33
+	int c_defaultPositionButtonID = vr::EVRButtonId::k_EButton_A; // 7
 	bool c_enableOffHandGripping = true;
 	bool c_enableGripButtonToGrap = true;
 	bool c_enableGripButtonToLetGo = true;
@@ -163,8 +166,8 @@ namespace F4VRBody {
 		c_gripLetGoThreshold = ini.GetDoubleValue("Fallout4VRBody", "GripLetGoThreshold", 15.0f);
 		c_pipBoyButtonMode =             ini.GetBoolValue("Fallout4VRBody", "OperatePipboyWithButton", false);
 		c_pipBoyButtonArm = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonArm", 0);
-		c_pipBoyButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonID", 2);
-		c_gripButtonID = (int)ini.GetLongValue("Fallout4VRBody", "GripButtonID", 0);
+		c_pipBoyButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_Grip); //2
+		c_gripButtonID = (int)ini.GetLongValue("Fallout4VRBody", "GripButtonID", vr::EVRButtonId::k_EButton_Grip); // 2
 		c_enableOffHandGripping = ini.GetBoolValue("Fallout4VRBody", "EnableOffHandGripping", true);
 		c_enableGripButtonToGrap = ini.GetBoolValue("Fallout4VRBody", "EnableGripButton", true);
 		c_enableGripButtonToLetGo = ini.GetBoolValue("Fallout4VRBody", "EnableGripButtonToLetGo", true);
@@ -182,6 +185,10 @@ namespace F4VRBody {
 		disableInteriorSmoothing           = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothing", 1);
 		disableInteriorSmoothingHorizontal = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothingHorizontal", 1);
 
+		// weaponPositioning
+		c_holdDelay = (int)ini.GetLongValue("Fallout4VRBody", "HoldDelay", 1000);
+		c_repositionButtonID = (int)ini.GetLongValue("Fallout4VRBody", "RepositionButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger); // 33
+		c_defaultPositionButtonID = (int)ini.GetLongValue("Fallout4VRBody", "DefaultPositionButtonID", vr::EVRButtonId::k_EButton_A); // 7
 
 		// now load weapon offset JSON
 		readOffsetJson();
