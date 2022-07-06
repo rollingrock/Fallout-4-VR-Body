@@ -2739,14 +2739,10 @@ namespace F4VRBody
 						bodyPos = _curPos;
 						if (_triggerGripping) {
 							auto end = fingerBonePos - _curPos;
-							auto change = end - _startFingerBonePos;
-							if (vec3_len(end) > vec3_len(_startFingerBonePos)) {
-								weap->m_localTransform.pos.x += vec3_len(change);
-								_DMESSAGE("Updating x translation for %s by %f to %f", weapname, vec3_len(change), weap->m_localTransform.pos.x);
-							}
-							else {
-								weap->m_localTransform.pos.x -= vec3_len(change);
-								_DMESSAGE("Updating x translation for %s by -%f to %f", weapname, vec3_len(change), weap->m_localTransform.pos.x);
+							auto change = vec3_len(end) > vec3_len(_startFingerBonePos)? vec3_len(end - _startFingerBonePos) : -vec3_len(end - _startFingerBonePos);
+							if (change != 0) {
+								weap->m_localTransform.pos.x += change;
+								_DMESSAGE("Updating x translation for %s by %f to %f", weapname, change, weap->m_localTransform.pos.x);
 							}
 						}
 						if (_hasLetGoTriggerButton && _pressLength > 0 && _pressLength < 1000) {
@@ -2757,12 +2753,8 @@ namespace F4VRBody
 							g_weaponOffsets->addOffset(weapname, _updatedTransform);
 							writeOffsetJson();
 						}else if (_hasLetGoTriggerButton && _pressLength > 0 && _pressLength > 1000) {
-							if (vec3_len(_endFingerBonePos) > vec3_len(_startFingerBonePos)) {
-								weap->m_localTransform.pos.x += vec3_len(_endFingerBonePos - _startFingerBonePos);
-							}
-							else {
-								weap->m_localTransform.pos.x -= vec3_len(_endFingerBonePos - _startFingerBonePos);
-							}
+							auto change = vec3_len(_endFingerBonePos) > vec3_len(_startFingerBonePos) ? vec3_len(_endFingerBonePos - _startFingerBonePos) : -vec3_len(_endFingerBonePos - _startFingerBonePos);
+							weap->m_localTransform.pos.x += change;
 							_MESSAGE("Saving position translation for %s from %f -> %f", weapname, _updatedTransform.pos.x, weap->m_localTransform.pos.x);
 							_updatedTransform.pos.x = weap->m_localTransform.pos.x;
 							_hasLetGoTriggerButton = false;
