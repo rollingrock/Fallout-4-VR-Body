@@ -72,8 +72,9 @@ namespace F4VRBody {
 	bool c_isLookingThroughScope = false;
 	bool c_pipBoyButtonMode = false;
 	int c_pipBoyButtonArm = 0;   // 0 for left 1 for right
-	int c_pipBoyButtonID = 2; // grip button is 2
-	int c_gripButtonID = 2;
+	int c_holdDelay = 1000; // 1000 ms
+	int c_repositionButtonID = vr::EVRButtonId::k_EButton_SteamVR_Trigger; //33
+	int c_defaultPositionButtonID = vr::EVRButtonId::k_EButton_A; // 7
 	bool c_enableOffHandGripping = true;
 	bool c_enableGripButtonToGrap = true;
 	bool c_enableGripButtonToLetGo = true;
@@ -182,6 +183,10 @@ namespace F4VRBody {
 		disableInteriorSmoothing           = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothing", 1);
 		disableInteriorSmoothingHorizontal = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothingHorizontal", 1);
 
+		// weaponPositioning
+		c_holdDelay = (int)ini.GetLongValue("Fallout4VRBody", "HoldDelay", 1000);
+		c_repositionButtonID = (int)ini.GetLongValue("Fallout4VRBody", "RepositionButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger); // 33
+		c_defaultPositionButtonID = (int)ini.GetLongValue("Fallout4VRBody", "DefaultPositionButtonID", vr::EVRButtonId::k_EButton_A); // 7
 
 		// now load weapon offset JSON
 		readOffsetJson();
