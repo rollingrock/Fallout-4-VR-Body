@@ -2840,7 +2840,7 @@ namespace F4VRBody
 				if (!c_enableGripButtonToGrap) {
 					_offHandGripping = true;
 				}
-				else if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_gripButtonID)) {
+				else if (!_pipboyStatus && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_gripButtonID)) {
 					if (_offHandGripping || !_hasLetGoGripButton) {
 						return;
 					}
