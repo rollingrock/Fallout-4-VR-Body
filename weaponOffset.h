@@ -2,6 +2,7 @@
 
 #include "f4se/NiObjects.h"
 #include <optional>
+#include "include/json.hpp"
 
 
 
@@ -23,8 +24,13 @@ namespace F4VRBody {
 		std::map<std::string, NiTransform> offsets;
 	};
 
+	static const std::string defaultJson{ ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets.json" };
+	static const std::string offsetsPath{ ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets" };
+
 	void readOffsetJson();
+	void loadOffsetJsonFile(const std::string& file = defaultJson);
 	void writeOffsetJson();
+	void saveOffsetJsonFile(const nlohmann::json& weaponJson, const std::string& file = defaultJson);
 
 	extern WeaponOffset* g_weaponOffsets;
 }
