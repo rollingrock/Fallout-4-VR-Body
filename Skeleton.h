@@ -330,5 +330,6 @@ namespace F4VRBody
 		bool _hasLetGoRepositionButton = false;
 		std::string _lastWeapon = "";
 		Quaternion _aimAdjust;
+		uint64_t _lastLookingAtPip = 0;
 	};
 }

@@ -1874,29 +1874,52 @@ namespace F4VRBody
 			return;
 		}
 
-		if (c_pipBoyButtonMode) {
-			uint64_t reg = (c_pipBoyButtonArm > 0) ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
-			if ((reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID)) && !_stickypip) {
-				if (_pipboyStatus) {
-					_pipboyStatus = false;
-					turnPipBoyOff();
-					_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
-				}
-				else {
-					_pipboyStatus = true;
-					_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
-					turnPipBoyOn();
-				}
-				_stickypip = true;
+		uint64_t reg = (c_pipBoyButtonArm > 0) ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
+		if ((reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID)) && !_stickypip) {
+			if (_pipboyStatus) {
+				_pipboyStatus = false;
+				turnPipBoyOff();
+				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
+				_MESSAGE("Disabling Pipboy with button");
 			}
-			else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID))) {
-				_stickypip = false;
+			else if (c_pipBoyButtonMode) {
+				//turning on the pip is gated by buttonmode
+				_pipboyStatus = true;
+				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+				turnPipBoyOn();
+				_MESSAGE("Enabling Pipboy with button");
+			}
+			else
+				return;
+			_stickypip = true;
+		}
+		else if (c_pipBoyButtonMode && !(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID))) {
+			_stickypip = false;
+		}
+		else if (c_pipBoyButtonMode)
+			return;
+
+
+		if (!isLookingAtPipBoy()) {
+			vr::VRControllerAxis_t axis_state = (c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
+			const auto timeElapsed = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _lastLookingAtPip;
+			if (_pipboyStatus && timeElapsed > c_pipBoyOffDelay) {
+				_pipboyStatus = false;
+				turnPipBoyOff();
+				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
+				_MESSAGE("Disabling PipBoy due to inactivity for %d more than %d ms", timeElapsed, c_pipBoyOffDelay);
+			}
+			else if (c_pipBoyAllowMovementNotLooking && _pipboyStatus && (axis_state.x != 0 || axis_state.y != 0)) {
+				turnPipBoyOff();
+				_pipboyStatus = false;
+				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
+				_MESSAGE("Disabling PipBoy due to movement when not looking at pipboy. input: (%f, %f)", axis_state.x, axis_state.y);
 			}
 			return;
 		}
-
-		if (!isLookingAtPipBoy()) {
-			return;
+		else if (_pipboyStatus)
+		{
+			_lastLookingAtPip = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 		}
 
 		float distance = vec3_len(finger - pipboy->m_worldTransform.pos);

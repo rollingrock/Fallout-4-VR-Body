@@ -71,10 +71,12 @@ namespace F4VRBody {
 	float c_gripLetGoThreshold = 15.0f;
 	bool c_isLookingThroughScope = false;
 	bool c_pipBoyButtonMode = false;
+	bool c_pipBoyAllowMovementNotLooking = true;
 	int c_pipBoyButtonArm = 0;   // 0 for left 1 for right
 	int c_pipBoyButtonID = vr::EVRButtonId::k_EButton_Grip; // grip button is 2
 	int c_gripButtonID = vr::EVRButtonId::k_EButton_Grip; // 2
 	int c_holdDelay = 1000; // 1000 ms
+	int c_pipBoyOffDelay = 5000; // 5000 ms
 	int c_repositionButtonID = vr::EVRButtonId::k_EButton_SteamVR_Trigger; //33
 	int c_defaultPositionButtonID = vr::EVRButtonId::k_EButton_A; // 7
 	bool c_enableOffHandGripping = true;
@@ -163,8 +165,10 @@ namespace F4VRBody {
 		c_handUI_Z = ini.GetDoubleValue("Fallout4VRBody", "handUI_Z", 0.0);
 		c_hideHead = ini.GetBoolValue("Fallout4VRBody", "HideTheHead");
 		c_pipBoyLookAtGate = ini.GetDoubleValue("Fallout4VRBody", "PipBoyLookAtThreshold", 0.7);
+		c_pipBoyOffDelay = (int)ini.GetLongValue("Fallout4VRBody", "PipBoyOffDelay", 5000);
 		c_gripLetGoThreshold = ini.GetDoubleValue("Fallout4VRBody", "GripLetGoThreshold", 15.0f);
 		c_pipBoyButtonMode =             ini.GetBoolValue("Fallout4VRBody", "OperatePipboyWithButton", false);
+		c_pipBoyAllowMovementNotLooking = ini.GetBoolValue("Fallout4VRBody", "AllowMovementWhenNotLookingAtPipboy", true);
 		c_pipBoyButtonArm = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonArm", 0);
 		c_pipBoyButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_Grip); //2
 		c_gripButtonID = (int)ini.GetLongValue("Fallout4VRBody", "GripButtonID", vr::EVRButtonId::k_EButton_Grip); // 2
