@@ -2620,20 +2620,21 @@ namespace F4VRBody
 
 		if ((*g_player)->actorState.IsWeaponDrawn()) {
 			NiNode* weap = getNode("Weapon", (*g_player)->firstPersonSkeleton);
-			auto weapname = (*g_player)->middleProcess->unk08->equipData->item->GetFullName();
+			std::string weapname = (*g_player)->middleProcess->unk08->equipData->item->GetFullName();
 			if (weap) {
 				if (!c_staticGripping) {
 					weap->m_localTransform = _weapSave;
 				}
-				auto newWeapon = weapname != _lastWeapon;
+				auto newWeapon = (_inPowerArmor ? weapname + powerArmorSuffix : weapname) != _lastWeapon;
 				if (newWeapon) {
-					_lastWeapon = weapname;
+					_lastWeapon = (_inPowerArmor ? weapname + powerArmorSuffix : weapname);
 					_useCustomWeaponOffset = false;
-					auto lookup = g_weaponOffsets->getOffset(weapname);
+					auto lookup = g_weaponOffsets->getOffset(weapname, _inPowerArmor);
 					if (lookup.has_value()) {
 						_useCustomWeaponOffset = true;
 						_customTransform = lookup.value();
-						_MESSAGE("Found json offset for %s pos (%f, %f, %f) scale %f", weapname, _customTransform.pos.x, _customTransform.pos.y, _customTransform.pos.z, _customTransform.scale);
+						_MESSAGE("Found weaponOffset for %s pos (%f, %f, %f) scale %f: powerArmor: %d", 
+							weapname, _customTransform.pos.x, _customTransform.pos.y, _customTransform.pos.z, _customTransform.scale, _inPowerArmor);
 					}else { // offsets should already be applied if not already saved
 						NiPoint3 offset = NiPoint3(-0.94, 0, 0); // apply static VR offset
 						NiNode* weapOffset = getNode("WeaponOffset", weap);
@@ -2747,11 +2748,11 @@ namespace F4VRBody
 						}
 						//_hasLetGoRepositionButton is always one frame after _repositionButtonHolding
 						if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength < c_holdDelay) {
-							_MESSAGE("Updating grip rotation for %s", weapname);
+							_MESSAGE("Updating grip rotation for %s: powerArmor: %d", weapname, _inPowerArmor);
 							_customTransform.rot = weap->m_localTransform.rot;
 							_hasLetGoRepositionButton = false;
 							_useCustomWeaponOffset = true;
-							g_weaponOffsets->addOffset(weapname, _customTransform);
+							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor);
 							writeOffsetJson();
 						}else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > c_holdDelay) {
 							auto change = vec3_len(_endFingerBonePos) > vec3_len(_startFingerBonePos) ? vec3_len(_endFingerBonePos - _startFingerBonePos) : -vec3_len(_endFingerBonePos - _startFingerBonePos);
@@ -2760,13 +2761,12 @@ namespace F4VRBody
 							_customTransform.pos.x = weap->m_localTransform.pos.x;
 							_hasLetGoRepositionButton = false;
 							_useCustomWeaponOffset = true;
-							g_weaponOffsets->addOffset(weapname, _customTransform);
+							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor);
 							writeOffsetJson();
 						}
-						else if (_useCustomWeaponOffset && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID)) {
-							_MESSAGE("Resetting grip to defaults for %s", weapname);
+							_MESSAGE("Resetting grip to defaults for %s: powerArmor: %d", weapname, _inPowerArmor);
 							_useCustomWeaponOffset = false;
-							g_weaponOffsets->deleteOffset(weapname);
+							g_weaponOffsets->deleteOffset(weapname, _inPowerArmor);
 							writeOffsetJson();
 						}
 					}

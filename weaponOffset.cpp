@@ -11,23 +11,25 @@ namespace F4VRBody {
 
 	WeaponOffset* g_weaponOffsets = nullptr;
 
-	std::optional<NiTransform> WeaponOffset::getOffset(const std::string &name) {
+	std::optional<NiTransform> WeaponOffset::getOffset(const std::string &name, const bool powerArmor) {
 
-		auto it = offsets.find(name);
+		auto it = offsets.find(powerArmor ? name + powerArmorSuffix : name);
 		if (it == offsets.end()) {
+			if (powerArmor) //check without PA
+				return getOffset(name); 
 			return { };
 		}
 
 		return it->second;
 	}
 
-	void WeaponOffset::addOffset(const std::string &name, NiTransform someData) {
-		offsets[name] = someData;
+	void WeaponOffset::addOffset(const std::string &name, NiTransform someData, const bool powerArmor) {
+		offsets[powerArmor ? name + powerArmorSuffix : name] = someData;
 	}
 
 
-	void WeaponOffset::deleteOffset(const std::string& name) {
-		offsets.erase(name);
+	void WeaponOffset::deleteOffset(const std::string& name, const bool powerArmor) {
+		offsets.erase(powerArmor ? name + powerArmorSuffix : name);
 	}
 
 	std::size_t WeaponOffset::getSize() {
