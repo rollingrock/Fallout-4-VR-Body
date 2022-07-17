@@ -253,6 +253,12 @@ namespace F4VRBody
 		float getNeckPitch();
 		float getBodyPitch();
 
+		enum repositionMode {
+			x = 0, // down the barrel
+			z, // vertically up and down
+			y, // laterally left and right
+			total = y
+		};
 
 	private:
 		BSFadeNode* _root;
@@ -323,6 +329,9 @@ namespace F4VRBody
 
 		bool _offHandGripping;
 		bool _repositionButtonHolding = false;
+		bool _repositionHapticFired = false;
+		bool _repositionModeSwitched = false;
+		repositionMode _repositionMode = repositionMode::x;
 		uint64_t _repositionButtonHoldStart = 0;
 		NiPoint3 _startFingerBonePos = NiPoint3(0, 0, 0);
 		NiPoint3 _endFingerBonePos = NiPoint3(0, 0, 0);
