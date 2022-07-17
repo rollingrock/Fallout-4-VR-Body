@@ -1,9 +1,8 @@
 #include "weaponOffset.h"
 
-#include "include/json.hpp"
-
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 using json = nlohmann::json;
 
@@ -12,23 +11,25 @@ namespace F4VRBody {
 
 	WeaponOffset* g_weaponOffsets = nullptr;
 
-	std::optional<NiTransform> WeaponOffset::getOffset(const std::string &name) {
+	std::optional<NiTransform> WeaponOffset::getOffset(const std::string &name, const bool powerArmor) {
 
-		auto it = offsets.find(name);
+		auto it = offsets.find(powerArmor ? name + powerArmorSuffix : name);
 		if (it == offsets.end()) {
+			if (powerArmor) //check without PA
+				return getOffset(name); 
 			return { };
 		}
 
 		return it->second;
 	}
 
-	void WeaponOffset::addOffset(const std::string &name, NiTransform someData) {
-		offsets[name] = someData;
+	void WeaponOffset::addOffset(const std::string &name, NiTransform someData, const bool powerArmor) {
+		offsets[powerArmor ? name + powerArmorSuffix : name] = someData;
 	}
 
 
-	void WeaponOffset::deleteOffset(const std::string& name) {
-		offsets.erase(name);
+	void WeaponOffset::deleteOffset(const std::string& name, const bool powerArmor) {
+		offsets.erase(powerArmor ? name + powerArmorSuffix : name);
 	}
 
 	std::size_t WeaponOffset::getSize() {
@@ -40,14 +41,30 @@ namespace F4VRBody {
 			delete g_weaponOffsets;
 		}
 		g_weaponOffsets = new WeaponOffset();
+		loadOffsetJsonFile(); //load default list if it exists
+		if (!(std::filesystem::exists(offsetsPath) && std::filesystem::is_directory(offsetsPath)))
+			std::filesystem::create_directory(offsetsPath);
+		for (const auto& file : std::filesystem::directory_iterator(offsetsPath)) {
+			std::wstring path = L"";
+			try {
+				path = file.path().wstring();
+			}
+			catch (std::exception& e) {
+				_WARNING("Unable to convert path to string: %s", e.what());
+			}
+			if (file.exists() && !file.is_directory())
+				loadOffsetJsonFile(file.path().string());
+			}
+	}
+	void loadOffsetJsonFile(const std::string &file) {
 
 		json weaponJson;
 		std::ifstream inF;
 
-		inF.open(".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets.json", std::ios::in);
+		inF.open(file, std::ios::in);
 
 		if (inF.fail()) {
-			_MESSAGE("cannot open FRIK_weapon_offsets.json!!!");
+			_WARNING("cannot open %s", file.c_str());
 			inF.close();
 			return;
 		}
@@ -57,7 +74,7 @@ namespace F4VRBody {
 		}
 		catch (json::parse_error& ex)
 		{
-			_MESSAGE("cannot open FRIK_weapon_offsets.json: parse error at byte %d", ex.byte);
+			_MESSAGE("cannot open %s: parse error at byte %d", file.c_str(), ex.byte);
 			inF.close();
 			return;
 		}
@@ -77,31 +94,39 @@ namespace F4VRBody {
 			g_weaponOffsets->addOffset(key, data);
 
 		}
-		_MESSAGE("Successfully loaded %d offsets from FRIK_weapon_offsets.json", g_weaponOffsets->getSize());
+		_MESSAGE("Successfully loaded %d offsets from %s: total %d", weaponJson.size(), file.c_str(), g_weaponOffsets->getSize());
 	}
 
-	void writeOffsetJson() {
-
-		json weaponJson;
+	void saveOffsetJsonFile(const json& weaponJson, const std::string& file) {
 		std::ofstream outF;
 
-		outF.open(".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets.json", std::ios::out);
+		outF.open(file, std::ios::out);
 
 		if (outF.fail()) {
-			_MESSAGE("cannot open FRIK_weapon_offsets.ini for writing!!!");
+			_MESSAGE("cannot open %s for writing", file.c_str());
 			return;
 		}
 
+		try {
+			outF << std::setw(4) << weaponJson;
+			outF.close();
+		}catch (std::exception& e) {
+			outF.close();
+			_WARNING("Unable to save json %s: %s", file.c_str(), e.what());
+		}
+	}
+	void writeOffsetJson() {
+
+		std::string file;
+
 		for (auto& item : g_weaponOffsets->offsets) {
+			json weaponJson;
 			weaponJson[item.first]["rotation"] = item.second.rot.arr;
 			weaponJson[item.first]["x"] = item.second.pos.x;
 			weaponJson[item.first]["y"] = item.second.pos.y;
 			weaponJson[item.first]["z"] = item.second.pos.z;
 			weaponJson[item.first]["scale"] = item.second.scale;
+			saveOffsetJsonFile(weaponJson, offsetsPath + "\\" + item.first + ".json");
 		}
-
-		outF << weaponJson;
-		outF.close();
 	}
-
 }

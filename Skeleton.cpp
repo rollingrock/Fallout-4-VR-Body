@@ -1874,29 +1874,52 @@ namespace F4VRBody
 			return;
 		}
 
-		if (c_pipBoyButtonMode) {
-			uint64_t reg = (c_pipBoyButtonArm > 0) ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
-			if ((reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID)) && !_stickypip) {
-				if (_pipboyStatus) {
-					_pipboyStatus = false;
-					turnPipBoyOff();
-					_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
-				}
-				else {
-					_pipboyStatus = true;
-					_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
-					turnPipBoyOn();
-				}
-				_stickypip = true;
+		uint64_t reg = (c_pipBoyButtonArm > 0) ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
+		if ((reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID)) && !_stickypip) {
+			if (_pipboyStatus) {
+				_pipboyStatus = false;
+				turnPipBoyOff();
+				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
+				_MESSAGE("Disabling Pipboy with button");
 			}
-			else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID))) {
-				_stickypip = false;
+			else if (c_pipBoyButtonMode) {
+				//turning on the pip is gated by buttonmode
+				_pipboyStatus = true;
+				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+				turnPipBoyOn();
+				_MESSAGE("Enabling Pipboy with button");
+			}
+			else
+				return;
+			_stickypip = true;
+		}
+		else if (c_pipBoyButtonMode && !(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID))) {
+			_stickypip = false;
+		}
+		else if (c_pipBoyButtonMode)
+			return;
+
+
+		if (!isLookingAtPipBoy()) {
+			vr::VRControllerAxis_t axis_state = (c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
+			const auto timeElapsed = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _lastLookingAtPip;
+			if (_pipboyStatus && timeElapsed > c_pipBoyOffDelay) {
+				_pipboyStatus = false;
+				turnPipBoyOff();
+				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
+				_MESSAGE("Disabling PipBoy due to inactivity for %d more than %d ms", timeElapsed, c_pipBoyOffDelay);
+			}
+			else if (c_pipBoyAllowMovementNotLooking && _pipboyStatus && (axis_state.x != 0 || axis_state.y != 0)) {
+				turnPipBoyOff();
+				_pipboyStatus = false;
+				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
+				_MESSAGE("Disabling PipBoy due to movement when not looking at pipboy. input: (%f, %f)", axis_state.x, axis_state.y);
 			}
 			return;
 		}
-
-		if (!isLookingAtPipBoy()) {
-			return;
+		else if (_pipboyStatus)
+		{
+			_lastLookingAtPip = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 		}
 
 		float distance = vec3_len(finger - pipboy->m_worldTransform.pos);
@@ -2620,20 +2643,21 @@ namespace F4VRBody
 
 		if ((*g_player)->actorState.IsWeaponDrawn()) {
 			NiNode* weap = getNode("Weapon", (*g_player)->firstPersonSkeleton);
-			auto weapname = (*g_player)->middleProcess->unk08->equipData->item->GetFullName();
+			std::string weapname = (*g_player)->middleProcess->unk08->equipData->item->GetFullName();
 			if (weap) {
 				if (!c_staticGripping) {
 					weap->m_localTransform = _weapSave;
 				}
-				auto newWeapon = weapname != _lastWeapon;
+				auto newWeapon = (_inPowerArmor ? weapname + powerArmorSuffix : weapname) != _lastWeapon;
 				if (newWeapon) {
-					_lastWeapon = weapname;
+					_lastWeapon = (_inPowerArmor ? weapname + powerArmorSuffix : weapname);
 					_useCustomWeaponOffset = false;
-					auto lookup = g_weaponOffsets->getOffset(weapname);
+					auto lookup = g_weaponOffsets->getOffset(weapname, _inPowerArmor);
 					if (lookup.has_value()) {
 						_useCustomWeaponOffset = true;
 						_customTransform = lookup.value();
-						_MESSAGE("Found json offset for %s pos (%f, %f, %f) scale %f", weapname, _customTransform.pos.x, _customTransform.pos.y, _customTransform.pos.z, _customTransform.scale);
+						_MESSAGE("Found weaponOffset for %s pos (%f, %f, %f) scale %f: powerArmor: %d", 
+							weapname, _customTransform.pos.x, _customTransform.pos.y, _customTransform.pos.z, _customTransform.scale, _inPowerArmor);
 					}else { // offsets should already be applied if not already saved
 						NiPoint3 offset = NiPoint3(-0.94, 0, 0); // apply static VR offset
 						NiNode* weapOffset = getNode("WeaponOffset", weap);
@@ -2702,18 +2726,30 @@ namespace F4VRBody
 							_hasLetGoRepositionButton = false;
 							_repositionButtonHoldStart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 							_startFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos - _curPos;
-							_MESSAGE("Reposition Button Hold start: weapon %s", weapname);
+							_MESSAGE("Reposition Button Hold start: weapon %s mode: %d", weapname, _repositionMode);
 						}
 					}
 					else{
+						if (!_repositionModeSwitched && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID)) {
+							_repositionMode = static_cast<repositionMode>((_repositionMode + 1) % (repositionMode::total + 1));
+							vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
+							_repositionModeSwitched = true;
+							_MESSAGE("Reposition Mode Switch: weapon %s %d ms mode: %d", weapname, _pressLength, _repositionMode);
+						}
+						else if (_repositionModeSwitched && !(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID))) {
+							_repositionModeSwitched = false;
+						}
 						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
-						if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
-							vrhook->StartHaptics(c_leftHandedMode? 0 : 1, 0.05, 0.3);
-						} else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
+						if (!_repositionHapticFired && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
+							vrhook->StartHaptics(c_leftHandedMode? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
+							_repositionHapticFired = true;
+						}
+						else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
 							_repositionButtonHolding = false;
 							_hasLetGoRepositionButton = true;
+							_repositionHapticFired = false;
 							_endFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos - _curPos;
-							_MESSAGE("Reposition Button Hold stop: weapon %s %d ms", weapname, _pressLength);
+							_MESSAGE("Reposition Button Hold stop: weapon %s %d ms mode: %d", weapname, _pressLength, _repositionMode);
 						}
 					}
 
@@ -2738,35 +2774,62 @@ namespace F4VRBody
 						fingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
 						bodyPos = _curPos;
 						if (_repositionButtonHolding) {
+							// this is for a preview of the move. The preview happens one frame before we detect the release so must be processed separately.
 							auto end = fingerBonePos - _curPos;
 							auto change = vec3_len(end) > vec3_len(_startFingerBonePos)? vec3_len(end - _startFingerBonePos) : -vec3_len(end - _startFingerBonePos);
 							if (change != 0) {
-								weap->m_localTransform.pos.x += change;
-								_DMESSAGE("Updating x translation for %s by %f to %f", weapname, change, weap->m_localTransform.pos.x);
+								switch (_repositionMode) {
+								case x:
+									weap->m_localTransform.pos.x += change;
+									_DMESSAGE("Updating X translation for %s by %f to %f", weapname, change, weap->m_localTransform.pos.x);
+									break;
+								case y:
+									weap->m_localTransform.pos.y += change;
+									_DMESSAGE("Updating Y translation for %s by %f to %f", weapname, change, weap->m_localTransform.pos.y);
+									break;
+								case z:
+									weap->m_localTransform.pos.z += change;
+									_DMESSAGE("Updating Z translation for %s by %f to %f", weapname, change, weap->m_localTransform.pos.z);
+								}
 							}
 						}
 						//_hasLetGoRepositionButton is always one frame after _repositionButtonHolding
 						if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength < c_holdDelay) {
-							_MESSAGE("Updating grip rotation for %s", weapname);
+							_MESSAGE("Updating grip rotation for %s: powerArmor: %d", weapname, _inPowerArmor);
 							_customTransform.rot = weap->m_localTransform.rot;
 							_hasLetGoRepositionButton = false;
 							_useCustomWeaponOffset = true;
-							g_weaponOffsets->addOffset(weapname, _customTransform);
+							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor);
 							writeOffsetJson();
 						}else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > c_holdDelay) {
 							auto change = vec3_len(_endFingerBonePos) > vec3_len(_startFingerBonePos) ? vec3_len(_endFingerBonePos - _startFingerBonePos) : -vec3_len(_endFingerBonePos - _startFingerBonePos);
-							weap->m_localTransform.pos.x += change;
-							_MESSAGE("Saving position translation for %s from %f -> %f", weapname, _customTransform.pos.x, weap->m_localTransform.pos.x);
-							_customTransform.pos.x = weap->m_localTransform.pos.x;
+							switch (_repositionMode) {
+							case x:
+								weap->m_localTransform.pos.x += change;
+								_MESSAGE("Saving X position translation for %s from %f -> %f: powerArmor: %d", weapname, _customTransform.pos.x, weap->m_localTransform.pos.x, _inPowerArmor);
+								_customTransform.pos.x = weap->m_localTransform.pos.x;
+								break;
+							case y:
+								weap->m_localTransform.pos.y += change;
+								_MESSAGE("Saving Y position translation for %s from %f -> %f: powerArmor: %d", weapname, _customTransform.pos.y, weap->m_localTransform.pos.y, _inPowerArmor);
+								_customTransform.pos.y = weap->m_localTransform.pos.y;
+								break;
+							case z:
+								weap->m_localTransform.pos.z += change;
+								_MESSAGE("Saving Z position translation for %s from %f -> %f: powerArmor: %d", weapname, _customTransform.pos.z, weap->m_localTransform.pos.z, _inPowerArmor);
+								_customTransform.pos.z = weap->m_localTransform.pos.z;
+							}
 							_hasLetGoRepositionButton = false;
 							_useCustomWeaponOffset = true;
-							g_weaponOffsets->addOffset(weapname, _customTransform);
+							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor);
 							writeOffsetJson();
 						}
-						else if (_useCustomWeaponOffset && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID)) {
-							_MESSAGE("Resetting grip to defaults for %s", weapname);
+						else if (_useCustomWeaponOffset 
+							&& !(_hasLetGoRepositionButton || _repositionButtonHolding) // do not allow defaults when handling reposition
+							&& reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID)) {
+							_MESSAGE("Resetting grip to defaults for %s: powerArmor: %d", weapname, _inPowerArmor);
 							_useCustomWeaponOffset = false;
-							g_weaponOffsets->deleteOffset(weapname);
+							g_weaponOffsets->deleteOffset(weapname, _inPowerArmor);
 							writeOffsetJson();
 						}
 					}
@@ -2817,7 +2880,7 @@ namespace F4VRBody
 				if (!c_enableGripButtonToGrap) {
 					_offHandGripping = true;
 				}
-				else if (reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_gripButtonID)) {
+				else if (!_pipboyStatus && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_gripButtonID)) {
 					if (_offHandGripping || !_hasLetGoGripButton) {
 						return;
 					}
