@@ -61,6 +61,7 @@ namespace F4VRBody {
 	extern bool c_enableGripButtonToGrap;
 	extern bool c_enableGripButtonToLetGo;
 	extern bool c_onePressGripButton;
+	extern float c_scopeAdjustDistance;
 
 	class BoneSphere {
 	public:

@@ -2903,6 +2903,84 @@ namespace F4VRBody
 		}
 	}
 
+	/* Handle off-hand scope*/
+	void Skeleton::offHandToScope() {
+		NiNode* weap = getNode("Weapon", (*g_player)->firstPersonSkeleton);
+		if (weap && (*g_player)->actorState.IsWeaponDrawn() && c_isLookingThroughScope) {
+			static BSFixedString reticleNodeName = "ReticleNode";
+			NiAVObject* scopeRet = weap->GetObjectByName(&reticleNodeName);
+			const std::string scopeName = scopeRet->m_name;
+			auto reticlePos = scopeRet->GetAsNiNode()->m_worldTransform.pos;
+			auto offset = vec3_len(reticlePos - _offhandPos);
+			uint64_t handInput = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
+			uint64_t _pressLength = 0;
+			const auto handNearScope = (offset < c_scopeAdjustDistance); // hand is close to scope, enable scope specific commands
+
+			// zoomtoggling
+			if (handNearScope && !_inRepositionMode)
+				if (!_zoomModeButtonHeld && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
+					_zoomModeButtonHeld = true;
+					_MESSAGE("Zoom Toggle started");
+				}
+				else if (_zoomModeButtonHeld && !(handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID))) {
+					_zoomModeButtonHeld = false;
+					_MESSAGE("Zoom Toggle pressed; sending message to switch zoom state");
+					g_messaging->Dispatch(g_pluginHandle, 16, nullptr, 0, "FO4VRBETTERSCOPES");
+					if (vrhook)
+						vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
+				}
+			if (handNearScope && !_repositionButtonHolding && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID)) { // repositioning
+				_repositionButtonHolding = true;
+				_hasLetGoRepositionButton = false;
+				_repositionButtonHoldStart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+				_MESSAGE("Reposition Button Hold start: scope %s", scopeName);
+			}
+			else if (_repositionButtonHolding && !(handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
+				_repositionButtonHolding = false;
+				_hasLetGoRepositionButton = true;
+				_inRepositionMode = false;
+				msgData.x = 0.f;
+				msgData.y = 1; // pass save command
+				msgData.z = 0.f;
+				g_messaging->Dispatch(g_pluginHandle, 17, (void*)&msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+				_MESSAGE("Reposition Button Hold stop: scope %s %d ms", scopeName, _pressLength);
+			}
+			_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
+			if (!_inRepositionMode && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
+				// enter reposition mode
+				if (vrhook)
+					vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
+				_inRepositionMode = true;
+			}
+			else { // in reposition mode
+				vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
+				if (!_repositionModeSwitched && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
+					if (vrhook)
+						vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
+					_repositionModeSwitched = true;
+					msgData.x = 0.f;
+					msgData.y = 0.f;
+					msgData.z = 0.f;
+					g_messaging->Dispatch(g_pluginHandle, 17, (void*)&msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+					_MESSAGE("Reposition Mode Reset: scope %s %d ms", scopeName, _pressLength);
+				}
+				else if (_repositionModeSwitched && !(handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID))) {
+					_repositionModeSwitched = false;
+				}
+				// get axis from non-movement joystick
+				else if (axis_state.x != 0 || axis_state.y != 0) { // axis_state y is up and down, which corresponds to reticle z axis
+					msgData.x = axis_state.x;
+					msgData.y = 0.f;
+					msgData.z = axis_state.y;
+					g_messaging->Dispatch(g_pluginHandle, 17, (void*)&msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+					_MESSAGE("Moving scope reticle. input: (%f, %f)", axis_state.x, axis_state.y);
+				}
+			}
+		}
+		else
+			_zoomModeButtonHeld = false;
+	}
+
 	void Skeleton::moveBack() {
 		NiNode* body = _root->m_parent->GetAsNiNode();
 

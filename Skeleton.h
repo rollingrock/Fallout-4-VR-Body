@@ -243,6 +243,7 @@ namespace F4VRBody
 		void copy1stPerson(std::string bone, bool isLeft, int offset);
 		void insertSaveState(std::string name, NiNode* node);
 		void rotateLeg(uint32_t pos, float angle);
+		void offHandToScope();
 		void moveBack();
 		void debug();
 
@@ -337,9 +338,13 @@ namespace F4VRBody
 		NiPoint3 _endFingerBonePos = NiPoint3(0, 0, 0);
 		bool _hasLetGoGripButton;
 		bool _hasLetGoRepositionButton = false;
+		bool _hasLetGoZoomModeButton = false;
+		bool _zoomModeButtonHeld = false;
 		std::string _lastWeapon = "";
 		Quaternion _aimAdjust;
 		uint64_t _lastLookingAtPip = 0;
+
 		NiPoint3 _offhandPos {0, 0, 0};
+		NiPoint3 msgData{ 0, 0, 0 }; // used for msg passing
 	};
 }

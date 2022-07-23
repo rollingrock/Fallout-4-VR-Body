@@ -86,6 +86,7 @@ namespace F4VRBody {
 	bool c_enableGripButtonToLetGo = true;
 	bool c_onePressGripButton = false;
 
+	float c_scopeAdjustDistance = 15.0f;
 
 	bool meshesReplaced = false;
 
@@ -197,7 +198,7 @@ namespace F4VRBody {
 		c_holdDelay = (int)ini.GetLongValue("Fallout4VRBody", "HoldDelay", 1000);
 		c_repositionButtonID = (int)ini.GetLongValue("Fallout4VRBody", "RepositionButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger); // 33
 		c_offHandActivateButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OffHandActivateButtonID", vr::EVRButtonId::k_EButton_A); // 7
-
+		c_scopeAdjustDistance = ini.GetDoubleValue("Fallout4VRBody", "ScopeAdjustDistance", 15.f);
 		// now load weapon offset JSON
 		readOffsetJson();
 
@@ -679,6 +680,7 @@ namespace F4VRBody {
 
 
 		playerSkelly->offHandToBarrel();
+		playerSkelly->offHandToScope();
 	//	playerSkelly->debug();
 	}
 
