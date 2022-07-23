@@ -1874,31 +1874,36 @@ namespace F4VRBody
 			return;
 		}
 
-		uint64_t reg = (c_pipBoyButtonArm > 0) ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
-		if ((reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID)) && !_stickypip) {
+		const auto pipOnButtonPressed = (c_pipBoyButtonArm ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID);
+		const auto pipOffButtonPressed = (c_pipBoyButtonOffArm ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonOffID);
+
+		// check off button
+		if (pipOffButtonPressed && !_stickypip) {
 			if (_pipboyStatus) {
 				_pipboyStatus = false;
 				turnPipBoyOff();
 				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				_MESSAGE("Disabling Pipboy with button");
+				_stickypip = true;
 			}
-			else if (c_pipBoyButtonMode) {
-				//turning on the pip is gated by buttonmode
-				_pipboyStatus = true;
-				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
-				turnPipBoyOn();
-				_MESSAGE("Enabling Pipboy with button");
-			}
-			else
-				return;
-			_stickypip = true;
 		}
-		else if (c_pipBoyButtonMode && !(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID))) {
+		else if (c_pipBoyButtonMode && !pipOffButtonPressed) {
+			// stickypip is a guard so we don't constantly toggle the pip boy every frame
 			_stickypip = false;
 		}
-		else if (c_pipBoyButtonMode)
-			return;
-
+		// check on button
+		if (c_pipBoyButtonMode && pipOnButtonPressed && !_stickypip) {
+			//turning on the pip is gated by buttonmode
+			_pipboyStatus = true;
+			_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+			turnPipBoyOn();
+			_MESSAGE("Enabling Pipboy with button");
+			_stickypip = true;
+		}
+		else if (c_pipBoyButtonMode && !pipOnButtonPressed) {
+			// stickypip is a guard so we don't constantly toggle the pip boy every frame
+			_stickypip = false;
+		}
 
 		if (!isLookingAtPipBoy()) {
 			vr::VRControllerAxis_t axis_state = (c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
@@ -1921,6 +1926,9 @@ namespace F4VRBody
 		{
 			_lastLookingAtPip = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 		}
+
+		if (c_pipBoyButtonMode) // If c_pipBoyButtonMode, don't check touch
+			return;
 
 		float distance = vec3_len(finger - pipboy->m_worldTransform.pos);
 

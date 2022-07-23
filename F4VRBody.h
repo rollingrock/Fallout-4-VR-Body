@@ -50,6 +50,8 @@ namespace F4VRBody {
 	extern bool c_pipBoyAllowMovementNotLooking;
 	extern int c_pipBoyButtonArm;
 	extern int c_pipBoyButtonID;
+	extern int c_pipBoyButtonOffArm;
+	extern int c_pipBoyButtonOffID;
 	extern int c_gripButtonID;
 	extern int c_holdDelay;
 	extern int c_pipBoyOffDelay;

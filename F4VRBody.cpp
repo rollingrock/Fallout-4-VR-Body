@@ -74,6 +74,8 @@ namespace F4VRBody {
 	bool c_pipBoyAllowMovementNotLooking = true;
 	int c_pipBoyButtonArm = 0;   // 0 for left 1 for right
 	int c_pipBoyButtonID = vr::EVRButtonId::k_EButton_Grip; // grip button is 2
+	int c_pipBoyButtonOffArm = 0;   // 0 for left 1 for right
+	int c_pipBoyButtonOffID = vr::EVRButtonId::k_EButton_Grip; // grip button is 2
 	int c_gripButtonID = vr::EVRButtonId::k_EButton_Grip; // 2
 	int c_holdDelay = 1000; // 1000 ms
 	int c_pipBoyOffDelay = 5000; // 5000 ms
@@ -171,6 +173,8 @@ namespace F4VRBody {
 		c_pipBoyAllowMovementNotLooking = ini.GetBoolValue("Fallout4VRBody", "AllowMovementWhenNotLookingAtPipboy", true);
 		c_pipBoyButtonArm = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonArm", 0);
 		c_pipBoyButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_Grip); //2
+		c_pipBoyButtonOffArm = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonOffArm", 0);
+		c_pipBoyButtonOffID = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip); //2
 		c_gripButtonID = (int)ini.GetLongValue("Fallout4VRBody", "GripButtonID", vr::EVRButtonId::k_EButton_Grip); // 2
 		c_enableOffHandGripping = ini.GetBoolValue("Fallout4VRBody", "EnableOffHandGripping", true);
 		c_enableGripButtonToGrap = ini.GetBoolValue("Fallout4VRBody", "EnableGripButton", true);
