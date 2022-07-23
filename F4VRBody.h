@@ -77,9 +77,9 @@ namespace F4VRBody {
 			debugSphere = nullptr;
 		}
 
-		BoneSphere(float a_radius, NiNode* a_bone, NiPoint3 a_offset) : radius(a_radius), bone(a_bone), offset(a_offset) { 
-			stickyRight = false; 
-			stickyLeft = false; 
+		BoneSphere(float a_radius, NiNode* a_bone, NiPoint3 a_offset) : radius(a_radius), bone(a_bone), offset(a_offset) {
+			stickyRight = false;
+			stickyLeft = false;
 			turnOnDebugSpheres = false;
 			debugSphere = nullptr;
 		}
@@ -101,7 +101,7 @@ namespace F4VRBody {
 
 
 	NiNode* loadNifFromFile(char* path);
-		
+
 	bool loadConfig();
 
 	void update();

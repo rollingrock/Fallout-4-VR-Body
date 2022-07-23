@@ -132,7 +132,7 @@ namespace F4VRBody {
 
 	const char* boneSphereEventName = "OnBoneSphereEvent";
 	RegistrationSetHolder<NullParameters>      g_boneSphereEventRegs;
-	
+
 	std::map<UInt32, BoneSphere*> boneSphereRegisteredObjects;
 	UInt32 nextBoneSphereHandle;
 	UInt32 curDevice;
@@ -182,7 +182,7 @@ namespace F4VRBody {
 		c_enableGripButtonToLetGo = ini.GetBoolValue("Fallout4VRBody", "EnableGripButtonToLetGo", true);
 		c_onePressGripButton = ini.GetBoolValue("Fallout4VRBody", "EnableGripButtonOnePress", true);
 
-		
+
 		//Smooth Movement
 		c_disableSmoothMovement            = ini.GetBoolValue("SmoothMovementVR", "DisableSmoothMovement");
 		smoothingAmount                    = (float) ini.GetDoubleValue("SmoothMovementVR", "SmoothAmount", 15.0);
@@ -210,7 +210,7 @@ namespace F4VRBody {
 
 
 	// Bone sphere detection
-	
+
 	void detectBoneSphere() {
 
 		if ((*g_player)->firstPersonSkeleton == nullptr) {
@@ -620,7 +620,7 @@ namespace F4VRBody {
 		if (c_verbose) { _MESSAGE("Set Knee Posture"); }
 		playerSkelly->setKneePos();
 		if (c_verbose) { _MESSAGE("Set Walk"); }
-		
+
 		if (!c_armsOnly) {
 			playerSkelly->walk();
 		}
@@ -693,7 +693,7 @@ namespace F4VRBody {
 		return;
 	}
 
-	
+
 	// Papyrus Native Funcs
 
 	void saveStates(StaticFunctionTag* base) {
@@ -858,7 +858,7 @@ namespace F4VRBody {
 
 		c_showPAHUD = !c_showPAHUD;
 	}
-	
+
 	void toggleHeadVis(StaticFunctionTag* base) {
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
@@ -918,7 +918,7 @@ namespace F4VRBody {
 	}
 
 
-	void moveCameraUp(StaticFunctionTag* base){ 
+	void moveCameraUp(StaticFunctionTag* base){
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
@@ -927,7 +927,7 @@ namespace F4VRBody {
 		c_cameraHeight += 2.0f;
 	}
 
-	void moveCameraDown(StaticFunctionTag* base){ 
+	void moveCameraDown(StaticFunctionTag* base){
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
@@ -936,7 +936,7 @@ namespace F4VRBody {
 		c_cameraHeight -= 2.0f;
 	}
 
-	void makeTaller(StaticFunctionTag* base){ 
+	void makeTaller(StaticFunctionTag* base){
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
@@ -945,7 +945,7 @@ namespace F4VRBody {
 		c_playerHeight += 2.0f;
 	}
 
-	void makeShorter(StaticFunctionTag* base){ 
+	void makeShorter(StaticFunctionTag* base){
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
@@ -954,7 +954,7 @@ namespace F4VRBody {
 		c_playerHeight -= 2.0f;
 	}
 
-	void moveUp(StaticFunctionTag* base){ 
+	void moveUp(StaticFunctionTag* base){
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
@@ -963,7 +963,7 @@ namespace F4VRBody {
 		c_playerOffset_up += 1.0f;
 	}
 
-	void moveDown(StaticFunctionTag* base){ 
+	void moveDown(StaticFunctionTag* base){
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
@@ -972,7 +972,7 @@ namespace F4VRBody {
 		c_playerOffset_up -= 1.0f;
 	}
 
-	void moveForward(StaticFunctionTag* base){ 
+	void moveForward(StaticFunctionTag* base){
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
@@ -981,7 +981,7 @@ namespace F4VRBody {
 		c_playerOffset_forward += 1.0f;
 	}
 
-	void moveBackward(StaticFunctionTag* base){ 
+	void moveBackward(StaticFunctionTag* base){
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
@@ -990,7 +990,7 @@ namespace F4VRBody {
 		c_playerOffset_forward -= 1.0f;
 	}
 
-	void increaseScale(StaticFunctionTag* base){ 
+	void increaseScale(StaticFunctionTag* base){
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
@@ -1001,7 +1001,7 @@ namespace F4VRBody {
 		set->SetDouble(c_fVrScale);
 	}
 
-	void decreaseScale(StaticFunctionTag* base){ 
+	void decreaseScale(StaticFunctionTag* base){
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
@@ -1019,7 +1019,7 @@ namespace F4VRBody {
 	void handUiXDown(StaticFunctionTag* base) {
 		c_handUI_X -= 1.0f;
 	}
-	
+
 	void handUiYUp(StaticFunctionTag* base) {
 		c_handUI_Y += 1.0f;
 	}
@@ -1062,7 +1062,7 @@ namespace F4VRBody {
 		if (radius == 0.0) {
 			return 0;
 		}
-		
+
 		if (pos.Length() != 3) {
 			return 0;
 		}
@@ -1096,7 +1096,7 @@ namespace F4VRBody {
 		pos.Get(&(offsetVec.y), 1);
 		pos.Get(&(offsetVec.z), 2);
 
-		
+
 		BoneSphere* sphere = new BoneSphere(radius, boneNode, offsetVec);
 		UInt32 handle = nextBoneSphereHandle++;
 
@@ -1108,7 +1108,7 @@ namespace F4VRBody {
 	void DestroyBoneSphere(StaticFunctionTag* base, UInt32 handle) {
 		if (boneSphereRegisteredObjects.count(handle)) {
 			NiNode* sphere = boneSphereRegisteredObjects[handle]->debugSphere;
-			
+
 			if (sphere) {
 				sphere->flags |= 0x1;
 				sphere->m_localTransform.scale = 0;

@@ -2664,7 +2664,7 @@ namespace F4VRBody
 					if (lookup.has_value()) {
 						_useCustomWeaponOffset = true;
 						_customTransform = lookup.value();
-						_MESSAGE("Found weaponOffset for %s pos (%f, %f, %f) scale %f: powerArmor: %d", 
+						_MESSAGE("Found weaponOffset for %s pos (%f, %f, %f) scale %f: powerArmor: %d",
 							weapname, _customTransform.pos.x, _customTransform.pos.y, _customTransform.pos.z, _customTransform.scale, _inPowerArmor);
 					}else { // offsets should already be applied if not already saved
 						NiPoint3 offset = NiPoint3(-0.94, 0, 0); // apply static VR offset
@@ -2835,7 +2835,7 @@ namespace F4VRBody
 							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor);
 							writeOffsetJson();
 						}
-						else if (_useCustomWeaponOffset 
+						else if (_useCustomWeaponOffset
 							&& !(_hasLetGoRepositionButton || _repositionButtonHolding) // do not allow defaults when handling reposition
 							&& reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
 							_MESSAGE("Resetting grip to defaults for %s: powerArmor: %d", weapname, _inPowerArmor);
