@@ -2740,7 +2740,8 @@ namespace F4VRBody
 					else{
 						if (!_repositionModeSwitched && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
 							_repositionMode = static_cast<repositionMode>((_repositionMode + 1) % (repositionMode::total + 1));
-							vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
+							if (vrhook)
+								vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
 							_repositionModeSwitched = true;
 							_MESSAGE("Reposition Mode Switch: weapon %s %d ms mode: %d", weapname, _pressLength, _repositionMode);
 						}
@@ -2749,6 +2750,8 @@ namespace F4VRBody
 						}
 						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
 						if (!_inRepositionMode && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
+							if (vrhook)
+								vrhook->StartHaptics(c_leftHandedMode? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
 							_inRepositionMode = true;
 						}
 						else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
