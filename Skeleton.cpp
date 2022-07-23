@@ -2688,7 +2688,7 @@ namespace F4VRBody
 
 				// handle offhand gripping
 
-				static NiPoint3 fingerBonePos = NiPoint3(0, 0, 0);
+				static NiPoint3 _offhandFingerBonePos = NiPoint3(0, 0, 0);
 				static NiPoint3 bodyPos = NiPoint3(0, 0, 0);
 				static float avgHandV[3] = {0.0f, 0.0f, 0.0f};
 				static int fc = 0;
@@ -2699,7 +2699,7 @@ namespace F4VRBody
 
 					float handFrameMovement;
 
-					handFrameMovement = vec3_len(rt->transforms[boneTreeMap[offHandBone]].world.pos - fingerBonePos);
+					handFrameMovement = vec3_len(rt->transforms[boneTreeMap[offHandBone]].world.pos - _offhandFingerBonePos);
 
 					float bodyFrameMovement = vec3_len(_curPos - bodyPos);
 					avgHandV[fc] = abs(handFrameMovement - bodyFrameMovement);
@@ -2738,24 +2738,23 @@ namespace F4VRBody
 						}
 					}
 					else{
-						if (!_repositionModeSwitched && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID)) {
+						if (!_repositionModeSwitched && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
 							_repositionMode = static_cast<repositionMode>((_repositionMode + 1) % (repositionMode::total + 1));
 							vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
 							_repositionModeSwitched = true;
 							_MESSAGE("Reposition Mode Switch: weapon %s %d ms mode: %d", weapname, _pressLength, _repositionMode);
 						}
-						else if (_repositionModeSwitched && !(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID))) {
+						else if (_repositionModeSwitched && !(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID))) {
 							_repositionModeSwitched = false;
 						}
 						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
-						if (!_repositionHapticFired && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
-							vrhook->StartHaptics(c_leftHandedMode? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
-							_repositionHapticFired = true;
+						if (!_inRepositionMode && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
+							_inRepositionMode = true;
 						}
 						else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
 							_repositionButtonHolding = false;
 							_hasLetGoRepositionButton = true;
-							_repositionHapticFired = false;
+							_inRepositionMode = false;
 							_endFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos - _curPos;
 							_MESSAGE("Reposition Button Hold stop: weapon %s %d ms mode: %d", weapname, _pressLength, _repositionMode);
 						}
@@ -2779,11 +2778,12 @@ namespace F4VRBody
 						rot = _aimAdjust.getRot();
 						weap->m_localTransform.rot = rot.multiply43Left(weap->m_localTransform.rot);
 
-						fingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
+						_offhandFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
+						_offhandPos = _offhandFingerBonePos;
 						bodyPos = _curPos;
 						if (_repositionButtonHolding) {
 							// this is for a preview of the move. The preview happens one frame before we detect the release so must be processed separately.
-							auto end = fingerBonePos - _curPos;
+							auto end = _offhandFingerBonePos - _curPos;
 							auto change = vec3_len(end) > vec3_len(_startFingerBonePos)? vec3_len(end - _startFingerBonePos) : -vec3_len(end - _startFingerBonePos);
 							if (change != 0) {
 								switch (_repositionMode) {
@@ -2834,7 +2834,7 @@ namespace F4VRBody
 						}
 						else if (_useCustomWeaponOffset 
 							&& !(_hasLetGoRepositionButton || _repositionButtonHolding) // do not allow defaults when handling reposition
-							&& reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID)) {
+							&& reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
 							_MESSAGE("Resetting grip to defaults for %s: powerArmor: %d", weapname, _inPowerArmor);
 							_useCustomWeaponOffset = false;
 							g_weaponOffsets->deleteOffset(weapname, _inPowerArmor);
@@ -2843,7 +2843,8 @@ namespace F4VRBody
 					}
 				}
 				else {
-					fingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
+					_offhandFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
+					_offhandPos = _offhandFingerBonePos;
 					bodyPos = _curPos;
 
 					if (fc != 0) {

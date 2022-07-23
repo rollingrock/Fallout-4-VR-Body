@@ -329,7 +329,7 @@ namespace F4VRBody
 
 		bool _offHandGripping;
 		bool _repositionButtonHolding = false;
-		bool _repositionHapticFired = false;
+		bool _inRepositionMode = false;
 		bool _repositionModeSwitched = false;
 		repositionMode _repositionMode = repositionMode::x;
 		uint64_t _repositionButtonHoldStart = 0;
@@ -340,5 +340,6 @@ namespace F4VRBody
 		std::string _lastWeapon = "";
 		Quaternion _aimAdjust;
 		uint64_t _lastLookingAtPip = 0;
+		NiPoint3 _offhandPos {0, 0, 0};
 	};
 }
