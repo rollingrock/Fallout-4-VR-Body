@@ -50,15 +50,18 @@ namespace F4VRBody {
 	extern bool c_pipBoyAllowMovementNotLooking;
 	extern int c_pipBoyButtonArm;
 	extern int c_pipBoyButtonID;
+	extern int c_pipBoyButtonOffArm;
+	extern int c_pipBoyButtonOffID;
 	extern int c_gripButtonID;
 	extern int c_holdDelay;
 	extern int c_pipBoyOffDelay;
 	extern int c_repositionButtonID;
-	extern int c_defaultPositionButtonID;
+	extern int c_offHandActivateButtonID;
 	extern bool c_enableOffHandGripping;
 	extern bool c_enableGripButtonToGrap;
 	extern bool c_enableGripButtonToLetGo;
 	extern bool c_onePressGripButton;
+	extern float c_scopeAdjustDistance;
 
 	class BoneSphere {
 	public:
@@ -74,9 +77,9 @@ namespace F4VRBody {
 			debugSphere = nullptr;
 		}
 
-		BoneSphere(float a_radius, NiNode* a_bone, NiPoint3 a_offset) : radius(a_radius), bone(a_bone), offset(a_offset) { 
-			stickyRight = false; 
-			stickyLeft = false; 
+		BoneSphere(float a_radius, NiNode* a_bone, NiPoint3 a_offset) : radius(a_radius), bone(a_bone), offset(a_offset) {
+			stickyRight = false;
+			stickyLeft = false;
 			turnOnDebugSpheres = false;
 			debugSphere = nullptr;
 		}
@@ -98,7 +101,7 @@ namespace F4VRBody {
 
 
 	NiNode* loadNifFromFile(char* path);
-		
+
 	bool loadConfig();
 
 	void update();

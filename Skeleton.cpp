@@ -1874,31 +1874,36 @@ namespace F4VRBody
 			return;
 		}
 
-		uint64_t reg = (c_pipBoyButtonArm > 0) ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
-		if ((reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID)) && !_stickypip) {
+		const auto pipOnButtonPressed = (c_pipBoyButtonArm ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID);
+		const auto pipOffButtonPressed = (c_pipBoyButtonOffArm ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonOffID);
+
+		// check off button
+		if (pipOffButtonPressed && !_stickypip) {
 			if (_pipboyStatus) {
 				_pipboyStatus = false;
 				turnPipBoyOff();
 				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				_MESSAGE("Disabling Pipboy with button");
+				_stickypip = true;
 			}
-			else if (c_pipBoyButtonMode) {
-				//turning on the pip is gated by buttonmode
-				_pipboyStatus = true;
-				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
-				turnPipBoyOn();
-				_MESSAGE("Enabling Pipboy with button");
-			}
-			else
-				return;
-			_stickypip = true;
 		}
-		else if (c_pipBoyButtonMode && !(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID))) {
+		else if (c_pipBoyButtonMode && !pipOffButtonPressed) {
+			// stickypip is a guard so we don't constantly toggle the pip boy every frame
 			_stickypip = false;
 		}
-		else if (c_pipBoyButtonMode)
-			return;
-
+		// check on button
+		if (c_pipBoyButtonMode && pipOnButtonPressed && !_stickypip) {
+			//turning on the pip is gated by buttonmode
+			_pipboyStatus = true;
+			_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+			turnPipBoyOn();
+			_MESSAGE("Enabling Pipboy with button");
+			_stickypip = true;
+		}
+		else if (c_pipBoyButtonMode && !pipOnButtonPressed) {
+			// stickypip is a guard so we don't constantly toggle the pip boy every frame
+			_stickypip = false;
+		}
 
 		if (!isLookingAtPipBoy()) {
 			vr::VRControllerAxis_t axis_state = (c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
@@ -1921,6 +1926,9 @@ namespace F4VRBody
 		{
 			_lastLookingAtPip = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 		}
+
+		if (c_pipBoyButtonMode) // If c_pipBoyButtonMode, don't check touch
+			return;
 
 		float distance = vec3_len(finger - pipboy->m_worldTransform.pos);
 
@@ -2656,7 +2664,7 @@ namespace F4VRBody
 					if (lookup.has_value()) {
 						_useCustomWeaponOffset = true;
 						_customTransform = lookup.value();
-						_MESSAGE("Found weaponOffset for %s pos (%f, %f, %f) scale %f: powerArmor: %d", 
+						_MESSAGE("Found weaponOffset for %s pos (%f, %f, %f) scale %f: powerArmor: %d",
 							weapname, _customTransform.pos.x, _customTransform.pos.y, _customTransform.pos.z, _customTransform.scale, _inPowerArmor);
 					}else { // offsets should already be applied if not already saved
 						NiPoint3 offset = NiPoint3(-0.94, 0, 0); // apply static VR offset
@@ -2680,7 +2688,7 @@ namespace F4VRBody
 
 				// handle offhand gripping
 
-				static NiPoint3 fingerBonePos = NiPoint3(0, 0, 0);
+				static NiPoint3 _offhandFingerBonePos = NiPoint3(0, 0, 0);
 				static NiPoint3 bodyPos = NiPoint3(0, 0, 0);
 				static float avgHandV[3] = {0.0f, 0.0f, 0.0f};
 				static int fc = 0;
@@ -2691,7 +2699,7 @@ namespace F4VRBody
 
 					float handFrameMovement;
 
-					handFrameMovement = vec3_len(rt->transforms[boneTreeMap[offHandBone]].world.pos - fingerBonePos);
+					handFrameMovement = vec3_len(rt->transforms[boneTreeMap[offHandBone]].world.pos - _offhandFingerBonePos);
 
 					float bodyFrameMovement = vec3_len(_curPos - bodyPos);
 					avgHandV[fc] = abs(handFrameMovement - bodyFrameMovement);
@@ -2730,24 +2738,26 @@ namespace F4VRBody
 						}
 					}
 					else{
-						if (!_repositionModeSwitched && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID)) {
+						if (!_repositionModeSwitched && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
 							_repositionMode = static_cast<repositionMode>((_repositionMode + 1) % (repositionMode::total + 1));
-							vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
+							if (vrhook)
+								vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
 							_repositionModeSwitched = true;
 							_MESSAGE("Reposition Mode Switch: weapon %s %d ms mode: %d", weapname, _pressLength, _repositionMode);
 						}
-						else if (_repositionModeSwitched && !(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID))) {
+						else if (_repositionModeSwitched && !(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID))) {
 							_repositionModeSwitched = false;
 						}
 						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
-						if (!_repositionHapticFired && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
-							vrhook->StartHaptics(c_leftHandedMode? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
-							_repositionHapticFired = true;
+						if (!_inRepositionMode && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
+							if (vrhook)
+								vrhook->StartHaptics(c_leftHandedMode? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
+							_inRepositionMode = true;
 						}
 						else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
 							_repositionButtonHolding = false;
 							_hasLetGoRepositionButton = true;
-							_repositionHapticFired = false;
+							_inRepositionMode = false;
 							_endFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos - _curPos;
 							_MESSAGE("Reposition Button Hold stop: weapon %s %d ms mode: %d", weapname, _pressLength, _repositionMode);
 						}
@@ -2771,11 +2781,12 @@ namespace F4VRBody
 						rot = _aimAdjust.getRot();
 						weap->m_localTransform.rot = rot.multiply43Left(weap->m_localTransform.rot);
 
-						fingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
+						_offhandFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
+						_offhandPos = _offhandFingerBonePos;
 						bodyPos = _curPos;
 						if (_repositionButtonHolding) {
 							// this is for a preview of the move. The preview happens one frame before we detect the release so must be processed separately.
-							auto end = fingerBonePos - _curPos;
+							auto end = _offhandFingerBonePos - _curPos;
 							auto change = vec3_len(end) > vec3_len(_startFingerBonePos)? vec3_len(end - _startFingerBonePos) : -vec3_len(end - _startFingerBonePos);
 							if (change != 0) {
 								switch (_repositionMode) {
@@ -2824,9 +2835,9 @@ namespace F4VRBody
 							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor);
 							writeOffsetJson();
 						}
-						else if (_useCustomWeaponOffset 
+						else if (_useCustomWeaponOffset
 							&& !(_hasLetGoRepositionButton || _repositionButtonHolding) // do not allow defaults when handling reposition
-							&& reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_defaultPositionButtonID)) {
+							&& reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
 							_MESSAGE("Resetting grip to defaults for %s: powerArmor: %d", weapname, _inPowerArmor);
 							_useCustomWeaponOffset = false;
 							g_weaponOffsets->deleteOffset(weapname, _inPowerArmor);
@@ -2835,7 +2846,8 @@ namespace F4VRBody
 					}
 				}
 				else {
-					fingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
+					_offhandFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
+					_offhandPos = _offhandFingerBonePos;
 					bodyPos = _curPos;
 
 					if (fc != 0) {
@@ -2892,6 +2904,84 @@ namespace F4VRBody
 		else {
 			_offHandGripping = false;
 		}
+	}
+
+	/* Handle off-hand scope*/
+	void Skeleton::offHandToScope() {
+		NiNode* weap = getNode("Weapon", (*g_player)->firstPersonSkeleton);
+		if (weap && (*g_player)->actorState.IsWeaponDrawn() && c_isLookingThroughScope) {
+			static BSFixedString reticleNodeName = "ReticleNode";
+			NiAVObject* scopeRet = weap->GetObjectByName(&reticleNodeName);
+			const std::string scopeName = scopeRet->m_name;
+			auto reticlePos = scopeRet->GetAsNiNode()->m_worldTransform.pos;
+			auto offset = vec3_len(reticlePos - _offhandPos);
+			uint64_t handInput = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
+			uint64_t _pressLength = 0;
+			const auto handNearScope = (offset < c_scopeAdjustDistance); // hand is close to scope, enable scope specific commands
+
+			// zoomtoggling
+			if (handNearScope && !_inRepositionMode)
+				if (!_zoomModeButtonHeld && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
+					_zoomModeButtonHeld = true;
+					_MESSAGE("Zoom Toggle started");
+				}
+				else if (_zoomModeButtonHeld && !(handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID))) {
+					_zoomModeButtonHeld = false;
+					_MESSAGE("Zoom Toggle pressed; sending message to switch zoom state");
+					g_messaging->Dispatch(g_pluginHandle, 16, nullptr, 0, "FO4VRBETTERSCOPES");
+					if (vrhook)
+						vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
+				}
+			if (handNearScope && !_repositionButtonHolding && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID)) { // repositioning
+				_repositionButtonHolding = true;
+				_hasLetGoRepositionButton = false;
+				_repositionButtonHoldStart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+				_MESSAGE("Reposition Button Hold start: scope %s", scopeName);
+			}
+			else if (_repositionButtonHolding && !(handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
+				_repositionButtonHolding = false;
+				_hasLetGoRepositionButton = true;
+				_inRepositionMode = false;
+				msgData.x = 0.f;
+				msgData.y = 1; // pass save command
+				msgData.z = 0.f;
+				g_messaging->Dispatch(g_pluginHandle, 17, (void*)&msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+				_MESSAGE("Reposition Button Hold stop: scope %s %d ms", scopeName, _pressLength);
+			}
+			_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
+			if (!_inRepositionMode && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
+				// enter reposition mode
+				if (vrhook)
+					vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
+				_inRepositionMode = true;
+			}
+			else { // in reposition mode
+				vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
+				if (!_repositionModeSwitched && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
+					if (vrhook)
+						vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
+					_repositionModeSwitched = true;
+					msgData.x = 0.f;
+					msgData.y = 0.f;
+					msgData.z = 0.f;
+					g_messaging->Dispatch(g_pluginHandle, 17, (void*)&msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+					_MESSAGE("Reposition Mode Reset: scope %s %d ms", scopeName, _pressLength);
+				}
+				else if (_repositionModeSwitched && !(handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID))) {
+					_repositionModeSwitched = false;
+				}
+				// get axis from non-movement joystick
+				else if (axis_state.x != 0 || axis_state.y != 0) { // axis_state y is up and down, which corresponds to reticle z axis
+					msgData.x = axis_state.x;
+					msgData.y = 0.f;
+					msgData.z = axis_state.y;
+					g_messaging->Dispatch(g_pluginHandle, 17, (void*)&msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+					_MESSAGE("Moving scope reticle. input: (%f, %f)", axis_state.x, axis_state.y);
+				}
+			}
+		}
+		else
+			_zoomModeButtonHeld = false;
 	}
 
 	void Skeleton::moveBack() {
