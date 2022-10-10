@@ -2651,7 +2651,12 @@ namespace F4VRBody
 
 		if ((*g_player)->actorState.IsWeaponDrawn()) {
 			NiNode* weap = getNode("Weapon", (*g_player)->firstPersonSkeleton);
-			std::string weapname = (*g_player)->middleProcess->unk08->equipData->item->GetFullName();
+
+			std::string weapname("");
+			if ((*g_player)->middleProcess->unk08->equipData) {
+					weapname = (*g_player)->middleProcess->unk08->equipData->item->GetFullName();
+			}
+
 			if (weap) {
 				if (!c_staticGripping) {
 					weap->m_localTransform = _weapSave;

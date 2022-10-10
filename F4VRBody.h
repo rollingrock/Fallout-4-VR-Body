@@ -21,6 +21,22 @@ extern PluginHandle g_pluginHandle;
 extern F4SEPapyrusInterface* g_papyrus;
 extern F4SEMessagingInterface* g_messaging;
 
+class BSAnimationManager;
+
+template <class T>
+class StackPtr  {
+public:
+	StackPtr() { p = nullptr; }
+
+	T p;
+};
+
+typedef void(*_AIProcess_getAnimationManager)(uint64_t aiProcess, StackPtr<BSAnimationManager*> &manager);
+extern RelocAddr<_AIProcess_getAnimationManager> AIProcess_getAnimationManager;
+
+typedef void(*_BSAnimationManager_setActiveGraph)(BSAnimationManager* manager, int graph);
+extern RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiveGraph;
+
 namespace F4VRBody {
 
 	extern float c_playerHeight;

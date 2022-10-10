@@ -30,6 +30,9 @@ int disableInteriorSmoothingHorizontal = 1;
 
 RelocPtr<bool> iniLeftHandedMode(0x37d5e48);      // location of bLeftHandedMode:VR ini setting
 
+RelocAddr<_AIProcess_getAnimationManager> AIProcess_getAnimationManager(0xec5400);
+RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiveGraph(0x1690240);
+
 OpenVRHookManagerAPI* vrhook;
 
 namespace F4VRBody {
@@ -540,6 +543,10 @@ namespace F4VRBody {
 				return;
 			}
 
+		//	StackPtr<BSAnimationManager*> manager;
+
+			//AIProcess_getAnimationManager((uint64_t)(*g_player)->middleProcess, manager);
+			//BSAnimationManager_setActiveGraph(manager.p, 0);
 			firstTime = false;
 			return;
 		}
@@ -553,7 +560,9 @@ namespace F4VRBody {
 			return;
 		}
 
+
 		if (playerSkelly->getRoot() != (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode()) {
+
 			auto node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
 			if (!node) {
 				return;
@@ -568,7 +577,7 @@ namespace F4VRBody {
 			_MESSAGE("initialized for real");
 			return;
 		}
-
+		
 		// do stuff now
 
 		if (c_verbose) { _MESSAGE("Start of Frame"); }
