@@ -2,6 +2,8 @@
 #include "Skeleton.h"
 #include "HandPose.h"
 #include "weaponOffset.h"
+#include "utils.h"
+#include "MuzzleFlash.h"
 
 #include "api/PapyrusVRAPI.h"
 #include "api/VRManagerAPI.h"
@@ -691,6 +693,18 @@ namespace F4VRBody {
 		playerSkelly->offHandToBarrel();
 		playerSkelly->offHandToScope();
 	//	playerSkelly->debug();
+
+	//	AIProcess_ClearMuzzleFlashes((*g_player)->middleProcess);
+
+
+		if ((*g_player)->middleProcess->unk08->equipData->equippedData) {
+			MuzzleFlash* muzzle = reinterpret_cast<MuzzleFlash*>((*g_player)->middleProcess->unk08->equipData->equippedData->unk28);
+			if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
+				muzzle->fireNode->m_localTransform = muzzle->projectileNode->m_worldTransform;
+			}
+		}
+
+
 	}
 
 

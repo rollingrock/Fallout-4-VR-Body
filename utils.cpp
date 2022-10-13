@@ -5,6 +5,9 @@
 
 namespace F4VRBody {
 
+	RelocAddr<_AIProcess_ClearMuzzleFlashes> AIProcess_ClearMuzzleFlashes(0xecc710);
+	RelocAddr<_AIProcess_CreateMuzzleFlash> AIProcess_CreateMuzzleFlash(0xecc570);
+
 	float vec3_len(NiPoint3 v1) {
 
 		return sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);

@@ -7,35 +7,41 @@
 
 namespace F4VRBody {
 
-	 float vec3_len(NiPoint3 v1);
-	 NiPoint3 vec3_norm(NiPoint3 v1);
+	typedef void* (*_AIProcess_ClearMuzzleFlashes)(Actor::MiddleProcess* middleProcess);
+	extern RelocAddr<_AIProcess_ClearMuzzleFlashes> AIProcess_ClearMuzzleFlashes;
 
-	 float vec3_dot(NiPoint3 v1, NiPoint3 v2);
-	 
-	 NiPoint3 vec3_cross(NiPoint3 v1, NiPoint3 v2);
+	typedef void* (*_AIProcess_CreateMuzzleFlash)(Actor::MiddleProcess* middleProcess, uint64_t projectile, Actor* actor);
+	extern RelocAddr<_AIProcess_CreateMuzzleFlash> AIProcess_CreateMuzzleFlash;
 
-	 float vec3_det(NiPoint3 v1, NiPoint3 v2, NiPoint3 n);
+	float vec3_len(NiPoint3 v1);
+	NiPoint3 vec3_norm(NiPoint3 v1);
 
-	 float degrees_to_rads(float deg);
-	 float rads_to_degrees(float deg);
+	float vec3_dot(NiPoint3 v1, NiPoint3 v2);
 
-	 NiPoint3 rotateXY(NiPoint3 vec, float angle);
-	 NiPoint3 pitchVec(NiPoint3 vec, float angle);
+	NiPoint3 vec3_cross(NiPoint3 v1, NiPoint3 v2);
 
-	 NiMatrix43 getRotationAxisAngle(NiPoint3 axis, float theta);
+	float vec3_det(NiPoint3 v1, NiPoint3 v2, NiPoint3 n);
 
-	 void updateTransforms(NiNode* node);
+	float degrees_to_rads(float deg);
+	float rads_to_degrees(float deg);
 
-	 void updateTransformsDown(NiNode* nde, bool updateSelf);
+	NiPoint3 rotateXY(NiPoint3 vec, float angle);
+	NiPoint3 pitchVec(NiPoint3 vec, float angle);
 
-	 void toggleVis(NiNode* nde, bool hide, bool updateSelf);
+	NiMatrix43 getRotationAxisAngle(NiPoint3 axis, float theta);
 
-	 void turnPipBoyOn();
-	 void turnPipBoyOff();
-	 
-	 bool getLeftHandedMode();
+	void updateTransforms(NiNode* node);
 
-	 NiNode* getChildNode(const char* nodeName, NiNode* nde);
-	 NiNode* get1stChildNode(const char* nodeName, NiNode* nde);
+	void updateTransformsDown(NiNode* nde, bool updateSelf);
+
+	void toggleVis(NiNode* nde, bool hide, bool updateSelf);
+
+	void turnPipBoyOn();
+	void turnPipBoyOff();
+
+	bool getLeftHandedMode();
+
+	NiNode* getChildNode(const char* nodeName, NiNode* nde);
+	NiNode* get1stChildNode(const char* nodeName, NiNode* nde);
 
 }

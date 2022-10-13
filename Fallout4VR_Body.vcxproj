@@ -196,6 +196,7 @@ copy "$(TargetPath)" "H:\MO2\fo4vr\mods\FRIK\F4SE\Plugins" /Y</Command>
     <ClInclude Include="include\version.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="MenuChecker.h" />
+    <ClInclude Include="MuzzleFlash.h" />
     <ClInclude Include="NiCloneProcess.h" />
     <ClInclude Include="openvr\openvr.h" />
     <ClInclude Include="patches.h" />
