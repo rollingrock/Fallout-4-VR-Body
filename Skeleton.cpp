@@ -2931,6 +2931,7 @@ namespace F4VRBody
 					if (vrhook)
 						vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
 				}
+			// detect scope reposition buton being held near scope. Only has to start near scope.
 			if (handNearScope && !_repositionButtonHolding && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID)) { // repositioning
 				_repositionButtonHolding = true;
 				_hasLetGoRepositionButton = false;
@@ -2938,6 +2939,7 @@ namespace F4VRBody
 				_MESSAGE("Reposition Button Hold start: scope %s", scopeName);
 			}
 			else if (_repositionButtonHolding && !(handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
+			// was in scope reposition mode and just released button, time to save
 				_repositionButtonHolding = false;
 				_hasLetGoRepositionButton = true;
 				_inRepositionMode = false;
@@ -2948,13 +2950,14 @@ namespace F4VRBody
 				_MESSAGE("Reposition Button Hold stop: scope %s %d ms", scopeName, _pressLength);
 			}
 			_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
+			// repositioning does not require hand near scope
 			if (!_inRepositionMode && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
 				// enter reposition mode
 				if (vrhook)
 					vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
 				_inRepositionMode = true;
 			}
-			else { // in reposition mode
+			else if (_inRepositionMode) { // in reposition mode for better scopes
 				vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
 				if (!_repositionModeSwitched && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
 					if (vrhook)
