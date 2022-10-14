@@ -2809,6 +2809,8 @@ namespace F4VRBody
 								weap->m_localTransform.pos.y = _offsetPreview.y; // y, z are cumulative
 								weap->m_localTransform.pos.z = _offsetPreview.z;
 								break;
+							case resetToDefault:
+								break;
 							}
 						}
 						//_hasLetGoRepositionButton is always one frame after _repositionButtonHolding
@@ -2827,19 +2829,17 @@ namespace F4VRBody
 								weap->m_localTransform.pos.y = _offsetPreview.y; // y, z are cumulative
 								weap->m_localTransform.pos.z = _offsetPreview.z;
 								_customTransform.pos = weap->m_localTransform.pos;
+								_useCustomWeaponOffset = true;
+								g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor);
+								break;
+							case resetToDefault:
+								_MESSAGE("Resetting grip to defaults for %s: powerArmor: %d", weapname, _inPowerArmor);
+								_useCustomWeaponOffset = false;
+								g_weaponOffsets->deleteOffset(weapname, _inPowerArmor);
+								_repositionMode = weapon;
 								break;
 							}
 							_hasLetGoRepositionButton = false;
-							_useCustomWeaponOffset = true;
-							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor);
-							writeOffsetJson();
-						}
-						else if (_useCustomWeaponOffset
-							&& !(_hasLetGoRepositionButton || _repositionButtonHolding) // do not allow defaults when handling reposition
-							&& reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
-							_MESSAGE("Resetting grip to defaults for %s: powerArmor: %d", weapname, _inPowerArmor);
-							_useCustomWeaponOffset = false;
-							g_weaponOffsets->deleteOffset(weapname, _inPowerArmor);
 							writeOffsetJson();
 						}
 					}

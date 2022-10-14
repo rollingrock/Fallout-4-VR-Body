@@ -255,8 +255,9 @@ namespace F4VRBody
 		float getBodyPitch();
 
 		enum repositionMode {
-			weapon = 0, // weapon
-			total = weapon
+			weapon = 0, // move weapon
+			resetToDefault = 1, // reset to default and exit reposition mode
+			total = resetToDefault
 		};
 
 	private:
