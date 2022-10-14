@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -79,13 +79,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>lib_debug;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
-    <IncludePath>C:\Users\rolli\source\repos\f4sevr\src\f4sevr;C:\Users\rolli\source\repos\f4sevr\src;include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\f4sevr\src\f4sevr;$(SolutionDir)..\f4sevr\src;include;$(IncludePath)</IncludePath>
     <TargetName>FRIK</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
-    <IncludePath>C:\Users\rolli\source\repos\f4sevr\src\f4sevr;C:\Users\rolli\source\repos\f4sevr\src;include;$(IncludePath) </IncludePath>
+    <IncludePath>$(SolutionDir)..\f4sevr\src\f4sevr;$(SolutionDir)..\f4sevr\src;include;$(IncludePath)</IncludePath>
     <TargetName>FRIK</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
