@@ -255,10 +255,8 @@ namespace F4VRBody
 		float getBodyPitch();
 
 		enum repositionMode {
-			x = 0, // down the barrel
-			z, // vertically up and down
-			y, // laterally left and right
-			total = y
+			weapon = 0, // weapon
+			total = weapon
 		};
 
 	private:
@@ -332,10 +330,11 @@ namespace F4VRBody
 		bool _repositionButtonHolding = false;
 		bool _inRepositionMode = false;
 		bool _repositionModeSwitched = false;
-		repositionMode _repositionMode = repositionMode::x;
+		repositionMode _repositionMode = repositionMode::weapon;
 		uint64_t _repositionButtonHoldStart = 0;
 		NiPoint3 _startFingerBonePos = NiPoint3(0, 0, 0);
 		NiPoint3 _endFingerBonePos = NiPoint3(0, 0, 0);
+		NiPoint3 _offsetPreview = NiPoint3(0, 0, 0);
 		bool _hasLetGoGripButton;
 		bool _hasLetGoRepositionButton = false;
 		bool _hasLetGoZoomModeButton = false;

@@ -2739,6 +2739,7 @@ namespace F4VRBody
 							_hasLetGoRepositionButton = false;
 							_repositionButtonHoldStart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 							_startFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos - _curPos;
+							_offsetPreview = weap->m_localTransform.pos;
 							_MESSAGE("Reposition Button Hold start: weapon %s mode: %d", weapname, _repositionMode);
 						}
 					}
@@ -2789,24 +2790,25 @@ namespace F4VRBody
 						_offhandFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
 						_offhandPos = _offhandFingerBonePos;
 						bodyPos = _curPos;
+						vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
 						if (_repositionButtonHolding) {
 							// this is for a preview of the move. The preview happens one frame before we detect the release so must be processed separately.
-							auto end = _offhandFingerBonePos - _curPos;
+							auto end = _offhandPos - _curPos;
 							auto change = vec3_len(end) > vec3_len(_startFingerBonePos)? vec3_len(end - _startFingerBonePos) : -vec3_len(end - _startFingerBonePos);
-							if (change != 0) {
-								switch (_repositionMode) {
-								case x:
-									weap->m_localTransform.pos.x += change;
-									_DMESSAGE("Updating X translation for %s by %f to %f", weapname, change, weap->m_localTransform.pos.x);
-									break;
-								case y:
-									weap->m_localTransform.pos.y += change;
-									_DMESSAGE("Updating Y translation for %s by %f to %f", weapname, change, weap->m_localTransform.pos.y);
-									break;
-								case z:
-									weap->m_localTransform.pos.z += change;
-									_DMESSAGE("Updating Z translation for %s by %f to %f", weapname, change, weap->m_localTransform.pos.z);
+							switch (_repositionMode) {
+							case weapon:
+								_offsetPreview.x = change;
+								if (axis_state.x != 0.f || axis_state.y != 0.f) { // axis_state y is up and down, which corresponds to reticle z axis
+									_offsetPreview.y += axis_state.x;
+									_offsetPreview.z -= axis_state.y;
+									_DMESSAGE("Updating weapon to (%f,%f) with analog input: (%f, %f)", _offsetPreview.y, _offsetPreview.z, axis_state.x, axis_state.y);
 								}
+								if (change != 0.f)
+									_DMESSAGE("Previewing translation for %s by %f to %f", weapname, change, weap->m_localTransform.pos.x + _offsetPreview.x);
+								weap->m_localTransform.pos.x += _offsetPreview.x; // x is a distance delta
+								weap->m_localTransform.pos.y = _offsetPreview.y; // y, z are cumulative
+								weap->m_localTransform.pos.z = _offsetPreview.z;
+								break;
 							}
 						}
 						//_hasLetGoRepositionButton is always one frame after _repositionButtonHolding
@@ -2818,22 +2820,14 @@ namespace F4VRBody
 							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor);
 							writeOffsetJson();
 						}else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > c_holdDelay) {
-							auto change = vec3_len(_endFingerBonePos) > vec3_len(_startFingerBonePos) ? vec3_len(_endFingerBonePos - _startFingerBonePos) : -vec3_len(_endFingerBonePos - _startFingerBonePos);
 							switch (_repositionMode) {
-							case x:
-								weap->m_localTransform.pos.x += change;
-								_MESSAGE("Saving X position translation for %s from %f -> %f: powerArmor: %d", weapname, _customTransform.pos.x, weap->m_localTransform.pos.x, _inPowerArmor);
-								_customTransform.pos.x = weap->m_localTransform.pos.x;
+							case weapon:
+								_MESSAGE("Saving position translation for %s from (%f, %f, %f) -> (%f, %f, %f): powerArmor: %d", weapname, weap->m_localTransform.pos.x, weap->m_localTransform.pos.y, weap->m_localTransform.pos.z, _offsetPreview.x, _offsetPreview.y, _offsetPreview.z, _inPowerArmor);
+								weap->m_localTransform.pos.x += _offsetPreview.x; // x is a distance delta
+								weap->m_localTransform.pos.y = _offsetPreview.y; // y, z are cumulative
+								weap->m_localTransform.pos.z = _offsetPreview.z;
+								_customTransform.pos = weap->m_localTransform.pos;
 								break;
-							case y:
-								weap->m_localTransform.pos.y += change;
-								_MESSAGE("Saving Y position translation for %s from %f -> %f: powerArmor: %d", weapname, _customTransform.pos.y, weap->m_localTransform.pos.y, _inPowerArmor);
-								_customTransform.pos.y = weap->m_localTransform.pos.y;
-								break;
-							case z:
-								weap->m_localTransform.pos.z += change;
-								_MESSAGE("Saving Z position translation for %s from %f -> %f: powerArmor: %d", weapname, _customTransform.pos.z, weap->m_localTransform.pos.z, _inPowerArmor);
-								_customTransform.pos.z = weap->m_localTransform.pos.z;
 							}
 							_hasLetGoRepositionButton = false;
 							_useCustomWeaponOffset = true;
