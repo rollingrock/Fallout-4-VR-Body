@@ -208,8 +208,15 @@ namespace F4VRBody
 		// movement
 		void walk();
 
+		enum wandMode {
+			both = 0,
+			mainhandWand,
+			offhandWand,
+		};
 
-		void hideWands();
+		void setWandsVisibility(bool a_show = true, wandMode a_mode = both);
+		void showWands(wandMode a_mode = both);
+		void hideWands(wandMode a_mode = both);
 		void hideWeapon();
 		void swapPipboy();
 		void leftHandedModePipboy();
@@ -227,6 +234,7 @@ namespace F4VRBody
 
 		// utility
 		NiNode* getNode(const char* nodeName, NiNode* nde);
+		void setVisibility(NiAVObject* nde, bool a_show = true); // Change flags to show or hide a node
 		void updateDown(NiNode* nde, bool updateSelf);
 		void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 		void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);

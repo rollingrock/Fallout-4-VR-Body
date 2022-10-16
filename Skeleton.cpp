@@ -569,6 +569,15 @@ namespace F4VRBody
 		return nullptr;
 	}
 
+	void Skeleton::setVisibility(NiAVObject* nde, bool a_show)
+	{
+		if (nde)
+			if (a_show)
+				nde->flags &= 0xfffffffffffffffe;
+			else
+				nde->flags |= 0x1;
+	}
+
 	void Skeleton::setupHead(NiNode* headNode, bool hideHead) {
 
 		if (!headNode) {
@@ -1677,44 +1686,57 @@ namespace F4VRBody
 
 	}
 
-	void Skeleton::hideWands() {
+	void Skeleton::setWandsVisibility(bool a_show, wandMode a_mode) {
 		int i;
-
-		for (i = 0; i < _playerNodes->primaryWandNode->m_children.m_emptyRunStart; i++) {
-			if (_playerNodes->primaryWandNode->m_children.m_data[i]) {
-				NiNode* n = (NiNode*)(_playerNodes->primaryWandNode->m_children.m_data[i]);
-				auto right = _playerNodes->primaryWandNode->m_children.m_data[i]->GetAsBSTriShape();
-				if (right) {
-					NiAVObject* n1 = (NiAVObject*)right;
-					n1->flags |= 0x1;
-					break;
-				}
-				else if (!strcmp(n->m_name.c_str(), "")) {
-					n->flags |= 0x1;
-					NiAVObject* n1 = (NiAVObject*)n->m_children.m_data[0];
-					n1->flags |= 0x1;
-					break;
-				}
-			}
-		}
-
-		for (i = 0; i < _playerNodes->SecondaryWandNode->m_children.m_emptyRunStart; i++) {
-			if (_playerNodes->SecondaryWandNode->m_children.m_data[i]) {
-				NiNode* n = (NiNode*)(_playerNodes->SecondaryWandNode->m_children.m_data[i]);
-				auto left = _playerNodes->SecondaryWandNode->m_children.m_data[i]->GetAsBSTriShape();
-				if (left) {
-					NiAVObject* n2 = (NiAVObject*)left;
-					n2->flags |= 0x1;
-					break;
-				}
-				else if (!strcmp(n->m_name.c_str(), "")) {
-					n->flags |= 0x1;
-					NiAVObject* n2 = (NiAVObject*)n->m_children.m_data[0];
-					n2->flags |= 0x1;
-					break;
+		auto rightHand = a_mode == both || (a_mode == mainhandWand && !c_leftHandedMode) || (a_mode == offhandWand && c_leftHandedMode);
+		auto leftHand = a_mode == both || (a_mode == mainhandWand && c_leftHandedMode) || (a_mode == offhandWand && !c_leftHandedMode);
+		if (rightHand) {
+			for (i = 0; i < _playerNodes->primaryWandNode->m_children.m_emptyRunStart; i++) {
+				if (_playerNodes->primaryWandNode->m_children.m_data[i]) {
+					NiNode* n = (NiNode*)(_playerNodes->primaryWandNode->m_children.m_data[i]);
+					auto right = _playerNodes->primaryWandNode->m_children.m_data[i]->GetAsBSTriShape();
+					if (right) {
+						NiAVObject* n1 = (NiAVObject*)right;
+						setVisibility(n1, a_show);
+						break;
+					}
+					else if (!strcmp(n->m_name.c_str(), "")) {
+						setVisibility(n, a_show);
+						NiAVObject* n1 = (NiAVObject*)n->m_children.m_data[0];
+						setVisibility(n1, a_show);
+						break;
+					}
 				}
 			}
 		}
+
+		if (leftHand) {
+			for (i = 0; i < _playerNodes->SecondaryWandNode->m_children.m_emptyRunStart; i++) {
+				if (_playerNodes->SecondaryWandNode->m_children.m_data[i]) {
+					NiNode* n = (NiNode*)(_playerNodes->SecondaryWandNode->m_children.m_data[i]);
+					auto left = _playerNodes->SecondaryWandNode->m_children.m_data[i]->GetAsBSTriShape();
+					if (left) {
+						NiAVObject* n2 = (NiAVObject*)left;
+						setVisibility(n2, a_show);
+						break;
+					}
+					else if (!strcmp(n->m_name.c_str(), "")) {
+						setVisibility(n, a_show);
+						NiAVObject* n2 = (NiAVObject*)n->m_children.m_data[0];
+						setVisibility(n2, a_show);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	void Skeleton::showWands(wandMode a_mode) {
+		setWandsVisibility(true, a_mode);
+	}
+
+	void Skeleton::hideWands(wandMode a_mode) {
+		setWandsVisibility(false, a_mode);
 	}
 
 	void Skeleton::hideFistHelpers() {
@@ -2818,6 +2840,7 @@ namespace F4VRBody
 							auto change = vec3_len(end) > vec3_len(_startFingerBonePos) ? vec3_len(end - _startFingerBonePos) : -vec3_len(end - _startFingerBonePos);
 							switch (_repositionMode) {
 							case weapon:
+								showWands(wandMode::offhandWand);
 								_offsetPreview.x = change;
 								if (axis_state.x != 0.f || axis_state.y != 0.f) { // axis_state y is up and down, which corresponds to reticle z axis
 									_offsetPreview.y += axis_state.x;
@@ -2831,9 +2854,11 @@ namespace F4VRBody
 								weap->m_localTransform.pos.z = _offsetPreview.z;
 								break;
 							case offhand:
+								showWands(wandMode::mainhandWand);
 								weap->m_localTransform.rot = _originalWeaponRot;
 								break;
 							case resetToDefault:
+								showWands(wandMode::both);
 								break;
 							}
 						}
@@ -2873,6 +2898,7 @@ namespace F4VRBody
 								_repositionMode = weapon;
 								break;
 							}
+							hideWands();
 							_hasLetGoRepositionButton = false;
 							writeOffsetJson();
 						}
