@@ -2654,7 +2654,7 @@ namespace F4VRBody
 
 			std::string weapname("");
 			if ((*g_player)->middleProcess->unk08->equipData) {
-					weapname = (*g_player)->middleProcess->unk08->equipData->item->GetFullName();
+				weapname = (*g_player)->middleProcess->unk08->equipData->item->GetFullName();
 			}
 
 			if (weap) {
@@ -2665,13 +2665,22 @@ namespace F4VRBody
 				if (newWeapon) {
 					_lastWeapon = (_inPowerArmor ? weapname + powerArmorSuffix : weapname);
 					_useCustomWeaponOffset = false;
-					auto lookup = g_weaponOffsets->getOffset(weapname, _inPowerArmor);
+					_useCustomOffHandOffset = false;
+					auto lookup = g_weaponOffsets->getOffset(weapname, _inPowerArmor ? Mode::offHandwithPowerArmor : Mode::offHand);
+					if (lookup.has_value()) {
+						_useCustomOffHandOffset = true;
+						_offhandOffset = lookup.value();
+						_MESSAGE("Found offHandOffset for %s pos (%f, %f, %f) scale %f: powerArmor: %d",
+							weapname, _offhandOffset.pos.x, _offhandOffset.pos.y, _offhandOffset.pos.z, _offhandOffset.scale, _inPowerArmor);
+					}
+					lookup = g_weaponOffsets->getOffset(weapname, _inPowerArmor ? Mode::powerArmor : Mode::normal);
 					if (lookup.has_value()) {
 						_useCustomWeaponOffset = true;
 						_customTransform = lookup.value();
 						_MESSAGE("Found weaponOffset for %s pos (%f, %f, %f) scale %f: powerArmor: %d",
 							weapname, _customTransform.pos.x, _customTransform.pos.y, _customTransform.pos.z, _customTransform.scale, _inPowerArmor);
-					}else { // offsets should already be applied if not already saved
+					}
+					else { // offsets should already be applied if not already saved
 						NiPoint3 offset = NiPoint3(-0.94, 0, 0); // apply static VR offset
 						NiNode* weapOffset = getNode("WeaponOffset", weap);
 
@@ -2679,7 +2688,7 @@ namespace F4VRBody
 							offset.x -= weapOffset->m_localTransform.pos.y;
 							offset.y -= -2.099;
 							_MESSAGE("%s: WeaponOffset pos (%f, %f, %f) scale %f", weapname, weapOffset->m_localTransform.pos.x, weapOffset->m_localTransform.pos.y, weapOffset->m_localTransform.pos.z,
-									weapOffset->m_localTransform.scale);
+								weapOffset->m_localTransform.scale);
 						}
 						weap->m_localTransform.pos += offset;
 					}
@@ -2695,11 +2704,12 @@ namespace F4VRBody
 
 				static NiPoint3 _offhandFingerBonePos = NiPoint3(0, 0, 0);
 				static NiPoint3 bodyPos = NiPoint3(0, 0, 0);
-				static float avgHandV[3] = {0.0f, 0.0f, 0.0f};
+				static float avgHandV[3] = { 0.0f, 0.0f, 0.0f };
 				static int fc = 0;
 				float handV = 0.0f;
 
 				static auto offHandBone = c_leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
+				static auto onHandBone = !c_leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
 				if (_offHandGripping && c_enableOffHandGripping) {
 
 					float handFrameMovement;
@@ -2743,7 +2753,7 @@ namespace F4VRBody
 							_MESSAGE("Reposition Button Hold start: weapon %s mode: %d", weapname, _repositionMode);
 						}
 					}
-					else{
+					else {
 						if (!_repositionModeSwitched && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
 							_repositionMode = static_cast<repositionMode>((_repositionMode + 1) % (repositionMode::total + 1));
 							if (vrhook)
@@ -2757,7 +2767,7 @@ namespace F4VRBody
 						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
 						if (!_inRepositionMode && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
 							if (vrhook)
-								vrhook->StartHaptics(c_leftHandedMode? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
+								vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
 							_inRepositionMode = true;
 						}
 						else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
@@ -2771,9 +2781,19 @@ namespace F4VRBody
 
 					if (_offHandGripping) {
 
-						NiPoint3 oH2Bar;
+						NiPoint3 oH2Bar; // off hand to barrel
 
 						oH2Bar = rt->transforms[boneTreeMap[offHandBone]].world.pos - weap->m_worldTransform.pos;
+
+						if (_useCustomOffHandOffset) {
+							// TODO: figure out y offset (left-right)
+							//NiPoint3 zZeroedOffhandOffset = _offhandOffset.pos;
+							//zZeroedOffhandOffset.z = 0;
+							//auto fcos = vec3_dot(vec3_norm(zZeroedOffhandOffset), vec3_norm(_offhandOffset.pos));
+							//auto fsin = vec3_det(vec3_norm(zZeroedOffhandOffset), vec3_norm(_offhandOffset.pos), NiPoint3(-1, 0, 0));
+							//oH2Bar.y -= _offhandOffset.pos.y;
+							oH2Bar.z -= _offhandOffset.pos.z;
+						}							
 
 						NiPoint3 barrelVec = NiPoint3(0, 1, 0);
 
@@ -2785,6 +2805,7 @@ namespace F4VRBody
 						// use Quaternion to rotate the vector onto the other vector to avoid issues with the poles
 						_aimAdjust.vec2vec(vec3_norm(oH2Bar), vec3_norm(barrelVec));
 						rot = _aimAdjust.getRot();
+						_originalWeaponRot = weap->m_localTransform.rot; // save unrotated vector
 						weap->m_localTransform.rot = rot.multiply43Left(weap->m_localTransform.rot);
 
 						_offhandFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
@@ -2794,7 +2815,7 @@ namespace F4VRBody
 						if (_repositionButtonHolding) {
 							// this is for a preview of the move. The preview happens one frame before we detect the release so must be processed separately.
 							auto end = _offhandPos - _curPos;
-							auto change = vec3_len(end) > vec3_len(_startFingerBonePos)? vec3_len(end - _startFingerBonePos) : -vec3_len(end - _startFingerBonePos);
+							auto change = vec3_len(end) > vec3_len(_startFingerBonePos) ? vec3_len(end - _startFingerBonePos) : -vec3_len(end - _startFingerBonePos);
 							switch (_repositionMode) {
 							case weapon:
 								_offsetPreview.x = change;
@@ -2809,6 +2830,9 @@ namespace F4VRBody
 								weap->m_localTransform.pos.y = _offsetPreview.y; // y, z are cumulative
 								weap->m_localTransform.pos.z = _offsetPreview.z;
 								break;
+							case offhand:
+								weap->m_localTransform.rot = _originalWeaponRot;
+								break;
 							case resetToDefault:
 								break;
 							}
@@ -2819,9 +2843,10 @@ namespace F4VRBody
 							_customTransform.rot = weap->m_localTransform.rot;
 							_hasLetGoRepositionButton = false;
 							_useCustomWeaponOffset = true;
-							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor);
+							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor ? Mode::powerArmor : Mode::normal);
 							writeOffsetJson();
-						}else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > c_holdDelay) {
+						}
+						else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > c_holdDelay) {
 							switch (_repositionMode) {
 							case weapon:
 								_MESSAGE("Saving position translation for %s from (%f, %f, %f) -> (%f, %f, %f): powerArmor: %d", weapname, weap->m_localTransform.pos.x, weap->m_localTransform.pos.y, weap->m_localTransform.pos.z, _offsetPreview.x, _offsetPreview.y, _offsetPreview.z, _inPowerArmor);
@@ -2830,12 +2855,21 @@ namespace F4VRBody
 								weap->m_localTransform.pos.z = _offsetPreview.z;
 								_customTransform.pos = weap->m_localTransform.pos;
 								_useCustomWeaponOffset = true;
-								g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor);
+								g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor ? Mode::powerArmor : Mode::normal);
+								break;
+							case offhand:
+								_offhandOffset.rot = weap->m_localTransform.rot;
+								_offhandOffset.pos = rt->transforms[boneTreeMap[offHandBone]].world.pos - rt->transforms[boneTreeMap[onHandBone]].world.pos;
+								_useCustomOffHandOffset = true;
+								g_weaponOffsets->addOffset(weapname, _offhandOffset, _inPowerArmor ? Mode::offHandwithPowerArmor : Mode::offHand);
+								_MESSAGE("Saving offHandOffset (%f, %f, %f,) for %s: powerArmor: %d", _offhandOffset.pos.x, _offhandOffset.pos.y, _offhandOffset.pos.z, weapname, _inPowerArmor);
 								break;
 							case resetToDefault:
 								_MESSAGE("Resetting grip to defaults for %s: powerArmor: %d", weapname, _inPowerArmor);
 								_useCustomWeaponOffset = false;
-								g_weaponOffsets->deleteOffset(weapname, _inPowerArmor);
+								_useCustomOffHandOffset = false;
+								g_weaponOffsets->deleteOffset(weapname, _inPowerArmor ? Mode::powerArmor : Mode::normal);
+								g_weaponOffsets->deleteOffset(weapname, _inPowerArmor ? Mode::offHandwithPowerArmor : Mode::offHand);
 								_repositionMode = weapon;
 								break;
 							}

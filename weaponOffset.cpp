@@ -11,25 +11,48 @@ namespace F4VRBody {
 
 	WeaponOffset* g_weaponOffsets = nullptr;
 
-	std::optional<NiTransform> WeaponOffset::getOffset(const std::string &name, const bool powerArmor) {
+	std::string getSearchName(const std::string& name, const Mode mode) {
+		std::string searchName;
+		switch (mode) {
+		case powerArmor:
+			searchName = name + powerArmorSuffix;
+			break;
+		case offHand:
+			searchName = name + offHandSuffix;
+			break;
+		case offHandwithPowerArmor:
+			searchName = name + offHandSuffix + powerArmorSuffix;
+			break;
+		case normal:
+		default:
+			searchName = name;
+			break;
+		}
+		return searchName;
+	}
 
-		auto it = offsets.find(powerArmor ? name + powerArmorSuffix : name);
+	std::optional<NiTransform> WeaponOffset::getOffset(const std::string &name, const Mode mode) {
+		auto it = offsets.find(getSearchName(name, mode));
 		if (it == offsets.end()) {
-			if (powerArmor) //check without PA
-				return getOffset(name); 
-			return { };
+			switch (mode) { //check without PA
+			case powerArmor:
+			case offHandwithPowerArmor:
+				return getOffset(name);
+			default:
+				return { };
+			}
 		}
 
 		return it->second;
 	}
 
-	void WeaponOffset::addOffset(const std::string &name, NiTransform someData, const bool powerArmor) {
-		offsets[powerArmor ? name + powerArmorSuffix : name] = someData;
+	void WeaponOffset::addOffset(const std::string &name, NiTransform someData, const Mode mode) {
+		offsets[getSearchName(name, mode)] = someData;
 	}
 
 
-	void WeaponOffset::deleteOffset(const std::string& name, const bool powerArmor) {
-		offsets.erase(powerArmor ? name + powerArmorSuffix : name);
+	void WeaponOffset::deleteOffset(const std::string& name, const Mode mode) {
+		offsets.erase(getSearchName(name, mode));
 	}
 
 	std::size_t WeaponOffset::getSize() {
