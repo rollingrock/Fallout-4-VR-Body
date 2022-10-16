@@ -208,8 +208,15 @@ namespace F4VRBody
 		// movement
 		void walk();
 
+		enum wandMode {
+			both = 0,
+			mainhandWand,
+			offhandWand,
+		};
 
-		void hideWands();
+		void setWandsVisibility(bool a_show = true, wandMode a_mode = both);
+		void showWands(wandMode a_mode = both);
+		void hideWands(wandMode a_mode = both);
 		void hideWeapon();
 		void swapPipboy();
 		void leftHandedModePipboy();
@@ -227,6 +234,7 @@ namespace F4VRBody
 
 		// utility
 		NiNode* getNode(const char* nodeName, NiNode* nde);
+		void setVisibility(NiAVObject* nde, bool a_show = true); // Change flags to show or hide a node
 		void updateDown(NiNode* nde, bool updateSelf);
 		void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 		void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
@@ -256,7 +264,8 @@ namespace F4VRBody
 
 		enum repositionMode {
 			weapon = 0, // move weapon
-			resetToDefault = 1, // reset to default and exit reposition mode
+			offhand, // move offhand grip position
+			resetToDefault, // reset to default and exit reposition mode
 			total = resetToDefault
 		};
 
@@ -326,6 +335,7 @@ namespace F4VRBody
 		NiTransform _weapSave;
 		NiTransform _customTransform;
 		bool _useCustomWeaponOffset = false;
+		bool _useCustomOffHandOffset = false;
 
 		bool _offHandGripping;
 		bool _repositionButtonHolding = false;
@@ -344,7 +354,9 @@ namespace F4VRBody
 		Quaternion _aimAdjust;
 		uint64_t _lastLookingAtPip = 0;
 
+		NiMatrix43 _originalWeaponRot;
 		NiPoint3 _offhandPos {0, 0, 0};
+		NiTransform _offhandOffset; // Saving as NiTransform in case we need rotation in future
 		NiPoint3 msgData{ 0, 0, 0 }; // used for msg passing
 	};
 }

@@ -9,6 +9,13 @@
 
 namespace F4VRBody {
 
+	enum Mode {
+		normal = 0,
+		powerArmor,
+		offHand,
+		offHandwithPowerArmor,
+	};
+
 	class WeaponOffset {
 	public:
 
@@ -16,15 +23,16 @@ namespace F4VRBody {
 			offsets.clear();
 		}
 
-		std::optional<NiTransform> getOffset(const std::string &name, const bool powerArmor = false);
-		void addOffset(const std::string &name, NiTransform someData, const bool powerArmor = false);
-		void deleteOffset(const std::string& name, const bool powerArmor = false);
+		std::optional<NiTransform> getOffset(const std::string& name, const Mode mode = normal);
+		void addOffset(const std::string &name, NiTransform someData, const Mode mode = normal);
+		void deleteOffset(const std::string& name, const Mode mode = normal);
 		std::size_t getSize();
 
 		std::map<std::string, NiTransform> offsets;
 	};
 
 	static const std::string powerArmorSuffix{ "-PowerArmor" };
+	static const std::string offHandSuffix{ "-offHand" };
 	static const std::string defaultJson{ ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets.json" };
 	static const std::string offsetsPath{ ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets" };
 
