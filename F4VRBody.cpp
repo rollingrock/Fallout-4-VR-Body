@@ -697,7 +697,7 @@ namespace F4VRBody {
 	//	AIProcess_ClearMuzzleFlashes((*g_player)->middleProcess);
 
 
-		if ((*g_player)->middleProcess->unk08->equipData->equippedData) {
+		if ((*g_player)->middleProcess->unk08->equipData && (*g_player)->middleProcess->unk08->equipData->equippedData) {
 			MuzzleFlash* muzzle = reinterpret_cast<MuzzleFlash*>((*g_player)->middleProcess->unk08->equipData->equippedData->unk28);
 			if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
 				muzzle->fireNode->m_localTransform = muzzle->projectileNode->m_worldTransform;
