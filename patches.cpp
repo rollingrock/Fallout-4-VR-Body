@@ -16,9 +16,9 @@ namespace patches {
 	RelocAddr<std::uint64_t> toJumpTo(0x1b932f2);
 	RelocAddr<std::uint64_t> toJumpBreak(0x1b93315);
 
-	RelocAddr<std::uint64_t> shaderEffectPatch(0x28aaec5);
-	RelocAddr<std::uint64_t> shaderEffectContinue(0x28aaeca);
-	RelocAddr<std::uint64_t> shaderEffectReturn(0x28aaedd);
+	RelocAddr<std::uint64_t> shaderEffectPatch(0x28d33e4);
+	RelocAddr<std::uint64_t> shaderEffectContinue(0x28d33ea);
+	RelocAddr<std::uint64_t> shaderEffectReturn(0x28d4ec8);
 
 	void patchInventoryInfBug() {
 
@@ -88,17 +88,12 @@ namespace patches {
 				Xbyak::Label retLab;
 				Xbyak::Label contLab;
 
-				push(rax);
-				test(rsi, rsi);
 				jz("null_pointer");
-				mov(rax, ptr[rsi + 0x78]);
-				test(rax, rax);
+				test(r15,r15);
 				jz("null_pointer");
-				pop(rax);
 				jmp(ptr[rip + contLab]);
 
 				L("null_pointer");
-				pop(rax);
 				jmp(ptr[rip + retLab]);
 
 
@@ -115,13 +110,13 @@ namespace patches {
 		PatchMissingR15 code(buf);
 		g_localTrampoline.EndAlloc(code.getCurr());
 
-		g_branchTrampoline.Write5Branch(shaderEffectPatch.GetUIntPtr(), uintptr_t(code.getCode()));
+		g_branchTrampoline.Write6Branch(shaderEffectPatch.GetUIntPtr(), uintptr_t(code.getCode()));
 	}
 
 
 	bool patchAll() {
 		patchInventoryInfBug();
-		patchPipeGunScopeCrash();
+//		patchPipeGunScopeCrash();
 		return true;
 	}
 
