@@ -496,7 +496,9 @@ namespace F4VRBody {
 
 			playerSkelly = new Skeleton(node);
 			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
-			playerSkelly->setNodes();
+			if (!playerSkelly->setNodes()) {
+				return false;
+			}
 			//replaceMeshes(playerSkelly->getPlayerNodes());
 			//playerSkelly->setDirection();
 		    playerSkelly->swapPipboy();

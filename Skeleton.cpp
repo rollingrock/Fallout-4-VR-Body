@@ -701,7 +701,7 @@ namespace F4VRBody
 		room->m_localTransform.rot = rot.make43();
 	}
 
-	void Skeleton::setNodes() {
+	bool Skeleton::setNodes() {
 		QueryPerformanceFrequency(&freqCounter);
 		QueryPerformanceCounter(&timer);
 
@@ -716,12 +716,17 @@ namespace F4VRBody
 
 		if (!_playerNodes) {
 			_MESSAGE("player nodes not set");
-			return;
+			return false;
 		}
 
 		_curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
 
 		setCommonNode();
+
+		if (_common == nullptr) {
+			_MESSAGE("Common Node Not Set");
+			return false;
+		}
 
 		_rightHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		_leftHand  = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
@@ -829,6 +834,7 @@ namespace F4VRBody
 		_MESSAGE("finished saving tree");
 
 		initBoneTreeMap();
+		return true;
 	}
 
 	void Skeleton::positionDiff() {

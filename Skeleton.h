@@ -238,7 +238,7 @@ namespace F4VRBody
 		void updateDown(NiNode* nde, bool updateSelf);
 		void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 		void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
-		void setNodes();
+		bool setNodes();
 		ArmNodes getArm(bool isLeft);
 		void set1stPersonArm(NiNode* weapon, NiNode* offsetNode);
 		void setBodyLen();
