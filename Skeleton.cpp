@@ -730,6 +730,9 @@ namespace F4VRBody
 
 		_rightHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		_leftHand  = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		
+		_rightHandPrevFrame = _rightHand->m_worldTransform;
+		_leftHandPrevFrame = _leftHand->m_worldTransform;
 
 		_spine = this->getNode("SPINE2", _root);
 		_chest = this->getNode("Chest", _root);
@@ -2218,6 +2221,7 @@ namespace F4VRBody
 			weaponNode->m_localTransform.pos = isLeft ? NiPoint3(0, 0, 0) : NiPoint3(6.389, -2.099, -3.133);
 		}
 
+		dampenHand(offsetNode, isLeft);
 
 		weaponNode->IncRef();
 		set1stPersonArm(weaponNode, offsetNode);
@@ -3058,6 +3062,43 @@ namespace F4VRBody
 		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
 		_root->m_localTransform.pos.y -= 50.0;
 	}
+
+	void Skeleton::dampenHand(NiNode* node, bool isLeft) {
+
+		if (!c_dampenHands) {
+			return;
+		}
+
+		Quaternion rq, rt;
+
+		NiTransform prevFrame = isLeft ? _leftHandPrevFrame : _rightHandPrevFrame;
+
+		rq.fromRot(prevFrame.rot);
+		rt.fromRot(node->m_worldTransform.rot);
+
+
+		rq.slerp(1 - c_dampenHandsRotation, rt);
+
+		node->m_worldTransform.rot = rq.getRot().make43();
+
+		NiPoint3 dir = _curPos - _lastPos;
+		NiPoint3 deltaPos = node->m_worldTransform.pos - prevFrame.pos - dir;   // need to add in player velocity here
+
+		deltaPos *= c_dampenHandsTranslation;
+
+		node->m_worldTransform.pos -= deltaPos;
+
+		if (isLeft) {
+			_leftHandPrevFrame = node->m_worldTransform;
+		}
+		else {
+			_rightHandPrevFrame = node->m_worldTransform;
+		}
+
+		updateDown(node, false);
+	}
+
+
 
 	void Skeleton::debug() {
 

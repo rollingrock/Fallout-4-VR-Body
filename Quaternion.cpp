@@ -50,6 +50,14 @@ namespace F4VRBody {
 		z = sinAngle * axis.z;
 	}
 
+	float Quaternion::getAngleFromAxisAngle(Quaternion target) {
+		Quaternion ret;
+
+		ret = target * this->conjugate();
+
+		return 2 * acosf(ret.w);
+	}
+
 	Matrix44 Quaternion::getRot() {
 		Matrix44 mat;
 
@@ -123,7 +131,7 @@ namespace F4VRBody {
 			dotp = -dotp;
 		}
 
-		if (dotp > 0.9995) {
+		if (dotp > 0.999995) {
 			w = save.w;
 			x = save.x;
 			y = save.y;

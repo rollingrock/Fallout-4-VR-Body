@@ -90,6 +90,9 @@ namespace F4VRBody {
 	bool c_enableGripButtonToGrap = true;
 	bool c_enableGripButtonToLetGo = true;
 	bool c_onePressGripButton = false;
+	bool c_dampenHands = true;
+	float c_dampenHandsRotation = 0.7;
+	float c_dampenHandsTranslation = 0.7;
 
 	float c_scopeAdjustDistance = 15.0f;
 
@@ -186,6 +189,9 @@ namespace F4VRBody {
 		c_enableGripButtonToGrap = ini.GetBoolValue("Fallout4VRBody", "EnableGripButton", true);
 		c_enableGripButtonToLetGo = ini.GetBoolValue("Fallout4VRBody", "EnableGripButtonToLetGo", true);
 		c_onePressGripButton = ini.GetBoolValue("Fallout4VRBody", "EnableGripButtonOnePress", true);
+		c_dampenHands = ini.GetBoolValue("Fallout4VRBody", "DampenHands", true);
+		c_dampenHandsRotation = ini.GetDoubleValue("Fallout4VRBody", "DampenHandsRotation", 0.7);
+		c_dampenHandsTranslation = ini.GetDoubleValue("Fallout4VRBody", "DampenHandsTranslation", 0.7);
 
 
 		//Smooth Movement
@@ -655,7 +661,6 @@ namespace F4VRBody {
 		playerSkelly->leftHandedModePipboy();
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
-
 		// Misc stuff to showahide things and also setup the wrist pipboy
 		if (c_verbose) { _MESSAGE("Pipboy and Weapons"); }
 		playerSkelly->hideWeapon();
@@ -742,6 +747,9 @@ namespace F4VRBody {
 		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_X", c_handUI_X);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_Y", c_handUI_Y);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_Z", c_handUI_Z);
+		rc = ini.SetBoolValue("Fallout4VRBody", "DampenHands", c_dampenHands);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "DampenHandsRotation", c_dampenHandsRotation);
+		rc = ini.SetDoubleValue("Fallout4VRBody", "DampenHandsTranslation", c_dampenHandsTranslation);
 
 		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
 
@@ -1175,7 +1183,55 @@ namespace F4VRBody {
 		}
 	}
 
+	void toggleDampenHands(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
 
+		c_dampenHands = !c_dampenHands;
+	}
+
+	void increaseDampenRotation(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_dampenHandsRotation += 0.05f;
+		c_dampenHandsRotation = c_dampenHandsRotation >= 1.0f ? 0.95f : c_dampenHandsRotation;
+	}
+
+	void decreaseDampenRotation(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_dampenHandsRotation -= 0.05f;
+		c_dampenHandsRotation = c_dampenHandsRotation <= 0.0f ? 0.05f : c_dampenHandsRotation;
+	}
+
+	void increaseDampenTranslation(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_dampenHandsTranslation += 0.05f;
+
+		c_dampenHandsTranslation = c_dampenHandsTranslation >= 1.0f ? 0.95f : c_dampenHandsTranslation;
+	}
+
+	void decreaseDampenTranslation(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_dampenHandsTranslation -= 0.05f;
+		c_dampenHandsTranslation = c_dampenHandsTranslation <= 0.0f ? 0.5f : c_dampenHandsTranslation;
+	}
 	bool RegisterFuncs(VirtualMachine* vm) {
 
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("saveStates", "FRIK:FRIK", F4VRBody::saveStates, vm));
@@ -1197,6 +1253,11 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", F4VRBody::moveBackward, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("increaseScale", "FRIK:FRIK", F4VRBody::increaseScale, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("decreaseScale", "FRIK:FRIK", F4VRBody::decreaseScale, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleDampenHands", "FRIK:FRIK", F4VRBody::toggleDampenHands, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("increaseDampenRotation", "FRIK:FRIK", F4VRBody::increaseDampenRotation, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("decreaseDampenRotation", "FRIK:FRIK", F4VRBody::decreaseDampenRotation, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("increaseDampenTranslation", "FRIK:FRIK", F4VRBody::increaseDampenTranslation, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("decreaseDampenTranslation", "FRIK:FRIK", F4VRBody::decreaseDampenTranslation, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiXUp", "FRIK:FRIK", F4VRBody::handUiXUp, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiXDown", "FRIK:FRIK", F4VRBody::handUiXDown, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiYUp", "FRIK:FRIK", F4VRBody::handUiYUp, vm));

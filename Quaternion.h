@@ -53,6 +53,7 @@ namespace F4VRBody {
 		double dot(Quaternion q);
 
 		void setAngleAxis(float angle, NiPoint3 axis);
+		float getAngleFromAxisAngle(Quaternion target);
 
 		Matrix44 getRot();
 		void fromRot(NiMatrix43 rot);

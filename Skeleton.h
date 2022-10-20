@@ -224,6 +224,7 @@ namespace F4VRBody
 		void fixMelee();
 		void hideFistHelpers();
 		void fixPAArmor();
+		void dampenHand(NiNode* node, bool isLeft);
 
 		bool isLookingAtPipBoy();
 		void hidePipboy();
@@ -358,5 +359,8 @@ namespace F4VRBody
 		NiPoint3 _offhandPos {0, 0, 0};
 		NiTransform _offhandOffset; // Saving as NiTransform in case we need rotation in future
 		NiPoint3 msgData{ 0, 0, 0 }; // used for msg passing
+
+		NiTransform _rightHandPrevFrame;
+		NiTransform _leftHandPrevFrame;
 	};
 }
