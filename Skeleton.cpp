@@ -3071,17 +3071,18 @@ namespace F4VRBody
 
 		Quaternion rq, rt;
 
+		// do a spherical interpolation between previous frame and current frame for the world rotation matrix
 		NiTransform prevFrame = isLeft ? _leftHandPrevFrame : _rightHandPrevFrame;
 
 		rq.fromRot(prevFrame.rot);
 		rt.fromRot(node->m_worldTransform.rot);
 
-
 		rq.slerp(1 - c_dampenHandsRotation, rt);
 
 		node->m_worldTransform.rot = rq.getRot().make43();
 
-		NiPoint3 dir = _curPos - _lastPos;
+		// do a linear interprolation  between the position from the previous frame to current frame
+		NiPoint3 dir = _curPos - _lastPos;   // this in effect offsets the player movement from this interpolation
 		NiPoint3 deltaPos = node->m_worldTransform.pos - prevFrame.pos - dir;   // need to add in player velocity here
 
 		deltaPos *= c_dampenHandsTranslation;
