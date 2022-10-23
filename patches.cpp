@@ -16,6 +16,9 @@ namespace patches {
 	RelocAddr<std::uint64_t> toJumpTo(0x1b932f2);
 	RelocAddr<std::uint64_t> toJumpBreak(0x1b93315);
 
+	RelocAddr<std::uint64_t> lockForRead_branch(0x1b932f8);
+	RelocAddr<std::uint64_t> lockForRead_return(0x1b932fd);
+
 	RelocAddr<std::uint64_t> shaderEffectPatch(0x28d323a);
 	RelocAddr<std::uint64_t> shaderEffectCall(0x2813560);
 	RelocAddr<std::uint64_t> shaderEffectContinue(0x28d323f);
@@ -24,7 +27,7 @@ namespace patches {
 	void patchInventoryInfBug() {
 
 		struct PatchShortVar : Xbyak::CodeGenerator {
-			PatchShortVar(void* buf) : Xbyak::CodeGenerator(4096, buf) {
+			PatchShortVar(void* buf) : Xbyak::CodeGenerator(2048, buf) {
 				Xbyak::Label retLab;
 				
 				and (edi, 0xffff);   // edi is an int but should be treated as a short.  Should allow for loop to exit.
@@ -82,6 +85,28 @@ namespace patches {
 		return;
 	}
 
+	void patchLockForReadMask() {
+		struct PatchMoreMask : Xbyak::CodeGenerator {
+			PatchMoreMask(void* buf) : Xbyak::CodeGenerator(2048, buf) {
+				Xbyak::Label retLab;
+
+				and (dword[rdi + 0x4], 0xFFFFFFF);
+				mov(rcx, 1);
+				jmp(ptr[rip + retLab]);
+				
+				L(retLab);
+				dq(lockForRead_return.GetUIntPtr());
+
+
+			}
+		};
+
+		void* buf = g_localTrampoline.StartAlloc();
+		PatchMoreMask code(buf);
+		g_localTrampoline.EndAlloc(code.getCurr());
+
+		g_branchTrampoline.Write5Branch(lockForRead_branch.GetUIntPtr(), uintptr_t(code.getCode()));
+	}
 
 	void patchPipeGunScopeCrash() {
 		struct PatchMissingR15 : Xbyak::CodeGenerator {
@@ -118,6 +143,7 @@ namespace patches {
 
 	bool patchAll() {
 		patchInventoryInfBug();
+		patchLockForReadMask();
 		patchPipeGunScopeCrash();
 		return true;
 	}

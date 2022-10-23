@@ -112,13 +112,13 @@ extern "C" {
 		g_messaging = (F4SEMessagingInterface*)a_f4se->QueryInterface(kInterface_Messaging);
 		g_messaging->RegisterListener(g_pluginHandle, "F4SE", OnF4SEMessage);
 
-		if (!g_branchTrampoline.Create(1024 * 64))
+		if (!g_branchTrampoline.Create(1024 * 128))
 		{
 			_ERROR("couldn't create branch trampoline. this is fatal. skipping remainder of init process.");
 			return false;
 		}
 
-		if (!g_localTrampoline.Create(1024 * 64, g_moduleHandle))
+		if (!g_localTrampoline.Create(1024 * 128, g_moduleHandle))
 		{
 			_ERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
 			return false;
