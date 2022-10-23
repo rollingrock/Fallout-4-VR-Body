@@ -34,6 +34,7 @@ RelocPtr<bool> iniLeftHandedMode(0x37d5e48);      // location of bLeftHandedMode
 
 RelocAddr<_AIProcess_getAnimationManager> AIProcess_getAnimationManager(0xec5400);
 RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiveGraph(0x1690240);
+RelocAddr<uint64_t> EquippedWeaponData_vfunc(0x2d7fcf8);
 
 OpenVRHookManagerAPI* vrhook;
 
@@ -705,9 +706,13 @@ namespace F4VRBody {
 
 
 		if ((*g_player)->middleProcess->unk08->equipData && (*g_player)->middleProcess->unk08->equipData->equippedData) {
-			MuzzleFlash* muzzle = reinterpret_cast<MuzzleFlash*>((*g_player)->middleProcess->unk08->equipData->equippedData->unk28);
-			if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
-				muzzle->fireNode->m_localTransform = muzzle->projectileNode->m_worldTransform;
+			auto obj = (*g_player)->middleProcess->unk08->equipData->equippedData;
+			uint64_t* vfunc = (uint64_t*)obj;
+			if ((*vfunc & 0xFFFF) == (EquippedWeaponData_vfunc & 0xFFFF)) {
+				MuzzleFlash* muzzle = reinterpret_cast<MuzzleFlash*>((*g_player)->middleProcess->unk08->equipData->equippedData->unk28);
+				if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
+					muzzle->fireNode->m_localTransform = muzzle->projectileNode->m_worldTransform;
+				}
 			}
 		}
 

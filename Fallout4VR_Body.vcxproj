@@ -169,7 +169,8 @@ copy "$(TargetPath)" "H:\MO2\fo4vr\mods\FRIK\F4SE\Plugins" /Y</Command>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "E:\fvre\mods\FRIK\F4SE\Plugins" /Y
 copy "$(TargetPath)" "H:\MO2\fo4vr\mods\FRIK\F4SE\Plugins" /Y
-copy "$(SolutionDir)x64\Release\FRIK.pdb" "E:\fvre\mods\FRIK\F4SE\Plugins" /Y</Command>
+copy "$(SolutionDir)x64\Release\FRIK.pdb" "E:\fvre\mods\FRIK\F4SE\Plugins" /Y
+copy "$(SolutionDir)x64\Release\FRIK.pdb" "H:\MO2\fo4vr\mods\FRIK\F4SE\Plugins" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
