@@ -85,6 +85,7 @@ namespace F4VRBody {
 	int c_gripButtonID = vr::EVRButtonId::k_EButton_Grip; // 2
 	int c_holdDelay = 1000; // 1000 ms
 	int c_pipBoyOffDelay = 5000; // 5000 ms
+	bool c_repositionMasterMode = false;
 	int c_repositionButtonID = vr::EVRButtonId::k_EButton_SteamVR_Trigger; //33
 	int c_offHandActivateButtonID = vr::EVRButtonId::k_EButton_A; // 7
 	bool c_enableOffHandGripping = true;
@@ -207,6 +208,7 @@ namespace F4VRBody {
 		disableInteriorSmoothingHorizontal = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothingHorizontal", 1);
 
 		// weaponPositioning
+		c_repositionMasterMode = ini.GetBoolValue("Fallout4VRBody", "EnableRepositionMode", false);
 		c_holdDelay = (int)ini.GetLongValue("Fallout4VRBody", "HoldDelay", 1000);
 		c_repositionButtonID = (int)ini.GetLongValue("Fallout4VRBody", "RepositionButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger); // 33
 		c_offHandActivateButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OffHandActivateButtonID", vr::EVRButtonId::k_EButton_A); // 7
@@ -1237,6 +1239,16 @@ namespace F4VRBody {
 		c_dampenHandsTranslation -= 0.05f;
 		c_dampenHandsTranslation = c_dampenHandsTranslation <= 0.0f ? 0.5f : c_dampenHandsTranslation;
 	}
+
+	void toggleRepositionMasterMode(StaticFunctionTag* base) {
+		BSFixedString menuName("BookMenu");
+		if ((*g_ui)->IsMenuRegistered(menuName)) {
+			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+		}
+
+		c_repositionMasterMode = !c_repositionMasterMode;
+	}
+
 	bool RegisterFuncs(VirtualMachine* vm) {
 
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("saveStates", "FRIK:FRIK", F4VRBody::saveStates, vm));
@@ -1263,6 +1275,7 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("decreaseDampenRotation", "FRIK:FRIK", F4VRBody::decreaseDampenRotation, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("increaseDampenTranslation", "FRIK:FRIK", F4VRBody::increaseDampenTranslation, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("decreaseDampenTranslation", "FRIK:FRIK", F4VRBody::decreaseDampenTranslation, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleRepositionMasterMode", "FRIK:FRIK", F4VRBody::toggleRepositionMasterMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiXUp", "FRIK:FRIK", F4VRBody::handUiXUp, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiXDown", "FRIK:FRIK", F4VRBody::handUiXDown, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiYUp", "FRIK:FRIK", F4VRBody::handUiYUp, vm));

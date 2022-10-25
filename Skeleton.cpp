@@ -2798,9 +2798,9 @@ namespace F4VRBody
 						}
 						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
 						if (!_inRepositionMode && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
-							if (vrhook)
+							if (vrhook && c_repositionMasterMode)
 								vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
-							_inRepositionMode = true;
+							_inRepositionMode = c_repositionMasterMode;
 						}
 						else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
 							_repositionButtonHolding = false;
@@ -2844,7 +2844,7 @@ namespace F4VRBody
 						_offhandPos = _offhandFingerBonePos;
 						bodyPos = _curPos;
 						vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
-						if (_repositionButtonHolding) {
+						if (_repositionButtonHolding && c_repositionMasterMode) {
 							// this is for a preview of the move. The preview happens one frame before we detect the release so must be processed separately.
 							auto end = _offhandPos - _curPos;
 							auto change = vec3_len(end) > vec3_len(_startFingerBonePos) ? vec3_len(end - _startFingerBonePos) : -vec3_len(end - _startFingerBonePos);
@@ -2873,7 +2873,7 @@ namespace F4VRBody
 							}
 						}
 						//_hasLetGoRepositionButton is always one frame after _repositionButtonHolding
-						if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength < c_holdDelay) {
+						if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength < c_holdDelay && c_repositionMasterMode) {
 							_MESSAGE("Updating grip rotation for %s: powerArmor: %d", weapname, _inPowerArmor);
 							_customTransform.rot = weap->m_localTransform.rot;
 							_hasLetGoRepositionButton = false;
@@ -2881,7 +2881,7 @@ namespace F4VRBody
 							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor ? Mode::powerArmor : Mode::normal);
 							writeOffsetJson();
 						}
-						else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > c_holdDelay) {
+						else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > c_holdDelay && c_repositionMasterMode) {
 							switch (_repositionMode) {
 							case weapon:
 								_MESSAGE("Saving position translation for %s from (%f, %f, %f) -> (%f, %f, %f): powerArmor: %d", weapname, weap->m_localTransform.pos.x, weap->m_localTransform.pos.y, weap->m_localTransform.pos.z, _offsetPreview.x, _offsetPreview.y, _offsetPreview.z, _inPowerArmor);
@@ -3001,54 +3001,57 @@ namespace F4VRBody
 					if (vrhook)
 						vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
 				}
-			// detect scope reposition buton being held near scope. Only has to start near scope.
-			if (handNearScope && !_repositionButtonHolding && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID)) { // repositioning
-				_repositionButtonHolding = true;
-				_hasLetGoRepositionButton = false;
-				_repositionButtonHoldStart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-				_MESSAGE("Reposition Button Hold start: scope %s", scopeName);
-			}
-			else if (_repositionButtonHolding && !(handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
-			// was in scope reposition mode and just released button, time to save
-				_repositionButtonHolding = false;
-				_hasLetGoRepositionButton = true;
-				_inRepositionMode = false;
-				msgData.x = 0.f;
-				msgData.y = 1; // pass save command
-				msgData.z = 0.f;
-				g_messaging->Dispatch(g_pluginHandle, 17, (void*)&msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
-				_MESSAGE("Reposition Button Hold stop: scope %s %d ms", scopeName, _pressLength);
-			}
-			_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
-			// repositioning does not require hand near scope
-			if (!_inRepositionMode && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
-				// enter reposition mode
-				if (vrhook)
-					vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
-				_inRepositionMode = true;
-			}
-			else if (_inRepositionMode) { // in reposition mode for better scopes
-				vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
-				if (!_repositionModeSwitched && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
-					if (vrhook)
-						vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
-					_repositionModeSwitched = true;
+
+			if (c_repositionMasterMode) {
+				// detect scope reposition buton being held near scope. Only has to start near scope.
+				if (handNearScope && !_repositionButtonHolding && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID)) { // repositioning
+					_repositionButtonHolding = true;
+					_hasLetGoRepositionButton = false;
+					_repositionButtonHoldStart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+					_MESSAGE("Reposition Button Hold start: scope %s", scopeName);
+				}
+				else if (_repositionButtonHolding && !(handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
+					// was in scope reposition mode and just released button, time to save
+					_repositionButtonHolding = false;
+					_hasLetGoRepositionButton = true;
+					_inRepositionMode = false;
 					msgData.x = 0.f;
-					msgData.y = 0.f;
+					msgData.y = 1; // pass save command
 					msgData.z = 0.f;
 					g_messaging->Dispatch(g_pluginHandle, 17, (void*)&msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
-					_MESSAGE("Reposition Mode Reset: scope %s %d ms", scopeName, _pressLength);
+					_MESSAGE("Reposition Button Hold stop: scope %s %d ms", scopeName, _pressLength);
 				}
-				else if (_repositionModeSwitched && !(handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID))) {
-					_repositionModeSwitched = false;
+				_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
+				// repositioning does not require hand near scope
+				if (!_inRepositionMode && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
+					// enter reposition mode
+					if (vrhook && c_repositionMasterMode)
+						vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
+					_inRepositionMode = c_repositionMasterMode;
 				}
-				// get axis from non-movement joystick
-				else if (axis_state.x != 0 || axis_state.y != 0) { // axis_state y is up and down, which corresponds to reticle z axis
-					msgData.x = axis_state.x;
-					msgData.y = 0.f;
-					msgData.z = axis_state.y;
-					g_messaging->Dispatch(g_pluginHandle, 17, (void*)&msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
-					_MESSAGE("Moving scope reticle. input: (%f, %f)", axis_state.x, axis_state.y);
+				else if (_inRepositionMode) { // in reposition mode for better scopes
+					vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
+					if (!_repositionModeSwitched && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
+						if (vrhook)
+							vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
+						_repositionModeSwitched = true;
+						msgData.x = 0.f;
+						msgData.y = 0.f;
+						msgData.z = 0.f;
+						g_messaging->Dispatch(g_pluginHandle, 17, (void*)&msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+						_MESSAGE("Reposition Mode Reset: scope %s %d ms", scopeName, _pressLength);
+					}
+					else if (_repositionModeSwitched && !(handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID))) {
+						_repositionModeSwitched = false;
+					}
+					// get axis from non-movement joystick
+					else if (axis_state.x != 0 || axis_state.y != 0) { // axis_state y is up and down, which corresponds to reticle z axis
+						msgData.x = axis_state.x;
+						msgData.y = 0.f;
+						msgData.z = axis_state.y;
+						g_messaging->Dispatch(g_pluginHandle, 17, (void*)&msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+						_MESSAGE("Moving scope reticle. input: (%f, %f)", axis_state.x, axis_state.y);
+					}
 				}
 			}
 		}

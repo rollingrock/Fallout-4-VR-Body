@@ -71,6 +71,7 @@ namespace F4VRBody {
 	extern int c_gripButtonID;
 	extern int c_holdDelay;
 	extern int c_pipBoyOffDelay;
+	extern bool c_repositionMasterMode;
 	extern int c_repositionButtonID;
 	extern int c_offHandActivateButtonID;
 	extern bool c_enableOffHandGripping;
