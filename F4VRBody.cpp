@@ -4,10 +4,14 @@
 #include "weaponOffset.h"
 #include "utils.h"
 #include "MuzzleFlash.h"
+#include "BSFlattenedBoneTree.h"
 
 #include "api/PapyrusVRAPI.h"
 #include "api/VRManagerAPI.h"
 
+#include <algorithm>
+
+#include "Menu.h"
 
 
 
@@ -35,6 +39,8 @@ RelocPtr<bool> iniLeftHandedMode(0x37d5e48);      // location of bLeftHandedMode
 RelocAddr<_AIProcess_getAnimationManager> AIProcess_getAnimationManager(0xec5400);
 RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiveGraph(0x1690240);
 RelocAddr<uint64_t> EquippedWeaponData_vfunc(0x2d7fcf8);
+RelocAddr<_NiNode_UpdateWorldBound> NiNode_UpdateWorldBound(0x1c18ab0);
+RelocPtr<NiNode*> worldRootCamera1(0x6885c80);
 
 OpenVRHookManagerAPI* vrhook;
 
@@ -73,6 +79,7 @@ namespace F4VRBody {
 	float c_handUI_Y = 0.0;
 	float c_handUI_Z = 0.0;
 	bool  c_hideHead = false;
+	bool c_hideSkin = false;
 	float c_pipBoyLookAtGate = 0.7;
 	float c_gripLetGoThreshold = 15.0f;
 	bool c_isLookingThroughScope = false;
@@ -125,6 +132,26 @@ namespace F4VRBody {
 	typedef NiNode* (*_addNode)(uint64_t attachNode, NiAVObject* node);
 	RelocAddr<_addNode> addNode(0xada20);
 
+	typedef void* (*_BSFadeNode_UpdateGeomArray)(NiNode* node, int somevar);
+	RelocAddr<_BSFadeNode_UpdateGeomArray> BSFadeNode_UpdateGeomArray(0x27a9690);
+
+	typedef void* (*_BSFadeNode_UpdateDownwardPass)(NiNode* node, NiAVObject::NiUpdateData* updateData, int somevar);
+	RelocAddr<_BSFadeNode_UpdateDownwardPass> BSFadeNode_UpdateDownwardPass(0x27a8db0);
+
+	typedef void* (*_BSFadeNode_MergeWorldBounds)(NiNode* node);
+	RelocAddr<_BSFadeNode_MergeWorldBounds> BSFadeNode_MergeWorldBounds(0x27a9930);
+
+	typedef void* (*_NiNode_UpdateTransformsAndBounds)(NiNode* node, NiAVObject::NiUpdateData* updateData);
+	RelocAddr<_NiNode_UpdateTransformsAndBounds> NiNode_UpdateTransformsAndBounds(0x1c18ce0);
+
+	typedef void* (*_NiNode_UpdateDownwardPass)(NiNode* node, NiAVObject::NiUpdateData* updateData, uint64_t unk, int somevar);
+	RelocAddr<_NiNode_UpdateDownwardPass> NiNode_UpdateDownwardPass(0x1c18620);
+
+	typedef void* (*_BSGraphics_Utility_CalcBoneMatrices)(BSSubIndexTriShape* node, uint64_t counter);
+	RelocAddr<_BSGraphics_Utility_CalcBoneMatrices> BSGraphics_Utility_CalcBoneMatrices(0x1dabc60);
+
+
+	RelocAddr<uint64_t> g_frameCounter(0x65a2b48);
 	RelocAddr<UInt64*> cloneAddr1(0x36ff560);
 	RelocAddr<UInt64*> cloneAddr2(0x36ff564);
 
@@ -146,6 +173,11 @@ namespace F4VRBody {
 	std::map<UInt32, BoneSphere*> boneSphereRegisteredObjects;
 	UInt32 nextBoneSphereHandle;
 	UInt32 curDevice;
+
+	// hide meshes
+	std::vector<std::string> faceGeometry;
+	std::vector<std::string> skinGeometry;
+	bool bDumpArray = false;
 
 	bool loadConfig() {
 		CSimpleIniA ini;
@@ -176,7 +208,8 @@ namespace F4VRBody {
 		c_handUI_X = ini.GetDoubleValue("Fallout4VRBody", "handUI_X", 0.0);
 		c_handUI_Y = ini.GetDoubleValue("Fallout4VRBody", "handUI_Y", 0.0);
 		c_handUI_Z = ini.GetDoubleValue("Fallout4VRBody", "handUI_Z", 0.0);
-		c_hideHead = ini.GetBoolValue("Fallout4VRBody", "HideTheHead");
+		c_hideHead = ini.GetBoolValue("Fallout4VRBody", "HideHead");
+		c_hideSkin = ini.GetBoolValue("Fallout4VRBody", "HideSkin");
 		c_pipBoyLookAtGate = ini.GetDoubleValue("Fallout4VRBody", "PipBoyLookAtThreshold", 0.7);
 		c_pipBoyOffDelay = (int)ini.GetLongValue("Fallout4VRBody", "PipBoyOffDelay", 5000);
 		c_gripLetGoThreshold = ini.GetDoubleValue("Fallout4VRBody", "GripLetGoThreshold", 15.0f);
@@ -216,10 +249,86 @@ namespace F4VRBody {
 		// now load weapon offset JSON
 		readOffsetJson();
 
+		std::ifstream cullList;
+
+		cullList.open(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\face.ini");
+
+		if (cullList.is_open()) {
+			while (cullList) {
+				std::string input;
+				cullList >> input;
+				faceGeometry.push_back(input);
+			}
+		}
+
+		cullList.close();
+
+		cullList.open(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\skins.ini");
+
+		if (cullList.is_open()) {
+			while (cullList) {
+				std::string input;
+				cullList >> input;
+				skinGeometry.push_back(input);
+			}
+		}
+
+		cullList.close();
+
 		return true;
 	}
 
 
+	// cull items in skins/faces cull list
+
+	void cullGeometry() {
+		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
+
+		if (!rn) {
+			return;
+		}
+
+		if (!c_hideHead && !c_hideSkin) {
+			return;
+		}
+
+		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
+
+			rn->kGeomArray[i].spGeometry->flags &= 0xfffffffffffffffe;
+			if (c_hideHead) {
+				if (std::find(faceGeometry.begin(), faceGeometry.end(), rn->kGeomArray[i].spGeometry->m_name.c_str()) != faceGeometry.end()) {
+					rn->kGeomArray[i].spGeometry->flags |= 0x1;
+				}
+			}
+
+			if (c_hideSkin) {
+				if (std::find(skinGeometry.begin(), skinGeometry.end(), rn->kGeomArray[i].spGeometry->m_name.c_str()) != skinGeometry.end()) {
+					rn->kGeomArray[i].spGeometry->flags |= 0x1;
+				}
+			}
+		}
+	}
+
+
+	void dumpGeometryArrayInUpdate() {
+
+		if (!bDumpArray) {
+			return;
+		}
+
+		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
+
+		if (!rn) {
+			return;
+		}
+
+		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
+			_MESSAGE("%s", rn->kGeomArray[i].spGeometry->m_name.c_str());
+		}
+
+		bDumpArray = false;
+
+	}
 
 
 
@@ -378,6 +487,56 @@ namespace F4VRBody {
 
 	}
 
+	void fixSkeleton() {
+
+			NiNode* pn = (*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
+
+			static BSFixedString lHand("LArm_Hand");
+			static BSFixedString lArm("LArm_ForeArm1");
+			static BSFixedString lfarm("LArm_ForeArm2");
+			static BSFixedString rHand("RArm_Hand");
+			static BSFixedString rArm("RArm_ForeArm1");
+			static BSFixedString rfarm("RArm_ForeArm2");
+			static BSFixedString pipboyName("PipboyBone");
+
+			NiNode* hand = pn->GetObjectByName(&lHand)->GetAsNiNode();
+			NiNode* arm = pn->GetObjectByName(&lArm)->GetAsNiNode();
+			NiNode* forearm = pn->GetObjectByName(&lfarm)->GetAsNiNode();
+			NiNode* pipboy = (NiNode*)pn->m_children.m_data[0]->GetObjectByName(&pipboyName);
+
+			Skeleton sk;
+			bool inPA = sk.detectInPowerArmor();
+
+			if (!inPA) {
+				if (arm->m_children.m_data[0] == hand) {
+					arm->RemoveChildAt(0);
+					if (pipboy) {
+						pipboy->m_parent->RemoveChild(pipboy);
+					}
+					else {
+						pipboy = (NiNode*)pn->GetObjectByName(&pipboyName);
+					}
+					forearm->m_parent->RemoveChild(forearm);
+					arm->AttachChild(forearm, true);
+					forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(hand, true);
+					if (pipboy) {
+						forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(pipboy, true);
+					}
+				}
+
+				hand = pn->GetObjectByName(&rHand)->GetAsNiNode();
+				arm = pn->GetObjectByName(&rArm)->GetAsNiNode();
+				forearm = pn->GetObjectByName(&rfarm)->GetAsNiNode();
+
+				if (arm->m_children.m_data[0] == hand) {
+					arm->RemoveChildAt(0);
+					forearm->m_parent->RemoveChild(forearm);
+					arm->AttachChild(forearm, true);
+					forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(hand, true);
+				}
+			}
+	}
+
 	void replaceMeshes(PlayerNodes* pn) {
 		NiNode* ui = pn->primaryUIAttachNode;
 		NiNode* wand = get1stChildNode("world_primaryWand.nif", ui);
@@ -526,13 +685,22 @@ namespace F4VRBody {
 			_MESSAGE("scale set");
 
 			playerSkelly->setBodyLen();
-			c_leftHandedMode = *iniLeftHandedMode;
-			playerSkelly->setLeftHandedSticky();
 			_MESSAGE("initialized");
 			return true;
 		}
 		else {
 			return false;
+		}
+	}
+
+	void smoothMovement()
+	{
+		if (!c_disableSmoothMovement) {
+			if (c_verbose) { _MESSAGE("Smooth Movement"); }
+			SmoothMovementVR::everyFrame();
+			static BSFixedString pwn("PlayerWorldNode");
+			NiNode* pwn_node = (*g_player)->unkF0->rootNode->m_parent->GetObjectByName(&pwn)->GetAsNiNode();
+			updateTransformsDown(pwn_node, true);
 		}
 	}
 
@@ -592,6 +760,9 @@ namespace F4VRBody {
 		}
 		
 		// do stuff now
+		c_leftHandedMode = *iniLeftHandedMode;
+		playerSkelly->setLeftHandedSticky();
+
 
 		if (c_verbose) { _MESSAGE("Start of Frame"); }
 
@@ -601,11 +772,6 @@ namespace F4VRBody {
 			replaceMeshes(playerSkelly->getPlayerNodes());
 		}
 
-		if (!c_disableSmoothMovement) {
-			if (c_verbose) { _MESSAGE("Smooth Movement"); }
-			SmoothMovementVR::everyFrame();
-			updateTransformsDown(playerSkelly->getPlayerNodes()->playerworldnode, true);
-		}
 
 		// check if jumping or in air;
 
@@ -617,6 +783,8 @@ namespace F4VRBody {
 
 		if (c_verbose) { _MESSAGE("Hide Wands"); }
 		playerSkelly->hideWands();
+
+	//	fixSkeleton();
 
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
 		if (c_verbose) { _MESSAGE("restore locals of skeleton"); }
@@ -677,10 +845,13 @@ namespace F4VRBody {
 		if (c_verbose) { _MESSAGE("Fix the Armor"); }
 		playerSkelly->fixArmor();
 
+		cullGeometry();
+
 		// project body out in front of the camera for debug purposes
 		if (c_verbose) { _MESSAGE("Selfie Time"); }
 		playerSkelly->selfieSkelly(70.0f);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
+
 
 		if (c_verbose) { _MESSAGE("fix the missing screen"); }
 		fixMissingScreen(playerSkelly->getPlayerNodes());
@@ -702,10 +873,10 @@ namespace F4VRBody {
 
 		playerSkelly->offHandToBarrel();
 		playerSkelly->offHandToScope();
-	//	playerSkelly->debug();
 
-	//	AIProcess_ClearMuzzleFlashes((*g_player)->middleProcess);
-
+		BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
+		BSFlattenedBoneTree_UpdateBoneArray((*g_player)->unkF0->rootNode->m_children.m_data[0]); // just in case any transforms missed because they are not in the tree do a full flat bone array update
+		BSFadeNode_UpdateGeomArray((*g_player)->unkF0->rootNode, 1);
 
 		if ((*g_player)->middleProcess->unk08->equipData && (*g_player)->middleProcess->unk08->equipData->equippedData) {
 			auto obj = (*g_player)->middleProcess->unk08->equipData->equippedData;
@@ -718,6 +889,14 @@ namespace F4VRBody {
 			}
 		}
 
+		if (isInScopeMenu()) {
+			playerSkelly->hideHands();
+		}
+
+		playerSkelly->fixBackOfHand();
+
+		dumpGeometryArrayInUpdate();
+		playerSkelly->debug();
 
 	}
 
@@ -727,6 +906,8 @@ namespace F4VRBody {
 		isLoaded = true;
 		nextBoneSphereHandle = 1;
 		curDevice = 0;
+
+		scopeMenuEvent.Register();
 		return;
 	}
 
@@ -1249,6 +1430,12 @@ namespace F4VRBody {
 		c_repositionMasterMode = !c_repositionMasterMode;
 	}
 
+	void dumpGeometryArray(StaticFunctionTag* base) {
+		
+		bDumpArray = true;
+	}
+
+
 	bool RegisterFuncs(VirtualMachine* vm) {
 
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("saveStates", "FRIK:FRIK", F4VRBody::saveStates, vm));
@@ -1291,6 +1478,7 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, UInt32, bool>("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheresAtBone, vm));
 		vm->RegisterFunction(new NativeFunction6<StaticFunctionTag, void, bool, float, float, float, float, float>("setFingerPositionScalar", "FRIK:FRIK", F4VRBody::setFingerPositionScalar, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("restoreFingerPoseControl", "FRIK:FRIK", F4VRBody::restoreFingerPoseControl, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("dumpGeometryArray", "FRIK:FRIK", F4VRBody::dumpGeometryArray, vm));
 
 		return true;
 	}

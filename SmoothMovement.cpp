@@ -2,6 +2,7 @@
 
 #include "SmoothMovementVR.h"
 #include "f4se/NiExtraData.h"
+#include "F4VRBody.h"
 #include <atomic>
 #include <deque>
 
@@ -181,7 +182,7 @@ namespace SmoothMovementVR
 
 						if (playerWorldNode && hmdNode)
 						{
-							const NiPoint3 curPos = (*g_player)->unkF0->rootNode->m_worldTransform.pos;
+							const NiPoint3 curPos = (*g_player)->firstPersonSkeleton->m_worldTransform.pos;
 
 							if (first && curPos.z != 0)
 							{
@@ -245,6 +246,8 @@ namespace SmoothMovementVR
 						//	_MESSAGE("playerPos: %g %g %g  --hmd local:  %g %g %g  --appliedLocal: %g %g %g", curPos.x, curPos.y, curPos.z, hmdNode->m_localTransform.pos.x, hmdNode->m_localTransform.pos.y, hmdNode->m_localTransform.pos.z, playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
 						//	_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
+
+								playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load() ? (F4VRBody::c_PACameraHeight + F4VRBody::c_cameraHeight) : F4VRBody::c_cameraHeight;
 						}
 						else
 						{

@@ -159,14 +159,14 @@ namespace F4VRBody {
 
 		float dotP = vec3_dot(vec3_norm(v1), vec3_norm(v2));
 
-		if (dotP > 0.999) {
+		if (dotP > 0.99999999) {
 			this->makeIdentity();
 			return;
 		}
-		else if (dotP < -0.999) {
+		else if (dotP < -0.99999999) {
 			// reverse it
 			cross = vec3_norm(vec3_cross(NiPoint3(0, 1, 0), v1));
-			if (vec3_len(cross) < 0.000001) {
+			if (vec3_len(cross) < 0.00000001) {
 				cross = vec3_norm(vec3_cross(NiPoint3(1, 0, 0), v1));
 			}
 			this->setAngleAxis(PI, cross);

@@ -174,11 +174,13 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "H:\MO2\fo4vr\mods\FRIK\F4SE\Plugins" 
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BSFlattenedBoneTree.cpp" />
     <ClCompile Include="F4VRBody.cpp" />
     <ClCompile Include="HandPose.cpp" />
     <ClCompile Include="hook.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matrix.cpp" />
+    <ClCompile Include="Menu.cpp" />
     <ClCompile Include="MenuChecker.cpp" />
     <ClCompile Include="patches.cpp" />
     <ClCompile Include="Quaternion.cpp" />
@@ -197,6 +199,7 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "H:\MO2\fo4vr\mods\FRIK\F4SE\Plugins" 
     <ClInclude Include="include\SimpleIni.h" />
     <ClInclude Include="include\version.h" />
     <ClInclude Include="matrix.h" />
+    <ClInclude Include="Menu.h" />
     <ClInclude Include="MenuChecker.h" />
     <ClInclude Include="MuzzleFlash.h" />
     <ClInclude Include="NiCloneProcess.h" />

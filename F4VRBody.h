@@ -37,6 +37,11 @@ extern RelocAddr<_AIProcess_getAnimationManager> AIProcess_getAnimationManager;
 typedef void(*_BSAnimationManager_setActiveGraph)(BSAnimationManager* manager, int graph);
 extern RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiveGraph;
 
+typedef void(*_NiNode_UpdateWorldBound)(NiNode* node);
+extern RelocAddr<_NiNode_UpdateWorldBound> NiNode_UpdateWorldBound;
+
+extern RelocPtr<NiNode*> worldRootCamera1;
+
 namespace F4VRBody {
 
 	extern float c_playerHeight;
@@ -124,6 +129,7 @@ namespace F4VRBody {
 
 	bool loadConfig();
 
+	void smoothMovement();
 	void update();
 	void startUp();
 

@@ -1,5 +1,7 @@
 #include "hook.h"
 #include "F4VRBody.h"
+#include "f4se/GameReferences.h"
+#include "f4se/GameCamera.h"
 
 #include "xbyak/xbyak.h"
 
@@ -16,10 +18,17 @@ RelocAddr<uintptr_t> hookPlayerUpdate(0xf1004c);
 RelocAddr<uintptr_t> hookBoneTreeUpdate(0xd84ee4);
 
 RelocAddr<uintptr_t> hookEndUpdate(0xd84f2c);
-
+RelocAddr<uintptr_t> hookMainDrawCandidate(0xd844bc);
+RelocAddr<uintptr_t> hookMainDrawandUi(0xd87ace);
 
 typedef void(*_hookedFunc)(uint64_t param1, uint64_t param2, uint64_t param3);
 RelocAddr<_hookedFunc> hookedFunc(0x1C18620);
+
+typedef void(*_hookedPosPlayerFunc)(double param1, double param2, double param3);
+RelocAddr<_hookedPosPlayerFunc> hookedPosPlayerFunc(0x2841530);
+
+typedef void(*_hookedMainDrawCandidateFunc)(uint64_t param1, uint64_t param2, uint64_t param3, uint64_t param4);
+RelocAddr<_hookedMainDrawCandidateFunc> hookedMainDrawCandidateFunc(0xd831f0);
 
 //typedef void(*_hookedMainLoop)();
 //RelocAddr<_hookedMainLoop> hookedMainLoop(0xd83ac0);
@@ -32,6 +41,28 @@ RelocAddr<_hookedda09a0> hookedda09a0(0xda09a0);
 
 typedef void(*_hooked1c22fb0)(uint64_t a, uint64_t b);
 RelocAddr<_hooked1c22fb0> hooked1c22fb0(0x1c22fb0);
+
+typedef void(*_main_update_player)(uint64_t rcx, uint64_t rdx);
+RelocAddr<_main_update_player> main_update_player(0x1c22fb0);
+RelocAddr<uintptr_t> hookMainUpdatePlayer(0x0f0ff6a);
+
+typedef void(*_hookMultiBoundCullingFunc)();
+RelocAddr<_hookMultiBoundCullingFunc> hookMultiBoundCullingFunc(0x0d84930);
+RelocAddr<uintptr_t> hookMultiBoundCulling(0x0d8445d);
+
+// renderer stuff
+
+void RendererEnable(std::uint64_t a_ptr, bool a_bool) {
+	using func_t = decltype(&RendererEnable);
+	RelocAddr<func_t> func(0x0b00150);
+	return func(a_ptr, a_bool);
+}
+
+std::uint64_t RendererGetByName(const BSFixedString& a_name) {
+	using func_t = decltype(&RendererGetByName);
+	RelocAddr<func_t> func(0x0b00270);
+	return func(a_name);
+}
 
 RelocAddr<uint64_t> wandMesh(0x2d686d8);
 
@@ -58,6 +89,61 @@ void hookIt(uint64_t rcx) {
 
 	hookedda09a0(parm);
 	return;
+}
+
+void hook2(uint64_t rcx, uint64_t rdx, uint64_t r8, uint64_t r9) {
+
+	F4VRBody::update();
+
+	hookedMainDrawCandidateFunc(rcx, rdx, r8, r9);
+
+	BSFixedString name("ScopeMenu");
+
+	std::uint64_t renderer = RendererGetByName(name);
+
+	if (renderer) {
+//		RendererEnable(renderer, false);
+	}
+
+	return;
+}
+
+void hook3(double param1, double param2, double param3) {
+
+	hookedPosPlayerFunc(param1, param2, param3);
+	F4VRBody::update();
+	return;
+}
+
+void hook4() {
+	F4VRBody::update();
+	hookMultiBoundCullingFunc();
+	return;
+}
+
+void hookSmoothMovement() {
+	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
+		F4VRBody::smoothMovement();
+	}
+	hookMultiBoundCullingFunc();
+}
+
+void hook_main_update_player(uint64_t rcx, uint64_t rdx) {
+
+	if ((*g_player) && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
+		NiNode* body = (*g_player)->unkF0->rootNode->GetAsNiNode();
+		body->m_localTransform.pos.x = (*g_playerCamera)->cameraNode->m_worldTransform.pos.x;
+		body->m_localTransform.pos.y = (*g_playerCamera)->cameraNode->m_worldTransform.pos.y;
+		body->m_worldTransform.pos.x = (*g_playerCamera)->cameraNode->m_worldTransform.pos.x;
+		body->m_worldTransform.pos.y = (*g_playerCamera)->cameraNode->m_worldTransform.pos.y;
+
+		static BSFixedString pwn("PlayerWorldNode");
+		NiNode* pwn_node = (*g_player)->unkF0->rootNode->m_parent->GetObjectByName(&pwn)->GetAsNiNode();
+		body->m_localTransform.pos.z += pwn_node->m_localTransform.pos.z;
+		body->m_worldTransform.pos.z += pwn_node->m_localTransform.pos.z;
+	}
+
+	main_update_player(rcx, rdx);
 }
 
 void updateCounter() {
@@ -88,7 +174,12 @@ void hookMain() {
 
 //	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&F4VRBody::update);
 
-	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
+//	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
+	g_branchTrampoline.Write5Call(hookMainDrawCandidate.GetUIntPtr(), (uintptr_t)&hook2);
+//	g_branchTrampoline.Write5Call(hookMultiBoundCulling.GetUIntPtr(), (uintptr_t)&hook4);
+
+	g_branchTrampoline.Write5Call(hookMainUpdatePlayer.GetUIntPtr(), (uintptr_t)&hook_main_update_player);
+	g_branchTrampoline.Write5Call(hookMultiBoundCulling.GetUIntPtr(), (uintptr_t)&hookSmoothMovement);
 
 //	_MESSAGE("hooking main loop function");
 //	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);

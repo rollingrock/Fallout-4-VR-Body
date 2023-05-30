@@ -1,5 +1,4 @@
 #include "utils.h"
-#include "f4se/GameSettings.h"
 
 #define PI 3.14159265358979323846
 
@@ -7,6 +6,9 @@ namespace F4VRBody {
 
 	RelocAddr<_AIProcess_ClearMuzzleFlashes> AIProcess_ClearMuzzleFlashes(0xecc710);
 	RelocAddr<_AIProcess_CreateMuzzleFlash> AIProcess_CreateMuzzleFlash(0xecc570);
+
+	typedef Setting* (*_SettingCollectionList_GetPtr)(SettingCollectionList* list, const char* name);
+	RelocAddr<_SettingCollectionList_GetPtr> SettingCollectionList_GetPtr(0x501500);
 
 	float vec3_len(NiPoint3 v1) {
 
@@ -162,7 +164,7 @@ namespace F4VRBody {
 		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
 			if (nextNode) {
-				toggleVis(nextNode, hide, true);
+				toggleVis((NiNode*)nextNode, hide, true);
 			}
 		}
 	}
@@ -252,4 +254,14 @@ namespace F4VRBody {
 
 		return nullptr;
 	}
+
+	Setting* GetINISettingNative(const char* name)
+	{
+		Setting* setting = SettingCollectionList_GetPtr(*g_iniSettings, name);
+		if (!setting)
+			setting = SettingCollectionList_GetPtr(*g_iniPrefSettings, name);
+
+		return setting;
+	}
+
 }

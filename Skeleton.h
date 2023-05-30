@@ -204,6 +204,8 @@ namespace F4VRBody
 		void makeArmsT(bool);
 		void fixArmor();
 		void showHidePAHUD();
+		void hideHands();
+		void fixBackOfHand();
 
 		// movement
 		void walk();
@@ -243,7 +245,7 @@ namespace F4VRBody
 		ArmNodes getArm(bool isLeft);
 		void set1stPersonArm(NiNode* weapon, NiNode* offsetNode);
 		void setBodyLen();
-		void detectInPowerArmor();
+		bool detectInPowerArmor();
 		void setKneePos();
 		void showOnlyArms();
 		void handleWeaponNodes();
@@ -255,6 +257,8 @@ namespace F4VRBody
 		void offHandToScope();
 		void moveBack();
 		void debug();
+		void initLocalDefaults();
+		void fixBoneTree();
 
 		void setTime();
 
@@ -292,6 +296,7 @@ namespace F4VRBody
 		float _curx;
 		float _cury;
 		std::map<std::string, NiTransform> savedStates;
+		std::map<std::string, NiPoint3> boneLocalDefault;
 
 		NiMatrix43 originalPipboyRotation;
 		bool _pipboyStatus;

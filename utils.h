@@ -2,6 +2,7 @@
 
 #include "f4se/GameReferences.h"
 #include "f4se/NiNodes.h"
+#include "f4se/GameSettings.h"
 
 #include "matrix.h"
 
@@ -43,5 +44,7 @@ namespace F4VRBody {
 
 	NiNode* getChildNode(const char* nodeName, NiNode* nde);
 	NiNode* get1stChildNode(const char* nodeName, NiNode* nde);
+
+	Setting* GetINISettingNative(const char* name);
 
 }
