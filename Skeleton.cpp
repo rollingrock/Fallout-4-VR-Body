@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <time.h>
+#include <string.h>
 
 extern PapyrusVRAPI* g_papyrusvr;
 extern OpenVRHookManagerAPI* vrhook;
@@ -475,7 +476,7 @@ namespace F4VRBody
 			fromNode->UpdateWorldData(ud);
 		}
 
-		if (!strcmp(toNode->m_name.c_str(), fromNode->m_name.c_str())) {
+		if (!_stricmp(toNode->m_name.c_str(), fromNode->m_name.c_str())) {
 			return;
 		}
 
@@ -496,7 +497,7 @@ namespace F4VRBody
 		NiAVObject::NiUpdateData* ud = nullptr;
 
 
-		if (!strcmp(toNode->m_name.c_str(), fromNode->m_name.c_str())) {
+		if (!_stricmp(toNode->m_name.c_str(), fromNode->m_name.c_str())) {
 			if (updateTarget) {
 				fromNode->UpdateWorldData(ud);
 			}
@@ -554,7 +555,7 @@ namespace F4VRBody
 			return nullptr;
 		}
 
-		if (!strcmp(nodeName, nde->m_name.c_str())) {
+		if (!_stricmp(nodeName, nde->m_name.c_str())) {
 			return nde;
 		}
 
@@ -588,9 +589,11 @@ namespace F4VRBody
 			return;
 		}
 
-		if (hideHead) {
-			headNode->m_localTransform.scale = 0.0000001;
-		}
+	//	c_selfieMode = true;
+
+		//if (hideHead) {
+		//	headNode->m_localTransform.scale = 0.0000001;
+		//}
 
 		headNode->m_localTransform.rot.data[0][0] =  0.967;
 		headNode->m_localTransform.rot.data[0][1] = -0.251;
@@ -602,13 +605,14 @@ namespace F4VRBody
 		headNode->m_localTransform.rot.data[2][1] = -0.037;
 		headNode->m_localTransform.rot.data[2][2] =  0.998;
 
-		if (!c_selfieMode) {
-			headNode->m_localTransform.pos.y = -4.0;
-		}
-		else {
-			// always show the head in selfie mode
-			headNode->m_localTransform.scale = 1.0;
-		}
+//		if (!c_selfieMode) {
+////			headNode->m_localTransform.pos.y = -4.0;
+//		}
+//		else {
+//			// always show the head in selfie mode
+//			headNode->m_localTransform.scale = 1.0;
+//			headNode->m_localTransform.pos.y = 0.0;
+//		}
 
 
 		NiAVObject::NiUpdateData* ud = nullptr;
@@ -636,7 +640,7 @@ namespace F4VRBody
 
 	void Skeleton::initLocalDefaults() {
 		boneLocalDefault.insert({ "Root", NiPoint3(-0.000000, -0.000000, 0.000000) });
-		boneLocalDefault["COM"] = NiPoint3(0.000011, 0.000041, 68.911301);
+		boneLocalDefault["COM"] = NiPoint3(2.0, 1.5, 68.911301);
 		boneLocalDefault["Pelvis"] = NiPoint3(0.000000, 0.000000, 0.000000);
 		boneLocalDefault["LLeg_Thigh"] = NiPoint3(0.000008, 0.000431, 6.615070);
 		boneLocalDefault["LLeg_Calf"] = NiPoint3(31.595196, 0.000021, -0.000031);
@@ -659,6 +663,8 @@ namespace F4VRBody
 		boneLocalDefault["RArm_ForeArm2"] = NiPoint3(6.152768, 0.000040, -0.000039);
 		boneLocalDefault["RArm_ForeArm3"] = NiPoint3(6.152856, -0.000009, -0.000091);
 		boneLocalDefault["RArm_Hand"] = NiPoint3(6.152939, 0.000044, -0.000029);
+		boneLocalDefault["Neck"] = NiPoint3(22.084, -3.767, 0.0);
+		boneLocalDefault["Head"] = NiPoint3(8.224354, 0.0, 0.0);
 
 	}
 
@@ -695,6 +701,8 @@ namespace F4VRBody
 		insertSaveState("RArm_ForeArm2", node);
 		insertSaveState("RArm_ForeArm3", node);
 		insertSaveState("RArm_Hand", node);
+		insertSaveState("Neck", node);
+		insertSaveState("Head", node);
 
 		//for (auto i = 0; i < node->m_children.m_emptyRunStart; ++i) {
 		//	auto nextNode = node->m_children.m_data[i] ? node->m_children.m_data[i]->GetAsNiNode() : nullptr;
@@ -988,7 +996,7 @@ namespace F4VRBody
 		return degrees_to_rads(angle);
 	}
 
-	void Skeleton::setUnderHMD() {
+	void Skeleton::setUnderHMD(float groundHeight) {
 
 		detectInPowerArmor();
 
@@ -1003,7 +1011,8 @@ namespace F4VRBody
 
 //		float y    = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
 	//	float x    = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
-		float z = _root->m_localTransform.pos.z;
+//		float z = _root->m_localTransform.pos.z;
+		float z = groundHeight;
 
 		float neckYaw   = getNeckYaw();
 		float neckPitch   = getNeckPitch();
@@ -1022,29 +1031,36 @@ namespace F4VRBody
 		body->m_worldTransform.pos.x = this->getPosition().x;
 		body->m_worldTransform.pos.y = this->getPosition().y;
 		body->m_worldTransform.pos.z += _playerNodes->playerworldnode->m_localTransform.pos.z;
-	//	_MESSAGE("%2f", _playerNodes->playerworldnode->m_localTransform.pos.z);
-
-		updateDown(_root, true);
 
 		NiPoint3 back = vec3_norm(NiPoint3(_forwardDir.x, _forwardDir.y, 0));
 		NiPoint3 bodydir = NiPoint3(0, 1, 0);
 
 		mat.rotateVectoVec(back, bodydir);
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
-		_root->m_localTransform.pos = body->m_worldTransform.pos - getPosition();
-		_root->m_localTransform.pos.z = z;
+		//_root->m_localTransform.pos = body->m_worldTransform.pos - getPosition();
+		_root->m_localTransform.pos *= 0.0f;
+		_root->m_localTransform.pos.y = c_playerOffset_forward - 6.0f;
 		_root->m_localTransform.scale = c_playerHeight / defaultCameraHeight;    // set scale based off specified user height
+
+		updateDown(_root, true);
 
 	}
 
 	void Skeleton::setBodyPosture() {
 		float neckPitch = getNeckPitch();
-		float bodyPitch = getBodyPitch();
+		float bodyPitch = (std::min)(getBodyPitch(), 0.6f);
 
-		NiNode* camera = (*g_playerCamera)->cameraNode;
+		float curHeight = c_playerHeight;
+		float heightCalc = (std::max)(0.0f, curHeight - _playerNodes->UprightHmdNode->m_localTransform.pos.z);
+
+		//NiNode* camera = (*g_playerCamera)->cameraNode;
+		NiNode* camera = _playerNodes->HmdNode;
 		NiNode* com = getNode("COM", _root);
 		NiNode* neck = getNode("Neck", _root);
 		NiNode* spine = getNode("SPINE1", _root);
+		NiNode* head = getNode("Head", _root);
+
+		Matrix44 rotMat;
 
 		_leftKneePos = getNode("LLeg_Calf", com)->m_worldTransform.pos;
 		_rightKneePos = getNode("RLeg_Calf", com)->m_worldTransform.pos;
@@ -1053,33 +1069,65 @@ namespace F4VRBody
 		com->m_localTransform.pos.x = 0.0;
 		com->m_localTransform.pos.y = 0.0;
 
-		float z_adjust = c_playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
-		NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * c_playerOffset_forward / 2, -_forwardDir.y * c_playerOffset_forward / 2, z_adjust);
-		NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
-
 		_torsoLen = vec3_len(neck->m_worldTransform.pos - com->m_worldTransform.pos);
 
+		//NiNode* camTarget = getNode("CamTarget", _root);
+		//
+		//if (camTarget) {
+		//	_MESSAGE("%f", vec3_len(camTarget->m_worldTransform.pos - head->m_worldTransform.pos));
+		//}
+
+		//float z_adjust = c_playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
+		//float xy_adjust = cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
+		//NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * xy_adjust / 2, -_forwardDir.y * xy_adjust / 2, z_adjust);
+		//NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
+		//float base = neckPitch > 0.0 ? 5.0 : 10.5;
+		//float hyp = base;
+		//if (abs(rads_to_degrees(neckPitch) >= 5.0)) {
+		//	hyp = base / cosf(neckPitch);
+		//}
+		//NiPoint3 neckPos = camera->m_worldTransform.pos + (NiPoint3(-1 * camera->m_worldTransform.rot.data[1][0], -1 * camera->m_worldTransform.rot.data[1][1], -1 * camera->m_worldTransform.rot.data[1][2]) * hyp);
+		//_MESSAGE("%f %f %f %f %f", base, neckPitch, neckPos.x, neckPos.y, neckPos.z);
+
+		float headMoveBack = 3.45;
+		NiPoint3 headPos = camera->m_worldTransform.pos + (NiPoint3(-1 * camera->m_worldTransform.rot.data[1][0], -1 * camera->m_worldTransform.rot.data[1][1], -1 * camera->m_worldTransform.rot.data[1][2]) * headMoveBack);
+		
+		NiPoint3 posVec = headPos - neck->m_worldTransform.pos;
+		NiPoint3 uLocalDir = neck->m_worldTransform.rot.Transpose() * vec3_norm(posVec);
+		rotMat.rotateVectoVec(uLocalDir, head->m_localTransform.pos);
+		neck->m_localTransform.rot = rotMat.multiply43Right(neck->m_localTransform.rot);
+
+		updateDown(neck, true);
+		
+		_MESSAGE("%f %f %f %f", camera->m_worldTransform.pos.x, camera->m_worldTransform.pos.y, _root->m_parent->m_worldTransform.pos.x, _root->m_parent->m_worldTransform.pos.y);
+
+
+		return;
+
+		NiPoint3 neckPos = neck->m_worldTransform.pos;
+		_MESSAGE("%f %f %f", neckPos.x, neckPos.y, neckPos.z);
 		NiPoint3 hmdToHip = neckPos - com->m_worldTransform.pos;
+		hmdToHip.z = com->m_worldTransform.pos.z - heightCalc;
 		NiPoint3 dir = NiPoint3(-_forwardDir.x, -_forwardDir.y, 0);
 
 		float dist = tanf(bodyPitch) * vec3_len(hmdToHip);
 		NiPoint3 tmpHipPos = com->m_worldTransform.pos + dir * (dist / vec3_len(dir));
-		tmpHipPos.z = com->m_worldTransform.pos.z;
+		tmpHipPos.z = com->m_worldTransform.pos.z - heightCalc;
 
 		NiPoint3 hmdtoNewHip = tmpHipPos - neckPos;
 		NiPoint3 newHipPos = neckPos + hmdtoNewHip * (_torsoLen / vec3_len(hmdtoNewHip));
 
+
 		NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * (newHipPos - com->m_worldTransform.pos);
-		float offsetFwd;
-		offsetFwd = _inPowerArmor ? -c_powerArmor_forward : c_playerOffset_forward;
-		com->m_localTransform.pos.y += newPos.y + offsetFwd;
-		com->m_localTransform.pos.z = newPos.z;
+		//float offsetFwd;
+		//offsetFwd = _inPowerArmor ? -c_powerArmor_forward : c_playerOffset_forward;
+		com->m_localTransform.pos.y += newPos.y;
+		com->m_localTransform.pos.z = (std::min)(newPos.z, _legLen);
 		com->m_localTransform.pos.z -= _inPowerArmor ? c_powerArmor_up + c_PACameraHeight : 0.0f;
 
 		Matrix44 rot;
 		rot.rotateVectoVec(neckPos - tmpHipPos, hmdToHip);
 		NiMatrix43 mat = rot.multiply43Left(spine->m_parent->m_worldTransform.rot.Transpose());
-		rot.makeTransformMatrix(mat, NiPoint3(0, 0, 0));
 		spine->m_localTransform.rot = rot.multiply43Right(spine->m_worldTransform.rot);
 
 	}
@@ -1257,8 +1305,8 @@ namespace F4VRBody
 				else {
 					delayFrame = delayFrame == 2 ? delayFrame : delayFrame + 1;
 				}
-				_rightFootTarget.z = _root->m_worldTransform.pos.z;
-				_rightFootStart.z = _root->m_worldTransform.pos.z;
+				_rightFootTarget.z = _root->m_parent->m_worldTransform.pos.z;
+				_rightFootStart.z = _root->m_parent->m_worldTransform.pos.z;
 				_rightFootPos = _rightFootStart + ((_rightFootTarget - _rightFootStart) * interp);
 				double stepAmount = std::clamp(vec3_len(_rightFootTarget - _rightFootStart) / 150.0, 0.0, 1.0);
 				double stepHeight = (std::max)(stepAmount * 9.0, 1.0);
@@ -1279,8 +1327,8 @@ namespace F4VRBody
 				else {
 					delayFrame = delayFrame == 2 ? delayFrame : delayFrame + 1;
 				}
-				_leftFootTarget.z = _root->m_worldTransform.pos.z;
-				_leftFootStart.z = _root->m_worldTransform.pos.z;
+				_leftFootTarget.z = _root->m_parent->m_worldTransform.pos.z;
+				_leftFootStart.z = _root->m_parent->m_worldTransform.pos.z;
 				_leftFootPos = _leftFootStart + ((_leftFootTarget - _leftFootStart) * interp);
 				double stepAmount = std::clamp(vec3_len(_leftFootTarget - _leftFootStart) / 150.0, 0.0, 1.0);
 				double stepHeight = (std::max)(stepAmount * 9.0, 1.0);
@@ -1377,8 +1425,8 @@ namespace F4VRBody
 		NiPoint3 xDir = vec3_norm(footToHip);
 		NiPoint3 yDir = vec3_norm(hipDir - xDir * vec3_dot(hipDir, xDir));
 
-		float thighLenOrig = vec3_len(kneeNode->m_localTransform.pos);
-		float calfLenOrig = vec3_len(footNode->m_localTransform.pos);
+		float thighLenOrig = vec3_len(kneeNode->m_localTransform.pos) * kneeNode->m_worldTransform.scale;
+		float calfLenOrig = vec3_len(footNode->m_localTransform.pos) * footNode->m_worldTransform.scale;
 		float thighLen = thighLenOrig;
 		float calfLen = calfLenOrig;
 
@@ -1514,10 +1562,11 @@ namespace F4VRBody
 		_torsoLen = vec3_len(getNode("Camera", _root)->m_worldTransform.pos - getNode("COM", _root)->m_worldTransform.pos);
 		_torsoLen *= c_playerHeight / defaultCameraHeight;
 
-		_legLen =  vec3_len(getNode("LLeg_Thigh", _root)->m_worldTransform.pos -  getNode("Pelvis", _root)->m_worldTransform.pos);
+		_legLen =  vec3_len(getNode("Pelvis", _root)->m_worldTransform.pos -  getNode("COM", _root)->m_worldTransform.pos);
+		_legLen +=  vec3_len(getNode("LLeg_Thigh", _root)->m_worldTransform.pos -  getNode("Pelvis", _root)->m_worldTransform.pos);
 		_legLen += vec3_len(getNode("LLeg_Calf", _root)->m_worldTransform.pos - getNode("LLeg_Thigh", _root)->m_worldTransform.pos);
 		_legLen += vec3_len(getNode("LLeg_Foot", _root)->m_worldTransform.pos - getNode("LLeg_Calf", _root)->m_worldTransform.pos);
-		_legLen *= c_playerHeight / defaultCameraHeight;
+	//	_legLen *= c_playerHeight / defaultCameraHeight;
 	}
 
 	void Skeleton::hideWeapon() {
@@ -1749,7 +1798,7 @@ namespace F4VRBody
 						setVisibility(n1, a_show);
 						break;
 					}
-					else if (!strcmp(n->m_name.c_str(), "")) {
+					else if (!_stricmp(n->m_name.c_str(), "")) {
 						setVisibility(n, a_show);
 						NiAVObject* n1 = (NiAVObject*)n->m_children.m_data[0];
 						setVisibility(n1, a_show);
@@ -1769,7 +1818,7 @@ namespace F4VRBody
 						setVisibility(n2, a_show);
 						break;
 					}
-					else if (!strcmp(n->m_name.c_str(), "")) {
+					else if (!_stricmp(n->m_name.c_str(), "")) {
 						setVisibility(n, a_show);
 						NiAVObject* n2 = (NiAVObject*)n->m_children.m_data[0];
 						setVisibility(n2, a_show);
@@ -2307,8 +2356,8 @@ namespace F4VRBody
 
 		NiPoint3 shoulderToHand = handPos - arm.upper->m_worldTransform.pos;
 		float armLength = c_armLength;
-		float adjustAmount = (std::clamp)(vec3_len(shoulderToHand) - armLength * 0.5f, 0.0f, armLength * 0.75f) / (armLength * 0.75f);
-		NiPoint3 shoulderOffset = vec3_norm(shoulderToHand) * (adjustAmount * armLength * 0.225f);
+		float adjustAmount = (std::clamp)(vec3_len(shoulderToHand) - armLength * 0.5f, 0.0f, armLength * 0.85f) / (armLength * 0.85f);
+		NiPoint3 shoulderOffset = vec3_norm(shoulderToHand) * (adjustAmount * armLength * 0.08f);
 
 		NiPoint3 clavicalToNewShoulder = arm.upper->m_worldTransform.pos + shoulderOffset - arm.shoulder->m_worldTransform.pos;
 
@@ -2427,6 +2476,7 @@ namespace F4VRBody
 		// Twist angle ranges from -PI/2 to +PI/2; map that range to go from the minimum to the maximum instead
 		float twistLimitAngle = twistMinAngle + ((twistAngle + PI / 2.0f) / PI) * (twistMaxAngle - twistMinAngle);
 
+		_MESSAGE("%f %f %f %f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), rads_to_degrees(twistAngle), rads_to_degrees(twistLimitAngle));
 		// The bendDownDir vector points in the direction the player faces, and bends up/down with the final elbow angle
 		NiMatrix43 rot = getRotationAxisAngle(sidewaysDir * negLeft, twistLimitAngle);
 		NiPoint3 bendDownDir = rot * forwardDir;
