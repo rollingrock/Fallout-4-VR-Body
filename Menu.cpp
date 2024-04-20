@@ -20,7 +20,7 @@ namespace F4VRBody {
 	EventResult ScopeMenuEventHandler::ReceiveEvent(MenuOpenCloseEvent* a_event, void* dispatcher) {
 		const char* name = a_event->menuName.c_str();
 
-		if (!strcmp(name, "ScopeMenu")) {
+		if (!_stricmp(name, "ScopeMenu")) {
 			if (a_event->isOpen) {
 			//	_MESSAGE("scope opened");
 				if (!c_staticGripping) {

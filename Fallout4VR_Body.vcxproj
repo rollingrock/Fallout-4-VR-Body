@@ -139,8 +139,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "E:\fvre\mods\FRIK\F4SE\Plugins" /Y
-copy "$(TargetPath)" "H:\MO2\fo4vr\mods\FRIK\F4SE\Plugins" /Y</Command>
+      <Command>copy "$(TargetPath)" "C:\mo2\fo4vr\mods\FRIK\F4SE\Plugins" /Y
+copy "$(TargetPath)" "C:\mo2\fo4vr\mods\FRIK\F4SE\Plugins" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -167,10 +167,8 @@ copy "$(TargetPath)" "H:\MO2\fo4vr\mods\FRIK\F4SE\Plugins" /Y</Command>
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "E:\fvre\mods\FRIK\F4SE\Plugins" /Y
-copy "$(TargetPath)" "H:\MO2\fo4vr\mods\FRIK\F4SE\Plugins" /Y
-copy "$(SolutionDir)x64\Release\FRIK.pdb" "E:\fvre\mods\FRIK\F4SE\Plugins" /Y
-copy "$(SolutionDir)x64\Release\FRIK.pdb" "H:\MO2\fo4vr\mods\FRIK\F4SE\Plugins" /Y</Command>
+      <Command>copy "$(TargetPath)" "C:\mo2\fo4vr\mods\FRIK\F4SE\Plugins" /Y
+copy "$(SolutionDir)x64\Release\FRIK.pdb" "C:\mo2\fo4vr\mods\FRIK\F4SE\Plugins" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

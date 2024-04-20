@@ -222,7 +222,7 @@ namespace F4VRBody {
 			return nullptr;
 		}
 
-		if (!strcmp(nodeName, nde->m_name.c_str())) {
+		if (!_stricmp(nodeName, nde->m_name.c_str())) {
 			return nde;
 		}
 
@@ -246,7 +246,7 @@ namespace F4VRBody {
 		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
 			if (nextNode) {
-				if (!strcmp(nodeName, nextNode->m_name.c_str())) {
+				if (!_stricmp(nodeName, nextNode->m_name.c_str())) {
 					return nextNode;
 				}
 			}

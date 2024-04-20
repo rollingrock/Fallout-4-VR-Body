@@ -150,6 +150,9 @@ namespace F4VRBody {
 	typedef void* (*_BSGraphics_Utility_CalcBoneMatrices)(BSSubIndexTriShape* node, uint64_t counter);
 	RelocAddr<_BSGraphics_Utility_CalcBoneMatrices> BSGraphics_Utility_CalcBoneMatrices(0x1dabc60);
 
+	typedef uint64_t(*_TESObjectCELL_GetLandHeight)(TESObjectCELL* cell, NiPoint3* coord, float* height);
+	RelocAddr<_TESObjectCELL_GetLandHeight> TESObjectCell_GetLandHeight(0x039b230);
+
 
 	RelocAddr<uint64_t> g_frameCounter(0x65a2b48);
 	RelocAddr<UInt64*> cloneAddr1(0x36ff560);
@@ -294,16 +297,16 @@ namespace F4VRBody {
 
 		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
 
-			rn->kGeomArray[i].spGeometry->flags &= 0xfffffffffffffffe;
+			rn->kGeomArray[i]->spGeometry->flags &= 0xfffffffffffffffe;
 			if (c_hideHead) {
-				if (std::find(faceGeometry.begin(), faceGeometry.end(), rn->kGeomArray[i].spGeometry->m_name.c_str()) != faceGeometry.end()) {
-					rn->kGeomArray[i].spGeometry->flags |= 0x1;
+				if (std::find(faceGeometry.begin(), faceGeometry.end(), rn->kGeomArray[i]->spGeometry->m_name.c_str()) != faceGeometry.end()) {
+					rn->kGeomArray[i]->spGeometry->flags |= 0x1;
 				}
 			}
 
 			if (c_hideSkin) {
-				if (std::find(skinGeometry.begin(), skinGeometry.end(), rn->kGeomArray[i].spGeometry->m_name.c_str()) != skinGeometry.end()) {
-					rn->kGeomArray[i].spGeometry->flags |= 0x1;
+				if (std::find(skinGeometry.begin(), skinGeometry.end(), rn->kGeomArray[i]->spGeometry->m_name.c_str()) != skinGeometry.end()) {
+					rn->kGeomArray[i]->spGeometry->flags |= 0x1;
 				}
 			}
 		}
@@ -323,7 +326,7 @@ namespace F4VRBody {
 		}
 
 		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
-			_MESSAGE("%s", rn->kGeomArray[i].spGeometry->m_name.c_str());
+			_MESSAGE("%s", rn->kGeomArray[i]->spGeometry->m_name.c_str());
 		}
 
 		bDumpArray = false;
@@ -786,6 +789,11 @@ namespace F4VRBody {
 
 	//	fixSkeleton();
 
+		NiPoint3 position = (*g_player)->pos;
+		float groundHeight = 0.0f;
+
+		uint64_t ret = TESObjectCell_GetLandHeight((*g_player)->parentCell, &position, &groundHeight);
+
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
 		if (c_verbose) { _MESSAGE("restore locals of skeleton"); }
 		playerSkelly->restoreLocals(playerSkelly->getRoot()->m_parent->GetAsNiNode());
@@ -799,7 +807,7 @@ namespace F4VRBody {
 
 		//// set up the body underneath the headset in a proper scale and orientation
 		if (c_verbose) { _MESSAGE("Set body under HMD"); }
-		playerSkelly->setUnderHMD();
+		playerSkelly->setUnderHMD(groundHeight);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// Now Set up body Posture and hook up the legs
@@ -896,6 +904,8 @@ namespace F4VRBody {
 		playerSkelly->fixBackOfHand();
 
 		dumpGeometryArrayInUpdate();
+
+
 		playerSkelly->debug();
 
 	}

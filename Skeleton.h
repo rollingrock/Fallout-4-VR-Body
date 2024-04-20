@@ -193,7 +193,7 @@ namespace F4VRBody
 		void setupHead(NiNode* headNode, bool hideHead);
 		void saveStatesTree(NiNode* node);
 		void restoreLocals(NiNode* node);
-		void setUnderHMD();
+		void setUnderHMD(float groundHeight);
 		void setBodyPosture();
 		void setLegs();
 		void setSingleLeg(bool isLeft);
