@@ -5,8 +5,6 @@
 #include "f4se/GameRTTI.h"
 #include "f4se/NiNodes.h"
 #include "f4se/BSSkin.h"
-#include "api/PapyrusVRAPI.h"
-#include "api/VRManagerAPI.h"
 
 #include <algorithm>
 #include <array>
@@ -16,6 +14,7 @@
 #include "matrix.h"
 #include "Quaternion.h"
 #include "BSFlattenedBoneTree.h"
+#include "VR.h"
 
 
 #define DEFAULT_HEIGHT 56.0;
@@ -140,6 +139,13 @@ namespace F4VRBody
 		NiTransform* RArm_Finger53;
 	};
 
+	struct CaseInsensitiveComparator
+	{
+		bool operator()(const std::string& a, const std::string& b) const noexcept
+		{
+			return ::_stricmp(a.c_str(), b.c_str()) < 0;
+		}
+	};
 
 	class Skeleton {
 	public:
@@ -147,12 +153,14 @@ namespace F4VRBody
 		{
 			_curPos = NiPoint3(0, 0, 0);
 			_walkingState = 0;
+			_vrSystem = new VRHook::VRSystem();
 		}
 
 		Skeleton(BSFadeNode* a_node) : _root(a_node)
 		{
 			_curPos = NiPoint3(0, 0, 0);
 			_walkingState = 0;
+			_vrSystem = new VRHook::VRSystem();
 		}
 
 		void setDirection() {
@@ -295,8 +303,8 @@ namespace F4VRBody
 		ArmNodes leftArm;
 		float _curx;
 		float _cury;
-		std::map<std::string, NiTransform> savedStates;
-		std::map<std::string, NiPoint3> boneLocalDefault;
+		std::map<std::string, NiTransform, CaseInsensitiveComparator> savedStates;
+		std::map<std::string, NiPoint3, CaseInsensitiveComparator> boneLocalDefault;
 
 		NiMatrix43 originalPipboyRotation;
 		bool _pipboyStatus;
@@ -327,15 +335,16 @@ namespace F4VRBody
 		int _footStepping;
 		NiPoint3 _stepDir;
 		double _prevSpeed;
+		double _curSpeed;
 		double _stepTimeinStep;
 		int delayFrame;
 
 		HandMeshBoneTransforms* _boneTransforms;
 
 
-		std::map<std::string, NiTransform> _handBones;
-		std::map<std::string, bool> _closedHand;
-		std::map<std::string, vr::EVRButtonId> _handBonesButton;
+		std::map<std::string, NiTransform, CaseInsensitiveComparator> _handBones;
+		std::map<std::string, bool, CaseInsensitiveComparator> _closedHand;
+		std::map<std::string, vr::EVRButtonId, CaseInsensitiveComparator> _handBonesButton;
 
 		bool _weaponEquipped;
 		NiTransform _weapSave;
@@ -367,5 +376,8 @@ namespace F4VRBody
 
 		NiTransform _rightHandPrevFrame;
 		NiTransform _leftHandPrevFrame;
+
+		//vr system api
+		VRHook::VRSystem* _vrSystem;
 	};
 }

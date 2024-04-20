@@ -185,6 +185,7 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "C:\mo2\fo4vr\mods\FRIK\F4SE\Plugins" 
     <ClCompile Include="Skeleton.cpp" />
     <ClCompile Include="SmoothMovement.cpp" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="VR.cpp" />
     <ClCompile Include="weaponOffset.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -207,6 +208,7 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "C:\mo2\fo4vr\mods\FRIK\F4SE\Plugins" 
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SmoothMovementVR.h" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="VR.h" />
     <ClInclude Include="weaponOffset.h" />
   </ItemGroup>
   <ItemGroup>

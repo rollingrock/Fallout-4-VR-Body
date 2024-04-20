@@ -47,4 +47,6 @@ namespace F4VRBody {
 
 	Setting* GetINISettingNative(const char* name);
 
+	void printNodePos(std::string nodeName, NiPoint3 node);
+
 }

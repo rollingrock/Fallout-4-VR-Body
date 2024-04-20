@@ -126,6 +126,7 @@ namespace F4VRBody {
 
 
 	NiNode* loadNifFromFile(char* path);
+	void placeDebugSphere(NiTransform* transform, std::string sphereName, NiNode* parentNode, NiNode* roomNode);
 
 	bool loadConfig();
 

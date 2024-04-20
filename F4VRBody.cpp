@@ -6,14 +6,9 @@
 #include "MuzzleFlash.h"
 #include "BSFlattenedBoneTree.h"
 
-#include "api/PapyrusVRAPI.h"
-#include "api/VRManagerAPI.h"
-
 #include <algorithm>
 
 #include "Menu.h"
-
-
 
 #define PI 3.14159265358979323846
 
@@ -41,8 +36,6 @@ RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiveGraph(
 RelocAddr<uint64_t> EquippedWeaponData_vfunc(0x2d7fcf8);
 RelocAddr<_NiNode_UpdateWorldBound> NiNode_UpdateWorldBound(0x1c18ab0);
 RelocPtr<NiNode*> worldRootCamera1(0x6885c80);
-
-OpenVRHookManagerAPI* vrhook;
 
 namespace F4VRBody {
 
@@ -109,16 +102,11 @@ namespace F4VRBody {
 
 	float headDefaultHeight = 125.0;
 
-	std::map<std::string, NiTransform> handClosed;
-	std::map<std::string, NiTransform> handOpen;
+	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
+	std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
 
 	std::map<std::string, float> handPapyrusPose;
 	std::map<std::string, bool> handPapyrusHasControl;
-
-	vr::VRControllerState_t rightControllerState;
-	vr::VRControllerState_t leftControllerState;
-	vr::TrackedDevicePose_t renderPoses[64]; //Used to store available poses
-	vr::TrackedDevicePose_t gamePoses[64]; //Used to store available poses
 
 	// loadNif native func
 	//typedef int(*_loadNif)(const char* path, uint64_t parentNode, uint64_t flags);
@@ -221,6 +209,7 @@ namespace F4VRBody {
 		c_pipBoyButtonArm = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonArm", 0);
 		c_pipBoyButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_Grip); //2
 		c_pipBoyButtonOffArm = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonOffArm", 0);
+
 		c_pipBoyButtonOffID = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip); //2
 		c_gripButtonID = (int)ini.GetLongValue("Fallout4VRBody", "GripButtonID", vr::EVRButtonId::k_EButton_Grip); // 2
 		c_enableOffHandGripping = ini.GetBoolValue("Fallout4VRBody", "EnableOffHandGripping", true);
@@ -490,6 +479,35 @@ namespace F4VRBody {
 
 	}
 
+	void placeDebugSphere(NiTransform* transform, std::string sphereName, NiNode* parentNode, NiNode* roomNode) {
+		NiNode* sphere = getChildNode(sphereName.c_str(), parentNode);
+
+		if (sphere == nullptr) {
+			NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/1x1Sphere.nif");
+			NiCloneProcess proc;
+			proc.unk18 = cloneAddr1;
+			proc.unk48 = cloneAddr2;
+
+			sphere = cloneNode(retNode, &proc);
+			if (sphere) {
+				sphere->m_name = BSFixedString(sphereName.c_str());
+
+				parentNode->AttachChild((NiAVObject*)sphere, true);
+				sphere->flags &= 0xfffffffffffffffe;
+				sphere->m_localTransform.scale = 20.0;
+			}
+		}
+
+		if (sphere) {
+			//sphere->m_localTransform.pos = parentNode->m_worldTransform.rot.Transpose() * ((transform->pos - parentNode->m_worldTransform.pos) / parentNode->m_worldTransform.scale);
+			sphere->m_localTransform.pos = transform->pos;
+			NiPoint3 pos = (roomNode->m_worldTransform.rot * (sphere->m_localTransform.pos * roomNode->m_worldTransform.scale));
+			sphere->m_worldTransform.pos = roomNode->m_worldTransform.pos + pos;
+			sphere->m_localTransform.pos = parentNode->m_worldTransform.rot.Transpose() * ((sphere->m_worldTransform.pos - parentNode->m_worldTransform.pos) / parentNode->m_worldTransform.scale);
+			updateTransforms(sphere);
+		}
+	}
+
 	void fixSkeleton() {
 
 			NiNode* pn = (*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
@@ -601,24 +619,6 @@ namespace F4VRBody {
 		}
 	}
 
-	void getVRControllerState() {
-		static uint32_t leftpacket = 0;
-		static uint32_t rightpacket = 0;
-		if (vrhook != nullptr) {
-
-			vr::TrackedDeviceIndex_t lefthand = vrhook->GetVRSystem()->GetTrackedDeviceIndexForControllerRole(vr::ETrackedControllerRole::TrackedControllerRole_LeftHand);
-			vr::TrackedDeviceIndex_t righthand = vrhook->GetVRSystem()->GetTrackedDeviceIndexForControllerRole(vr::ETrackedControllerRole::TrackedControllerRole_RightHand);
-
-			vrhook->GetVRSystem()->GetControllerState(lefthand, &leftControllerState, sizeof(vr::VRControllerState_t));
-			vrhook->GetVRSystem()->GetControllerState(righthand, &rightControllerState, sizeof(vr::VRControllerState_t));
-
-			if (rightControllerState.unPacketNum != rightpacket) {
-			}
-			if (leftControllerState.unPacketNum != leftpacket) {
-			}
-		}
-	}
-
 	void setHandUI(PlayerNodes* pn) {
 		NiNode* wand = pn->primaryUIAttachNode;
 		BSFixedString bname = "BackOfHand";
@@ -677,9 +677,6 @@ namespace F4VRBody {
 			_MESSAGE("handle pipboy init");
 
 			turnPipBoyOff();
-
-
-			vrhook = RequestOpenVRHookManagerObject();
 
 			if (c_setScale) {
 				Setting* set = GetINISetting("fVrScale:VR");
@@ -781,8 +778,6 @@ namespace F4VRBody {
 		c_jumping = SmoothMovementVR::checkIfJumpingOrInAir();
 
 		playerSkelly->setTime();
-
-		getVRControllerState();
 
 		if (c_verbose) { _MESSAGE("Hide Wands"); }
 		playerSkelly->hideWands();

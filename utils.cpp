@@ -264,4 +264,8 @@ namespace F4VRBody {
 		return setting;
 	}
 
+	void printNodePos(std::string nodeName, NiPoint3 node) {
+		_MESSAGE("%s -> %f %f %f", nodeName.c_str(), node.x, node.y, node.z);
+	}
+
 }

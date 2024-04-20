@@ -8,9 +8,6 @@
 #include <time.h>
 #include <string.h>
 
-extern PapyrusVRAPI* g_papyrusvr;
-extern OpenVRHookManagerAPI* vrhook;
-
 using namespace std::chrono;
 namespace F4VRBody
 {
@@ -20,13 +17,10 @@ namespace F4VRBody
 	UInt32 KeywordPowerArmor = 0x4D8A1;
 	UInt32 KeywordPowerArmorFrame = 0x15503F;
 
-	extern vr::VRControllerState_t rightControllerState;
-	extern vr::VRControllerState_t leftControllerState;
-
 	std::map<std::string, int> boneTreeMap;
 	std::vector<std::string> boneTreeVec;
 
-	void initBoneTreeMap() {
+	static void initBoneTreeMap() {
 		boneTreeMap.insert({ "COM", 0 });
 		boneTreeMap.insert({ "Pelvis", 1 });
 		boneTreeMap.insert({ "LLeg_Thigh", 2 });
@@ -521,6 +515,10 @@ namespace F4VRBody
 
 		//also save last position at this time for anyone doing speed calcs
 		_lastPos = _curPos;
+
+		// set current vr controller state
+		_vrSystem->setVRControllerState();
+		_vrSystem->setRoomNode(_playerNodes->roomnode);
 	}
 
 	void Skeleton::selfieSkelly(float offsetOutFront) {    // Projects the 3rd person body out in front of the player by offset amount
@@ -595,15 +593,20 @@ namespace F4VRBody
 		//	headNode->m_localTransform.scale = 0.0000001;
 		//}
 
-		headNode->m_localTransform.rot.data[0][0] =  0.967;
-		headNode->m_localTransform.rot.data[0][1] = -0.251;
-		headNode->m_localTransform.rot.data[0][2] =  0.047;
-		headNode->m_localTransform.rot.data[1][0] =  0.249;
-		headNode->m_localTransform.rot.data[1][1] =  0.967;
-		headNode->m_localTransform.rot.data[1][2] =  0.051;
-		headNode->m_localTransform.rot.data[2][0] = -0.058;
-		headNode->m_localTransform.rot.data[2][1] = -0.037;
-		headNode->m_localTransform.rot.data[2][2] =  0.998;
+		//headNode->m_localTransform.rot.data[0][0] =  0.967;
+		//headNode->m_localTransform.rot.data[0][1] = -0.251;
+		//headNode->m_localTransform.rot.data[0][2] =  0.047;
+		//headNode->m_localTransform.rot.data[1][0] =  0.249;
+		//headNode->m_localTransform.rot.data[1][1] =  0.967;
+		//headNode->m_localTransform.rot.data[1][2] =  0.051;
+		//headNode->m_localTransform.rot.data[2][0] = -0.058;
+		//headNode->m_localTransform.rot.data[2][1] = -0.037;
+		//headNode->m_localTransform.rot.data[2][2] =  0.998;
+
+		Matrix44 mat;
+		mat.setEulerAngles(0.0f, 0.0f, degrees_to_rads(-18.43));
+
+		headNode->m_localTransform.rot = mat.make43();
 
 //		if (!c_selfieMode) {
 ////			headNode->m_localTransform.pos.y = -4.0;
@@ -895,6 +898,49 @@ namespace F4VRBody
 
 	}
 
+	//NiPoint3 Skeleton::getPosition() {
+	//	static NiPoint3 stablePos = NiPoint3(0, 0, 0);
+	//	static int state = 0;
+
+	//	//	_curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
+	//	_curPos = (*g_playerCamera)->cameraNode->m_worldTransform.pos;
+
+	//	if (!state && vec3_len(NiPoint3(_curPos.x, _curPos.y, 0) - NiPoint3(stablePos.x, stablePos.y, 0)) > 25.0f) {
+	//		state = 1;
+	//		_lastPos = stablePos;
+	//		stablePos += (_curPos - stablePos) / 60.0f;
+	//		NiPoint3 dir = NiPoint3(_curPos.x, _curPos.y, 0) - NiPoint3(_lastPos.x, _lastPos.y, 0);
+
+	//		_curSpeed = std::clamp((abs(vec3_len(dir)) / _frameTime), 0.0, 350.0) / 40.0f;
+	//		if (_prevSpeed > 5.0) {
+	//			_curSpeed = (_curSpeed + _prevSpeed) / 2;
+	//		}
+	//		_prevSpeed = _curSpeed;
+	//		_curPos = stablePos;
+	//	}
+	//	else if (state) {
+	//		if (vec3_len(_curPos - stablePos) > 2.0f) {
+	//			stablePos += (_curPos - stablePos) / 60.0f;
+	//			_curPos = stablePos;
+	//			_curSpeed = _prevSpeed;
+	//		}
+	//		else {
+	//			stablePos = _curPos;
+	//			state = 0;
+	//			_curSpeed = 0.0;
+	//			_prevSpeed = 0.0;
+	//		}
+	//	}
+	//	else {
+	//		_curPos = stablePos;
+	//		_lastPos = stablePos;
+	//		_curSpeed = 0.0;
+	//		_prevSpeed = 0.0;
+	//	}
+
+	//	return _curPos;
+	//}
+
 	NiPoint3 Skeleton::getPosition() {
 
 		//	_curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
@@ -999,6 +1045,7 @@ namespace F4VRBody
 	void Skeleton::setUnderHMD(float groundHeight) {
 
 		detectInPowerArmor();
+		_vrSystem->updatePoses();
 
 		if (c_disableSmoothMovement) {
 			_playerNodes->playerworldnode->m_localTransform.pos.z = _inPowerArmor ? (c_PACameraHeight + c_cameraHeight) : c_cameraHeight;
@@ -1039,7 +1086,7 @@ namespace F4VRBody
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
 		//_root->m_localTransform.pos = body->m_worldTransform.pos - getPosition();
 		_root->m_localTransform.pos *= 0.0f;
-		_root->m_localTransform.pos.y = c_playerOffset_forward - 6.0f;
+		_root->m_localTransform.pos.y = c_playerOffset_forward - 2.0f;
 		_root->m_localTransform.scale = c_playerHeight / defaultCameraHeight;    // set scale based off specified user height
 
 		updateDown(_root, true);
@@ -1048,19 +1095,12 @@ namespace F4VRBody
 
 	void Skeleton::setBodyPosture() {
 		float neckPitch = getNeckPitch();
-		float bodyPitch = (std::min)(getBodyPitch(), 0.6f);
+		float bodyPitch = getBodyPitch();
 
-		float curHeight = c_playerHeight;
-		float heightCalc = (std::max)(0.0f, curHeight - _playerNodes->UprightHmdNode->m_localTransform.pos.z);
-
-		//NiNode* camera = (*g_playerCamera)->cameraNode;
-		NiNode* camera = _playerNodes->HmdNode;
+		NiNode* camera = (*g_playerCamera)->cameraNode;
 		NiNode* com = getNode("COM", _root);
 		NiNode* neck = getNode("Neck", _root);
 		NiNode* spine = getNode("SPINE1", _root);
-		NiNode* head = getNode("Head", _root);
-
-		Matrix44 rotMat;
 
 		_leftKneePos = getNode("LLeg_Calf", com)->m_worldTransform.pos;
 		_rightKneePos = getNode("RLeg_Calf", com)->m_worldTransform.pos;
@@ -1069,68 +1109,126 @@ namespace F4VRBody
 		com->m_localTransform.pos.x = 0.0;
 		com->m_localTransform.pos.y = 0.0;
 
+		float z_adjust = c_playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
+		NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * c_playerOffset_forward / 2, -_forwardDir.y * c_playerOffset_forward / 2, z_adjust);
+		NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
+
 		_torsoLen = vec3_len(neck->m_worldTransform.pos - com->m_worldTransform.pos);
 
-		//NiNode* camTarget = getNode("CamTarget", _root);
-		//
-		//if (camTarget) {
-		//	_MESSAGE("%f", vec3_len(camTarget->m_worldTransform.pos - head->m_worldTransform.pos));
-		//}
-
-		//float z_adjust = c_playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
-		//float xy_adjust = cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
-		//NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * xy_adjust / 2, -_forwardDir.y * xy_adjust / 2, z_adjust);
-		//NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
-		//float base = neckPitch > 0.0 ? 5.0 : 10.5;
-		//float hyp = base;
-		//if (abs(rads_to_degrees(neckPitch) >= 5.0)) {
-		//	hyp = base / cosf(neckPitch);
-		//}
-		//NiPoint3 neckPos = camera->m_worldTransform.pos + (NiPoint3(-1 * camera->m_worldTransform.rot.data[1][0], -1 * camera->m_worldTransform.rot.data[1][1], -1 * camera->m_worldTransform.rot.data[1][2]) * hyp);
-		//_MESSAGE("%f %f %f %f %f", base, neckPitch, neckPos.x, neckPos.y, neckPos.z);
-
-		float headMoveBack = 3.45;
-		NiPoint3 headPos = camera->m_worldTransform.pos + (NiPoint3(-1 * camera->m_worldTransform.rot.data[1][0], -1 * camera->m_worldTransform.rot.data[1][1], -1 * camera->m_worldTransform.rot.data[1][2]) * headMoveBack);
-		
-		NiPoint3 posVec = headPos - neck->m_worldTransform.pos;
-		NiPoint3 uLocalDir = neck->m_worldTransform.rot.Transpose() * vec3_norm(posVec);
-		rotMat.rotateVectoVec(uLocalDir, head->m_localTransform.pos);
-		neck->m_localTransform.rot = rotMat.multiply43Right(neck->m_localTransform.rot);
-
-		updateDown(neck, true);
-		
-		_MESSAGE("%f %f %f %f", camera->m_worldTransform.pos.x, camera->m_worldTransform.pos.y, _root->m_parent->m_worldTransform.pos.x, _root->m_parent->m_worldTransform.pos.y);
-
-
-		return;
-
-		NiPoint3 neckPos = neck->m_worldTransform.pos;
-		_MESSAGE("%f %f %f", neckPos.x, neckPos.y, neckPos.z);
 		NiPoint3 hmdToHip = neckPos - com->m_worldTransform.pos;
-		hmdToHip.z = com->m_worldTransform.pos.z - heightCalc;
 		NiPoint3 dir = NiPoint3(-_forwardDir.x, -_forwardDir.y, 0);
 
 		float dist = tanf(bodyPitch) * vec3_len(hmdToHip);
 		NiPoint3 tmpHipPos = com->m_worldTransform.pos + dir * (dist / vec3_len(dir));
-		tmpHipPos.z = com->m_worldTransform.pos.z - heightCalc;
+		tmpHipPos.z = com->m_worldTransform.pos.z;
 
 		NiPoint3 hmdtoNewHip = tmpHipPos - neckPos;
 		NiPoint3 newHipPos = neckPos + hmdtoNewHip * (_torsoLen / vec3_len(hmdtoNewHip));
 
-
 		NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * (newHipPos - com->m_worldTransform.pos);
-		//float offsetFwd;
-		//offsetFwd = _inPowerArmor ? -c_powerArmor_forward : c_playerOffset_forward;
-		com->m_localTransform.pos.y += newPos.y;
-		com->m_localTransform.pos.z = (std::min)(newPos.z, _legLen);
+		float offsetFwd;
+		offsetFwd = _inPowerArmor ? -c_powerArmor_forward : c_playerOffset_forward;
+		com->m_localTransform.pos.y += newPos.y + offsetFwd;
+		com->m_localTransform.pos.z = newPos.z;
 		com->m_localTransform.pos.z -= _inPowerArmor ? c_powerArmor_up + c_PACameraHeight : 0.0f;
 
 		Matrix44 rot;
 		rot.rotateVectoVec(neckPos - tmpHipPos, hmdToHip);
 		NiMatrix43 mat = rot.multiply43Left(spine->m_parent->m_worldTransform.rot.Transpose());
+		rot.makeTransformMatrix(mat, NiPoint3(0, 0, 0));
 		spine->m_localTransform.rot = rot.multiply43Right(spine->m_worldTransform.rot);
 
 	}
+
+	// working on new body pose.   will comment out for now for new release ********************
+	
+	//void Skeleton::setBodyPosture() {
+	//		float neckPitch = getNeckPitch();
+	//		float bodyPitch = (std::min)(getBodyPitch(), 0.6f);
+
+	//		float curHeight = c_playerHeight;
+	//		float heightCalc = (std::max)(0.0f, curHeight - _playerNodes->UprightHmdNode->m_localTransform.pos.z);
+
+	//		_leftKneePos = getNode("LLeg_Calf", _root)->m_worldTransform.pos;
+	//		_rightKneePos = getNode("RLeg_Calf", _root)->m_worldTransform.pos;
+
+	//		NiNode* camera = (*g_playerCamera)->cameraNode;
+	//		//NiNode* camera = _playerNodes->HmdNode;
+	//		NiNode* com = getNode("COM", _root);
+	//		NiNode* neck = getNode("Neck", _root);
+	//		NiNode* spine = getNode("SPINE1", _root);
+	//		NiNode* head = getNode("Head", _root);
+	//		NiNode* lFoot = getNode("LLeg_Foot", _root);
+	//		NiNode* rFoot = getNode("RLeg_Foot", _root);
+
+	//		Matrix44 rot;
+	//		
+	//		if (_vrSystem->viveTrackersPresent()) {
+	//			NiTransform hipWorld;
+	//			NiTransform rightControllerWorld;
+	//			NiTransform leftControllerWorld;
+	//			NiTransform hmdWorld;
+	//			NiTransform leftLowerArmWorld;
+	//			_vrSystem->getTrackerNiTransformByName("hips", &hipWorld);
+	//			_vrSystem->getTrackerNiTransformByName("left_arm_lower", &leftLowerArmWorld);
+	//			_vrSystem->getControllerNiTransformByName("Right", &rightControllerWorld);
+	//			_vrSystem->getControllerNiTransformByName("Left", &leftControllerWorld);
+	//			_vrSystem->getControllerNiTransformByName("HMD", &hmdWorld);
+
+	//			//rot.makeTransformMatrix(hipWorld.rot, hipWorld.pos);
+	//			////com->m_localTransform.rot = rot.multiply43Left(com->m_parent->m_worldTransform.rot.Transpose());
+	//			//com->m_localTransform.pos = com->m_parent->m_worldTransform.rot.Transpose() * (hipWorld.pos - com->m_parent->m_worldTransform.pos);
+	//			//updateDown(com, true);
+
+	//			//placeDebugSphere(&hipWorld, "hipSphere", _root, _playerNodes->roomnode);
+	//			//placeDebugSphere(&leftLowerArmWorld, "LLArmSphere", _root, _playerNodes->roomnode);
+
+	//			//_MESSAGE("===========================");
+	//			//_MESSAGE("root %f %f %f vivehip %f %f %f com %f %f %f",
+	//			//	_root->m_worldTransform.pos.x, _root->m_worldTransform.pos.y, _root->m_worldTransform.pos.z,
+	//			//	hipWorld.pos.x, hipWorld.pos.y, hipWorld.pos.z,
+	//			//	com->m_worldTransform.pos.x, com->m_worldTransform.pos.y, com->m_worldTransform.pos.z
+	//			//	);
+	//			//_MESSAGE("room %f %f %f steamright %f %f %f gameright %f %f %f",
+	//			//	_playerNodes->roomnode->m_worldTransform.pos.x, _playerNodes->roomnode->m_worldTransform.pos.y, _playerNodes->roomnode->m_worldTransform.pos.z,
+	//			//	rightControllerWorld.pos.x, rightControllerWorld.pos.y, rightControllerWorld.pos.z,
+	//			//	_playerNodes->primaryWandNode->m_worldTransform.pos.x, _playerNodes->primaryWandNode->m_worldTransform.pos.y, _playerNodes->primaryWandNode->m_worldTransform.pos.z
+	//			//	);
+	//			//_MESSAGE("room %f %f %f steamleft %f %f %f gameright %f %f %f",
+	//			//	_playerNodes->roomnode->m_worldTransform.pos.x, _playerNodes->roomnode->m_worldTransform.pos.y, _playerNodes->roomnode->m_worldTransform.pos.z,
+	//			//	leftControllerWorld.pos.x, leftControllerWorld.pos.y, leftControllerWorld.pos.z,
+	//			//	_playerNodes->SecondaryWandNode->m_worldTransform.pos.x, _playerNodes->SecondaryWandNode->m_worldTransform.pos.y, _playerNodes->SecondaryWandNode->m_worldTransform.pos.z
+	//			//	);
+	//			//_MESSAGE("room %f %f %f steamhmd  %f %f %f gameright %f %f %f",
+	//			//	_playerNodes->roomnode->m_worldTransform.pos.x, _playerNodes->roomnode->m_worldTransform.pos.y, _playerNodes->roomnode->m_worldTransform.pos.z,
+	//			//	hmdWorld.pos.x, hmdWorld.pos.y, hmdWorld.pos.z,
+	//			//	_playerNodes->HmdNode->m_worldTransform.pos.x, _playerNodes->HmdNode->m_worldTransform.pos.y, _playerNodes->HmdNode->m_worldTransform.pos.z
+	//			//	);
+	//		}
+	//		else {
+	//			com->m_localTransform.pos.x = 0.0;
+	//			com->m_localTransform.pos.y = 0.0;
+
+	//			_torsoLen = vec3_len(head->m_worldTransform.pos - com->m_worldTransform.pos);
+
+	//			float cam2HipLen = vec3_len(camera->m_worldTransform.pos - com->m_worldTransform.pos);
+
+	//			if (cam2HipLen < _torsoLen) {
+	//				// lower hip so torso length is preserved
+	//				com->m_localTransform.pos.z -= _torsoLen - cam2HipLen;
+	//				updateDown(com, true);
+	//			}
+	//		}
+	//		// angle spine so spine angle aligns with camera position
+	//		rot.rotateVectoVec(camera->m_worldTransform.pos - com->m_worldTransform.pos, neck->m_worldTransform.pos - com->m_worldTransform.pos);
+	//		NiMatrix43 mat = rot.multiply43Left(spine->m_parent->m_worldTransform.rot.Transpose());
+	//		rot.makeTransformMatrix(mat, NiPoint3(0, 0, 0));
+	//		spine->m_localTransform.rot = rot.multiply43Right(spine->m_worldTransform.rot);
+
+	//		rot.setEulerAngles(0, 0, degrees_to_rads(40));
+	//		head->m_localTransform.rot = rot.make43();
+	//		head->m_localTransform.pos.y -= 7.0f;
+	//}
 
 	void Skeleton::setKneePos() {
 		NiNode* lKnee = getNode("LLeg_Calf", _root);
@@ -1216,7 +1314,7 @@ namespace F4VRBody
 		if (!c_jumping) {
 			switch (_walkingState) {
 			case 0: {
-				if (curSpeed >= 35.0) {
+				if (_curSpeed >= 5.0) {
 					_walkingState = 1;          // start walking
 					_footStepping = std::rand() % 2 + 1;    // pick a random foot to take a step
 					_stepDir = dir;
@@ -1224,7 +1322,7 @@ namespace F4VRBody
 					delayFrame = 2;
 
 					if (_footStepping == 1) {
-						_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
+						_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (_curSpeed * stepTime * 1.5);
 						_rightFootStart = rFoot->m_worldTransform.pos;
 						_leftFootTarget = lFoot->m_worldTransform.pos;
 						_leftFootStart = lFoot->m_worldTransform.pos;
@@ -1234,7 +1332,7 @@ namespace F4VRBody
 					else {
 						_rightFootTarget = rFoot->m_worldTransform.pos;
 						_rightFootStart = rFoot->m_worldTransform.pos;
-						_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
+						_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * (_curSpeed * stepTime * 1.5);
 						_leftFootStart = lFoot->m_worldTransform.pos;
 						_leftFootPos = _leftFootStart;
 						_rightFootPos = _rightFootStart;
@@ -1248,14 +1346,14 @@ namespace F4VRBody
 				break;
 			}
 			case 1: {
-				if (curSpeed < 20.0) {
+				if (_curSpeed < 5.0) {
 					_walkingState = 2;          // begin process to stop walking
 					_currentStepTime = 0.0;
 				}
 				break;
 			}
 			case 2: {
-				if (curSpeed >= 20.0) {
+				if (_curSpeed >= 5.0) {
 					_walkingState = 1;         // resume walking
 					_currentStepTime = 0.0;
 				}
@@ -1280,7 +1378,7 @@ namespace F4VRBody
 		else if (_walkingState == 1) {
 			NiPoint3 dirOffset = dir - _stepDir;
 			float dot = vec3_dot(dir, _stepDir);
-			double scale = (std::min)(curSpeed * stepTime * 1.5, 140.0);
+			double scale = (std::min)(_curSpeed * stepTime * 1.5, 140.0);
 			dirOffset = dirOffset * scale;
 
 			int sign = 1;
@@ -1996,8 +2094,8 @@ namespace F4VRBody
 			return;
 		}
 
-		const auto pipOnButtonPressed = (c_pipBoyButtonArm ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID);
-		const auto pipOffButtonPressed = (c_pipBoyButtonOffArm ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonOffID);
+		const auto pipOnButtonPressed = (c_pipBoyButtonArm ? _vrSystem->getControllerState(false).ulButtonPressed : _vrSystem->getControllerState(true).ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID);
+		const auto pipOffButtonPressed = (c_pipBoyButtonOffArm ? _vrSystem->getControllerState(false).ulButtonPressed : _vrSystem->getControllerState(true).ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonOffID);
 
 		// check off button
 		if (pipOffButtonPressed && !_stickypip) {
@@ -2028,7 +2126,7 @@ namespace F4VRBody
 		}
 
 		if (!isLookingAtPipBoy()) {
-			vr::VRControllerAxis_t axis_state = (c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
+			vr::VRControllerAxis_t axis_state = (c_pipBoyButtonArm > 0) ? _vrSystem->getControllerState(false).rAxis[0] : _vrSystem->getControllerState(true).rAxis[0];
 			const auto timeElapsed = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _lastLookingAtPip;
 			if (_pipboyStatus && timeElapsed > c_pipBoyOffDelay) {
 				_pipboyStatus = false;
@@ -2061,8 +2159,8 @@ namespace F4VRBody
 		}
 		else {
 			if (!_stickypip) {
-				if (vrhook != nullptr) {
-					vrhook->StartHaptics(2, 0.05, 0.3);
+				if (_vrSystem->getHook() != nullptr) {
+					_vrSystem->getHook()->StartHaptics(2, 0.05, 0.3);
 				}
 			}
 			else {
@@ -2476,7 +2574,7 @@ namespace F4VRBody
 		// Twist angle ranges from -PI/2 to +PI/2; map that range to go from the minimum to the maximum instead
 		float twistLimitAngle = twistMinAngle + ((twistAngle + PI / 2.0f) / PI) * (twistMaxAngle - twistMinAngle);
 
-		_MESSAGE("%f %f %f %f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), rads_to_degrees(twistAngle), rads_to_degrees(twistLimitAngle));
+	//	_MESSAGE("%f %f %f %f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), rads_to_degrees(twistAngle), rads_to_degrees(twistLimitAngle));
 		// The bendDownDir vector points in the direction the player faces, and bends up/down with the final elbow angle
 		NiMatrix43 rot = getRotationAxisAngle(sidewaysDir * negLeft, twistLimitAngle);
 		NiPoint3 bendDownDir = rot * forwardDir;
@@ -2806,8 +2904,8 @@ namespace F4VRBody
 			if(strstr(boneTreeVec[pos].c_str(), "Finger")) {
 
 				isLeft = strncmp(boneTreeVec[pos].c_str(), "L", 1) ? false : true;
-				uint64_t reg = isLeft ? leftControllerState.ulButtonTouched : rightControllerState.ulButtonTouched;
-				float gripProx = isLeft ? leftControllerState.rAxis[2].x : rightControllerState.rAxis[2].x;
+				uint64_t reg = isLeft ? _vrSystem->getControllerState(true).ulButtonTouched : _vrSystem->getControllerState(false).ulButtonTouched;
+				float gripProx = isLeft ? _vrSystem->getControllerState(true).rAxis[2].x : _vrSystem->getControllerState(false).rAxis[2].x;
 				bool thumbUp = (reg & vr::ButtonMaskFromId(vr::k_EButton_Grip)) && (reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)) && (!(reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
 				_closedHand[boneTreeVec[pos]] = reg & vr::ButtonMaskFromId(_handBonesButton[boneTreeVec[pos]]);
 
@@ -2955,7 +3053,7 @@ namespace F4VRBody
 
 					handV = sum / 3;
 
-					uint64_t reg = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
+					uint64_t reg = c_leftHandedMode ? _vrSystem->getControllerState(false).ulButtonPressed : _vrSystem->getControllerState(true).ulButtonPressed;
 					if (c_onePressGripButton && _hasLetGoGripButton) {
 						_offHandGripping = false;
 					}
@@ -2982,8 +3080,8 @@ namespace F4VRBody
 					else {
 						if (!_repositionModeSwitched && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
 							_repositionMode = static_cast<repositionMode>((_repositionMode + 1) % (repositionMode::total + 1));
-							if (vrhook)
-								vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
+							if (_vrSystem->getHook())
+								_vrSystem->getHook()->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
 							_repositionModeSwitched = true;
 							_MESSAGE("Reposition Mode Switch: weapon %s %d ms mode: %d", weapname, _pressLength, _repositionMode);
 						}
@@ -2992,8 +3090,8 @@ namespace F4VRBody
 						}
 						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
 						if (!_inRepositionMode && reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
-							if (vrhook && c_repositionMasterMode)
-								vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
+							if (_vrSystem->getHook() && c_repositionMasterMode)
+								_vrSystem->getHook()->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
 							_inRepositionMode = c_repositionMasterMode;
 						}
 						else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID))) {
@@ -3048,7 +3146,7 @@ namespace F4VRBody
 						_offhandFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
 						_offhandPos = _offhandFingerBonePos;
 						bodyPos = _curPos;
-						vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
+						vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? _vrSystem->getControllerState(false).rAxis[0] : _vrSystem->getControllerState(true).rAxis[0];
 						if (_repositionButtonHolding && c_repositionMasterMode) {
 							// this is for a preview of the move. The preview happens one frame before we detect the release so must be processed separately.
 							auto end = _offhandPos - _curPos;
@@ -3155,7 +3253,7 @@ namespace F4VRBody
 			oH2Bar = weap->m_worldTransform.rot.Transpose() * vec3_norm(oH2Bar) / weap->m_worldTransform.scale;
 
 			float dotP = vec3_dot(vec3_norm(oH2Bar), barrelVec);
-			uint64_t reg = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
+			uint64_t reg = c_leftHandedMode ? _vrSystem->getControllerState(false).ulButtonPressed : _vrSystem->getControllerState(true).ulButtonPressed;
 
 			if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_gripButtonID))) {
 				_hasLetGoGripButton = true;
@@ -3189,7 +3287,7 @@ namespace F4VRBody
 			const std::string scopeName = scopeRet->m_name;
 			auto reticlePos = scopeRet->GetAsNiNode()->m_worldTransform.pos;
 			auto offset = vec3_len(reticlePos - _offhandPos);
-			uint64_t handInput = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
+			uint64_t handInput = c_leftHandedMode ? _vrSystem->getControllerState(false).ulButtonPressed : _vrSystem->getControllerState(true).ulButtonPressed;
 			uint64_t _pressLength = 0;
 			const auto handNearScope = (offset < c_scopeAdjustDistance); // hand is close to scope, enable scope specific commands
 
@@ -3203,8 +3301,8 @@ namespace F4VRBody
 					_zoomModeButtonHeld = false;
 					_MESSAGE("Zoom Toggle pressed; sending message to switch zoom state");
 					g_messaging->Dispatch(g_pluginHandle, 16, nullptr, 0, "FO4VRBETTERSCOPES");
-					if (vrhook)
-						vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
+					if (_vrSystem->getHook())
+						_vrSystem->getHook()->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
 				}
 
 			if (c_repositionMasterMode) {
@@ -3230,15 +3328,15 @@ namespace F4VRBody
 				// repositioning does not require hand near scope
 				if (!_inRepositionMode && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_repositionButtonID) && _pressLength > c_holdDelay) {
 					// enter reposition mode
-					if (vrhook && c_repositionMasterMode)
-						vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
+					if (_vrSystem->getHook() && c_repositionMasterMode)
+						_vrSystem->getHook()->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
 					_inRepositionMode = c_repositionMasterMode;
 				}
 				else if (_inRepositionMode) { // in reposition mode for better scopes
-					vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
+					vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? _vrSystem->getControllerState(false).rAxis[0] : _vrSystem->getControllerState(true).rAxis[0];
 					if (!_repositionModeSwitched && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
-						if (vrhook)
-							vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
+						if (_vrSystem->getHook())
+							_vrSystem->getHook()->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
 						_repositionModeSwitched = true;
 						msgData.x = 0.f;
 						msgData.y = 0.f;
@@ -3326,6 +3424,8 @@ namespace F4VRBody
 	void Skeleton::debug() {
 
 		static std::uint64_t fc = 0;
+
+//		_vrSystem->debugPrint();
 
 		//BSFadeNode* rn = static_cast<BSFadeNode*>(_root->m_parent);
 
