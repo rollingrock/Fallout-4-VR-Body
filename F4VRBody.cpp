@@ -109,8 +109,8 @@ namespace F4VRBody {
 
 	float headDefaultHeight = 125.0;
 
-	std::map<std::string, NiTransform> handClosed;
-	std::map<std::string, NiTransform> handOpen;
+	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
+	std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
 
 	std::map<std::string, float> handPapyrusPose;
 	std::map<std::string, bool> handPapyrusHasControl;

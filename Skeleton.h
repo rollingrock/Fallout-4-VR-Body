@@ -140,6 +140,13 @@ namespace F4VRBody
 		NiTransform* RArm_Finger53;
 	};
 
+	struct CaseInsensitiveComparator
+	{
+		bool operator()(const std::string& a, const std::string& b) const noexcept
+		{
+			return ::_stricmp(a.c_str(), b.c_str()) < 0;
+		}
+	};
 
 	class Skeleton {
 	public:
@@ -295,8 +302,8 @@ namespace F4VRBody
 		ArmNodes leftArm;
 		float _curx;
 		float _cury;
-		std::map<std::string, NiTransform> savedStates;
-		std::map<std::string, NiPoint3> boneLocalDefault;
+		std::map<std::string, NiTransform, CaseInsensitiveComparator> savedStates;
+		std::map<std::string, NiPoint3, CaseInsensitiveComparator> boneLocalDefault;
 
 		NiMatrix43 originalPipboyRotation;
 		bool _pipboyStatus;
@@ -333,9 +340,9 @@ namespace F4VRBody
 		HandMeshBoneTransforms* _boneTransforms;
 
 
-		std::map<std::string, NiTransform> _handBones;
-		std::map<std::string, bool> _closedHand;
-		std::map<std::string, vr::EVRButtonId> _handBonesButton;
+		std::map<std::string, NiTransform, CaseInsensitiveComparator> _handBones;
+		std::map<std::string, bool, CaseInsensitiveComparator> _closedHand;
+		std::map<std::string, vr::EVRButtonId, CaseInsensitiveComparator> _handBonesButton;
 
 		bool _weaponEquipped;
 		NiTransform _weapSave;
