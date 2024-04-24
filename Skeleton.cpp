@@ -1011,7 +1011,7 @@ namespace F4VRBody
 
 //		float y    = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
 	//	float x    = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
-//		float z = _root->m_localTransform.pos.z;
+	//	float z = _root->m_localTransform.pos.z;
 		float z = groundHeight;
 
 		float neckYaw   = getNeckYaw();
@@ -1032,14 +1032,17 @@ namespace F4VRBody
 		body->m_worldTransform.pos.y = this->getPosition().y;
 		body->m_worldTransform.pos.z += _playerNodes->playerworldnode->m_localTransform.pos.z;
 
+		updateDown(_root, true);
+
 		NiPoint3 back = vec3_norm(NiPoint3(_forwardDir.x, _forwardDir.y, 0));
 		NiPoint3 bodydir = NiPoint3(0, 1, 0);
 
 		mat.rotateVectoVec(back, bodydir);
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
-		//_root->m_localTransform.pos = body->m_worldTransform.pos - getPosition();
-		_root->m_localTransform.pos *= 0.0f;
-		_root->m_localTransform.pos.y = c_playerOffset_forward - 6.0f;
+		_root->m_localTransform.pos = body->m_worldTransform.pos - getPosition();
+		_root->m_localTransform.pos.z = z;
+		//_root->m_localTransform.pos *= 0.0f;
+		//_root->m_localTransform.pos.y = c_playerOffset_forward - 6.0f;
 		_root->m_localTransform.scale = c_playerHeight / defaultCameraHeight;    // set scale based off specified user height
 
 		updateDown(_root, true);
@@ -1048,19 +1051,12 @@ namespace F4VRBody
 
 	void Skeleton::setBodyPosture() {
 		float neckPitch = getNeckPitch();
-		float bodyPitch = (std::min)(getBodyPitch(), 0.6f);
+		float bodyPitch = getBodyPitch();
 
-		float curHeight = c_playerHeight;
-		float heightCalc = (std::max)(0.0f, curHeight - _playerNodes->UprightHmdNode->m_localTransform.pos.z);
-
-		//NiNode* camera = (*g_playerCamera)->cameraNode;
-		NiNode* camera = _playerNodes->HmdNode;
+		NiNode* camera = (*g_playerCamera)->cameraNode;
 		NiNode* com = getNode("COM", _root);
 		NiNode* neck = getNode("Neck", _root);
 		NiNode* spine = getNode("SPINE1", _root);
-		NiNode* head = getNode("Head", _root);
-
-		Matrix44 rotMat;
 
 		_leftKneePos = getNode("LLeg_Calf", com)->m_worldTransform.pos;
 		_rightKneePos = getNode("RLeg_Calf", com)->m_worldTransform.pos;
@@ -1069,68 +1065,123 @@ namespace F4VRBody
 		com->m_localTransform.pos.x = 0.0;
 		com->m_localTransform.pos.y = 0.0;
 
+		float z_adjust = c_playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
+		NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * c_playerOffset_forward / 2, -_forwardDir.y * c_playerOffset_forward / 2, z_adjust);
+		NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
+
 		_torsoLen = vec3_len(neck->m_worldTransform.pos - com->m_worldTransform.pos);
 
-		//NiNode* camTarget = getNode("CamTarget", _root);
-		//
-		//if (camTarget) {
-		//	_MESSAGE("%f", vec3_len(camTarget->m_worldTransform.pos - head->m_worldTransform.pos));
-		//}
-
-		//float z_adjust = c_playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
-		//float xy_adjust = cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
-		//NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * xy_adjust / 2, -_forwardDir.y * xy_adjust / 2, z_adjust);
-		//NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
-		//float base = neckPitch > 0.0 ? 5.0 : 10.5;
-		//float hyp = base;
-		//if (abs(rads_to_degrees(neckPitch) >= 5.0)) {
-		//	hyp = base / cosf(neckPitch);
-		//}
-		//NiPoint3 neckPos = camera->m_worldTransform.pos + (NiPoint3(-1 * camera->m_worldTransform.rot.data[1][0], -1 * camera->m_worldTransform.rot.data[1][1], -1 * camera->m_worldTransform.rot.data[1][2]) * hyp);
-		//_MESSAGE("%f %f %f %f %f", base, neckPitch, neckPos.x, neckPos.y, neckPos.z);
-
-		float headMoveBack = 3.45;
-		NiPoint3 headPos = camera->m_worldTransform.pos + (NiPoint3(-1 * camera->m_worldTransform.rot.data[1][0], -1 * camera->m_worldTransform.rot.data[1][1], -1 * camera->m_worldTransform.rot.data[1][2]) * headMoveBack);
-		
-		NiPoint3 posVec = headPos - neck->m_worldTransform.pos;
-		NiPoint3 uLocalDir = neck->m_worldTransform.rot.Transpose() * vec3_norm(posVec);
-		rotMat.rotateVectoVec(uLocalDir, head->m_localTransform.pos);
-		neck->m_localTransform.rot = rotMat.multiply43Right(neck->m_localTransform.rot);
-
-		updateDown(neck, true);
-		
-		_MESSAGE("%f %f %f %f", camera->m_worldTransform.pos.x, camera->m_worldTransform.pos.y, _root->m_parent->m_worldTransform.pos.x, _root->m_parent->m_worldTransform.pos.y);
-
-
-		return;
-
-		NiPoint3 neckPos = neck->m_worldTransform.pos;
-		_MESSAGE("%f %f %f", neckPos.x, neckPos.y, neckPos.z);
 		NiPoint3 hmdToHip = neckPos - com->m_worldTransform.pos;
-		hmdToHip.z = com->m_worldTransform.pos.z - heightCalc;
 		NiPoint3 dir = NiPoint3(-_forwardDir.x, -_forwardDir.y, 0);
 
 		float dist = tanf(bodyPitch) * vec3_len(hmdToHip);
 		NiPoint3 tmpHipPos = com->m_worldTransform.pos + dir * (dist / vec3_len(dir));
-		tmpHipPos.z = com->m_worldTransform.pos.z - heightCalc;
+		tmpHipPos.z = com->m_worldTransform.pos.z;
 
 		NiPoint3 hmdtoNewHip = tmpHipPos - neckPos;
 		NiPoint3 newHipPos = neckPos + hmdtoNewHip * (_torsoLen / vec3_len(hmdtoNewHip));
 
-
 		NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * (newHipPos - com->m_worldTransform.pos);
-		//float offsetFwd;
-		//offsetFwd = _inPowerArmor ? -c_powerArmor_forward : c_playerOffset_forward;
-		com->m_localTransform.pos.y += newPos.y;
-		com->m_localTransform.pos.z = (std::min)(newPos.z, _legLen);
+		float offsetFwd;
+		offsetFwd = _inPowerArmor ? -c_powerArmor_forward : c_playerOffset_forward;
+		com->m_localTransform.pos.y += newPos.y + offsetFwd;
+		com->m_localTransform.pos.z = newPos.z;
 		com->m_localTransform.pos.z -= _inPowerArmor ? c_powerArmor_up + c_PACameraHeight : 0.0f;
 
 		Matrix44 rot;
 		rot.rotateVectoVec(neckPos - tmpHipPos, hmdToHip);
 		NiMatrix43 mat = rot.multiply43Left(spine->m_parent->m_worldTransform.rot.Transpose());
+		rot.makeTransformMatrix(mat, NiPoint3(0, 0, 0));
 		spine->m_localTransform.rot = rot.multiply43Right(spine->m_worldTransform.rot);
 
 	}
+
+
+	//void Skeleton::setBodyPosture() {
+	//	float neckPitch = getNeckPitch();
+	//	float bodyPitch = (std::min)(getBodyPitch(), 0.6f);
+
+	//	float curHeight = c_playerHeight;
+	//	float heightCalc = (std::max)(0.0f, curHeight - _playerNodes->UprightHmdNode->m_localTransform.pos.z);
+
+	//	//NiNode* camera = (*g_playerCamera)->cameraNode;
+	//	NiNode* camera = _playerNodes->HmdNode;
+	//	NiNode* com = getNode("COM", _root);
+	//	NiNode* neck = getNode("Neck", _root);
+	//	NiNode* spine = getNode("SPINE1", _root);
+	//	NiNode* head = getNode("Head", _root);
+
+	//	Matrix44 rotMat;
+
+	//	_leftKneePos = getNode("LLeg_Calf", com)->m_worldTransform.pos;
+	//	_rightKneePos = getNode("RLeg_Calf", com)->m_worldTransform.pos;
+
+	//	float comZ = com->m_localTransform.pos.z;
+	//	com->m_localTransform.pos.x = 0.0;
+	//	com->m_localTransform.pos.y = 0.0;
+
+	//	_torsoLen = vec3_len(neck->m_worldTransform.pos - com->m_worldTransform.pos);
+
+	//	//NiNode* camTarget = getNode("CamTarget", _root);
+	//	//
+	//	//if (camTarget) {
+	//	//	_MESSAGE("%f", vec3_len(camTarget->m_worldTransform.pos - head->m_worldTransform.pos));
+	//	//}
+
+	//	//float z_adjust = c_playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
+	//	//float xy_adjust = cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
+	//	//NiPoint3 neckAdjust = NiPoint3(-_forwardDir.x * xy_adjust / 2, -_forwardDir.y * xy_adjust / 2, z_adjust);
+	//	//NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
+	//	//float base = neckPitch > 0.0 ? 5.0 : 10.5;
+	//	//float hyp = base;
+	//	//if (abs(rads_to_degrees(neckPitch) >= 5.0)) {
+	//	//	hyp = base / cosf(neckPitch);
+	//	//}
+	//	//NiPoint3 neckPos = camera->m_worldTransform.pos + (NiPoint3(-1 * camera->m_worldTransform.rot.data[1][0], -1 * camera->m_worldTransform.rot.data[1][1], -1 * camera->m_worldTransform.rot.data[1][2]) * hyp);
+	//	//_MESSAGE("%f %f %f %f %f", base, neckPitch, neckPos.x, neckPos.y, neckPos.z);
+
+	//	float headMoveBack = 3.45;
+	//	NiPoint3 headPos = camera->m_worldTransform.pos + (NiPoint3(-1 * camera->m_worldTransform.rot.data[1][0], -1 * camera->m_worldTransform.rot.data[1][1], -1 * camera->m_worldTransform.rot.data[1][2]) * headMoveBack);
+	//	
+	//	NiPoint3 posVec = headPos - neck->m_worldTransform.pos;
+	//	NiPoint3 uLocalDir = neck->m_worldTransform.rot.Transpose() * vec3_norm(posVec);
+	//	rotMat.rotateVectoVec(uLocalDir, head->m_localTransform.pos);
+	//	neck->m_localTransform.rot = rotMat.multiply43Right(neck->m_localTransform.rot);
+
+	//	updateDown(neck, true);
+	//	
+	//	_MESSAGE("%f %f %f %f", camera->m_worldTransform.pos.x, camera->m_worldTransform.pos.y, _root->m_parent->m_worldTransform.pos.x, _root->m_parent->m_worldTransform.pos.y);
+
+
+	//	return;
+
+	//	NiPoint3 neckPos = neck->m_worldTransform.pos;
+	//	_MESSAGE("%f %f %f", neckPos.x, neckPos.y, neckPos.z);
+	//	NiPoint3 hmdToHip = neckPos - com->m_worldTransform.pos;
+	//	hmdToHip.z = com->m_worldTransform.pos.z - heightCalc;
+	//	NiPoint3 dir = NiPoint3(-_forwardDir.x, -_forwardDir.y, 0);
+
+	//	float dist = tanf(bodyPitch) * vec3_len(hmdToHip);
+	//	NiPoint3 tmpHipPos = com->m_worldTransform.pos + dir * (dist / vec3_len(dir));
+	//	tmpHipPos.z = com->m_worldTransform.pos.z - heightCalc;
+
+	//	NiPoint3 hmdtoNewHip = tmpHipPos - neckPos;
+	//	NiPoint3 newHipPos = neckPos + hmdtoNewHip * (_torsoLen / vec3_len(hmdtoNewHip));
+
+
+	//	NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * (newHipPos - com->m_worldTransform.pos);
+	//	//float offsetFwd;
+	//	//offsetFwd = _inPowerArmor ? -c_powerArmor_forward : c_playerOffset_forward;
+	//	com->m_localTransform.pos.y += newPos.y;
+	//	com->m_localTransform.pos.z = (std::min)(newPos.z, _legLen);
+	//	com->m_localTransform.pos.z -= _inPowerArmor ? c_powerArmor_up + c_PACameraHeight : 0.0f;
+
+	//	Matrix44 rot;
+	//	rot.rotateVectoVec(neckPos - tmpHipPos, hmdToHip);
+	//	NiMatrix43 mat = rot.multiply43Left(spine->m_parent->m_worldTransform.rot.Transpose());
+	//	spine->m_localTransform.rot = rot.multiply43Right(spine->m_worldTransform.rot);
+
+	//}
 
 	void Skeleton::setKneePos() {
 		NiNode* lKnee = getNode("LLeg_Calf", _root);
@@ -1275,6 +1326,9 @@ namespace F4VRBody
 			// we're standing still so just set foot positions accordingly.
 			_leftFootPos = lFoot->m_worldTransform.pos;
 			_rightFootPos = rFoot->m_worldTransform.pos;
+			_leftFootPos.z = _root->m_worldTransform.pos.z;
+			_rightFootPos.z = _root->m_worldTransform.pos.z;
+
 			return;
 		}
 		else if (_walkingState == 1) {
@@ -1305,8 +1359,8 @@ namespace F4VRBody
 				else {
 					delayFrame = delayFrame == 2 ? delayFrame : delayFrame + 1;
 				}
-				_rightFootTarget.z = _root->m_parent->m_worldTransform.pos.z;
-				_rightFootStart.z = _root->m_parent->m_worldTransform.pos.z;
+				_rightFootTarget.z = _root->m_worldTransform.pos.z;
+				_rightFootStart.z = _root->m_worldTransform.pos.z;
 				_rightFootPos = _rightFootStart + ((_rightFootTarget - _rightFootStart) * interp);
 				double stepAmount = std::clamp(vec3_len(_rightFootTarget - _rightFootStart) / 150.0, 0.0, 1.0);
 				double stepHeight = (std::max)(stepAmount * 9.0, 1.0);
@@ -1327,8 +1381,8 @@ namespace F4VRBody
 				else {
 					delayFrame = delayFrame == 2 ? delayFrame : delayFrame + 1;
 				}
-				_leftFootTarget.z = _root->m_parent->m_worldTransform.pos.z;
-				_leftFootStart.z = _root->m_parent->m_worldTransform.pos.z;
+				_leftFootTarget.z = _root->m_worldTransform.pos.z;
+				_leftFootStart.z = _root->m_worldTransform.pos.z;
 				_leftFootPos = _leftFootStart + ((_leftFootTarget - _leftFootStart) * interp);
 				double stepAmount = std::clamp(vec3_len(_leftFootTarget - _leftFootStart) / 150.0, 0.0, 1.0);
 				double stepHeight = (std::max)(stepAmount * 9.0, 1.0);
@@ -1425,8 +1479,8 @@ namespace F4VRBody
 		NiPoint3 xDir = vec3_norm(footToHip);
 		NiPoint3 yDir = vec3_norm(hipDir - xDir * vec3_dot(hipDir, xDir));
 
-		float thighLenOrig = vec3_len(kneeNode->m_localTransform.pos) * kneeNode->m_worldTransform.scale;
-		float calfLenOrig = vec3_len(footNode->m_localTransform.pos) * footNode->m_worldTransform.scale;
+		float thighLenOrig = vec3_len(kneeNode->m_localTransform.pos);
+		float calfLenOrig = vec3_len(footNode->m_localTransform.pos);
 		float thighLen = thighLenOrig;
 		float calfLen = calfLenOrig;
 
@@ -1562,11 +1616,10 @@ namespace F4VRBody
 		_torsoLen = vec3_len(getNode("Camera", _root)->m_worldTransform.pos - getNode("COM", _root)->m_worldTransform.pos);
 		_torsoLen *= c_playerHeight / defaultCameraHeight;
 
-		_legLen =  vec3_len(getNode("Pelvis", _root)->m_worldTransform.pos -  getNode("COM", _root)->m_worldTransform.pos);
-		_legLen +=  vec3_len(getNode("LLeg_Thigh", _root)->m_worldTransform.pos -  getNode("Pelvis", _root)->m_worldTransform.pos);
+		_legLen = vec3_len(getNode("LLeg_Thigh", _root)->m_worldTransform.pos - getNode("Pelvis", _root)->m_worldTransform.pos);
 		_legLen += vec3_len(getNode("LLeg_Calf", _root)->m_worldTransform.pos - getNode("LLeg_Thigh", _root)->m_worldTransform.pos);
 		_legLen += vec3_len(getNode("LLeg_Foot", _root)->m_worldTransform.pos - getNode("LLeg_Calf", _root)->m_worldTransform.pos);
-	//	_legLen *= c_playerHeight / defaultCameraHeight;
+		_legLen *= c_playerHeight / defaultCameraHeight;
 	}
 
 	void Skeleton::hideWeapon() {
@@ -2260,7 +2313,8 @@ namespace F4VRBody
 		}
 
 		NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-		NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
+		//NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
+		NiNode* leftWeapon = getNode("WeaponLeft", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 		bool handleLeftMode = c_leftHandedMode ^ isLeft;
 
@@ -2322,7 +2376,12 @@ namespace F4VRBody
 		}
 
 		if (c_leftHandedMode) {
-			weaponNode->m_localTransform.pos = isLeft ? NiPoint3(6.389, -2.099, 3.133) : NiPoint3(0, -4.8, 0);
+			w.setEulerAngles(degrees_to_rads(0), degrees_to_rads(45), degrees_to_rads(0));
+			_weapSave.rot = w.multiply43Right(_weapSave.rot);
+		}
+
+		if (c_leftHandedMode) {
+			weaponNode->m_localTransform.pos = isLeft ? NiPoint3(3.389, -2.099, 3.133) : NiPoint3(0, -4.8, 0);
 		}
 		else {
 			weaponNode->m_localTransform.pos = isLeft ? NiPoint3(0, 0, 0) : NiPoint3(6.389, -2.099, -3.133);
@@ -2624,13 +2683,12 @@ namespace F4VRBody
 		float origEHLen = vec3_len(arm.hand->m_worldTransform.pos - arm.forearm1->m_worldTransform.pos);
 		float forearmRatio = (forearmLen / origEHLen) * _root->m_localTransform.scale;
 
-		//forearmRatio *= _inPowerArmor ? 1.5 : 1.0;
-		//if (arm.forearm2) {
-		//	arm.forearm2->m_localTransform.pos *= forearmRatio;
-		//	arm.forearm3->m_localTransform.pos *= forearmRatio;
-		//}
-		//this->debug();
-		//arm.hand->m_localTransform.pos     *= forearmRatio;
+		forearmRatio *= _inPowerArmor ? 1.5 : 1.0;
+		if (arm.forearm2) {
+			arm.forearm2->m_localTransform.pos *= forearmRatio;
+			arm.forearm3->m_localTransform.pos *= forearmRatio;
+		}
+		arm.hand->m_localTransform.pos     *= forearmRatio;
 
 		return;
 	}
@@ -2811,7 +2869,7 @@ namespace F4VRBody
 				bool thumbUp = (reg & vr::ButtonMaskFromId(vr::k_EButton_Grip)) && (reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)) && (!(reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
 				_closedHand[boneTreeVec[pos]] = reg & vr::ButtonMaskFromId(_handBonesButton[boneTreeVec[pos]]);
 
-				if ((*g_player)->actorState.IsWeaponDrawn() && !isLeft) {
+				if ((*g_player)->actorState.IsWeaponDrawn() && !(isLeft ^ c_leftHandedMode)) {
 					int dig1 = boneTreeVec[pos].c_str()[11] - '0';
 					int dig2 = boneTreeVec[pos].c_str()[12] - '0';
 					int arrOff = (dig2 - 1) + ((dig1 - 1) * 3);
@@ -2826,7 +2884,20 @@ namespace F4VRBody
 				rt->transforms[pos].local.rot = trans.rot;
 				rt->transforms[pos].local.pos = handOpen[boneTreeVec[pos].c_str()].pos;
 
-			//	_MESSAGE("%s %d %d", boneTreeVec[pos].c_str(), rt->transforms[pos].parPos, rt->transforms[pos].childPos);
+				//_MESSAGE("%s,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", boneTreeVec[pos].c_str(), 
+				//											trans.rot.arr[0],
+				//											trans.rot.arr[1],
+				//											trans.rot.arr[2],
+				//											trans.rot.arr[3],
+				//											trans.rot.arr[4],
+				//											trans.rot.arr[5],
+				//											trans.rot.arr[6],
+				//											trans.rot.arr[7],
+				//											trans.rot.arr[8],
+				//											trans.rot.arr[9],
+				//											trans.rot.arr[10],
+				//											trans.rot.arr[11]
+				//	);
 
 				if (rt->transforms[pos].refNode) {
 					rt->transforms[pos].refNode->m_localTransform = rt->transforms[pos].local;
@@ -2918,6 +2989,12 @@ namespace F4VRBody
 						}
 						weap->m_localTransform.pos += offset;
 					}
+				}
+
+				if (c_leftHandedMode) {
+					weap->m_localTransform.pos.x += 6.25f;
+					weap->m_localTransform.pos.y += 2.5f;
+					weap->m_localTransform.pos.z += 2.75f;
 				}
 				if (_useCustomWeaponOffset) { // load custom transform
 					weap->m_localTransform = _customTransform;
@@ -3020,6 +3097,7 @@ namespace F4VRBody
 							//oH2Bar.y -= _offhandOffset.pos.y;
 							oH2Bar.z -= _offhandOffset.pos.z;
 						}							
+						oH2Bar.z += 3.5f;
 
 						NiPoint3 barrelVec = NiPoint3(0, 1, 0);
 
@@ -3381,71 +3459,71 @@ namespace F4VRBody
 		//	}
 		//}
 
-			//if (rt->bonePositions[i].name && (rt->bonePositions[i].position != 0) && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
-			//	int pos = rt->bonePositions[i].position;
-			//	if (pos > rt->numTransforms) {
-			//		continue;
-			//	}
-			//	_MESSAGE("%d,%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", fc, rt->bonePositions[i].name->data,
-			//						rt->bonePositions[i].position,
-			//						rt->transforms[pos].local.rot.arr[0],
-			//						rt->transforms[pos].local.rot.arr[1],
-			//						rt->transforms[pos].local.rot.arr[2],
-			//						rt->transforms[pos].local.rot.arr[3],
-			//						rt->transforms[pos].local.rot.arr[4],
-			//						rt->transforms[pos].local.rot.arr[5],
-			//						rt->transforms[pos].local.rot.arr[6],
-			//						rt->transforms[pos].local.rot.arr[7],
-			//						rt->transforms[pos].local.rot.arr[8],
-			//						rt->transforms[pos].local.rot.arr[9],
-			//						rt->transforms[pos].local.rot.arr[10],
-			//						rt->transforms[pos].local.rot.arr[11],
-			//						rt->transforms[pos].local.pos.x,
-			//						rt->transforms[pos].local.pos.y,
-			//						rt->transforms[pos].local.pos.z,
-			//						rt->transforms[pos].world.rot.arr[0],
-			//						rt->transforms[pos].world.rot.arr[1],
-			//						rt->transforms[pos].world.rot.arr[2],
-			//						rt->transforms[pos].world.rot.arr[3],
-			//						rt->transforms[pos].world.rot.arr[4],
-			//						rt->transforms[pos].world.rot.arr[5],
-			//						rt->transforms[pos].world.rot.arr[6],
-			//						rt->transforms[pos].world.rot.arr[7],
-			//						rt->transforms[pos].world.rot.arr[8],
-			//						rt->transforms[pos].world.rot.arr[9],
-			//						rt->transforms[pos].world.rot.arr[10],
-			//						rt->transforms[pos].world.rot.arr[11],
-			//						rt->transforms[pos].world.pos.x,
-			//						rt->transforms[pos].world.pos.y,
-			//						rt->transforms[pos].world.pos.z
-			//	);
+		//	if (rt->bonePositions[i].name && (rt->bonePositions[i].position != 0) && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
+		//		int pos = rt->bonePositions[i].position;
+		//		if (pos > rt->numTransforms) {
+		//			continue;
+		//		}
+		//		_MESSAGE("%d,%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", fc, rt->bonePositions[i].name->data,
+		//							rt->bonePositions[i].position,
+		//							rt->transforms[pos].local.rot.arr[0],
+		//							rt->transforms[pos].local.rot.arr[1],
+		//							rt->transforms[pos].local.rot.arr[2],
+		//							rt->transforms[pos].local.rot.arr[3],
+		//							rt->transforms[pos].local.rot.arr[4],
+		//							rt->transforms[pos].local.rot.arr[5],
+		//							rt->transforms[pos].local.rot.arr[6],
+		//							rt->transforms[pos].local.rot.arr[7],
+		//							rt->transforms[pos].local.rot.arr[8],
+		//							rt->transforms[pos].local.rot.arr[9],
+		//							rt->transforms[pos].local.rot.arr[10],
+		//							rt->transforms[pos].local.rot.arr[11],
+		//							rt->transforms[pos].local.pos.x,
+		//							rt->transforms[pos].local.pos.y,
+		//							rt->transforms[pos].local.pos.z,
+		//							rt->transforms[pos].world.rot.arr[0],
+		//							rt->transforms[pos].world.rot.arr[1],
+		//							rt->transforms[pos].world.rot.arr[2],
+		//							rt->transforms[pos].world.rot.arr[3],
+		//							rt->transforms[pos].world.rot.arr[4],
+		//							rt->transforms[pos].world.rot.arr[5],
+		//							rt->transforms[pos].world.rot.arr[6],
+		//							rt->transforms[pos].world.rot.arr[7],
+		//							rt->transforms[pos].world.rot.arr[8],
+		//							rt->transforms[pos].world.rot.arr[9],
+		//							rt->transforms[pos].world.rot.arr[10],
+		//							rt->transforms[pos].world.rot.arr[11],
+		//							rt->transforms[pos].world.pos.x,
+		//							rt->transforms[pos].world.pos.y,
+		//							rt->transforms[pos].world.pos.z
+		//		);
 
 
-			//	if(strstr(rt->bonePositions[i].name->data, "Finger")) {
-			//		Matrix44 rot;
-			//		rot.makeIdentity();
-			//		rt->transforms[pos].local.rot = rot.make43();
+		//	//	if(strstr(rt->bonePositions[i].name->data, "Finger")) {
+		//	//		Matrix44 rot;
+		//	//		rot.makeIdentity();
+		//	//		rt->transforms[pos].local.rot = rot.make43();
 
-			//		if (rt->transforms[pos].refNode) {
-			//			rt->transforms[pos].refNode->m_localTransform.rot = rot.make43();
-			//		}
+		//	//		if (rt->transforms[pos].refNode) {
+		//	//			rt->transforms[pos].refNode->m_localTransform.rot = rot.make43();
+		//	//		}
 
-			//		rot.makeTransformMatrix(rt->transforms[pos].local.rot, NiPoint3(0, 0, 0));
+		//	//		rot.makeTransformMatrix(rt->transforms[pos].local.rot, NiPoint3(0, 0, 0));
 
-			//		short parent = rt->transforms[pos].parPos;
-			//		rt->transforms[pos].world.rot = rot.multiply43Left(rt->transforms[parent].world.rot);
+		//	//		short parent = rt->transforms[pos].parPos;
+		//	//		rt->transforms[pos].world.rot = rot.multiply43Left(rt->transforms[parent].world.rot);
 
-			//		if (rt->transforms[pos].refNode) {
-			//			rt->transforms[pos].refNode->m_worldTransform.rot = rt->transforms[pos].world.rot;
-			//		}
+		//	//		if (rt->transforms[pos].refNode) {
+		//	//			rt->transforms[pos].refNode->m_worldTransform.rot = rt->transforms[pos].world.rot;
+		//	//		}
 
-			//	}
-			//}
+		//	//	}
+		//	}
 
-			//rt->UpdateWorldBound();
+		//	//rt->UpdateWorldBound();
 		//}
 
-		fc++;
+		//fc++;
 	}
 
 }

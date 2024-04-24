@@ -50,6 +50,10 @@ typedef void(*_hookMultiBoundCullingFunc)();
 RelocAddr<_hookMultiBoundCullingFunc> hookMultiBoundCullingFunc(0x0d84930);
 RelocAddr<uintptr_t> hookMultiBoundCulling(0x0d8445d);
 
+typedef void(*_someRandomFunc)(uint64_t rcx);
+RelocAddr < _someRandomFunc> someRandomFunc(0xd3c820);
+RelocAddr<uintptr_t> hookSomeRandomFunc(0xd8405e);
+
 // renderer stuff
 
 void RendererEnable(std::uint64_t a_ptr, bool a_bool) {
@@ -103,6 +107,23 @@ void hook2(uint64_t rcx, uint64_t rdx, uint64_t r8, uint64_t r9) {
 
 	if (renderer) {
 //		RendererEnable(renderer, false);
+	}
+
+	return;
+}
+
+void hook5(uint64_t rcx) {
+
+	F4VRBody::update();
+
+	someRandomFunc(rcx);
+
+	BSFixedString name("ScopeMenu");
+
+	std::uint64_t renderer = RendererGetByName(name);
+
+	if (renderer) {
+		//		RendererEnable(renderer, false);
 	}
 
 	return;
@@ -175,8 +196,9 @@ void hookMain() {
 //	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&F4VRBody::update);
 
 //	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
-	g_branchTrampoline.Write5Call(hookMainDrawCandidate.GetUIntPtr(), (uintptr_t)&hook2);
+	//g_branchTrampoline.Write5Call(hookMainDrawCandidate.GetUIntPtr(), (uintptr_t)&hook2);
 //	g_branchTrampoline.Write5Call(hookMultiBoundCulling.GetUIntPtr(), (uintptr_t)&hook4);
+	g_branchTrampoline.Write5Call(hookSomeRandomFunc.GetUIntPtr(), (uintptr_t)&hook5);
 
 	g_branchTrampoline.Write5Call(hookMainUpdatePlayer.GetUIntPtr(), (uintptr_t)&hook_main_update_player);
 	g_branchTrampoline.Write5Call(hookMultiBoundCulling.GetUIntPtr(), (uintptr_t)&hookSmoothMovement);
