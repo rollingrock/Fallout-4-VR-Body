@@ -700,9 +700,9 @@ namespace F4VRBody {
 	{
 		if (!c_disableSmoothMovement) {
 			if (c_verbose) { _MESSAGE("Smooth Movement"); }
-			SmoothMovementVR::everyFrame();
 			static BSFixedString pwn("PlayerWorldNode");
 			NiNode* pwn_node = (*g_player)->unkF0->rootNode->m_parent->GetObjectByName(&pwn)->GetAsNiNode();
+			SmoothMovementVR::everyFrame();
 			updateTransformsDown(pwn_node, true);
 		}
 	}

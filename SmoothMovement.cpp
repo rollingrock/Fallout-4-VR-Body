@@ -178,11 +178,11 @@ namespace SmoothMovementVR
 					{
 						NiAVObject* playerWorldNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&playerWorld, true, true);
 						NiAVObject* hmdNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&Hmd, true, true);
-						//NiAVObject * roomNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&room, true, true);
+						NiAVObject * roomNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&room, true, true);
 
 						if (playerWorldNode && hmdNode)
 						{
-							const NiPoint3 curPos = (*g_player)->firstPersonSkeleton->m_worldTransform.pos;
+							const NiPoint3 curPos = roomNode->m_localTransform.pos;
 
 							if (first && curPos.z != 0)
 							{
@@ -217,7 +217,7 @@ namespace SmoothMovementVR
 								notMoving.store(false);
 							}
 
-							lastPositions.emplace_back((*g_player)->unkF0->rootNode->m_worldTransform.pos);
+							lastPositions.emplace_back(roomNode->m_localTransform.pos);
 							if (lastPositions.size() > 5)
 							{
 								lastPositions.pop_front();
@@ -243,7 +243,7 @@ namespace SmoothMovementVR
 								lastAppliedLocalX.store(playerWorldNode->m_localTransform.pos.x);
 								lastAppliedLocalY.store(playerWorldNode->m_localTransform.pos.y);
 							}
-						//	_MESSAGE("playerPos: %g %g %g  --hmd local:  %g %g %g  --appliedLocal: %g %g %g", curPos.x, curPos.y, curPos.z, hmdNode->m_localTransform.pos.x, hmdNode->m_localTransform.pos.y, hmdNode->m_localTransform.pos.z, playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
+							//_MESSAGE("playerPos: %g %g %g  --newPos:  %g %g %g  --appliedLocal: %g %g %g", curPos.x, curPos.y, curPos.z, newPos.x, newPos.y, newPos.z, playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
 						//	_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
