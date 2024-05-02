@@ -40,6 +40,9 @@ extern RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiv
 typedef void(*_NiNode_UpdateWorldBound)(NiNode* node);
 extern RelocAddr<_NiNode_UpdateWorldBound> NiNode_UpdateWorldBound;
 
+typedef void(*_AIProcess_Set3DUpdateFlags)(Actor::MiddleProcess* proc, uint64_t flags);
+extern RelocAddr<_AIProcess_Set3DUpdateFlags> AIProcess_Set3DUpdateFlags;
+
 extern RelocPtr<NiNode*> worldRootCamera1;
 
 namespace F4VRBody {

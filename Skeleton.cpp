@@ -26,301 +26,17 @@ namespace F4VRBody
 	std::map<std::string, int> boneTreeMap;
 	std::vector<std::string> boneTreeVec;
 
-	void initBoneTreeMap() {
-		boneTreeMap.insert({ "COM", 0 });
-		boneTreeMap.insert({ "Pelvis", 1 });
-		boneTreeMap.insert({ "LLeg_Thigh", 2 });
-		boneTreeMap.insert({ "LLeg_Calf", 3 });
-		boneTreeMap.insert({ "LLeg_Foot", 4 });
-		boneTreeMap.insert({ "LLeg_Toe1", 5 });
-		boneTreeMap.insert({ "LLeg_Calf_skin", 6 });
-		boneTreeMap.insert({ "LLeg_Calf_Low_skin", 7 });
-		boneTreeMap.insert({ "LLeg_Calf_Armor1", 8 });
-		boneTreeMap.insert({ "LLeg_Calf_Armor2", 9 });
-		boneTreeMap.insert({ "LLeg_Thigh_skin", 10 });
-		boneTreeMap.insert({ "LLeg_Thigh_Low_skin", 11 });
-		boneTreeMap.insert({ "LLeg_Thigh_Armor1", 12 });
-		boneTreeMap.insert({ "LLeg_Thigh_Armor2", 13 });
-		boneTreeMap.insert({ "RLeg_Thigh", 14 });
-		boneTreeMap.insert({ "RLeg_Calf", 15 });
-		boneTreeMap.insert({ "RLeg_Foot", 16 });
-		boneTreeMap.insert({ "RLeg_Toe1", 17 });
-		boneTreeMap.insert({ "RLeg_Calf_skin", 18 });
-		boneTreeMap.insert({ "RLeg_Calf_Low_skin", 19 });
-		boneTreeMap.insert({ "RLeg_Calf_Armor1", 20 });
-		boneTreeMap.insert({ "RLeg_Calf_Armor2", 21 });
-		boneTreeMap.insert({ "RLeg_Thigh_skin", 22 });
-		boneTreeMap.insert({ "RLeg_Thigh_Low_skin", 23 });
-		boneTreeMap.insert({ "RLeg_Thigh_Fat_skin", 24 });
-		boneTreeMap.insert({ "RLeg_Thigh_Armor", 25 });
-		boneTreeMap.insert({ "Pelvis_skin", 26 });
-		boneTreeMap.insert({ "RButtFat_skin", 27 });
-		boneTreeMap.insert({ "LButtFat_skin", 28 });
-		boneTreeMap.insert({ "Pelvis_Rear_skin", 29 });
-		boneTreeMap.insert({ "Pelvis_Armor", 30 });
-		boneTreeMap.insert({ "SPINE1", 31 });
-		boneTreeMap.insert({ "SPINE2", 32 });
-		boneTreeMap.insert({ "Chest", 33 });
-		boneTreeMap.insert({ "LArm_Collarbone", 34 });
-		boneTreeMap.insert({ "LArm_UpperArm", 35 });
-		boneTreeMap.insert({ "LArm_ForeArm1", 36 });
-		boneTreeMap.insert({ "LArm_ForeArm2", 37 });
-		boneTreeMap.insert({ "LArm_ForeArm3", 38 });
-		boneTreeMap.insert({ "LArm_Hand", 39 });
-		boneTreeMap.insert({ "LArm_Finger11", 40 });
-		boneTreeMap.insert({ "LArm_Finger12", 41 });
-		boneTreeMap.insert({ "LArm_Finger13", 42 });
-		boneTreeMap.insert({ "LArm_Finger21", 43 });
-		boneTreeMap.insert({ "LArm_Finger22", 44 });
-		boneTreeMap.insert({ "LArm_Finger23", 45 });
-		boneTreeMap.insert({ "LArm_Finger31", 46 });
-		boneTreeMap.insert({ "LArm_Finger32", 47 });
-		boneTreeMap.insert({ "LArm_Finger33", 48 });
-		boneTreeMap.insert({ "LArm_Finger41", 49 });
-		boneTreeMap.insert({ "LArm_Finger42", 50 });
-		boneTreeMap.insert({ "LArm_Finger43", 51 });
-		boneTreeMap.insert({ "LArm_Finger51", 52 });
-		boneTreeMap.insert({ "LArm_Finger52", 53 });
-		boneTreeMap.insert({ "LArm_Finger53", 54 });
-		boneTreeMap.insert({ "WeaponLeft", 55 });
-		boneTreeMap.insert({ "AnimObjectL1", 56 });
-		boneTreeMap.insert({ "AnimObjectL3", 57 });
-		boneTreeMap.insert({ "AnimObjectL2", 58 });
-		boneTreeMap.insert({ "PipboyBone", 59 });
-		boneTreeMap.insert({ "LArm_ForeArm3_skin", 60 });
-		boneTreeMap.insert({ "LArm_ForeArm2_skin", 61 });
-		boneTreeMap.insert({ "LArm_ForeArm1_skin", 62 });
-		boneTreeMap.insert({ "LArm_ForeArm_Armor", 63 });
-		boneTreeMap.insert({ "LArm_UpperTwist1", 64 });
-		boneTreeMap.insert({ "LArm_UpperTwist2", 65 });
-		boneTreeMap.insert({ "LArm_UpperTwist2_skin", 66 });
-		boneTreeMap.insert({ "LArm_UpperFat_skin", 67 });
-		boneTreeMap.insert({ "LArm_UpperTwist1_skin", 68 });
-		boneTreeMap.insert({ "LArm_UpperArm_skin", 69 });
-		boneTreeMap.insert({ "LArm_UpperArm_Armor", 70 });
-		boneTreeMap.insert({ "LArm_Collarbone_skin", 71 });
-		boneTreeMap.insert({ "LArm_ShoulderFat_skin", 72 });
-		boneTreeMap.insert({ "Neck", 73 });
-		boneTreeMap.insert({ "Head", 74 });
-		boneTreeMap.insert({ "Head_skin", 75 });
-		boneTreeMap.insert({ "Face_skin", 76 });
-		boneTreeMap.insert({ "Helmet_Armor", 77 });
-		boneTreeMap.insert({ "Neck_skin", 78 });
-		boneTreeMap.insert({ "Neck1_skin", 79 });
-		boneTreeMap.insert({ "RArm_Collarbone", 80 });
-		boneTreeMap.insert({ "RArm_UpperArm", 81 });
-		boneTreeMap.insert({ "RArm_ForeArm1", 82 });
-		boneTreeMap.insert({ "RArm_ForeArm2", 83 });
-		boneTreeMap.insert({ "RArm_ForeArm3", 84 });
-		boneTreeMap.insert({ "RArm_Hand", 85 });
-		boneTreeMap.insert({ "RArm_Finger11", 86 });
-		boneTreeMap.insert({ "RArm_Finger12", 87 });
-		boneTreeMap.insert({ "RArm_Finger13", 88 });
-		boneTreeMap.insert({ "RArm_Finger21", 89 });
-		boneTreeMap.insert({ "RArm_Finger22", 90 });
-		boneTreeMap.insert({ "RArm_Finger23", 91 });
-		boneTreeMap.insert({ "RArm_Finger31", 92 });
-		boneTreeMap.insert({ "RArm_Finger32", 93 });
-		boneTreeMap.insert({ "RArm_Finger33", 94 });
-		boneTreeMap.insert({ "RArm_Finger41", 95 });
-		boneTreeMap.insert({ "RArm_Finger42", 96 });
-		boneTreeMap.insert({ "RArm_Finger43", 97 });
-		boneTreeMap.insert({ "RArm_Finger51", 98 });
-		boneTreeMap.insert({ "RArm_Finger52", 99 });
-		boneTreeMap.insert({ "RArm_Finger53", 100 });
-		boneTreeMap.insert({ "WEAPON", 101 });
-		boneTreeMap.insert({ "AnimObjectR1", 102 });
-		boneTreeMap.insert({ "AnimObjectR2", 103 });
-		boneTreeMap.insert({ "AnimObjectR3", 104 });
-		boneTreeMap.insert({ "RArm_ForeArm3_skin", 105 });
-		boneTreeMap.insert({ "RArm_ForeArm2_skin", 106 });
-		boneTreeMap.insert({ "RArm_ForeArm1_skin", 107 });
-		boneTreeMap.insert({ "RArm_ForeArm_Armor", 108 });
-		boneTreeMap.insert({ "RArm_UpperTwist1", 109 });
-		boneTreeMap.insert({ "RArm_UpperTwist2", 110 });
-		boneTreeMap.insert({ "RArm_UpperTwist2_skin", 111 });
-		boneTreeMap.insert({ "RArm_UpperFat_skin", 112 });
-		boneTreeMap.insert({ "RArm_UpperTwist1_skin", 113 });
-		boneTreeMap.insert({ "RArm_UpperArm_skin", 114 });
-		boneTreeMap.insert({ "RArm_UpperArm_Armor", 115 });
-		boneTreeMap.insert({ "RArm_Collarbone_skin", 116 });
-		boneTreeMap.insert({ "RArm_ShoulderFat_skin", 117 });
-		boneTreeMap.insert({ "L_RibHelper", 118 });
-		boneTreeMap.insert({ "R_RibHelper", 119 });
-		boneTreeMap.insert({ "Chest_skin", 120 });
-		boneTreeMap.insert({ "LBreast_skin", 121 });
-		boneTreeMap.insert({ "RBreast_skin", 122 });
-		boneTreeMap.insert({ "Chest_Rear_Skin", 123 });
-		boneTreeMap.insert({ "Chest_Upper_skin", 124 });
-		boneTreeMap.insert({ "Neck_Low_skin", 125 });
-		boneTreeMap.insert({ "Back_Armor", 126 });
-		boneTreeMap.insert({ "Tank_Armor", 127 });
-		boneTreeMap.insert({ "Wheel", 128 });
-		boneTreeMap.insert({ "ProjectileNode", 129 });
-		boneTreeMap.insert({ "Pauldron_Armor", 130 });
-		boneTreeMap.insert({ "L_Pauldron", 131 });
-		boneTreeMap.insert({ "R_Pauldron", 132 });
-		boneTreeMap.insert({ "Spine2_skin", 133 });
-		boneTreeMap.insert({ "UpperBelly_skin", 134 });
-		boneTreeMap.insert({ "Spine2_Rear_skin", 135 });
-		boneTreeMap.insert({ "Spine1_skin", 136 });
-		boneTreeMap.insert({ "Belly_skin", 137 });
-		boneTreeMap.insert({ "Spine1_Rear_skin", 138 });
-		boneTreeMap.insert({ "Camera", 139 });
-		boneTreeMap.insert({ "Camera Control", 140 });
-		boneTreeMap.insert({ "AnimObjectA", 141 });
-		boneTreeMap.insert({ "AnimObjectB", 142 });
-		boneTreeMap.insert({ "CamTargetParent", 143 });
-		boneTreeMap.insert({ "CamTarget", 144 });
-		boneTreeMap.insert({ "OpenArmor", 145 });
+	void initBoneTreeMap(NiNode* root) {
+		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)root;
 
-		boneTreeVec.push_back("COM");
-		boneTreeVec.push_back("Pelvis");
-		boneTreeVec.push_back("LLeg_Thigh");
-		boneTreeVec.push_back("LLeg_Calf");
-		boneTreeVec.push_back("LLeg_Foot");
-		boneTreeVec.push_back("LLeg_Toe1");
-		boneTreeVec.push_back("LLeg_Calf_skin");
-		boneTreeVec.push_back("LLeg_Calf_Low_skin");
-		boneTreeVec.push_back("LLeg_Calf_Armor1");
-		boneTreeVec.push_back("LLeg_Calf_Armor2");
-		boneTreeVec.push_back("LLeg_Thigh_skin");
-		boneTreeVec.push_back("LLeg_Thigh_Low_skin");
-		boneTreeVec.push_back("LLeg_Thigh_Armor1");
-		boneTreeVec.push_back("LLeg_Thigh_Armor2");
-		boneTreeVec.push_back("RLeg_Thigh");
-		boneTreeVec.push_back("RLeg_Calf");
-		boneTreeVec.push_back("RLeg_Foot");
-		boneTreeVec.push_back("RLeg_Toe1");
-		boneTreeVec.push_back("RLeg_Calf_skin");
-		boneTreeVec.push_back("RLeg_Calf_Low_skin");
-		boneTreeVec.push_back("RLeg_Calf_Armor1");
-		boneTreeVec.push_back("RLeg_Calf_Armor2");
-		boneTreeVec.push_back("RLeg_Thigh_skin");
-		boneTreeVec.push_back("RLeg_Thigh_Low_skin");
-		boneTreeVec.push_back("RLeg_Thigh_Fat_skin");
-		boneTreeVec.push_back("RLeg_Thigh_Armor");
-		boneTreeVec.push_back("Pelvis_skin");
-		boneTreeVec.push_back("RButtFat_skin");
-		boneTreeVec.push_back("LButtFat_skin");
-		boneTreeVec.push_back("Pelvis_Rear_skin");
-		boneTreeVec.push_back("Pelvis_Armor");
-		boneTreeVec.push_back("SPINE1");
-		boneTreeVec.push_back("SPINE2");
-		boneTreeVec.push_back("Chest");
-		boneTreeVec.push_back("LArm_Collarbone");
-		boneTreeVec.push_back("LArm_UpperArm");
-		boneTreeVec.push_back("LArm_ForeArm1");
-		boneTreeVec.push_back("LArm_ForeArm2");
-		boneTreeVec.push_back("LArm_ForeArm3");
-		boneTreeVec.push_back("LArm_Hand");
-		boneTreeVec.push_back("LArm_Finger11");
-		boneTreeVec.push_back("LArm_Finger12");
-		boneTreeVec.push_back("LArm_Finger13");
-		boneTreeVec.push_back("LArm_Finger21");
-		boneTreeVec.push_back("LArm_Finger22");
-		boneTreeVec.push_back("LArm_Finger23");
-		boneTreeVec.push_back("LArm_Finger31");
-		boneTreeVec.push_back("LArm_Finger32");
-		boneTreeVec.push_back("LArm_Finger33");
-		boneTreeVec.push_back("LArm_Finger41");
-		boneTreeVec.push_back("LArm_Finger42");
-		boneTreeVec.push_back("LArm_Finger43");
-		boneTreeVec.push_back("LArm_Finger51");
-		boneTreeVec.push_back("LArm_Finger52");
-		boneTreeVec.push_back("LArm_Finger53");
-		boneTreeVec.push_back("WeaponLeft");
-		boneTreeVec.push_back("AnimObjectL1");
-		boneTreeVec.push_back("AnimObjectL3");
-		boneTreeVec.push_back("AnimObjectL2");
-		boneTreeVec.push_back("PipboyBone");
-		boneTreeVec.push_back("LArm_ForeArm3_skin");
-		boneTreeVec.push_back("LArm_ForeArm2_skin");
-		boneTreeVec.push_back("LArm_ForeArm1_skin");
-		boneTreeVec.push_back("LArm_ForeArm_Armor");
-		boneTreeVec.push_back("LArm_UpperTwist1");
-		boneTreeVec.push_back("LArm_UpperTwist2");
-		boneTreeVec.push_back("LArm_UpperTwist2_skin");
-		boneTreeVec.push_back("LArm_UpperFat_skin");
-		boneTreeVec.push_back("LArm_UpperTwist1_skin");
-		boneTreeVec.push_back("LArm_UpperArm_skin");
-		boneTreeVec.push_back("LArm_UpperArm_Armor");
-		boneTreeVec.push_back("LArm_Collarbone_skin");
-		boneTreeVec.push_back("LArm_ShoulderFat_skin");
-		boneTreeVec.push_back("Neck");
-		boneTreeVec.push_back("Head");
-		boneTreeVec.push_back("Head_skin");
-		boneTreeVec.push_back("Face_skin");
-		boneTreeVec.push_back("Helmet_Armor");
-		boneTreeVec.push_back("Neck_skin");
-		boneTreeVec.push_back("Neck1_skin");
-		boneTreeVec.push_back("RArm_Collarbone");
-		boneTreeVec.push_back("RArm_UpperArm");
-		boneTreeVec.push_back("RArm_ForeArm1");
-		boneTreeVec.push_back("RArm_ForeArm2");
-		boneTreeVec.push_back("RArm_ForeArm3");
-		boneTreeVec.push_back("RArm_Hand");
-		boneTreeVec.push_back("RArm_Finger11");
-		boneTreeVec.push_back("RArm_Finger12");
-		boneTreeVec.push_back("RArm_Finger13");
-		boneTreeVec.push_back("RArm_Finger21");
-		boneTreeVec.push_back("RArm_Finger22");
-		boneTreeVec.push_back("RArm_Finger23");
-		boneTreeVec.push_back("RArm_Finger31");
-		boneTreeVec.push_back("RArm_Finger32");
-		boneTreeVec.push_back("RArm_Finger33");
-		boneTreeVec.push_back("RArm_Finger41");
-		boneTreeVec.push_back("RArm_Finger42");
-		boneTreeVec.push_back("RArm_Finger43");
-		boneTreeVec.push_back("RArm_Finger51");
-		boneTreeVec.push_back("RArm_Finger52");
-		boneTreeVec.push_back("RArm_Finger53");
-		boneTreeVec.push_back("WEAPON");
-		boneTreeVec.push_back("AnimObjectR1");
-		boneTreeVec.push_back("AnimObjectR2");
-		boneTreeVec.push_back("AnimObjectR3");
-		boneTreeVec.push_back("RArm_ForeArm3_skin");
-		boneTreeVec.push_back("RArm_ForeArm2_skin");
-		boneTreeVec.push_back("RArm_ForeArm1_skin");
-		boneTreeVec.push_back("RArm_ForeArm_Armor");
-		boneTreeVec.push_back("RArm_UpperTwist1");
-		boneTreeVec.push_back("RArm_UpperTwist2");
-		boneTreeVec.push_back("RArm_UpperTwist2_skin");
-		boneTreeVec.push_back("RArm_UpperFat_skin");
-		boneTreeVec.push_back("RArm_UpperTwist1_skin");
-		boneTreeVec.push_back("RArm_UpperArm_skin");
-		boneTreeVec.push_back("RArm_UpperArm_Armor");
-		boneTreeVec.push_back("RArm_Collarbone_skin");
-		boneTreeVec.push_back("RArm_ShoulderFat_skin");
-		boneTreeVec.push_back("L_RibHelper");
-		boneTreeVec.push_back("R_RibHelper");
-		boneTreeVec.push_back("Chest_skin");
-		boneTreeVec.push_back("LBreast_skin");
-		boneTreeVec.push_back("RBreast_skin");
-		boneTreeVec.push_back("Chest_Rear_Skin");
-		boneTreeVec.push_back("Chest_Upper_skin");
-		boneTreeVec.push_back("Neck_Low_skin");
-		boneTreeVec.push_back("Back_Armor");
-		boneTreeVec.push_back("Tank_Armor");
-		boneTreeVec.push_back("Wheel");
-		boneTreeVec.push_back("ProjectileNode");
-		boneTreeVec.push_back("Pauldron_Armor");
-		boneTreeVec.push_back("L_Pauldron");
-		boneTreeVec.push_back("R_Pauldron");
-		boneTreeVec.push_back("Spine2_skin");
-		boneTreeVec.push_back("UpperBelly_skin");
-		boneTreeVec.push_back("Spine2_Rear_skin");
-		boneTreeVec.push_back("Spine1_skin");
-		boneTreeVec.push_back("Belly_skin");
-		boneTreeVec.push_back("Spine1_Rear_skin");
-		boneTreeVec.push_back("Camera");
-		boneTreeVec.push_back("Camera Control");
-		boneTreeVec.push_back("AnimObjectA");
-		boneTreeVec.push_back("AnimObjectB");
-		boneTreeVec.push_back("CamTargetParent");
-		boneTreeVec.push_back("CamTarget");
-		boneTreeVec.push_back("OpenArmor");
-		boneTreeVec.push_back("NULL");
+		boneTreeMap.clear();
+		boneTreeVec.clear();
+
+		for (auto i = 0; i < rt->numTransforms; i++) {
+			_MESSAGE("BoneTree Init -> Push %s into position %d", rt->transforms[i].name.c_str(), i);
+			boneTreeMap.insert({ rt->transforms[i].name.c_str(), i});
+			boneTreeVec.push_back(rt->transforms[i].name.c_str());
+		}
 	}
 
 	void printMatrix(Matrix44* mat) {
@@ -737,12 +453,12 @@ namespace F4VRBody
 		}
 
 
-		NiNode* room = _playerNodes->playerworldnode;
+		//NiNode* room = _playerNodes->playerworldnode;
 
-		Matrix44 rot;
-		rot.makeIdentity();
+		//Matrix44 rot;
+		//rot.makeIdentity();
 
-		room->m_localTransform.rot = rot.make43();
+		//room->m_localTransform.rot = rot.make43();
 	}
 
 	bool Skeleton::setNodes() {
@@ -883,7 +599,7 @@ namespace F4VRBody
 		saveStatesTree(_root->m_parent->GetAsNiNode());
 		_MESSAGE("finished saving tree");
 
-		initBoneTreeMap();
+		initBoneTreeMap(_root);
 		return true;
 	}
 
@@ -1586,11 +1302,9 @@ namespace F4VRBody
 
 		static bool oneTime = false;
 
-		return;
 		if (_inPowerArmor) {
 			if (!oneTime) {
 				oneTime = true;
-				return;
 				rotateLeg(boneTreeMap["LLeg_Calf_Armor1"], 90.0f);
 				rotateLeg(boneTreeMap["LLeg_Calf_Armor2"], 90.0f);
 				rotateLeg(boneTreeMap["LLeg_Thigh_Armor"], 90.0f);
@@ -2031,7 +1745,7 @@ namespace F4VRBody
 		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
 
 		NiPoint3 finger;
-		NiAVObject* pipboy;
+		NiAVObject* pipboy = nullptr;
 
 		if (!c_leftHandedPipBoy) {
 			finger = rt->transforms[boneTreeMap["RArm_Finger23"]].world.pos;
@@ -2171,87 +1885,6 @@ namespace F4VRBody
 			hud->m_localTransform.scale = c_showPAHUD ? 1.0 : 0.0;
 			return;
 		}
-	}
-
-	void Skeleton::setArms_wp(bool isLeft) {
-		ArmNodes arm;
-
-		arm = isLeft ? leftArm : rightArm;
-
-		NiPoint3 handPos = isLeft ? _leftHand->m_worldTransform.pos : _rightHand->m_worldTransform.pos;
-		NiMatrix43 handRot = isLeft ? _leftHand->m_worldTransform.rot : _rightHand->m_worldTransform.rot;
-
-		// Detect if the 1st person hand position is invalid.  This can happen when a controller loses tracking.
-		// If it is, do not handle IK and let Fallout use its normal animations for that arm instead.
-
-		if (isnan(handPos.x) || isnan(handPos.y) || isnan(handPos.z) ||
-			isinf(handPos.x) || isinf(handPos.y) || isinf(handPos.z) ||
-			vec3_len(arm.upper->m_worldTransform.pos - handPos) > 200.0)
-		{
-			return;
-		}
-
-		NiPoint3 handSide = arm.hand->m_worldTransform.rot * NiPoint3(0, 1, 0);
-		NiPoint3 handinSide = handSide * -1;
-
-		NiPoint3 wLocalDir = arm.forearm3->m_worldTransform.rot.Transpose() * vec3_norm(handinSide);
-		wLocalDir.x = 0;
-		NiPoint3 forearm3Side = arm.forearm3->m_worldTransform.rot * NiPoint3(0, -1 * 1, 0);
-		NiPoint3 floc = arm.forearm2->m_worldTransform.rot.Transpose() * vec3_norm(forearm3Side);
-		floc.x = 0;
-		float fcos = vec3_dot(vec3_norm(floc), vec3_norm(wLocalDir));
-		NiPoint3 cross = vec3_cross(vec3_norm(floc), vec3_norm(wLocalDir));
-
-		float forearmAngle = acosf(fcos);
-
-		_MESSAGE("cross.x         %5f", cross.x);
-		_MESSAGE("fcos            %5f", fcos);
-		_MESSAGE("forearmangle    %5f", forearmAngle);
-		_MESSAGE("forearmangle    %5f", rads_to_degrees(forearmAngle));
-
-
-		return;
-
-		float upperArmLength = vec3_len(arm.forearm1->m_worldTransform.pos - arm.upper->m_worldTransform.pos);
-		float lowerArmLength = vec3_len(arm.hand->m_worldTransform.pos - arm.forearm1->m_worldTransform.pos);
-		float armLength = upperArmLength + lowerArmLength;
-		float armLengthScale = 0.75;
-
-		float negLeft = isLeft ? -1 : 1;
-
-		NiPoint3 forwardDir = _forwardDir;
-		NiPoint3 sidewaysDir = _sidewaysRDir * negLeft;
-		NiPoint3 upDir = NiPoint3(0, 0, 1);
-
-		// Shoulder first.    Solve for a yaw and roll if hand position exceeds a threshold given by
-		//              (shoudlerToHand dot forwardUnitVec)
-		// yaw = c *  -------------------------------------  - d
-		//                       armlength
-		// roll is the same except upVec instead of forward
-
-		NiPoint3 shoulderToHand = handPos - arm.upper->m_worldTransform.pos;
-
-		float dotF = vec3_dot(shoulderToHand, forwardDir);
-		float dotU = vec3_dot(shoulderToHand, upDir);
-		float c = degrees_to_rads(30.0);
-
-		float yaw  = c * (dotF / (armLength * armLengthScale)) - 0.5;
-		float roll = c * (dotU / (armLength * armLengthScale)) - 0.5;
-		yaw = std::clamp(yaw, 0.0f, degrees_to_rads(33.0));
-		roll = std::clamp(roll, 0.0f, degrees_to_rads(33.0));
-
-
-		Matrix44 rotate;
-		rotate.setEulerAngles(yaw, roll, 0);
-
-		arm.shoulder->m_localTransform.rot = rotate.multiply43Left(arm.shoulder->m_localTransform.rot);
-
-		// now elbow
-		_MESSAGE("");
-		_MESSAGE("========== Frame %d ============", g_mainLoopCounter);
-		_MESSAGE("armLength       %5f", armLength);
-		_MESSAGE("yaw             %5f", rads_to_degrees(yaw));
-		_MESSAGE("roll            %5f", rads_to_degrees(roll));
 	}
 
 	void Skeleton::setLeftHandedSticky() {
@@ -2680,11 +2313,12 @@ namespace F4VRBody
 		// Calculate Flp:  Fwp = Uwp + Uwr * (Flp * Uws) = elbowWorld   ===>   Flp = Uwr' * (elbowWorld - Uwp) / Uws
 		arm.forearm1->m_localTransform.pos = Uwr.Transpose() * ((elbowWorld - Uwp) / arm.upper->m_worldTransform.scale);
 
+		return;
 		float origEHLen = vec3_len(arm.hand->m_worldTransform.pos - arm.forearm1->m_worldTransform.pos);
 		float forearmRatio = (forearmLen / origEHLen) * _root->m_localTransform.scale;
 
 		forearmRatio *= _inPowerArmor ? 1.5 : 1.0;
-		if (arm.forearm2) {
+		if (arm.forearm2 && !_inPowerArmor) {
 			arm.forearm2->m_localTransform.pos *= forearmRatio;
 			arm.forearm3->m_localTransform.pos *= forearmRatio;
 		}
@@ -3405,7 +3039,7 @@ namespace F4VRBody
 
 		static std::uint64_t fc = 0;
 
-		//BSFadeNode* rn = static_cast<BSFadeNode*>(_root->m_parent);
+		BSFadeNode* rn = static_cast<BSFadeNode*>(_root->m_parent);
 
 		//for (auto i = 0; i < rn->kGeomArray.capacity-1; ++i) {
 		//	BSFadeNode::FlattenedGeometryData data = rn->kGeomArray[i];
@@ -3437,16 +3071,17 @@ namespace F4VRBody
 		//	map->Dump();
 		//}
 
-		//BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
+		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
 
 		//for (auto i = 0; i < rt->numTransforms; i++) {
 
-		//	if (rt->transforms[i].refNode) {
-		//		_MESSAGE("%d,%s,%d,%d", fc, rt->transforms[i].refNode->m_name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
-		//	}
-		//	else {
-		//		_MESSAGE("%d,%s,%d,%d", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
-		//	}
+		//	//if (rt->transforms[i].refNode) {
+		//	//	_MESSAGE("%d,%s,%d,%d", fc, rt->transforms[i].refNode->m_name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
+		//	//}
+		//	//else {
+		//	//	_MESSAGE("%d,%s,%d,%d", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
+		//	//}
+		//		_MESSAGE("%d,%d,%s", fc, i, rt->transforms[i].name.c_str());
 		//}
 		//
 		//for (auto i = 0; i < rt->numTransforms; i++) {
@@ -3523,7 +3158,7 @@ namespace F4VRBody
 		//	//rt->UpdateWorldBound();
 		//}
 
-		//fc++;
+		fc++;
 	}
 
 }

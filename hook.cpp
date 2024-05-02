@@ -51,8 +51,32 @@ RelocAddr<_hookMultiBoundCullingFunc> hookMultiBoundCullingFunc(0x0d84930);
 RelocAddr<uintptr_t> hookMultiBoundCulling(0x0d8445d);
 
 typedef void(*_someRandomFunc)(uint64_t rcx);
-RelocAddr < _someRandomFunc> someRandomFunc(0xd3c820);
+RelocAddr <_someRandomFunc> someRandomFunc(0xd3c820);
 RelocAddr<uintptr_t> hookSomeRandomFunc(0xd8405e);
+
+typedef void(*_Actor_ReEquipAll)(Actor* a_actor);
+RelocAddr <_Actor_ReEquipAll> Actor_ReEquipAll(0xddf050);
+RelocAddr<uintptr_t> hookActor_ReEquipAllExit(0xf01528);
+
+typedef void(*_ExtraData_SetMultiBoundRef)(std::uint64_t rcx, std::uint64_t rdx);
+RelocAddr <_ExtraData_SetMultiBoundRef> ExtraData_SetMultiBoundRef(0x91320);
+RelocAddr<uintptr_t> hookExtraData_SetMultiBoundRef(0xf00dc6);
+
+RelocAddr<_AIProcess_Set3DUpdateFlags> AIProcess_Set3DUpdateFlags(0xec8ce0);
+
+// fix powerarmor 3d mesh hooks
+
+void fixPA3D() {
+	Actor_ReEquipAll(*g_player);
+	AIProcess_Set3DUpdateFlags((*g_player)->middleProcess, 0x520);
+	return;
+}
+
+void fixPA3DEnter(std::uint64_t rcx, std::uint64_t rdx) {
+	ExtraData_SetMultiBoundRef(rcx, rdx);
+	AIProcess_Set3DUpdateFlags((*g_player)->middleProcess, 0x520);
+	return;
+}
 
 // renderer stuff
 
@@ -202,6 +226,9 @@ void hookMain() {
 
 	g_branchTrampoline.Write5Call(hookMainUpdatePlayer.GetUIntPtr(), (uintptr_t)&hook_main_update_player);
 	g_branchTrampoline.Write5Call(hookMultiBoundCulling.GetUIntPtr(), (uintptr_t)&hookSmoothMovement);
+
+	g_branchTrampoline.Write5Call(hookActor_ReEquipAllExit.GetUIntPtr(), (uintptr_t)&fixPA3D);
+	g_branchTrampoline.Write5Call(hookExtraData_SetMultiBoundRef.GetUIntPtr(), (uintptr_t)&fixPA3DEnter);
 
 //	_MESSAGE("hooking main loop function");
 //	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);

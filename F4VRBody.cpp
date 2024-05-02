@@ -41,6 +41,8 @@ RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiveGraph(
 RelocAddr<uint64_t> EquippedWeaponData_vfunc(0x2d7fcf8);
 RelocAddr<_NiNode_UpdateWorldBound> NiNode_UpdateWorldBound(0x1c18ab0);
 RelocPtr<NiNode*> worldRootCamera1(0x6885c80);
+UInt32 KeywordPowerArmor = 0x4D8A1;
+UInt32 KeywordPowerArmorFrame = 0x15503F;
 
 OpenVRHookManagerAPI* vrhook;
 
@@ -153,6 +155,23 @@ namespace F4VRBody {
 	typedef uint64_t(*_TESObjectCELL_GetLandHeight)(TESObjectCELL* cell, NiPoint3* coord, float* height);
 	RelocAddr<_TESObjectCELL_GetLandHeight> TESObjectCell_GetLandHeight(0x039b230);
 
+	typedef void(*_Actor_SwitchRace)(Actor* a_actor, TESRace* a_race, bool param3, bool param4);
+	RelocAddr<_Actor_SwitchRace> Actor_SwitchRace(0xe07850);
+
+	typedef void(*_Actor_Reset3D)(Actor* a_actor, double param2, uint64_t param3, bool param4, uint64_t param5);
+	RelocAddr<_Actor_Reset3D> Actor_Reset3D(0xddad60);
+
+	typedef bool(*_PowerArmor_ActorInPowerArmor)(Actor* a_actor);
+	RelocAddr<_PowerArmor_ActorInPowerArmor> PowerArmor_ActorInPowerArmor(0x9bf5d0);
+
+	typedef bool(*_PowerArmor_SwitchToPowerArmor)(Actor* a_actor, TESObjectREFR* a_refr, uint64_t a_char);
+	RelocAddr<_PowerArmor_SwitchToPowerArmor> PowerArmor_SwitchToPowerArmor(0x9bfbc0);
+
+	typedef void(*_AIProcess_Update3DModel)(Actor::MiddleProcess* proc, Actor* a_actor, uint64_t flags, uint64_t someNum);
+	RelocAddr<_AIProcess_Update3DModel> AIProcess_Update3DModel(0x0e3c9c0);
+
+	typedef void(*_PowerArmor_SwitchFromPowerArmorFurnitureLoaded)(Actor* a_actor, uint64_t somenum);
+	RelocAddr<_PowerArmor_SwitchFromPowerArmorFurnitureLoaded> PowerArmor_SwitchFromPowerArmorFurnitureLoaded(0x9c1450);
 
 	RelocAddr<uint64_t> g_frameCounter(0x65a2b48);
 	RelocAddr<UInt64*> cloneAddr1(0x36ff560);
@@ -744,7 +763,6 @@ namespace F4VRBody {
 			return;
 		}
 
-
 		if (playerSkelly->getRoot() != (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode()) {
 
 			auto node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
@@ -851,13 +869,13 @@ namespace F4VRBody {
 
 
 		if (c_verbose) { _MESSAGE("Fix the Armor"); }
-		playerSkelly->fixArmor();
+	//	playerSkelly->fixArmor();
 
 		cullGeometry();
 
 		// project body out in front of the camera for debug purposes
 		if (c_verbose) { _MESSAGE("Selfie Time"); }
-		playerSkelly->selfieSkelly(70.0f);
+		playerSkelly->selfieSkelly(120.0f);
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 
 
