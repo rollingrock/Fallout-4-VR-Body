@@ -2610,20 +2610,32 @@ namespace F4VRBody
 
 
 				if (!c_staticGripping) {
-					weap->m_localTransform = _weapSave;
+					float oldVecX = weap->m_localTransform.rot.data[0][0];
+					float oldVecY = weap->m_localTransform.rot.data[1][0];
+					float oldVecZ = weap->m_localTransform.rot.data[2][0];
+					float newVecX = _weapSave.rot.data[0][0];
+					float newVecY = _weapSave.rot.data[1][0];
+					float newVecZ = _weapSave.rot.data[2][0];
+					float dotProd = oldVecX * newVecX + oldVecY * newVecY + oldVecZ * newVecZ; //dot product is equal to the cosine of the angle between multiplied by the maginitude of the vectors. Maths!
+					float magnitude = sqrtf(((oldVecX * oldVecX) + (oldVecY * oldVecY) + (oldVecZ * oldVecZ)) * ((newVecX * newVecX) + (newVecY * newVecY) + (newVecZ * newVecZ))); //sqrt(A)*sqrt(B)=sqrt(A*B)
+					//_MESSAGE(std::to_string(dotProd / magnitude).c_str());
+					//prevent dynamic grip if the rotation will be at or above 69 degrees, dirty melee fix. TODO replace with INI option? and more proper way of detecting melee weapons?
+					if (dotProd >= (magnitude * 0.35836794954530027348413778941347)) { //cos(69) = 0.35836794954530027348413778941347
+						weap->m_localTransform = _weapSave;
 
-					// rotate scope parent so it matches the dynamic grip
+						// rotate scope parent so it matches the dynamic grip
 
-					NiPoint3 staticVec = NiPoint3(-0.120, 0.987, 0.108);
-					NiPoint3 dynamicVec = NiPoint3(_weapSave.rot.data[0][0], _weapSave.rot.data[1][0], _weapSave.rot.data[2][0]);
-					
-					Quaternion dynRotQ;
+						NiPoint3 staticVec = NiPoint3(-0.120, 0.987, 0.108);
+						NiPoint3 dynamicVec = NiPoint3(_weapSave.rot.data[0][0], _weapSave.rot.data[1][0], _weapSave.rot.data[2][0]);
 
-					dynRotQ.vec2vec(staticVec, dynamicVec);
-					Matrix44 rot = dynRotQ.getRot();
+						Quaternion dynRotQ;
 
-					_playerNodes->primaryWeaponScopeCamera->m_localTransform.rot = rot.multiply43Left(_playerNodes->primaryWeaponScopeCamera->m_localTransform.rot);
-				//	updateTransforms(dynamic_cast<NiNode*>(_playerNodes->primaryWeaponScopeCamera));
+						dynRotQ.vec2vec(staticVec, dynamicVec);
+						Matrix44 rot = dynRotQ.getRot();
+
+						_playerNodes->primaryWeaponScopeCamera->m_localTransform.rot = rot.multiply43Left(_playerNodes->primaryWeaponScopeCamera->m_localTransform.rot);
+						//	updateTransforms(dynamic_cast<NiNode*>(_playerNodes->primaryWeaponScopeCamera));
+					}
 				}
 				auto newWeapon = (_inPowerArmor ? weapname + powerArmorSuffix : weapname) != _lastWeapon;
 				if (newWeapon) {
