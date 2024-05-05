@@ -355,32 +355,66 @@ namespace F4VRBody
 	}
 
 	void Skeleton::initLocalDefaults() {
-		boneLocalDefault.insert({ "Root", NiPoint3(-0.000000, -0.000000, 0.000000) });
-		boneLocalDefault["COM"] = NiPoint3(2.0, 1.5, 68.911301);
-		boneLocalDefault["Pelvis"] = NiPoint3(0.000000, 0.000000, 0.000000);
-		boneLocalDefault["LLeg_Thigh"] = NiPoint3(0.000008, 0.000431, 6.615070);
-		boneLocalDefault["LLeg_Calf"] = NiPoint3(31.595196, 0.000021, -0.000031);
-		boneLocalDefault["LLeg_Foot"] = NiPoint3(31.942888, -0.000018, -0.000018);
-		boneLocalDefault["RLeg_Thigh"] = NiPoint3(0.000008, 0.000431, -6.615068);
-		boneLocalDefault["RLeg_Calf"] = NiPoint3(31.595139, 0.000020, 0.000029);
-		boneLocalDefault["RLeg_Foot"] = NiPoint3(31.942570, 0.000001, -0.000002);
-		boneLocalDefault["SPINE1"] = NiPoint3(3.791992, -0.002948, -0.000008);
-		boneLocalDefault["SPINE2"] = NiPoint3(8.704666, 0.000000, 0.000000);
-		boneLocalDefault["Chest"] = NiPoint3(9.956283, -0.000000, 0.000000);
-		boneLocalDefault["LArm_Collarbone"] = NiPoint3(19.153227, -0.510421, 1.695077);
-		boneLocalDefault["LArm_UpperArm"] = NiPoint3(12.536572, 0.000003, 0.000000);
-		boneLocalDefault["LArm_ForeArm1"] = NiPoint3(17.968307, 0.000019, 0.000007);
-		boneLocalDefault["LArm_ForeArm2"] = NiPoint3(6.151599, -0.000022, -0.000045);
-		boneLocalDefault["LArm_ForeArm3"] = NiPoint3(6.151586, -0.000068, 0.000016);
-		boneLocalDefault["LArm_Hand"] = NiPoint3(6.151584, 0.000033, -0.000065);
-		boneLocalDefault["RArm_Collarbone"] = NiPoint3(19.153219, -0.510418, -1.695124);
-		boneLocalDefault["RArm_UpperArm"] = NiPoint3(12.534259, 0.000007, -0.000013);
-		boneLocalDefault["RArm_ForeArm1"] = NiPoint3(17.970503, 0.000103, -0.000056);
-		boneLocalDefault["RArm_ForeArm2"] = NiPoint3(6.152768, 0.000040, -0.000039);
-		boneLocalDefault["RArm_ForeArm3"] = NiPoint3(6.152856, -0.000009, -0.000091);
-		boneLocalDefault["RArm_Hand"] = NiPoint3(6.152939, 0.000044, -0.000029);
-		boneLocalDefault["Neck"] = NiPoint3(22.084, -3.767, 0.0);
-		boneLocalDefault["Head"] = NiPoint3(8.224354, 0.0, 0.0);
+		detectInPowerArmor();
+
+		boneLocalDefault.clear();
+		if (_inPowerArmor) {
+			boneLocalDefault.insert({ "Root", NiPoint3(-0.000000, -0.000000, 0.000000) });
+			boneLocalDefault["COM"] = NiPoint3(-0.000031, -3.749783, 89.419518);
+			boneLocalDefault["Pelvis"] = NiPoint3(0.000000, 0.000000, 0.000000);
+			boneLocalDefault["LLeg_Thigh"] = NiPoint3(4.548744, -1.329979, 6.908315);
+			boneLocalDefault["LLeg_Calf"] = NiPoint3(34.297993, 0.000030, 0.000008);
+			boneLocalDefault["LLeg_Foot"] = NiPoint3(52.541229, -0.000018, -0.000018);
+			boneLocalDefault["RLeg_Thigh"] = NiPoint3(4.547630, -1.324275, -6.897992);
+			boneLocalDefault["RLeg_Calf"] = NiPoint3(34.297920, 0.000020, 0.000029);
+			boneLocalDefault["RLeg_Foot"] = NiPoint3(52.540794, 0.000001, -0.000002);
+			boneLocalDefault["SPINE1"] = NiPoint3(5.750534, -0.002948, -0.000008);
+			boneLocalDefault["SPINE2"] = NiPoint3(5.625465, 0.000000, 0.000000);
+			boneLocalDefault["Chest"] = NiPoint3(5.536583, -0.000000, 0.000000);
+			boneLocalDefault["LArm_Collarbone"] = NiPoint3(22.192039, 0.348167, 1.004177);
+			boneLocalDefault["LArm_UpperArm"] = NiPoint3(14.598365, 0.000075, 0.000146);
+			boneLocalDefault["LArm_ForeArm1"] = NiPoint3(19.536854, 0.419780, 0.045785);
+			boneLocalDefault["LArm_ForeArm2"] = NiPoint3(0.000168, 0.000150, 0.000153);
+			boneLocalDefault["LArm_ForeArm3"] = NiPoint3(10.000494, 0.000162, -0.000004);
+			boneLocalDefault["LArm_Hand"] = NiPoint3(26.964424, 0.000185, 0.000400);
+			boneLocalDefault["RArm_Collarbone"] = NiPoint3(22.191887, 0.348147, -1.003999);
+			boneLocalDefault["RArm_UpperArm"] = NiPoint3(14.598806, 0.000044, 0.000044);
+			boneLocalDefault["RArm_ForeArm1"] = NiPoint3(19.536560, 0.419853, -0.046183);
+			boneLocalDefault["RArm_ForeArm2"] = NiPoint3(-0.000053, -0.000068, -0.000137);
+			boneLocalDefault["RArm_ForeArm3"] = NiPoint3(10.000502, -0.000104, 0.000120);
+			boneLocalDefault["RArm_Hand"] = NiPoint3(26.964560, 0.000064, 0.001247);
+			boneLocalDefault["Neck"] = NiPoint3(24.293526, -2.841563, 0.000019);
+			boneLocalDefault["Head"] = NiPoint3(8.224354, 0.0, 0.0);
+		}
+		else {
+			boneLocalDefault.insert({ "Root", NiPoint3(-0.000000, -0.000000, 0.000000) });
+			boneLocalDefault["COM"] = NiPoint3(2.0, 1.5, 68.911301);
+			boneLocalDefault["Pelvis"] = NiPoint3(0.000000, 0.000000, 0.000000);
+			boneLocalDefault["LLeg_Thigh"] = NiPoint3(0.000008, 0.000431, 6.615070);
+			boneLocalDefault["LLeg_Calf"] = NiPoint3(31.595196, 0.000021, -0.000031);
+			boneLocalDefault["LLeg_Foot"] = NiPoint3(31.942888, -0.000018, -0.000018);
+			boneLocalDefault["RLeg_Thigh"] = NiPoint3(0.000008, 0.000431, -6.615068);
+			boneLocalDefault["RLeg_Calf"] = NiPoint3(31.595139, 0.000020, 0.000029);
+			boneLocalDefault["RLeg_Foot"] = NiPoint3(31.942570, 0.000001, -0.000002);
+			boneLocalDefault["SPINE1"] = NiPoint3(3.791992, -0.002948, -0.000008);
+			boneLocalDefault["SPINE2"] = NiPoint3(8.704666, 0.000000, 0.000000);
+			boneLocalDefault["Chest"] = NiPoint3(9.956283, -0.000000, 0.000000);
+			boneLocalDefault["LArm_Collarbone"] = NiPoint3(19.153227, -0.510421, 1.695077);
+			boneLocalDefault["LArm_UpperArm"] = NiPoint3(12.536572, 0.000003, 0.000000);
+			boneLocalDefault["LArm_ForeArm1"] = NiPoint3(17.968307, 0.000019, 0.000007);
+			boneLocalDefault["LArm_ForeArm2"] = NiPoint3(6.151599, -0.000022, -0.000045);
+			boneLocalDefault["LArm_ForeArm3"] = NiPoint3(6.151586, -0.000068, 0.000016);
+			boneLocalDefault["LArm_Hand"] = NiPoint3(6.151584, 0.000033, -0.000065);
+			boneLocalDefault["RArm_Collarbone"] = NiPoint3(19.153219, -0.510418, -1.695124);
+			boneLocalDefault["RArm_UpperArm"] = NiPoint3(12.534259, 0.000007, -0.000013);
+			boneLocalDefault["RArm_ForeArm1"] = NiPoint3(17.970503, 0.000103, -0.000056);
+			boneLocalDefault["RArm_ForeArm2"] = NiPoint3(6.152768, 0.000040, -0.000039);
+			boneLocalDefault["RArm_ForeArm3"] = NiPoint3(6.152856, -0.000009, -0.000091);
+			boneLocalDefault["RArm_Hand"] = NiPoint3(6.152939, 0.000044, -0.000029);
+			boneLocalDefault["Neck"] = NiPoint3(22.084, -3.767, 0.0);
+			boneLocalDefault["Head"] = NiPoint3(8.224354, 0.0, 0.0);
+
+		}
 
 	}
 
@@ -479,7 +513,7 @@ namespace F4VRBody
 			return false;
 		}
 
-		_curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
+		_curPos = (*g_playerCamera)->cameraNode->m_worldTransform.pos;
 
 		setCommonNode();
 
@@ -748,8 +782,6 @@ namespace F4VRBody
 		body->m_worldTransform.pos.y = this->getPosition().y;
 		body->m_worldTransform.pos.z += _playerNodes->playerworldnode->m_localTransform.pos.z;
 
-		updateDown(_root, true);
-
 		NiPoint3 back = vec3_norm(NiPoint3(_forwardDir.x, _forwardDir.y, 0));
 		NiPoint3 bodydir = NiPoint3(0, 1, 0);
 
@@ -760,9 +792,6 @@ namespace F4VRBody
 		//_root->m_localTransform.pos *= 0.0f;
 		//_root->m_localTransform.pos.y = c_playerOffset_forward - 6.0f;
 		_root->m_localTransform.scale = c_playerHeight / defaultCameraHeight;    // set scale based off specified user height
-
-		updateDown(_root, true);
-
 	}
 
 	void Skeleton::setBodyPosture() {
@@ -1191,7 +1220,13 @@ namespace F4VRBody
 
 
 		NiPoint3 footToHip = hipNode->m_worldTransform.pos - footPos;
-		NiPoint3 hipDir = hipNode->m_worldTransform.rot * NiPoint3(0, 1, 0);
+
+		NiPoint3 rotV = NiPoint3(0, 1, 0);
+		if (_inPowerArmor) {
+			rotV.y = 0;
+			rotV.z = isLeft ? 1 : -1;
+		}
+		NiPoint3 hipDir = hipNode->m_worldTransform.rot * rotV;
 		NiPoint3 xDir = vec3_norm(footToHip);
 		NiPoint3 yDir = vec3_norm(hipDir - xDir * vec3_dot(hipDir, xDir));
 
@@ -1231,13 +1266,13 @@ namespace F4VRBody
 		rotMat.rotateVectoVec(uLocalDir, kneeNode->m_localTransform.pos);
 		hipNode->m_localTransform.rot = rotMat.multiply43Left(hipNode->m_localTransform.rot);
 
-		if (_inPowerArmor) {
-			//power armor for some reason twists the legs.  twist them back!
-			Matrix44 twist;
-			float angle = isLeft ? 90.0f : -90.0f;
-			twist.setEulerAngles(degrees_to_rads(angle), 0, 0);
-			hipNode->m_localTransform.rot = twist.multiply43Left(hipNode->m_localTransform.rot);
-		}
+		//if (_inPowerArmor) {
+		//	//power armor for some reason twists the legs.  twist them back!
+		//	Matrix44 twist;
+		//	float angle = isLeft ? 90.0f : -90.0f;
+		//	twist.setEulerAngles(degrees_to_rads(angle), 0, 0);
+		//	hipNode->m_localTransform.rot = twist.multiply43Left(hipNode->m_localTransform.rot);
+		//}
 
 		NiMatrix43 hipWR;
 		rotMat.makeTransformMatrix(hipNode->m_localTransform.rot, NiPoint3(0, 0, 0));
@@ -1265,17 +1300,17 @@ namespace F4VRBody
 		//LPOS(nodeFoot) = Cwr.Transpose() * (footPos - kneePos) / WSCL(nodeCalf);
 		footNode->m_localTransform.pos = calfWR.Transpose() * (footPos - kneePos) / kneeNode->m_worldTransform.scale;
 
-		if (_inPowerArmor) {
-			footNode->m_localTransform.pos *= 1.5;
-			//power armor for some reason twists the legs.  twist them back!
-			Matrix44 twist;
+		//if (_inPowerArmor) {
+		//	footNode->m_localTransform.pos *= 1.5;
+		//	//power armor for some reason twists the legs.  twist them back!
+		//	Matrix44 twist;
 
-			float angle = isLeft ? 90.0f : -90.0f;
-			float angle2 = isLeft ? -45.0f : 45.0f;
-			float angle3 = isLeft ? 30.0f : -30.0f;
-			twist.setEulerAngles(degrees_to_rads(angle2), degrees_to_rads(angle), degrees_to_rads(angle3));
-			footNode->m_localTransform.rot = twist.multiply43Left(footNode->m_localTransform.rot);
-		}
+		//	float angle = isLeft ? 90.0f : -90.0f;
+		//	float angle2 = isLeft ? -45.0f : 45.0f;
+		//	float angle3 = isLeft ? 30.0f : -30.0f;
+		//	twist.setEulerAngles(degrees_to_rads(angle2), degrees_to_rads(angle), degrees_to_rads(angle3));
+		//	footNode->m_localTransform.rot = twist.multiply43Left(footNode->m_localTransform.rot);
+		//}
 	}
 
 	void Skeleton::rotateLeg(uint32_t pos, float angle) {
@@ -1750,12 +1785,12 @@ namespace F4VRBody
 		if (!c_leftHandedPipBoy) {
 			finger = rt->transforms[boneTreeMap["RArm_Finger23"]].world.pos;
 
-			pipboy = getNode("PipboyRoot", leftArm.forearm3->GetAsNiNode());
+			pipboy = getNode("PipboyRoot", leftArm.shoulder->GetAsNiNode());
 		}
 		else {
 			finger = rt->transforms[boneTreeMap["LArm_Finger23"]].world.pos;
 
-			pipboy = getNode("PipboyRoot", rightArm.forearm3->GetAsNiNode());
+			pipboy = getNode("PipboyRoot", rightArm.shoulder->GetAsNiNode());
 
 		}
 
@@ -2084,8 +2119,7 @@ namespace F4VRBody
 		float originalUpperLen = vec3_len(arm.forearm1->m_localTransform.pos);
 		float originalForearmLen;
 
-		//sometimes powerarmor or other things detach or do not even load all forearm nodes so just keeping this check in to preserve functionality without crashing.
-		if ((arm.forearm2 == nullptr) || (arm.forearm3 == nullptr)) {
+		if (_inPowerArmor) {
 			originalForearmLen = vec3_len(arm.hand->m_localTransform.pos);
 		}
 		else {
@@ -2258,7 +2292,7 @@ namespace F4VRBody
 
 		NiMatrix43 Fwr2, Fwr3;
 
-		if ((arm.forearm2 != nullptr) && (arm.forearm3 != nullptr)) {
+		if (!_inPowerArmor && (arm.forearm2 != nullptr) && (arm.forearm3 != nullptr)) {
 			rotatedM.makeTransformMatrix(arm.forearm2->m_localTransform.rot, arm.forearm2->m_localTransform.pos);
 			Fwr2 = rotatedM.multiply43Left(Fwr);
 			rotatedM.makeTransformMatrix(arm.forearm3->m_localTransform.rot, arm.forearm3->m_localTransform.pos);
@@ -2303,7 +2337,7 @@ namespace F4VRBody
 
 		// Calculate Hlr:  Fwr * Hlr = handRot   ===>   Hlr = Fwr' * handRot
 		rotatedM.makeTransformMatrix(handRot, handPos);
-		if (arm.forearm3) {
+		if (!_inPowerArmor) {
 			arm.hand->m_localTransform.rot = rotatedM.multiply43Left(Fwr3.Transpose());
 		}
 		else {
@@ -2517,21 +2551,6 @@ namespace F4VRBody
 
 				rt->transforms[pos].local.rot = trans.rot;
 				rt->transforms[pos].local.pos = handOpen[boneTreeVec[pos].c_str()].pos;
-
-				//_MESSAGE("%s,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", boneTreeVec[pos].c_str(), 
-				//											trans.rot.arr[0],
-				//											trans.rot.arr[1],
-				//											trans.rot.arr[2],
-				//											trans.rot.arr[3],
-				//											trans.rot.arr[4],
-				//											trans.rot.arr[5],
-				//											trans.rot.arr[6],
-				//											trans.rot.arr[7],
-				//											trans.rot.arr[8],
-				//											trans.rot.arr[9],
-				//											trans.rot.arr[10],
-				//											trans.rot.arr[11]
-				//	);
 
 				if (rt->transforms[pos].refNode) {
 					rt->transforms[pos].refNode->m_localTransform = rt->transforms[pos].local;

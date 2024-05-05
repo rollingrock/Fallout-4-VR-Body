@@ -652,7 +652,7 @@ namespace F4VRBody {
 		updateTransformsDown(node, false);
 	}
 
-	bool setSkelly() {
+	bool setSkelly(bool inPowerArmor) {
 
 		if (c_verbose) {
 			_MESSAGE("setSkelly Start");
@@ -682,7 +682,7 @@ namespace F4VRBody {
 				return false;
 			}
 
-			initHandPoses();
+			initHandPoses(inPowerArmor);
 
 			playerSkelly = new Skeleton(node);
 			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
@@ -721,12 +721,64 @@ namespace F4VRBody {
 			if (c_verbose) { _MESSAGE("Smooth Movement"); }
 			static BSFixedString pwn("PlayerWorldNode");
 			NiNode* pwn_node = (*g_player)->unkF0->rootNode->m_parent->GetObjectByName(&pwn)->GetAsNiNode();
+			pwn_node->m_localTransform.pos = NiPoint3(0, 0, 0);
 			SmoothMovementVR::everyFrame();
 			updateTransformsDown(pwn_node, true);
 		}
 	}
 
+	bool HasKeywordPA(TESObjectARMO* armor, UInt32 keywordFormId)
+	{
+		if (armor)
+		{
+			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++)
+			{
+				if (armor->keywordForm.keywords[i])
+				{
+					if (armor->keywordForm.keywords[i]->formID == keywordFormId)
+					{
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	bool detectInPowerArmor() {
+
+		// Thanks Shizof and SmoothtMovementVR for below code
+		if ((*g_player)->equipData) {
+			if ((*g_player)->equipData->slots[0x03].item != nullptr)
+			{
+				TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item;
+				if (equippedForm)
+				{
+					if (equippedForm->formType == TESObjectARMO::kTypeID)
+					{
+						TESObjectARMO* armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO);
+
+						if (armor)
+						{
+							if (HasKeywordPA(armor, KeywordPowerArmor) || HasKeywordPA(armor, KeywordPowerArmorFrame))
+							{
+								return true;
+							}
+							else
+							{
+								return false;
+							}
+						}
+					}
+				}
+			}
+		}
+		return false;
+
+	}
+
 	void update() {
+		static bool inPowerArmorSticky = false;
 
 		if (!isLoaded) {
 			return;
@@ -741,8 +793,28 @@ namespace F4VRBody {
 			printPlayerOnce = false;
 		}
 
+		if (!inPowerArmorSticky) {
+			inPowerArmorSticky = detectInPowerArmor();
+
+			if (inPowerArmorSticky) {
+				delete playerSkelly;
+				firstTime = true;
+				return;
+			}
+		}
+		else {
+			inPowerArmorSticky = detectInPowerArmor();
+
+			if (!inPowerArmorSticky) {
+				delete playerSkelly;
+				firstTime = true;
+				return;
+			}
+		}
+
+
 		if (!playerSkelly || firstTime) {
-			if (!setSkelly()) {
+			if (!setSkelly(inPowerArmorSticky)) {
 				return;
 			}
 
@@ -845,8 +917,6 @@ namespace F4VRBody {
 		playerSkelly->setSingleLeg(false);
 		playerSkelly->setSingleLeg(true);
 
-		playerSkelly->fixPAArmor();
-
 		// Do another update before setting arms
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
@@ -866,10 +936,6 @@ namespace F4VRBody {
 		playerSkelly->fixMelee();
 		playerSkelly->hideFistHelpers();
 		playerSkelly->showHidePAHUD();
-
-
-		if (c_verbose) { _MESSAGE("Fix the Armor"); }
-	//	playerSkelly->fixArmor();
 
 		cullGeometry();
 

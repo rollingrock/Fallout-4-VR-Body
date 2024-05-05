@@ -4,7 +4,7 @@
 
 namespace F4VRBody {
 
-	void initHandPoses() {
+	void initHandPoses(bool inPowerArmor) {
 		std::vector<std::vector<float>> data;
 
 		// pulled from the game engine while running idle animations 
@@ -136,37 +136,69 @@ namespace F4VRBody {
 		std::copy(data[28].begin(), data[28].end(), handOpen["RArm_Finger52"].rot.arr);
 		std::copy(data[29].begin(), data[29].end(), handOpen["RArm_Finger53"].rot.arr);
 
-		handOpen["LArm_Finger11"].pos = NiPoint3(1.582972, -1.262648, 1.853201);
-		handOpen["LArm_Finger12"].pos = NiPoint3(3.569515, 0.000042, 0.000004);
-		handOpen["LArm_Finger13"].pos = NiPoint3(2.401824, 0, 0);
-		handOpen["LArm_Finger21"].pos = NiPoint3(7.501364, 0.430291, 2.277657);
-		handOpen["LArm_Finger22"].pos = NiPoint3(3.018186, 0.000026, 0.000011);
-		handOpen["LArm_Finger23"].pos = NiPoint3(1.850236, 0, 0);
-		handOpen["LArm_Finger31"].pos = NiPoint3(7.595781, 0.62098, 0.457392);
-		handOpen["LArm_Finger32"].pos = NiPoint3(3.091653, 0.000021, -0.000004);
-		handOpen["LArm_Finger33"].pos = NiPoint3(2.187974, 0, 0);
-		handOpen["LArm_Finger41"].pos = NiPoint3(7.464033, 0.350152, -1.438817);
-		handOpen["LArm_Finger42"].pos = NiPoint3(2.664419, 0.000027, 0.000004);
-		handOpen["LArm_Finger43"].pos = NiPoint3(1.89974, 0, 0);
-		handOpen["LArm_Finger51"].pos = NiPoint3(6.637259, -0.35742, -3.01848);
-		handOpen["LArm_Finger52"].pos = NiPoint3(2.238261, 0.000018, 0.000003);
-		handOpen["LArm_Finger53"].pos = NiPoint3(1.665912, 0, 0);
-		handOpen["RArm_Finger11"].pos = NiPoint3(1.582972, -1.262648, -1.853201);
-		handOpen["RArm_Finger12"].pos = NiPoint3(3.569515, 0.000042, 0.000004);
-		handOpen["RArm_Finger13"].pos = NiPoint3(2.401824, 0, 0);
-		handOpen["RArm_Finger21"].pos = NiPoint3(7.501364, 0.430291, -2.277657);
-		handOpen["RArm_Finger22"].pos = NiPoint3(3.018186, 0.000026, 0.000011);
-		handOpen["RArm_Finger23"].pos = NiPoint3(1.850236, 0, 0); 
-		handOpen["RArm_Finger31"].pos = NiPoint3(7.595781, 0.62098, -0.457392);
-		handOpen["RArm_Finger32"].pos = NiPoint3(3.091653, 0.000021, -0.000004);
-		handOpen["RArm_Finger33"].pos = NiPoint3(2.187974, 0, 0);
-		handOpen["RArm_Finger41"].pos = NiPoint3(7.464033, 0.350152, 1.438817);
-		handOpen["RArm_Finger42"].pos = NiPoint3(2.664419, 0.000027, 0.000004);
-		handOpen["RArm_Finger43"].pos = NiPoint3(1.89974, 0, 0);
-		handOpen["RArm_Finger51"].pos = NiPoint3(6.637259, -0.35742, 3.01848);
-		handOpen["RArm_Finger52"].pos = NiPoint3(2.238261, 0.000018, 0.000003);
-		handOpen["RArm_Finger53"].pos = NiPoint3(1.665912, 0, 0);
-
-
+		if (inPowerArmor) {
+			handOpen["LArm_Finger11"].pos = NiPoint3(3.993323, -4.156268, 3.585619);
+			handOpen["LArm_Finger12"].pos = NiPoint3(2.893830, 0.000042, 0.000004);
+			handOpen["LArm_Finger13"].pos = NiPoint3(4.687409, 0, 0);
+			handOpen["LArm_Finger21"].pos = NiPoint3(8.474635, -2.161191, 3.789806);
+			handOpen["LArm_Finger22"].pos = NiPoint3(2.613208, 0.000026, 0.000011);
+			handOpen["LArm_Finger23"].pos = NiPoint3(5.145684, 0, 0);
+			handOpen["LArm_Finger31"].pos = NiPoint3(8.151892, -2.576661, 1.100114);
+			handOpen["LArm_Finger32"].pos = NiPoint3(3.722714, 0.000021, -0.000004);
+			handOpen["LArm_Finger33"].pos = NiPoint3(4.984375, 0, 0);
+			handOpen["LArm_Finger41"].pos = NiPoint3(7.967844, -2.258833, -1.337387);
+			handOpen["LArm_Finger42"].pos = NiPoint3(2.933939, 0.000027, 0.000004);
+			handOpen["LArm_Finger43"].pos = NiPoint3(5.102559, 0, 0);
+			handOpen["LArm_Finger51"].pos = NiPoint3(8.365221, -2.603350, -3.706458);
+			handOpen["LArm_Finger52"].pos = NiPoint3(2.128304, 0.000018, 0.000003);
+			handOpen["LArm_Finger53"].pos = NiPoint3(4.594295, 0, 0);
+			handOpen["RArm_Finger11"].pos = NiPoint3(3.993090, -4.156340, -3.585553);
+			handOpen["RArm_Finger12"].pos = NiPoint3(2.893783, 0.000042, 0.000004);
+			handOpen["RArm_Finger13"].pos = NiPoint3(4.686954, 0, 0);
+			handOpen["RArm_Finger21"].pos = NiPoint3(8.474229, -2.161169, -3.789712);
+			handOpen["RArm_Finger22"].pos = NiPoint3(2.613165, 0.000026, 0.000011);
+			handOpen["RArm_Finger23"].pos = NiPoint3(5.145271, 0, 0);
+			handOpen["RArm_Finger31"].pos = NiPoint3(8.151529, -2.576689, -1.100008);
+			handOpen["RArm_Finger32"].pos = NiPoint3(3.722677, 0.000021, -0.000004);
+			handOpen["RArm_Finger33"].pos = NiPoint3(4.973974, 0, 0);
+			handOpen["RArm_Finger41"].pos = NiPoint3(7.967505, -2.258873, 1.337498);
+			handOpen["RArm_Finger42"].pos = NiPoint3(2.933841, 0.000027, 0.000004);
+			handOpen["RArm_Finger43"].pos = NiPoint3(5.102017, 0, 0);
+			handOpen["RArm_Finger51"].pos = NiPoint3(8.364894, -2.603419, 3.706582);
+			handOpen["RArm_Finger52"].pos = NiPoint3(2.128275, 0.000018, 0.000003);
+			handOpen["RArm_Finger53"].pos = NiPoint3(4.593989, 0, 0);
+		}
+		else {
+			handOpen["LArm_Finger11"].pos = NiPoint3(1.582972, -1.262648, 1.853201);
+			handOpen["LArm_Finger12"].pos = NiPoint3(3.569515, 0.000042, 0.000004);
+			handOpen["LArm_Finger13"].pos = NiPoint3(2.401824, 0, 0);
+			handOpen["LArm_Finger21"].pos = NiPoint3(7.501364, 0.430291, 2.277657);
+			handOpen["LArm_Finger22"].pos = NiPoint3(3.018186, 0.000026, 0.000011);
+			handOpen["LArm_Finger23"].pos = NiPoint3(1.850236, 0, 0);
+			handOpen["LArm_Finger31"].pos = NiPoint3(7.595781, 0.62098, 0.457392);
+			handOpen["LArm_Finger32"].pos = NiPoint3(3.091653, 0.000021, -0.000004);
+			handOpen["LArm_Finger33"].pos = NiPoint3(2.187974, 0, 0);
+			handOpen["LArm_Finger41"].pos = NiPoint3(7.464033, 0.350152, -1.438817);
+			handOpen["LArm_Finger42"].pos = NiPoint3(2.664419, 0.000027, 0.000004);
+			handOpen["LArm_Finger43"].pos = NiPoint3(1.89974, 0, 0);
+			handOpen["LArm_Finger51"].pos = NiPoint3(6.637259, -0.35742, -3.01848);
+			handOpen["LArm_Finger52"].pos = NiPoint3(2.238261, 0.000018, 0.000003);
+			handOpen["LArm_Finger53"].pos = NiPoint3(1.665912, 0, 0);
+			handOpen["RArm_Finger11"].pos = NiPoint3(1.582972, -1.262648, -1.853201);
+			handOpen["RArm_Finger12"].pos = NiPoint3(3.569515, 0.000042, 0.000004);
+			handOpen["RArm_Finger13"].pos = NiPoint3(2.401824, 0, 0);
+			handOpen["RArm_Finger21"].pos = NiPoint3(7.501364, 0.430291, -2.277657);
+			handOpen["RArm_Finger22"].pos = NiPoint3(3.018186, 0.000026, 0.000011);
+			handOpen["RArm_Finger23"].pos = NiPoint3(1.850236, 0, 0);
+			handOpen["RArm_Finger31"].pos = NiPoint3(7.595781, 0.62098, -0.457392);
+			handOpen["RArm_Finger32"].pos = NiPoint3(3.091653, 0.000021, -0.000004);
+			handOpen["RArm_Finger33"].pos = NiPoint3(2.187974, 0, 0);
+			handOpen["RArm_Finger41"].pos = NiPoint3(7.464033, 0.350152, 1.438817);
+			handOpen["RArm_Finger42"].pos = NiPoint3(2.664419, 0.000027, 0.000004);
+			handOpen["RArm_Finger43"].pos = NiPoint3(1.89974, 0, 0);
+			handOpen["RArm_Finger51"].pos = NiPoint3(6.637259, -0.35742, 3.01848);
+			handOpen["RArm_Finger52"].pos = NiPoint3(2.238261, 0.000018, 0.000003);
+			handOpen["RArm_Finger53"].pos = NiPoint3(1.665912, 0, 0);
+		}
 	}
 }
