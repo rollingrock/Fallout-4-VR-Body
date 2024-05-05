@@ -26,31 +26,6 @@ namespace F4VRBody
 	std::map<std::string, int> boneTreeMap;
 	std::vector<std::string> boneTreeVec;
 
-	void addFingerRelations(std::map<std::string, std::pair<std::string, std::string>>* map, std::string hand, std::string finger1, std::string finger2, std::string finger3) {
-		map->insert({ finger1, { hand, finger2 } });
-		map->insert({ finger2, { finger1, finger3 } });
-		map->insert({ finger3, { finger2, std::string()}});
-	}
-
-	std::map<std::string, std::pair<std::string, std::string>> makeFingerRelations() {
-		std::map<std::string, std::pair<std::string, std::string>> map;
-		//left hand
-		addFingerRelations(&map, "LArm_Hand", "LArm_Finger11", "LArm_Finger12", "LArm_Finger13");
-		addFingerRelations(&map, "LArm_Hand", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23");
-		addFingerRelations(&map, "LArm_Hand", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33");
-		addFingerRelations(&map, "LArm_Hand", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43");
-		addFingerRelations(&map, "LArm_Hand", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53");
-		//right hand
-		addFingerRelations(&map, "RArm_Hand", "RArm_Finger11", "RArm_Finger12", "RArm_Finger13");
-		addFingerRelations(&map, "RArm_Hand", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23");
-		addFingerRelations(&map, "RArm_Hand", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33");
-		addFingerRelations(&map, "RArm_Hand", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43");
-		addFingerRelations(&map, "RArm_Hand", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53");
-		return map;
-	}
-
-	std::map<std::string, std::pair<std::string, std::string>> fingerRelations = makeFingerRelations();
-
 	void initBoneTreeMap(NiNode* root) {
 		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)root;
 
@@ -2446,17 +2421,19 @@ namespace F4VRBody
 		_handBones[bone].rot = rot.make43();
 	}
 
-	void Skeleton::copy1stPerson(std::string bone) {
+	void Skeleton::copy1stPerson(std::string bone, bool isLeft, int offset) {
+
+		int firstPos = 68;
+
 		BSFlattenedBoneTree* fpTree = (BSFlattenedBoneTree*)(*g_player)->firstPersonSkeleton->m_children.m_data[0]->GetAsNiNode();
 
-		int pos = fpTree->GetBoneIndex(bone);
 
-		if (pos >= 0) {
-			if (fpTree->transforms[pos].refNode) {
-				_handBones[bone] = fpTree->transforms[pos].refNode->m_localTransform;
+		if (firstPos != 0) {
+			if (fpTree->transforms[firstPos + offset].refNode) {
+				_handBones[bone] = fpTree->transforms[firstPos + offset].refNode->m_localTransform;
 			}
 			else {
-				_handBones[bone] = fpTree->transforms[pos].local;
+				_handBones[bone] = fpTree->transforms[firstPos + offset].local;
 			}
 		}
 	}
@@ -2464,6 +2441,7 @@ namespace F4VRBody
 	void Skeleton::fixBoneTree() {
 
 		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
+		bool isLeft = false;
 
 		if (rt->numTransforms > 145) {
 			return;
@@ -2472,18 +2450,25 @@ namespace F4VRBody
 		for (auto pos = 0; pos < rt->numTransforms; pos++) {
 			_MESSAGE("%d", pos);
 
-			const char* name = rt->transforms[pos].name.c_str();
-			auto found = fingerRelations.find(name);
-			if (found != fingerRelations.end()) {
-				auto relation = found->second;
-				int parentPos = boneTreeMap[relation.first];
-				rt->transforms[pos].parPos = parentPos;
-				if (relation.second.size() > 0) {
-					int childPos = boneTreeMap[relation.second];
-					rt->transforms[pos].childPos = childPos;
+			if (strstr(boneTreeVec[pos].c_str(), "Finger")) {
+				isLeft = strncmp(boneTreeVec[pos].c_str(), "L", 1) ? false : true;
+
+				int handPos = isLeft ? 39 : 85;
+				int dig1 = boneTreeVec[pos].c_str()[11] - '0';
+				int dig2 = boneTreeVec[pos].c_str()[12] - '0';
+				int arrOff = (dig2 - 1) + ((dig1 - 1) * 3);
+
+
+				rt->transforms[pos].parPos = handPos + arrOff;
+				if (dig2 != 3) {
+					rt->transforms[pos].childPos = handPos + arrOff + 2;
 				}
 				else {
 					rt->transforms[pos].childPos = -1;
+				}
+
+				if (dig2 == 1) {
+					rt->transforms[pos].parPos = handPos;
 				}
 
 				NiNode* meshNode = this->getNode(boneTreeVec[pos].c_str(), _root);
@@ -2510,28 +2495,30 @@ namespace F4VRBody
 
 		for (auto pos = 0; pos < rt->numTransforms; pos++) {
 
-			std::string name = boneTreeVec[pos];
-			auto found = fingerRelations.find(name.c_str());
-			if (found != fingerRelations.end()) {
-				isLeft = name[0] == 'L';
+			if(strstr(boneTreeVec[pos].c_str(), "Finger")) {
+
+				isLeft = strncmp(boneTreeVec[pos].c_str(), "L", 1) ? false : true;
 				uint64_t reg = isLeft ? leftControllerState.ulButtonTouched : rightControllerState.ulButtonTouched;
 				float gripProx = isLeft ? leftControllerState.rAxis[2].x : rightControllerState.rAxis[2].x;
 				bool thumbUp = (reg & vr::ButtonMaskFromId(vr::k_EButton_Grip)) && (reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)) && (!(reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
-				_closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton[name]);
+				_closedHand[boneTreeVec[pos]] = reg & vr::ButtonMaskFromId(_handBonesButton[boneTreeVec[pos]]);
 
 				if ((*g_player)->actorState.IsWeaponDrawn() && !(isLeft ^ c_leftHandedMode)) {
-					this->copy1stPerson(name);
+					int dig1 = boneTreeVec[pos].c_str()[11] - '0';
+					int dig2 = boneTreeVec[pos].c_str()[12] - '0';
+					int arrOff = (dig2 - 1) + ((dig1 - 1) * 3);
+					this->copy1stPerson(boneTreeVec[pos], isLeft, arrOff);
 				}
 				else {
-					this->calculateHandPose(name, gripProx, thumbUp, isLeft);
+					this->calculateHandPose(boneTreeVec[pos], gripProx, thumbUp, isLeft);
 				}
 
-				NiTransform trans = _handBones[name];
+				NiTransform trans = _handBones[boneTreeVec[pos]];
 
 				rt->transforms[pos].local.rot = trans.rot;
-				rt->transforms[pos].local.pos = handOpen[name.c_str()].pos;
+				rt->transforms[pos].local.pos = handOpen[boneTreeVec[pos].c_str()].pos;
 
-				//_MESSAGE("%s,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", name.c_str(), 
+				//_MESSAGE("%s,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", boneTreeVec[pos].c_str(), 
 				//											trans.rot.arr[0],
 				//											trans.rot.arr[1],
 				//											trans.rot.arr[2],
@@ -2590,32 +2577,20 @@ namespace F4VRBody
 
 
 				if (!c_staticGripping) {
-					float oldVecX = weap->m_localTransform.rot.data[0][0];
-					float oldVecY = weap->m_localTransform.rot.data[1][0];
-					float oldVecZ = weap->m_localTransform.rot.data[2][0];
-					float newVecX = _weapSave.rot.data[0][0];
-					float newVecY = _weapSave.rot.data[1][0];
-					float newVecZ = _weapSave.rot.data[2][0];
-					float dotProd = oldVecX * newVecX + oldVecY * newVecY + oldVecZ * newVecZ; //dot product is equal to the cosine of the angle between multiplied by the maginitude of the vectors. Maths!
-					float magnitude = sqrtf(((oldVecX * oldVecX) + (oldVecY * oldVecY) + (oldVecZ * oldVecZ)) * ((newVecX * newVecX) + (newVecY * newVecY) + (newVecZ * newVecZ))); //sqrt(A)*sqrt(B)=sqrt(A*B)
-					//_MESSAGE(std::to_string(dotProd / magnitude).c_str());
-					//prevent dynamic grip if the rotation will be at or above 69 degrees, dirty melee fix. TODO replace with INI option? and more proper way of detecting melee weapons?
-					if (dotProd >= (magnitude * 0.35836794954530027348413778941347)) { //cos(69) = 0.35836794954530027348413778941347
-						weap->m_localTransform = _weapSave;
+					weap->m_localTransform = _weapSave;
 
-						// rotate scope parent so it matches the dynamic grip
+					// rotate scope parent so it matches the dynamic grip
 
-						NiPoint3 staticVec = NiPoint3(-0.120, 0.987, 0.108);
-						NiPoint3 dynamicVec = NiPoint3(newVecX, newVecY, newVecZ);
+					NiPoint3 staticVec = NiPoint3(-0.120, 0.987, 0.108);
+					NiPoint3 dynamicVec = NiPoint3(_weapSave.rot.data[0][0], _weapSave.rot.data[1][0], _weapSave.rot.data[2][0]);
+					
+					Quaternion dynRotQ;
 
-						Quaternion dynRotQ;
+					dynRotQ.vec2vec(staticVec, dynamicVec);
+					Matrix44 rot = dynRotQ.getRot();
 
-						dynRotQ.vec2vec(staticVec, dynamicVec);
-						Matrix44 rot = dynRotQ.getRot();
-
-						_playerNodes->primaryWeaponScopeCamera->m_localTransform.rot = rot.multiply43Left(_playerNodes->primaryWeaponScopeCamera->m_localTransform.rot);
-						//	updateTransforms(dynamic_cast<NiNode*>(_playerNodes->primaryWeaponScopeCamera));
-					}
+					_playerNodes->primaryWeaponScopeCamera->m_localTransform.rot = rot.multiply43Left(_playerNodes->primaryWeaponScopeCamera->m_localTransform.rot);
+				//	updateTransforms(dynamic_cast<NiNode*>(_playerNodes->primaryWeaponScopeCamera));
 				}
 				auto newWeapon = (_inPowerArmor ? weapname + powerArmorSuffix : weapname) != _lastWeapon;
 				if (newWeapon) {
