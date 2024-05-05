@@ -26,6 +26,31 @@ namespace F4VRBody
 	std::map<std::string, int> boneTreeMap;
 	std::vector<std::string> boneTreeVec;
 
+	void addFingerRelations(std::map<std::string, std::pair<std::string, std::string>>* map, std::string hand, std::string finger1, std::string finger2, std::string finger3) {
+		map->insert({ finger1, { hand, finger2 } });
+		map->insert({ finger2, { finger1, finger3 } });
+		map->insert({ finger3, { finger2, std::string()} });
+	}
+
+	std::map<std::string, std::pair<std::string, std::string>> makeFingerRelations() {
+		std::map<std::string, std::pair<std::string, std::string>> map;
+		//left hand
+		addFingerRelations(&map, "LArm_Hand", "LArm_Finger11", "LArm_Finger12", "LArm_Finger13");
+		addFingerRelations(&map, "LArm_Hand", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23");
+		addFingerRelations(&map, "LArm_Hand", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33");
+		addFingerRelations(&map, "LArm_Hand", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43");
+		addFingerRelations(&map, "LArm_Hand", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53");
+		//right hand
+		addFingerRelations(&map, "RArm_Hand", "RArm_Finger11", "RArm_Finger12", "RArm_Finger13");
+		addFingerRelations(&map, "RArm_Hand", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23");
+		addFingerRelations(&map, "RArm_Hand", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33");
+		addFingerRelations(&map, "RArm_Hand", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43");
+		addFingerRelations(&map, "RArm_Hand", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53");
+		return map;
+	}
+
+	std::map<std::string, std::pair<std::string, std::string>> fingerRelations = makeFingerRelations();
+
 	void initBoneTreeMap(NiNode* root) {
 		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)root;
 
@@ -2455,19 +2480,18 @@ namespace F4VRBody
 		_handBones[bone].rot = rot.make43();
 	}
 
-	void Skeleton::copy1stPerson(std::string bone, bool isLeft, int offset) {
-
-		int firstPos = 68;
-
+	void Skeleton::copy1stPerson(std::string bone) {
 		BSFlattenedBoneTree* fpTree = (BSFlattenedBoneTree*)(*g_player)->firstPersonSkeleton->m_children.m_data[0]->GetAsNiNode();
 
+		int pos = fpTree->GetBoneIndex(bone);
 
-		if (firstPos != 0) {
-			if (fpTree->transforms[firstPos + offset].refNode) {
-				_handBones[bone] = fpTree->transforms[firstPos + offset].refNode->m_localTransform;
+
+		if (pos >= 0) {
+			if (fpTree->transforms[pos].refNode) {
+				_handBones[bone] = fpTree->transforms[pos].refNode->m_localTransform;
 			}
 			else {
-				_handBones[bone] = fpTree->transforms[firstPos + offset].local;
+				_handBones[bone] = fpTree->transforms[pos].local;
 			}
 		}
 	}
@@ -2475,7 +2499,6 @@ namespace F4VRBody
 	void Skeleton::fixBoneTree() {
 
 		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
-		bool isLeft = false;
 
 		if (rt->numTransforms > 145) {
 			return;
@@ -2484,25 +2507,18 @@ namespace F4VRBody
 		for (auto pos = 0; pos < rt->numTransforms; pos++) {
 			_MESSAGE("%d", pos);
 
-			if (strstr(boneTreeVec[pos].c_str(), "Finger")) {
-				isLeft = strncmp(boneTreeVec[pos].c_str(), "L", 1) ? false : true;
-
-				int handPos = isLeft ? 39 : 85;
-				int dig1 = boneTreeVec[pos].c_str()[11] - '0';
-				int dig2 = boneTreeVec[pos].c_str()[12] - '0';
-				int arrOff = (dig2 - 1) + ((dig1 - 1) * 3);
-
-
-				rt->transforms[pos].parPos = handPos + arrOff;
-				if (dig2 != 3) {
-					rt->transforms[pos].childPos = handPos + arrOff + 2;
+			const char* name = rt->transforms[pos].name.c_str();
+			auto found = fingerRelations.find(name);
+			if (found != fingerRelations.end()) {
+				auto relation = found->second;
+				int parentPos = boneTreeMap[relation.first];
+				rt->transforms[pos].parPos = parentPos;
+				if (relation.second.size() > 0) {
+					int childPos = boneTreeMap[relation.second];
+					rt->transforms[pos].childPos = childPos;
 				}
 				else {
 					rt->transforms[pos].childPos = -1;
-				}
-
-				if (dig2 == 1) {
-					rt->transforms[pos].parPos = handPos;
 				}
 
 				NiNode* meshNode = this->getNode(boneTreeVec[pos].c_str(), _root);
@@ -2529,28 +2545,26 @@ namespace F4VRBody
 
 		for (auto pos = 0; pos < rt->numTransforms; pos++) {
 
-			if(strstr(boneTreeVec[pos].c_str(), "Finger")) {
-
-				isLeft = strncmp(boneTreeVec[pos].c_str(), "L", 1) ? false : true;
+			std::string name = boneTreeVec[pos];
+			auto found = fingerRelations.find(name.c_str());
+			if (found != fingerRelations.end()) {
+				isLeft = name[0] == 'L';
 				uint64_t reg = isLeft ? leftControllerState.ulButtonTouched : rightControllerState.ulButtonTouched;
 				float gripProx = isLeft ? leftControllerState.rAxis[2].x : rightControllerState.rAxis[2].x;
 				bool thumbUp = (reg & vr::ButtonMaskFromId(vr::k_EButton_Grip)) && (reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)) && (!(reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
-				_closedHand[boneTreeVec[pos]] = reg & vr::ButtonMaskFromId(_handBonesButton[boneTreeVec[pos]]);
+				_closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton[name]);
 
 				if ((*g_player)->actorState.IsWeaponDrawn() && !(isLeft ^ c_leftHandedMode)) {
-					int dig1 = boneTreeVec[pos].c_str()[11] - '0';
-					int dig2 = boneTreeVec[pos].c_str()[12] - '0';
-					int arrOff = (dig2 - 1) + ((dig1 - 1) * 3);
-					this->copy1stPerson(boneTreeVec[pos], isLeft, arrOff);
+					this->copy1stPerson(name);
 				}
 				else {
-					this->calculateHandPose(boneTreeVec[pos], gripProx, thumbUp, isLeft);
+					this->calculateHandPose(name, gripProx, thumbUp, isLeft);
 				}
-
-				NiTransform trans = _handBones[boneTreeVec[pos]];
+				
+				NiTransform trans = _handBones[name];
 
 				rt->transforms[pos].local.rot = trans.rot;
-				rt->transforms[pos].local.pos = handOpen[boneTreeVec[pos].c_str()].pos;
+				rt->transforms[pos].local.pos = handOpen[name.c_str()].pos;
 
 				if (rt->transforms[pos].refNode) {
 					rt->transforms[pos].refNode->m_localTransform = rt->transforms[pos].local;
