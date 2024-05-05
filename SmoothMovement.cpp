@@ -3,6 +3,7 @@
 #include "SmoothMovementVR.h"
 #include "f4se/NiExtraData.h"
 #include "F4VRBody.h"
+#include "utils.h"
 #include <atomic>
 #include <deque>
 

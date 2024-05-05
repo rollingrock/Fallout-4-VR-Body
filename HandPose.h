@@ -10,5 +10,5 @@ namespace F4VRBody {
 	extern std::map<std::string, float> handPapyrusPose;
 	extern std::map<std::string, bool> handPapyrusHasControl;
 
-	void initHandPoses();
+	void initHandPoses(bool inPowerArmor);
 }

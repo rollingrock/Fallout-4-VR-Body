@@ -50,6 +50,10 @@ typedef void(*_hookMultiBoundCullingFunc)();
 RelocAddr<_hookMultiBoundCullingFunc> hookMultiBoundCullingFunc(0x0d84930);
 RelocAddr<uintptr_t> hookMultiBoundCulling(0x0d8445d);
 
+typedef void(*_smoothMovementHook)();
+RelocAddr<_smoothMovementHook> smoothMovementHook(0x01baba00);
+RelocAddr<uintptr_t> hook_smoothMovementHook(0xd83df2);
+
 typedef void(*_someRandomFunc)(uint64_t rcx);
 RelocAddr <_someRandomFunc> someRandomFunc(0xd3c820);
 RelocAddr<uintptr_t> hookSomeRandomFunc(0xd8405e);
@@ -137,7 +141,6 @@ void hook2(uint64_t rcx, uint64_t rdx, uint64_t r8, uint64_t r9) {
 }
 
 void hook5(uint64_t rcx) {
-
 	F4VRBody::update();
 
 	someRandomFunc(rcx);
@@ -170,7 +173,7 @@ void hookSmoothMovement() {
 	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 		F4VRBody::smoothMovement();
 	}
-	hookMultiBoundCullingFunc();
+	smoothMovementHook();
 }
 
 void hook_main_update_player(uint64_t rcx, uint64_t rdx) {
@@ -225,7 +228,7 @@ void hookMain() {
 	g_branchTrampoline.Write5Call(hookSomeRandomFunc.GetUIntPtr(), (uintptr_t)&hook5);
 
 	g_branchTrampoline.Write5Call(hookMainUpdatePlayer.GetUIntPtr(), (uintptr_t)&hook_main_update_player);
-	g_branchTrampoline.Write5Call(hookMultiBoundCulling.GetUIntPtr(), (uintptr_t)&hookSmoothMovement);
+	g_branchTrampoline.Write5Call(hook_smoothMovementHook.GetUIntPtr(), (uintptr_t)&hookSmoothMovement);
 
 	g_branchTrampoline.Write5Call(hookActor_ReEquipAllExit.GetUIntPtr(), (uintptr_t)&fixPA3D);
 	g_branchTrampoline.Write5Call(hookExtraData_SetMultiBoundRef.GetUIntPtr(), (uintptr_t)&fixPA3DEnter);
