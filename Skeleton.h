@@ -258,7 +258,7 @@ namespace F4VRBody
 		void handleWeaponNodes();
 		void setLeftHandedSticky();
 		void calculateHandPose(std::string bone, float gripProx, bool thumbUp, bool isLeft);
-		void copy1stPerson(std::string bone, bool isLeft, int offset);
+		void copy1stPerson(std::string bone);
 		void insertSaveState(std::string name, NiNode* node);
 		void rotateLeg(uint32_t pos, float angle);
 		void offHandToScope();
