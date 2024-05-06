@@ -639,6 +639,8 @@ namespace F4VRBody {
 	}
 
 	void setHandUI(PlayerNodes* pn) {
+		static NiPoint3 origLoc(0, 0, 0);
+
 		NiNode* wand = pn->primaryUIAttachNode;
 		BSFixedString bname = "BackOfHand";
 		NiNode* node = (NiNode*)wand->GetObjectByName(&bname);
@@ -647,9 +649,12 @@ namespace F4VRBody {
 			return;
 		}
 
-		node->m_worldTransform.pos += NiPoint3(c_handUI_X, c_handUI_Y, c_handUI_Z);
+		if (vec3_len(origLoc) == 0.0) {
+			origLoc = node->m_localTransform.pos;
+		}
+		node->m_localTransform.pos = origLoc + NiPoint3(c_handUI_X, c_handUI_Y, c_handUI_Z);
 
-		updateTransformsDown(node, false);
+		updateTransformsDown(node, true);
 	}
 
 	bool setSkelly(bool inPowerArmor) {

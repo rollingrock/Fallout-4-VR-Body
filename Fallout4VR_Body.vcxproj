@@ -187,6 +187,7 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "C:\mo2\mgc\mods\FRIK alpha 64\F4SE\Pl
     <ClCompile Include="Skeleton.cpp" />
     <ClCompile Include="SmoothMovement.cpp" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="VR.cpp" />
     <ClCompile Include="weaponOffset.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -209,6 +210,7 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "C:\mo2\mgc\mods\FRIK alpha 64\F4SE\Pl
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SmoothMovementVR.h" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="VR.h" />
     <ClInclude Include="weaponOffset.h" />
   </ItemGroup>
   <ItemGroup>
