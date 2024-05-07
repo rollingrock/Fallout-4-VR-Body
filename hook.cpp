@@ -50,9 +50,9 @@ typedef void(*_hookMultiBoundCullingFunc)();
 RelocAddr<_hookMultiBoundCullingFunc> hookMultiBoundCullingFunc(0x0d84930);
 RelocAddr<uintptr_t> hookMultiBoundCulling(0x0d8445d);
 
-typedef void(*_smoothMovementHook)();
-RelocAddr<_smoothMovementHook> smoothMovementHook(0x01baba00);
-RelocAddr<uintptr_t> hook_smoothMovementHook(0xd83df2);
+typedef void(*_smoothMovementHook)(uint64_t rcx);
+RelocAddr<_smoothMovementHook> smoothMovementHook(0x1ba7ba0);
+RelocAddr<uintptr_t> hook_smoothMovementHook(0xd83ec4);
 
 typedef void(*_someRandomFunc)(uint64_t rcx);
 RelocAddr <_someRandomFunc> someRandomFunc(0xd3c820);
@@ -169,11 +169,11 @@ void hook4() {
 	return;
 }
 
-void hookSmoothMovement() {
+void hookSmoothMovement(uint64_t rcx) {
 	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 		F4VRBody::smoothMovement();
 	}
-	smoothMovementHook();
+	smoothMovementHook(rcx);
 }
 
 void hook_main_update_player(uint64_t rcx, uint64_t rdx) {
@@ -185,10 +185,10 @@ void hook_main_update_player(uint64_t rcx, uint64_t rdx) {
 		body->m_worldTransform.pos.x = (*g_playerCamera)->cameraNode->m_worldTransform.pos.x;
 		body->m_worldTransform.pos.y = (*g_playerCamera)->cameraNode->m_worldTransform.pos.y;
 
-		static BSFixedString pwn("PlayerWorldNode");
-		NiNode* pwn_node = (*g_player)->unkF0->rootNode->m_parent->GetObjectByName(&pwn)->GetAsNiNode();
-		body->m_localTransform.pos.z += pwn_node->m_localTransform.pos.z;
-		body->m_worldTransform.pos.z += pwn_node->m_localTransform.pos.z;
+		//static BSFixedString pwn("PlayerWorldNode");
+		//NiNode* pwn_node = (*g_player)->unkF0->rootNode->m_parent->GetObjectByName(&pwn)->GetAsNiNode();
+		//body->m_localTransform.pos.z += pwn_node->m_localTransform.pos.z;
+		//body->m_worldTransform.pos.z += pwn_node->m_localTransform.pos.z;
 	}
 
 	main_update_player(rcx, rdx);

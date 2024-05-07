@@ -3,9 +3,9 @@
 #include "f4se/NiNodes.h"
 
 namespace F4VRBody {
-	typedef int (*_BSFlattenedBoneTree_GetBoneIndex)(NiAVObject* a_tree, BSFixedString a_name);
+	typedef int (*_BSFlattenedBoneTree_GetBoneIndex)(NiAVObject* a_tree, BSFixedString* a_name);
 	extern RelocAddr <_BSFlattenedBoneTree_GetBoneIndex> BSFlattenedBoneTree_GetBoneIndex;
-	typedef NiNode* (*_BSFlattenedBoneTree_GetBoneNode)(NiAVObject* a_tree, BSFixedString a_name);
+	typedef NiNode* (*_BSFlattenedBoneTree_GetBoneNode)(NiAVObject* a_tree, BSFixedString* a_name);
 	extern RelocAddr <_BSFlattenedBoneTree_GetBoneNode> BSFlattenedBoneTree_GetBoneNode;
 	typedef NiNode* (*_BSFlattenedBoneTree_GetBoneNodeFromPos)(NiAVObject* a_tree, int a_pos);
 	extern RelocAddr <_BSFlattenedBoneTree_GetBoneNodeFromPos> BSFlattenedBoneTree_GetBoneNodeFromPos;
@@ -36,13 +36,13 @@ namespace F4VRBody {
 
 		int GetBoneIndex(std::string a_name)
 		{
-			BSFixedString name(a_name.c_str());
+			BSFixedString* name = new BSFixedString(a_name.c_str());
 			return BSFlattenedBoneTree_GetBoneIndex(this, name);
 		}
 
 		NiNode* GetBoneNode(std::string a_name)
 		{
-			BSFixedString name(a_name.c_str());
+			BSFixedString* name = new BSFixedString(a_name.c_str());
 			return BSFlattenedBoneTree_GetBoneNode(this, name);
 		}
 

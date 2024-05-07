@@ -2372,11 +2372,9 @@ namespace F4VRBody
 		// Calculate Flp:  Fwp = Uwp + Uwr * (Flp * Uws) = elbowWorld   ===>   Flp = Uwr' * (elbowWorld - Uwp) / Uws
 		arm.forearm1->m_localTransform.pos = Uwr.Transpose() * ((elbowWorld - Uwp) / arm.upper->m_worldTransform.scale);
 
-		return;
 		float origEHLen = vec3_len(arm.hand->m_worldTransform.pos - arm.forearm1->m_worldTransform.pos);
 		float forearmRatio = (forearmLen / origEHLen) * _root->m_localTransform.scale;
 
-		forearmRatio *= _inPowerArmor ? 1.5 : 1.0;
 		if (arm.forearm2 && !_inPowerArmor) {
 			arm.forearm2->m_localTransform.pos *= forearmRatio;
 			arm.forearm3->m_localTransform.pos *= forearmRatio;

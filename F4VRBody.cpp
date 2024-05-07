@@ -724,11 +724,7 @@ namespace F4VRBody {
 	{
 		if (!c_disableSmoothMovement) {
 			if (c_verbose) { _MESSAGE("Smooth Movement"); }
-			static BSFixedString pwn("PlayerWorldNode");
-			NiNode* pwn_node = (*g_player)->unkF0->rootNode->m_parent->GetObjectByName(&pwn)->GetAsNiNode();
-			pwn_node->m_localTransform.pos = NiPoint3(0, 0, 0);
 			SmoothMovementVR::everyFrame();
-			updateTransformsDown(pwn_node, true);
 		}
 	}
 
@@ -872,7 +868,6 @@ namespace F4VRBody {
 
 
 		// check if jumping or in air;
-
 		c_jumping = SmoothMovementVR::checkIfJumpingOrInAir();
 
 		playerSkelly->setTime();

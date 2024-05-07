@@ -179,7 +179,7 @@ namespace SmoothMovementVR
 					{
 						NiAVObject* playerWorldNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&playerWorld, true, true);
 						NiAVObject* hmdNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&Hmd, true, true);
-						NiAVObject * roomNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&room, true, true);
+						//NiAVObject * roomNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&room, true, true);
 
 						if (playerWorldNode && hmdNode)
 						{
@@ -226,17 +226,17 @@ namespace SmoothMovementVR
 
 							NiPoint3 newPos = smoothedValue(curPos);
 
-							if (notMoving.load())
+							if (notMoving.load() && distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, lastAppliedLocalX.load(), lastAppliedLocalY.load()) > 100)
 							{
 								newPos.x = curPos.x;
 								newPos.y = curPos.y;
+								newPos.z = curPos.z;
 								smoothedX.store(newPos.x);
 								smoothedY.store(newPos.y);
 								playerWorldNode->m_localTransform.pos.z = newPos.z - curPos.z;
 							}
 							else
 							{
-								//playerWorldNode->m_localTransform.pos = NiPoint3(newPos.x - curPos.x, newPos.y - curPos.y, );
 								playerWorldNode->m_localTransform.pos.x = newPos.x - curPos.x;
 								playerWorldNode->m_localTransform.pos.y = newPos.y - curPos.y;
 								playerWorldNode->m_localTransform.pos.z = newPos.z - curPos.z;
@@ -249,6 +249,7 @@ namespace SmoothMovementVR
 						//	_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
 								playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load() ? (F4VRBody::c_PACameraHeight + F4VRBody::c_cameraHeight) : F4VRBody::c_cameraHeight;
+								F4VRBody::updateTransformsDown((NiNode*)playerWorldNode, true);
 						}
 						else
 						{
