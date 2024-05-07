@@ -183,7 +183,7 @@ namespace SmoothMovementVR
 
 						if (playerWorldNode && hmdNode)
 						{
-							const NiPoint3 curPos = roomNode->m_localTransform.pos;
+							const NiPoint3 curPos = (*g_player)->pos;
 
 							if (first && curPos.z != 0)
 							{
@@ -218,7 +218,7 @@ namespace SmoothMovementVR
 								notMoving.store(false);
 							}
 
-							lastPositions.emplace_back(roomNode->m_localTransform.pos);
+							lastPositions.emplace_back((*g_player)->pos);
 							if (lastPositions.size() > 5)
 							{
 								lastPositions.pop_front();
@@ -226,7 +226,7 @@ namespace SmoothMovementVR
 
 							NiPoint3 newPos = smoothedValue(curPos);
 
-							if (notMoving.load() && distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, lastAppliedLocalX.load(), lastAppliedLocalY.load()) > 100)
+							if (notMoving.load())
 							{
 								newPos.x = curPos.x;
 								newPos.y = curPos.y;
