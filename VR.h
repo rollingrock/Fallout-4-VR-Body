@@ -14,6 +14,14 @@ namespace VRHook {
 
 	class VRSystem {
 	public:
+
+		enum TrackerType {
+			HMD,
+			Left,
+			Right,
+			Vive
+		};
+
 		VRSystem() {
 			leftPacket = 0;
 			rightPacket = 0;
@@ -71,8 +79,17 @@ namespace VRHook {
 			}
 		}
 
-		inline vr::VRControllerState_t getControllerState(bool retLeft) {
-			return retLeft ? leftControllerState : rightControllerState;
+		inline vr::VRControllerState_t getControllerState(TrackerType a_tracker) {
+			switch (a_tracker) {
+			case Left:
+				return leftControllerState;
+
+			case Right:
+				return rightControllerState;
+
+			default:
+				return rightControllerState;    // TODO: need to figure out a null state to give back if it gets here.
+			}
 		}
 
 		void getTrackerNiTransformByName(std::string trackerName, NiTransform* transform);
@@ -103,4 +120,11 @@ namespace VRHook {
 		std::map<std::string, vr::TrackedDeviceIndex_t> controllers;
 		NiNode* roomNode;
 	};
+
+	extern VRSystem* g_vrHook;
+
+	inline void InitVRSystem() {
+		g_vrHook = new VRSystem();
+	}
+
 }

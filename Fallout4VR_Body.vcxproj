@@ -176,12 +176,14 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "C:\mo2\mgc\mods\FRIK alpha 64\F4SE\Pl
   <ItemGroup>
     <ClCompile Include="BSFlattenedBoneTree.cpp" />
     <ClCompile Include="F4VRBody.cpp" />
+    <ClCompile Include="GunReload.cpp" />
     <ClCompile Include="HandPose.cpp" />
     <ClCompile Include="hook.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="Menu.cpp" />
     <ClCompile Include="MenuChecker.cpp" />
+    <ClCompile Include="Offsets.cpp" />
     <ClCompile Include="patches.cpp" />
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="Skeleton.cpp" />
@@ -195,6 +197,7 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "C:\mo2\mgc\mods\FRIK alpha 64\F4SE\Pl
     <ClInclude Include="api\VRManagerAPI.h" />
     <ClInclude Include="BSFlattenedBoneTree.h" />
     <ClInclude Include="F4VRBody.h" />
+    <ClInclude Include="GunReload.h" />
     <ClInclude Include="HandPose.h" />
     <ClInclude Include="hook.h" />
     <ClInclude Include="include\SimpleIni.h" />
@@ -204,6 +207,7 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "C:\mo2\mgc\mods\FRIK alpha 64\F4SE\Pl
     <ClInclude Include="MenuChecker.h" />
     <ClInclude Include="MuzzleFlash.h" />
     <ClInclude Include="NiCloneProcess.h" />
+    <ClInclude Include="Offsets.h" />
     <ClInclude Include="openvr\openvr.h" />
     <ClInclude Include="patches.h" />
     <ClInclude Include="Quaternion.h" />

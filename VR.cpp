@@ -74,5 +74,6 @@ namespace VRHook {
 		}
 	}
 
+	VRSystem* g_vrHook = nullptr;
 
 }

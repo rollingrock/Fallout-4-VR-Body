@@ -14,6 +14,8 @@
 #include "F4VRBody.h"
 #include "SmoothMovementVR.h"
 #include "patches.h"
+#include "GunReload.h"
+#include "VR.h"
 
 
 
@@ -56,7 +58,10 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
 			SmoothMovementVR::StartFunctions();
 
 			SmoothMovementVR::MenuOpenCloseHandler::Register();
+
+			VRHook::InitVRSystem();
 			_MESSAGE("kMessage_GameLoaded Completed");
+
 		}
 		if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
 			bool gripConfig = !F4VRBody::c_staticGripping;
@@ -121,6 +126,7 @@ extern "C" {
 		if (!g_localTrampoline.Create(1024 * 128, g_moduleHandle))
 		{
 			_ERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
+
 			return false;
 		}
 
@@ -146,6 +152,7 @@ extern "C" {
 			return false;
 		}
 
+		F4VRBody::InitGunReloadSystem();
 		hookMain();
 
 		_MESSAGE("F4VRBody Loaded");

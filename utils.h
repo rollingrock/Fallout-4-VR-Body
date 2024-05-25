@@ -6,6 +6,8 @@
 
 #include "matrix.h"
 
+#include <chrono>
+
 namespace F4VRBody {
 
 	typedef void* (*_AIProcess_ClearMuzzleFlashes)(Actor::MiddleProcess* middleProcess);
@@ -46,5 +48,16 @@ namespace F4VRBody {
 	NiNode* get1stChildNode(const char* nodeName, NiNode* nde);
 
 	Setting* GetINISettingNative(const char* name);
+
+	// get elapsed time when needed
+	template <
+		class result_t = std::chrono::milliseconds,
+		class clock_t = std::chrono::steady_clock,
+		class duration_t = std::chrono::milliseconds
+	>
+	auto since(std::chrono::time_point<clock_t, duration_t> const& start)
+	{
+		return std::chrono::duration_cast<result_t>(clock_t::now() - start);
+	}
 
 }

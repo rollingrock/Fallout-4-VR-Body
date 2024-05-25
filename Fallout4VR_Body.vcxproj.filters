@@ -60,6 +60,12 @@
     <ClCompile Include="VR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GunReload.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Offsets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\version.h">
@@ -123,6 +129,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VR.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GunReload.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Offsets.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

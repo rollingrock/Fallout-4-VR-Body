@@ -3,6 +3,7 @@
 #include "HandPose.h"
 #include "weaponOffset.h"
 #include "f4se/GameForms.h"
+#include "VR.h"
 
 #include <chrono>
 #include <time.h>
@@ -19,9 +20,6 @@ namespace F4VRBody
 
 	UInt32 KeywordPowerArmor = 0x4D8A1;
 	UInt32 KeywordPowerArmorFrame = 0x15503F;
-
-	extern vr::VRControllerState_t rightControllerState;
-	extern vr::VRControllerState_t leftControllerState;
 
 	std::map<std::string, int> boneTreeMap;
 	std::vector<std::string> boneTreeVec;
@@ -1514,6 +1512,8 @@ namespace F4VRBody
 		if (!inventory) {
 			return;
 		}
+		
+		bool isMelee = Offsets::CombatUtilities_IsActorUsingMelee(*g_player);
 
 		for (int i = 0; i < inventory->items.count; i++) {
 			BGSInventoryItem item;
@@ -1534,23 +1534,18 @@ namespace F4VRBody
 
 				uint8_t type = weap->weapData.unk137; // unk137 is the weapon type that maps to WeaponType enum
 
-				if ((type == WeaponType::kWeaponType_One_Hand_Axe) ||
-					(type == WeaponType::kWeaponType_One_Hand_Dagger) ||
-					(type == WeaponType::kWeaponType_One_Hand_Mace) ||
-					(type == WeaponType::kWeaponType_One_Hand_Sword) ||
-					(type == WeaponType::kWeaponType_Two_Hand_Axe) ||
-					(type == WeaponType::kWeaponType_Two_Hand_Sword)) {
+				if (isMelee) {
 
 					NiAVObject* wNode = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 					Matrix44 rot;
 					rot.setEulerAngles(degrees_to_rads(85.0f), degrees_to_rads(-70.0f), degrees_to_rads(0.0f));
 					wNode->m_localTransform.rot = rot.multiply43Right(wNode->m_localTransform.rot);
-					wNode->m_localTransform.pos.z += 1.5f;
 
 					updateDown(wNode->GetAsNiNode(), true);
 
 					(*g_player)->Update(0.0f);
+					break;
 
 				}
 			}
@@ -1823,8 +1818,10 @@ namespace F4VRBody
 			return;
 		}
 
-		const auto pipOnButtonPressed = (c_pipBoyButtonArm ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID);
-		const auto pipOffButtonPressed = (c_pipBoyButtonOffArm ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonOffID);
+		const auto pipOnButtonPressed = (c_pipBoyButtonArm ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : 
+			VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonID);
+		const auto pipOffButtonPressed = (c_pipBoyButtonOffArm ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : 
+			VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId((vr::EVRButtonId)c_pipBoyButtonOffID);
 
 		// check off button
 		if (pipOffButtonPressed && !_stickypip) {
@@ -1855,7 +1852,7 @@ namespace F4VRBody
 		}
 
 		if (!isLookingAtPipBoy()) {
-			vr::VRControllerAxis_t axis_state = (c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
+			vr::VRControllerAxis_t axis_state = (c_pipBoyButtonArm > 0) ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0];
 			const auto timeElapsed = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _lastLookingAtPip;
 			if (_pipboyStatus && timeElapsed > c_pipBoyOffDelay) {
 				_pipboyStatus = false;
@@ -2547,8 +2544,8 @@ namespace F4VRBody
 			auto found = fingerRelations.find(name.c_str());
 			if (found != fingerRelations.end()) {
 				isLeft = name[0] == 'L';
-				uint64_t reg = isLeft ? leftControllerState.ulButtonTouched : rightControllerState.ulButtonTouched;
-				float gripProx = isLeft ? leftControllerState.rAxis[2].x : rightControllerState.rAxis[2].x;
+				uint64_t reg = isLeft ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonTouched : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonTouched;
+				float gripProx = isLeft ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[2].x : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[2].x;
 				bool thumbUp = (reg & vr::ButtonMaskFromId(vr::k_EButton_Grip)) && (reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)) && (!(reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
 				_closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton[name]);
 
@@ -2709,7 +2706,7 @@ namespace F4VRBody
 
 					handV = sum / 3;
 
-					uint64_t reg = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
+					uint64_t reg = c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed;
 					if (c_onePressGripButton && _hasLetGoGripButton) {
 						_offHandGripping = false;
 					}
@@ -2803,7 +2800,7 @@ namespace F4VRBody
 						_offhandFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos;
 						_offhandPos = _offhandFingerBonePos;
 						bodyPos = _curPos;
-						vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
+						vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0];
 						if (_repositionButtonHolding && c_repositionMasterMode) {
 							// this is for a preview of the move. The preview happens one frame before we detect the release so must be processed separately.
 							auto end = _offhandPos - _curPos;
@@ -2910,7 +2907,7 @@ namespace F4VRBody
 			oH2Bar = weap->m_worldTransform.rot.Transpose() * vec3_norm(oH2Bar) / weap->m_worldTransform.scale;
 
 			float dotP = vec3_dot(vec3_norm(oH2Bar), barrelVec);
-			uint64_t reg = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
+			uint64_t reg = c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed;
 
 			if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)c_gripButtonID))) {
 				_hasLetGoGripButton = true;
@@ -2944,7 +2941,7 @@ namespace F4VRBody
 			const std::string scopeName = scopeRet->m_name;
 			auto reticlePos = scopeRet->GetAsNiNode()->m_worldTransform.pos;
 			auto offset = vec3_len(reticlePos - _offhandPos);
-			uint64_t handInput = c_leftHandedMode ? rightControllerState.ulButtonPressed : leftControllerState.ulButtonPressed;
+			uint64_t handInput = c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed;
 			uint64_t _pressLength = 0;
 			const auto handNearScope = (offset < c_scopeAdjustDistance); // hand is close to scope, enable scope specific commands
 
@@ -2990,7 +2987,7 @@ namespace F4VRBody
 					_inRepositionMode = c_repositionMasterMode;
 				}
 				else if (_inRepositionMode) { // in reposition mode for better scopes
-					vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? rightControllerState.rAxis[0] : leftControllerState.rAxis[0];
+					vr::VRControllerAxis_t axis_state = !(c_pipBoyButtonArm > 0) ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0];
 					if (!_repositionModeSwitched && handInput & vr::ButtonMaskFromId((vr::EVRButtonId)c_offHandActivateButtonID)) {
 						if (vrhook)
 							vrhook->StartHaptics(c_leftHandedMode ? 0 : 1, 0.1, 0.3);
@@ -3083,6 +3080,30 @@ namespace F4VRBody
 		static std::uint64_t fc = 0;
 
 		BSFadeNode* rn = static_cast<BSFadeNode*>(_root->m_parent);
+		//static bool runTimer = false;
+		//static auto startTime = std::chrono::high_resolution_clock::now();
+
+		//if (fc > 400) {
+		//	fc = 0;
+		//	BSFixedString event("reloadStart");
+		//	IAnimationGraphManagerHolder_NotifyAnimationGraph(&(*g_player)->animGraphHolder, event);
+		//	runTimer = true;
+		//	startTime = std::chrono::high_resolution_clock::now();
+		//}
+
+		//if (runTimer) {
+		//	auto elapsed = std::chrono::high_resolution_clock::now() - startTime;
+		//	if (300 < std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count()) {
+
+		//		BSFixedString event("reloadComplete");
+		//		IAnimationGraphManagerHolder_NotifyAnimationGraph(&(*g_player)->animGraphHolder, event);
+		//		TESObjectREFR_UpdateAnimation((*g_player), 5.0f);
+
+		//		runTimer = false;
+		//	}
+		//}
+
+		//_MESSAGE("throwing-> %d", Actor_CanThrow(*g_player, g_equipIndex));
 
 		//for (auto i = 0; i < rn->kGeomArray.capacity-1; ++i) {
 		//	BSFadeNode::FlattenedGeometryData data = rn->kGeomArray[i];

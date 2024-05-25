@@ -13,6 +13,7 @@
 
 #include "include/SimpleIni.h"
 #include "SmoothMovementVR.h"
+#include "Offsets.h"
 
 #include <windows.h>
 
@@ -21,29 +22,7 @@ extern PluginHandle g_pluginHandle;
 extern F4SEPapyrusInterface* g_papyrus;
 extern F4SEMessagingInterface* g_messaging;
 
-class BSAnimationManager;
 
-template <class T>
-class StackPtr  {
-public:
-	StackPtr() { p = nullptr; }
-
-	T p;
-};
-
-typedef void(*_AIProcess_getAnimationManager)(uint64_t aiProcess, StackPtr<BSAnimationManager*> &manager);
-extern RelocAddr<_AIProcess_getAnimationManager> AIProcess_getAnimationManager;
-
-typedef void(*_BSAnimationManager_setActiveGraph)(BSAnimationManager* manager, int graph);
-extern RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiveGraph;
-
-typedef void(*_NiNode_UpdateWorldBound)(NiNode* node);
-extern RelocAddr<_NiNode_UpdateWorldBound> NiNode_UpdateWorldBound;
-
-typedef void(*_AIProcess_Set3DUpdateFlags)(Actor::MiddleProcess* proc, uint64_t flags);
-extern RelocAddr<_AIProcess_Set3DUpdateFlags> AIProcess_Set3DUpdateFlags;
-
-extern RelocPtr<NiNode*> worldRootCamera1;
 
 namespace F4VRBody {
 

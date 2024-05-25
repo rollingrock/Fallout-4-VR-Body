@@ -2,6 +2,7 @@
 #include "F4VRBody.h"
 #include "f4se/GameReferences.h"
 #include "f4se/GameCamera.h"
+#include "GunReload.h"
 
 #include "xbyak/xbyak.h"
 
@@ -66,7 +67,30 @@ typedef void(*_ExtraData_SetMultiBoundRef)(std::uint64_t rcx, std::uint64_t rdx)
 RelocAddr <_ExtraData_SetMultiBoundRef> ExtraData_SetMultiBoundRef(0x91320);
 RelocAddr<uintptr_t> hookExtraData_SetMultiBoundRef(0xf00dc6);
 
+typedef uint64_t(*_Actor_GetCurrentWeapon)(uint64_t rcx, uint64_t rdx, uint64_t r8);
+RelocAddr <_Actor_GetCurrentWeapon> Actor_GetCurrentWeapon(0xe50da0);
+RelocAddr<uintptr_t> hookActor_GetCurrentWeaponForGunReload(0xf3027c);
+
+typedef uint64_t(*_TESObjectREFR_SetupAnimationUpdateDataForRefernce)(uint64_t rcx, float* rdx);
+RelocAddr <_TESObjectREFR_SetupAnimationUpdateDataForRefernce> TESObjectREFR_SetupAnimationUpdateDataForRefernce(0x4189c0);
+RelocAddr<uintptr_t> hookActor_SetupAnimationUpdateDataForRefernce(0xf0fbdf);
+
+typedef void(*_AIProcess_Set3DUpdateFlags)(Actor::MiddleProcess* rcx, int rdx);
 RelocAddr<_AIProcess_Set3DUpdateFlags> AIProcess_Set3DUpdateFlags(0xec8ce0);
+
+// Gun Reload Init
+uint64_t gunReloadInit(uint64_t rcx, uint64_t rdx, uint64_t r8) {
+	F4VRBody::g_gunReloadSystem->startAnimationCapture();
+	return Actor_GetCurrentWeapon(rcx, rdx, r8);
+}
+
+uint64_t updatePlayerAnimationHook(uint64_t rcx, float* rdx) {
+
+	if (F4VRBody::g_animDeltaTime < 0.0f) {
+		rdx[0] = F4VRBody::g_animDeltaTime;
+	}
+	return TESObjectREFR_SetupAnimationUpdateDataForRefernce(rcx, rdx);
+}
 
 // fix powerarmor 3d mesh hooks
 
@@ -232,6 +256,8 @@ void hookMain() {
 
 	g_branchTrampoline.Write5Call(hookActor_ReEquipAllExit.GetUIntPtr(), (uintptr_t)&fixPA3D);
 	g_branchTrampoline.Write5Call(hookExtraData_SetMultiBoundRef.GetUIntPtr(), (uintptr_t)&fixPA3DEnter);
+	g_branchTrampoline.Write5Call(hookActor_GetCurrentWeaponForGunReload.GetUIntPtr(), (uintptr_t)&gunReloadInit);
+	g_branchTrampoline.Write5Call(hookActor_SetupAnimationUpdateDataForRefernce.GetUIntPtr(), (uintptr_t)&updatePlayerAnimationHook);
 
 //	_MESSAGE("hooking main loop function");
 //	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);

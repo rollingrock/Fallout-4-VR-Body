@@ -5,6 +5,8 @@
 #include "utils.h"
 #include "MuzzleFlash.h"
 #include "BSFlattenedBoneTree.h"
+#include "GunReload.h"
+#include "VR.h"
 
 #include "api/PapyrusVRAPI.h"
 #include "api/VRManagerAPI.h"
@@ -12,6 +14,7 @@
 #include <algorithm>
 
 #include "Menu.h"
+
 
 
 
@@ -34,13 +37,6 @@ float stoppingMultiplierHorizontal = 0.2f;
 int disableInteriorSmoothing = 1;
 int disableInteriorSmoothingHorizontal = 1;
 
-RelocPtr<bool> iniLeftHandedMode(0x37d5e48);      // location of bLeftHandedMode:VR ini setting
-
-RelocAddr<_AIProcess_getAnimationManager> AIProcess_getAnimationManager(0xec5400);
-RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiveGraph(0x1690240);
-RelocAddr<uint64_t> EquippedWeaponData_vfunc(0x2d7fcf8);
-RelocAddr<_NiNode_UpdateWorldBound> NiNode_UpdateWorldBound(0x1c18ab0);
-RelocPtr<NiNode*> worldRootCamera1(0x6885c80);
 UInt32 KeywordPowerArmor = 0x4D8A1;
 UInt32 KeywordPowerArmorFrame = 0x15503F;
 
@@ -117,72 +113,14 @@ namespace F4VRBody {
 	std::map<std::string, float> handPapyrusPose;
 	std::map<std::string, bool> handPapyrusHasControl;
 
-	vr::VRControllerState_t rightControllerState;
-	vr::VRControllerState_t leftControllerState;
-	vr::TrackedDevicePose_t renderPoses[64]; //Used to store available poses
-	vr::TrackedDevicePose_t gamePoses[64]; //Used to store available poses
 
-	// loadNif native func
-	//typedef int(*_loadNif)(const char* path, uint64_t parentNode, uint64_t flags);
-	typedef int(*_loadNif)(uint64_t path, uint64_t mem, uint64_t flags);
-	RelocAddr<_loadNif> loadNif(0x1d0dee0);
-	//RelocAddr<_loadNif> loadNif(0x1d0dd80);
-
-	typedef NiNode*(*_cloneNode)(NiNode* node, NiCloneProcess* obj);
-	RelocAddr<_cloneNode> cloneNode(0x1c13ff0);
-
-	typedef NiNode* (*_addNode)(uint64_t attachNode, NiAVObject* node);
-	RelocAddr<_addNode> addNode(0xada20);
-
-	typedef void* (*_BSFadeNode_UpdateGeomArray)(NiNode* node, int somevar);
-	RelocAddr<_BSFadeNode_UpdateGeomArray> BSFadeNode_UpdateGeomArray(0x27a9690);
-
-	typedef void* (*_BSFadeNode_UpdateDownwardPass)(NiNode* node, NiAVObject::NiUpdateData* updateData, int somevar);
-	RelocAddr<_BSFadeNode_UpdateDownwardPass> BSFadeNode_UpdateDownwardPass(0x27a8db0);
-
-	typedef void* (*_BSFadeNode_MergeWorldBounds)(NiNode* node);
-	RelocAddr<_BSFadeNode_MergeWorldBounds> BSFadeNode_MergeWorldBounds(0x27a9930);
-
-	typedef void* (*_NiNode_UpdateTransformsAndBounds)(NiNode* node, NiAVObject::NiUpdateData* updateData);
-	RelocAddr<_NiNode_UpdateTransformsAndBounds> NiNode_UpdateTransformsAndBounds(0x1c18ce0);
-
-	typedef void* (*_NiNode_UpdateDownwardPass)(NiNode* node, NiAVObject::NiUpdateData* updateData, uint64_t unk, int somevar);
-	RelocAddr<_NiNode_UpdateDownwardPass> NiNode_UpdateDownwardPass(0x1c18620);
-
-	typedef void* (*_BSGraphics_Utility_CalcBoneMatrices)(BSSubIndexTriShape* node, uint64_t counter);
-	RelocAddr<_BSGraphics_Utility_CalcBoneMatrices> BSGraphics_Utility_CalcBoneMatrices(0x1dabc60);
-
-	typedef uint64_t(*_TESObjectCELL_GetLandHeight)(TESObjectCELL* cell, NiPoint3* coord, float* height);
-	RelocAddr<_TESObjectCELL_GetLandHeight> TESObjectCell_GetLandHeight(0x039b230);
-
-	typedef void(*_Actor_SwitchRace)(Actor* a_actor, TESRace* a_race, bool param3, bool param4);
-	RelocAddr<_Actor_SwitchRace> Actor_SwitchRace(0xe07850);
-
-	typedef void(*_Actor_Reset3D)(Actor* a_actor, double param2, uint64_t param3, bool param4, uint64_t param5);
-	RelocAddr<_Actor_Reset3D> Actor_Reset3D(0xddad60);
-
-	typedef bool(*_PowerArmor_ActorInPowerArmor)(Actor* a_actor);
-	RelocAddr<_PowerArmor_ActorInPowerArmor> PowerArmor_ActorInPowerArmor(0x9bf5d0);
-
-	typedef bool(*_PowerArmor_SwitchToPowerArmor)(Actor* a_actor, TESObjectREFR* a_refr, uint64_t a_char);
-	RelocAddr<_PowerArmor_SwitchToPowerArmor> PowerArmor_SwitchToPowerArmor(0x9bfbc0);
-
-	typedef void(*_AIProcess_Update3DModel)(Actor::MiddleProcess* proc, Actor* a_actor, uint64_t flags, uint64_t someNum);
-	RelocAddr<_AIProcess_Update3DModel> AIProcess_Update3DModel(0x0e3c9c0);
-
-	typedef void(*_PowerArmor_SwitchFromPowerArmorFurnitureLoaded)(Actor* a_actor, uint64_t somenum);
-	RelocAddr<_PowerArmor_SwitchFromPowerArmorFurnitureLoaded> PowerArmor_SwitchFromPowerArmorFurnitureLoaded(0x9c1450);
-
-	RelocAddr<uint64_t> g_frameCounter(0x65a2b48);
-	RelocAddr<UInt64*> cloneAddr1(0x36ff560);
-	RelocAddr<UInt64*> cloneAddr2(0x36ff564);
 
 	NiNode* loadNifFromFile(char* path) {
 		uint64_t flags[2];
 		flags[0] = 0x0;
 		flags[1] = 0xed | 0x2d;
 		uint64_t mem = 0;
-		int ret = loadNif((uint64_t)&(*path), (uint64_t)&mem, (uint64_t)&flags);
+		int ret = Offsets::loadNif((uint64_t)&(*path), (uint64_t)&mem, (uint64_t)&flags);
 
 		return (NiNode*)mem;
 	}
@@ -474,10 +412,10 @@ namespace F4VRBody {
 			if (element.second->turnOnDebugSpheres && !element.second->debugSphere) {
 				NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/1x1Sphere.nif");
 				NiCloneProcess proc;
-				proc.unk18 = cloneAddr1;
-				proc.unk48 = cloneAddr2;
+				proc.unk18 = Offsets::cloneAddr1;
+				proc.unk48 = Offsets::cloneAddr2;
 
-				sphere = cloneNode(retNode, &proc);
+				sphere = Offsets::cloneNode(retNode, &proc);
 				if (sphere) {
 					sphere->m_name = BSFixedString("Sphere01");
 
@@ -595,7 +533,7 @@ namespace F4VRBody {
 
 			pn->ScreenNode->RemoveChildAt(0);
 			// using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
-			NiNode* rn = addNode((uint64_t)&pn->ScreenNode, newScreen);
+			NiNode* rn = Offsets::addNode((uint64_t)&pn->ScreenNode, newScreen);
 			pn->PipboyRoot_nif_only_node = retNode;
 		}
 
@@ -615,25 +553,7 @@ namespace F4VRBody {
 				pn->ScreenNode->RemoveChildAt(0);
 
 				newScreen = pn->PipboyRoot_nif_only_node->GetObjectByName(&screenName)->m_parent;
-				NiNode* rn = addNode((uint64_t)&pn->ScreenNode, newScreen);
-			}
-		}
-	}
-
-	void getVRControllerState() {
-		static uint32_t leftpacket = 0;
-		static uint32_t rightpacket = 0;
-		if (vrhook != nullptr) {
-
-			vr::TrackedDeviceIndex_t lefthand = vrhook->GetVRSystem()->GetTrackedDeviceIndexForControllerRole(vr::ETrackedControllerRole::TrackedControllerRole_LeftHand);
-			vr::TrackedDeviceIndex_t righthand = vrhook->GetVRSystem()->GetTrackedDeviceIndexForControllerRole(vr::ETrackedControllerRole::TrackedControllerRole_RightHand);
-
-			vrhook->GetVRSystem()->GetControllerState(lefthand, &leftControllerState, sizeof(vr::VRControllerState_t));
-			vrhook->GetVRSystem()->GetControllerState(righthand, &rightControllerState, sizeof(vr::VRControllerState_t));
-
-			if (rightControllerState.unPacketNum != rightpacket) {
-			}
-			if (leftControllerState.unPacketNum != leftpacket) {
+				NiNode* rn = Offsets::addNode((uint64_t)&pn->ScreenNode, newScreen);
 			}
 		}
 	}
@@ -854,13 +774,13 @@ namespace F4VRBody {
 		}
 		
 		// do stuff now
-		c_leftHandedMode = *iniLeftHandedMode;
+		c_leftHandedMode = *Offsets::iniLeftHandedMode;
 		playerSkelly->setLeftHandedSticky();
 
 
 		if (c_verbose) { _MESSAGE("Start of Frame"); }
 
-		c_leftHandedMode = *iniLeftHandedMode;
+		c_leftHandedMode = *Offsets::iniLeftHandedMode;
 
 		if (!meshesReplaced) {
 			replaceMeshes(playerSkelly->getPlayerNodes());
@@ -872,7 +792,7 @@ namespace F4VRBody {
 
 		playerSkelly->setTime();
 
-		getVRControllerState();
+		VRHook::g_vrHook->setVRControllerState();
 
 		if (c_verbose) { _MESSAGE("Hide Wands"); }
 		playerSkelly->hideWands();
@@ -882,7 +802,7 @@ namespace F4VRBody {
 		NiPoint3 position = (*g_player)->pos;
 		float groundHeight = 0.0f;
 
-		uint64_t ret = TESObjectCell_GetLandHeight((*g_player)->parentCell, &position, &groundHeight);
+		uint64_t ret = Offsets::TESObjectCell_GetLandHeight((*g_player)->parentCell, &position, &groundHeight);
 
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
 		if (c_verbose) { _MESSAGE("restore locals of skeleton"); }
@@ -942,8 +862,7 @@ namespace F4VRBody {
 		// project body out in front of the camera for debug purposes
 		if (c_verbose) { _MESSAGE("Selfie Time"); }
 		playerSkelly->selfieSkelly(120.0f);
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
-
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);  
 
 		if (c_verbose) { _MESSAGE("fix the missing screen"); }
 		fixMissingScreen(playerSkelly->getPlayerNodes());
@@ -954,26 +873,26 @@ namespace F4VRBody {
 			playerSkelly->showOnlyArms();
 		}
 
-
 		playerSkelly->setHandPose();
 		if (c_verbose) { _MESSAGE("Operate Pipboy"); }
 		playerSkelly->operatePipBoy();
 		if (c_verbose) { _MESSAGE("bone sphere stuff"); }
 		detectBoneSphere();
 		handleDebugBoneSpheres();
+		g_gunReloadSystem->Update();
 
 
 		playerSkelly->offHandToBarrel();
 		playerSkelly->offHandToScope();
 
-		BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
+		Offsets::BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
 		BSFlattenedBoneTree_UpdateBoneArray((*g_player)->unkF0->rootNode->m_children.m_data[0]); // just in case any transforms missed because they are not in the tree do a full flat bone array update
-		BSFadeNode_UpdateGeomArray((*g_player)->unkF0->rootNode, 1);
+		Offsets::BSFadeNode_UpdateGeomArray((*g_player)->unkF0->rootNode, 1);
 
 		if ((*g_player)->middleProcess->unk08->equipData && (*g_player)->middleProcess->unk08->equipData->equippedData) {
 			auto obj = (*g_player)->middleProcess->unk08->equipData->equippedData;
 			uint64_t* vfunc = (uint64_t*)obj;
-			if ((*vfunc & 0xFFFF) == (EquippedWeaponData_vfunc & 0xFFFF)) {
+			if ((*vfunc & 0xFFFF) == (Offsets::EquippedWeaponData_vfunc & 0xFFFF)) {
 				MuzzleFlash* muzzle = reinterpret_cast<MuzzleFlash*>((*g_player)->middleProcess->unk08->equipData->equippedData->unk28);
 				if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
 					muzzle->fireNode->m_localTransform = muzzle->projectileNode->m_worldTransform;
@@ -986,9 +905,9 @@ namespace F4VRBody {
 		}
 
 		playerSkelly->fixBackOfHand();
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 
 		dumpGeometryArrayInUpdate();
-
 
 		playerSkelly->debug();
 
@@ -1229,7 +1148,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		return *iniLeftHandedMode;
+		return *Offsets::iniLeftHandedMode;
 	}
 
 
