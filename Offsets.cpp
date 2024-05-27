@@ -59,4 +59,22 @@ namespace Offsets {
 	RelocAddr<UInt64*> cloneAddr1(0x36ff560);
 	RelocAddr<UInt64*> cloneAddr2(0x36ff564);
 
+	RelocAddr<_TESObjectREFR_GetWorldSpace> TESObjectREFR_GetWorldSpace(0x3f75a0);
+	RelocAddr<_TESDataHandler_CreateReferenceAtLocation> TESDataHandler_CreateReferenceAtLocation(0x11bd80);
+	RelocAddr<_TESObjectREFR_Set3D> TESObjectREFR_Set3D(0x3ece40);
+	RelocAddr<_TESObjectREFR_Set3DSimple> TESObjectREFR_Set3DSimple(0x3edb20);
+
+	RelocAddr< _Actor_GetCurrentWeapon> Actor_GetCurrentWeapon(0xe50da0);
+	RelocAddr< _Actor_GetCurrentAmmo> Actor_GetCurrentAmmo(0xe05ba0);
+	RelocAddr<_Actor_GetWeaponEquipIndex> Actor_GetWeaponEquipIndex(0xe50e70);
+	RelocAddr<_BSPointerHandleManagerInterface_GetSmartPointer> BSPointerHandleManagerInterface_GetSmartPointer(0xab60);
+	RelocAddr<_TESObjectCell_AttachReference3D> TESObjectCell_AttachReference3D(0x3c8310);
+	RelocAddr<_TESObjectREFR_AttachToParentRef3D> TESObjectREFR_AttachToParentRef3D(0x46b380);
+	RelocAddr<_TESObjectREFR_AttachAllChildRef3D> TESObjectREFR_AttachAllChildRef3D(0x46b8d0);
+	RelocAddr<_TESObjectREFR_DropAddon3DReplacement> TESObjectREFR_DropAddon3DReplacement(0x3e9c70);
+	RelocAddr<_TESObjectREFR_InitHavokForCollisionObject> TESObjectREFR_InitHavokForCollisionObject(0x3eee60);
+	RelocAddr<_bhkUtilFunctions_MoveFirstCollisionObjectToRoot> bhkUtilFunctions_MoveFirstCollisionObjectToRoot(0x1e17050);
+	RelocAddr<_bhkUtilFunctions_SetLayer> bhkUtilFunctions_SetLayer(0x1e16180);
+	RelocAddr<_bhkWorld_SetMotion> bhkWorld_SetMotion(0x1df95b0);
+	RelocAddr<_bhkWorld_RemoveObject> bhkWorld_RemoveObject(0x1df9480);
 }

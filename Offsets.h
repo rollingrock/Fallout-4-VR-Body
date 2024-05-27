@@ -4,12 +4,15 @@
 #include "F4SE_common/SafeWrite.h"
 #include "f4se/GameReferences.h"
 #include "f4se/GameObjects.h"
+#include "f4se/GameForms.h"
 #include "f4se/NiNodes.h"
 #include "f4se/NiObjects.h"
 #include "f4se/BSGeometry.h"
 #include "f4se/GameSettings.h"
 #include "f4se/GameMenus.h"
+#include "f4se/GameData.h"
 #include "NiCloneProcess.h"
+#include "MiscStructs.h"
 
 class BSAnimationManager;
 
@@ -114,5 +117,56 @@ namespace Offsets {
 	extern RelocAddr<uint64_t> g_frameCounter;
 	extern RelocAddr<UInt64*> cloneAddr1;
 	extern RelocAddr<UInt64*> cloneAddr2;
+
+	typedef TESWorldSpace* (*_TESObjectREFR_GetWorldSpace)(TESObjectREFR* a_refr);
+	extern RelocAddr<_TESObjectREFR_GetWorldSpace> TESObjectREFR_GetWorldSpace;
+
+	typedef void*(*_TESDataHandler_CreateReferenceAtLocation)(DataHandler* dataHandler, void* newRefr, F4VRBody::NEW_REFR_DATA* refrData);
+	extern RelocAddr<_TESDataHandler_CreateReferenceAtLocation> TESDataHandler_CreateReferenceAtLocation;
+	
+	typedef TESObjectWEAP* (*_Actor_GetCurrentWeapon)(Actor* a_actor, TESObjectWEAP* weap, F4VRBody::BGSEquipIndex idx);
+	extern RelocAddr<_Actor_GetCurrentWeapon> Actor_GetCurrentWeapon;
+
+	typedef TESAmmo* (*_Actor_GetCurrentAmmo)(Actor* a_actor, F4VRBody::BGSEquipIndex idx);
+	extern RelocAddr<_Actor_GetCurrentAmmo> Actor_GetCurrentAmmo;
+
+	typedef void(*_Actor_GetWeaponEquipIndex)(Actor* a_actor, F4VRBody::BGSEquipIndex* idx, F4VRBody::BGSObjectInstance* instance);
+	extern RelocAddr<_Actor_GetWeaponEquipIndex> Actor_GetWeaponEquipIndex;
+
+	typedef void(*_TESObjectREFR_Set3D)(TESObjectREFR* a_refr, NiAVObject* a_obj, bool unk);
+	extern RelocAddr<_TESObjectREFR_Set3D> TESObjectREFR_Set3D;
+
+	typedef void(*_TESObjectREFR_Set3DSimple)(TESObjectREFR* a_refr, NiAVObject* a_obj, bool unk);
+	extern RelocAddr<_TESObjectREFR_Set3DSimple> TESObjectREFR_Set3DSimple;
+
+	typedef void(*_TESObjectREFR_DropAddon3DReplacement)(TESObjectREFR* a_refr, NiAVObject* a_obj);
+	extern RelocAddr<_TESObjectREFR_DropAddon3DReplacement> TESObjectREFR_DropAddon3DReplacement;
+
+	typedef void(*_BSPointerHandleManagerInterface_GetSmartPointer)(void* a_handle, void* a_refr);
+	extern RelocAddr<_BSPointerHandleManagerInterface_GetSmartPointer> BSPointerHandleManagerInterface_GetSmartPointer;
+
+	typedef void(*_TESObjectCell_AttachReference3D)(TESObjectCELL* a_cell, TESObjectREFR* a_refr, bool somebool, bool somebool2);
+	extern RelocAddr<_TESObjectCell_AttachReference3D> TESObjectCell_AttachReference3D;
+
+	typedef void(*_TESObjectREFR_AttachToParentRef3D)(TESObjectREFR* a_refr);
+	extern RelocAddr<_TESObjectREFR_AttachToParentRef3D> TESObjectREFR_AttachToParentRef3D;
+
+	typedef void(*_TESObjectREFR_AttachAllChildRef3D)(TESObjectREFR* a_refr);
+	extern RelocAddr<_TESObjectREFR_AttachAllChildRef3D> TESObjectREFR_AttachAllChildRef3D;
+
+	typedef void(*_TESObjectREFR_InitHavokForCollisionObject)(TESObjectREFR* a_refr);
+	extern RelocAddr<_TESObjectREFR_InitHavokForCollisionObject> TESObjectREFR_InitHavokForCollisionObject;
+
+	typedef void(*_bhkUtilFunctions_MoveFirstCollisionObjectToRoot)(NiAVObject* root, NiAVObject* child);
+	extern RelocAddr<_bhkUtilFunctions_MoveFirstCollisionObjectToRoot> bhkUtilFunctions_MoveFirstCollisionObjectToRoot;
+
+	typedef void(*_bhkUtilFunctions_SetLayer)(NiAVObject* root, std::uint32_t collisionLayer);
+	extern RelocAddr<_bhkUtilFunctions_SetLayer> bhkUtilFunctions_SetLayer;
+
+	typedef void(*_bhkWorld_RemoveObject)(NiAVObject* root, bool a_bool, bool a_bool2);
+	extern RelocAddr<_bhkWorld_RemoveObject> bhkWorld_RemoveObject;
+
+	typedef void(*_bhkWorld_SetMotion)(NiAVObject* root, F4VRBody::hknpMotionPropertiesId::Preset preset, bool bool1, bool bool2, bool bool3);
+	extern RelocAddr<_bhkWorld_SetMotion> bhkWorld_SetMotion;
 
 }

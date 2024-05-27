@@ -19,6 +19,7 @@ namespace F4VRBody {
 		GunReload() {
 			startAnimCap = false;
 			state = idle;
+			reloadButtonPressed = false;
 		}
 
 		inline void startAnimationCapture() {
@@ -29,7 +30,8 @@ namespace F4VRBody {
 		void DoAnimationCapture();
 		void Update();
 
-		bool startReloading();
+		bool StartReloading();
+		bool SetAmmoMesh();
 
 
 
@@ -38,6 +40,10 @@ namespace F4VRBody {
 		std::chrono::high_resolution_clock::time_point startCapTime;
 		bool startAnimCap;
 		ReloadState state;
+		bool reloadButtonPressed;
+		TESAmmo* currentAmmo{ nullptr };
+		NiNode* magMesh{ nullptr };
+		TESObjectREFR* currentRefr{ nullptr };
 	};
 
 	extern GunReload* g_gunReloadSystem;

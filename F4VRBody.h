@@ -133,4 +133,15 @@ namespace F4VRBody {
 
 	bool RegisterFuncs(VirtualMachine* vm);
 
+	inline NiNode* loadNifFromFile(char* path) {
+		uint64_t flags[2];
+		flags[0] = 0x0;
+		flags[1] = 0xed | 0x2d;
+		uint64_t mem = 0;
+		int ret = Offsets::loadNif((uint64_t)&(*path), (uint64_t)&mem, (uint64_t)&flags);
+
+		return (NiNode*)mem;
+	}
+
+
 }

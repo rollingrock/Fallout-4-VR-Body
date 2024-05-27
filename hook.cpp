@@ -86,7 +86,7 @@ uint64_t gunReloadInit(uint64_t rcx, uint64_t rdx, uint64_t r8) {
 
 uint64_t updatePlayerAnimationHook(uint64_t rcx, float* rdx) {
 
-	if (F4VRBody::g_animDeltaTime < 0.0f) {
+	if (F4VRBody::g_animDeltaTime >= 0.0f) {
 		rdx[0] = F4VRBody::g_animDeltaTime;
 	}
 	return TESObjectREFR_SetupAnimationUpdateDataForRefernce(rcx, rdx);

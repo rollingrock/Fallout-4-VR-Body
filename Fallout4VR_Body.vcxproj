@@ -183,6 +183,7 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "C:\mo2\mgc\mods\FRIK alpha 64\F4SE\Pl
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="Menu.cpp" />
     <ClCompile Include="MenuChecker.cpp" />
+    <ClCompile Include="MiscStructs.cpp" />
     <ClCompile Include="Offsets.cpp" />
     <ClCompile Include="patches.cpp" />
     <ClCompile Include="Quaternion.cpp" />
@@ -205,6 +206,7 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "C:\mo2\mgc\mods\FRIK alpha 64\F4SE\Pl
     <ClInclude Include="matrix.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="MenuChecker.h" />
+    <ClInclude Include="MiscStructs.h" />
     <ClInclude Include="MuzzleFlash.h" />
     <ClInclude Include="NiCloneProcess.h" />
     <ClInclude Include="Offsets.h" />

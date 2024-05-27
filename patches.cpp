@@ -140,12 +140,39 @@ namespace patches {
 		g_branchTrampoline.Write5Branch(shaderEffectPatch.GetUIntPtr(), uintptr_t(code.getCode()));
 	}
 
+	RelocAddr<uint64_t> DropAddOnPatch1(0x03e9caf);
+	RelocAddr<uint64_t> DropAddOnPatch2(0x03e9cd3);
+	RelocAddr<uint64_t> DropAddOnPatch3(0x3e9df5);
+
+	void patchDropAddOn3DReplacement() {
+		int bytesToNOP = 0x6;
+
+		for (int i = 0; i < bytesToNOP; ++i) {
+			SafeWrite8(DropAddOnPatch1.GetUIntPtr() + i, 0x90);    
+		}
+
+		bytesToNOP = 0x5;
+
+		for (int i = 0; i < bytesToNOP; ++i) {
+			SafeWrite8(DropAddOnPatch2.GetUIntPtr() + i, 0x90);  
+		}
+
+		bytesToNOP = 0x7;
+
+		for (int i = 0; i < bytesToNOP; ++i) {
+			SafeWrite8(DropAddOnPatch3.GetUIntPtr() + i, 0x90);  
+		}
+
+	}
 
 	bool patchAll() {
 		patchInventoryInfBug();
 		patchLockForReadMask();
 		patchPipeGunScopeCrash();
+		//patchDropAddOn3DReplacement();
 		return true;
 	}
+
+
 
 }
