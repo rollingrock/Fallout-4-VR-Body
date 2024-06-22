@@ -116,7 +116,11 @@ namespace F4VRBody {
 	}
 
 	void updateTransforms(NiNode* node) {
+		if (!node->m_parent) {
+			return;
+		}
 		NiPoint3 pos = node->m_localTransform.pos;
+
 		pos = (node->m_parent->m_worldTransform.rot * (pos * node->m_parent->m_worldTransform.scale));
 
 		node->m_worldTransform.pos = node->m_parent->m_worldTransform.pos + pos;

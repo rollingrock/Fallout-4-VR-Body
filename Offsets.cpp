@@ -77,4 +77,14 @@ namespace Offsets {
 	RelocAddr<_bhkUtilFunctions_SetLayer> bhkUtilFunctions_SetLayer(0x1e16180);
 	RelocAddr<_bhkWorld_SetMotion> bhkWorld_SetMotion(0x1df95b0);
 	RelocAddr<_bhkWorld_RemoveObject> bhkWorld_RemoveObject(0x1df9480);
+	RelocAddr<_bhkNPCollisionObject_AddToWorld> bhkNPCollisionObject_AddToWorld(0x1e07be0);
+	RelocAddr<_TESObjectCell_GetbhkWorld> TESObjectCell_GetbhkWorld(0x39b070);
+	RelocAddr<_Actor_GetAmmoClipPercentage> Actor_GetAmmoClipPercentage(0xddf6c0);
+	RelocAddr<_Actor_GetCurrentAmmoCount> Actor_GetCurrentAmmoCount(0xddf690);
+	RelocAddr<_Actor_SetCurrentAmmoCount> Actor_SetCurrentAmmoCount(0xddf790);
+	RelocAddr<_ExtraDataList_setCount> ExtraDataList_setCount(0x88fe0);
+	RelocAddr<_ExtraDataList_ExtraDataList> ExtraDataList_ExtraDataList(0x81360);
+	RelocAddr<_ExtraDataList_setAmmoCount> ExtraDataList_setAmmoCount(0x980d0);
+	RelocAddr<_ExtraDataListSetPersistentCell> ExtraDataListSetPersistentCell(0x87bc0);
+	RelocAddr<_MemoryManager_Allocate> MemoryManager_Allocate(0x1b91950);
 }

@@ -169,4 +169,33 @@ namespace Offsets {
 	typedef void(*_bhkWorld_SetMotion)(NiAVObject* root, F4VRBody::hknpMotionPropertiesId::Preset preset, bool bool1, bool bool2, bool bool3);
 	extern RelocAddr<_bhkWorld_SetMotion> bhkWorld_SetMotion;
 
+	typedef void(*_bhkNPCollisionObject_AddToWorld)(bhkNPCollisionObject* a_obj, bhkWorld* a_world);
+	extern RelocAddr<_bhkNPCollisionObject_AddToWorld> bhkNPCollisionObject_AddToWorld;
+
+	typedef bhkWorld*(*_TESObjectCell_GetbhkWorld)(TESObjectCELL* a_cell);
+	extern RelocAddr<_TESObjectCell_GetbhkWorld> TESObjectCell_GetbhkWorld;
+
+	typedef float(*_Actor_GetAmmoClipPercentage)(Actor* a_actor, F4VRBody::BGSEquipIndex a_idx);
+	extern RelocAddr<_Actor_GetAmmoClipPercentage> Actor_GetAmmoClipPercentage;
+
+	typedef float(*_Actor_GetCurrentAmmoCount)(Actor* a_actor, F4VRBody::BGSEquipIndex a_idx);
+	extern RelocAddr<_Actor_GetCurrentAmmoCount> Actor_GetCurrentAmmoCount;
+
+	typedef float(*_Actor_SetCurrentAmmoCount)(Actor* a_actor, F4VRBody::BGSEquipIndex a_idx, int a_count);
+	extern RelocAddr<_Actor_SetCurrentAmmoCount> Actor_SetCurrentAmmoCount;
+
+	typedef void(*_ExtraDataList_setAmmoCount)(ExtraDataList* a_list, int a_count);
+	extern RelocAddr<_ExtraDataList_setAmmoCount> ExtraDataList_setAmmoCount;
+
+	typedef void(*_ExtraDataList_setCount)(ExtraDataList* a_list, int a_count);
+	extern RelocAddr<_ExtraDataList_setCount> ExtraDataList_setCount;
+
+	typedef void(*_ExtraDataList_ExtraDataList)(ExtraDataList* a_list);
+	extern RelocAddr<_ExtraDataList_ExtraDataList> ExtraDataList_ExtraDataList;
+
+	typedef void(*_ExtraDataListSetPersistentCell)(ExtraDataList* a_list, int a_int);
+	extern RelocAddr<_ExtraDataListSetPersistentCell> ExtraDataListSetPersistentCell;
+
+	typedef void* (*_MemoryManager_Allocate)(Heap* manager, uint64_t size, uint32_t someint, bool somebool);
+	extern RelocAddr<_MemoryManager_Allocate> MemoryManager_Allocate;
 }

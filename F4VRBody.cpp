@@ -871,7 +871,7 @@ namespace F4VRBody {
 		if (c_verbose) { _MESSAGE("bone sphere stuff"); }
 		detectBoneSphere();
 		handleDebugBoneSpheres();
-		g_gunReloadSystem->Update();
+		//g_gunReloadSystem->Update();
 
 
 		playerSkelly->offHandToBarrel();
