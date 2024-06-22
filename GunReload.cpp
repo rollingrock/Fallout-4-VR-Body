@@ -118,7 +118,7 @@ namespace F4VRBody {
 			return true;
 		}
 		else {
-			reloadButtonPressed = handInput & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip) ? true : false;
+			reloadButtonPressed = handInput && vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip);
 			magNode->flags &= 0xfffffffffffffffe;
 		}
 		return false;
