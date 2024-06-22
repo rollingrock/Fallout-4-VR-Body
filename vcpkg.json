@@ -1,0 +1,23 @@
+{
+  "name": "frik",
+  "version-string": "1.1.0",
+  "description": "FRIK Body for Fallout 4 VR",
+  "homepage": "https://github.com/rollingrock/Fallout-4-VR-Body",
+  "license": "MIT",
+  "dependencies": [
+    "boost-stl-interfaces",
+    "fmt",
+    "rsm-binary-io",
+    "rsm-mmio",
+    "simpleini",
+    "spdlog",
+    "xbyak",
+    "srell",
+    "args",
+    "nowide",
+    "rapidcsv",
+    "frozen",
+    "catch2",
+    "openvr"
+  ]
+}
