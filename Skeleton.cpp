@@ -1747,7 +1747,7 @@ namespace F4VRBody
 
 		float dot = vec3_dot(vec3_norm(pipBoyOut), vec3_norm(lookDir));
 
-		return (dot < -(c_pipBoyLookAtGate) ? true : false);
+		return dot < -(c_pipBoyLookAtGate);
 
 	}
 
