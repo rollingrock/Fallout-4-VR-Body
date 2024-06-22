@@ -246,17 +246,12 @@ namespace F4VRBody {
 
 		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
 
-			rn->kGeomArray[i].spGeometry->flags &= 0xfffffffffffffffe;
-			if (c_hideHead) {
-				if (std::find(faceGeometry.begin(), faceGeometry.end(), rn->kGeomArray[i].spGeometry->m_name.c_str()) != faceGeometry.end()) {
-					rn->kGeomArray[i].spGeometry->flags |= 0x1;
-				}
-			}
-
-			if (c_hideSkin) {
-				if (std::find(skinGeometry.begin(), skinGeometry.end(), rn->kGeomArray[i].spGeometry->m_name.c_str()) != skinGeometry.end()) {
-					rn->kGeomArray[i].spGeometry->flags |= 0x1;
-				}
+			auto& geometry = rn->kGeomArray[i].spGeometry;
+			auto geometryName = geometry->m_name.c_str();
+			geometry->flags &= 0xfffffffffffffffe; // show
+			if ((c_hideHead && std::find(faceGeometry.begin(), faceGeometry.end(), geometryName) != faceGeometry.end())
+				|| (c_hideSkin && std::find(skinGeometry.begin(), skinGeometry.end(), geometryName) != skinGeometry.end())) {
+				geometry->flags |= 0x1; // hide
 			}
 		}
 	}
@@ -275,7 +270,9 @@ namespace F4VRBody {
 		}
 
 		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
-			_MESSAGE("%s", rn->kGeomArray[i].spGeometry->m_name.c_str());
+			auto& geometry = rn->kGeomArray[i].spGeometry;
+			auto geometryName = geometry->m_name.c_str();
+			_MESSAGE("%s hidden: %d", geometryName, geometry->flags &= 0x1);
 		}
 
 		bDumpArray = false;
