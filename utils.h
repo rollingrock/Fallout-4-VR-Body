@@ -60,4 +60,8 @@ namespace F4VRBody {
 		return std::chrono::duration_cast<result_t>(clock_t::now() - start);
 	}
 
+	std::string str_tolower(std::string s);
+	std::string ltrim(std::string s);
+	std::string rtrim(std::string s);
+	std::string trim(std::string s);
 }

@@ -87,7 +87,7 @@ namespace F4VRBody
 
 	void Skeleton::printChildren(NiNode* child, std::string padding) {
 		padding += "....";
-		_MESSAGE("%s%s : children = %d %d: %2f %2f %2f %2f %2f %2f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart, (child->flags & 0x1),
+		_MESSAGE("%s%s : children = %d hidden: %d: local (%2f, %2f, %2f) world (%2f, %2f, %2f)", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart, (child->flags & 0x1),
 			child->m_localTransform.pos.x,
 			child->m_localTransform.pos.y,
 			child->m_localTransform.pos.z,
@@ -113,7 +113,7 @@ namespace F4VRBody
 
 	void Skeleton::printNodes(NiNode* nde) {
 		// print root node info first
-		_MESSAGE("%s : children = %d %d: local %f %f %f", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, (nde->flags & 0x1),
+		_MESSAGE("%s : children = %d hidden: %d: local (%f, %f, %f)", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, (nde->flags & 0x1),
 			nde->m_localTransform.pos.x,nde->m_localTransform.pos.y,nde->m_localTransform.pos.z);
 
 		std::string padding = "";

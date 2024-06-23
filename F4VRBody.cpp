@@ -209,7 +209,7 @@ namespace F4VRBody {
 			while (cullList) {
 				std::string input;
 				cullList >> input;
-				faceGeometry.push_back(input);
+				faceGeometry.push_back(trim(str_tolower(input)));
 			}
 		}
 
@@ -221,7 +221,7 @@ namespace F4VRBody {
 			while (cullList) {
 				std::string input;
 				cullList >> input;
-				skinGeometry.push_back(input);
+				skinGeometry.push_back(trim(str_tolower(input)));
 			}
 		}
 
@@ -245,14 +245,30 @@ namespace F4VRBody {
 		}
 
 		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
-
+			bool hide = false;
 			auto& geometry = rn->kGeomArray[i].spGeometry;
 			auto geometryName = geometry->m_name.c_str();
+			auto geomStr = trim(str_tolower(std::string(geometryName)));
 			geometry->flags &= 0xfffffffffffffffe; // show
-			if ((c_hideHead && std::find(faceGeometry.begin(), faceGeometry.end(), geometryName) != faceGeometry.end())
-				|| (c_hideSkin && std::find(skinGeometry.begin(), skinGeometry.end(), geometryName) != skinGeometry.end())) {
-				geometry->flags |= 0x1; // hide
+			for (auto& faceGeom : faceGeometry) {
+				if (!c_hideHead || faceGeom.empty())
+					break;
+				if (geomStr.find(faceGeom) != std::string::npos) {
+					//_MESSAGE("Found %s in %s", faceGeom, geomStr.c_str());
+					hide = true;
+					break;
+				}
 			}
+			for (auto& skinGeom : skinGeometry) {
+				if (!c_hideSkin || skinGeom.empty())
+					break;
+				if (geomStr.find(skinGeom) != std::string::npos) {
+					hide = true;
+					break;
+				}
+			}
+			if (hide)
+				geometry->flags |= 0x1; // hide
 		}
 	}
 
