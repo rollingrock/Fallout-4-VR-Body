@@ -278,11 +278,15 @@ namespace F4VRBody {
 					if (form_type == FormType::kFormType_ARMO) {
 						auto form = reinterpret_cast<TESObjectARMO*>((*g_player)->equipData->slots[i].item);
 						auto bipedslot = form->bipedObject.data.parts;
-						auto mask = bipedslot & (BGSBipedObjectForm::kPart_Hair |
-							BGSBipedObjectForm::kPart_Head |
-							BGSBipedObjectForm::kPart_LongHair |
-							BGSBipedObjectForm::kPart_Unnamed17 |
-							BGSBipedObjectForm::kPart_Ears
+						auto mask = bipedslot & (BIPED_SLOTS::slot_HairTop |
+							BIPED_SLOTS::slot_HairLong |
+							BIPED_SLOTS::slot_Head |
+							BIPED_SLOTS::slot_Headband |
+							BIPED_SLOTS::slot_Eyes |
+							BIPED_SLOTS::slot_Beard |
+							BIPED_SLOTS::slot_Mouth |
+							BIPED_SLOTS::slot_Neck |
+							BIPED_SLOTS::slot_Scalp
 							);
 						if (mask != 0) {
 							(*g_player)->equipData->slots[i].node->flags |= 0x1;

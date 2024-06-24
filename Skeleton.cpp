@@ -1318,10 +1318,16 @@ namespace F4VRBody
 		// Calculate Clp:  Cwp = Twp + Twr * (Clp * Tws) = kneePos   ===>   Clp = Twr' * (kneePos - Twp) / Tws
 		//LPOS(nodeCalf) = Twr.Transpose() * (kneePos - thighPos) / WSCL(nodeThigh);
 		kneeNode->m_localTransform.pos = hipWR.Transpose() * (kneePos - hipPos) / hipNode->m_worldTransform.scale;
+		if (vec3_len(kneeNode->m_localTransform.pos) > thighLenOrig) {
+			kneeNode->m_localTransform.pos = vec3_norm(kneeNode->m_localTransform.pos) * thighLenOrig;
+		}
 
 		// Calculate Flp:  Fwp = Cwp + Cwr * (Flp * Cws) = footPos   ===>   Flp = Cwr' * (footPos - Cwp) / Cws
 		//LPOS(nodeFoot) = Cwr.Transpose() * (footPos - kneePos) / WSCL(nodeCalf);
 		footNode->m_localTransform.pos = calfWR.Transpose() * (footPos - kneePos) / kneeNode->m_worldTransform.scale;
+		if (vec3_len(footNode->m_localTransform.pos) > calfLenOrig) {
+			footNode->m_localTransform.pos = vec3_norm(footNode->m_localTransform.pos) * calfLenOrig;
+		}
 
 		//if (_inPowerArmor) {
 		//	footNode->m_localTransform.pos *= 1.5;
