@@ -3080,6 +3080,23 @@ namespace F4VRBody
 		static std::uint64_t fc = 0;
 
 		BSFadeNode* rn = static_cast<BSFadeNode*>(_root->m_parent);
+		//_MESSAGE("newrun");
+
+		//for (int i = 0; i < 44; i++) {
+		//	if ((*g_player)->equipData->slots[i].item != nullptr) {
+		//		std::string name = (*g_player)->equipData->slots[i].item->GetFullName();
+		//		auto form_type = (*g_player)->equipData->slots[i].item->GetFormType();
+		//		_MESSAGE("%s formType = %d", name.c_str(), form_type);
+		//		if (form_type == FormType::kFormType_ARMO) {
+		//			auto form = reinterpret_cast<TESObjectARMO*>((*g_player)->equipData->slots[i].item);
+		//			auto bipedslot = form->bipedObject.data.parts;
+		//			_MESSAGE("biped slot = %d", bipedslot);
+		//		}
+		//	}
+		//}
+
+
+
 		//static bool runTimer = false;
 		//static auto startTime = std::chrono::high_resolution_clock::now();
 

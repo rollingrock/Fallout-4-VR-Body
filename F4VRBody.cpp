@@ -270,6 +270,27 @@ namespace F4VRBody {
 			if (hide)
 				geometry->flags |= 0x1; // hide
 		}
+
+		if (c_hideHead) {
+			for (int i = 0; i < 44; i++) {
+				if ((*g_player)->equipData->slots[i].item != nullptr) {
+					auto form_type = (*g_player)->equipData->slots[i].item->GetFormType();
+					if (form_type == FormType::kFormType_ARMO) {
+						auto form = reinterpret_cast<TESObjectARMO*>((*g_player)->equipData->slots[i].item);
+						auto bipedslot = form->bipedObject.data.parts;
+						auto mask = bipedslot & (BGSBipedObjectForm::kPart_Hair |
+							BGSBipedObjectForm::kPart_Head |
+							BGSBipedObjectForm::kPart_LongHair |
+							BGSBipedObjectForm::kPart_Unnamed17 |
+							BGSBipedObjectForm::kPart_Ears
+							);
+						if (mask != 0) {
+							(*g_player)->equipData->slots[i].node->flags |= 0x1;
+						}
+					}
+				}
+			}
+		}
 	}
 
 
