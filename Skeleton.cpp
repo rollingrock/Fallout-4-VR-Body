@@ -719,10 +719,9 @@ namespace F4VRBody
 			weight = (std::max)((float)(weight + (0.02 * delta)), 0.0f);
 		}
 
-		hmdToLeft = vec3_norm(hmdToLeft);
-		hmdToRight = vec3_norm(hmdToRight);
 
 		NiPoint3 sum = hmdToRight + hmdToLeft;
+
 
 		NiPoint3 forwardDir = vec3_norm(_playerNodes->HmdNode->m_worldTransform.rot.Transpose() * vec3_norm(sum));  // rotate sum to local hmd space to get the proper angle
 		NiPoint3 hmdForwardDir = vec3_norm(_playerNodes->HmdNode->m_worldTransform.rot.Transpose() * _playerNodes->HmdNode->m_localTransform.pos);
@@ -1024,10 +1023,16 @@ namespace F4VRBody
 		if (_prevSpeed > 20.0) {
 			curSpeed = (curSpeed + _prevSpeed) / 2;
 		}
-		_prevSpeed = curSpeed;
 
 		double stepTime = std::clamp(cos(curSpeed / 140.0), 0.28, 0.50);
 		dir = vec3_norm(dir);
+
+		// if decelerating reset target
+		if ((curSpeed - _prevSpeed) < -20.0f) {
+			_walkingState = 3;
+		}
+
+		_prevSpeed = curSpeed;
 
 		static float spineAngle = 0.0;
 
@@ -1078,6 +1083,17 @@ namespace F4VRBody
 					_walkingState = 1;         // resume walking
 					_currentStepTime = 0.0;
 				}
+				break;
+			}
+			case 3: {
+				_stepDir = dir;
+				if (_footStepping == 1) {
+					_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 0.1);
+				}
+				else {
+					_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 0.1);
+				}
+				_walkingState = 1;
 				break;
 			}
 			default: {
