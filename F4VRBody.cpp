@@ -289,7 +289,9 @@ namespace F4VRBody {
 							BIPED_SLOTS::slot_Scalp
 							);
 						if (mask != 0) {
-							(*g_player)->equipData->slots[i].node->flags |= 0x1;
+							if ((*g_player)->equipData->slots[i].node != nullptr) {
+								(*g_player)->equipData->slots[i].node->flags |= 0x1;
+							}
 						}
 					}
 				}
