@@ -33,6 +33,7 @@ namespace F4VRBody {
 	extern float c_fVrScale;
 	extern float c_armLength;
 	extern float c_cameraHeight;
+	extern float c_dynamicCameraHeight;
 	extern bool  c_showPAHUD;
 	extern bool  c_hidePipboy;
 	extern bool  c_selfieMode;
