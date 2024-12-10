@@ -10,6 +10,7 @@
 #include "f4se/PapyrusNativeFunctions.h"
 #include "f4se/PapyrusEvents.h"
 #include "f4se/PapyrusVM.h"
+//#include "f4se/GameForms.h"
 
 #include "include/SimpleIni.h"
 #include "SmoothMovementVR.h"
@@ -45,6 +46,9 @@ namespace F4VRBody {
 	extern float c_powerArmor_forward;
 	extern float c_powerArmor_up;
 	extern float c_PACameraHeight;
+	extern float c_PARootOffset;
+	extern float c_RootOffset;
+	extern float c_pipBoyScale;
 	extern bool  c_staticGripping;
 	extern float c_pipBoyLookAtGate;
 	extern float c_gripLetGoThreshold;
@@ -69,6 +73,28 @@ namespace F4VRBody {
 	extern bool c_dampenHands;
 	extern float c_dampenHandsRotation;
 	extern float c_dampenHandsTranslation;
+	extern bool c_IsHoloPipboy;
+	extern bool c_IsPipBoyTorchOnArm;
+	extern int c_SwitchTorchButton;
+	extern bool c_CalibrateModeActive;
+	extern float c_DirectionalDeadzone;
+	extern bool _controlSleepStickyX;
+	extern bool _controlSleepStickyY;
+	extern bool _controlSleepStickyT;
+	extern bool c_switchUIControltoPrimary;
+	extern float c_armLengthbkup;
+	extern float c_powerArmor_upbkup;
+	extern float c_playerOffset_upbkup;
+	extern float c_RootOffsetbkup;
+	extern float c_PARootOffsetbkup;
+	extern float c_fVrScalebkup;
+	extern float c_playerOffset_forwardbkup;
+	extern float c_powerArmor_forwardbkup;
+	extern float c_cameraHeightbkup;
+	extern float c_PACameraHeightbkup;
+	extern float c_PlayerHMDHeight;
+	extern float lastCamZ;
+	extern float c_shouldertoHMD;
 
 	class BoneSphere {
 	public:
@@ -103,7 +129,9 @@ namespace F4VRBody {
 	enum BoneSphereEvent {
 		BoneSphereEvent_None = 0,
 		BoneSphereEvent_Enter = 1,
-		BoneSphereEvent_Exit = 2
+		BoneSphereEvent_Exit = 2,
+		BoneSphereEvent_Holster = 3,
+		BoneSphereEvent_Draw  = 4
 	};
 
 	enum BIPED_SLOTS {
@@ -150,9 +178,10 @@ namespace F4VRBody {
 	void smoothMovement();
 	void update();
 	void startUp();
-
+	void saveSettings();
+	void swapPB();
 	// Native funcs to expose to papyrus
-
+	bool HasKeyword();
 	void saveStates(StaticFunctionTag* base);
 	void calibrate(StaticFunctionTag* base);
 	void togglePipboyVis(StaticFunctionTag* base);
@@ -165,8 +194,8 @@ namespace F4VRBody {
 	void moveBackward(StaticFunctionTag* base);
 	void increaseScale(StaticFunctionTag* base);
 	void decreaseScale(StaticFunctionTag* base);
-
-
+	void holsterWeapon();
+	void drawWeapon();
 	bool RegisterFuncs(VirtualMachine* vm);
 
 	inline NiNode* loadNifFromFile(char* path) {

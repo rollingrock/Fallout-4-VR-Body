@@ -4,10 +4,13 @@
 #include "f4se/GameCamera.h"
 #include "f4se/GameRTTI.h"
 #include "f4se/NiNodes.h"
+#include "f4se/NiNodes.h"
 #include "f4se/BSSkin.h"
+#include "f4se/GameFormComponents.h"
+#include "f4se/GameMenus.h"
 #include "api/PapyrusVRAPI.h"
 #include "api/VRManagerAPI.h"
-
+#include "include/SimpleIni.h"
 #include <algorithm>
 #include <array>
 #include <map>
@@ -21,6 +24,8 @@
 #define DEFAULT_HEIGHT 56.0;
 
 extern uint64_t g_mainLoopCounter;
+
+
 
 namespace F4VRBody
 {
@@ -208,6 +213,7 @@ namespace F4VRBody
 		void setArms_wp(bool isLeft);
 		void setHandPose();
 		NiPoint3 getPosition();
+		NiPoint3 getPosition2();
 		void makeArmsT(bool);
 		void fixArmor();
 		void showHidePAHUD();
@@ -234,10 +240,15 @@ namespace F4VRBody
 		void hideFistHelpers();
 		void fixPAArmor();
 		void dampenHand(NiNode* node, bool isLeft);
-
 		bool isLookingAtPipBoy();
 		void hidePipboy();
 		void operatePipBoy();
+		bool armorHasHeadLamp();
+		bool _stickypip;
+		void setPipboyHandPose();
+		void disablePipboyHandPose();
+		void setConfigModeHandPose();
+		void disableConfigModePose();
 
 		// two handed
 		void offHandToBarrel();
@@ -266,9 +277,13 @@ namespace F4VRBody
 		void debug();
 		void initLocalDefaults();
 		void fixBoneTree();
-
+		void pipboyConfigurationMode();
+		void mainConfigurationMode();
+		void pipboyManagement();
+		void exitPBConfig();
+		void configModeExit();
+		
 		void setTime();
-
 		// Body Positioning
 		float getNeckYaw();
 		float getNeckPitch();
@@ -305,10 +320,36 @@ namespace F4VRBody
 		std::map<std::string, NiTransform, CaseInsensitiveComparator> savedStates;
 		std::map<std::string, NiPoint3, CaseInsensitiveComparator> boneLocalDefault;
 
+		// Cylons Vars
+		bool _stickyoffpip = false;
+		bool _stickybpip = false;
+		bool _isSaveButtonPressed = false;
+		bool _isModelSwapButtonPressed = false;
+		bool _isHandsButtonPressed = false;
+		bool _isWeaponButtonPressed = false;
+		bool _isGripButtonPressed = false;
+		bool _isPBConfigModeActive = false;
+		int _PBConfigModeEnterCounter = 0;
+		bool stickyPBlight = false;
+		bool stickyPBRadio = false;
+		bool _PBConfigSticky = false;
+		bool _PBControlsSticky[7] = { false, false, false,  false,  false,  false, false };
+		bool _SwithLightButtonSticky = false;
+		bool _SwitchLightHaptics = true;
+		bool _UISelectSticky = false;
+		bool _UIAltSelectSticky = false;
+		UInt32 LastPipboyPage = 0;
+		float lastRadioFreq = 0.0;
+		bool c_IsOperatingPipboy = false;
+		bool _PBTouchbuttons[10] = { false, false, false, false, false, false, false, false, false, false };
+		bool _MCTouchbuttons[10] = { false, false, false, false, false, false, false, false, false, false };
+		bool c_CalibrationModeUIActive = false;
+		// End
+
 		NiMatrix43 originalPipboyRotation;
 		bool _pipboyStatus;
 		int _pipTimer;
-		bool _stickypip;
+		
 
 		bool _leftHandedSticky;
 
