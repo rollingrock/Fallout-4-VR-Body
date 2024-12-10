@@ -80,7 +80,7 @@ extern "C" {
 		gLog.SetPrintLevel(IDebugLog::kLevel_DebugMessage);
 		gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
 
-		g_moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("SkyrimUncapper.dll"));
+		g_moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("FRIK.dll"));
 
 		_MESSAGE("F4VRBODY v%s", F4VRBODY_VERSION_VERSTRING);
 

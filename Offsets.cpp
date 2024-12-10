@@ -87,4 +87,6 @@ namespace Offsets {
 	RelocAddr<_ExtraDataList_setAmmoCount> ExtraDataList_setAmmoCount(0x980d0);
 	RelocAddr<_ExtraDataListSetPersistentCell> ExtraDataListSetPersistentCell(0x87bc0);
 	RelocAddr<_MemoryManager_Allocate> MemoryManager_Allocate(0x1b91950);
+	RelocAddr<_ControlMap_SaveRemappings> ControlMap_SaveRemappings(0x1bb3f00);
+	RelocAddr<_ForceGamePause> ForceGamePause(0x1323370); 
 }

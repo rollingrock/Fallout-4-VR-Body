@@ -776,6 +776,7 @@ namespace F4VRBody {
 			//AIProcess_getAnimationManager((uint64_t)(*g_player)->middleProcess, manager);
 			//BSAnimationManager_setActiveGraph(manager.p, 0);
 			firstTime = false;
+			Offsets::ControlMap_SaveRemappings(*g_inputMgr);
 			return;
 		}
 

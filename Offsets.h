@@ -198,4 +198,10 @@ namespace Offsets {
 
 	typedef void* (*_MemoryManager_Allocate)(Heap* manager, uint64_t size, uint32_t someint, bool somebool);
 	extern RelocAddr<_MemoryManager_Allocate> MemoryManager_Allocate;
+
+	typedef void(*_ControlMap_SaveRemappings)(InputManager* a_mgr);
+	extern RelocAddr<_ControlMap_SaveRemappings> ControlMap_SaveRemappings;
+
+	typedef void(*_ForceGamePause)(MenuControls* a_mgr);
+	extern RelocAddr<_ForceGamePause> ForceGamePause;
 }

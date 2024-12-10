@@ -3101,6 +3101,8 @@ namespace F4VRBody
 
 		static std::uint64_t fc = 0;
 
+		Offsets::ForceGamePause(*g_menuControls);
+
 		BSFadeNode* rn = static_cast<BSFadeNode*>(_root->m_parent);
 		//_MESSAGE("newrun");
 
