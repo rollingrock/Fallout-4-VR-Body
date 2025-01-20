@@ -2286,7 +2286,9 @@ namespace F4VRBody
 							}
 						}
 						if (root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage")) {  // Get Current Pipboy Tab and store it.
-							LastPipboyPage = PBCurrentPage.GetUInt();
+							if (PBCurrentPage.GetType() != GFxValue::kType_Undefined) {
+								LastPipboyPage = PBCurrentPage.GetUInt();
+							}
 						}
 						static BSFixedString boneNames[7] = { "TabChangeUp", "TabChangeDown", "PageChangeUp", "PageChangeDown", "ScrollItemsUp", "ScrollItemsDown", "SelectButton02" };
 						static BSFixedString transNames[7] = { "TabChangeUpTrans", "TabChangeDownTrans", "PageChangeUpTrans", "PageChangeDownTrans", "ScrollItemsUpTrans", "ScrollItemsDownTrans", "SelectButtonTrans" };
