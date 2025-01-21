@@ -26,6 +26,11 @@ public:
 
 namespace Offsets {
 
+	extern RelocAddr<UInt64> testin;
+
+	typedef void(*_AIProcess_getAnimationManager)(uint64_t aiProcess, StackPtr<BSAnimationManager*>& manager);
+	extern RelocAddr<_AIProcess_getAnimationManager> AIProcess_getAnimationManager;
+
 	extern RelocPtr<bool> iniLeftHandedMode;      // location of bLeftHandedMode:VR ini setting
 
 	typedef void(*_AIProcess_getAnimationManager)(uint64_t aiProcess, StackPtr<BSAnimationManager*> &manager);
@@ -60,6 +65,9 @@ namespace Offsets {
 
 	typedef void(*_TESObjectREFR_UpdateAnimation)(TESObjectREFR* obj, float a_delta);
 	extern RelocAddr< _TESObjectREFR_UpdateAnimation> TESObjectREFR_UpdateAnimation;
+
+
+
 
 	extern RelocPtr<NiNode*> worldRootCamera1;
 
@@ -198,4 +206,28 @@ namespace Offsets {
 
 	typedef void* (*_MemoryManager_Allocate)(Heap* manager, uint64_t size, uint32_t someint, bool somebool);
 	extern RelocAddr<_MemoryManager_Allocate> MemoryManager_Allocate;
+	typedef void* (*_togglePipboyLight)(Actor* a_actor);
+	extern RelocAddr<_togglePipboyLight> togglePipboyLight;
+
+	typedef bool* (*_isPipboyLightOn)(Actor* a_actor);
+	extern RelocAddr<_isPipboyLightOn> isPipboyLightOn;
+
+	typedef uint64_t (*_isPlayerRadioEnabled)();
+	extern RelocAddr<_isPlayerRadioEnabled> isPlayerRadioEnabled;
+
+	typedef float (*_getPlayerRadioFreq)();
+	extern RelocAddr<_getPlayerRadioFreq> getPlayerRadioFreq;
+
+
+	typedef void (*_ClearAllKeywords)(TESForm* form);
+	extern RelocAddr<_ClearAllKeywords> ClearAllKeywords;
+
+	typedef void (*_AddKeyword)(TESForm* form, BGSKeyword* keyword);
+	extern RelocAddr<_AddKeyword> AddKeyword;
+	typedef void(*_ControlMap_SaveRemappings)(InputManager* a_mgr);
+	extern RelocAddr<_ControlMap_SaveRemappings> ControlMap_SaveRemappings;
+
+	typedef void(*_ForceGamePause)(MenuControls* a_mgr);
+	extern RelocAddr<_ForceGamePause> ForceGamePause;
+
 }

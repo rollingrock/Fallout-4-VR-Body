@@ -1,5 +1,6 @@
 #include "utils.h"
 #include <algorithm>
+#include "f4se/PapyrusEvents.h"
 
 #define PI 3.14159265358979323846
 
@@ -174,6 +175,73 @@ namespace F4VRBody {
 		}
 	}
 
+	void SetINIBool(BSFixedString name, bool value) {
+		CallGlobalFunctionNoWait2<BSFixedString, bool>("Utility", "SetINIBool", BSFixedString(name.c_str()), value);
+	}
+
+	void SetINIFloat(BSFixedString name, float value) {
+		CallGlobalFunctionNoWait2<BSFixedString, float>("Utility", "SetINIFloat", BSFixedString(name.c_str()), value);
+	}
+
+	void ShowMessagebox(std::string asText) {
+		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Messagebox", BSFixedString(asText.c_str()));
+	}
+
+	void ShowNotification(std::string asText) {
+		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Notification", BSFixedString(asText.c_str()));
+	}
+
+	void TurnPlayerRadioOn(bool isActive) {
+		CallGlobalFunctionNoWait1<bool>("Game", "TurnPlayerRadioOn", isActive);
+	}
+
+	void SimulateExtendedButtonPress(WORD vkey)
+	{
+		HWND hwnd = ::FindWindowEx(0, 0, "Fallout4VR", 0);
+		if (hwnd)
+		{
+			HWND foreground = GetForegroundWindow();
+			if (foreground && hwnd == foreground)
+			{
+				INPUT input;
+				input.type = INPUT_KEYBOARD;
+				input.ki.wScan = MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
+				input.ki.time = 0;
+				input.ki.dwExtraInfo = 0;
+				input.ki.wVk = vkey;
+				if (vkey == VK_UP || vkey == VK_DOWN) {
+				input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;//0; //KEYEVENTF_KEYDOWN
+				}
+				else {
+					input.ki.dwFlags = 0;
+				}
+				SendInput(1, &input, sizeof(INPUT));
+				Sleep(30);
+				if (vkey == VK_UP || vkey == VK_DOWN) {
+					input.ki.dwFlags = KEYEVENTF_KEYUP | KEYEVENTF_EXTENDEDKEY;
+				}
+				else {
+					input.ki.dwFlags = KEYEVENTF_KEYUP;
+				}
+				SendInput(1, &input, sizeof(INPUT));
+			}
+		}
+	}
+
+	void RightStickXSleep(int time) { // Prevents Continous Input from Right Stick X Axis
+		Sleep(time);
+		_controlSleepStickyX = false;
+	}
+
+	void RightStickYSleep(int time) { // Prevents Continous Input from Right Stick Y Axis
+		Sleep(time);
+		_controlSleepStickyY = false;
+	}
+
+	void SecondaryTriggerSleep(int time) { // Used to determine if secondary trigger received a long or short press 
+		Sleep(time);
+		_controlSleepStickyT = false;
+	}
 
 	void turnPipBoyOn() {
 /*  From IdleHands
@@ -213,6 +281,10 @@ namespace F4VRBody {
 
 		set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
 		set->SetDouble(5.0);
+		if (!c_repositionMasterMode) {
+			SetINIFloat("fDirectionalDeadzone:Controls", c_DirectionalDeadzone);  //restores player rotation to right stick
+		}
+
 	}
 
 	bool getLeftHandedMode() {

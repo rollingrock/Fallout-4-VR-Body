@@ -7,6 +7,8 @@ namespace Offsets {
 
 	RelocPtr<bool> iniLeftHandedMode(0x37d5e48);      // location of bLeftHandedMode:VR ini setting
 
+	RelocAddr <UInt64> testin(0x5a3b888);
+
 	RelocAddr<_AIProcess_getAnimationManager> AIProcess_getAnimationManager(0xec5400);
 	RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiveGraph(0x1690240);
 	RelocAddr<uint64_t> EquippedWeaponData_vfunc(0x2d7fcf8);
@@ -24,6 +26,15 @@ namespace Offsets {
 	// loadNif native func
 	RelocAddr<_loadNif> loadNif(0x1d0dee0);
 	//RelocAddr<_loadNif> loadNif(0x1d0dd80);
+
+	RelocAddr<_togglePipboyLight> togglePipboyLight(0xf27720);
+	RelocAddr<_isPipboyLightOn> isPipboyLightOn(0xf27790);
+	RelocAddr<_isPlayerRadioEnabled> isPlayerRadioEnabled(0xd0a9d0);
+	RelocAddr<_getPlayerRadioFreq> getPlayerRadioFreq(0xd0a740);
+
+	
+	RelocAddr<_ClearAllKeywords> ClearAllKeywords(0x148270);
+	RelocAddr<_AddKeyword> AddKeyword(0x148310);
 
 	RelocAddr<_cloneNode> cloneNode(0x1c13ff0);
 
@@ -87,4 +98,6 @@ namespace Offsets {
 	RelocAddr<_ExtraDataList_setAmmoCount> ExtraDataList_setAmmoCount(0x980d0);
 	RelocAddr<_ExtraDataListSetPersistentCell> ExtraDataListSetPersistentCell(0x87bc0);
 	RelocAddr<_MemoryManager_Allocate> MemoryManager_Allocate(0x1b91950);
+	RelocAddr<_ControlMap_SaveRemappings> ControlMap_SaveRemappings(0x1bb3f00);
+	RelocAddr<_ForceGamePause> ForceGamePause(0x1323370); 
 }

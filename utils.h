@@ -3,8 +3,10 @@
 #include "f4se/GameReferences.h"
 #include "f4se/NiNodes.h"
 #include "f4se/GameSettings.h"
-
+#include "f4se/GameRTTI.h"
 #include "matrix.h"
+#include "Offsets.h"
+#include "F4VRBody.h"
 
 #include <chrono>
 
@@ -38,6 +40,19 @@ namespace F4VRBody {
 	void updateTransformsDown(NiNode* nde, bool updateSelf);
 
 	void toggleVis(NiNode* nde, bool hide, bool updateSelf);
+
+	void SetINIBool(BSFixedString name, bool value);
+	void SetINIFloat(BSFixedString name, float value);
+	//void SetINIInt(BSFixedString name, int value);
+
+	void TurnPlayerRadioOn(bool isActive);
+	void SimulateExtendedButtonPress(WORD vkey);
+	void RightStickXSleep(int time);
+	void RightStickYSleep(int time);
+	void SecondaryTriggerSleep(int time);
+	//void PipboyReopen();
+	void ShowMessagebox(std::string asText);
+	void ShowNotification(std::string asText);
 
 	void turnPipBoyOn();
 	void turnPipBoyOff();
