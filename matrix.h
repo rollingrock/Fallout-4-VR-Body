@@ -88,9 +88,6 @@ namespace F4VRBody {
 			}
 		}
 
-
-
-
 		float data[4][4];
 	};
 
