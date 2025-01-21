@@ -58,9 +58,11 @@ namespace F4VRBody {
 	float c_fVrScale = 72.0;
 	float c_playerOffset_forward = -4.0;
 	float c_playerOffset_up = -2.0;
+	float c_selfieOutFrontDistance = 120.0f;
 	float c_pipboyDetectionRange = 15.0f;
 	float c_armLength = 36.74;
 	float c_cameraHeight = 0.0;
+	float c_dynamicCameraHeight = 0.0;
 	float c_PACameraHeight = 0.0;
 	bool  c_showPAHUD = true;
 	bool  c_hidePipboy = false;
@@ -90,7 +92,11 @@ namespace F4VRBody {
 	float c_handUI_Y = 0.0;
 	float c_handUI_Z = 0.0;
 	bool  c_hideHead = false;
+	bool  c_loadedHideHead = false;
+	bool  c_hideEquipment = false;
+	bool  c_loadedHideEquipment = false;
 	bool c_hideSkin = false;
+	bool c_loadedHideSkin = false;
 	float c_pipBoyLookAtGate = 0.7;
 	float c_gripLetGoThreshold = 15.0f;
 	bool c_isLookingThroughScope = false;
@@ -172,7 +178,75 @@ namespace F4VRBody {
 	// hide meshes
 	std::vector<std::string> faceGeometry;
 	std::vector<std::string> skinGeometry;
+
+	std::vector<int> hideSlotIndexes;
+	bool isHideSlotLoaded = false;
+
 	bool bDumpArray = false;
+
+	static bool setHideSlotIndexes(bool isForceReload = false) {
+		if (isHideSlotLoaded && !isForceReload)
+			return true;
+
+		hideSlotIndexes.clear();
+
+		std::ifstream cullList;
+		cullList.open(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\slots.ini");
+
+		if (cullList.is_open()) {
+			while (cullList) {
+				std::string input;
+				cullList >> input;
+
+				if (input.empty())
+					continue;
+
+				input = trim(str_tolower(input));
+
+				// Slot Ids base on this link: https://falloutck.uesp.net/wiki/Biped_Slots
+
+				if (input.find("hairtop") != std::string::npos) {
+					hideSlotIndexes.push_back(0);
+				}
+
+				if (input.find("hairlong") != std::string::npos) {
+					hideSlotIndexes.push_back(1);
+				}
+
+				if (input.find("head") != std::string::npos) {
+					hideSlotIndexes.push_back(2);
+				}
+
+				if (input.find("headband") != std::string::npos) {
+					hideSlotIndexes.push_back(16);
+				}
+
+				if (input.find("eyes") != std::string::npos) {
+					hideSlotIndexes.push_back(17);
+				}
+
+				if (input.find("beard") != std::string::npos) {
+					hideSlotIndexes.push_back(18);
+				}
+
+				if (input.find("mouth") != std::string::npos) {
+					hideSlotIndexes.push_back(19);
+				}
+
+				if (input.find("neck") != std::string::npos) {
+					hideSlotIndexes.push_back(20);
+				}
+
+				if (input.find("scalp") != std::string::npos) {
+					hideSlotIndexes.push_back(22);
+				}
+			}
+		}
+
+		cullList.close();
+
+		return true;
+	}
 
 	bool loadConfig() {
 		CSimpleIniA ini;
@@ -206,7 +280,11 @@ namespace F4VRBody {
 		c_handUI_Y = ini.GetDoubleValue("Fallout4VRBody", "handUI_Y", 0.0);
 		c_handUI_Z = ini.GetDoubleValue("Fallout4VRBody", "handUI_Z", 0.0);
 		c_hideHead = ini.GetBoolValue("Fallout4VRBody", "HideHead");
+		c_loadedHideHead = c_hideHead;
+		c_hideEquipment = ini.GetBoolValue("Fallout4VRBody", "HideEquipment");
+		c_loadedHideEquipment = c_hideEquipment;
 		c_hideSkin = ini.GetBoolValue("Fallout4VRBody", "HideSkin");
+		c_loadedHideSkin = c_hideSkin;
 		c_pipBoyLookAtGate = ini.GetDoubleValue("Fallout4VRBody", "PipBoyLookAtThreshold", 0.7);
 		c_pipBoyOffDelay = (int)ini.GetLongValue("Fallout4VRBody", "PipBoyOffDelay", 5000);
 		c_gripLetGoThreshold = ini.GetDoubleValue("Fallout4VRBody", "GripLetGoThreshold", 15.0f);
@@ -268,7 +346,8 @@ namespace F4VRBody {
 			while (cullList) {
 				std::string input;
 				cullList >> input;
-				faceGeometry.push_back(trim(str_tolower(input)));
+				if (!input.empty())
+					faceGeometry.push_back(trim(str_tolower(input)));
 			}
 		}
 
@@ -280,7 +359,8 @@ namespace F4VRBody {
 			while (cullList) {
 				std::string input;
 				cullList >> input;
-				skinGeometry.push_back(trim(str_tolower(input)));
+				if (!input.empty())
+					skinGeometry.push_back(trim(str_tolower(input)));
 			}
 		}
 
@@ -289,77 +369,101 @@ namespace F4VRBody {
 		return true;
 	}
 
+	static void adjustSlotVisibility(int slotId, bool isHidden) {
+		auto& slot = (*g_player)->equipData->slots[slotId];
 
-	// cull items in skins/faces cull list
+		if (slot.item == nullptr)
+			return;
 
-	void cullGeometry() {
+		auto form_type = slot.item->GetFormType();
+		if (form_type != FormType::kFormType_ARMO)
+			return;
+
+		if (slot.node != nullptr) {
+			if (isHidden)
+				slot.node->flags |= 0x1;
+			else
+				slot.node->flags &= 0xfffffffffffffffe; // show
+		}
+	}
+
+	static void restoreGeometry() {
+		//Face and Skin
 		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
 
 		if (!rn) {
 			return;
 		}
 
-		if (!c_hideHead && !c_hideSkin) {
+		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
+			rn->kGeomArray[i].spGeometry->flags &= 0xfffffffffffffffe; // show
+		}
+
+		//Equipment
+		adjustSlotVisibility(0, false);
+		adjustSlotVisibility(1, false);
+		adjustSlotVisibility(2, false);
+		adjustSlotVisibility(16, false);
+		adjustSlotVisibility(17, false);
+		adjustSlotVisibility(18, false);
+		adjustSlotVisibility(19, false);
+		adjustSlotVisibility(20, false);
+		adjustSlotVisibility(22, false);
+	}
+
+	// cull items in skins/faces cull list
+
+	static void cullGeometry() {
+		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
+
+		if (!rn) {
 			return;
 		}
 
-		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
-			bool hide = false;
-			auto& geometry = rn->kGeomArray[i].spGeometry;
-			auto geometryName = geometry->m_name.c_str();
-			auto geomStr = trim(str_tolower(std::string(geometryName)));
-			geometry->flags &= 0xfffffffffffffffe; // show
-			for (auto& faceGeom : faceGeometry) {
-				if (!c_hideHead || faceGeom.empty())
-					break;
-				if (geomStr.find(faceGeom) != std::string::npos) {
-					//_MESSAGE("Found %s in %s", faceGeom, geomStr.c_str());
-					hide = true;
-					break;
-				}
-			}
-			for (auto& skinGeom : skinGeometry) {
-				if (!c_hideSkin || skinGeom.empty())
-					break;
-				if (geomStr.find(skinGeom) != std::string::npos) {
-					hide = true;
-					break;
-				}
-			}
-			if (hide)
-				geometry->flags |= 0x1; // hide
-		}
+		if (c_hideHead || c_hideSkin) {
+			for (auto i = 0; i < rn->kGeomArray.count; ++i) {
+				bool hide = false;
+				auto& geometry = rn->kGeomArray[i].spGeometry;
+				auto geometryName = geometry->m_name.c_str();
+				auto geomStr = trim(str_tolower(std::string(geometryName)));
 
-		if (c_hideHead) {
-			for (int i = 0; i < 44; i++) {
-				if ((*g_player)->equipData->slots[i].item != nullptr) {
-					auto form_type = (*g_player)->equipData->slots[i].item->GetFormType();
-					if (form_type == FormType::kFormType_ARMO) {
-						auto form = reinterpret_cast<TESObjectARMO*>((*g_player)->equipData->slots[i].item);
-						auto bipedslot = form->bipedObject.data.parts;
-						auto mask = bipedslot & (BIPED_SLOTS::slot_HairTop |
-							BIPED_SLOTS::slot_HairLong |
-							BIPED_SLOTS::slot_Head |
-							BIPED_SLOTS::slot_Headband |
-							BIPED_SLOTS::slot_Eyes |
-							BIPED_SLOTS::slot_Beard |
-							BIPED_SLOTS::slot_Mouth |
-							BIPED_SLOTS::slot_Neck |
-							BIPED_SLOTS::slot_Scalp
-							);
-						if (mask != 0) {
-							if ((*g_player)->equipData->slots[i].node != nullptr) {
-								(*g_player)->equipData->slots[i].node->flags |= 0x1;
-							}
+				if (c_hideHead) {
+					for (auto& faceGeom : faceGeometry) {
+						if (geomStr.find(faceGeom) != std::string::npos) {
+							//_MESSAGE("Found %s in %s", faceGeom, geomStr.c_str());
+							hide = true;
+							break;
 						}
 					}
 				}
+
+				if (c_hideSkin && !hide) {
+					for (auto& skinGeom : skinGeometry) {
+						if (geomStr.find(skinGeom) != std::string::npos) {
+							hide = true;
+							break;
+						}
+					}
+				}
+
+				if (hide)
+					geometry->flags |= 0x1; // hide
+				else
+					geometry->flags &= 0xfffffffffffffffe; // show
+			}
+		}
+
+		if (c_hideEquipment) {
+			//Ensure data is loaded.
+			isHideSlotLoaded = setHideSlotIndexes();
+
+			for (auto slot : hideSlotIndexes) {
+				adjustSlotVisibility(slot, true);
 			}
 		}
 	}
 
-
-	void dumpGeometryArrayInUpdate() {
+	static void dumpGeometryArrayInUpdate() {
 
 		if (!bDumpArray) {
 			return;
@@ -428,8 +532,8 @@ namespace F4VRBody {
 					if (g_boneSphereEventRegs.m_data.size() > 0) {
 						g_boneSphereEventRegs.ForEach(
 							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
-						}
+								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+							}
 						);
 					}
 				}
@@ -446,8 +550,8 @@ namespace F4VRBody {
 					if (g_boneSphereEventRegs.m_data.size() > 0) {
 						g_boneSphereEventRegs.ForEach(
 							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
-						}
+								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+							}
 						);
 					}
 				}
@@ -467,8 +571,8 @@ namespace F4VRBody {
 					if (g_boneSphereEventRegs.m_data.size() > 0) {
 						g_boneSphereEventRegs.ForEach(
 							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
-						}
+								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+							}
 						);
 					}
 				}
@@ -485,8 +589,8 @@ namespace F4VRBody {
 					if (g_boneSphereEventRegs.m_data.size() > 0) {
 						g_boneSphereEventRegs.ForEach(
 							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
-						}
+								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
+							}
 						);
 					}
 				}
@@ -540,52 +644,52 @@ namespace F4VRBody {
 
 	void fixSkeleton() {
 
-			NiNode* pn = (*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
+		NiNode* pn = (*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
 
-			static BSFixedString lHand("LArm_Hand");
-			static BSFixedString lArm("LArm_ForeArm1");
-			static BSFixedString lfarm("LArm_ForeArm2");
-			static BSFixedString rHand("RArm_Hand");
-			static BSFixedString rArm("RArm_ForeArm1");
-			static BSFixedString rfarm("RArm_ForeArm2");
-			static BSFixedString pipboyName("PipboyBone");
+		static BSFixedString lHand("LArm_Hand");
+		static BSFixedString lArm("LArm_ForeArm1");
+		static BSFixedString lfarm("LArm_ForeArm2");
+		static BSFixedString rHand("RArm_Hand");
+		static BSFixedString rArm("RArm_ForeArm1");
+		static BSFixedString rfarm("RArm_ForeArm2");
+		static BSFixedString pipboyName("PipboyBone");
 
-			NiNode* hand = pn->GetObjectByName(&lHand)->GetAsNiNode();
-			NiNode* arm = pn->GetObjectByName(&lArm)->GetAsNiNode();
-			NiNode* forearm = pn->GetObjectByName(&lfarm)->GetAsNiNode();
-			NiNode* pipboy = (NiNode*)pn->m_children.m_data[0]->GetObjectByName(&pipboyName);
+		NiNode* hand = pn->GetObjectByName(&lHand)->GetAsNiNode();
+		NiNode* arm = pn->GetObjectByName(&lArm)->GetAsNiNode();
+		NiNode* forearm = pn->GetObjectByName(&lfarm)->GetAsNiNode();
+		NiNode* pipboy = (NiNode*)pn->m_children.m_data[0]->GetObjectByName(&pipboyName);
 
-			Skeleton sk;
-			bool inPA = sk.detectInPowerArmor();
+		Skeleton sk;
+		bool inPA = sk.detectInPowerArmor();
 
-			if (!inPA) {
-				if (arm->m_children.m_data[0] == hand) {
-					arm->RemoveChildAt(0);
-					if (pipboy) {
-						pipboy->m_parent->RemoveChild(pipboy);
-					}
-					else {
-						pipboy = (NiNode*)pn->GetObjectByName(&pipboyName);
-					}
-					forearm->m_parent->RemoveChild(forearm);
-					arm->AttachChild(forearm, true);
-					forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(hand, true);
-					if (pipboy) {
-						forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(pipboy, true);
-					}
+		if (!inPA) {
+			if (arm->m_children.m_data[0] == hand) {
+				arm->RemoveChildAt(0);
+				if (pipboy) {
+					pipboy->m_parent->RemoveChild(pipboy);
 				}
-
-				hand = pn->GetObjectByName(&rHand)->GetAsNiNode();
-				arm = pn->GetObjectByName(&rArm)->GetAsNiNode();
-				forearm = pn->GetObjectByName(&rfarm)->GetAsNiNode();
-
-				if (arm->m_children.m_data[0] == hand) {
-					arm->RemoveChildAt(0);
-					forearm->m_parent->RemoveChild(forearm);
-					arm->AttachChild(forearm, true);
-					forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(hand, true);
+				else {
+					pipboy = (NiNode*)pn->GetObjectByName(&pipboyName);
+				}
+				forearm->m_parent->RemoveChild(forearm);
+				arm->AttachChild(forearm, true);
+				forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(hand, true);
+				if (pipboy) {
+					forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(pipboy, true);
 				}
 			}
+
+			hand = pn->GetObjectByName(&rHand)->GetAsNiNode();
+			arm = pn->GetObjectByName(&rArm)->GetAsNiNode();
+			forearm = pn->GetObjectByName(&rfarm)->GetAsNiNode();
+
+			if (arm->m_children.m_data[0] == hand) {
+				arm->RemoveChildAt(0);
+				forearm->m_parent->RemoveChild(forearm);
+				arm->AttachChild(forearm, true);
+				forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(hand, true);
+			}
+		}
 	}
 
 	void replaceMeshes(PlayerNodes* pn, std::string itemHide, std::string itemShow) {
@@ -593,8 +697,8 @@ namespace F4VRBody {
 		NiNode* wand = get1stChildNode("world_primaryWand.nif", ui);
 		NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
 		if (retNode) {
-//			ui->RemoveChild(wand);
-	//		ui->AttachChild(retNode, true);
+			//			ui->RemoveChild(wand);
+				//		ui->AttachChild(retNode, true);
 		}
 
 		wand = pn->SecondaryWandNode;
@@ -623,6 +727,7 @@ namespace F4VRBody {
 			NiNode* rn = Offsets::addNode((uint64_t)&pn->ScreenNode, newScreen);
 			pn->PipboyRoot_nif_only_node = retNode;
 		}
+
 		meshesReplaced = true;			
 		// Cylons Code Start >>>>
 		auto lookup = g_weaponOffsets->getOffset("PipboyPosition", Mode::normal);
@@ -649,6 +754,7 @@ namespace F4VRBody {
 			_ShowNode->m_localTransform.scale = 1;
 		}
 			// <<<< Cylons Code End
+
 		_MESSAGE("Meshes replaced!");
 
 	}
@@ -727,7 +833,7 @@ namespace F4VRBody {
 			}
 			//replaceMeshes(playerSkelly->getPlayerNodes());
 			//playerSkelly->setDirection();
-		    playerSkelly->swapPipboy();
+			playerSkelly->swapPipboy();
 
 			_MESSAGE("handle pipboy init");
 
@@ -921,7 +1027,7 @@ namespace F4VRBody {
 		if (c_verbose) { _MESSAGE("Hide Wands"); }
 		playerSkelly->hideWands();
 
-	//	fixSkeleton();
+		//	fixSkeleton();
 
 		NiPoint3 position = (*g_player)->pos;
 		float groundHeight = 0.0f;
@@ -985,8 +1091,8 @@ namespace F4VRBody {
 
 		// project body out in front of the camera for debug purposes
 		if (c_verbose) { _MESSAGE("Selfie Time"); }
-		playerSkelly->selfieSkelly(120.0f);
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);  
+		playerSkelly->selfieSkelly(c_selfieOutFrontDistance);
+		playerSkelly->updateDown(playerSkelly->getRoot(), true);
 
 		if (c_verbose) { _MESSAGE("fix the missing screen"); }
 		fixMissingScreen(playerSkelly->getPlayerNodes());
@@ -1369,6 +1475,11 @@ namespace F4VRBody {
 		}
 
 		c_hideHead = !c_hideHead;
+		c_loadedHideHead = c_hideHead;
+
+		if (c_hideHead) {
+			restoreGeometry();
+		}
 	}
 
 	void togglePipboyVis(StaticFunctionTag* base) {
@@ -1388,6 +1499,27 @@ namespace F4VRBody {
 		}
 
 		c_selfieMode = !c_selfieMode;
+
+		if (c_selfieMode)
+		{
+			restoreGeometry();
+			c_hideHead = false;
+			c_hideEquipment = false;
+			c_hideSkin = false;
+		}
+		else
+		{
+			c_hideHead = c_loadedHideHead;
+			c_hideEquipment = c_loadedHideEquipment;
+			c_hideSkin = c_loadedHideSkin;
+		}
+	}
+
+	static void setSelfieMode(StaticFunctionTag* base, bool isSelfieMode) {
+		if (c_selfieMode == isSelfieMode)
+			return;
+
+		toggleSelfieMode(base);
 	}
 
 	void toggleArmsOnlyMode(StaticFunctionTag* base) {
@@ -1439,7 +1571,11 @@ namespace F4VRBody {
 		c_cameraHeight -= 2.0f;
 	}
 
-	void makeTaller(StaticFunctionTag* base){
+	void setDynamicCameraHeight(StaticFunctionTag* base, float dynamicCameraHeight) {
+		c_dynamicCameraHeight = dynamicCameraHeight;
+	}
+
+	void makeTaller(StaticFunctionTag* base) {
 		BSFixedString menuName("BookMenu");
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
@@ -1713,7 +1849,7 @@ namespace F4VRBody {
 	}
 
 	void dumpGeometryArray(StaticFunctionTag* base) {
-		
+
 		bDumpArray = true;
 	}
 
@@ -1726,11 +1862,13 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleHeadVis", "FRIK:FRIK", F4VRBody::toggleHeadVis, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePipboyVis", "FRIK:FRIK", F4VRBody::togglePipboyVis, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", F4VRBody::toggleSelfieMode, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("setSelfieMode", "FRIK:FRIK", F4VRBody::setSelfieMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleArmsOnlyMode", "FRIK:FRIK", F4VRBody::toggleArmsOnlyMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleStaticGripping", "FRIK:FRIK", F4VRBody::toggleStaticGripping, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("isLeftHandedMode", "FRIK:FRIK", F4VRBody::isLeftHandedMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraUp", "FRIK:FRIK", F4VRBody::moveCameraUp, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraDown", "FRIK:FRIK", F4VRBody::moveCameraDown, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, float>("setDynamicCameraHeight", "FRIK:FRIK", F4VRBody::setDynamicCameraHeight, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeTaller", "FRIK:FRIK", F4VRBody::makeTaller, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeShorter", "FRIK:FRIK", F4VRBody::makeShorter, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveUp", "FRIK:FRIK", F4VRBody::moveUp, vm));

@@ -248,7 +248,7 @@ namespace SmoothMovementVR
 
 						//	_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
-								playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load() ? (F4VRBody::c_PACameraHeight + F4VRBody::c_cameraHeight) : F4VRBody::c_cameraHeight;
+							playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load() ? (F4VRBody::c_PACameraHeight + F4VRBody::c_cameraHeight + F4VRBody::c_dynamicCameraHeight) : F4VRBody::c_cameraHeight + F4VRBody::c_dynamicCameraHeight;
 						}
 						else
 						{
