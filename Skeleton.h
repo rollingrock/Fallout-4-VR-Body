@@ -240,11 +240,11 @@ namespace F4VRBody
 		void hideFistHelpers();
 		void fixPAArmor();
 		void dampenHand(NiNode* node, bool isLeft);
+		void dampenPipboyScreen();
 		bool isLookingAtPipBoy();
 		void hidePipboy();
 		void operatePipBoy();
 		bool armorHasHeadLamp();
-		bool _stickypip;
 		void setPipboyHandPose();
 		void disablePipboyHandPose();
 		void setConfigModeHandPose();
@@ -350,6 +350,7 @@ namespace F4VRBody
 		bool _pipboyStatus;
 		int _pipTimer;
 		
+		bool _stickypip;
 
 		bool _leftHandedSticky;
 
@@ -415,5 +416,6 @@ namespace F4VRBody
 
 		NiTransform _rightHandPrevFrame;
 		NiTransform _leftHandPrevFrame;
+		NiTransform _pipboyScreenPrevFrame;
 	};
 }

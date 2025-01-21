@@ -119,6 +119,7 @@ namespace F4VRBody {
 	bool c_enableGripButtonToLetGo = true;
 	bool c_onePressGripButton = false;
 	bool c_dampenHands = true;
+	bool c_dampenPipboyScreen = true;
 	bool c_PACurrentState = false;
 	bool c_PALastState = false;
 	float c_dampenHandsRotation = 0.7;
@@ -1025,6 +1026,7 @@ namespace F4VRBody {
 		playerSkelly->pipboyConfigurationMode();
 		playerSkelly->mainConfigurationMode();
 		playerSkelly->pipboyManagement();
+		playerSkelly->dampenPipboyScreen();
 		//Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
 		if (!detectInPowerArmor()) {
 			NiNode* _HideNode = nullptr;
