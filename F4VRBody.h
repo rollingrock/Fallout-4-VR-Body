@@ -71,9 +71,11 @@ namespace F4VRBody {
 	extern bool c_onePressGripButton;
 	extern float c_scopeAdjustDistance;
 	extern bool c_dampenHands;
-	extern bool c_dampenPipboyScreen;
 	extern float c_dampenHandsRotation;
 	extern float c_dampenHandsTranslation;
+	extern bool c_dampenPipboyScreen;
+	extern float c_dampenPipboyRotation;
+	extern float c_dampenPipboyTranslation;
 	extern bool c_IsHoloPipboy;
 	extern bool c_IsPipBoyTorchOnArm;
 	extern int c_SwitchTorchButton;

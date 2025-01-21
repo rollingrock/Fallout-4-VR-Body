@@ -2533,7 +2533,9 @@ namespace F4VRBody
 				if (root != nullptr) {
 					GFxValue PBCurrentPage;
 					if (root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage")) {
-						LastPipboyPage = PBCurrentPage.GetUInt();
+						if (PBCurrentPage.GetType() != GFxValue::kType_Undefined) {
+							LastPipboyPage = PBCurrentPage.GetUInt();
+						}
 					}
 				}
 			}
@@ -4357,11 +4359,11 @@ namespace F4VRBody
 			NiTransform prevFrame = _pipboyScreenPrevFrame;
 			rq.fromRot(prevFrame.rot);
 			rt.fromRot(pipboyScreen->m_worldTransform.rot);
-			rq.slerp(1 - c_dampenHandsRotation, rt);
+			rq.slerp(1 - c_dampenPipboyRotation, rt);
 			pipboyScreen->m_worldTransform.rot = rq.getRot().make43();
 			// do a linear interprolation  between the position from the previous frame to current frame
 			NiPoint3 deltaPos = pipboyScreen->m_worldTransform.pos - prevFrame.pos;
-			deltaPos *= c_dampenHandsTranslation;  // just use hands dampening value for now
+			deltaPos *= c_dampenPipboyTranslation;  // just use hands dampening value for now
 			pipboyScreen->m_worldTransform.pos -= deltaPos;
 			_pipboyScreenPrevFrame = pipboyScreen->m_worldTransform;
 			updateDown(pipboyScreen->GetAsNiNode(), false);
