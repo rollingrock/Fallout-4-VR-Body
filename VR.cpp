@@ -1,7 +1,6 @@
 #include "VR.h"
 #include "matrix.h"
 
-
 namespace VRHook {
 
 	RelocPtr<uint64_t*> vrDataStruct(0x59429c0);
@@ -12,65 +11,84 @@ namespace VRHook {
 		return func(a_transform, a_pose);
 	}
 
-	void VRSystem::getTrackerNiTransformByName(std::string trackerName, NiTransform* transform) {
-		vr::TrackedDevicePose_t pose = renderPoses[viveTrackers[trackerName]];
-		HmdMatrixToNiTransform(transform, &pose);
-
-		if (vrDataStruct != nullptr && roomNode != nullptr) {
-			NiMatrix43* worldSpaceMat = (NiMatrix43*)((char*)(*vrDataStruct) + 0x210);
-			NiPoint3* worldSpaceVec = (NiPoint3*)((char*)(*vrDataStruct) + 0x158);
-			transform->pos = transform->pos - *worldSpaceVec;
-			transform->pos = *worldSpaceMat * transform->pos;
-			//		transform->pos = roomNode->m_worldTransform.rot * transform->pos * roomNode->m_worldTransform.scale;
+	void VRSystem::getTrackerNiTransformByName(const std::string& trackerName, NiTransform* transform) {
+		auto it = viveTrackers.find(trackerName);
+		if (it != viveTrackers.end()) {
+			vr::TrackedDevicePose_t pose = renderPoses[it->second];
+			HmdMatrixToNiTransform(transform, &pose);
+			applyRoomTransform(transform);
 		}
-
 	}
 
 	void VRSystem::getTrackerNiTransformByIndex(vr::TrackedDeviceIndex_t idx, NiTransform* transform) {
-		vr::TrackedDevicePose_t pose = renderPoses[idx];
-		HmdMatrixToNiTransform(transform, &pose);
-
-		if (vrDataStruct != nullptr && roomNode != nullptr) {
-			NiMatrix43* worldSpaceMat = (NiMatrix43*)((char*)(*vrDataStruct) + 0x210);
-			NiPoint3* worldSpaceVec = (NiPoint3*)((char*)(*vrDataStruct) + 0x158);
-			transform->pos = transform->pos - *worldSpaceVec;
-			transform->pos = *worldSpaceMat * transform->pos;
-			//		transform->pos = roomNode->m_worldTransform.rot * transform->pos * roomNode->m_worldTransform.scale;
+		if (idx < vr::k_unMaxTrackedDeviceCount) {
+			vr::TrackedDevicePose_t pose = renderPoses[idx];
+			HmdMatrixToNiTransform(transform, &pose);
+			applyRoomTransform(transform);
 		}
 	}
 
-	void VRSystem::getControllerNiTransformByName(std::string trackerName, NiTransform* transform) {
-		vr::TrackedDevicePose_t pose = renderPoses[controllers[trackerName]];
-		HmdMatrixToNiTransform(transform, &pose);
+	void VRSystem::getControllerNiTransformByName(const std::string& trackerName, NiTransform* transform) {
+		auto it = controllers.find(trackerName);
+		if (it != controllers.end()) {
+			vr::TrackedDevicePose_t pose = renderPoses[it->second];
+			HmdMatrixToNiTransform(transform, &pose);
+			applyRoomTransform(transform);
+		}
+	}
 
-		if (vrDataStruct != nullptr && roomNode != nullptr) {
-			NiMatrix43* worldSpaceMat = (NiMatrix43*)((char*)(*vrDataStruct) + 0x210);
-			NiPoint3* worldSpaceVec = (NiPoint3*)((char*)(*vrDataStruct) + 0x158);
-			transform->pos = transform->pos - *worldSpaceVec;
+	void VRSystem::applyRoomTransform(NiTransform* transform) {
+		if (vrDataStruct && roomNode) {
+			NiMatrix43* worldSpaceMat = reinterpret_cast<NiMatrix43*>(reinterpret_cast<char*>(*vrDataStruct) + 0x210);
+			NiPoint3* worldSpaceVec = reinterpret_cast<NiPoint3*>(reinterpret_cast<char*>(*vrDataStruct) + 0x158);
+			transform->pos -= *worldSpaceVec;
 			transform->pos = *worldSpaceMat * transform->pos;
 		}
+	}
+
+	void VRSystem::initializeDevices() {
+		for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; ++i) {
+			auto dc = vrHook->GetVRSystem()->GetTrackedDeviceClass(i);
+			std::string prop = getProperty(vr::ETrackedDeviceProperty::Prop_ModelNumber_String, i);
+			if (dc == vr::ETrackedDeviceClass::TrackedDeviceClass_GenericTracker) {
+				viveTrackers[prop] = i;
+			} else if (dc == vr::ETrackedDeviceClass::TrackedDeviceClass_Controller) {
+				if (prop.find("Right") != std::string::npos) {
+					controllers["Right"] = i;
+				} else if (prop.find("Left") != std::string::npos) {
+					controllers["Left"] = i;
+				}
+			} else if (dc == vr::ETrackedDeviceClass::TrackedDeviceClass_HMD) {
+				controllers["HMD"] = i;
+			}
+		}
+	}
+
+	std::string VRSystem::getProperty(vr::ETrackedDeviceProperty property, vr::TrackedDeviceIndex_t idx) const {
+		const uint32_t bufSize = vr::k_unMaxPropertyStringSize;
+		std::unique_ptr<char[]> pchValue = std::make_unique<char[]>(bufSize);
+		vr::TrackedPropertyError pError = vr::TrackedPropertyError::TrackedProp_NotYetAvailable;
+
+		vrHook->GetVRSystem()->GetStringTrackedDeviceProperty(idx, property, pchValue.get(), bufSize, &pError);
+		return std::string(pchValue.get());
 	}
 
 	void VRSystem::debugPrint() {
-		vr::VRCompositorError error = vrHook->GetVRCompositor()->GetLastPoses((vr::TrackedDevicePose_t*)renderPoses, vr::k_unMaxTrackedDeviceCount, (vr::TrackedDevicePose_t*)gamePoses, vr::k_unMaxTrackedDeviceCount);
-		if (error && error != vr::EVRCompositorError::VRCompositorError_None)
-			_MESSAGE("Error while retriving game poses!");
+		vr::VRCompositorError error = vrHook->GetVRCompositor()->GetLastPoses(renderPoses, vr::k_unMaxTrackedDeviceCount, gamePoses, vr::k_unMaxTrackedDeviceCount);
+		if (error != vr::EVRCompositorError::VRCompositorError_None) {
+			_MESSAGE("Error while retrieving game poses!");
+		}
 
-		for (auto i : viveTrackers) {
-			vr::TrackedDevicePose_t renderMat = renderPoses[i.second];
-			vr::TrackedDevicePose_t gameMat = gamePoses[i.second];
+		for (const auto& tracker : viveTrackers) {
+			vr::TrackedDevicePose_t renderMat = renderPoses[tracker.second];
+			vr::TrackedDevicePose_t gameMat = gamePoses[tracker.second];
 
 			NiTransform renderTran;
-			NiTransform gameTran;
 			HmdMatrixToNiTransform(&renderTran, &renderMat);
 
-			_MESSAGE("%d : %s --> render = %f %f %f |||| game = %f %f %f", i.second, i.first.c_str(), renderTran.pos.x,
-				renderTran.pos.y,
-				renderTran.pos.z,
-				gameMat.mDeviceToAbsoluteTracking.m[0][3],
-				gameMat.mDeviceToAbsoluteTracking.m[1][3],
-				gameMat.mDeviceToAbsoluteTracking.m[2][3]
-			);
+			_MESSAGE("%d : %s --> render = %f %f %f |||| game = %f %f %f", tracker.second, tracker.first.c_str(),
+				renderTran.pos.x, renderTran.pos.y, renderTran.pos.z,
+				gameMat.mDeviceToAbsoluteTracking.m[0][3], gameMat.mDeviceToAbsoluteTracking.m[1][3], gameMat.mDeviceToAbsoluteTracking.m[2][3]);
 		}
 	}
 
