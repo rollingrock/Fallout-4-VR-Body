@@ -119,10 +119,13 @@ namespace F4VRBody {
 	bool c_enableGripButtonToLetGo = true;
 	bool c_onePressGripButton = false;
 	bool c_dampenHands = true;
+	bool c_dampenPipboyScreen = true;
 	bool c_PACurrentState = false;
 	bool c_PALastState = false;
 	float c_dampenHandsRotation = 0.7;
 	float c_dampenHandsTranslation = 0.7;
+	float c_dampenPipboyRotation = 0.7;
+	float c_dampenPipboyTranslation = 0.7;
 	int c_UISelfieButton = 2;
 	float c_pipBoyScale = 1.0;
 	float c_armLengthbkup;
@@ -222,8 +225,11 @@ namespace F4VRBody {
 		c_enableGripButtonToLetGo = ini.GetBoolValue("Fallout4VRBody", "EnableGripButtonToLetGo", true);
 		c_onePressGripButton = ini.GetBoolValue("Fallout4VRBody", "EnableGripButtonOnePress", true);
 		c_dampenHands = ini.GetBoolValue("Fallout4VRBody", "DampenHands", true);
+		c_dampenPipboyScreen = ini.GetBoolValue("Fallout4VRBody", "DampenPipboyScreen", true);
 		c_dampenHandsRotation = ini.GetDoubleValue("Fallout4VRBody", "DampenHandsRotation", 0.7);
 		c_dampenHandsTranslation = ini.GetDoubleValue("Fallout4VRBody", "DampenHandsTranslation", 0.7);
+		c_dampenPipboyRotation = ini.GetDoubleValue("Fallout4VRBody", "DampenPipboyRotation", 0.7);
+		c_dampenPipboyTranslation = ini.GetDoubleValue("Fallout4VRBody", "DampenPipboyTranslation", 0.7);
 		c_DirectionalDeadzone = ini.GetDoubleValue("Fallout4VRBody", "fDirectionalDeadzone", 0.5);
 		c_PlayerHMDHeight = ini.GetDoubleValue("Fallout4VRBody", "fHMDHeight", 109.0);
 		c_shouldertoHMD = ini.GetDoubleValue("Fallout4VRBody", "fShouldertoHMD", 109.0);
@@ -1025,6 +1031,7 @@ namespace F4VRBody {
 		playerSkelly->pipboyConfigurationMode();
 		playerSkelly->mainConfigurationMode();
 		playerSkelly->pipboyManagement();
+		playerSkelly->dampenPipboyScreen();
 		//Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
 		if (!detectInPowerArmor()) {
 			NiNode* _HideNode = nullptr;
