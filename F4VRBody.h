@@ -55,6 +55,7 @@ namespace F4VRBody {
 	extern float c_gripLetGoThreshold;
 	extern bool c_isLookingThroughScope;
 	extern bool c_pipBoyButtonMode;
+	extern bool c_pipBoyOpenWhenLookAt;
 	extern bool c_pipBoyAllowMovementNotLooking;
 	extern int c_pipBoyButtonArm;
 	extern int c_pipBoyButtonID;
@@ -63,6 +64,7 @@ namespace F4VRBody {
 	extern int c_gripButtonID;
 	extern int c_holdDelay;
 	extern int c_pipBoyOffDelay;
+	extern int c_pipBoyOnDelay;
 	extern bool c_repositionMasterMode;
 	extern int c_repositionButtonID;
 	extern int c_offHandActivateButtonID;
@@ -74,6 +76,9 @@ namespace F4VRBody {
 	extern bool c_dampenHands;
 	extern float c_dampenHandsRotation;
 	extern float c_dampenHandsTranslation;
+	extern bool c_dampenHandsInVanillaScope;
+	extern float c_dampenHandsRotationInVanillaScope;
+	extern float c_dampenHandsTranslationInVanillaScope;
 	extern bool c_dampenPipboyScreen;
 	extern float c_dampenPipboyRotation;
 	extern float c_dampenPipboyTranslation;

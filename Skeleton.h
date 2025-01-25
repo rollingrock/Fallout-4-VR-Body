@@ -408,6 +408,7 @@ namespace F4VRBody
 		std::string _lastWeapon = "";
 		Quaternion _aimAdjust;
 		uint64_t _lastLookingAtPip = 0;
+		uint64_t _startedLookingAtPip = 0;
 
 		NiMatrix43 _originalWeaponRot;
 		NiPoint3 _offhandPos {0, 0, 0};
