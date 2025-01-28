@@ -44,7 +44,8 @@ namespace F4VRBody {
 	void SetINIBool(BSFixedString name, bool value);
 	void SetINIFloat(BSFixedString name, float value);
 	//void SetINIInt(BSFixedString name, int value);
-
+	void ConfigureGameVars();
+	void WindowFocus();
 	void TurnPlayerRadioOn(bool isActive);
 	void SimulateExtendedButtonPress(WORD vkey);
 	void RightStickXSleep(int time);

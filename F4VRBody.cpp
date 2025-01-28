@@ -73,6 +73,7 @@ namespace F4VRBody {
 	bool  c_leftHandedMode = false;
 	bool  c_disableSmoothMovement = false;
 	bool  c_jumping = false;
+	bool  GameVarsConfigured = false;
 	float c_powerArmor_forward = 0.0f;
 	float c_powerArmor_up = 0.0f;
 	float c_RootOffset = 0.0f;
@@ -112,6 +113,7 @@ namespace F4VRBody {
 	int c_SwitchTorchButton = 2; // button to switch torch from head to hand
 	float c_DirectionalDeadzone = 0.5; // Default value of fDirectionalDeadzone, used when turning off Pipboy to restore directionial control to the player.
 	bool c_switchUIControltoPrimary = true; // if the player wants to switch controls or not.
+	bool c_autoFocusWindow = false;
 	bool _controlSleepStickyX = false;
 	bool _controlSleepStickyY = false;
 	bool _controlSleepStickyT = false;
@@ -325,6 +327,7 @@ namespace F4VRBody {
 		c_pipBoyScale = (float)ini.GetDoubleValue("Fallout4VRBody", "PipboyScale", 1.0);
 		c_UISelfieButton = (int)ini.GetLongValue("ConfigModeUIButtons", "ToggleSelfieModeButton", 2);
 		c_switchUIControltoPrimary = (bool)ini.GetBoolValue("Fallout4VRBody", "PipboyUIPrimaryController", true);
+		c_autoFocusWindow = (bool)ini.GetBoolValue("Fallout4VRBody", "AutoFocusWindow", false);
 		 
 
 
@@ -1012,8 +1015,13 @@ namespace F4VRBody {
 
 		if (c_verbose) { _MESSAGE("Start of Frame"); }
 
-		c_leftHandedMode = *Offsets::iniLeftHandedMode;
+		if (!GameVarsConfigured) {
+			ConfigureGameVars();
+			GameVarsConfigured = true;
+		}
 
+		c_leftHandedMode = *Offsets::iniLeftHandedMode;
+		
 		if (!meshesReplaced) {
 			if (c_IsHoloPipboy == 0) {
 				replaceMeshes(playerSkelly->getPlayerNodes(), "HoloEmitter", "Screen");
@@ -1269,7 +1277,6 @@ namespace F4VRBody {
 		isLoaded = true;
 		nextBoneSphereHandle = 1;
 		curDevice = 0;
-
 		scopeMenuEvent.Register();
 		return;
 	}

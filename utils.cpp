@@ -179,6 +179,32 @@ namespace F4VRBody {
 		CallGlobalFunctionNoWait1<bool>("Game", "TurnPlayerRadioOn", isActive);
 	}
 
+	void ConfigureGameVars() {
+		SetINIFloat("fPipboyMaxScale:VRPipboy", 3.0000);
+		SetINIFloat("fPipboyMinScale:VRPipboy", 0.0100);
+		SetINIFloat("fVrPowerArmorScaleMultiplier:VR", 1.0000);
+	}
+
+	void WindowFocus() {
+		HWND hwnd = ::FindWindowEx(0, 0, "Fallout4VR", 0);
+		if (!hwnd) {
+			ShowMessagebox("Window Not Found");
+			return;
+		}
+		HWND foreground = GetForegroundWindow();
+		if (foreground != hwnd) {
+			{
+				//PostMessage(hwnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+				//PostMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
+				SendMessage(foreground, WM_SYSCOMMAND, SC_MINIMIZE, 0); // restore the minimize window
+				SendMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0); // restore the minimize window
+				SetForegroundWindow(hwnd);
+				SetActiveWindow(hwnd);
+				SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+			}
+		}
+	}
+
 	void SimulateExtendedButtonPress(WORD vkey)
 	{
 		HWND hwnd = ::FindWindowEx(0, 0, "Fallout4VR", 0);
@@ -245,6 +271,11 @@ namespace F4VRBody {
 
 		set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
 		set->SetDouble(0.0);
+
+		if (c_autoFocusWindow && c_switchUIControltoPrimary) {
+			WindowFocus();
+		}
+		
 	}
 
 	void turnPipBoyOff() {

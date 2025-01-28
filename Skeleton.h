@@ -329,6 +329,8 @@ namespace F4VRBody
 		bool _isWeaponButtonPressed = false;
 		bool _isGripButtonPressed = false;
 		bool _isPBConfigModeActive = false;
+		bool _isGlanceButtonPressed = false;
+		bool _isDampenScreenButtonPressed = false;
 		int _PBConfigModeEnterCounter = 0;
 		bool stickyPBlight = false;
 		bool stickyPBRadio = false;
@@ -341,7 +343,9 @@ namespace F4VRBody
 		UInt32 LastPipboyPage = 0;
 		float lastRadioFreq = 0.0;
 		bool c_IsOperatingPipboy = false;
-		bool _PBTouchbuttons[10] = { false, false, false, false, false, false, false, false, false, false };
+		bool isWeaponinHand = false;
+		bool weaponStateDetected = false;
+		bool _PBTouchbuttons[12] = { false, false, false, false, false, false, false, false, false, false, false, false };
 		bool _MCTouchbuttons[10] = { false, false, false, false, false, false, false, false, false, false };
 		bool c_CalibrationModeUIActive = false;
 		// End
