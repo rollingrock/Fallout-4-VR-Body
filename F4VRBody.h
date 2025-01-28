@@ -91,6 +91,7 @@ namespace F4VRBody {
 	extern bool _controlSleepStickyY;
 	extern bool _controlSleepStickyT;
 	extern bool c_switchUIControltoPrimary;
+	extern bool c_autoFocusWindow;
 	extern float c_armLengthbkup;
 	extern float c_powerArmor_upbkup;
 	extern float c_playerOffset_upbkup;

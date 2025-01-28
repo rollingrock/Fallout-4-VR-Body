@@ -1600,7 +1600,10 @@ namespace F4VRBody
 				_pipboyStatus = false;
 				turnPipBoyOff();
 				exitPBConfig();
-				drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+				if (isWeaponinHand) {
+					drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					weaponStateDetected = false;
+				}
 				disablePipboyHandPose();
 				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				_MESSAGE("Disabling Pipboy with button");
@@ -1626,9 +1629,14 @@ namespace F4VRBody
 		else if (!pipOnButtonPressed) {
 			if (_controlSleepStickyT && _stickybpip) {  // if bool is still set to true on control release we know it was a short press.
 				_pipboyStatus = true;
-				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;				
+				if (!weaponStateDetected) {
+					isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
+					if (isWeaponinHand) {
+						holsterWeapon(); // holster weapon so we can use primary trigger as an input.
+					}
+				}
 				turnPipBoyOn();
-				holsterWeapon(); // holster weapon so we can use primary trigger as an input.
 				setPipboyHandPose();
 				c_IsOperatingPipboy = true;
 				_MESSAGE("Enabling Pipboy with button");
@@ -1648,7 +1656,10 @@ namespace F4VRBody
 				_pipboyStatus = false;
 				turnPipBoyOff();
 				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
-				drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+				if (isWeaponinHand) {
+					drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					weaponStateDetected = false;
+				}
 				disablePipboyHandPose();
 				c_IsOperatingPipboy = false;
 		//		_MESSAGE("Disabling PipBoy due to inactivity for %d more than %d ms", timeElapsed, c_pipBoyOffDelay);
@@ -1657,7 +1668,10 @@ namespace F4VRBody
 				turnPipBoyOff();
 				_pipboyStatus = false;
 				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
-				drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+				if (isWeaponinHand) {
+					drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					weaponStateDetected = false;
+				}
 				disablePipboyHandPose();
 				c_IsOperatingPipboy = false;
 		//		_MESSAGE("Disabling PipBoy due to movement when not looking at pipboy. input: (%f, %f)", axis_state.x, axis_state.y);
@@ -1677,8 +1691,13 @@ namespace F4VRBody
 				if (timeElapsed > c_pipBoyOnDelay) {
 					_pipboyStatus = true;
 					_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+					if (!weaponStateDetected) {
+						isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
+						if (isWeaponinHand) {
+							holsterWeapon(); // holster weapon so we can use primary trigger as an input.
+						}
+					}
 					turnPipBoyOn();
-					holsterWeapon(); // holster weapon so we can use primary trigger as an input.
 					setPipboyHandPose();
 					c_IsOperatingPipboy = true;
 					_startedLookingAtPip = 0;
@@ -1886,13 +1905,20 @@ namespace F4VRBody
 				distance = vec3_len(finger - pipboy->m_worldTransform.pos);
 				if ((distance < c_pipboyDetectionRange) && !c_IsOperatingPipboy && !_pipboyStatus) { // Hides Weapon and poses hand for pointing
 					c_IsOperatingPipboy = true;
-					holsterWeapon();
+					isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
+					if (isWeaponinHand) {
+						weaponStateDetected = true;
+						holsterWeapon();
+					}
 					setPipboyHandPose();
 				}
 				if ((distance > c_pipboyDetectionRange) && c_IsOperatingPipboy && !_pipboyStatus) { // Restores Weapon and releases hand pose
 					c_IsOperatingPipboy = false;					
 					disablePipboyHandPose();
-					drawWeapon();
+					if (isWeaponinHand) {
+						weaponStateDetected = false;
+					    drawWeapon();
+					}
 				}
 			}
 			else if (!isLookingAtPipBoy() && c_IsOperatingPipboy && !_pipboyStatus) { // Catches if you're not looking at the pipboy when your hand moves outside of the control area and restores weapon / releases hand pose							
@@ -1905,7 +1931,10 @@ namespace F4VRBody
 						}
 					}
 				}
-				drawWeapon();
+				if (isWeaponinHand) {
+					weaponStateDetected = false;
+					drawWeapon();
+				}
 				c_IsOperatingPipboy = false;
 			}
 			if (LastPipboyPage == 4) {  // fixes broken 'Mode Knob' position when radio tab is selected
@@ -2299,7 +2328,7 @@ namespace F4VRBody
 
 	void Skeleton::exitPBConfig() {  // Exit Pipboy Config Mode / remove UI.
 		if (_isPBConfigModeActive) {
-			for (int i = 0; i <= 9; i++) {
+			for (int i = 0; i <= 11; i++) {
 				_PBTouchbuttons[i] = false;
 			}
 			static BSFixedString hudname("PBCONFIGHUD");
@@ -2649,8 +2678,10 @@ namespace F4VRBody
 			bool MoveYButtonPressed = _PBTouchbuttons[7];
 			bool MoveZButtonPressed = _PBTouchbuttons[8];
 			bool ExitButtonPressed = _PBTouchbuttons[9];
-			char* meshName[10] = { "PB-MainTitleTrans", "PB-Tile07Trans", "PB-Tile03Trans", "PB-Tile08Trans", "PB-Tile02Trans", "PB-Tile01Trans", "PB-Tile04Trans", "PB-Tile05Trans", "PB-Tile06Trans", "PB-Tile09Trans" };
-			char* meshName2[10] = { "PB-MainTitle", "PB-Tile07", "PB-Tile03", "PB-Tile08", "PB-Tile02", "PB-Tile01", "PB-Tile04", "PB-Tile05", "PB-Tile06", "PB-Tile09" };
+			bool GlanceButtonPressed = _PBTouchbuttons[10];
+			bool DampenScreenButtonPressed = _PBTouchbuttons[11];
+			char* meshName[12] = { "PB-MainTitleTrans", "PB-Tile07Trans", "PB-Tile03Trans", "PB-Tile08Trans", "PB-Tile02Trans", "PB-Tile01Trans", "PB-Tile04Trans", "PB-Tile05Trans", "PB-Tile06Trans", "PB-Tile09Trans", "PB-Tile10Trans", "PB-Tile11Trans" };
+			char* meshName2[12] = { "PB-MainTitle", "PB-Tile07", "PB-Tile03", "PB-Tile08", "PB-Tile02", "PB-Tile01", "PB-Tile04", "PB-Tile05", "PB-Tile06", "PB-Tile09", "PB-Tile10", "PB-Tile11" };
 			static BSFixedString wandPipName("PipboyRoot");
 			NiAVObject* pbRoot = _playerNodes->SecondaryWandNode->GetObjectByName(&wandPipName);
 			if (!pbRoot) {
@@ -2687,9 +2718,9 @@ namespace F4VRBody
 					HUD->m_name = BSFixedString("PBCONFIGHUD");
 					NiNode* UIATTACH = getNode("world_primaryWand.nif", _playerNodes->primaryUIAttachNode);
 					UIATTACH->AttachChild((NiAVObject*)HUD, true);
-					char* MainHud[10] = { "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif", "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile09.nif" };
-					char* MainHud2[10] = { "Data/Meshes/FRIK/PB-MainTitle.nif", "Data/Meshes/FRIK/PB-Tile07.nif", "Data/Meshes/FRIK/PB-Tile03.nif", "Data/Meshes/FRIK/PB-Tile08.nif", "Data/Meshes/FRIK/PB-Tile02.nif", "Data/Meshes/FRIK/PB-Tile01.nif", "Data/Meshes/FRIK/PB-Tile04.nif", "Data/Meshes/FRIK/PB-Tile05.nif", "Data/Meshes/FRIK/PB-Tile06.nif", "Data/Meshes/FRIK/PB-Tile09.nif" };
-					for (int i = 0; i <= 9; i++) {
+					char* MainHud[12] = { "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif", "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile09.nif" , "Data/Meshes/FRIK/UI-Tile10.nif", "Data/Meshes/FRIK/UI-Tile11.nif" };
+					char* MainHud2[12] = { "Data/Meshes/FRIK/PB-MainTitle.nif", "Data/Meshes/FRIK/PB-Tile07.nif", "Data/Meshes/FRIK/PB-Tile03.nif", "Data/Meshes/FRIK/PB-Tile08.nif", "Data/Meshes/FRIK/PB-Tile02.nif", "Data/Meshes/FRIK/PB-Tile01.nif", "Data/Meshes/FRIK/PB-Tile04.nif", "Data/Meshes/FRIK/PB-Tile05.nif", "Data/Meshes/FRIK/PB-Tile06.nif", "Data/Meshes/FRIK/PB-Tile09.nif", "Data/Meshes/FRIK/PB-Tile10.nif" , "Data/Meshes/FRIK/PB-Tile11.nif" };
+					for (int i = 0; i <= 11; i++) {
 						NiNode* retNode = loadNifFromFile(MainHud[i]);
 						NiCloneProcess proc;
 						proc.unk18 = Offsets::cloneAddr1;
@@ -2701,6 +2732,18 @@ namespace F4VRBody
 						NiNode* UI2 = Offsets::cloneNode(retNode, &proc);
 						UI2->m_name = BSFixedString(meshName[i]);
 						UI->AttachChild((NiAVObject*)UI2, true);
+						if (i == 10 && c_pipBoyOpenWhenLookAt) {
+							retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+							NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
+							UI3->m_name = BSFixedString("PBGlanceMarker");
+							UI->AttachChild((NiAVObject*)UI3, true);
+						}
+						if (i == 11 && c_dampenPipboyScreen) {
+							retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+							NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
+							UI3->m_name = BSFixedString("PBDampenMarker");
+							UI->AttachChild((NiAVObject*)UI3, true);
+						}
 					}
 					setConfigModeHandPose();
 					_isPBConfigModeActive = true;
@@ -2714,7 +2757,7 @@ namespace F4VRBody
 				BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_root;
 				NiPoint3 finger;
 				c_leftHandedMode ? finger = rt->transforms[boneTreeMap["RArm_Finger23"]].world.pos : finger = rt->transforms[boneTreeMap["LArm_Finger23"]].world.pos;
-				for (int i = 1; i <= 9; i++) {
+				for (int i = 1; i <= 11; i++) {
 					BSFixedString TouchName = meshName2[i];
 					BSFixedString TransName = meshName[i];
 					NiNode* TouchMesh = (NiNode*)_playerNodes->primaryUIAttachNode->GetObjectByName(&TouchName);
@@ -2723,7 +2766,7 @@ namespace F4VRBody
 						float distance = vec3_len(finger - TouchMesh->m_worldTransform.pos);
 						if (distance > 2.0) {
 							TransMesh->m_localTransform.pos.y = 0.0;
-							if (i == 1 || i == 3) {
+							if (i == 1 || i == 3 || i == 10 || i == 11) {
 								_PBTouchbuttons[i] = false;
 							}
 						}
@@ -2736,7 +2779,7 @@ namespace F4VRBody
 								if (vrhook != nullptr) {
 									//_PBConfigSticky = true;
 									c_leftHandedMode ? vrhook->StartHaptics(2, 0.05, 0.3) : vrhook->StartHaptics(1, 0.05, 0.3);
-									for (int i = 1; i <= 9; i++) {
+									for (int i = 1; i <= 11; i++) {
 										if ((i != 1) && (i != 3))
 										_PBTouchbuttons[i] = false;
 									}
@@ -2745,7 +2788,7 @@ namespace F4VRBody
 									if (UIMarker) {
 										UIMarker->m_parent->RemoveChild(UIMarker);
 									}
-									if ((i != 1) && (i != 3)) {
+									if ((i != 1) && (i != 3) && (i != 10) && (i != 11)) {
 										NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 										NiCloneProcess proc;
 										proc.unk18 = Offsets::cloneAddr1;
@@ -2753,6 +2796,52 @@ namespace F4VRBody
 										NiNode* UI = Offsets::cloneNode(retNode, &proc);
 										UI->m_name = BSFixedString("PBCONFIGMarker");
 										TouchMesh->AttachChild((NiAVObject*)UI, true);
+									}
+									if (i == 10 || i == 11) {
+										if (i == 10) {
+											if (!c_pipBoyOpenWhenLookAt) {
+												BSFixedString bname = "PBGlanceMarker";
+												NiNode* UIMarker = (NiNode*)_playerNodes->primaryUIAttachNode->GetObjectByName(&bname);
+												if (!UIMarker) {
+													NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+													NiCloneProcess proc;
+													proc.unk18 = Offsets::cloneAddr1;
+													proc.unk48 = Offsets::cloneAddr2;
+													NiNode* UI = Offsets::cloneNode(retNode, &proc);
+													UI->m_name = BSFixedString("PBGlanceMarker");
+													TouchMesh->AttachChild((NiAVObject*)UI, true);
+												}
+											}
+											else if(c_pipBoyOpenWhenLookAt) {
+												BSFixedString bname = "PBGlanceMarker";
+												NiNode* UIMarker = (NiNode*)_playerNodes->primaryUIAttachNode->GetObjectByName(&bname);
+												if (UIMarker) {
+													UIMarker->m_parent->RemoveChild(UIMarker);
+												}
+											}
+										}
+										if (i == 11) {
+											if (!c_dampenPipboyScreen) {
+												BSFixedString bname = "PBDampenMarker";
+												NiNode* UIMarker = (NiNode*)_playerNodes->primaryUIAttachNode->GetObjectByName(&bname);
+												if (!UIMarker) {
+													NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+													NiCloneProcess proc;
+													proc.unk18 = Offsets::cloneAddr1;
+													proc.unk48 = Offsets::cloneAddr2;
+													NiNode* UI = Offsets::cloneNode(retNode, &proc);
+													UI->m_name = BSFixedString("PBDampenMarker");
+													TouchMesh->AttachChild((NiAVObject*)UI, true);
+												}
+											}
+											else if (c_dampenPipboyScreen) {
+												BSFixedString bname = "PBDampenMarker";
+												NiNode* UIMarker = (NiNode*)_playerNodes->primaryUIAttachNode->GetObjectByName(&bname);
+												if (UIMarker) {
+													UIMarker->m_parent->RemoveChild(UIMarker);
+												}
+											}
+										}
 									}
 									_PBTouchbuttons[i] = true;
 								}
@@ -2767,6 +2856,28 @@ namespace F4VRBody
 				}
 				else if (!SaveButtonPressed) {
 					_isSaveButtonPressed = false;
+				}
+				if (GlanceButtonPressed && !_isGlanceButtonPressed) {
+					_isGlanceButtonPressed = true;
+					c_pipBoyOpenWhenLookAt ? c_pipBoyOpenWhenLookAt = false : c_pipBoyOpenWhenLookAt = true;
+					CSimpleIniA ini;
+					SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
+					rc = ini.SetBoolValue("Fallout4VRBody", "PipBoyOpenWhenLookAt", c_pipBoyOpenWhenLookAt);
+					rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
+				}
+				else if (!GlanceButtonPressed) {
+					_isGlanceButtonPressed = false;
+				}
+				if (DampenScreenButtonPressed && !_isDampenScreenButtonPressed) {
+					_isDampenScreenButtonPressed = true;
+					c_dampenPipboyScreen ? c_dampenPipboyScreen = false : c_dampenPipboyScreen = true;
+					CSimpleIniA ini;
+					SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
+					rc = ini.SetBoolValue("Fallout4VRBody", "DampenPipboyScreen", c_dampenPipboyScreen);
+					rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
+				}
+				else if (!DampenScreenButtonPressed) {
+					_isDampenScreenButtonPressed = false;
 				}
 				if (ExitButtonPressed) {
 					exitPBConfig();
