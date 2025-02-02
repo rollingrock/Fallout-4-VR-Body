@@ -58,6 +58,8 @@ namespace F4VRBody {
 	void turnPipBoyOn();
 	void turnPipBoyOff();
 
+	bool isCameraLookingAtObject(NiAVObject* cameraNode, NiAVObject* objectNode, float detectThresh);
+
 	bool getLeftHandedMode();
 
 	NiNode* getChildNode(const char* nodeName, NiNode* nde);
