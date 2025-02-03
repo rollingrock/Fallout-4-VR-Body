@@ -1532,14 +1532,18 @@ namespace F4VRBody
 
 		BSFixedString screenName("Screen:0");
 		NiAVObject* screen = pipboy->GetObjectByName(&screenName);
+		if (screen == nullptr) {
+			return false;
+		}
 
-		NiPoint3 pipBoyOut = screen->m_worldTransform.rot * NiPoint3(0, -1, 0);
-		NiPoint3 lookDir = (*g_playerCamera)->cameraNode->m_worldTransform.rot * NiPoint3(0, 1, 0);
+		return  isCameraLookingAtObject((*g_playerCamera)->cameraNode, screen, c_pipBoyLookAtGate);
 
-		float dot = vec3_dot(vec3_norm(pipBoyOut), vec3_norm(lookDir));
+		//NiPoint3 pipBoyOut = screen->m_worldTransform.rot * NiPoint3(0, -1, 0);
+		//NiPoint3 lookDir = (*g_playerCamera)->cameraNode->m_worldTransform.rot * NiPoint3(0, 1, 0);
 
-		return dot < -(c_pipBoyLookAtGate);
+		//float dot = vec3_dot(vec3_norm(pipBoyOut), vec3_norm(lookDir));
 
+		//return dot < -(c_pipBoyLookAtGate);
 	}
 
     void Skeleton::hidePipboy() {
@@ -3534,12 +3538,15 @@ namespace F4VRBody
             Matrix44 rot;
             if (bone.find("Finger11") != std::string::npos) {
                 rot.setEulerAngles(sign * 0.5, sign * 0.4, -0.3);
+				NiMatrix43 wr = handOpen[bone].rot;
+				wr = rot.multiply43Left(wr);
+				qt.fromRot(wr);
             } else if (bone.find("Finger13") != std::string::npos) {
                 rot.setEulerAngles(0, 0, degrees_to_rads(-35.0));
+				NiMatrix43 wr = handOpen[bone].rot;
+				wr = rot.multiply43Left(wr);
+				qt.fromRot(wr);
             }
-            NiMatrix43 wr = handOpen[bone].rot;
-            wr = rot.multiply43Left(wr);
-            qt.fromRot(wr);
         }
         else if (_closedHand[bone]) {
             qt.fromRot(handClosed[bone].rot);
@@ -4130,6 +4137,10 @@ namespace F4VRBody
 
 	void Skeleton::dampenPipboyScreen() {
 		if (!c_dampenPipboyScreen) {
+			return;
+		}
+		else if (!_pipboyStatus) {
+			_pipboyScreenPrevFrame = _playerNodes->ScreenNode->m_worldTransform;
 			return;
 		}
 		NiNode* pipboyScreen = _playerNodes->ScreenNode;

@@ -302,6 +302,32 @@ namespace F4VRBody {
 
 	}
 
+	// Function to check if the camera is looking at the object and the object is facing the camera
+	bool isCameraLookingAtObject(NiAVObject* cameraNode, NiAVObject* objectNode, float detectThresh) {
+		// Get the position of the camera and the object
+		NiPoint3 cameraPos = cameraNode->m_worldTransform.pos;
+		NiPoint3 objectPos = objectNode->m_worldTransform.pos;
+
+		// Calculate the direction vector from the camera to the object
+		NiPoint3 direction = vec3_norm(NiPoint3(objectPos.x - cameraPos.x, objectPos.y - cameraPos.y, objectPos.z - cameraPos.z));
+
+		// Get the forward vector of the camera (assuming it's the y-axis)
+		NiPoint3 cameraForward = vec3_norm(cameraNode->m_worldTransform.rot * NiPoint3(0, 1, 0));
+
+		// Get the forward vector of the object (assuming it's the y-axis)
+		NiPoint3 objectForward = vec3_norm(objectNode->m_worldTransform.rot * NiPoint3(0, 1, 0));
+
+		// Check if the camera is looking at the object
+		float cameraDot = vec3_dot(cameraForward, direction);
+		bool isCameraLooking = cameraDot > detectThresh; // Adjust the threshold as needed
+
+		// Check if the object is facing the camera
+		float objectDot = vec3_dot(objectForward, direction);
+		bool isObjectFacing = objectDot > detectThresh; // Adjust the threshold as needed
+
+		return isCameraLooking && isObjectFacing;
+	}
+
 	bool getLeftHandedMode() {
 		Setting* set = GetINISetting("bLeftHandedMode:VR");
 
