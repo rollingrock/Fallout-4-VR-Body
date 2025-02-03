@@ -1620,14 +1620,14 @@ namespace F4VRBody
 		then we know the button was a short press, if it is set to false we know it was a long press. Long press = torch on / off, Short Press = Pipboy enable.
 		*/
 
-		if (pipOnButtonPressed && !_stickybpip) {
+		if (pipOnButtonPressed && !_stickybpip && !c_IsOperatingPipboy) {
 			_stickybpip = true;
 			_controlSleepStickyT = true;
 			std::thread t5(SecondaryTriggerSleep, 300); // switches a bool to false after 150ms
 			t5.detach();
 		}
 		else if (!pipOnButtonPressed) {
-			if (_controlSleepStickyT && _stickybpip) {  // if bool is still set to true on control release we know it was a short press.
+			if (_controlSleepStickyT && _stickybpip && isLookingAtPipBoy()) {  // if bool is still set to true on control release we know it was a short press.
 				_pipboyStatus = true;
 				_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;				
 				if (!weaponStateDetected) {
