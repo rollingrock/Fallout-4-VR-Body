@@ -515,8 +515,6 @@ namespace F4VRBody
 		_MESSAGE("righthand node = %016I64X", _rightHand);
 		_MESSAGE("lefthand node = %016I64X", _leftHand);
 
-		_weaponEquipped = false;
-
 		// Setup Arms
 		const std::vector<std::pair<BSFixedString, NiAVObject**>> armNodes = {
 			{"RArm_Collarbone", &rightArm.shoulder},
@@ -1315,17 +1313,25 @@ namespace F4VRBody
 		return isLeft ? leftArm : rightArm;
 	}
 
+	/// <summary>
+	/// Fix melle weapon oriantation in hand to match how a human holds it.
+	/// </summary>
 	void Skeleton::fixMelee() {
 
-		_weaponEquipped = false;
+		if (!(*g_player)->actorState.IsWeaponDrawn()) {
+			// if no weapon is drawn, nothing to fix
+			return;
+		}
 
-		BGSInventoryList* inventory = (*g_player)->inventoryList;
+		if (!Offsets::CombatUtilities_IsActorUsingMelee(*g_player)) {
+			// no need to fix non-melee weapons
+			return;
+		}
 
+		auto* inventory = (*g_player)->inventoryList;
 		if (!inventory) {
 			return;
 		}
-		
-		bool isMelee = Offsets::CombatUtilities_IsActorUsingMelee(*g_player);
 
 		for (int i = 0; i < inventory->items.count; i++) {
 			BGSInventoryItem item;
@@ -1336,30 +1342,16 @@ namespace F4VRBody
 				continue;
 			}
 
-			if ((item.form->formType == FormType::kFormType_WEAP) && (item.stack->flags & 0x3))   {
-				// check if weapon is sheathed or not
-				if ((*g_player)->actorState.IsWeaponDrawn()) {
-					_weaponEquipped = true;
-				}
+			if ((item.form->formType == FormType::kFormType_WEAP) && (item.stack->flags & 0x3)) {
 
 				TESObjectWEAP* weap = static_cast<TESObjectWEAP*>(item.form);
+				NiAVObject* wNode = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
-				uint8_t type = weap->weapData.unk137; // unk137 is the weapon type that maps to WeaponType enum
-
-				if (isMelee) {
-
-					NiAVObject* wNode = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-
-					Matrix44 rot;
-					rot.setEulerAngles(degrees_to_rads(85.0f), degrees_to_rads(-70.0f), degrees_to_rads(0.0f));
-					wNode->m_localTransform.rot = rot.multiply43Right(wNode->m_localTransform.rot);
-
-					updateDown(wNode->GetAsNiNode(), true);
-
-					(*g_player)->Update(0.0f);
-					break;
-
-				}
+				Matrix44 rot;
+				rot.setEulerAngles(degrees_to_rads(85.0f), degrees_to_rads(-70.0f), degrees_to_rads(0.0f));
+				wNode->m_localTransform.rot = rot.multiply43Right(wNode->m_localTransform.rot);
+				updateDown(wNode->GetAsNiNode(), true);
+				break;
 			}
 		}
 	}
