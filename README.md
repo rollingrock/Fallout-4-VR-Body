@@ -4,20 +4,6 @@ Developing mod to add full body support with IK for Fallout 4 VR!
 
 Now released on Nexus!!! https://www.nexusmods.com/fallout4/mods/53464/
 
-## Locations
-
-#### Logs
-
-Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`
-
-- `Fallout4VRBody.log` for FRIK logs
-- ??? for crash logs
-
-#### Weapons Offset Overrides
-
-`<mod_list_folder>\overwrite\F4SE\Plugins\FRIK_weapon_offsets`  
-Where `<mod_list_folder>` can be `VR Essentials Overhaul` for example.
-
 ## Dev Setup
 
 Prerequisites:
@@ -33,9 +19,6 @@ Prerequisites:
    1. Git clone [`Fallout-4-VR-Body`](https://github.com/rollingrock/Fallout-4-VR-Body)
       - Should be `\root\Fallout-4-VR-Body\` for later
    2. Extract files in `\root\Fallout-4-VR-Body\f4se_updates_add_to_your_f4se_library\f4se_updates.zip` to `f4sevr\src\f4sevr\f4se` (overwrite)
-4. Fix later compilation (maybe the file should be added to the override above)
-   1. Open `f4sevr\src\f4sevr\f4se\NiNodes.h`
-   2. Change line 47 to `tArray<FlattenedGeometryData>	kGeomArray;					// 168` (remove `*`)
 
 ### Build `FRIK`:
 
@@ -75,6 +58,18 @@ Prerequisites:
    1. `\root\f4sevr\src\f4sevr\x64\Release\f4se_common.lib`
    2. `\root\f4sevr\src\f4sevr\x64\Release\f4sevr_1_2_72.lib`
    3. `\root\f4sevr\src\f4sevr\x64_vc11\Release\common_vc11.lib`
+
+## Tips
+
+- Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`
+
+  - `Fallout4VRBody.log` for FRIK logs
+  - `crash-<date time>.log` for crash logs
+
+- Weapons Offset Overrides are in `<mod_list_folder>\overwrite\F4SE\Plugins\FRIK_weapon_offsets`  
+  Where `<mod_list_folder>` can be `VR Essentials Overhaul` for example.
+
+- Don't keep more than one `.dll` file in the `...\F4SE\Plugins` folder. For example, if you're backing up `FRIK.dll`, avoid renaming it to `FRIK_org.dll` in the same folder. This is because `F4SEVR` loads all `.dll` files in the directory, which results in the plugin being loaded twice. It appears to load plugins in alphabetical order, so `FRIK_org.dll` will be loaded after `FRIK.dll`, potentially causing issues and making it unclear why your code isn't running.
 
 ## Credits
 
