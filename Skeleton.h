@@ -390,7 +390,6 @@ namespace F4VRBody
 		std::map<std::string, bool, CaseInsensitiveComparator> _closedHand;
 		std::map<std::string, vr::EVRButtonId, CaseInsensitiveComparator> _handBonesButton;
 
-		bool _weaponEquipped;
 		NiTransform _weapSave;
 		NiTransform _customTransform;
 		bool _useCustomWeaponOffset = false;
