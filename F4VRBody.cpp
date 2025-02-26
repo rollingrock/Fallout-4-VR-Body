@@ -1,5 +1,6 @@
 #include "F4VRBody.h"
 #include "Skeleton.h"
+#include "Pipboy.h"
 #include "HandPose.h"
 #include "weaponOffset.h"
 #include "utils.h"
@@ -157,8 +158,6 @@ namespace F4VRBody {
 	float c_shouldertoHMD = 0.0;
 
 	float c_scopeAdjustDistance = 15.0f;
-
-	bool meshesReplaced = false;
 
 	float headDefaultHeight = 125.0;
 
@@ -705,73 +704,6 @@ namespace F4VRBody {
 		}
 	}
 
-	void replaceMeshes(PlayerNodes* pn, std::string itemHide, std::string itemShow) {
-		NiNode* ui = pn->primaryUIAttachNode;
-		NiNode* wand = get1stChildNode("world_primaryWand.nif", ui);
-		NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
-		if (retNode) {
-			//			ui->RemoveChild(wand);
-				//		ui->AttachChild(retNode, true);
-		}
-
-		wand = pn->SecondaryWandNode;
-		NiNode* pipParent = get1stChildNode("PipboyParent", wand);
-
-		if (!pipParent) {
-			meshesReplaced = false;
-			return;
-		}
-		wand = get1stChildNode("PipboyRoot_NIF_ONLY", pipParent);
-		c_IsHoloPipboy ? retNode = loadNifFromFile("Data/Meshes/FRIK/HoloPipboyVR.nif") : retNode = loadNifFromFile("Data/Meshes/FRIK/PipboyVR.nif");
-		if (retNode && wand) {
-			BSFixedString screenName("Screen:0");
-			NiAVObject* newScreen = retNode->GetObjectByName(&screenName)->m_parent;
-
-			if (!newScreen) {
-				meshesReplaced = false;
-				return;
-			}
-
-			pipParent->RemoveChild(wand);
-			pipParent->AttachChild(retNode, true);
-
-			pn->ScreenNode->RemoveChildAt(0);
-			// using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
-			NiNode* rn = Offsets::addNode((uint64_t)&pn->ScreenNode, newScreen);
-			pn->PipboyRoot_nif_only_node = retNode;
-		}
-
-		meshesReplaced = true;			
-		// Cylons Code Start >>>>
-		auto lookup = g_weaponOffsets->getOffset("PipboyPosition", Mode::normal);
-		if (c_IsHoloPipboy == true) {
-		    lookup = g_weaponOffsets->getOffset("HoloPipboyPosition", Mode::normal);
-		}
-		if (lookup.has_value()) {
-			NiTransform pbTransform = lookup.value();
-			static BSFixedString wandPipName("PipboyRoot");
-			NiAVObject* pbRoot = pn->SecondaryWandNode->GetObjectByName(&wandPipName);
-			if (pbRoot) {
-				pbRoot->m_localTransform = pbTransform;
-			}
-		}
-		pn->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0; //prevents the VRPipboy screen from being displayed on first load whilst PB is off.
-		NiNode* _HideNode = getChildNode(itemHide.c_str(), (*g_player)->unkF0->rootNode);
-		if (_HideNode) {
-			_HideNode->flags |= 0x1;
-			_HideNode->m_localTransform.scale = 0;
-		}
-		NiNode* _ShowNode = getChildNode(itemShow.c_str(), (*g_player)->unkF0->rootNode);
-		if (_ShowNode) {
-			_ShowNode->flags &= 0xfffffffffffffffe;
-			_ShowNode->m_localTransform.scale = 1;
-		}
-			// <<<< Cylons Code End
-
-		_MESSAGE("Meshes replaced!");
-
-	}
-
 	void fixMissingScreen(PlayerNodes* pn) {
 		NiNode* screenNode = pn->ScreenNode;
 
@@ -849,6 +781,7 @@ namespace F4VRBody {
 			playerSkelly->swapPipboy();
 
 			_MESSAGE("handle pipboy init");
+			g_pipboy = new Pipboy(playerSkelly);
 
 			turnPipBoyOff();
 
@@ -998,12 +931,8 @@ namespace F4VRBody {
 			playerSkelly->setDirection();
 			playerSkelly->swapPipboy();
 			playerSkelly->setBodyLen();
-			if (c_IsHoloPipboy == 0) {
-				replaceMeshes(playerSkelly->getPlayerNodes(),"HoloEmitter", "Screen");
-			}
-			else if (c_IsHoloPipboy == 1) {
-				replaceMeshes(playerSkelly->getPlayerNodes(), "Screen", "HoloEmitter");
-			}
+			// TODO: check if this is needed as the same call is done 10 lines below
+			g_pipboy->replaceMeshes(false);
 			_MESSAGE("initialized for real");
 			return;
 		}
@@ -1022,18 +951,7 @@ namespace F4VRBody {
 
 		c_leftHandedMode = *Offsets::iniLeftHandedMode;
 		
-		if (!meshesReplaced) {
-			if (c_IsHoloPipboy == 0) {
-				replaceMeshes(playerSkelly->getPlayerNodes(), "HoloEmitter", "Screen");
-			}
-			else if (c_IsHoloPipboy == 1) {
-				replaceMeshes(playerSkelly->getPlayerNodes(), "Screen", "HoloEmitter");
-			}
-		}
-
-
-		// check if jumping or in air;
-
+		g_pipboy->replaceMeshes(false);
 
 		// check if jumping or in air;
 		c_jumping = SmoothMovementVR::checkIfJumpingOrInAir();
@@ -1260,15 +1178,6 @@ namespace F4VRBody {
 		}
 		else {
 			playerSkelly->fixArmor();
-		}
-	}
-
-	void swapPB() {
-		if (c_IsHoloPipboy == 0) {
-			replaceMeshes(playerSkelly->getPlayerNodes(), "HoloEmitter", "Screen");
-		}
-		else if (c_IsHoloPipboy == 1) {
-			replaceMeshes(playerSkelly->getPlayerNodes(), "Screen", "HoloEmitter");
 		}
 	}
 

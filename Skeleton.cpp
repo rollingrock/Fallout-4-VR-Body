@@ -1,5 +1,6 @@
 #include "Skeleton.h"
 #include "F4VRBody.h"
+#include "Pipboy.h"
 #include "HandPose.h"
 #include "weaponOffset.h"
 #include "f4se/GameForms.h"
@@ -2892,7 +2893,7 @@ namespace F4VRBody
 					_pipboyStatus = false;
 					_stickypip = false;
 					turnPipBoyOff();
-					swapPB();
+					g_pipboy->replaceMeshes(true);
 					_pipboyStatus = true;
 					_stickypip = true;
 					_playerNodes->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;

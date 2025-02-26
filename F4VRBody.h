@@ -189,7 +189,6 @@ namespace F4VRBody {
 	void update();
 	void startUp();
 	void saveSettings();
-	void swapPB();
 	// Native funcs to expose to papyrus
 	bool HasKeyword();
 	void saveStates(StaticFunctionTag* base);
