@@ -1,4 +1,5 @@
 #include "Pipboy.h"
+#include "VR.h"
 
 namespace F4VRBody {
 
@@ -17,6 +18,108 @@ namespace F4VRBody {
 				replaceMeshes("Screen", "HoloEmitter");
 			}
 		}
+	}
+
+	/// <summary>
+	/// Executed every frame to update the Pipboy location and handle interaction with pipboy config UX.
+	/// TODO: refactor into seperate functions for each functionality
+	/// </summary>
+	void Pipboy::onUpdate() {
+		// Cylons Code Starts Here ---->
+		playerSkelly->pipboyConfigurationMode();
+		playerSkelly->mainConfigurationMode();
+		playerSkelly->pipboyManagement();
+		playerSkelly->dampenPipboyScreen();
+		
+		//Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
+		if (!playerSkelly->detectInPowerArmor()) {
+			NiNode* _HideNode = nullptr;
+			c_IsHoloPipboy ? _HideNode = getChildNode("Screen", (*g_player)->unkF0->rootNode) : _HideNode = getChildNode("HoloEmitter", (*g_player)->unkF0->rootNode);
+			if (_HideNode) {
+				if (_HideNode->m_localTransform.scale != 0) {
+					_HideNode->flags |= 0x1;
+					_HideNode->m_localTransform.scale = 0;
+				}
+			}
+		}
+		if (c_CalibrateModeActive) {
+			vr::VRControllerAxis_t doinantHandStick = (c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0]);
+			uint64_t dominantHand = (c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed);
+			uint64_t offHand = (c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed);
+			const auto ExitandSave = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)33);
+			const auto ExitnoSave = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)33);
+			const auto SelfieButton = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)1);
+			const auto HeightButton = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)1);
+			if (ExitandSave && !c_ExitandSavePressed) {
+				c_ExitandSavePressed = true;
+				playerSkelly->configModeExit();
+				saveSettings();
+				if (vrhook != nullptr) {
+					c_leftHandedMode ? vrhook->StartHaptics(1, 0.55, 0.5) : vrhook->StartHaptics(2, 0.55, 0.5);
+				}
+			}
+			else if (!ExitandSave) {
+				c_ExitandSavePressed = false;
+			}
+			if (ExitnoSave && !c_ExitnoSavePressed) {
+				c_ExitnoSavePressed = true;
+				playerSkelly->configModeExit();
+				c_armLength = c_armLengthbkup;
+				c_powerArmor_up = c_powerArmor_upbkup;
+				c_playerOffset_up = c_playerOffset_upbkup;
+				c_RootOffset = c_RootOffsetbkup;
+				c_PARootOffset = c_PARootOffsetbkup;
+				c_fVrScale = c_fVrScalebkup;
+				c_playerOffset_forward = c_playerOffset_forwardbkup;
+				c_powerArmor_forward = c_powerArmor_forwardbkup;
+				c_cameraHeight = c_cameraHeightbkup;
+				c_PACameraHeight = c_PACameraHeightbkup;
+			}
+			else if (!ExitnoSave) {
+				c_ExitnoSavePressed = false;
+			}
+			if (SelfieButton && !c_SelfieButtonPressed) {
+				c_SelfieButtonPressed = true;
+				c_selfieMode = !c_selfieMode;
+			}
+			else if (!SelfieButton) {
+				c_SelfieButtonPressed = false;
+			}
+			if (HeightButton && !c_UIHeightButtonPressed) {
+				c_UIHeightButtonPressed = true;
+				PlayerNodes* skelly = playerSkelly->getPlayerNodes();
+				c_PlayerHMDHeight = skelly->UprightHmdNode->m_localTransform.pos.z;
+				float x = playerSkelly->getNode("LArm_Collarbone", playerSkelly->getRoot())->m_worldTransform.pos.z;
+				c_shouldertoHMD = c_PlayerHMDHeight - x;
+				lastCamZ = 0.0;
+			}
+			else if (!HeightButton) {
+				c_UIHeightButtonPressed = false;
+			}
+		}
+		else {
+			uint64_t dominantHand = (c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed);
+			uint64_t offHand = (c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed);
+			const auto dHTouch = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)32);
+			const auto oHTouch = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)32);
+			if (dHTouch && !c_CalibrateModeActive) {
+				c_ConfigModeTimer += 1;
+				if (c_ConfigModeTimer > 200 && c_ConfigModeTimer2 > 200) {
+					c_DampenHandsButtonPressed = true;
+					c_CalibrateModeActive = true;
+				}
+			}
+			else if (!dHTouch && !c_CalibrateModeActive && c_ConfigModeTimer > 0) {
+				c_ConfigModeTimer = 0;
+			}
+			if (oHTouch && !c_CalibrateModeActive) {
+				c_ConfigModeTimer2 += 1;
+			}
+			else if (!oHTouch && !c_CalibrateModeActive && c_ConfigModeTimer2 > 0) {
+				c_ConfigModeTimer2 = 0;
+			}
+		}
+		// Cylons Code Ends Here
 	}
 
 	/// <summary>
@@ -89,6 +192,5 @@ namespace F4VRBody {
 		// <<<< Cylons Code End
 
 		_MESSAGE("Pipboy Meshes replaced! Hide: %s, Show: %s", itemHide, itemShow);
-
 	}
 }
