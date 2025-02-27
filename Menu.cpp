@@ -1,11 +1,11 @@
 #include "Menu.h"
+#include "Config.h"
 #include "f4sE_common/Relocation.h"
 #include "F4SE_common/SafeWrite.h"
 
 #include "utils.h"
 
 namespace F4VRBody {
-	extern bool c_staticGripping;
 
 	bool inScopeMenu = false;
 	
@@ -23,8 +23,8 @@ namespace F4VRBody {
 		if (!_stricmp(name, "ScopeMenu")) {
 			if (a_event->isOpen) {
 			//	_MESSAGE("scope opened");
-				if (!c_staticGripping) {
-					c_staticGripping = true;
+				if (!g_config->staticGripping) {
+					g_config->staticGripping = true;
 			//		dynamicGripEnabled = true;
 				}
 				else {
@@ -35,8 +35,8 @@ namespace F4VRBody {
 			}
 			else {
 				//_MESSAGE("scope closed");
-				if (dynamicGripEnabled && c_staticGripping) {
-		//			c_staticGripping = false;
+				if (dynamicGripEnabled && g_config->staticGripping) {
+		//			staticGripping = false;
 				}
 				inScopeMenu = false;
 			}

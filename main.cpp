@@ -9,6 +9,7 @@
 
 #include "f4se/GameData.h"
 
+#include "Config.h"
 #include "version.h"
 #include "hook.h"
 #include "F4VRBody.h"
@@ -64,7 +65,7 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
 
 		}
 		if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
-			bool gripConfig = !F4VRBody::c_staticGripping;
+			bool gripConfig = !F4VRBody::g_config->staticGripping;
 			g_messaging->Dispatch(g_pluginHandle, 15, (void*) gripConfig, sizeof(bool), "FO4VRBETTERSCOPES");
 
 			g_messaging->RegisterListener(g_pluginHandle, "FO4VRBETTERSCOPES", OnBetterScopesMessage);
@@ -130,7 +131,8 @@ extern "C" {
 			return false;
 		}
 
-		if (!F4VRBody::loadConfig()) {
+		;
+		if (!F4VRBody::initConfig()) {
 			_ERROR("could not open ini config file");
 			return false;
 		}

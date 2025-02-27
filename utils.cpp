@@ -1,3 +1,6 @@
+#pragma once
+
+#include "Config.h"
 #include "utils.h"
 #include <algorithm>
 #include "f4se/PapyrusEvents.h"
@@ -272,7 +275,7 @@ namespace F4VRBody {
 		set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
 		set->SetDouble(0.0);
 
-		if (c_autoFocusWindow && c_switchUIControltoPrimary) {
+		if (g_config->autoFocusWindow && g_config->switchUIControltoPrimary) {
 			WindowFocus();
 		}
 		
@@ -297,7 +300,7 @@ namespace F4VRBody {
 		set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
 		set->SetDouble(5.0);
 		if (!c_repositionMasterMode) {
-			SetINIFloat("fDirectionalDeadzone:Controls", c_DirectionalDeadzone);  //restores player rotation to right stick
+			SetINIFloat("fDirectionalDeadzone:Controls", g_config->directionalDeadzone);  //restores player rotation to right stick
 		}
 
 	}

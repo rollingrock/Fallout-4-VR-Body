@@ -1,20 +1,14 @@
 // From Shizof's mod with permission.  Thanks Shizof!!
 
+#pragma once
+
+#include "Config.h"
 #include "SmoothMovementVR.h"
 #include "f4se/NiExtraData.h"
 #include "F4VRBody.h"
 #include "utils.h"
 #include <atomic>
 #include <deque>
-
-extern float smoothingAmount;
-extern float smoothingAmountHorizontal;
-extern float dampingMultiplier;
-extern float dampingMultiplierHorizontal;
-extern float stoppingMultiplier;
-extern float stoppingMultiplierHorizontal;
-extern int disableInteriorSmoothing;
-extern int disableInteriorSmoothingHorizontal;
 
 namespace SmoothMovementVR
 {
@@ -91,14 +85,14 @@ namespace SmoothMovementVR
 		}
 		else
 		{
-			if (disableInteriorSmoothingHorizontal && interiorCell.load())
+			if (F4VRBody::g_config->disableInteriorSmoothingHorizontal && interiorCell.load())
 			{
 				smoothedX.store(newPosition.x);
 				smoothedY.store(newPosition.y);
 			}
 			else
 			{
-				if (dampingMultiplierHorizontal != 0 && smoothingAmountHorizontal != 0)
+				if (F4VRBody::g_config->dampingMultiplierHorizontal != 0 && F4VRBody::g_config->smoothingAmountHorizontal != 0)
 				{
 					float absValX = abs(newPosition.x - smoothedX.load());
 					if (absValX < 0.1f)
@@ -110,8 +104,8 @@ namespace SmoothMovementVR
 					{
 						absValY = 0.1f;
 					}
-					smoothedX.store(smoothedX.load() + m_frameTime.load() * ((newPosition.x - smoothedX.load()) / (smoothingAmountHorizontal * (dampingMultiplierHorizontal / absValX) * (notMoving.load() ? (stoppingMultiplierHorizontal) : 1.0f))));
-					smoothedY.store(smoothedY.load() + m_frameTime.load() * ((newPosition.y - smoothedY.load()) / (smoothingAmountHorizontal * (dampingMultiplierHorizontal / absValY) * (notMoving.load() ? (stoppingMultiplierHorizontal) : 1.0f))));
+					smoothedX.store(smoothedX.load() + m_frameTime.load() * ((newPosition.x - smoothedX.load()) / (F4VRBody::g_config->smoothingAmountHorizontal * (F4VRBody::g_config->dampingMultiplierHorizontal / absValX) * (notMoving.load() ? (F4VRBody::g_config->stoppingMultiplierHorizontal) : 1.0f))));
+					smoothedY.store(smoothedY.load() + m_frameTime.load() * ((newPosition.y - smoothedY.load()) / (F4VRBody::g_config->smoothingAmountHorizontal * (F4VRBody::g_config->dampingMultiplierHorizontal / absValY) * (notMoving.load() ? (F4VRBody::g_config->stoppingMultiplierHorizontal) : 1.0f))));
 				}
 				else
 				{
@@ -120,7 +114,7 @@ namespace SmoothMovementVR
 				}
 			}
 
-			if (disableInteriorSmoothing && interiorCell.load())
+			if (F4VRBody::g_config->disableInteriorSmoothing && interiorCell.load())
 			{
 				smoothedZ.store(newPosition.z);
 			}
@@ -131,7 +125,7 @@ namespace SmoothMovementVR
 				{
 					absVal = 0.1f;
 				}
-				smoothedZ.store(smoothedZ.load() + m_frameTime.load() * ((newPosition.z - smoothedZ.load()) / (smoothingAmount * (dampingMultiplier / absVal) * (notMoving.load() ? (stoppingMultiplier) : 1.0f))));
+				smoothedZ.store(smoothedZ.load() + m_frameTime.load() * ((newPosition.z - smoothedZ.load()) / (F4VRBody::g_config->smoothingAmount * (F4VRBody::g_config->dampingMultiplier / absVal) * (notMoving.load() ? (F4VRBody::g_config->stoppingMultiplier) : 1.0f))));
 			}
 		}
 
@@ -248,7 +242,7 @@ namespace SmoothMovementVR
 
 						//	_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
-							playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load() ? (F4VRBody::c_PACameraHeight + F4VRBody::c_cameraHeight + F4VRBody::c_dynamicCameraHeight) : F4VRBody::c_cameraHeight + F4VRBody::c_dynamicCameraHeight;
+							playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load() ? (F4VRBody::g_config->PACameraHeight + F4VRBody::g_config->cameraHeight + F4VRBody::c_dynamicCameraHeight) : F4VRBody::g_config->cameraHeight + F4VRBody::c_dynamicCameraHeight;
 						}
 						else
 						{
