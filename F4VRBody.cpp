@@ -769,7 +769,6 @@ namespace F4VRBody {
 			}
 			//replaceMeshes(playerSkelly->getPlayerNodes());
 			//playerSkelly->setDirection();
-			playerSkelly->swapPipboy();
 
 			vrhook = RequestOpenVRHookManagerObject();
 
@@ -919,7 +918,7 @@ namespace F4VRBody {
 			playerSkelly->updateRoot(node);
 			playerSkelly->setNodes();
 			playerSkelly->setDirection();
-			playerSkelly->swapPipboy();
+			g_pipboy->swapPipboy();
 			playerSkelly->setBodyLen();
 			// TODO: check if this is needed as the same call is done 10 lines below
 			g_pipboy->replaceMeshes(false);
@@ -1031,7 +1030,7 @@ namespace F4VRBody {
 
 		playerSkelly->setHandPose();
 		if (c_verbose) { _MESSAGE("Operate Pipboy"); }
-		playerSkelly->operatePipBoy();
+		g_pipboy->operatePipBoy();
 		if (c_verbose) { _MESSAGE("bone sphere stuff"); }
 		detectBoneSphere();
 		handleDebugBoneSpheres();
