@@ -12,7 +12,7 @@ namespace F4VRBody {
 		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
 
 		if (rc < 0) {
-			_MESSAGE("ERROR: cannot read FRIK.ini");
+			_ERROR("ERROR: cannot read FRIK.ini");
 			return false;
 		}
 
@@ -242,7 +242,7 @@ namespace F4VRBody {
 		writeOffsetJson();
 
 		if (rc < 0) {
-			_MESSAGE("Config: Failed to save FRIK.ini");
+			_ERROR("Config: Failed to save FRIK.ini");
 		}
 		else {
 			_MESSAGE("Config: Saving FRIK.ini successful");

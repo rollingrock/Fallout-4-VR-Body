@@ -78,8 +78,8 @@ extern "C" {
 	{
 		Sleep(5000);
 		gLog.OpenRelative(CSIDL_MYDOCUMENTS, R"(\\My Games\\Fallout4VR\\F4SE\\Fallout4VRBody.log)");
-		gLog.SetPrintLevel(IDebugLog::kLevel_DebugMessage);
-		gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
+		gLog.SetPrintLevel(IDebugLog::kLevel_Message);
+		gLog.SetLogLevel(IDebugLog::kLevel_Message);
 
 		g_moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("FRIK.dll"));
 
@@ -137,20 +137,25 @@ extern "C" {
 			return false;
 		}
 
+		auto logLevel = F4VRBody::g_config->verbose ? IDebugLog::kLevel_DebugMessage : IDebugLog::kLevel_Message;
+		_MESSAGE("Set log level = %d", logLevel);
+		gLog.SetPrintLevel(logLevel);
+		gLog.SetLogLevel(logLevel);
+
 		g_papyrus = (F4SEPapyrusInterface*)a_f4se->QueryInterface(kInterface_Papyrus);
 
 
 		_MESSAGE("register papyrus funcs");
 
 		if (!g_papyrus->Register(F4VRBody::RegisterFuncs)) {
-			_MESSAGE("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
+			_ERROR("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
 			return false;
 		}
 
 		PatchBody();
 		
 		if (!patches::patchAll()) {
-			_MESSAGE("error loading misc patches");
+			_ERROR("error loading misc patches");
 			return false;
 		}
 

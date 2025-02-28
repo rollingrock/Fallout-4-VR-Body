@@ -142,7 +142,7 @@ namespace F4VRBody {
 
 	static bool initConfig() {
 		if (g_config) {
-			_MESSAGE("ERROR: config already initialized");
+			_ERROR("ERROR: config already initialized");
 			return false;
 		}
 
@@ -150,12 +150,12 @@ namespace F4VRBody {
 		auto config = new Config();
 		auto success = config->loadConfig();
 		if (success) {
-			_MESSAGE("Config loaded successfully");
+			_VMESSAGE("Config loaded successfully");
 			g_config = config;
 			return true;
 		}
 		else {
-			_MESSAGE("ERROR: Failed to load config");
+			_ERROR("ERROR: Failed to load config");
 			delete config;
 			return false;
 		}

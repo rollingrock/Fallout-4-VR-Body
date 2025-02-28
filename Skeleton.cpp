@@ -1620,9 +1620,7 @@ namespace F4VRBody {
         NiNode* lHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
         if (!rightWeapon || !rHand || !leftWeapon || !lHand) {
-            if (g_config->verbose) {
-                _MESSAGE("Cannot set up weapon nodes");
-            }
+            _VMESSAGE("Cannot set up weapon nodes");
             _leftHandedSticky = g_config->leftHandedMode;
             return;
         }

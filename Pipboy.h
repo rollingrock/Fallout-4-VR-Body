@@ -72,7 +72,7 @@ namespace F4VRBody {
 	
 	static void initPipboy(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
 		if (g_pipboy) {
-			_MESSAGE("ERROR: pipboy already initialized");
+			_ERROR("ERROR: pipboy already initialized");
 			return;
 		}
 

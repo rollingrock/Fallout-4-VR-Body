@@ -436,19 +436,13 @@ namespace F4VRBody {
 
 	bool setSkelly(bool inPowerArmor) {
 
-		if (g_config->verbose) {
-			_MESSAGE("setSkelly Start");
-		}
-
+		_VMESSAGE("setSkelly Start");
 		if (!(*g_player)->unkF0) {
-			if (g_config->verbose) {
-				_MESSAGE("loaded Data Not Set Yet");
-			}
+			_VMESSAGE("loaded Data Not Set Yet");
 			return false;
 		}
 
 		_MESSAGE("loadedData = %016I64X", (*g_player)->unkF0);
-
 		if (!(*g_player)->unkF0->rootNode) {
 			_MESSAGE("rootnode not set yet!");
 			return false;
@@ -476,7 +470,6 @@ namespace F4VRBody {
 
 			_vrhook = RequestOpenVRHookManagerObject();
 
-			_MESSAGE("handle pipboy init");
 			initPipboy(_skelly, _vrhook);
 
 			turnPipBoyOff();
@@ -501,7 +494,7 @@ namespace F4VRBody {
 	void smoothMovement()
 	{
 		if (!g_config->disableSmoothMovement) {
-			if (g_config->verbose) { _MESSAGE("Smooth Movement"); }
+			_VMESSAGE("Smooth Movement");
 			SmoothMovementVR::everyFrame();
 		}
 	}
@@ -637,7 +630,7 @@ namespace F4VRBody {
 		_skelly->setLeftHandedSticky();
 
 
-		if (g_config->verbose) { _MESSAGE("Start of Frame"); }
+		_VMESSAGE("Start of Frame");
 
 		if (!GameVarsConfigured) {
 			ConfigureGameVars();
@@ -655,7 +648,7 @@ namespace F4VRBody {
 
 		VRHook::g_vrHook->setVRControllerState();
 
-		if (g_config->verbose) { _MESSAGE("Hide Wands"); }
+		_VMESSAGE("Hide Wands");
 		_skelly->hideWands();
 
 		//	fixSkeleton();
@@ -666,35 +659,35 @@ namespace F4VRBody {
 		uint64_t ret = Offsets::TESObjectCell_GetLandHeight((*g_player)->parentCell, &position, &groundHeight);
 
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
-		if (g_config->verbose) { _MESSAGE("restore locals of skeleton"); }
+		_VMESSAGE("restore locals of skeleton");
 		_skelly->restoreLocals(_skelly->getRoot()->m_parent->GetAsNiNode());
 		_skelly->updateDown(_skelly->getRoot(), true);
 
 
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
-		if (g_config->verbose) { _MESSAGE("Setup Head"); }
+		_VMESSAGE("Setup Head");
 		NiNode* headNode = _skelly->getNode("Head", _skelly->getRoot());
 		_skelly->setupHead(headNode, g_config->hideHead);
 
 		//// set up the body underneath the headset in a proper scale and orientation
-		if (g_config->verbose) { _MESSAGE("Set body under HMD"); }
+		_VMESSAGE("Set body under HMD");
 		_skelly->setUnderHMD(groundHeight);
 		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// Now Set up body Posture and hook up the legs
-		if (g_config->verbose) { _MESSAGE("Set body posture"); }
+		_VMESSAGE("Set body posture");
 		_skelly->setBodyPosture();
 		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
-		if (g_config->verbose) { _MESSAGE("Set Knee Posture"); }
+		_VMESSAGE("Set Knee Posture");
 		_skelly->setKneePos();
-		if (g_config->verbose) { _MESSAGE("Set Walk"); }
+		_VMESSAGE("Set Walk");
 
 		if (!g_config->armsOnly) {
 			_skelly->walk();
 		}
 		//_skelly->setLegs();
-		if (g_config->verbose) { _MESSAGE("Set Legs"); }
+		_VMESSAGE("Set Legs");
 		_skelly->setSingleLeg(false);
 		_skelly->setSingleLeg(true);
 
@@ -702,7 +695,7 @@ namespace F4VRBody {
 		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// do arm IK - Right then Left
-		if (g_config->verbose) { _MESSAGE("Set Arms"); }
+		_VMESSAGE("Set Arms");
 		_skelly->handleWeaponNodes();
 		_skelly->setArms(false);
 		_skelly->setArms(true);
@@ -710,7 +703,7 @@ namespace F4VRBody {
 		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// Misc stuff to showahide things and also setup the wrist pipboy
-		if (g_config->verbose) { _MESSAGE("Pipboy and Weapons"); }
+		_VMESSAGE("Pipboy and Weapons"); 
 		_skelly->hideWeapon();
 		_skelly->positionPipboy();
 		_skelly->hidePipboy();
@@ -721,11 +714,11 @@ namespace F4VRBody {
 		cullGeometry();
 
 		// project body out in front of the camera for debug purposes
-		if (g_config->verbose) { _MESSAGE("Selfie Time"); }
+		_VMESSAGE("Selfie Time");
 		_skelly->selfieSkelly(g_config->selfieOutFrontDistance);
 		_skelly->updateDown(_skelly->getRoot(), true);
 
-		if (g_config->verbose) { _MESSAGE("fix the missing screen"); }
+		_VMESSAGE("fix the missing screen");
 		fixMissingScreen(_skelly->getPlayerNodes());
 
 		setHandUI(_skelly->getPlayerNodes());
@@ -735,9 +728,9 @@ namespace F4VRBody {
 		}
 
 		_skelly->setHandPose();
-		if (g_config->verbose) { _MESSAGE("Operate Pipboy"); }
+		_VMESSAGE("Operate Pipboy");
 		g_pipboy->operatePipBoy();
-		if (g_config->verbose) { _MESSAGE("bone sphere stuff"); }
+		_VMESSAGE("bone sphere stuff");
 		detectBoneSphere();
 		handleDebugBoneSpheres();
 		//g_gunReloadSystem->Update();
