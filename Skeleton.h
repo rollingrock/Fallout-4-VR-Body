@@ -275,7 +275,6 @@ namespace F4VRBody
 		void rotateLeg(uint32_t pos, float angle);
 		void offHandToScope();
 		void moveBack();
-		void debug();
 		void initLocalDefaults();
 		void fixBoneTree();
 		

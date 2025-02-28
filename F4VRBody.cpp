@@ -10,6 +10,7 @@
 #include "BSFlattenedBoneTree.h"
 #include "GunReload.h"
 #include "VR.h"
+#include "Debug.h"
 
 #include "api/PapyrusVRAPI.h"
 #include "api/VRManagerAPI.h"
@@ -766,7 +767,7 @@ namespace F4VRBody {
 
 		dumpGeometryArrayInUpdate();
 
-		_skelly->debug();
+		debug(_skelly);
 
 		if (!detectInPowerArmor()) { // sets 3rd Person Pipboy Scale
 			NiNode* _Pipboy3rd = getChildNode("PipboyBone", (*g_player)->unkF0->rootNode);
