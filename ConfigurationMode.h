@@ -35,6 +35,7 @@ namespace F4VRBody {
 		void configModeExit();
 		void pipboyConfigurationMode();
 		void mainConfigurationMode();
+		void checkWeaponRepositionPipboyConflict();
 
 		Skeleton* _skelly;
 		OpenVRHookManagerAPI* _vrhook;

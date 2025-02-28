@@ -636,7 +636,8 @@ namespace F4VRBody {
 						if (root->GetVariable(&IsProjected, "root.Menu_mc.projectedBorder_mc.visible")) { //check if Pipboy is projected and disable right stick rotation if it isn't
 							bool UIProjected = IsProjected.GetBool();
 							if (!UIProjected && g_config->switchUIControltoPrimary) {
-								SetINIFloat("fDirectionalDeadzone:Controls", 1.0);  //prevents player movement controls so we can switch controls to the right stick (or left if the Pipboy is on the right arm)
+								//prevents player rotation controls so we can switch controls to the right stick (or left if the Pipboy is on the right arm)
+								rotationStickEnabledToggle(false); 
 							}
 						}
 						if (root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage")) {  // Get Current Pipboy Tab and store it.

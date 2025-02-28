@@ -94,7 +94,7 @@ namespace F4VRBody {
 		disableInteriorSmoothingHorizontal = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothingHorizontal", 1);
 
 		// weaponPositioning
-		//c_repositionMasterMode = ini.GetBoolValue("Fallout4VRBody", "EnableRepositionMode", false);       Enabled / Disabled via config mode
+		//c_weaponRepositionMasterMode = ini.GetBoolValue("Fallout4VRBody", "EnableRepositionMode", false);       Enabled / Disabled via config mode
 		holdDelay = (int)ini.GetLongValue("Fallout4VRBody", "HoldDelay", 1000);
 		repositionButtonID = (int)ini.GetLongValue("Fallout4VRBody", "RepositionButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger); // 33
 		offHandActivateButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OffHandActivateButtonID", vr::EVRButtonId::k_EButton_A); // 7
@@ -224,7 +224,7 @@ namespace F4VRBody {
 		rc = ini.SetBoolValue("Fallout4VRBody", "PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		rc = ini.SetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode", armsOnly);
 		rc = ini.SetBoolValue("Fallout4VRBody", "EnableStaticGripping", staticGripping);
-		//rc = ini.SetBoolValue("Fallout4VRBody", "EnableRepositionMode", c_repositionMasterMode);  Handled by Config Mode. 
+		//rc = ini.SetBoolValue("Fallout4VRBody", "EnableRepositionMode", c_weaponRepositionMasterMode);  Handled by Config Mode. 
 		rc = ini.SetBoolValue("Fallout4VRBody", "HideTheHead", hideHead);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_X", handUI_X);
 		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_Y", handUI_Y);

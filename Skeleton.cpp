@@ -2354,9 +2354,9 @@ namespace F4VRBody {
 						}
 						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
 						if (!_inRepositionMode && reg & vr::ButtonMaskFromId((vr::EVRButtonId)g_config->repositionButtonID) && _pressLength > g_config->holdDelay) {
-							if (_vrhook && c_repositionMasterMode)
+							if (_vrhook && c_weaponRepositionMasterMode)
 								_vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
-							_inRepositionMode = c_repositionMasterMode;
+							_inRepositionMode = c_weaponRepositionMasterMode;
 						}
 						else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)g_config->repositionButtonID))) {
 							_repositionButtonHolding = false;
@@ -2412,7 +2412,7 @@ namespace F4VRBody {
 						_offhandPos = _offhandFingerBonePos;
 						bodyPos = _curPos;
 						vr::VRControllerAxis_t axis_state = !(g_config->pipBoyButtonArm > 0) ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0];
-						if (_repositionButtonHolding && c_repositionMasterMode) {
+						if (_repositionButtonHolding && c_weaponRepositionMasterMode) {
 							// this is for a preview of the move. The preview happens one frame before we detect the release so must be processed separately.
 							auto end = _offhandPos - _curPos;
 							auto change = vec3_len(end) > vec3_len(_startFingerBonePos) ? vec3_len(end - _startFingerBonePos) : -vec3_len(end - _startFingerBonePos);
@@ -2441,7 +2441,7 @@ namespace F4VRBody {
 							}
 						}
 						//_hasLetGoRepositionButton is always one frame after _repositionButtonHolding
-						if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength < g_config->holdDelay && c_repositionMasterMode) {
+						if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength < g_config->holdDelay && c_weaponRepositionMasterMode) {
 							_MESSAGE("Updating grip rotation for %s: powerArmor: %d", weapname, _inPowerArmor);
 							_customTransform.rot = weap->m_localTransform.rot;
 							_hasLetGoRepositionButton = false;
@@ -2449,7 +2449,7 @@ namespace F4VRBody {
 							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor ? Mode::powerArmor : Mode::normal);
 							writeOffsetJson();
 						}
-						else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > g_config->holdDelay && c_repositionMasterMode) {
+						else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > g_config->holdDelay && c_weaponRepositionMasterMode) {
 							switch (_repositionMode) {
 							case weapon:
 								_MESSAGE("Saving position translation for %s from (%f, %f, %f) -> (%f, %f, %f): powerArmor: %d", weapname, weap->m_localTransform.pos.x, weap->m_localTransform.pos.y, weap->m_localTransform.pos.z, _offsetPreview.x, _offsetPreview.y, _offsetPreview.z, _inPowerArmor);
@@ -2570,7 +2570,7 @@ namespace F4VRBody {
             }
         }
 
-        if (c_repositionMasterMode) {
+        if (c_weaponRepositionMasterMode) {
             uint64_t _pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
 
             // Detect scope reposition button being held near scope. Only has to start near scope.
@@ -2594,10 +2594,10 @@ namespace F4VRBody {
             // Repositioning does not require hand near scope
             if (!_inRepositionMode && (handInput & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(g_config->repositionButtonID))) && _pressLength > g_config->holdDelay) {
                 // Enter reposition mode
-                if (_vrhook && c_repositionMasterMode) {
+                if (_vrhook && c_weaponRepositionMasterMode) {
                     _vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1, 0.3);
                 }
-                _inRepositionMode = c_repositionMasterMode;
+                _inRepositionMode = c_weaponRepositionMasterMode;
             } else if (_inRepositionMode) { // In reposition mode for better scopes
                 vr::VRControllerAxis_t axis_state = !(g_config->pipBoyButtonArm > 0) ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0];
                 if (!_repositionModeSwitched && (handInput & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(g_config->offHandActivateButtonID)))) {

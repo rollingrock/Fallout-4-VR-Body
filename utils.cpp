@@ -299,10 +299,25 @@ namespace F4VRBody {
 
 		set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
 		set->SetDouble(5.0);
-		if (!c_repositionMasterMode) {
-			SetINIFloat("fDirectionalDeadzone:Controls", g_config->directionalDeadzone);  //restores player rotation to right stick
-		}
 
+		rotationStickEnabledToggle(true);
+	}
+
+	/// <summary>
+	/// Check if ANY pipboy open by checking if pipboy menu can be found in the UI.
+	/// Returns true for wrist, in-front, and projected pipboy.
+	/// </summary>
+	bool isAnyPipboyOpen() {
+		BSFixedString pipboyMenu("PipboyMenu");
+		return (*g_ui)->GetMenu(pipboyMenu) != nullptr;
+	}
+
+	/// <summary>
+	/// If to enable/disable the use of right stick for player rotattion.
+	/// Used to disable for pipboy usage and weapon repositions.
+	/// </summary>
+	void rotationStickEnabledToggle(bool enable) {
+		SetINIFloat("fDirectionalDeadzone:Controls", enable ? g_config->directionalDeadzone : 1.0);
 	}
 
 	// Function to check if the camera is looking at the object and the object is facing the camera
