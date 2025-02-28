@@ -54,7 +54,7 @@ namespace F4VRBody {
 	bool _controlSleepStickyX = false;
 	bool _controlSleepStickyY = false;
 	bool _controlSleepStickyT = false;
-	bool c_repositionMasterMode = false;
+	bool c_weaponRepositionMasterMode = false;
 
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
@@ -1321,7 +1321,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		 c_repositionMasterMode = !c_repositionMasterMode;
+		 c_weaponRepositionMasterMode = !c_weaponRepositionMasterMode;
 	}
 
 	void dumpGeometryArray(StaticFunctionTag* base) {

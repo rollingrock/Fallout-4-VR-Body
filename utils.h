@@ -57,6 +57,8 @@ namespace F4VRBody {
 
 	void turnPipBoyOn();
 	void turnPipBoyOff();
+	bool isAnyPipboyOpen();
+	void rotationStickEnabledToggle(bool enable);
 
 	bool isCameraLookingAtObject(NiAVObject* cameraNode, NiAVObject* objectNode, float detectThresh);
 
