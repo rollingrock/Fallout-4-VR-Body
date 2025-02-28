@@ -248,4 +248,15 @@ namespace F4VRBody {
 			_MESSAGE("successfully wrote config file");
 		}
 	}
+
+	/// <summary>
+	/// Save specific key and bool value into FRIK.ini file.
+	/// </summary>
+	void Config::saveBoolValue(const char* key, bool value) {
+		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value ? "true" : "false");
+		CSimpleIniA ini;
+		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
+		rc = ini.SetBoolValue("Fallout4VRBody", key, value);
+		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
+	}
 }

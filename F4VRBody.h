@@ -33,7 +33,6 @@ namespace F4VRBody {
 	extern float c_dynamicCameraHeight;
 	extern bool c_selfieMode;
 	extern bool GameVarsConfigured;
-	extern bool c_CalibrateModeActive;
 	extern bool c_loadedHideHead;
 	extern bool c_loadedHideEquipment;
 	extern bool c_loadedHideSkin;

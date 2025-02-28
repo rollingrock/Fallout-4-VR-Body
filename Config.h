@@ -14,18 +14,22 @@ namespace F4VRBody {
 	public:
 		bool loadConfig();
 		void saveSettings();
-
-		// probably should be moved to config UI class
-		float c_armLengthbkup;
-		float c_powerArmor_upbkup;
-		float c_playerOffset_upbkup;
-		float c_RootOffsetbkup;
-		float c_PARootOffsetbkup;
-		float c_fVrScalebkup;
-		float c_playerOffset_forwardbkup;
-		float c_powerArmor_forwardbkup;
-		float c_cameraHeightbkup;
-		float c_PACameraHeightbkup;
+		inline void togglePipBoyTorchOnArm() {
+			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
+			saveBoolValue("PipBoyTorchOnArm", isPipBoyTorchOnArm);
+		}
+		inline void toggleIsHoloPipboy() {
+			isHoloPipboy = !isHoloPipboy;
+			saveBoolValue("HoloPipBoyEnabled", isHoloPipboy);
+		}
+		inline void toggleDampenPipboyScreen() {
+			dampenPipboyScreen = !dampenPipboyScreen;
+			saveBoolValue("DampenPipboyScreen", dampenPipboyScreen);
+		}
+		inline void togglePipBoyOpenWhenLookAt() {
+			pipBoyOpenWhenLookAt = !pipBoyOpenWhenLookAt;
+			saveBoolValue("PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+		}
 
 		// consts
 		const float selfieOutFrontDistance = 120.0f;
@@ -129,6 +133,7 @@ namespace F4VRBody {
 		void loadHideFace();
 		void loadHideSkins();
 		void loadHideSlots();
+		void saveBoolValue(const char* pKey, bool value);
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now

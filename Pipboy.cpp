@@ -1,4 +1,5 @@
 #include "Pipboy.h"
+#include "ConfigurationMode.h"
 #include "Config.h"
 #include "VR.h"
 
@@ -48,9 +49,7 @@ namespace F4VRBody {
 	/// TODO: refactor into seperate functions for each functionality
 	/// </summary>
 	void Pipboy::onUpdate() {
-		// Cylons Code Starts Here ---->
-		pipboyConfigurationMode();
-		playerSkelly->mainConfigurationMode();
+		
 		pipboyManagement();
 		dampenPipboyScreen();
 
@@ -65,83 +64,6 @@ namespace F4VRBody {
 				}
 			}
 		}
-		if (c_CalibrateModeActive) {
-			vr::VRControllerAxis_t doinantHandStick = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0]);
-			uint64_t dominantHand = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed);
-			uint64_t offHand = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed);
-			const auto ExitandSave = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)33);
-			const auto ExitnoSave = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)33);
-			const auto SelfieButton = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)1);
-			const auto HeightButton = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)1);
-			if (ExitandSave && !c_ExitandSavePressed) {
-				c_ExitandSavePressed = true;
-				playerSkelly->configModeExit();
-				g_config->saveSettings();
-				if (vrhook != nullptr) {
-					g_config->leftHandedMode ? vrhook->StartHaptics(1, 0.55, 0.5) : vrhook->StartHaptics(2, 0.55, 0.5);
-				}
-			}
-			else if (!ExitandSave) {
-				c_ExitandSavePressed = false;
-			}
-			if (ExitnoSave && !c_ExitnoSavePressed) {
-				c_ExitnoSavePressed = true;
-				playerSkelly->configModeExit();
-				g_config->armLength = g_config->c_armLengthbkup;
-				g_config->powerArmor_up = g_config->c_powerArmor_upbkup;
-				g_config->playerOffset_up = g_config->c_playerOffset_upbkup;
-				g_config->rootOffset = g_config->c_RootOffsetbkup;
-				g_config->PARootOffset = g_config->c_PARootOffsetbkup;
-				g_config->fVrScale = g_config->c_fVrScalebkup;
-				g_config->playerOffset_forward = g_config->c_playerOffset_forwardbkup;
-				g_config->powerArmor_forward = g_config->c_powerArmor_forwardbkup;
-				g_config->cameraHeight = g_config->c_cameraHeightbkup;
-				g_config->PACameraHeight = g_config->c_PACameraHeightbkup;
-			}
-			else if (!ExitnoSave) {
-				c_ExitnoSavePressed = false;
-			}
-			if (SelfieButton && !c_SelfieButtonPressed) {
-				c_SelfieButtonPressed = true;
-				c_selfieMode = !c_selfieMode;
-			}
-			else if (!SelfieButton) {
-				c_SelfieButtonPressed = false;
-			}
-			if (HeightButton && !c_UIHeightButtonPressed) {
-				c_UIHeightButtonPressed = true;
-				PlayerNodes* skelly = playerSkelly->getPlayerNodes();
-				g_config->playerHMDHeight = skelly->UprightHmdNode->m_localTransform.pos.z;
-				float x = playerSkelly->getNode("LArm_Collarbone", playerSkelly->getRoot())->m_worldTransform.pos.z;
-				g_config->shoulderToHMD = g_config->playerHMDHeight - x;
-			}
-			else if (!HeightButton) {
-				c_UIHeightButtonPressed = false;
-			}
-		}
-		else {
-			uint64_t dominantHand = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed);
-			uint64_t offHand = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed);
-			const auto dHTouch = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)32);
-			const auto oHTouch = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)32);
-			if (dHTouch && !c_CalibrateModeActive) {
-				c_ConfigModeTimer += 1;
-				if (c_ConfigModeTimer > 200 && c_ConfigModeTimer2 > 200) {
-					c_DampenHandsButtonPressed = true;
-					c_CalibrateModeActive = true;
-				}
-			}
-			else if (!dHTouch && !c_CalibrateModeActive && c_ConfigModeTimer > 0) {
-				c_ConfigModeTimer = 0;
-			}
-			if (oHTouch && !c_CalibrateModeActive) {
-				c_ConfigModeTimer2 += 1;
-			}
-			else if (!oHTouch && !c_CalibrateModeActive && c_ConfigModeTimer2 > 0) {
-				c_ConfigModeTimer2 = 0;
-			}
-		}
-		// Cylons Code Ends Here
 	}
 
 	/// <summary>
@@ -216,311 +138,6 @@ namespace F4VRBody {
 		_MESSAGE("Pipboy Meshes replaced! Hide: %s, Show: %s", itemHide, itemShow);
 	}
 
-	void Pipboy::pipboyConfigurationMode() { // The Pipboy Configuration Mode function. 
-		if (_pipboyStatus) {
-			float rAxisOffsetX;
-			vr::VRControllerAxis_t doinantHandStick = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0]);
-			uint64_t dominantHand = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed);
-			uint64_t offHand = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed);
-			const auto PBConfigButtonPressed = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)32);
-			bool ModelSwapButtonPressed = _PBTouchbuttons[1];
-			bool RotateButtonPressed = _PBTouchbuttons[2];
-			bool SaveButtonPressed = _PBTouchbuttons[3];
-			bool ModelScaleButtonPressed = _PBTouchbuttons[4];
-			bool ScaleButtonPressed = _PBTouchbuttons[5];
-			bool MoveXButtonPressed = _PBTouchbuttons[6];
-			bool MoveYButtonPressed = _PBTouchbuttons[7];
-			bool MoveZButtonPressed = _PBTouchbuttons[8];
-			bool ExitButtonPressed = _PBTouchbuttons[9];
-			bool GlanceButtonPressed = _PBTouchbuttons[10];
-			bool DampenScreenButtonPressed = _PBTouchbuttons[11];
-			char* meshName[12] = { "PB-MainTitleTrans", "PB-Tile07Trans", "PB-Tile03Trans", "PB-Tile08Trans", "PB-Tile02Trans", "PB-Tile01Trans", "PB-Tile04Trans", "PB-Tile05Trans", "PB-Tile06Trans", "PB-Tile09Trans", "PB-Tile10Trans", "PB-Tile11Trans" };
-			char* meshName2[12] = { "PB-MainTitle", "PB-Tile07", "PB-Tile03", "PB-Tile08", "PB-Tile02", "PB-Tile01", "PB-Tile04", "PB-Tile05", "PB-Tile06", "PB-Tile09", "PB-Tile10", "PB-Tile11" };
-			static BSFixedString wandPipName("PipboyRoot");
-			NiAVObject* pbRoot = playerSkelly->getPlayerNodes()->SecondaryWandNode->GetObjectByName(&wandPipName);
-			if (!pbRoot) {
-				return;
-			}
-			BSFixedString pipName("PipboyBone");
-			NiAVObject* _3rdPipboy = nullptr;
-			if (!g_config->leftHandedPipBoy) {
-				if (playerSkelly->getLeftArm().forearm3) {
-					_3rdPipboy = playerSkelly->getLeftArm().forearm3->GetObjectByName(&pipName);
-				}
-			}
-			else {
-				_3rdPipboy = playerSkelly->getRightArm().forearm3->GetObjectByName(&pipName);
-
-			}
-			if (PBConfigButtonPressed && !_isPBConfigModeActive) { // Enter Pipboy Config Mode by holding down favorites button.
-				_PBConfigModeEnterCounter += 1;
-				if (_PBConfigModeEnterCounter > 200) {
-					BSFixedString menuName("FavoritesMenu");
-					if ((*g_ui)->IsMenuOpen(menuName)) {
-						if ((*g_ui)->IsMenuRegistered(menuName)) {
-							CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-						}
-					}
-					if (vrhook != nullptr) {
-						g_config->leftHandedMode ? vrhook->StartHaptics(1, 0.55, 0.5) : vrhook->StartHaptics(2, 0.55, 0.5);
-					}
-					NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
-					NiCloneProcess proc;
-					proc.unk18 = Offsets::cloneAddr1;
-					proc.unk48 = Offsets::cloneAddr2;
-					NiNode* HUD = Offsets::cloneNode(retNode, &proc);
-					HUD->m_name = BSFixedString("PBCONFIGHUD");
-					NiNode* UIATTACH = playerSkelly->getNode("world_primaryWand.nif", playerSkelly->getPlayerNodes()->primaryUIAttachNode);
-					UIATTACH->AttachChild((NiAVObject*)HUD, true);
-					char* MainHud[12] = { "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif", "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile09.nif" , "Data/Meshes/FRIK/UI-Tile10.nif", "Data/Meshes/FRIK/UI-Tile11.nif" };
-					char* MainHud2[12] = { "Data/Meshes/FRIK/PB-MainTitle.nif", "Data/Meshes/FRIK/PB-Tile07.nif", "Data/Meshes/FRIK/PB-Tile03.nif", "Data/Meshes/FRIK/PB-Tile08.nif", "Data/Meshes/FRIK/PB-Tile02.nif", "Data/Meshes/FRIK/PB-Tile01.nif", "Data/Meshes/FRIK/PB-Tile04.nif", "Data/Meshes/FRIK/PB-Tile05.nif", "Data/Meshes/FRIK/PB-Tile06.nif", "Data/Meshes/FRIK/PB-Tile09.nif", "Data/Meshes/FRIK/PB-Tile10.nif" , "Data/Meshes/FRIK/PB-Tile11.nif" };
-					for (int i = 0; i <= 11; i++) {
-						NiNode* retNode = loadNifFromFile(MainHud[i]);
-						NiCloneProcess proc;
-						proc.unk18 = Offsets::cloneAddr1;
-						proc.unk48 = Offsets::cloneAddr2;
-						NiNode* UI = Offsets::cloneNode(retNode, &proc);
-						UI->m_name = BSFixedString(meshName2[i]);
-						HUD->AttachChild((NiAVObject*)UI, true);
-						retNode = loadNifFromFile(MainHud2[i]);
-						NiNode* UI2 = Offsets::cloneNode(retNode, &proc);
-						UI2->m_name = BSFixedString(meshName[i]);
-						UI->AttachChild((NiAVObject*)UI2, true);
-						if (i == 10 && g_config->pipBoyOpenWhenLookAt) {
-							retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-							NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
-							UI3->m_name = BSFixedString("PBGlanceMarker");
-							UI->AttachChild((NiAVObject*)UI3, true);
-						}
-						if (i == 11 && g_config->dampenPipboyScreen) {
-							retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-							NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
-							UI3->m_name = BSFixedString("PBDampenMarker");
-							UI->AttachChild((NiAVObject*)UI3, true);
-						}
-					}
-					playerSkelly->setConfigModeHandPose();
-					_isPBConfigModeActive = true;
-					_PBConfigModeEnterCounter = 0;
-				}
-			}
-			else if (!PBConfigButtonPressed && !_isPBConfigModeActive) {
-				_PBConfigModeEnterCounter = 0;
-			}
-			if (_isPBConfigModeActive) {
-				BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)playerSkelly->getRoot();
-				NiPoint3 finger;
-				g_config->leftHandedMode ? finger = rt->transforms[playerSkelly->getBoneInMap("RArm_Finger23")].world.pos : finger = rt->transforms[playerSkelly->getBoneInMap("LArm_Finger23")].world.pos;
-				for (int i = 1; i <= 11; i++) {
-					BSFixedString TouchName = meshName2[i];
-					BSFixedString TransName = meshName[i];
-					NiNode* TouchMesh = (NiNode*)playerSkelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName);
-					NiNode* TransMesh = (NiNode*)playerSkelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName);
-					if (TouchMesh && TransMesh) {
-						float distance = vec3_len(finger - TouchMesh->m_worldTransform.pos);
-						if (distance > 2.0) {
-							TransMesh->m_localTransform.pos.y = 0.0;
-							if (i == 1 || i == 3 || i == 10 || i == 11) {
-								_PBTouchbuttons[i] = false;
-							}
-						}
-						else if (distance <= 2.0) {
-							float fz = (2.0 - distance);
-							if (fz > 0.0 && fz < 1.2) {
-								TransMesh->m_localTransform.pos.y = (fz);
-							}
-							if ((TransMesh->m_localTransform.pos.y > 1.0) && !_PBTouchbuttons[i]) {
-								if (vrhook != nullptr) {
-									//_PBConfigSticky = true;
-									g_config->leftHandedMode ? vrhook->StartHaptics(2, 0.05, 0.3) : vrhook->StartHaptics(1, 0.05, 0.3);
-									for (int i = 1; i <= 11; i++) {
-										if ((i != 1) && (i != 3))
-											_PBTouchbuttons[i] = false;
-									}
-									BSFixedString bname = "PBCONFIGMarker";
-									NiNode* UIMarker = (NiNode*)playerSkelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
-									if (UIMarker) {
-										UIMarker->m_parent->RemoveChild(UIMarker);
-									}
-									if ((i != 1) && (i != 3) && (i != 10) && (i != 11)) {
-										NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-										NiCloneProcess proc;
-										proc.unk18 = Offsets::cloneAddr1;
-										proc.unk48 = Offsets::cloneAddr2;
-										NiNode* UI = Offsets::cloneNode(retNode, &proc);
-										UI->m_name = BSFixedString("PBCONFIGMarker");
-										TouchMesh->AttachChild((NiAVObject*)UI, true);
-									}
-									if (i == 10 || i == 11) {
-										if (i == 10) {
-											if (!g_config->pipBoyOpenWhenLookAt) {
-												BSFixedString bname = "PBGlanceMarker";
-												NiNode* UIMarker = (NiNode*)playerSkelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
-												if (!UIMarker) {
-													NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-													NiCloneProcess proc;
-													proc.unk18 = Offsets::cloneAddr1;
-													proc.unk48 = Offsets::cloneAddr2;
-													NiNode* UI = Offsets::cloneNode(retNode, &proc);
-													UI->m_name = BSFixedString("PBGlanceMarker");
-													TouchMesh->AttachChild((NiAVObject*)UI, true);
-												}
-											}
-											else if (g_config->pipBoyOpenWhenLookAt) {
-												BSFixedString bname = "PBGlanceMarker";
-												NiNode* UIMarker = (NiNode*)playerSkelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
-												if (UIMarker) {
-													UIMarker->m_parent->RemoveChild(UIMarker);
-												}
-											}
-										}
-										if (i == 11) {
-											if (!g_config->dampenPipboyScreen) {
-												BSFixedString bname = "PBDampenMarker";
-												NiNode* UIMarker = (NiNode*)playerSkelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
-												if (!UIMarker) {
-													NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-													NiCloneProcess proc;
-													proc.unk18 = Offsets::cloneAddr1;
-													proc.unk48 = Offsets::cloneAddr2;
-													NiNode* UI = Offsets::cloneNode(retNode, &proc);
-													UI->m_name = BSFixedString("PBDampenMarker");
-													TouchMesh->AttachChild((NiAVObject*)UI, true);
-												}
-											}
-											else if (g_config->dampenPipboyScreen) {
-												BSFixedString bname = "PBDampenMarker";
-												NiNode* UIMarker = (NiNode*)playerSkelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
-												if (UIMarker) {
-													UIMarker->m_parent->RemoveChild(UIMarker);
-												}
-											}
-										}
-									}
-									_PBTouchbuttons[i] = true;
-								}
-							}
-						}
-					}
-				}
-				if (SaveButtonPressed && !_isSaveButtonPressed) {
-					_isSaveButtonPressed = true;
-					g_config->isHoloPipboy ? g_weaponOffsets->addOffset("HoloPipboyPosition", pbRoot->m_localTransform, Mode::normal) : g_weaponOffsets->addOffset("PipboyPosition", pbRoot->m_localTransform, Mode::normal);
-					writeOffsetJson();
-
-					// TODO: move save INI to common code instead or repeating it
-					// why do some buttons (glance, dumpen, model) save on toggle and not wait for save button?
-					_MESSAGE("Saving config to FRIK.ini");
-					CSimpleIniA ini;
-					SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-					rc = ini.SetDoubleValue("Fallout4VRBody", "PipboyScale", (double)_3rdPipboy->m_localTransform.scale);
-					rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-				}
-				else if (!SaveButtonPressed) {
-					_isSaveButtonPressed = false;
-				}
-				if (GlanceButtonPressed && !_isGlanceButtonPressed) {
-					_isGlanceButtonPressed = true;
-					g_config->pipBoyOpenWhenLookAt ? g_config->pipBoyOpenWhenLookAt = false : g_config->pipBoyOpenWhenLookAt = true;
-					CSimpleIniA ini;
-					SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-					rc = ini.SetBoolValue("Fallout4VRBody", "PipBoyOpenWhenLookAt", g_config->pipBoyOpenWhenLookAt);
-					rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-				}
-				else if (!GlanceButtonPressed) {
-					_isGlanceButtonPressed = false;
-				}
-				if (DampenScreenButtonPressed && !_isDampenScreenButtonPressed) {
-					_isDampenScreenButtonPressed = true;
-					g_config->dampenPipboyScreen ? g_config->dampenPipboyScreen = false : g_config->dampenPipboyScreen = true;
-					CSimpleIniA ini;
-					SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-					rc = ini.SetBoolValue("Fallout4VRBody", "DampenPipboyScreen", g_config->dampenPipboyScreen);
-					rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-				}
-				else if (!DampenScreenButtonPressed) {
-					_isDampenScreenButtonPressed = false;
-				}
-				if (ExitButtonPressed) {
-					exitPBConfig();
-				}
-				if (ModelSwapButtonPressed && !_isModelSwapButtonPressed) {
-					_isModelSwapButtonPressed = true;
-					g_config->isHoloPipboy ? g_config->isHoloPipboy = false : g_config->isHoloPipboy = true;
-					_pipboyStatus = false;
-					_stickypip = false;
-					turnPipBoyOff();
-					g_pipboy->replaceMeshes(true);
-					_pipboyStatus = true;
-					_stickypip = true;
-					playerSkelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
-					turnPipBoyOn();
-					CSimpleIniA ini;
-					SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-					rc = ini.SetBoolValue("Fallout4VRBody", "HoloPipBoyEnabled", g_config->isHoloPipboy);
-					rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-				}
-				else if (!ModelSwapButtonPressed) {
-					_isModelSwapButtonPressed = false;
-				}
-				if ((doinantHandStick.y > 0.10 || doinantHandStick.y < -0.10) && (RotateButtonPressed)) {
-					Matrix44 rot;
-					rAxisOffsetX = doinantHandStick.y / 10;
-					if (rAxisOffsetX < 0) {
-						rAxisOffsetX = rAxisOffsetX * -1;
-					}
-					else {
-						rAxisOffsetX = 0 - rAxisOffsetX;
-					}
-					rot.setEulerAngles((degrees_to_rads(rAxisOffsetX)), 0, 0);
-					pbRoot->m_localTransform.rot = rot.multiply43Left(pbRoot->m_localTransform.rot);
-					rot.multiply43Left(pbRoot->m_localTransform.rot);
-				}
-				if ((doinantHandStick.y > 0.10) && (ScaleButtonPressed)) {
-					pbRoot->m_localTransform.scale = (pbRoot->m_localTransform.scale + 0.001);
-				}
-				if ((doinantHandStick.y < -0.10) && (ScaleButtonPressed)) {
-					pbRoot->m_localTransform.scale = (pbRoot->m_localTransform.scale - 0.001);
-				}
-				if ((doinantHandStick.y > 0.10) && (MoveXButtonPressed)) {
-					rAxisOffsetX = doinantHandStick.y / 50;
-					pbRoot->m_localTransform.pos.x = (pbRoot->m_localTransform.pos.x + rAxisOffsetX);
-				}
-				if ((doinantHandStick.y < -0.10) && (MoveXButtonPressed)) {
-					rAxisOffsetX = doinantHandStick.y / 50;
-					pbRoot->m_localTransform.pos.x = (pbRoot->m_localTransform.pos.x + rAxisOffsetX);
-				}
-				if ((doinantHandStick.y > 0.10) && (MoveYButtonPressed)) {
-					rAxisOffsetX = doinantHandStick.y / 20;
-					pbRoot->m_localTransform.pos.y = (pbRoot->m_localTransform.pos.y + rAxisOffsetX);
-				}
-				if ((doinantHandStick.y < -0.10) && (MoveYButtonPressed)) {
-					rAxisOffsetX = doinantHandStick.y / 20;
-					pbRoot->m_localTransform.pos.y = (pbRoot->m_localTransform.pos.y + rAxisOffsetX);
-				}
-				if ((doinantHandStick.y > 0.10) && (MoveZButtonPressed)) {
-					rAxisOffsetX = doinantHandStick.y / 20;
-					pbRoot->m_localTransform.pos.z = (pbRoot->m_localTransform.pos.z - rAxisOffsetX);
-				}
-				if ((doinantHandStick.y < -0.10) && (MoveZButtonPressed)) {
-					rAxisOffsetX = doinantHandStick.y / 20;
-					pbRoot->m_localTransform.pos.z = (pbRoot->m_localTransform.pos.z - rAxisOffsetX);
-				}
-
-				if ((doinantHandStick.y > 0.10) && (ModelScaleButtonPressed) && (_3rdPipboy)) {
-					rAxisOffsetX = doinantHandStick.y / 65;
-					_3rdPipboy->m_localTransform.scale += rAxisOffsetX;
-					g_config->pipBoyScale = _3rdPipboy->m_localTransform.scale;
-				}
-				if ((doinantHandStick.y < -0.10) && (ModelScaleButtonPressed) && (_3rdPipboy)) {
-					rAxisOffsetX = doinantHandStick.y / 65;
-					_3rdPipboy->m_localTransform.scale += rAxisOffsetX;
-					g_config->pipBoyScale = _3rdPipboy->m_localTransform.scale;
-				}
-			}
-		}
-	}
-
 	void Pipboy::operatePipBoy() {
 
 		if ((*g_player)->firstPersonSkeleton == nullptr) {
@@ -548,7 +165,7 @@ namespace F4VRBody {
 			if (_pipboyStatus) {
 				_pipboyStatus = false;
 				turnPipBoyOff();
-				exitPBConfig();
+				g_configurationMode->exitPBConfig();
 				if (isWeaponinHand) {
 					drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					weaponStateDetected = false;
@@ -601,7 +218,7 @@ namespace F4VRBody {
 			_startedLookingAtPip = 0;
 			vr::VRControllerAxis_t axis_state = (g_config->pipBoyButtonArm > 0) ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0];
 			const auto timeElapsed = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _lastLookingAtPip;
-			if (_pipboyStatus && timeElapsed > g_config->pipBoyOffDelay && !_isPBConfigModeActive) {
+			if (_pipboyStatus && timeElapsed > g_config->pipBoyOffDelay && !g_configurationMode->isPipBoyConfigModeActive()) {
 				_pipboyStatus = false;
 				turnPipBoyOff();
 				playerSkelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
@@ -613,7 +230,7 @@ namespace F4VRBody {
 				c_IsOperatingPipboy = false;
 				//		_MESSAGE("Disabling PipBoy due to inactivity for %d more than %d ms", timeElapsed, g_config->pipBoyOffDelay);
 			}
-			else if (g_config->pipBoyAllowMovementNotLooking && _pipboyStatus && (axis_state.x != 0 || axis_state.y != 0) && !_isPBConfigModeActive) {
+			else if (g_config->pipBoyAllowMovementNotLooking && _pipboyStatus && (axis_state.x != 0 || axis_state.y != 0) && !g_configurationMode->isPipBoyConfigModeActive()) {
 				turnPipBoyOff();
 				_pipboyStatus = false;
 				playerSkelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
@@ -691,7 +308,7 @@ namespace F4VRBody {
 					if (_pipboyStatus) {
 						_pipboyStatus = false;
 						turnPipBoyOff();
-						exitPBConfig();
+						g_configurationMode->exitPBConfig();
 						playerSkelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 					}
 					else {
@@ -919,7 +536,6 @@ namespace F4VRBody {
 					const auto SwitchLightButton = _PipboyHand & vr::ButtonMaskFromId((vr::EVRButtonId)g_config->switchTorchButton);
 					if (vrhook != nullptr && _SwitchLightHaptics) {
 						g_config->leftHandedPipBoy ? vrhook->StartHaptics(2, 0.1, 0.1) : vrhook->StartHaptics(1, 0.1, 0.1);
-						_isSaveButtonPressed = true;
 					}
 					// Control switching between hand and head based Pipboy light
 					if (SwitchLightButton && !_SwithLightButtonSticky) {
@@ -927,7 +543,6 @@ namespace F4VRBody {
 						_SwitchLightHaptics = false;
 						if (vrhook != nullptr) {
 							g_config->leftHandedPipBoy ? vrhook->StartHaptics(2, 0.05, 0.3) : vrhook->StartHaptics(1, 0.05, 0.3);
-							_isSaveButtonPressed = true;
 						}
 						NiNode* LGHT_ATTACH = g_config->leftHandedPipBoy ? playerSkelly->getNode("RArm_Hand", playerSkelly->getRightArm().shoulder->GetAsNiNode()) : playerSkelly->getNode("LArm_Hand", playerSkelly->getLeftArm().shoulder->GetAsNiNode());
 						NiNode* lght = g_config->isPipBoyTorchOnArm ? get1stChildNode("HeadLightParent", LGHT_ATTACH) : playerSkelly->getPlayerNodes()->HeadLightParentNode->GetAsNiNode();
@@ -941,12 +556,8 @@ namespace F4VRBody {
 							lght->m_localTransform.pos.y = PosY;
 							g_config->isPipBoyTorchOnArm ? lght->m_parent->RemoveChild(lght) : playerSkelly->getPlayerNodes()->HeadLightParentNode->m_parent->RemoveChild(lght);
 							g_config->isPipBoyTorchOnArm ? playerSkelly->getPlayerNodes()->HmdNode->AttachChild(lght, true) : LGHT_ATTACH->AttachChild(lght, true);
-							g_config->isPipBoyTorchOnArm ? g_config->isPipBoyTorchOnArm = false : g_config->isPipBoyTorchOnArm = true;
+							g_config->togglePipBoyTorchOnArm();
 						}
-						CSimpleIniA ini;
-						SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-						rc = ini.SetBoolValue("Fallout4VRBody", "PipBoyTorchOnArm", g_config->isPipBoyTorchOnArm);
-						rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
 					}
 					if (!SwitchLightButton) {
 						_SwithLightButtonSticky = false;
@@ -1119,7 +730,7 @@ namespace F4VRBody {
 							}
 						}
 						// Mirror Left Stick Controls on Right Stick.
-						if (!_isPBConfigModeActive && g_config->switchUIControltoPrimary) {
+						if (!g_configurationMode->isPipBoyConfigModeActive() && g_config->switchUIControltoPrimary) {
 							BSFixedString selectnodename = "SelectRotate";
 							NiNode* trans = g_config->leftHandedPipBoy ? playerSkelly->getRightArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode() : playerSkelly->getLeftArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode();
 							vr::VRControllerAxis_t doinantHandStick = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0]);
@@ -1217,7 +828,7 @@ namespace F4VRBody {
 								_UIAltSelectSticky = false;
 							}
 						}
-						else if (!_isPBConfigModeActive && !g_config->switchUIControltoPrimary) {
+						else if (!g_configurationMode->isPipBoyConfigModeActive() && !g_config->switchUIControltoPrimary) {
 							//still move Pipboy trigger mesh even if controls havent been swapped.
 							vr::VRControllerAxis_t secondaryTrigger = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[1] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[1]);
 							vr::VRControllerAxis_t offHandStick = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0]);
@@ -1271,23 +882,6 @@ namespace F4VRBody {
 					}
 				}
 			}
-		}
-	}
-
-	void Pipboy::exitPBConfig() {  // Exit Pipboy Config Mode / remove UI.
-		if (_isPBConfigModeActive) {
-			for (int i = 0; i <= 11; i++) {
-				_PBTouchbuttons[i] = false;
-			}
-			static BSFixedString hudname("PBCONFIGHUD");
-			NiAVObject* PBConfigUI = playerSkelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&hudname);
-			if (PBConfigUI) {
-				PBConfigUI->flags |= 0x1;
-				PBConfigUI->m_localTransform.scale = 0;
-				PBConfigUI->m_parent->RemoveChild(PBConfigUI);
-			}
-			playerSkelly->disableConfigModePose();
-			_isPBConfigModeActive = false;
 		}
 	}
 

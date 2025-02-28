@@ -243,17 +243,13 @@ namespace F4VRBody
 		void showWands(wandMode a_mode = both);
 		void hideWands(wandMode a_mode = both);
 		void hideWeapon();
-		void swapPipboy();
 		void leftHandedModePipboy();
 		void positionPipboy();
 		void fixMelee();
 		void hideFistHelpers();
 		void fixPAArmor();
 		void dampenHand(NiNode* node, bool isLeft);
-		void dampenPipboyScreen();
-		bool isLookingAtPipBoy();
 		void hidePipboy();
-		void operatePipBoy();
 		bool armorHasHeadLamp();
 		void setPipboyHandPose();
 		void disablePipboyHandPose();
@@ -287,11 +283,6 @@ namespace F4VRBody
 		void debug();
 		void initLocalDefaults();
 		void fixBoneTree();
-		void pipboyConfigurationMode();
-		void mainConfigurationMode();
-		void pipboyManagement();
-		void exitPBConfig();
-		void configModeExit();
 		
 		void setTime();
 		// Body Positioning
@@ -329,14 +320,6 @@ namespace F4VRBody
 		float _cury;
 		std::map<std::string, NiTransform, CaseInsensitiveComparator> savedStates;
 		std::map<std::string, NiPoint3, CaseInsensitiveComparator> boneLocalDefault;
-
-		// Cylons Vars
-		bool _isHandsButtonPressed = false;
-		bool _isWeaponButtonPressed = false;
-		bool _isGripButtonPressed = false;
-		bool _MCTouchbuttons[10] = { false, false, false, false, false, false, false, false, false, false };
-		bool c_CalibrationModeUIActive = false;
-		// End
 
 		NiMatrix43 originalPipboyRotation;
 		

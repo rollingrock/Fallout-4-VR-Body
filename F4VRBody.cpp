@@ -1,5 +1,6 @@
 #include "F4VRBody.h"
 #include "Config.h"
+#include "ConfigurationMode.h"
 #include "Skeleton.h"
 #include "Pipboy.h"
 #include "HandPose.h"
@@ -48,7 +49,6 @@ namespace F4VRBody {
 	float c_dynamicCameraHeight = 0.0;
 	bool c_selfieMode = false;
 	bool GameVarsConfigured = false;
-	bool c_CalibrateModeActive = false;
 	bool c_loadedHideHead = false;
 	bool c_loadedHideEquipment = false;
 	bool c_loadedHideSkin = false;
@@ -483,6 +483,8 @@ namespace F4VRBody {
 
 			turnPipBoyOff();
 
+			initConfigurationMode(playerSkelly, vrhook);
+
 			if (g_config->setScale) {
 				Setting* set = GetINISetting("fVrScale:VR");
 				set->SetDouble(g_config->fVrScale);
@@ -766,6 +768,7 @@ namespace F4VRBody {
 		}
 
 		g_pipboy->onUpdate();
+		g_configurationMode->onUpdate();
 		
 		playerSkelly->fixBackOfHand();
 		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
