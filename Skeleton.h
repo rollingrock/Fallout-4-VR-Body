@@ -201,11 +201,6 @@ namespace F4VRBody
 			_common = this->getNode("COM", _root);
 		}
 
-		// info stuff
-		void printChildren(NiNode* child, std::string padding);
-		void printNodes(NiNode* nde);
-		void positionDiff();
-
 		int getBoneInMap(std::string boneName);
 
 		// reposition stuff
