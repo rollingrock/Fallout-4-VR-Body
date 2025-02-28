@@ -13,7 +13,7 @@
 #include <string.h>
 
 extern PapyrusVRAPI* g_papyrusvr;
-extern OpenVRHookManagerAPI* vrhook;
+extern OpenVRHookManagerAPI* _vrhook;
 
 using namespace std::chrono;
 namespace F4VRBody {
@@ -2304,14 +2304,14 @@ namespace F4VRBody {
 						_useCustomOffHandOffset = true;
 						_offhandOffset = lookup.value();
 						_MESSAGE("Found offHandOffset for %s pos (%f, %f, %f) scale %f: powerArmor: %d",
-							weapname, _offhandOffset.pos.x, _offhandOffset.pos.y, _offhandOffset.pos.z, _offhandOffset.scale, _inPowerArmor);
+							weapname.c_str(), _offhandOffset.pos.x, _offhandOffset.pos.y, _offhandOffset.pos.z, _offhandOffset.scale, _inPowerArmor);
 					}
 					lookup = g_weaponOffsets->getOffset(weapname, _inPowerArmor ? Mode::powerArmor : Mode::normal);
 					if (lookup.has_value()) {
 						_useCustomWeaponOffset = true;
 						_customTransform = lookup.value();
-						_MESSAGE("Found weaponOffset for %s pos (%f, %f, %f) scale %f: powerArmor: %d",
-							weapname, _customTransform.pos.x, _customTransform.pos.y, _customTransform.pos.z, _customTransform.scale, _inPowerArmor);
+						_MESSAGE("Found weaponOffset for \"%s\", pos:(%f, %f, %f) scale: %f, inPowerArmor: %d",
+							weapname.c_str(), _customTransform.pos.x, _customTransform.pos.y, _customTransform.pos.z, _customTransform.scale, _inPowerArmor);
 					}
 					else { // offsets should already be applied if not already saved
 						NiPoint3 offset = NiPoint3(-0.94, 0, 0); // apply static VR offset
@@ -2320,8 +2320,8 @@ namespace F4VRBody {
 						if (weapOffset) {
 							offset.x -= weapOffset->m_localTransform.pos.y;
 							offset.y -= -2.099;
-							_MESSAGE("%s: WeaponOffset pos (%f, %f, %f) scale %f", weapname, weapOffset->m_localTransform.pos.x, weapOffset->m_localTransform.pos.y, weapOffset->m_localTransform.pos.z,
-								weapOffset->m_localTransform.scale);
+							_MESSAGE("%s: WeaponOffset pos (%f, %f, %f) scale %f", 
+								weapname.c_str(), weapOffset->m_localTransform.pos.x, weapOffset->m_localTransform.pos.y, weapOffset->m_localTransform.pos.z, weapOffset->m_localTransform.scale);
 						}
 						weap->m_localTransform.pos += offset;
 					}
@@ -2395,8 +2395,8 @@ namespace F4VRBody {
 					else {
 						if (!_repositionModeSwitched && reg & vr::ButtonMaskFromId((vr::EVRButtonId)g_config->offHandActivateButtonID)) {
 							_repositionMode = static_cast<repositionMode>((_repositionMode + 1) % (repositionMode::total + 1));
-							if (vrhook)
-								vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
+							if (_vrhook)
+								_vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
 							_repositionModeSwitched = true;
 							_MESSAGE("Reposition Mode Switch: weapon %s %d ms mode: %d", weapname, _pressLength, _repositionMode);
 						}
@@ -2405,8 +2405,8 @@ namespace F4VRBody {
 						}
 						_pressLength = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _repositionButtonHoldStart;
 						if (!_inRepositionMode && reg & vr::ButtonMaskFromId((vr::EVRButtonId)g_config->repositionButtonID) && _pressLength > g_config->holdDelay) {
-							if (vrhook && c_repositionMasterMode)
-								vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
+							if (_vrhook && c_repositionMasterMode)
+								_vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
 							_inRepositionMode = c_repositionMasterMode;
 						}
 						else if (!(reg & vr::ButtonMaskFromId((vr::EVRButtonId)g_config->repositionButtonID))) {
@@ -2615,8 +2615,8 @@ namespace F4VRBody {
                 _zoomModeButtonHeld = false;
                 _MESSAGE("Zoom Toggle pressed; sending message to switch zoom state");
                 g_messaging->Dispatch(g_pluginHandle, 16, nullptr, 0, "FO4VRBETTERSCOPES");
-                if (vrhook) {
-                    vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1, 0.3);
+                if (_vrhook) {
+                    _vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1, 0.3);
                 }
             }
         }
@@ -2645,15 +2645,15 @@ namespace F4VRBody {
             // Repositioning does not require hand near scope
             if (!_inRepositionMode && (handInput & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(g_config->repositionButtonID))) && _pressLength > g_config->holdDelay) {
                 // Enter reposition mode
-                if (vrhook && c_repositionMasterMode) {
-                    vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1, 0.3);
+                if (_vrhook && c_repositionMasterMode) {
+                    _vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1, 0.3);
                 }
                 _inRepositionMode = c_repositionMasterMode;
             } else if (_inRepositionMode) { // In reposition mode for better scopes
                 vr::VRControllerAxis_t axis_state = !(g_config->pipBoyButtonArm > 0) ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0];
                 if (!_repositionModeSwitched && (handInput & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(g_config->offHandActivateButtonID)))) {
-                    if (vrhook) {
-                        vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1, 0.3);
+                    if (_vrhook) {
+                        _vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1, 0.3);
                     }
                     _repositionModeSwitched = true;
                     msgData.x = 0.f;

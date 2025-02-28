@@ -242,10 +242,10 @@ namespace F4VRBody {
 		writeOffsetJson();
 
 		if (rc < 0) {
-			_MESSAGE("Failed to write out INI config file");
+			_MESSAGE("Config: Failed to save FRIK.ini");
 		}
 		else {
-			_MESSAGE("successfully wrote config file");
+			_MESSAGE("Config: Saving FRIK.ini successful");
 		}
 	}
 

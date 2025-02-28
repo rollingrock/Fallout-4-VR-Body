@@ -15,13 +15,13 @@ namespace F4VRBody {
 	class ConfigurationMode
 	{
 	public:
-		ConfigurationMode(Skeleton* iSkelly, OpenVRHookManagerAPI* hook) {
-			skelly = iSkelly;
-			vrhook = hook;
+		ConfigurationMode(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
+			_skelly = skelly;
+			_vrhook = hook;
 		}
 
 		inline bool isCalibrateModeActive() const {
-			return c_CalibrateModeActive; 
+			return _calibrateModeActive; 
 		}
 
 		inline bool isPipBoyConfigModeActive() const {
@@ -36,13 +36,13 @@ namespace F4VRBody {
 		void pipboyConfigurationMode();
 		void mainConfigurationMode();
 
-		Skeleton* skelly;
-		OpenVRHookManagerAPI* vrhook;
+		Skeleton* _skelly;
+		OpenVRHookManagerAPI* _vrhook;
 
 		// persistant fields to be used for general configuration menu
 		bool _MCTouchbuttons[10] = { false, false, false, false, false, false, false, false, false, false };
-		bool c_CalibrationModeUIActive = false;
-		bool c_CalibrateModeActive = false;
+		bool _calibrationModeUIActive = false;
+		bool _calibrateModeActive = false;
 		bool _isHandsButtonPressed = false;
 		bool _isWeaponButtonPressed = false;
 		bool _isGripButtonPressed = false;
@@ -50,13 +50,13 @@ namespace F4VRBody {
 		// persistant fields to be used for pipboy configuration menu
 		bool _PBTouchbuttons[12] = { false, false, false, false, false, false, false, false, false, false, false, false };
 		bool _isPBConfigModeActive = false;
-		bool c_ExitandSavePressed = false;
-		bool c_ExitnoSavePressed = false;
-		bool c_SelfieButtonPressed = false;
-		bool c_UIHeightButtonPressed = false;
-		bool c_DampenHandsButtonPressed = false;
-		int c_ConfigModeTimer = 0;
-		int c_ConfigModeTimer2 = 0;
+		bool _exitAndSavePressed = false;
+		bool _exitWithoutSavePressed = false;
+		bool _selfieButtonPressed = false;
+		bool _UIHeightButtonPressed = false;
+		bool _dampenHandsButtonPressed = false;
+		int _configModeTimer = 0;
+		int _configModeTimer2 = 0;
 		bool _isSaveButtonPressed = false;
 		bool _isModelSwapButtonPressed = false;
 		bool _isGlanceButtonPressed = false;
@@ -64,16 +64,16 @@ namespace F4VRBody {
 		int _PBConfigModeEnterCounter = 0;
 
 		// backup and resture if erxist config without saving
-		float c_armLengthbkup;
-		float c_powerArmor_upbkup;
-		float c_playerOffset_upbkup;
-		float c_RootOffsetbkup;
-		float c_PARootOffsetbkup;
-		float c_fVrScalebkup;
-		float c_playerOffset_forwardbkup;
-		float c_powerArmor_forwardbkup;
-		float c_cameraHeightbkup;
-		float c_PACameraHeightbkup;
+		float _armLength_bkup = 0;
+		float _powerArmor_up_bkup = 0;
+		float _playerOffset_up_bkup = 0;
+		float _rootOffset_bkup = 0;
+		float _PARootOffset_bkup = 0;
+		float _fVrScale_bkup = 0;
+		float _playerOffset_forward_bkup = 0;
+		float _powerArmor_forward_bkup = 0;
+		float _cameraHeight_bkup = 0;
+		float _PACameraHeight_bkup = 0;
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now
@@ -81,11 +81,11 @@ namespace F4VRBody {
 
 	static void initConfigurationMode(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
 		if (g_configurationMode) {
-			_MESSAGE("ERROR: config already initialized");
+			_MESSAGE("ERROR: configuration mode already initialized");
 			return;
 		}
 
-		_MESSAGE("Init config...");
+		_MESSAGE("Init configuration mode...");
 		g_configurationMode = new ConfigurationMode(skelly, hook);
 	}
 }

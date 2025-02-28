@@ -5,11 +5,17 @@
 
 namespace F4VRBody {
 
+	/// <summary>
+	/// Hnadle Pipboy:
+	/// 1. On wrist UI override.
+	/// 2. Hand interaction with on-wrist pipboy.
+	/// 3. Flashlight on-wrist / head location toggle.
+	/// </summary>
 	class Pipboy	{
 	public:
 		Pipboy(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
-			playerSkelly = skelly;
-			vrhook = hook;
+			_skelly = skelly;
+			_vrhook = hook;
 		}
 
 		inline bool status() const {
@@ -17,7 +23,7 @@ namespace F4VRBody {
 		}
 
 		inline bool isOperatingPipboy() const {
-			return c_IsOperatingPipboy; 
+			return _isOperatingPipboy; 
 		}
 
 		void swapPipboy();
@@ -27,18 +33,23 @@ namespace F4VRBody {
 		void operatePipBoy();
 
 	private:
-		Skeleton* playerSkelly;
-		OpenVRHookManagerAPI* vrhook;
-		bool meshesReplaced = false;
+		void replaceMeshes(std::string itemHide, std::string itemShow);
+		void pipboyManagement();
+		void dampenPipboyScreen();
+		bool isLookingAtPipBoy();
+
+		Skeleton* _skelly;
+		OpenVRHookManagerAPI* _vrhook;
 		
-		bool _stickypip;
+		bool meshesReplaced = false;
+		bool _stickypip = false;
 		bool _pipboyStatus = false;
 		int _pipTimer = 0;
 		uint64_t _startedLookingAtPip = 0;
 		uint64_t _lastLookingAtPip = 0;
 		NiTransform _pipboyScreenPrevFrame;
 
-		// Cylons Vars
+		// Pipboy interaction with hand variables
 		bool _stickyoffpip = false;
 		bool _stickybpip = false;
 		bool stickyPBlight = false;
@@ -49,19 +60,23 @@ namespace F4VRBody {
 		bool _SwitchLightHaptics = true;
 		bool _UISelectSticky = false;
 		bool _UIAltSelectSticky = false;
-		UInt32 LastPipboyPage = 0;
+		bool _isOperatingPipboy = false;
+		bool _isWeaponinHand = false;
+		bool _weaponStateDetected = false;
+		UInt32 _lastPipboyPage = 0;
 		float lastRadioFreq = 0.0;
-		bool c_IsOperatingPipboy = false;
-		bool isWeaponinHand = false;
-		bool weaponStateDetected = false;
-		// End
-
-		void replaceMeshes(std::string itemHide, std::string itemShow);
-		void pipboyManagement();
-		void dampenPipboyScreen();
-		bool isLookingAtPipBoy();
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now
 	extern Pipboy* g_pipboy;
+	
+	static void initPipboy(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
+		if (g_pipboy) {
+			_MESSAGE("ERROR: pipboy already initialized");
+			return;
+		}
+
+		_MESSAGE("Init pipboy...");
+		g_pipboy = new Pipboy(skelly, hook);
+	}
 }

@@ -14,6 +14,7 @@ namespace F4VRBody {
 	public:
 		bool loadConfig();
 		void saveSettings();
+
 		inline void togglePipBoyTorchOnArm() {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
 			saveBoolValue("PipBoyTorchOnArm", isPipBoyTorchOnArm);

@@ -12,22 +12,22 @@ namespace F4VRBody {
 	/// Exit Main FRIK Config Mode
 	/// </summary>
 	void ConfigurationMode::configModeExit() {
-		c_CalibrationModeUIActive = false;
-		if (NiNode* c_MBox = skelly->getNode("messageBoxMenuWider", skelly->getPlayerNodes()->playerworldnode)) {
+		_calibrationModeUIActive = false;
+		if (NiNode* c_MBox = _skelly->getNode("messageBoxMenuWider", _skelly->getPlayerNodes()->playerworldnode)) {
 			c_MBox->flags &= ~0x1;
 			c_MBox->m_localTransform.scale = 1.0;
 		}
-		if (c_CalibrateModeActive) {
+		if (_calibrateModeActive) {
 			std::fill(std::begin(_MCTouchbuttons), std::end(_MCTouchbuttons), false);
 			static BSFixedString hudname("MCCONFIGHUD");
-			if (NiAVObject* MCConfigUI = skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&hudname)) {
+			if (NiAVObject* MCConfigUI = _skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&hudname)) {
 				MCConfigUI->flags |= 0x1;
 				MCConfigUI->m_localTransform.scale = 0;
 				MCConfigUI->m_parent->RemoveChild(MCConfigUI);
 			}
-			skelly->disableConfigModePose();
+			_skelly->disableConfigModePose();
 			SetINIFloat("fDirectionalDeadzone:Controls", c_repositionMasterMode ? 1.0 : g_config->directionalDeadzone);
-			c_CalibrateModeActive = false;
+			_calibrateModeActive = false;
 		}
 	}
 
@@ -38,13 +38,13 @@ namespace F4VRBody {
 				_PBTouchbuttons[i] = false;
 			}
 			static BSFixedString hudname("PBCONFIGHUD");
-			NiAVObject* PBConfigUI = skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&hudname);
+			NiAVObject* PBConfigUI = _skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&hudname);
 			if (PBConfigUI) {
 				PBConfigUI->flags |= 0x1;
 				PBConfigUI->m_localTransform.scale = 0;
 				PBConfigUI->m_parent->RemoveChild(PBConfigUI);
 			}
-			skelly->disableConfigModePose();
+			_skelly->disableConfigModePose();
 			_isPBConfigModeActive = false;
 		}
 	}
@@ -54,7 +54,7 @@ namespace F4VRBody {
 	/// 
 	/// </summary>
 	void ConfigurationMode::mainConfigurationMode() {
-		if (!c_CalibrateModeActive) {
+		if (!_calibrateModeActive) {
 			return;
 		}
 
@@ -63,9 +63,9 @@ namespace F4VRBody {
 		char* meshName2[10] = { "MC-MainTitle", "MC-Tile01", "MC-Tile02", "MC-Tile03", "MC-Tile04", "MC-Tile05", "MC-Tile06", "MC-Tile07", "MC-Tile08", "MC-Tile09" };
 		char* meshName3[10] = { "","","","","","","", "MC-Tile07On", "MC-Tile08On", "MC-Tile09On" };
 		char* meshName4[4] = { "MC-ModeA", "MC-ModeB", "MC-ModeC", "MC-ModeD" };
-		if (!c_CalibrationModeUIActive) { // Create Config UI
+		if (!_calibrationModeUIActive) { // Create Config UI
 			ShowMessagebox("FRIK Config Mode");
-			NiNode* c_MBox = skelly->getNode("messageBoxMenuWider", skelly->getPlayerNodes()->playerworldnode);
+			NiNode* c_MBox = _skelly->getNode("messageBoxMenuWider", _skelly->getPlayerNodes()->playerworldnode);
 			if (c_MBox) {
 				c_MBox->flags |= 0x1;
 				c_MBox->m_localTransform.scale = 0;
@@ -75,8 +75,8 @@ namespace F4VRBody {
 				if ((*g_ui)->IsMenuRegistered(menuName)) {
 					CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 				}
-				if (vrhook != nullptr) {
-					g_config->leftHandedMode ? vrhook->StartHaptics(1, 0.55, 0.5) : vrhook->StartHaptics(2, 0.55, 0.5);
+				if (_vrhook != nullptr) {
+					g_config->leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
 				}
 			}
 			NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
@@ -85,7 +85,7 @@ namespace F4VRBody {
 			proc.unk48 = Offsets::cloneAddr2;
 			NiNode* HUD = Offsets::cloneNode(retNode, &proc);
 			HUD->m_name = BSFixedString("MCCONFIGHUD");
-			NiNode* UIATTACH = skelly->getNode("world_primaryWand.nif", skelly->getPlayerNodes()->primaryUIAttachNode);
+			NiNode* UIATTACH = _skelly->getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
 			UIATTACH->AttachChild((NiAVObject*)HUD, true);
 			char* MainHud[10] = { "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif", "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile08.nif", "Data/Meshes/FRIK/UI-Tile09.nif" };
 			char* MainHud2[10] = { "Data/Meshes/FRIK/MC-MainTitle.nif", "Data/Meshes/FRIK/MC-Tile01.nif", "Data/Meshes/FRIK/MC-Tile02.nif", "Data/Meshes/FRIK/MC-Tile03.nif", "Data/Meshes/FRIK/MC-Tile04.nif", "Data/Meshes/FRIK/MC-Tile05.nif", "Data/Meshes/FRIK/MC-Tile06.nif", "Data/Meshes/FRIK/MC-Tile07.nif", "Data/Meshes/FRIK/MC-Tile08.nif", "Data/Meshes/FRIK/MC-Tile09.nif" };
@@ -117,36 +117,36 @@ namespace F4VRBody {
 					}
 				}
 			}
-			skelly->setConfigModeHandPose();
-			c_CalibrationModeUIActive = true;
-			c_armLengthbkup = g_config->armLength;
-			c_powerArmor_upbkup = g_config->powerArmor_up;
-			c_playerOffset_upbkup = g_config->playerOffset_up;
-			c_RootOffsetbkup = g_config->rootOffset;
-			c_PARootOffsetbkup = g_config->PARootOffset;
-			c_fVrScalebkup = g_config->fVrScale;
-			c_playerOffset_forwardbkup = g_config->playerOffset_forward;
-			c_powerArmor_forwardbkup = g_config->powerArmor_forward;
-			c_cameraHeightbkup = g_config->cameraHeight;
-			c_PACameraHeightbkup = g_config->PACameraHeight;
+			_skelly->setConfigModeHandPose();
+			_calibrationModeUIActive = true;
+			_armLength_bkup = g_config->armLength;
+			_powerArmor_up_bkup = g_config->powerArmor_up;
+			_playerOffset_up_bkup = g_config->playerOffset_up;
+			_rootOffset_bkup = g_config->rootOffset;
+			_PARootOffset_bkup = g_config->PARootOffset;
+			_fVrScale_bkup = g_config->fVrScale;
+			_playerOffset_forward_bkup = g_config->playerOffset_forward;
+			_powerArmor_forward_bkup = g_config->powerArmor_forward;
+			_cameraHeight_bkup = g_config->cameraHeight;
+			_PACameraHeight_bkup = g_config->PACameraHeight;
 		}
 		else {
 			NiNode* UIElement = nullptr;
 			// Dampen Hands
-			UIElement = skelly->getNode("MC-Tile07On", skelly->getPlayerNodes()->primaryUIAttachNode);
+			UIElement = _skelly->getNode("MC-Tile07On", _skelly->getPlayerNodes()->primaryUIAttachNode);
 			g_config->dampenHands ? UIElement->m_localTransform.scale = 1 : UIElement->m_localTransform.scale = 0;
 			// Weapon Reposition Mode
-			UIElement = skelly->getNode("MC-Tile08On", skelly->getPlayerNodes()->primaryUIAttachNode);
+			UIElement = _skelly->getNode("MC-Tile08On", _skelly->getPlayerNodes()->primaryUIAttachNode);
 			c_repositionMasterMode ? UIElement->m_localTransform.scale = 1 : UIElement->m_localTransform.scale = 0;
 			// Grip Mode
 			if (!g_config->enableGripButtonToGrap && !g_config->onePressGripButton && !g_config->enableGripButtonToLetGo) { // Standard Sticky Grip on / off
 				for (int i = 0; i < 4; i++) {
 					if (i == 0) {
-						UIElement = skelly->getNode(meshName4[i], skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					}
 					else {
-						UIElement = skelly->getNode(meshName4[i], skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
@@ -154,11 +154,11 @@ namespace F4VRBody {
 			else if (!g_config->enableGripButtonToGrap && !g_config->onePressGripButton && g_config->enableGripButtonToLetGo) { // Sticky Grip with button to release
 				for (int i = 0; i < 4; i++) {
 					if (i == 1) {
-						UIElement = skelly->getNode(meshName4[i], skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					}
 					else {
-						UIElement = skelly->getNode(meshName4[i], skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
@@ -166,11 +166,11 @@ namespace F4VRBody {
 			else if (g_config->enableGripButtonToGrap && g_config->onePressGripButton && !g_config->enableGripButtonToLetGo) { // Button held to Grip
 				for (int i = 0; i < 4; i++) {
 					if (i == 2) {
-						UIElement = skelly->getNode(meshName4[i], skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					}
 					else {
-						UIElement = skelly->getNode(meshName4[i], skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
@@ -178,29 +178,29 @@ namespace F4VRBody {
 			else if (g_config->enableGripButtonToGrap && !g_config->onePressGripButton && g_config->enableGripButtonToLetGo) { // button press to toggle Grip on or off
 				for (int i = 0; i < 4; i++) {
 					if (i == 3) {
-						UIElement = skelly->getNode(meshName4[i], skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					}
 					else {
-						UIElement = skelly->getNode(meshName4[i], skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
 			}
 			else {  //Not exepected - show no mode lable until button pressed 
 				for (int i = 0; i < 4; i++) {
-					UIElement = skelly->getNode(meshName4[i], skelly->getPlayerNodes()->primaryUIAttachNode);
+					UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 					UIElement->m_localTransform.scale = 0;
 				}
 			}
-			BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)skelly->getRoot();
+			BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_skelly->getRoot();
 			NiPoint3 finger;
-			g_config->leftHandedMode ? finger = rt->transforms[skelly->getBoneInMap("RArm_Finger23")].world.pos : finger = rt->transforms[skelly->getBoneInMap("LArm_Finger23")].world.pos;
+			g_config->leftHandedMode ? finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos : finger = rt->transforms[_skelly->getBoneInMap("LArm_Finger23")].world.pos;
 			for (int i = 1; i <= 9; i++) {
 				BSFixedString TouchName = meshName2[i];
 				BSFixedString TransName = meshName[i];
-				NiNode* TouchMesh = (NiNode*)skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName);
-				NiNode* TransMesh = (NiNode*)skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName);
+				NiNode* TouchMesh = (NiNode*)_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName);
+				NiNode* TransMesh = (NiNode*)_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName);
 				if (TouchMesh && TransMesh) {
 					float distance = vec3_len(finger - TouchMesh->m_worldTransform.pos);
 					if (distance > 2.0) {
@@ -215,14 +215,14 @@ namespace F4VRBody {
 							TransMesh->m_localTransform.pos.y = (fz);
 						}
 						if ((TransMesh->m_localTransform.pos.y > 1.0) && !_MCTouchbuttons[i]) {
-							if (vrhook != nullptr) {
+							if (_vrhook != nullptr) {
 								//_PBConfigSticky = true;
-								g_config->leftHandedMode ? vrhook->StartHaptics(2, 0.05, 0.3) : vrhook->StartHaptics(1, 0.05, 0.3);
+								g_config->leftHandedMode ? _vrhook->StartHaptics(2, 0.05, 0.3) : _vrhook->StartHaptics(1, 0.05, 0.3);
 								for (int i = 1; i <= 7; i++) {
 									_MCTouchbuttons[i] = false;
 								}
 								BSFixedString bname = "MCCONFIGMarker";
-								NiNode* UIMarker = (NiNode*)skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
+								NiNode* UIMarker = (NiNode*)_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
 								if (UIMarker) {
 									UIMarker->m_parent->RemoveChild(UIMarker);
 								}
@@ -253,7 +253,7 @@ namespace F4VRBody {
 			bool HandsButtonPressed = _MCTouchbuttons[7];
 			bool WeaponButtonPressed = _MCTouchbuttons[8];
 			bool GripButtonPressed = _MCTouchbuttons[9];
-			bool isInPA = skelly->detectInPowerArmor();
+			bool isInPA = _skelly->detectInPowerArmor();
 			if (HandsButtonPressed && !_isHandsButtonPressed) {
 				_isHandsButtonPressed = true;
 				g_config->dampenHands = !g_config->dampenHands;
@@ -359,7 +359,7 @@ namespace F4VRBody {
 		pipboyConfigurationMode();
 		mainConfigurationMode();
 
-		if (c_CalibrateModeActive) {
+		if (_calibrateModeActive) {
 			vr::VRControllerAxis_t doinantHandStick = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0]);
 			uint64_t dominantHand = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed);
 			uint64_t offHand = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed);
@@ -367,50 +367,50 @@ namespace F4VRBody {
 			const auto ExitnoSave = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)33);
 			const auto SelfieButton = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)1);
 			const auto HeightButton = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)1);
-			if (ExitandSave && !c_ExitandSavePressed) {
-				c_ExitandSavePressed = true;
+			if (ExitandSave && !_exitAndSavePressed) {
+				_exitAndSavePressed = true;
 				g_configurationMode->configModeExit();
 				g_config->saveSettings();
-				if (vrhook != nullptr) {
-					g_config->leftHandedMode ? vrhook->StartHaptics(1, 0.55, 0.5) : vrhook->StartHaptics(2, 0.55, 0.5);
+				if (_vrhook != nullptr) {
+					g_config->leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
 				}
 			}
 			else if (!ExitandSave) {
-				c_ExitandSavePressed = false;
+				_exitAndSavePressed = false;
 			}
-			if (ExitnoSave && !c_ExitnoSavePressed) {
-				c_ExitnoSavePressed = true;
+			if (ExitnoSave && !_exitWithoutSavePressed) {
+				_exitWithoutSavePressed = true;
 				g_configurationMode->configModeExit();
-				g_config->armLength = c_armLengthbkup;
-				g_config->powerArmor_up = c_powerArmor_upbkup;
-				g_config->playerOffset_up = c_playerOffset_upbkup;
-				g_config->rootOffset = c_RootOffsetbkup;
-				g_config->PARootOffset = c_PARootOffsetbkup;
-				g_config->fVrScale = c_fVrScalebkup;
-				g_config->playerOffset_forward = c_playerOffset_forwardbkup;
-				g_config->powerArmor_forward = c_powerArmor_forwardbkup;
-				g_config->cameraHeight = c_cameraHeightbkup;
-				g_config->PACameraHeight = c_PACameraHeightbkup;
+				g_config->armLength = _armLength_bkup;
+				g_config->powerArmor_up = _powerArmor_up_bkup;
+				g_config->playerOffset_up = _playerOffset_up_bkup;
+				g_config->rootOffset = _rootOffset_bkup;
+				g_config->PARootOffset = _PARootOffset_bkup;
+				g_config->fVrScale = _fVrScale_bkup;
+				g_config->playerOffset_forward = _playerOffset_forward_bkup;
+				g_config->powerArmor_forward = _powerArmor_forward_bkup;
+				g_config->cameraHeight = _cameraHeight_bkup;
+				g_config->PACameraHeight = _PACameraHeight_bkup;
 			}
 			else if (!ExitnoSave) {
-				c_ExitnoSavePressed = false;
+				_exitWithoutSavePressed = false;
 			}
-			if (SelfieButton && !c_SelfieButtonPressed) {
-				c_SelfieButtonPressed = true;
+			if (SelfieButton && !_selfieButtonPressed) {
+				_selfieButtonPressed = true;
 				c_selfieMode = !c_selfieMode;
 			}
 			else if (!SelfieButton) {
-				c_SelfieButtonPressed = false;
+				_selfieButtonPressed = false;
 			}
-			if (HeightButton && !c_UIHeightButtonPressed) {
-				c_UIHeightButtonPressed = true;
-				PlayerNodes* pNodes = skelly->getPlayerNodes();
+			if (HeightButton && !_UIHeightButtonPressed) {
+				_UIHeightButtonPressed = true;
+				PlayerNodes* pNodes = _skelly->getPlayerNodes();
 				g_config->playerHMDHeight = pNodes->UprightHmdNode->m_localTransform.pos.z;
-				float x = skelly->getNode("LArm_Collarbone", skelly->getRoot())->m_worldTransform.pos.z;
+				float x = _skelly->getNode("LArm_Collarbone", _skelly->getRoot())->m_worldTransform.pos.z;
 				g_config->shoulderToHMD = g_config->playerHMDHeight - x;
 			}
 			else if (!HeightButton) {
-				c_UIHeightButtonPressed = false;
+				_UIHeightButtonPressed = false;
 			}
 		}
 		else {
@@ -418,21 +418,21 @@ namespace F4VRBody {
 			uint64_t offHand = (g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed);
 			const auto dHTouch = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)32);
 			const auto oHTouch = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)32);
-			if (dHTouch && !c_CalibrateModeActive) {
-				c_ConfigModeTimer += 1;
-				if (c_ConfigModeTimer > 200 && c_ConfigModeTimer2 > 200) {
-					c_DampenHandsButtonPressed = true;
-					c_CalibrateModeActive = true;
+			if (dHTouch && !_calibrateModeActive) {
+				_configModeTimer += 1;
+				if (_configModeTimer > 200 && _configModeTimer2 > 200) {
+					_dampenHandsButtonPressed = true;
+					_calibrateModeActive = true;
 				}
 			}
-			else if (!dHTouch && !c_CalibrateModeActive && c_ConfigModeTimer > 0) {
-				c_ConfigModeTimer = 0;
+			else if (!dHTouch && !_calibrateModeActive && _configModeTimer > 0) {
+				_configModeTimer = 0;
 			}
-			if (oHTouch && !c_CalibrateModeActive) {
-				c_ConfigModeTimer2 += 1;
+			if (oHTouch && !_calibrateModeActive) {
+				_configModeTimer2 += 1;
 			}
-			else if (!oHTouch && !c_CalibrateModeActive && c_ConfigModeTimer2 > 0) {
-				c_ConfigModeTimer2 = 0;
+			else if (!oHTouch && !_calibrateModeActive && _configModeTimer2 > 0) {
+				_configModeTimer2 = 0;
 			}
 		}
 	}
@@ -461,19 +461,19 @@ namespace F4VRBody {
 			char* meshName[12] = { "PB-MainTitleTrans", "PB-Tile07Trans", "PB-Tile03Trans", "PB-Tile08Trans", "PB-Tile02Trans", "PB-Tile01Trans", "PB-Tile04Trans", "PB-Tile05Trans", "PB-Tile06Trans", "PB-Tile09Trans", "PB-Tile10Trans", "PB-Tile11Trans" };
 			char* meshName2[12] = { "PB-MainTitle", "PB-Tile07", "PB-Tile03", "PB-Tile08", "PB-Tile02", "PB-Tile01", "PB-Tile04", "PB-Tile05", "PB-Tile06", "PB-Tile09", "PB-Tile10", "PB-Tile11" };
 			static BSFixedString wandPipName("PipboyRoot");
-			NiAVObject* pbRoot = skelly->getPlayerNodes()->SecondaryWandNode->GetObjectByName(&wandPipName);
+			NiAVObject* pbRoot = _skelly->getPlayerNodes()->SecondaryWandNode->GetObjectByName(&wandPipName);
 			if (!pbRoot) {
 				return;
 			}
 			BSFixedString pipName("PipboyBone");
 			NiAVObject* _3rdPipboy = nullptr;
 			if (!g_config->leftHandedPipBoy) {
-				if (skelly->getLeftArm().forearm3) {
-					_3rdPipboy = skelly->getLeftArm().forearm3->GetObjectByName(&pipName);
+				if (_skelly->getLeftArm().forearm3) {
+					_3rdPipboy = _skelly->getLeftArm().forearm3->GetObjectByName(&pipName);
 				}
 			}
 			else {
-				_3rdPipboy = skelly->getRightArm().forearm3->GetObjectByName(&pipName);
+				_3rdPipboy = _skelly->getRightArm().forearm3->GetObjectByName(&pipName);
 
 			}
 			if (PBConfigButtonPressed && !_isPBConfigModeActive) { // Enter Pipboy Config Mode by holding down favorites button.
@@ -485,8 +485,8 @@ namespace F4VRBody {
 							CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 						}
 					}
-					if (vrhook != nullptr) {
-						g_config->leftHandedMode ? vrhook->StartHaptics(1, 0.55, 0.5) : vrhook->StartHaptics(2, 0.55, 0.5);
+					if (_vrhook != nullptr) {
+						g_config->leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
 					}
 					NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
 					NiCloneProcess proc;
@@ -494,7 +494,7 @@ namespace F4VRBody {
 					proc.unk48 = Offsets::cloneAddr2;
 					NiNode* HUD = Offsets::cloneNode(retNode, &proc);
 					HUD->m_name = BSFixedString("PBCONFIGHUD");
-					NiNode* UIATTACH = skelly->getNode("world_primaryWand.nif", skelly->getPlayerNodes()->primaryUIAttachNode);
+					NiNode* UIATTACH = _skelly->getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
 					UIATTACH->AttachChild((NiAVObject*)HUD, true);
 					char* MainHud[12] = { "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif", "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile09.nif" , "Data/Meshes/FRIK/UI-Tile10.nif", "Data/Meshes/FRIK/UI-Tile11.nif" };
 					char* MainHud2[12] = { "Data/Meshes/FRIK/PB-MainTitle.nif", "Data/Meshes/FRIK/PB-Tile07.nif", "Data/Meshes/FRIK/PB-Tile03.nif", "Data/Meshes/FRIK/PB-Tile08.nif", "Data/Meshes/FRIK/PB-Tile02.nif", "Data/Meshes/FRIK/PB-Tile01.nif", "Data/Meshes/FRIK/PB-Tile04.nif", "Data/Meshes/FRIK/PB-Tile05.nif", "Data/Meshes/FRIK/PB-Tile06.nif", "Data/Meshes/FRIK/PB-Tile09.nif", "Data/Meshes/FRIK/PB-Tile10.nif" , "Data/Meshes/FRIK/PB-Tile11.nif" };
@@ -523,7 +523,7 @@ namespace F4VRBody {
 							UI->AttachChild((NiAVObject*)UI3, true);
 						}
 					}
-					skelly->setConfigModeHandPose();
+					_skelly->setConfigModeHandPose();
 					_isPBConfigModeActive = true;
 					_PBConfigModeEnterCounter = 0;
 				}
@@ -532,14 +532,14 @@ namespace F4VRBody {
 				_PBConfigModeEnterCounter = 0;
 			}
 			if (_isPBConfigModeActive) {
-				BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)skelly->getRoot();
+				BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_skelly->getRoot();
 				NiPoint3 finger;
-				g_config->leftHandedMode ? finger = rt->transforms[skelly->getBoneInMap("RArm_Finger23")].world.pos : finger = rt->transforms[skelly->getBoneInMap("LArm_Finger23")].world.pos;
+				g_config->leftHandedMode ? finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos : finger = rt->transforms[_skelly->getBoneInMap("LArm_Finger23")].world.pos;
 				for (int i = 1; i <= 11; i++) {
 					BSFixedString TouchName = meshName2[i];
 					BSFixedString TransName = meshName[i];
-					NiNode* TouchMesh = (NiNode*)skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName);
-					NiNode* TransMesh = (NiNode*)skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName);
+					NiNode* TouchMesh = (NiNode*)_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName);
+					NiNode* TransMesh = (NiNode*)_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName);
 					if (TouchMesh && TransMesh) {
 						float distance = vec3_len(finger - TouchMesh->m_worldTransform.pos);
 						if (distance > 2.0) {
@@ -554,15 +554,15 @@ namespace F4VRBody {
 								TransMesh->m_localTransform.pos.y = (fz);
 							}
 							if ((TransMesh->m_localTransform.pos.y > 1.0) && !_PBTouchbuttons[i]) {
-								if (vrhook != nullptr) {
+								if (_vrhook != nullptr) {
 									//_PBConfigSticky = true;
-									g_config->leftHandedMode ? vrhook->StartHaptics(2, 0.05, 0.3) : vrhook->StartHaptics(1, 0.05, 0.3);
+									g_config->leftHandedMode ? _vrhook->StartHaptics(2, 0.05, 0.3) : _vrhook->StartHaptics(1, 0.05, 0.3);
 									for (int i = 1; i <= 11; i++) {
 										if ((i != 1) && (i != 3))
 											_PBTouchbuttons[i] = false;
 									}
 									BSFixedString bname = "PBCONFIGMarker";
-									NiNode* UIMarker = (NiNode*)skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
+									NiNode* UIMarker = (NiNode*)_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
 									if (UIMarker) {
 										UIMarker->m_parent->RemoveChild(UIMarker);
 									}
@@ -579,7 +579,7 @@ namespace F4VRBody {
 										if (i == 10) {
 											if (!g_config->pipBoyOpenWhenLookAt) {
 												BSFixedString bname = "PBGlanceMarker";
-												NiNode* UIMarker = (NiNode*)skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
+												NiNode* UIMarker = (NiNode*)_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
 												if (!UIMarker) {
 													NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 													NiCloneProcess proc;
@@ -592,7 +592,7 @@ namespace F4VRBody {
 											}
 											else if (g_config->pipBoyOpenWhenLookAt) {
 												BSFixedString bname = "PBGlanceMarker";
-												NiNode* UIMarker = (NiNode*)skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
+												NiNode* UIMarker = (NiNode*)_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
 												if (UIMarker) {
 													UIMarker->m_parent->RemoveChild(UIMarker);
 												}
@@ -601,7 +601,7 @@ namespace F4VRBody {
 										if (i == 11) {
 											if (!g_config->dampenPipboyScreen) {
 												BSFixedString bname = "PBDampenMarker";
-												NiNode* UIMarker = (NiNode*)skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
+												NiNode* UIMarker = (NiNode*)_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
 												if (!UIMarker) {
 													NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 													NiCloneProcess proc;
@@ -614,7 +614,7 @@ namespace F4VRBody {
 											}
 											else if (g_config->dampenPipboyScreen) {
 												BSFixedString bname = "PBDampenMarker";
-												NiNode* UIMarker = (NiNode*)skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
+												NiNode* UIMarker = (NiNode*)_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname);
 												if (UIMarker) {
 													UIMarker->m_parent->RemoveChild(UIMarker);
 												}
@@ -634,7 +634,7 @@ namespace F4VRBody {
 
 					// TODO: move save INI to common code instead or repeating it
 					// why do some buttons (glance, dumpen, model) save on toggle and not wait for save button?
-					_MESSAGE("Saving config to FRIK.ini");
+					_MESSAGE("Saving Pipboy scale config to FRIK.ini");
 					CSimpleIniA ini;
 					SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
 					rc = ini.SetDoubleValue("Fallout4VRBody", "PipboyScale", (double)_3rdPipboy->m_localTransform.scale);
@@ -666,7 +666,7 @@ namespace F4VRBody {
 					g_config->toggleIsHoloPipboy();
 					turnPipBoyOff();
 					g_pipboy->replaceMeshes(true);
-					skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+					_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
 					turnPipBoyOn();
 				}
 				else if (!ModelSwapButtonPressed) {
