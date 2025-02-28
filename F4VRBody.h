@@ -39,7 +39,7 @@ namespace F4VRBody {
 	extern bool _controlSleepStickyX;
 	extern bool _controlSleepStickyY;
 	extern bool _controlSleepStickyT;
-	extern bool c_repositionMasterMode;
+	extern bool c_weaponRepositionMasterMode;
 
 	class BoneSphere {
 	public:
