@@ -185,6 +185,14 @@ namespace F4VRBody
 			_root = node;
 		}
 
+		ArmNodes getLeftArm() {
+			return leftArm;
+		}
+
+		ArmNodes getRightArm() {
+			return rightArm;
+		}
+
 		PlayerNodes* getPlayerNodes() {
 			return _playerNodes;
 		}
@@ -193,10 +201,7 @@ namespace F4VRBody
 			_common = this->getNode("COM", _root);
 		}
 
-		// info stuff
-		void printChildren(NiNode* child, std::string padding);
-		void printNodes(NiNode* nde);
-		void positionDiff();
+		int getBoneInMap(std::string boneName);
 
 		// reposition stuff
 		void rotateWorld(NiNode* nde);
@@ -233,17 +238,13 @@ namespace F4VRBody
 		void showWands(wandMode a_mode = both);
 		void hideWands(wandMode a_mode = both);
 		void hideWeapon();
-		void swapPipboy();
 		void leftHandedModePipboy();
 		void positionPipboy();
 		void fixMelee();
 		void hideFistHelpers();
 		void fixPAArmor();
 		void dampenHand(NiNode* node, bool isLeft);
-		void dampenPipboyScreen();
-		bool isLookingAtPipBoy();
 		void hidePipboy();
-		void operatePipBoy();
 		bool armorHasHeadLamp();
 		void setPipboyHandPose();
 		void disablePipboyHandPose();
@@ -274,14 +275,8 @@ namespace F4VRBody
 		void rotateLeg(uint32_t pos, float angle);
 		void offHandToScope();
 		void moveBack();
-		void debug();
 		void initLocalDefaults();
 		void fixBoneTree();
-		void pipboyConfigurationMode();
-		void mainConfigurationMode();
-		void pipboyManagement();
-		void exitPBConfig();
-		void configModeExit();
 		
 		void setTime();
 		// Body Positioning
@@ -320,42 +315,8 @@ namespace F4VRBody
 		std::map<std::string, NiTransform, CaseInsensitiveComparator> savedStates;
 		std::map<std::string, NiPoint3, CaseInsensitiveComparator> boneLocalDefault;
 
-		// Cylons Vars
-		bool _stickyoffpip = false;
-		bool _stickybpip = false;
-		bool _isSaveButtonPressed = false;
-		bool _isModelSwapButtonPressed = false;
-		bool _isHandsButtonPressed = false;
-		bool _isWeaponButtonPressed = false;
-		bool _isGripButtonPressed = false;
-		bool _isPBConfigModeActive = false;
-		bool _isGlanceButtonPressed = false;
-		bool _isDampenScreenButtonPressed = false;
-		int _PBConfigModeEnterCounter = 0;
-		bool stickyPBlight = false;
-		bool stickyPBRadio = false;
-		bool _PBConfigSticky = false;
-		bool _PBControlsSticky[7] = { false, false, false,  false,  false,  false, false };
-		bool _SwithLightButtonSticky = false;
-		bool _SwitchLightHaptics = true;
-		bool _UISelectSticky = false;
-		bool _UIAltSelectSticky = false;
-		UInt32 LastPipboyPage = 0;
-		float lastRadioFreq = 0.0;
-		bool c_IsOperatingPipboy = false;
-		bool isWeaponinHand = false;
-		bool weaponStateDetected = false;
-		bool _PBTouchbuttons[12] = { false, false, false, false, false, false, false, false, false, false, false, false };
-		bool _MCTouchbuttons[10] = { false, false, false, false, false, false, false, false, false, false };
-		bool c_CalibrationModeUIActive = false;
-		// End
-
 		NiMatrix43 originalPipboyRotation;
-		bool _pipboyStatus;
-		int _pipTimer;
 		
-		bool _stickypip;
-
 		bool _leftHandedSticky;
 
 		bool _inPowerArmor;
@@ -410,8 +371,6 @@ namespace F4VRBody
 		bool _zoomModeButtonHeld = false;
 		std::string _lastWeapon = "";
 		Quaternion _aimAdjust;
-		uint64_t _lastLookingAtPip = 0;
-		uint64_t _startedLookingAtPip = 0;
 
 		NiMatrix43 _originalWeaponRot;
 		NiPoint3 _offhandPos {0, 0, 0};
@@ -420,6 +379,5 @@ namespace F4VRBody
 
 		NiTransform _rightHandPrevFrame;
 		NiTransform _leftHandPrevFrame;
-		NiTransform _pipboyScreenPrevFrame;
 	};
 }

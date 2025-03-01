@@ -1,5 +1,8 @@
 #include "F4VRBody.h"
+#include "Config.h"
+#include "ConfigurationMode.h"
 #include "Skeleton.h"
+#include "Pipboy.h"
 #include "HandPose.h"
 #include "weaponOffset.h"
 #include "utils.h"
@@ -7,6 +10,7 @@
 #include "BSFlattenedBoneTree.h"
 #include "GunReload.h"
 #include "VR.h"
+#include "Debug.h"
 
 #include "api/PapyrusVRAPI.h"
 #include "api/VRManagerAPI.h"
@@ -17,10 +21,6 @@
 #include "MiscStructs.h"
 
 
-
-
-#define PI 3.14159265358979323846
-
 bool firstTime = true;
 bool printPlayerOnce = true;
 
@@ -28,24 +28,14 @@ PluginHandle g_pluginHandle = kPluginHandle_Invalid;
 F4SEPapyrusInterface* g_papyrus = NULL;
 F4SEMessagingInterface* g_messaging = NULL;
 
-//Smooth Movement
-float smoothingAmount = 10.0f;
-float smoothingAmountHorizontal = 0;
-float dampingMultiplier = 1.0f;
-float dampingMultiplierHorizontal = 0;
-float stoppingMultiplier = 0.2f;
-float stoppingMultiplierHorizontal = 0.2f;
-int disableInteriorSmoothing = 1;
-int disableInteriorSmoothingHorizontal = 1;
-
 UInt32 KeywordPowerArmor = 0x4D8A1;
 UInt32 KeywordPowerArmorFrame = 0x15503F;
 
-OpenVRHookManagerAPI* vrhook;
+OpenVRHookManagerAPI* _vrhook;
 
 namespace F4VRBody {
 
-	Skeleton* playerSkelly = nullptr;
+	Skeleton* _skelly = nullptr;
 
 	bool isLoaded = false;
 
@@ -53,114 +43,18 @@ namespace F4VRBody {
 	uint64_t prevCounter = 0;
 	uint64_t localCounter = 0;
 
-	float c_playerHeight = 0.0;
-	bool  c_setScale = false;
-	float c_fVrScale = 72.0;
-	float c_playerOffset_forward = -4.0;
-	float c_playerOffset_up = -2.0;
-	float c_selfieOutFrontDistance = 120.0f;
-	float c_pipboyDetectionRange = 15.0f;
-	float c_armLength = 36.74;
-	float c_cameraHeight = 0.0;
-	float c_dynamicCameraHeight = 0.0;
-	float c_PACameraHeight = 0.0;
-	bool  c_showPAHUD = true;
-	bool  c_hidePipboy = false;
-	bool  c_leftHandedPipBoy = false;
-	bool  c_selfieMode = false;
-	bool  c_verbose = false;
-	bool  c_armsOnly = false;
-	bool  c_leftHandedMode = false;
-	bool  c_disableSmoothMovement = false;
-	bool  c_jumping = false;
-	bool  GameVarsConfigured = false;
-	float c_powerArmor_forward = 0.0f;
-	float c_powerArmor_up = 0.0f;
-	float c_RootOffset = 0.0f;
-	float c_PARootOffset = 0.0f;
-	int c_ConfigModeTimer = 0;
-	int c_ConfigModeTimer2 = 0;
-	bool c_CalibrateModeActive = false;
-	bool c_ExitnoSavePressed = false;
-	bool c_ExitandSavePressed = false;
-	bool c_PrimaryShiftButtonPressed = false;
-	bool c_OffHandShiftButtonPressed = false;
-	bool c_SelfieButtonPressed = false;
-	bool c_DampenHandsButtonPressed = false;
-	bool c_WeaponConfigButtonPressed = false;
-	bool  c_staticGripping = false;
-	float c_handUI_X = 0.0;
-	float c_handUI_Y = 0.0;
-	float c_handUI_Z = 0.0;
-	bool  c_hideHead = false;
-	bool  c_loadedHideHead = false;
-	bool  c_hideEquipment = false;
-	bool  c_loadedHideEquipment = false;
-	bool c_hideSkin = false;
-	bool c_loadedHideSkin = false;
-	float c_pipBoyLookAtGate = 0.7;
-	float c_gripLetGoThreshold = 15.0f;
 	bool c_isLookingThroughScope = false;
-	bool c_pipBoyButtonMode = false;
-	bool c_pipBoyOpenWhenLookAt = false;
-	bool c_pipBoyAllowMovementNotLooking = true;
-	int c_pipBoyButtonArm = 0;   // 0 for left 1 for right
-	int c_pipBoyButtonID = vr::EVRButtonId::k_EButton_Grip; // grip button is 2
-	int c_pipBoyButtonOffArm = 0;   // 0 for left 1 for right
-	int c_pipBoyButtonOffID = vr::EVRButtonId::k_EButton_Grip; // grip button is 2
-	bool c_IsHoloPipboy = true; // false = Default, true = HoloPipBoy
-	bool c_IsPipBoyTorchOnArm = true; // false = Head Based Torch, true = PipBoy Based Torch
-	int c_SwitchTorchButton = 2; // button to switch torch from head to hand
-	float c_DirectionalDeadzone = 0.5; // Default value of fDirectionalDeadzone, used when turning off Pipboy to restore directionial control to the player.
-	bool c_switchUIControltoPrimary = true; // if the player wants to switch controls or not.
-	bool c_autoFocusWindow = false;
+	bool c_jumping = false;
+	float c_dynamicCameraHeight = 0.0;
+	bool c_selfieMode = false;
+	bool GameVarsConfigured = false;
+	bool c_loadedHideHead = false;
+	bool c_loadedHideEquipment = false;
+	bool c_loadedHideSkin = false;
 	bool _controlSleepStickyX = false;
 	bool _controlSleepStickyY = false;
 	bool _controlSleepStickyT = false;
-	int c_gripButtonID = vr::EVRButtonId::k_EButton_Grip; // 2
-	int c_holdDelay = 1000; // 1000 ms
-	int c_pipBoyOffDelay = 5000; // 5000 ms
-	int c_pipBoyOnDelay = 100; // 100 ms
 	bool c_repositionMasterMode = false;
-	int c_repositionButtonID = vr::EVRButtonId::k_EButton_SteamVR_Trigger; //33
-	int c_offHandActivateButtonID = vr::EVRButtonId::k_EButton_A; // 7
-	bool c_enableOffHandGripping = true;
-	bool c_enableGripButtonToGrap = true;
-	bool c_enableGripButtonToLetGo = true;
-	bool c_onePressGripButton = false;
-	bool c_dampenHands = true;
-	bool c_dampenHandsInVanillaScope = true;
-	bool c_dampenPipboyScreen = true;
-	bool c_PACurrentState = false;
-	bool c_PALastState = false;
-	float c_dampenHandsRotation = 0.7;
-	float c_dampenHandsTranslation = 0.7;
-	float c_dampenHandsRotationInVanillaScope = 0.3;
-	float c_dampenHandsTranslationInVanillaScope = 0.3;
-	float c_dampenPipboyRotation = 0.7;
-	float c_dampenPipboyTranslation = 0.7;
-	int c_UISelfieButton = 2;
-	float c_pipBoyScale = 1.0;
-	float c_armLengthbkup;
-	float c_powerArmor_upbkup;
-	float c_playerOffset_upbkup;
-	float c_RootOffsetbkup;
-	float c_PARootOffsetbkup;
-	float c_fVrScalebkup;
-	float c_playerOffset_forwardbkup;
-	float c_powerArmor_forwardbkup;
-	float c_cameraHeightbkup;
-	float c_PACameraHeightbkup;
-	bool c_UIHeightButtonPressed = false;
-	float c_PlayerHMDHeight;
-	float lastCamZ = 0.0;
-	float c_shouldertoHMD = 0.0;
-
-	float c_scopeAdjustDistance = 15.0f;
-
-	bool meshesReplaced = false;
-
-	float headDefaultHeight = 125.0;
 
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
@@ -182,205 +76,9 @@ namespace F4VRBody {
 	UInt32 nextBoneSphereHandle;
 	UInt32 curDevice;
 
-	// hide meshes
-	std::vector<std::string> faceGeometry;
-	std::vector<std::string> skinGeometry;
-
-	std::vector<int> hideSlotIndexes;
 	bool isHideSlotLoaded = false;
 
 	bool bDumpArray = false;
-
-	static bool setHideSlotIndexes(bool isForceReload = false) {
-		if (isHideSlotLoaded && !isForceReload)
-			return true;
-
-		hideSlotIndexes.clear();
-
-		std::ifstream cullList;
-		cullList.open(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\slots.ini");
-
-		if (cullList.is_open()) {
-			while (cullList) {
-				std::string input;
-				cullList >> input;
-
-				if (input.empty())
-					continue;
-
-				input = trim(str_tolower(input));
-
-				// Slot Ids base on this link: https://falloutck.uesp.net/wiki/Biped_Slots
-
-				if (input.find("hairtop") != std::string::npos) {
-					hideSlotIndexes.push_back(0);
-				}
-
-				if (input.find("hairlong") != std::string::npos) {
-					hideSlotIndexes.push_back(1);
-				}
-
-				if (input.find("head") != std::string::npos) {
-					hideSlotIndexes.push_back(2);
-				}
-
-				if (input.find("headband") != std::string::npos) {
-					hideSlotIndexes.push_back(16);
-				}
-
-				if (input.find("eyes") != std::string::npos) {
-					hideSlotIndexes.push_back(17);
-				}
-
-				if (input.find("beard") != std::string::npos) {
-					hideSlotIndexes.push_back(18);
-				}
-
-				if (input.find("mouth") != std::string::npos) {
-					hideSlotIndexes.push_back(19);
-				}
-
-				if (input.find("neck") != std::string::npos) {
-					hideSlotIndexes.push_back(20);
-				}
-
-				if (input.find("scalp") != std::string::npos) {
-					hideSlotIndexes.push_back(22);
-				}
-			}
-		}
-
-		cullList.close();
-
-		return true;
-	}
-
-	bool loadConfig() {
-		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-
-		if (rc < 0) {
-			_MESSAGE("ERROR: cannot read FRIK.ini");
-			return false;
-		}
-
-		c_playerHeight =         (float) ini.GetDoubleValue("Fallout4VRBody", "PlayerHeight", 120.4828f);
-		c_setScale     =         ini.GetBoolValue("Fallout4VRBody", "setScale", false);
-		c_fVrScale     =         (float) ini.GetDoubleValue("Fallout4VRBody", "fVrScale", 70.0);
-		c_playerOffset_forward = (float) ini.GetDoubleValue("Fallout4VRBody", "playerOffset_forward", -4.0);
-		c_playerOffset_up =      (float) ini.GetDoubleValue("Fallout4VRBody", "playerOffset_up", -2.0);
-		c_powerArmor_forward = (float) ini.GetDoubleValue("Fallout4VRBody", "powerArmor_forward", 0.0);
-		c_powerArmor_up =      (float) ini.GetDoubleValue("Fallout4VRBody", "powerArmor_up", 0.0);
-		c_pipboyDetectionRange = (float) ini.GetDoubleValue("Fallout4VRBody", "pipboyDetectionRange", 15.0);
-		c_armLength =            (float) ini.GetDoubleValue("Fallout4VRBody", "armLength", 36.74);
-		c_cameraHeight =         (float) ini.GetDoubleValue("Fallout4VRBody", "cameraHeightOffset", 0.0);
-		c_PACameraHeight =         (float) ini.GetDoubleValue("Fallout4VRBody", "powerArmor_cameraHeightOffset", 0.0);
-		c_RootOffset = (float)ini.GetDoubleValue("Fallout4VRBody", "RootOffset", 0.0);
-		c_PARootOffset = (float)ini.GetDoubleValue("Fallout4VRBody", "powerArmor_RootOffset", 0.0);
-		c_showPAHUD =            ini.GetBoolValue("Fallout4VRBody", "showPAHUD");
-		c_hidePipboy =           ini.GetBoolValue("Fallout4VRBody", "hidePipboy");
-		c_leftHandedPipBoy =     ini.GetBoolValue("Fallout4VRBody", "PipboyRightArmLeftHandedMode");
-		c_verbose =              ini.GetBoolValue("Fallout4VRBody", "VerboseLogging");
-		c_armsOnly =             ini.GetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode");
-		c_staticGripping         = ini.GetBoolValue("Fallout4VRBody", "EnableStaticGripping");
-		c_handUI_X = ini.GetDoubleValue("Fallout4VRBody", "handUI_X", 0.0);
-		c_handUI_Y = ini.GetDoubleValue("Fallout4VRBody", "handUI_Y", 0.0);
-		c_handUI_Z = ini.GetDoubleValue("Fallout4VRBody", "handUI_Z", 0.0);
-		c_hideHead = ini.GetBoolValue("Fallout4VRBody", "HideHead");
-		c_loadedHideHead = c_hideHead;
-		c_hideEquipment = ini.GetBoolValue("Fallout4VRBody", "HideEquipment");
-		c_loadedHideEquipment = c_hideEquipment;
-		c_hideSkin = ini.GetBoolValue("Fallout4VRBody", "HideSkin");
-		c_loadedHideSkin = c_hideSkin;
-		c_pipBoyLookAtGate = ini.GetDoubleValue("Fallout4VRBody", "PipBoyLookAtThreshold", 0.7);
-		c_pipBoyOffDelay = (int)ini.GetLongValue("Fallout4VRBody", "PipBoyOffDelay", 5000);
-		c_pipBoyOnDelay = (int)ini.GetLongValue("Fallout4VRBody", "PipBoyOnDelay", 5000);
-		c_gripLetGoThreshold = ini.GetDoubleValue("Fallout4VRBody", "GripLetGoThreshold", 15.0f);
-		c_pipBoyButtonMode = ini.GetBoolValue("Fallout4VRBody", "OperatePipboyWithButton", false);
-		c_pipBoyOpenWhenLookAt = ini.GetBoolValue("Fallout4VRBody", "PipBoyOpenWhenLookAt", false);
-		c_pipBoyAllowMovementNotLooking = ini.GetBoolValue("Fallout4VRBody", "AllowMovementWhenNotLookingAtPipboy", true);
-		c_pipBoyButtonArm = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonArm", 0);
-		c_pipBoyButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_Grip); //2
-		c_pipBoyButtonOffArm = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonOffArm", 0);
-		c_pipBoyButtonOffID = (int)ini.GetLongValue("Fallout4VRBody", "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip); //2		
-		c_IsHoloPipboy = (bool)ini.GetBoolValue("Fallout4VRBody", "HoloPipBoyEnabled", true);
-		c_IsPipBoyTorchOnArm = (bool)ini.GetBoolValue("Fallout4VRBody", "PipBoyTorchOnArm", true);
-		c_SwitchTorchButton = (int)ini.GetLongValue("Fallout4VRBody", "SwitchTorchButton", 2);
-		c_gripButtonID = (int)ini.GetLongValue("Fallout4VRBody", "GripButtonID", vr::EVRButtonId::k_EButton_Grip); // 2
-		c_enableOffHandGripping = ini.GetBoolValue("Fallout4VRBody", "EnableOffHandGripping", true);
-		c_enableGripButtonToGrap = ini.GetBoolValue("Fallout4VRBody", "EnableGripButton", true);
-		c_enableGripButtonToLetGo = ini.GetBoolValue("Fallout4VRBody", "EnableGripButtonToLetGo", true);
-		c_onePressGripButton = ini.GetBoolValue("Fallout4VRBody", "EnableGripButtonOnePress", true);
-		c_dampenHands = ini.GetBoolValue("Fallout4VRBody", "DampenHands", true);
-		c_dampenHandsInVanillaScope = ini.GetBoolValue("Fallout4VRBody", "DampenHandsInVanillaScope", true);
-		c_dampenPipboyScreen = ini.GetBoolValue("Fallout4VRBody", "DampenPipboyScreen", true);
-		c_dampenHandsRotation = ini.GetDoubleValue("Fallout4VRBody", "DampenHandsRotation", 0.7);
-		c_dampenHandsTranslation = ini.GetDoubleValue("Fallout4VRBody", "DampenHandsTranslation", 0.7);
-		c_dampenHandsRotationInVanillaScope = ini.GetDoubleValue("Fallout4VRBody", "DampenHandsRotationInVanillaScope", 0.2);
-		c_dampenHandsTranslationInVanillaScope = ini.GetDoubleValue("Fallout4VRBody", "DampenHandsTranslationInVanillaScope", 0.2);
-		c_dampenPipboyRotation = ini.GetDoubleValue("Fallout4VRBody", "DampenPipboyRotation", 0.7);
-		c_dampenPipboyTranslation = ini.GetDoubleValue("Fallout4VRBody", "DampenPipboyTranslation", 0.7);
-		c_DirectionalDeadzone = ini.GetDoubleValue("Fallout4VRBody", "fDirectionalDeadzone", 0.5);
-		c_PlayerHMDHeight = ini.GetDoubleValue("Fallout4VRBody", "fHMDHeight", 109.0);
-		c_shouldertoHMD = ini.GetDoubleValue("Fallout4VRBody", "fShouldertoHMD", 109.0);
-		//Pipboy & Main Config Mode Buttons
-		c_pipBoyScale = (float)ini.GetDoubleValue("Fallout4VRBody", "PipboyScale", 1.0);
-		c_UISelfieButton = (int)ini.GetLongValue("ConfigModeUIButtons", "ToggleSelfieModeButton", 2);
-		c_switchUIControltoPrimary = (bool)ini.GetBoolValue("Fallout4VRBody", "PipboyUIPrimaryController", true);
-		c_autoFocusWindow = (bool)ini.GetBoolValue("Fallout4VRBody", "AutoFocusWindow", false);
-		 
-
-
-		//Smooth Movement
-		c_disableSmoothMovement            = ini.GetBoolValue("SmoothMovementVR", "DisableSmoothMovement");
-		smoothingAmount                    = (float) ini.GetDoubleValue("SmoothMovementVR", "SmoothAmount", 15.0);
-		smoothingAmountHorizontal          = (float) ini.GetDoubleValue("SmoothMovementVR", "SmoothAmountHorizontal", 5.0);
-		dampingMultiplier                  = (float) ini.GetDoubleValue("SmoothMovementVR", "Damping", 1.0);
-		dampingMultiplierHorizontal        = (float) ini.GetDoubleValue("SmoothMovementVR", "DampingHorizontal", 1.0);
-		stoppingMultiplier                 = (float) ini.GetDoubleValue("SmoothMovementVR", "StoppingMultiplier", 0.6);
-		stoppingMultiplierHorizontal       = (float) ini.GetDoubleValue("SmoothMovementVR", "StoppingMultiplierHorizontal", 0.6);
-		disableInteriorSmoothing           = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothing", 1);
-		disableInteriorSmoothingHorizontal = ini.GetBoolValue("SmoothMovementVR", "DisableInteriorSmoothingHorizontal", 1);
-
-		// weaponPositioning
-		//c_repositionMasterMode = ini.GetBoolValue("Fallout4VRBody", "EnableRepositionMode", false);       Enabled / Disabled via config mode
-		c_holdDelay = (int)ini.GetLongValue("Fallout4VRBody", "HoldDelay", 1000);
-		c_repositionButtonID = (int)ini.GetLongValue("Fallout4VRBody", "RepositionButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger); // 33
-		c_offHandActivateButtonID = (int)ini.GetLongValue("Fallout4VRBody", "OffHandActivateButtonID", vr::EVRButtonId::k_EButton_A); // 7
-		c_scopeAdjustDistance = ini.GetDoubleValue("Fallout4VRBody", "ScopeAdjustDistance", 15.f);
-		// now load weapon offset JSON
-		readOffsetJson();
-
-		std::ifstream cullList;
-
-		cullList.open(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\face.ini");
-
-		if (cullList.is_open()) {
-			while (cullList) {
-				std::string input;
-				cullList >> input;
-				if (!input.empty())
-					faceGeometry.push_back(trim(str_tolower(input)));
-			}
-		}
-
-		cullList.close();
-
-		cullList.open(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\skins.ini");
-
-		if (cullList.is_open()) {
-			while (cullList) {
-				std::string input;
-				cullList >> input;
-				if (!input.empty())
-					skinGeometry.push_back(trim(str_tolower(input)));
-			}
-		}
-
-		cullList.close();
-
-		return true;
-	}
 
 	static void adjustSlotVisibility(int slotId, bool isHidden) {
 		auto& slot = (*g_player)->equipData->slots[slotId];
@@ -433,15 +131,15 @@ namespace F4VRBody {
 			return;
 		}
 
-		if (c_hideHead || c_hideSkin) {
+		if (g_config->hideHead || g_config->hideSkin) {
 			for (auto i = 0; i < rn->kGeomArray.count; ++i) {
 				bool hide = false;
 				auto& geometry = rn->kGeomArray[i].spGeometry;
 				auto geometryName = geometry->m_name.c_str();
 				auto geomStr = trim(str_tolower(std::string(geometryName)));
 
-				if (c_hideHead) {
-					for (auto& faceGeom : faceGeometry) {
+				if (g_config->hideHead) {
+					for (auto& faceGeom : g_config->faceGeometry) {
 						if (geomStr.find(faceGeom) != std::string::npos) {
 							//_MESSAGE("Found %s in %s", faceGeom, geomStr.c_str());
 							hide = true;
@@ -450,8 +148,8 @@ namespace F4VRBody {
 					}
 				}
 
-				if (c_hideSkin && !hide) {
-					for (auto& skinGeom : skinGeometry) {
+				if (g_config->hideSkin && !hide) {
+					for (auto& skinGeom : g_config->skinGeometry) {
 						if (geomStr.find(skinGeom) != std::string::npos) {
 							hide = true;
 							break;
@@ -466,11 +164,8 @@ namespace F4VRBody {
 			}
 		}
 
-		if (c_hideEquipment) {
-			//Ensure data is loaded.
-			isHideSlotLoaded = setHideSlotIndexes();
-
-			for (auto slot : hideSlotIndexes) {
+		if (g_config->hideEquipment) {
+			for (auto slot : g_config->hideSlotIndexes) {
 				adjustSlotVisibility(slot, true);
 			}
 		}
@@ -705,73 +400,6 @@ namespace F4VRBody {
 		}
 	}
 
-	void replaceMeshes(PlayerNodes* pn, std::string itemHide, std::string itemShow) {
-		NiNode* ui = pn->primaryUIAttachNode;
-		NiNode* wand = get1stChildNode("world_primaryWand.nif", ui);
-		NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
-		if (retNode) {
-			//			ui->RemoveChild(wand);
-				//		ui->AttachChild(retNode, true);
-		}
-
-		wand = pn->SecondaryWandNode;
-		NiNode* pipParent = get1stChildNode("PipboyParent", wand);
-
-		if (!pipParent) {
-			meshesReplaced = false;
-			return;
-		}
-		wand = get1stChildNode("PipboyRoot_NIF_ONLY", pipParent);
-		c_IsHoloPipboy ? retNode = loadNifFromFile("Data/Meshes/FRIK/HoloPipboyVR.nif") : retNode = loadNifFromFile("Data/Meshes/FRIK/PipboyVR.nif");
-		if (retNode && wand) {
-			BSFixedString screenName("Screen:0");
-			NiAVObject* newScreen = retNode->GetObjectByName(&screenName)->m_parent;
-
-			if (!newScreen) {
-				meshesReplaced = false;
-				return;
-			}
-
-			pipParent->RemoveChild(wand);
-			pipParent->AttachChild(retNode, true);
-
-			pn->ScreenNode->RemoveChildAt(0);
-			// using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
-			NiNode* rn = Offsets::addNode((uint64_t)&pn->ScreenNode, newScreen);
-			pn->PipboyRoot_nif_only_node = retNode;
-		}
-
-		meshesReplaced = true;			
-		// Cylons Code Start >>>>
-		auto lookup = g_weaponOffsets->getOffset("PipboyPosition", Mode::normal);
-		if (c_IsHoloPipboy == true) {
-		    lookup = g_weaponOffsets->getOffset("HoloPipboyPosition", Mode::normal);
-		}
-		if (lookup.has_value()) {
-			NiTransform pbTransform = lookup.value();
-			static BSFixedString wandPipName("PipboyRoot");
-			NiAVObject* pbRoot = pn->SecondaryWandNode->GetObjectByName(&wandPipName);
-			if (pbRoot) {
-				pbRoot->m_localTransform = pbTransform;
-			}
-		}
-		pn->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0; //prevents the VRPipboy screen from being displayed on first load whilst PB is off.
-		NiNode* _HideNode = getChildNode(itemHide.c_str(), (*g_player)->unkF0->rootNode);
-		if (_HideNode) {
-			_HideNode->flags |= 0x1;
-			_HideNode->m_localTransform.scale = 0;
-		}
-		NiNode* _ShowNode = getChildNode(itemShow.c_str(), (*g_player)->unkF0->rootNode);
-		if (_ShowNode) {
-			_ShowNode->flags &= 0xfffffffffffffffe;
-			_ShowNode->m_localTransform.scale = 1;
-		}
-			// <<<< Cylons Code End
-
-		_MESSAGE("Meshes replaced!");
-
-	}
-
 	void fixMissingScreen(PlayerNodes* pn) {
 		NiNode* screenNode = pn->ScreenNode;
 
@@ -802,26 +430,20 @@ namespace F4VRBody {
 		if (vec3_len(origLoc) == 0.0) {
 			origLoc = node->m_localTransform.pos;
 		}
-		node->m_localTransform.pos = origLoc + NiPoint3(c_handUI_X, c_handUI_Y, c_handUI_Z);
+		node->m_localTransform.pos = origLoc + NiPoint3(g_config->handUI_X, g_config->handUI_Y, g_config->handUI_Z);
 
 		updateTransformsDown(node, true);
 	}
 
 	bool setSkelly(bool inPowerArmor) {
 
-		if (c_verbose) {
-			_MESSAGE("setSkelly Start");
-		}
-
+		_VMESSAGE("setSkelly Start");
 		if (!(*g_player)->unkF0) {
-			if (c_verbose) {
-				_MESSAGE("loaded Data Not Set Yet");
-			}
+			_VMESSAGE("loaded Data Not Set Yet");
 			return false;
 		}
 
 		_MESSAGE("loadedData = %016I64X", (*g_player)->unkF0);
-
 		if (!(*g_player)->unkF0->rootNode) {
 			_MESSAGE("rootnode not set yet!");
 			return false;
@@ -839,29 +461,29 @@ namespace F4VRBody {
 
 			initHandPoses(inPowerArmor);
 
-			playerSkelly = new Skeleton(node);
-			_MESSAGE("skeleton = %016I64X", playerSkelly->getRoot());
-			if (!playerSkelly->setNodes()) {
+			_skelly = new Skeleton(node);
+			_MESSAGE("skeleton = %016I64X", _skelly->getRoot());
+			if (!_skelly->setNodes()) {
 				return false;
 			}
-			//replaceMeshes(playerSkelly->getPlayerNodes());
-			//playerSkelly->setDirection();
-			playerSkelly->swapPipboy();
+			//replaceMeshes(_skelly->getPlayerNodes());
+			//_skelly->setDirection();
 
-			_MESSAGE("handle pipboy init");
+			_vrhook = RequestOpenVRHookManagerObject();
+
+			initPipboy(_skelly, _vrhook);
 
 			turnPipBoyOff();
 
+			initConfigurationMode(_skelly, _vrhook);
 
-			vrhook = RequestOpenVRHookManagerObject();
-
-			if (c_setScale) {
+			if (g_config->setScale) {
 				Setting* set = GetINISetting("fVrScale:VR");
-				set->SetDouble(c_fVrScale);
+				set->SetDouble(g_config->fVrScale);
 			}
 			_MESSAGE("scale set");
 
-			playerSkelly->setBodyLen();
+			_skelly->setBodyLen();
 			_MESSAGE("initialized");
 			return true;
 		}
@@ -872,8 +494,8 @@ namespace F4VRBody {
 
 	void smoothMovement()
 	{
-		if (!c_disableSmoothMovement) {
-			if (c_verbose) { _MESSAGE("Smooth Movement"); }
+		if (!g_config->disableSmoothMovement) {
+			_VMESSAGE("Smooth Movement");
 			SmoothMovementVR::everyFrame();
 		}
 	}
@@ -948,7 +570,7 @@ namespace F4VRBody {
 			inPowerArmorSticky = detectInPowerArmor();
 
 			if (inPowerArmorSticky) {
-				delete playerSkelly;
+				delete _skelly;
 				firstTime = true;
 				return;
 			}
@@ -957,14 +579,14 @@ namespace F4VRBody {
 			inPowerArmorSticky = detectInPowerArmor();
 
 			if (!inPowerArmorSticky) {
-				delete playerSkelly;
+				delete _skelly;
 				firstTime = true;
 				return;
 			}
 		}
 
 
-		if (!playerSkelly || firstTime) {
+		if (!_skelly || firstTime) {
 			if (!setSkelly(inPowerArmorSticky)) {
 				return;
 			}
@@ -986,64 +608,49 @@ namespace F4VRBody {
 			return;
 		}
 
-		if (playerSkelly->getRoot() != (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode()) {
+		if (_skelly->getRoot() != (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode()) {
 
 			auto node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
 			if (!node) {
 				return;
 			}
 
-			playerSkelly->updateRoot(node);
-			playerSkelly->setNodes();
-			playerSkelly->setDirection();
-			playerSkelly->swapPipboy();
-			playerSkelly->setBodyLen();
-			if (c_IsHoloPipboy == 0) {
-				replaceMeshes(playerSkelly->getPlayerNodes(),"HoloEmitter", "Screen");
-			}
-			else if (c_IsHoloPipboy == 1) {
-				replaceMeshes(playerSkelly->getPlayerNodes(), "Screen", "HoloEmitter");
-			}
+			_skelly->updateRoot(node);
+			_skelly->setNodes();
+			_skelly->setDirection();
+			g_pipboy->swapPipboy();
+			_skelly->setBodyLen();
+			// TODO: check if this is needed as the same call is done 10 lines below
+			g_pipboy->replaceMeshes(false);
 			_MESSAGE("initialized for real");
 			return;
 		}
 
 		// do stuff now
-		c_leftHandedMode = *Offsets::iniLeftHandedMode;
-		playerSkelly->setLeftHandedSticky();
+		 g_config->leftHandedMode = *Offsets::iniLeftHandedMode;
+		_skelly->setLeftHandedSticky();
 
 
-		if (c_verbose) { _MESSAGE("Start of Frame"); }
+		_VMESSAGE("Start of Frame");
 
 		if (!GameVarsConfigured) {
 			ConfigureGameVars();
 			GameVarsConfigured = true;
 		}
 
-		c_leftHandedMode = *Offsets::iniLeftHandedMode;
+		 g_config->leftHandedMode = *Offsets::iniLeftHandedMode;
 		
-		if (!meshesReplaced) {
-			if (c_IsHoloPipboy == 0) {
-				replaceMeshes(playerSkelly->getPlayerNodes(), "HoloEmitter", "Screen");
-			}
-			else if (c_IsHoloPipboy == 1) {
-				replaceMeshes(playerSkelly->getPlayerNodes(), "Screen", "HoloEmitter");
-			}
-		}
-
+		g_pipboy->replaceMeshes(false);
 
 		// check if jumping or in air;
+		 c_jumping = SmoothMovementVR::checkIfJumpingOrInAir();
 
-
-		// check if jumping or in air;
-		c_jumping = SmoothMovementVR::checkIfJumpingOrInAir();
-
-		playerSkelly->setTime();
+		_skelly->setTime();
 
 		VRHook::g_vrHook->setVRControllerState();
 
-		if (c_verbose) { _MESSAGE("Hide Wands"); }
-		playerSkelly->hideWands();
+		_VMESSAGE("Hide Wands");
+		_skelly->hideWands();
 
 		//	fixSkeleton();
 
@@ -1053,85 +660,85 @@ namespace F4VRBody {
 		uint64_t ret = Offsets::TESObjectCell_GetLandHeight((*g_player)->parentCell, &position, &groundHeight);
 
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
-		if (c_verbose) { _MESSAGE("restore locals of skeleton"); }
-		playerSkelly->restoreLocals(playerSkelly->getRoot()->m_parent->GetAsNiNode());
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);
+		_VMESSAGE("restore locals of skeleton");
+		_skelly->restoreLocals(_skelly->getRoot()->m_parent->GetAsNiNode());
+		_skelly->updateDown(_skelly->getRoot(), true);
 
 
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
-		if (c_verbose) { _MESSAGE("Setup Head"); }
-		NiNode* headNode = playerSkelly->getNode("Head", playerSkelly->getRoot());
-		playerSkelly->setupHead(headNode, c_hideHead);
+		_VMESSAGE("Setup Head");
+		NiNode* headNode = _skelly->getNode("Head", _skelly->getRoot());
+		_skelly->setupHead(headNode, g_config->hideHead);
 
 		//// set up the body underneath the headset in a proper scale and orientation
-		if (c_verbose) { _MESSAGE("Set body under HMD"); }
-		playerSkelly->setUnderHMD(groundHeight);
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
+		_VMESSAGE("Set body under HMD");
+		_skelly->setUnderHMD(groundHeight);
+		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// Now Set up body Posture and hook up the legs
-		if (c_verbose) { _MESSAGE("Set body posture"); }
-		playerSkelly->setBodyPosture();
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
+		_VMESSAGE("Set body posture");
+		_skelly->setBodyPosture();
+		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
-		if (c_verbose) { _MESSAGE("Set Knee Posture"); }
-		playerSkelly->setKneePos();
-		if (c_verbose) { _MESSAGE("Set Walk"); }
+		_VMESSAGE("Set Knee Posture");
+		_skelly->setKneePos();
+		_VMESSAGE("Set Walk");
 
-		if (!c_armsOnly) {
-			playerSkelly->walk();
+		if (!g_config->armsOnly) {
+			_skelly->walk();
 		}
-		//playerSkelly->setLegs();
-		if (c_verbose) { _MESSAGE("Set Legs"); }
-		playerSkelly->setSingleLeg(false);
-		playerSkelly->setSingleLeg(true);
+		//_skelly->setLegs();
+		_VMESSAGE("Set Legs");
+		_skelly->setSingleLeg(false);
+		_skelly->setSingleLeg(true);
 
 		// Do another update before setting arms
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
+		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// do arm IK - Right then Left
-		if (c_verbose) { _MESSAGE("Set Arms"); }
-		playerSkelly->handleWeaponNodes();
-		playerSkelly->setArms(false);
-		playerSkelly->setArms(true);
-		playerSkelly->leftHandedModePipboy();
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
+		_VMESSAGE("Set Arms");
+		_skelly->handleWeaponNodes();
+		_skelly->setArms(false);
+		_skelly->setArms(true);
+		_skelly->leftHandedModePipboy();
+		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
 
 		// Misc stuff to showahide things and also setup the wrist pipboy
-		if (c_verbose) { _MESSAGE("Pipboy and Weapons"); }
-		playerSkelly->hideWeapon();
-		playerSkelly->positionPipboy();
-		playerSkelly->hidePipboy();
-		playerSkelly->fixMelee();
-		playerSkelly->hideFistHelpers();
-		playerSkelly->showHidePAHUD();
+		_VMESSAGE("Pipboy and Weapons"); 
+		_skelly->hideWeapon();
+		_skelly->positionPipboy();
+		_skelly->hidePipboy();
+		_skelly->fixMelee();
+		_skelly->hideFistHelpers();
+		_skelly->showHidePAHUD();
 
 		cullGeometry();
 
 		// project body out in front of the camera for debug purposes
-		if (c_verbose) { _MESSAGE("Selfie Time"); }
-		playerSkelly->selfieSkelly(c_selfieOutFrontDistance);
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);
+		_VMESSAGE("Selfie Time");
+		_skelly->selfieSkelly(g_config->selfieOutFrontDistance);
+		_skelly->updateDown(_skelly->getRoot(), true);
 
-		if (c_verbose) { _MESSAGE("fix the missing screen"); }
-		fixMissingScreen(playerSkelly->getPlayerNodes());
+		_VMESSAGE("fix the missing screen");
+		fixMissingScreen(_skelly->getPlayerNodes());
 
-		setHandUI(playerSkelly->getPlayerNodes());
+		setHandUI(_skelly->getPlayerNodes());
 
-		if (c_armsOnly) {
-			playerSkelly->showOnlyArms();
+		if (g_config->armsOnly) {
+			_skelly->showOnlyArms();
 		}
 
-		playerSkelly->setHandPose();
-		if (c_verbose) { _MESSAGE("Operate Pipboy"); }
-		playerSkelly->operatePipBoy();
-		if (c_verbose) { _MESSAGE("bone sphere stuff"); }
+		_skelly->setHandPose();
+		_VMESSAGE("Operate Pipboy");
+		g_pipboy->operatePipBoy();
+		_VMESSAGE("bone sphere stuff");
 		detectBoneSphere();
 		handleDebugBoneSpheres();
 		//g_gunReloadSystem->Update();
 
 
-		playerSkelly->offHandToBarrel();
-		playerSkelly->offHandToScope();
+		_skelly->offHandToBarrel();
+		_skelly->offHandToScope();
 
 		Offsets::BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
 		BSFlattenedBoneTree_UpdateBoneArray((*g_player)->unkF0->rootNode->m_children.m_data[0]); // just in case any transforms missed because they are not in the tree do a full flat bone array update
@@ -1149,126 +756,27 @@ namespace F4VRBody {
 		}
 
 		if (isInScopeMenu()) {
-			playerSkelly->hideHands();
+			_skelly->hideHands();
 		}
-		// Cylons Code Starts Here ---->
-		playerSkelly->pipboyConfigurationMode();
-		playerSkelly->mainConfigurationMode();
-		playerSkelly->pipboyManagement();
-		playerSkelly->dampenPipboyScreen();
-		//Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
-		if (!detectInPowerArmor()) {
-			NiNode* _HideNode = nullptr;
-			c_IsHoloPipboy ? _HideNode = getChildNode("Screen", (*g_player)->unkF0->rootNode) : _HideNode = getChildNode("HoloEmitter", (*g_player)->unkF0->rootNode);
-			if (_HideNode) {
-				if (_HideNode->m_localTransform.scale != 0) {
-					_HideNode->flags |= 0x1;
-					_HideNode->m_localTransform.scale = 0;
-				}
-			}
-		}
-		if (c_CalibrateModeActive) {
-			vr::VRControllerAxis_t doinantHandStick = (c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0] : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0]);
-			uint64_t dominantHand = (c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed);
-			uint64_t offHand = (c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed);
-			const auto ExitandSave = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)33);
-			const auto ExitnoSave = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)33);
-			const auto SelfieButton = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)1);
-			const auto HeightButton = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)1);
-			if (ExitandSave && !c_ExitandSavePressed) {
-				c_ExitandSavePressed = true;
-				playerSkelly->configModeExit();
-				saveSettings();
-				if (vrhook != nullptr) {
-					c_leftHandedMode ? vrhook->StartHaptics(1, 0.55, 0.5) : vrhook->StartHaptics(2, 0.55, 0.5);
-				}
-			}
-			else if (!ExitandSave) {
-				c_ExitandSavePressed = false;
-			}
-			if (ExitnoSave && !c_ExitnoSavePressed) {
-				c_ExitnoSavePressed = true;
-				playerSkelly->configModeExit();
-				c_armLength = c_armLengthbkup;
-				c_powerArmor_up = c_powerArmor_upbkup;
-				c_playerOffset_up = c_playerOffset_upbkup;
-				c_RootOffset = c_RootOffsetbkup;
-				c_PARootOffset = c_PARootOffsetbkup;
-				c_fVrScale = c_fVrScalebkup;
-				c_playerOffset_forward = c_playerOffset_forwardbkup;
-				c_powerArmor_forward = c_powerArmor_forwardbkup;
-				c_cameraHeight = c_cameraHeightbkup;
-				c_PACameraHeight = c_PACameraHeightbkup;
-			}
-			else if (!ExitnoSave) {
-				c_ExitnoSavePressed = false;
-			}
-			if (SelfieButton && !c_SelfieButtonPressed) {
-				c_SelfieButtonPressed = true;
-				c_selfieMode = !c_selfieMode;
-			}
-			else if (!SelfieButton) {
-				c_SelfieButtonPressed = false;
-			}
-			if (HeightButton && !c_UIHeightButtonPressed) {
-				c_UIHeightButtonPressed = true;
-				PlayerNodes* skelly = playerSkelly->getPlayerNodes();
-				c_PlayerHMDHeight = skelly->UprightHmdNode->m_localTransform.pos.z;
-				float x = playerSkelly->getNode("LArm_Collarbone", playerSkelly->getRoot())->m_worldTransform.pos.z;
-				c_shouldertoHMD = c_PlayerHMDHeight - x;
-				lastCamZ = 0.0;
-			}
-			else if (!HeightButton) {
-				c_UIHeightButtonPressed = false;
-			}
-		}
-		else {
-			uint64_t dominantHand = (c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed);
-			uint64_t offHand = (c_leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed);
-			const auto dHTouch = dominantHand & vr::ButtonMaskFromId((vr::EVRButtonId)32);
-			const auto oHTouch = offHand & vr::ButtonMaskFromId((vr::EVRButtonId)32);
-			if (dHTouch && !c_CalibrateModeActive) {
-				c_ConfigModeTimer += 1;
-				if (c_ConfigModeTimer > 200 && c_ConfigModeTimer2 > 200) {
-					c_DampenHandsButtonPressed = true;
-					c_CalibrateModeActive = true;
-				}
-			}
-			else if (!dHTouch && !c_CalibrateModeActive && c_ConfigModeTimer > 0) {
-				c_ConfigModeTimer = 0;
-			}
-			if (oHTouch && !c_CalibrateModeActive) {
-				c_ConfigModeTimer2 += 1;
-			}
-			else if (!oHTouch && !c_CalibrateModeActive && c_ConfigModeTimer2 > 0) {
-				c_ConfigModeTimer2 = 0;
-			}
-		}
-		// Cylons Code Ends Here
-		playerSkelly->fixBackOfHand();
-		playerSkelly->updateDown(playerSkelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
+
+		g_pipboy->onUpdate();
+		g_configurationMode->onUpdate();
+		
+		_skelly->fixBackOfHand();
+		_skelly->updateDown(_skelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 
 		dumpGeometryArrayInUpdate();
 
-		playerSkelly->debug();
+		debug(_skelly);
 
 		if (!detectInPowerArmor()) { // sets 3rd Person Pipboy Scale
 			NiNode* _Pipboy3rd = getChildNode("PipboyBone", (*g_player)->unkF0->rootNode);
 			if (_Pipboy3rd) {
-				_Pipboy3rd->m_localTransform.scale = c_pipBoyScale;
+				_Pipboy3rd->m_localTransform.scale = g_config->pipBoyScale;
 			}
 		}
 		else {
-			playerSkelly->fixArmor();
-		}
-	}
-
-	void swapPB() {
-		if (c_IsHoloPipboy == 0) {
-			replaceMeshes(playerSkelly->getPlayerNodes(), "HoloEmitter", "Screen");
-		}
-		else if (c_IsHoloPipboy == 1) {
-			replaceMeshes(playerSkelly->getPlayerNodes(), "Screen", "HoloEmitter");
+			_skelly->fixArmor();
 		}
 	}
 
@@ -1306,54 +814,8 @@ namespace F4VRBody {
 		}
 	}
 
-	void saveSettings() {
-		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-
-		rc = ini.SetDoubleValue("Fallout4VRBody", "PlayerHeight", (double)c_playerHeight);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "fVrScale", (double)c_fVrScale);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "playerOffset_forward", (double)c_playerOffset_forward);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "playerOffset_up", (double)c_playerOffset_up);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "powerArmor_forward", (double)c_powerArmor_forward);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "powerArmor_up", (double)c_powerArmor_up);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "armLength", (double)c_armLength);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "cameraHeightOffset", (double)c_cameraHeight);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "powerArmor_cameraHeightOffset", (double)c_PACameraHeight);
-		rc = ini.SetBoolValue("Fallout4VRBody", "showPAHUD", c_showPAHUD);
-		rc = ini.SetBoolValue("Fallout4VRBody", "hidePipboy", c_hidePipboy);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "PipboyScale", (double)c_pipBoyScale);
-		rc = ini.SetBoolValue("Fallout4VRBody", "HoloPipBoyEnabled", c_IsHoloPipboy);
-		rc = ini.SetBoolValue("Fallout4VRBody", "PipBoyTorchOnArm", c_IsPipBoyTorchOnArm);
-		rc = ini.SetBoolValue("Fallout4VRBody", "EnableArmsOnlyMode", c_armsOnly);
-		rc = ini.SetBoolValue("Fallout4VRBody", "EnableStaticGripping", c_staticGripping);
-		//rc = ini.SetBoolValue("Fallout4VRBody", "EnableRepositionMode", c_repositionMasterMode);  Handled by Config Mode. 
-		rc = ini.SetBoolValue("Fallout4VRBody", "HideTheHead", c_hideHead);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_X", c_handUI_X);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_Y", c_handUI_Y);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "handUI_Z", c_handUI_Z);
-		rc = ini.SetBoolValue("Fallout4VRBody", "DampenHands", c_dampenHands);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "DampenHandsRotation", c_dampenHandsRotation);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "DampenHandsTranslation", c_dampenHandsTranslation);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "powerArmor_RootOffset", (double)c_PARootOffset);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "RootOffset", (double)c_RootOffset);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "fHMDHeight", (double)c_PlayerHMDHeight);
-		rc = ini.SetDoubleValue("Fallout4VRBody", "fShouldertoHMD", (double)c_shouldertoHMD);
-		rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-		
-		// save off any weapon offsets
-		writeOffsetJson();
-
-		if (rc < 0) {
-			_MESSAGE("Failed to write out INI config file");
-		}
-		else {
-			_MESSAGE("successfully wrote config file");
-		}
-
-	}
-
 	void saveStates(StaticFunctionTag* base) {
-		saveSettings();
+		g_config->saveSettings();
 	}
 
 	void setFingerPositionScalar(StaticFunctionTag* base, bool isLeft, float thumb, float index, float middle, float ring, float pinky) {
@@ -1470,9 +932,9 @@ namespace F4VRBody {
 		Sleep(2000);
 		PlayerNodes* pn = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
 
-		c_playerHeight = pn->UprightHmdNode->m_localTransform.pos.z;
+		 g_config->playerHeight = pn->UprightHmdNode->m_localTransform.pos.z;
 
-		_MESSAGE("Calibrated Height: %f  arm length: %f %f", c_playerHeight, c_armLength);
+		_MESSAGE("Calibrated Height: %f  arm length: %f %f", g_config->playerHeight, g_config->armLength);
 		ShowMessagebox("FRIK Config Mode");
 	}
 
@@ -1482,7 +944,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_showPAHUD = !c_showPAHUD;
+		 g_config->showPAHUD = !g_config->showPAHUD;
 	}
 
 	void toggleHeadVis(StaticFunctionTag* base) {
@@ -1491,10 +953,10 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_hideHead = !c_hideHead;
-		c_loadedHideHead = c_hideHead;
+		 g_config->hideHead = !g_config->hideHead;
+		 c_loadedHideHead = g_config->hideHead;
 
-		if (c_hideHead) {
+		if (g_config->hideHead) {
 			restoreGeometry();
 		}
 	}
@@ -1505,7 +967,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_hidePipboy = !c_hidePipboy;
+		 g_config->hidePipboy = !g_config->hidePipboy;
 
 	}
 
@@ -1515,20 +977,17 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_selfieMode = !c_selfieMode;
-
-		if (c_selfieMode)
-		{
+		 c_selfieMode = !c_selfieMode;
+		if (c_selfieMode) {
 			restoreGeometry();
-			c_hideHead = false;
-			c_hideEquipment = false;
-			c_hideSkin = false;
+			 g_config->hideHead = false;
+			 g_config->hideEquipment = false;
+			 g_config->hideSkin = false;
 		}
-		else
-		{
-			c_hideHead = c_loadedHideHead;
-			c_hideEquipment = c_loadedHideEquipment;
-			c_hideSkin = c_loadedHideSkin;
+		else {
+			 g_config->hideHead = c_loadedHideHead;
+			 g_config->hideEquipment = c_loadedHideEquipment;
+			 g_config->hideSkin = c_loadedHideSkin;
 		}
 	}
 
@@ -1545,7 +1004,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_armsOnly = !c_armsOnly;
+		 g_config->armsOnly = !g_config->armsOnly;
 	}
 
 	void toggleStaticGripping(StaticFunctionTag* base) {
@@ -1554,9 +1013,9 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_staticGripping = !c_staticGripping;
+		 g_config->staticGripping = !g_config->staticGripping;
 
-		bool gripConfig = !F4VRBody::c_staticGripping;
+		bool gripConfig = !g_config->staticGripping;
 		g_messaging->Dispatch(g_pluginHandle, 15, (void*)gripConfig, sizeof(bool), "FO4VRBETTERSCOPES");
 	}
 
@@ -1576,7 +1035,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_cameraHeight += 2.0f;
+		 g_config->cameraHeight += 2.0f;
 	}
 
 	void moveCameraDown(StaticFunctionTag* base){
@@ -1585,11 +1044,11 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_cameraHeight -= 2.0f;
+		 g_config->cameraHeight -= 2.0f;
 	}
 
 	void setDynamicCameraHeight(StaticFunctionTag* base, float dynamicCameraHeight) {
-		c_dynamicCameraHeight = dynamicCameraHeight;
+		 c_dynamicCameraHeight = dynamicCameraHeight;
 	}
 
 	void makeTaller(StaticFunctionTag* base) {
@@ -1598,7 +1057,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_playerHeight += 2.0f;
+		 g_config->playerHeight += 2.0f;
 	}
 
 	void makeShorter(StaticFunctionTag* base){
@@ -1607,7 +1066,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_playerHeight -= 2.0f;
+		 g_config->playerHeight -= 2.0f;
 	}
 
 	void moveUp(StaticFunctionTag* base){
@@ -1616,7 +1075,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_playerOffset_up += 1.0f;
+		 g_config->playerOffset_up += 1.0f;
 	}
 
 	void moveDown(StaticFunctionTag* base){
@@ -1625,7 +1084,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_playerOffset_up -= 1.0f;
+		 g_config->playerOffset_up -= 1.0f;
 	}
 
 	void moveForward(StaticFunctionTag* base){
@@ -1634,7 +1093,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_playerOffset_forward += 1.0f;
+		 g_config->playerOffset_forward += 1.0f;
 	}
 
 	void moveBackward(StaticFunctionTag* base){
@@ -1643,7 +1102,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_playerOffset_forward -= 1.0f;
+		 g_config->playerOffset_forward -= 1.0f;
 	}
 
 	void increaseScale(StaticFunctionTag* base){
@@ -1652,9 +1111,9 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_fVrScale += 1.0f;
+		 g_config->fVrScale += 1.0f;
 		Setting* set = GetINISetting("fVrScale:VR");
-		set->SetDouble(c_fVrScale);
+		set->SetDouble(g_config->fVrScale);
 	}
 
 	void decreaseScale(StaticFunctionTag* base){
@@ -1663,33 +1122,33 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_fVrScale -= 1.0f;
+		 g_config->fVrScale -= 1.0f;
 		Setting* set = GetINISetting("fVrScale:VR");
-		set->SetDouble(c_fVrScale);
+		set->SetDouble(g_config->fVrScale);
 	}
 
 	void handUiXUp(StaticFunctionTag* base) {
-		c_handUI_X += 1.0f;
+		 g_config->handUI_X += 1.0f;
 	}
 
 	void handUiXDown(StaticFunctionTag* base) {
-		c_handUI_X -= 1.0f;
+		 g_config->handUI_X -= 1.0f;
 	}
 
 	void handUiYUp(StaticFunctionTag* base) {
-		c_handUI_Y += 1.0f;
+		 g_config->handUI_Y += 1.0f;
 	}
 
 	void handUiYDown(StaticFunctionTag* base) {
-		c_handUI_Y -= 1.0f;
+		 g_config->handUI_Y -= 1.0f;
 	}
 
 	void handUiZUp(StaticFunctionTag* base) {
-		c_handUI_Z += 1.0f;
+		 g_config->handUI_Z += 1.0f;
 	}
 
 	void handUiZDown(StaticFunctionTag* base) {
-		c_handUI_Z -= 1.0f;
+		 g_config->handUI_Z -= 1.0f;
 	}
 
 	// Sphere bone detection funcs
@@ -1812,7 +1271,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_dampenHands = !c_dampenHands;
+		 g_config->dampenHands = !g_config->dampenHands;
 	}
 
 	void increaseDampenRotation(StaticFunctionTag* base) {
@@ -1821,8 +1280,8 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_dampenHandsRotation += 0.05f;
-		c_dampenHandsRotation = c_dampenHandsRotation >= 1.0f ? 0.95f : c_dampenHandsRotation;
+		 g_config->dampenHandsRotation += 0.05f;
+		 g_config->dampenHandsRotation = g_config->dampenHandsRotation >= 1.0f ? 0.95f : g_config->dampenHandsRotation;
 	}
 
 	void decreaseDampenRotation(StaticFunctionTag* base) {
@@ -1831,8 +1290,8 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_dampenHandsRotation -= 0.05f;
-		c_dampenHandsRotation = c_dampenHandsRotation <= 0.0f ? 0.05f : c_dampenHandsRotation;
+		 g_config->dampenHandsRotation -= 0.05f;
+		 g_config->dampenHandsRotation = g_config->dampenHandsRotation <= 0.0f ? 0.05f : g_config->dampenHandsRotation;
 	}
 
 	void increaseDampenTranslation(StaticFunctionTag* base) {
@@ -1841,9 +1300,9 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_dampenHandsTranslation += 0.05f;
+		 g_config->dampenHandsTranslation += 0.05f;
 
-		c_dampenHandsTranslation = c_dampenHandsTranslation >= 1.0f ? 0.95f : c_dampenHandsTranslation;
+		 g_config->dampenHandsTranslation = g_config->dampenHandsTranslation >= 1.0f ? 0.95f : g_config->dampenHandsTranslation;
 	}
 
 	void decreaseDampenTranslation(StaticFunctionTag* base) {
@@ -1852,8 +1311,8 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_dampenHandsTranslation -= 0.05f;
-		c_dampenHandsTranslation = c_dampenHandsTranslation <= 0.0f ? 0.5f : c_dampenHandsTranslation;
+		 g_config->dampenHandsTranslation -= 0.05f;
+		 g_config->dampenHandsTranslation = g_config->dampenHandsTranslation <= 0.0f ? 0.5f : g_config->dampenHandsTranslation;
 	}
 
 	void toggleRepositionMasterMode(StaticFunctionTag* base) {
@@ -1862,7 +1321,7 @@ namespace F4VRBody {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
 
-		c_repositionMasterMode = !c_repositionMasterMode;
+		 c_repositionMasterMode = !c_repositionMasterMode;
 	}
 
 	void dumpGeometryArray(StaticFunctionTag* base) {

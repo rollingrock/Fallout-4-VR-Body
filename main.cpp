@@ -9,6 +9,7 @@
 
 #include "f4se/GameData.h"
 
+#include "Config.h"
 #include "version.h"
 #include "hook.h"
 #include "F4VRBody.h"
@@ -64,7 +65,7 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
 
 		}
 		if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
-			bool gripConfig = !F4VRBody::c_staticGripping;
+			bool gripConfig = !F4VRBody::g_config->staticGripping;
 			g_messaging->Dispatch(g_pluginHandle, 15, (void*) gripConfig, sizeof(bool), "FO4VRBETTERSCOPES");
 
 			g_messaging->RegisterListener(g_pluginHandle, "FO4VRBETTERSCOPES", OnBetterScopesMessage);
@@ -77,8 +78,8 @@ extern "C" {
 	{
 		Sleep(5000);
 		gLog.OpenRelative(CSIDL_MYDOCUMENTS, R"(\\My Games\\Fallout4VR\\F4SE\\Fallout4VRBody.log)");
-		gLog.SetPrintLevel(IDebugLog::kLevel_DebugMessage);
-		gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
+		gLog.SetPrintLevel(IDebugLog::kLevel_Message);
+		gLog.SetLogLevel(IDebugLog::kLevel_Message);
 
 		g_moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("FRIK.dll"));
 
@@ -130,10 +131,16 @@ extern "C" {
 			return false;
 		}
 
-		if (!F4VRBody::loadConfig()) {
+		;
+		if (!F4VRBody::initConfig()) {
 			_ERROR("could not open ini config file");
 			return false;
 		}
+
+		auto logLevel = F4VRBody::g_config->verbose ? IDebugLog::kLevel_DebugMessage : IDebugLog::kLevel_Message;
+		_MESSAGE("Set log level = %d", logLevel);
+		gLog.SetPrintLevel(logLevel);
+		gLog.SetLogLevel(logLevel);
 
 		g_papyrus = (F4SEPapyrusInterface*)a_f4se->QueryInterface(kInterface_Papyrus);
 
@@ -141,14 +148,14 @@ extern "C" {
 		_MESSAGE("register papyrus funcs");
 
 		if (!g_papyrus->Register(F4VRBody::RegisterFuncs)) {
-			_MESSAGE("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
+			_ERROR("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
 			return false;
 		}
 
 		PatchBody();
 		
 		if (!patches::patchAll()) {
-			_MESSAGE("error loading misc patches");
+			_ERROR("error loading misc patches");
 			return false;
 		}
 

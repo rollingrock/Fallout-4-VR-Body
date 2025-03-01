@@ -173,6 +173,9 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "H:\mo2\fo4vr\mods\FRIK_69\F4SE\Plugin
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BSFlattenedBoneTree.cpp" />
+    <ClCompile Include="Config.cpp" />
+    <ClCompile Include="ConfigurationMode.cpp" />
+    <ClCompile Include="Debug.cpp" />
     <ClCompile Include="F4VRBody.cpp" />
     <ClCompile Include="GunReload.cpp" />
     <ClCompile Include="HandPose.cpp" />
@@ -184,6 +187,7 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "H:\mo2\fo4vr\mods\FRIK_69\F4SE\Plugin
     <ClCompile Include="MiscStructs.cpp" />
     <ClCompile Include="Offsets.cpp" />
     <ClCompile Include="patches.cpp" />
+    <ClCompile Include="Pipboy.cpp" />
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="Skeleton.cpp" />
     <ClCompile Include="SmoothMovement.cpp" />
@@ -195,6 +199,9 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "H:\mo2\fo4vr\mods\FRIK_69\F4SE\Plugin
     <ClInclude Include="api\PapyrusVRAPI.h" />
     <ClInclude Include="api\VRManagerAPI.h" />
     <ClInclude Include="BSFlattenedBoneTree.h" />
+    <ClInclude Include="Config.h" />
+    <ClInclude Include="ConfigurationMode.h" />
+    <ClInclude Include="Debug.h" />
     <ClInclude Include="F4VRBody.h" />
     <ClInclude Include="GunReload.h" />
     <ClInclude Include="HandPose.h" />
@@ -210,6 +217,7 @@ copy "$(SolutionDir)x64\Release\FRIK.pdb" "H:\mo2\fo4vr\mods\FRIK_69\F4SE\Plugin
     <ClInclude Include="Offsets.h" />
     <ClInclude Include="openvr\openvr.h" />
     <ClInclude Include="patches.h" />
+    <ClInclude Include="Pipboy.h" />
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SmoothMovementVR.h" />
