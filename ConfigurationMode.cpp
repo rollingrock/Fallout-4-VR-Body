@@ -26,7 +26,6 @@ namespace F4VRBody {
 				MCConfigUI->m_parent->RemoveChild(MCConfigUI);
 			}
 			_skelly->disableConfigModePose();
-			SetINIFloat("fDirectionalDeadzone:Controls", c_repositionMasterMode ? 1.0 : g_config->directionalDeadzone);
 			_calibrateModeActive = false;
 		}
 	}
@@ -137,7 +136,7 @@ namespace F4VRBody {
 			g_config->dampenHands ? UIElement->m_localTransform.scale = 1 : UIElement->m_localTransform.scale = 0;
 			// Weapon Reposition Mode
 			UIElement = _skelly->getNode("MC-Tile08On", _skelly->getPlayerNodes()->primaryUIAttachNode);
-			c_repositionMasterMode ? UIElement->m_localTransform.scale = 1 : UIElement->m_localTransform.scale = 0;
+			UIElement->m_localTransform.scale = c_weaponRepositionMasterMode ? 1 : 0;
 			// Grip Mode
 			if (!g_config->enableGripButtonToGrap && !g_config->onePressGripButton && !g_config->enableGripButtonToLetGo) { // Standard Sticky Grip on / off
 				for (int i = 0; i < 4; i++) {
@@ -263,7 +262,8 @@ namespace F4VRBody {
 			}
 			if (WeaponButtonPressed && !_isWeaponButtonPressed) {
 				_isWeaponButtonPressed = true;
-				c_repositionMasterMode = !c_repositionMasterMode;
+				c_weaponRepositionMasterMode = !c_weaponRepositionMasterMode;
+				rotationStickEnabledToggle(!c_weaponRepositionMasterMode);
 			}
 			else if (!WeaponButtonPressed) {
 				_isWeaponButtonPressed = false;
@@ -356,6 +356,7 @@ namespace F4VRBody {
 
 	void ConfigurationMode::onUpdate() {
 		
+		checkWeaponRepositionPipboyConflict();
 		pipboyConfigurationMode();
 		mainConfigurationMode();
 
@@ -728,5 +729,16 @@ namespace F4VRBody {
 				}
 			}
 		}
+	}
+
+	/// <summary>
+	/// Check if currently in weapon reposition mode to enable or disable the rotation stick depending if pipboy is open.
+	/// Needed to operate vanilla in-fron or projected pipboy when also doing weapon repositioning.
+	/// On-wrist pipboy needs the rotation stick disabled to override its own UI.
+	/// </summary>
+	void ConfigurationMode::checkWeaponRepositionPipboyConflict() {
+		if (!c_weaponRepositionMasterMode)
+			return;
+		rotationStickEnabledToggle(isAnyPipboyOpen() && !g_pipboy->isOperatingPipboy());
 	}
 }

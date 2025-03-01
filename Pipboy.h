@@ -22,6 +22,9 @@ namespace F4VRBody {
 			return _pipboyStatus;
 		}
 
+		/// <summary>
+		/// True if on-wrist pipboy is open.
+		/// </summary>
 		inline bool isOperatingPipboy() const {
 			return _isOperatingPipboy; 
 		}
