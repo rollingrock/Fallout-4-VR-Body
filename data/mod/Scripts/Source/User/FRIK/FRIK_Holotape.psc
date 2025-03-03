@@ -1,0 +1,26 @@
+Scriptname FRIK:FRIK_Holotape extends ReferenceAlias
+
+GlobalVariable Property FRIK_PBSFX Auto Const Mandatory
+Holotape Property PFRIK_Holotape Auto Const Mandatory
+ObjectReference Property PlayerRef Auto Const Mandatory
+Sound Property UIPipBoyOKPress Auto Const
+Sound Property UIPipBoyFavoriteOn Auto Const Mandatory
+
+Event OnInit()
+    PlayerRef.AddItem(PFRIK_Holotape, 1, true)
+    RegisterForMenuOpenCloseEvent("PipboyMenu")
+EndEvent
+
+Event OnPlayerLoadGame()
+    if (PlayerRef.GetItemCount(PFRIK_Holotape) == 0)
+        PlayerRef.AddItem(PFRIK_Holotape, 1, true)
+    Endif
+    RegisterForMenuOpenCloseEvent("PipboyMenu")
+EndEvent
+
+Event OnMenuOpenCloseEvent(string asMenuName, bool abOpening)
+    if (asMenuName== "PipboyMenu") && (FRIK_PBSFX.GetValue()==0.0)
+        int instanceID = UIPipBoyOKPress.play(PlayerRef)
+        int instanceID2 = UIPipBoyFavoriteOn.play(PlayerRef)
+    endif
+endEvent
