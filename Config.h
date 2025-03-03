@@ -12,8 +12,8 @@ namespace F4VRBody {
 	class Config
 	{
 	public:
-		bool loadConfig();
-		void saveSettings();
+		bool load();
+		void save() const;
 
 		inline void togglePipBoyTorchOnArm() {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
@@ -131,6 +131,8 @@ namespace F4VRBody {
 		std::vector<int> hideSlotIndexes;
 
 	private:
+		bool loadFrikINI();
+		void saveFrikINI() const;
 		void loadHideFace();
 		void loadHideSkins();
 		void loadHideSlots();
@@ -148,7 +150,7 @@ namespace F4VRBody {
 
 		_MESSAGE("Init config...");
 		auto config = new Config();
-		auto success = config->loadConfig();
+		auto success = config->load();
 		if (success) {
 			_VMESSAGE("Config loaded successfully");
 			g_config = config;
@@ -159,5 +161,6 @@ namespace F4VRBody {
 			delete config;
 			return false;
 		}
+		return true;
 	}
 }

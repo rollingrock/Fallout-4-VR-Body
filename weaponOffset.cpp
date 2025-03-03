@@ -59,12 +59,12 @@ namespace F4VRBody {
 		return offsets.size();
 	}
 
-	void readOffsetJson() {
+	void loadWeaponOffsetsJsons() {
 		if (g_weaponOffsets) {
 			delete g_weaponOffsets;
 		}
 		g_weaponOffsets = new WeaponOffset();
-		loadOffsetJsonFile(); //load default list if it exists
+		loadWeaponOffsetJsonFile(); //load default list if it exists
 		if (!(std::filesystem::exists(offsetsPath) && std::filesystem::is_directory(offsetsPath)))
 			std::filesystem::create_directory(offsetsPath);
 		for (const auto& file : std::filesystem::directory_iterator(offsetsPath)) {
@@ -76,10 +76,10 @@ namespace F4VRBody {
 				_WARNING("Unable to convert path to string: %s", e.what());
 			}
 			if (file.exists() && !file.is_directory())
-				loadOffsetJsonFile(file.path().string());
+				loadWeaponOffsetJsonFile(file.path().string());
 			}
 	}
-	void loadOffsetJsonFile(const std::string &file) {
+	void loadWeaponOffsetJsonFile(const std::string &file) {
 
 		json weaponJson;
 		std::ifstream inF;
@@ -138,7 +138,7 @@ namespace F4VRBody {
 			_WARNING("Unable to save json %s: %s", file.c_str(), e.what());
 		}
 	}
-	void writeOffsetJson() {
+	void saveWeaponOffsetsJsons() {
 
 		std::string file;
 

@@ -2447,7 +2447,7 @@ namespace F4VRBody {
 							_hasLetGoRepositionButton = false;
 							_useCustomWeaponOffset = true;
 							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor ? Mode::powerArmor : Mode::normal);
-							writeOffsetJson();
+							saveWeaponOffsetsJsons();
 						}
 						else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > g_config->holdDelay && c_weaponRepositionMasterMode) {
 							switch (_repositionMode) {
@@ -2478,7 +2478,7 @@ namespace F4VRBody {
 							}
 							hideWands();
 							_hasLetGoRepositionButton = false;
-							writeOffsetJson();
+							saveWeaponOffsetsJsons();
 						}
 					}
 				}

@@ -815,7 +815,7 @@ namespace F4VRBody {
 	}
 
 	void saveStates(StaticFunctionTag* base) {
-		g_config->saveSettings();
+		g_config->save();
 	}
 
 	void setFingerPositionScalar(StaticFunctionTag* base, bool isLeft, float thumb, float index, float middle, float ring, float pinky) {

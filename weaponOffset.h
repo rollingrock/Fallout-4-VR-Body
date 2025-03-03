@@ -36,9 +36,9 @@ namespace F4VRBody {
 	static const std::string defaultJson{ ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets.json" };
 	static const std::string offsetsPath{ ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets" };
 
-	void readOffsetJson();
-	void loadOffsetJsonFile(const std::string& file = defaultJson);
-	void writeOffsetJson();
+	void loadWeaponOffsetsJsons();
+	void loadWeaponOffsetJsonFile(const std::string& file = defaultJson);
+	void saveWeaponOffsetsJsons();
 	void saveOffsetJsonFile(const nlohmann::json& weaponJson, const std::string& file = defaultJson);
 
 	extern WeaponOffset* g_weaponOffsets;
