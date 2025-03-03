@@ -2,7 +2,7 @@
 
 #include <windows.h>
 #include "common/IDebugLog.h"
-#include "openvr/openvr.h"
+#include "openvr.h"
 
 // VR input callbacks
 // last argument is ptr to VRControllerState that the mod authors can modify and use to block inputs
