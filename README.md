@@ -24,14 +24,12 @@ Prerequisites:
 
 1. Git clone [`Fallout-4-VR-Body`](https://github.com/rollingrock/Fallout-4-VR-Body) (if not already from building "f4sevr")
    - Should be `\root\Fallout-4-VR-Body\`
-2. Download precompiled libs from [posedev branch / lib](https://github.com/rollingrock/Fallout-4-VR-Body/tree/posedev/lib) into `\root\Fallout-4-VR-Body\lib` (create folder)
-3. Download OpenVR headers from [posedev branch / openvr](https://github.com/rollingrock/Fallout-4-VR-Body/tree/posedev/openvr) into `\root\Fallout-4-VR-Body\openvr` (create folder)
-4. Open `Fallout-4-VR-Body` in Visual Studio
+2. Open `Fallout-4-VR-Body` in Visual Studio
    1. Double click `\root\Fallout-4-VR-Body\Fallout4VR_Body.sln`
-5. Change target dropdown from "Debug" to "Release"
-6. Build > Build Solution
+3. Change target dropdown from "Debug" to "Release"
+4. Build > Build Solution
    1. Ignore post build error to copy output file
-7. Find `\root\Fallout-4-VR-Body\x64\Release\FRIK.dll`
+5. Find `\root\Fallout-4-VR-Body\x64\Release\FRIK.dll`
 
 ### Optional, build `f4sevr`:
 
