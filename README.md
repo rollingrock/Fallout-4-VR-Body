@@ -27,9 +27,11 @@ Prerequisites:
 2. Open `Fallout-4-VR-Body` in Visual Studio
    1. Double click `\root\Fallout-4-VR-Body\Fallout4VR_Body.sln`
 3. Change target dropdown from "Debug" to "Release"
-4. Build > Build Solution
-   1. Ignore post build error to copy output file
-5. Find `\root\Fallout-4-VR-Body\x64\Release\FRIK.dll`
+4. Setup post build copy environment variable
+   1. `setx FRIK_MOD_PATH "C:\[myModsLocation]\FRIK\F4SE\Plugins"`
+   2. Restart VS2022 to load the envar
+5. Build > Build Solution
+6. Find `\root\Fallout-4-VR-Body\x64\Release\FRIK.dll`
 
 ### Optional, build `f4sevr`:
 
