@@ -78,13 +78,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>lib_debug;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>libs\debug;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <IncludePath>$(SolutionDir)..\f4sevr\src\f4sevr;$(SolutionDir)..\f4sevr\src;include;$(IncludePath)</IncludePath>
     <TargetName>FRIK</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>libs\release;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <IncludePath>$(SolutionDir)..\f4sevr\src\f4sevr;$(SolutionDir)..\f4sevr\src;include;$(IncludePath)</IncludePath>
     <TargetName>FRIK</TargetName>
   </PropertyGroup>
