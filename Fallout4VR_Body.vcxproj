@@ -219,6 +219,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="patches.h" />
     <ClInclude Include="Pipboy.h" />
     <ClInclude Include="Quaternion.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SmoothMovementVR.h" />
     <ClInclude Include="utils.h" />
@@ -226,7 +227,11 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="weaponOffset.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="data\FRIK.ini" />
     <None Include="exports.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

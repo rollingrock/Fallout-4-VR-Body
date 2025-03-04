@@ -2,6 +2,7 @@
 #include "weaponOffset.h"
 #include "include/SimpleIni.h"
 #include "utils.h"
+#include "resource.h"
 
 namespace F4VRBody {
 
@@ -11,11 +12,9 @@ namespace F4VRBody {
 	constexpr const char* INI_SECTION_MAIN = "Fallout4VRBody";
 	constexpr const char* INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
 
-	bool Config::load() {
+	void Config::load() {
 		// load main config
-		if (!loadFrikINI()) {
-			return false;
-		}
+		loadFrikINI();
 
 		// load weapon offset JSON
 		loadWeaponOffsetsJsons();
@@ -24,8 +23,6 @@ namespace F4VRBody {
 		loadHideFace();
 		loadHideSkins();
 		loadHideSlots();
-
-		return true;
 	}
 
 	void Config::save() const {
@@ -36,15 +33,17 @@ namespace F4VRBody {
 		saveWeaponOffsetsJsons();
 	}
 
-	bool Config::loadFrikINI()
-	{
+	void Config::loadFrikINI() {
+
+		if (!std::filesystem::exists(FRIK_INI_PATH)) {
+			_MESSAGE("No existing FRIK.ini file found, creating default...");
+			createDefaultFrikINI();
+		}
+
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
-
-		// TODO: handle default file
 		if (rc < 0) {
-			_ERROR("ERROR: Failed to load FRIK.ini file! Error: %d", rc);
-			return false;
+			throw std::runtime_error("Failed to load FRIK.ini file! Error: " + rc);
 		}
 
 		playerHeight = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f);
@@ -130,8 +129,53 @@ namespace F4VRBody {
 		stoppingMultiplierHorizontal = (float)ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplierHorizontal", 0.6);
 		disableInteriorSmoothing = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothing", 1);
 		disableInteriorSmoothingHorizontal = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothingHorizontal", 1);
+	}
 
-		return true;
+	/// <summary>
+	/// Find dll embeded resource by id and return its data as string.
+	/// </summary>
+	static std::string getEmbededResourceAsString(WORD idr) {
+
+		// Must specify the dll to read its resources and not the exe
+		HMODULE hModule = GetModuleHandle("FRIK.dll");
+		HRSRC hRes = FindResource(hModule, MAKEINTRESOURCE(IDR_FRIK_INI), RT_RCDATA);
+		if (!hRes) {
+			throw std::runtime_error("Default INI resource not found!");
+		}
+
+		HGLOBAL hResData = LoadResource(hModule, hRes);
+		if (!hResData) {
+			throw std::runtime_error("Failed to load default INI resource!");
+		}
+
+		DWORD dataSize = SizeofResource(hModule, hRes);
+		void* pData = LockResource(hResData);
+		if (!pData) {
+			throw std::runtime_error("Failed to lock default INI resource!");
+		}
+
+		return std::string(static_cast<const char* >(pData), dataSize);
+	}
+
+	/// <summary>
+	/// Get default FRIK.ini as dll resource and write it to the FRIK.ini file.
+	/// </summary>
+	void Config::createDefaultFrikINI() {
+
+		auto data = getEmbededResourceAsString(IDR_FRIK_INI);
+
+		std::ofstream outFile(FRIK_INI_PATH);
+		if (!outFile) {
+			throw std::runtime_error("Failed to create FRIK.ini file");
+		}
+		if (!outFile.write(data.data(), data.size())) {
+			outFile.close();
+			std::remove(FRIK_INI_PATH);
+			throw std::runtime_error("Failed to write to FRIK.ini file");
+		}
+		outFile.close();
+
+		_MESSAGE("Default FRIK.ini file created successfully (size: %d)", data.size());
 	}
 
 	void Config::loadHideFace() {

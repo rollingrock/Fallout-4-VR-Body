@@ -105,65 +105,68 @@ extern "C" {
 	}
 
 
-	bool F4SEPlugin_Load(const F4SEInterface* a_f4se)
-	{
-		_MESSAGE("F4VRBody Init");
+	bool F4SEPlugin_Load(const F4SEInterface* a_f4se) {
+		try {
+			_MESSAGE("F4VRBody Init");
 
-		g_pluginHandle = a_f4se->GetPluginHandle();
+			g_pluginHandle = a_f4se->GetPluginHandle();
 
-		if (g_pluginHandle == kPluginHandle_Invalid) {
-			return false;
+			if (g_pluginHandle == kPluginHandle_Invalid) {
+				return false;
+			}
+
+			g_messaging = (F4SEMessagingInterface*)a_f4se->QueryInterface(kInterface_Messaging);
+			g_messaging->RegisterListener(g_pluginHandle, "F4SE", OnF4SEMessage);
+
+			if (!g_branchTrampoline.Create(1024 * 128))
+			{
+				_ERROR("couldn't create branch trampoline. this is fatal. skipping remainder of init process.");
+				return false;
+			}
+
+			if (!g_localTrampoline.Create(1024 * 128, g_moduleHandle))
+			{
+				_ERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
+
+				return false;
+			}
+
+			;
+			F4VRBody::initConfig();
+
+			auto logLevel = F4VRBody::g_config->verbose ? IDebugLog::kLevel_DebugMessage : IDebugLog::kLevel_Message;
+			_MESSAGE("Set log level = %d", logLevel);
+			gLog.SetPrintLevel(logLevel);
+			gLog.SetLogLevel(logLevel);
+
+			g_papyrus = (F4SEPapyrusInterface*)a_f4se->QueryInterface(kInterface_Papyrus);
+
+
+			_MESSAGE("register papyrus funcs");
+
+			if (!g_papyrus->Register(F4VRBody::RegisterFuncs)) {
+				_ERROR("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
+				return false;
+			}
+
+			PatchBody();
+
+			if (!patches::patchAll()) {
+				_ERROR("error loading misc patches");
+				return false;
+			}
+
+			F4VRBody::InitGunReloadSystem();
+			hookMain();
+
+			_MESSAGE("F4VRBody Loaded");
+
+			return true;
 		}
-
-		g_messaging = (F4SEMessagingInterface*)a_f4se->QueryInterface(kInterface_Messaging);
-		g_messaging->RegisterListener(g_pluginHandle, "F4SE", OnF4SEMessage);
-
-		if (!g_branchTrampoline.Create(1024 * 128))
+		catch (const std::exception& e)
 		{
-			_ERROR("couldn't create branch trampoline. this is fatal. skipping remainder of init process.");
+			_FATALERROR("Fatal error in F4SEPlugin_Load: %s", e.what());
 			return false;
 		}
-
-		if (!g_localTrampoline.Create(1024 * 128, g_moduleHandle))
-		{
-			_ERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
-
-			return false;
-		}
-
-		;
-		if (!F4VRBody::initConfig()) {
-			_ERROR("could not open ini config file");
-			return false;
-		}
-
-		auto logLevel = F4VRBody::g_config->verbose ? IDebugLog::kLevel_DebugMessage : IDebugLog::kLevel_Message;
-		_MESSAGE("Set log level = %d", logLevel);
-		gLog.SetPrintLevel(logLevel);
-		gLog.SetLogLevel(logLevel);
-
-		g_papyrus = (F4SEPapyrusInterface*)a_f4se->QueryInterface(kInterface_Papyrus);
-
-
-		_MESSAGE("register papyrus funcs");
-
-		if (!g_papyrus->Register(F4VRBody::RegisterFuncs)) {
-			_ERROR("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
-			return false;
-		}
-
-		PatchBody();
-		
-		if (!patches::patchAll()) {
-			_ERROR("error loading misc patches");
-			return false;
-		}
-
-		F4VRBody::InitGunReloadSystem();
-		hookMain();
-
-		_MESSAGE("F4VRBody Loaded");
-
-		return true;
 	}
 };

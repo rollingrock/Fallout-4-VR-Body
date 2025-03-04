@@ -12,7 +12,7 @@ namespace F4VRBody {
 	class Config
 	{
 	public:
-		bool load();
+		void load();
 		void save() const;
 
 		inline void togglePipBoyTorchOnArm() {
@@ -131,7 +131,8 @@ namespace F4VRBody {
 		std::vector<int> hideSlotIndexes;
 
 	private:
-		bool loadFrikINI();
+		void createDefaultFrikINI();
+		void loadFrikINI();
 		void saveFrikINI() const;
 		void loadHideFace();
 		void loadHideSkins();
@@ -142,25 +143,15 @@ namespace F4VRBody {
 	// Not a fan of globals but it may be easiest to refactor code right now
 	extern Config* g_config;
 
-	static bool initConfig() {
+	static void initConfig() {
 		if (g_config) {
-			_ERROR("ERROR: config already initialized");
-			return false;
+			throw std::exception("Config already initialized");
 		}
 
 		_MESSAGE("Init config...");
 		auto config = new Config();
-		auto success = config->load();
-		if (success) {
-			_VMESSAGE("Config loaded successfully");
-			g_config = config;
-			return true;
-		}
-		else {
-			_ERROR("ERROR: Failed to load config");
-			delete config;
-			return false;
-		}
-		return true;
+		config->load();
+		g_config = config;
+		_VMESSAGE("Config loaded successfully");
 	}
 }
