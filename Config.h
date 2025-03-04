@@ -39,7 +39,6 @@ namespace F4VRBody {
 		bool leftHandedMode = false;
 
 		// persistant in FRIK.ini
-		bool verbose = false;
 		float playerHeight = 0.0;
 		float playerHMDHeight = 120.0;
 		float shoulderToHMD = 0.0;
@@ -131,14 +130,18 @@ namespace F4VRBody {
 		std::vector<int> hideSlotIndexes;
 
 	private:
-		void createDefaultFrikINI();
+		void createDefaultFrikINI(std::string filePath);
 		void loadFrikINI();
 		void saveFrikINI() const;
 		void updateLoggerLogLevel() const;
+		void updateFrikINIVersion();
 		void loadHideFace();
 		void loadHideSkins();
 		void loadHideSlots();
 		void saveBoolValue(const char* pKey, bool value);
+
+		int logLevel = 3;
+		int version = 0;
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now

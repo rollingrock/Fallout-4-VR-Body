@@ -8,18 +8,26 @@ namespace F4VRBody {
 
 	Config* g_config = nullptr;
 
+	constexpr const int FRIK_INI_VERSION = 2;
 	constexpr const char* FRIK_INI_PATH = ".\\Data\\F4SE\\plugins\\FRIK.ini";
 	constexpr const char* INI_SECTION_MAIN = "Fallout4VRBody";
+	constexpr const char* INI_SECTION_DEBUG = "Debug";
 	constexpr const char* INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
 
 	void Config::load() {
-		// load main config
+		if (!std::filesystem::exists(FRIK_INI_PATH)) {
+			_MESSAGE("No existing FRIK.ini file found, creating default...");
+			createDefaultFrikINI(FRIK_INI_PATH);
+		}
+
 		loadFrikINI();
 
-		// update the log level after reading it from FRIK ini
 		updateLoggerLogLevel();
 
-		// load weapon offset JSON
+		if (version < FRIK_INI_VERSION) {
+			updateFrikINIVersion();
+		}
+
 		loadWeaponOffsetsJsons();
 
 		// load hide meshes
@@ -37,17 +45,14 @@ namespace F4VRBody {
 	}
 
 	void Config::loadFrikINI() {
-
-		if (!std::filesystem::exists(FRIK_INI_PATH)) {
-			_MESSAGE("No existing FRIK.ini file found, creating default...");
-			createDefaultFrikINI();
-		}
-
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
 		if (rc < 0) {
 			throw std::runtime_error("Failed to load FRIK.ini file! Error: " + rc);
 		}
+
+		version = ini.GetLongValue(INI_SECTION_DEBUG, "Version", 0);
+		logLevel = ini.GetLongValue(INI_SECTION_DEBUG, "LogLevel", 3);
 
 		playerHeight = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f);
 		setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", false);
@@ -65,7 +70,6 @@ namespace F4VRBody {
 		showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
 		hidePipboy = ini.GetBoolValue(INI_SECTION_MAIN, "hidePipboy");
 		leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
-		verbose = ini.GetBoolValue(INI_SECTION_MAIN, "VerboseLogging");
 		armsOnly = ini.GetBoolValue(INI_SECTION_MAIN, "EnableArmsOnlyMode");
 		staticGripping = ini.GetBoolValue(INI_SECTION_MAIN, "EnableStaticGripping");
 		handUI_X = ini.GetDoubleValue(INI_SECTION_MAIN, "handUI_X", 0.0);
@@ -137,17 +141,17 @@ namespace F4VRBody {
 	/// <summary>
 	/// Get default FRIK.ini as dll resource and write it to the FRIK.ini file.
 	/// </summary>
-	void Config::createDefaultFrikINI() {
+	void Config::createDefaultFrikINI(std::string filePath) {
 
 		auto data = getEmbededResourceAsString(IDR_FRIK_INI);
 
-		std::ofstream outFile(FRIK_INI_PATH);
+		std::ofstream outFile(filePath, std::ios::trunc);
 		if (!outFile) {
 			throw std::runtime_error("Failed to create FRIK.ini file");
 		}
 		if (!outFile.write(data.data(), data.size())) {
 			outFile.close();
-			std::remove(FRIK_INI_PATH);
+			std::remove(filePath.c_str());
 			throw std::runtime_error("Failed to write to FRIK.ini file");
 		}
 		outFile.close();
@@ -176,10 +180,74 @@ namespace F4VRBody {
 	/// Update the global logger log level based on the config setting.
 	/// </summary>
 	void Config::updateLoggerLogLevel() const {
-		auto logLevel = verbose ? IDebugLog::kLevel_DebugMessage : IDebugLog::kLevel_Message;
 		_MESSAGE("Set log level = %d", logLevel);
-		gLog.SetPrintLevel(logLevel);
-		gLog.SetLogLevel(logLevel);
+		auto level = static_cast<IDebugLog::LogLevel>(logLevel);
+		gLog.SetPrintLevel(level);
+		gLog.SetLogLevel(level);
+	}
+
+	/// <summary>
+	/// Current FRIK.ini file is older. Need to update it by:
+	/// 1. Overriding the file with the default FRIK.ini resource.
+	/// 2. Saving the current config values read from previous FRIK.ini to the new FRIK.ini file.
+	/// This preserves the user changed values, including new values and comments, and remove old values completly.
+	/// A backup of the previous file is created with the version number for safety.
+	/// </summary>
+	void Config::updateFrikINIVersion() {
+		_MESSAGE("Updating FRIK.ini from version %d to %d", version, FRIK_INI_VERSION);
+		
+		CSimpleIniA oldIni;
+		SI_Error rc = oldIni.LoadFile(FRIK_INI_PATH);
+		if (rc < 0) 
+			throw std::runtime_error("Failed to load old FRIK.ini file! Error: " + std::to_string(rc));
+
+		// override the file with the default FRIK.ini resource.
+		auto tmpIniPath = std::string(FRIK_INI_PATH) + ".tmp";
+		createDefaultFrikINI(tmpIniPath.c_str());
+
+		CSimpleIniA newIni;
+		rc = newIni.LoadFile(tmpIniPath.c_str());
+		if (rc < 0)
+			throw std::runtime_error("Failed to load new FRIK.ini file! Error: " + std::to_string(rc));
+
+		// remove temp ini file
+		std::remove(tmpIniPath.c_str());
+
+		// update all values in the new ini with the old ini values but only if they exists in the new
+		std::list<CSimpleIniA::Entry> sectionsList;
+		oldIni.GetAllSections(sectionsList);
+		for (const auto& section : sectionsList) {
+			std::list<CSimpleIniA::Entry> keysList;
+			oldIni.GetAllKeys(section.pItem, keysList);
+			for (const auto& key : keysList) {
+				auto oldVal = oldIni.GetValue(section.pItem, key.pItem);
+				auto newVal = newIni.GetValue(section.pItem, key.pItem);
+				if (newVal != nullptr && std::strcmp(oldVal, newVal) != 0) {
+					_MESSAGE("Migrating %s.%s = %s", section.pItem, key.pItem, oldIni.GetValue(section.pItem, key.pItem));
+					newIni.SetValue(section.pItem, key.pItem, oldIni.GetValue(section.pItem, key.pItem));
+				}
+				else {
+					_VMESSAGE("Skipping %s.%s (%s)", section.pItem, key.pItem, newVal == nullptr ? "removed" : "unchanged");
+				}
+			}
+		}
+
+		// set the version to latest
+		newIni.SetLongValue(INI_SECTION_DEBUG, "version", FRIK_INI_VERSION);
+
+		// backup the old ini file before overwritting
+		auto nameStr = std::string(FRIK_INI_PATH);
+		nameStr = nameStr.replace(nameStr.length() - 4, 4, "_bkp_v" + std::to_string(version) + ".ini");
+		int res = std::rename(FRIK_INI_PATH, nameStr.c_str());
+		if (rc != 0)
+			_WARNING("Failed to backup old FRIK.ini file to '%s'. Error: %d", nameStr, rc);
+		
+		// save the new ini file
+		rc = newIni.SaveFile(FRIK_INI_PATH);
+		if (rc < 0)
+			throw std::runtime_error("Failed to save post update FRIK.ini file! Error: " + std::to_string(rc));
+		
+		_MESSAGE("FRIK.ini updated successfully");
 	}
 
 	void Config::loadHideSkins() {
