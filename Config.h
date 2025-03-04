@@ -14,6 +14,7 @@ namespace F4VRBody {
 	public:
 		void load();
 		void save() const;
+		void onUpdateFrame();
 
 		inline void togglePipBoyTorchOnArm() {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
@@ -140,7 +141,12 @@ namespace F4VRBody {
 		void loadHideSlots();
 		void saveBoolValue(const char* pKey, bool value);
 
+		// Reload config interval in seconds (0 - no reload)
+		int reloadConfigInterval = 0;
+		time_t lastReloadTime = 0;
+		// The log level to set for the logger
 		int logLevel = 3;
+		// The FRIK.ini version to handle updates/migrations
 		int version = 0;
 	};
 

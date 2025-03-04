@@ -566,6 +566,8 @@ namespace F4VRBody {
 			printPlayerOnce = false;
 		}
 
+		g_config->onUpdateFrame();
+
 		if (!inPowerArmorSticky) {
 			inPowerArmorSticky = detectInPowerArmor();
 

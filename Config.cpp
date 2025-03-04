@@ -14,6 +14,33 @@ namespace F4VRBody {
 	constexpr const char* INI_SECTION_DEBUG = "Debug";
 	constexpr const char* INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
 
+	/// <summary>
+	/// Runs on every game frame.
+	/// Used to reload the config file if the reload interval has passed.
+	/// </summary>
+	void Config::onUpdateFrame() {
+		try {
+			if (reloadConfigInterval <= 0)
+				return;
+
+			auto now = std::time(nullptr);
+			if (now - lastReloadTime < reloadConfigInterval)
+				return;
+
+			_VMESSAGE("Reloading FRIK.ini file...");
+			lastReloadTime = now;
+			loadFrikINI();
+		}
+		catch (const std::exception& e) {
+			_WARNING("Failed to reload FRIK.ini file: %s", e.what());
+		}
+	}
+
+	/// <summary>
+	/// Load the FRIK.ini config, hide meshes, and weapon offsets.
+	/// Handle creating the FRIK.ini file if it doesn't exist.
+	/// Handle updating the FRIK.ini file if the version is old.
+	/// </summary>
 	void Config::load() {
 		if (!std::filesystem::exists(FRIK_INI_PATH)) {
 			_MESSAGE("No existing FRIK.ini file found, creating default...");
@@ -53,6 +80,8 @@ namespace F4VRBody {
 
 		version = ini.GetLongValue(INI_SECTION_DEBUG, "Version", 0);
 		logLevel = ini.GetLongValue(INI_SECTION_DEBUG, "LogLevel", 3);
+		reloadConfigInterval = ini.GetLongValue(INI_SECTION_DEBUG, "ReloadConfigInterval", 3);
+		
 
 		playerHeight = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f);
 		setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", false);
@@ -233,7 +262,7 @@ namespace F4VRBody {
 		}
 
 		// set the version to latest
-		newIni.SetLongValue(INI_SECTION_DEBUG, "version", FRIK_INI_VERSION);
+		newIni.SetLongValue(INI_SECTION_DEBUG, "Version", FRIK_INI_VERSION);
 
 		// backup the old ini file before overwritting
 		auto nameStr = std::string(FRIK_INI_PATH);
