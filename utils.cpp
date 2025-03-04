@@ -421,7 +421,7 @@ namespace F4VRBody {
 	/// <summary>
 	/// Find dll embeded resource by id and return its data as string.
 	/// </summary>
-	static std::string getEmbededResourceAsString(WORD idr) {
+	std::string getEmbededResourceAsString(WORD idr) {
 
 		// Must specify the dll to read its resources and not the exe
 		HMODULE hModule = GetModuleHandle("FRIK.dll");
@@ -442,5 +442,17 @@ namespace F4VRBody {
 		}
 
 		return std::string(static_cast<const char*>(pData), dataSize);
+	}
+
+	/// <summary>
+	/// Get a simple string of the current time in HH:MM:SS format.
+	/// </summary>
+	std::string getCurrentTimeString() {
+		std::time_t now = std::time(nullptr);
+		std::tm localTime;
+		localtime_s(&localTime, &now);
+		char buffer[9];
+		std::strftime(buffer, sizeof(buffer), "%H:%M:%S", &localTime);
+		return std::string(buffer);
 	}
 }

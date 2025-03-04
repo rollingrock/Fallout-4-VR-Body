@@ -134,6 +134,7 @@ namespace F4VRBody {
 		void createDefaultFrikINI();
 		void loadFrikINI();
 		void saveFrikINI() const;
+		void updateLoggerLogLevel() const;
 		void loadHideFace();
 		void loadHideSkins();
 		void loadHideSlots();
@@ -148,7 +149,6 @@ namespace F4VRBody {
 			throw std::exception("Config already initialized");
 		}
 
-		_MESSAGE("Init config...");
 		auto config = new Config();
 		config->load();
 		g_config = config;

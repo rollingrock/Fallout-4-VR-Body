@@ -16,6 +16,9 @@ namespace F4VRBody {
 		// load main config
 		loadFrikINI();
 
+		// update the log level after reading it from FRIK ini
+		updateLoggerLogLevel();
+
 		// load weapon offset JSON
 		loadWeaponOffsetsJsons();
 
@@ -132,32 +135,6 @@ namespace F4VRBody {
 	}
 
 	/// <summary>
-	/// Find dll embeded resource by id and return its data as string.
-	/// </summary>
-	static std::string getEmbededResourceAsString(WORD idr) {
-
-		// Must specify the dll to read its resources and not the exe
-		HMODULE hModule = GetModuleHandle("FRIK.dll");
-		HRSRC hRes = FindResource(hModule, MAKEINTRESOURCE(IDR_FRIK_INI), RT_RCDATA);
-		if (!hRes) {
-			throw std::runtime_error("Default INI resource not found!");
-		}
-
-		HGLOBAL hResData = LoadResource(hModule, hRes);
-		if (!hResData) {
-			throw std::runtime_error("Failed to load default INI resource!");
-		}
-
-		DWORD dataSize = SizeofResource(hModule, hRes);
-		void* pData = LockResource(hResData);
-		if (!pData) {
-			throw std::runtime_error("Failed to lock default INI resource!");
-		}
-
-		return std::string(static_cast<const char* >(pData), dataSize);
-	}
-
-	/// <summary>
 	/// Get default FRIK.ini as dll resource and write it to the FRIK.ini file.
 	/// </summary>
 	void Config::createDefaultFrikINI() {
@@ -193,6 +170,16 @@ namespace F4VRBody {
 		}
 
 		cullList.close();
+	}
+
+	/// <summary>
+	/// Update the global logger log level based on the config setting.
+	/// </summary>
+	void Config::updateLoggerLogLevel() const {
+		auto logLevel = verbose ? IDebugLog::kLevel_DebugMessage : IDebugLog::kLevel_Message;
+		_MESSAGE("Set log level = %d", logLevel);
+		gLog.SetPrintLevel(logLevel);
+		gLog.SetLogLevel(logLevel);
 	}
 
 	void Config::loadHideSkins() {

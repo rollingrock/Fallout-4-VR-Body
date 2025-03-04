@@ -84,4 +84,7 @@ namespace F4VRBody {
 	std::string ltrim(std::string s);
 	std::string rtrim(std::string s);
 	std::string trim(std::string s);
+
+	std::string getEmbededResourceAsString(WORD idr);
+	std::string getCurrentTimeString();
 }
