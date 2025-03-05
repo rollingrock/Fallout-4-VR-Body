@@ -149,7 +149,6 @@ namespace F4VRBody {
 		UISelfieButton = (int)ini.GetLongValue("ConfigModeUIButtons", "ToggleSelfieModeButton", 2);
 
 		// weaponPositioning
-		//c_weaponRepositionMasterMode = ini.GetBoolValue(INI_SECTION_MAIN, "EnableRepositionMode", false);       Enabled / Disabled via config mode
 		holdDelay = (int)ini.GetLongValue(INI_SECTION_MAIN, "HoldDelay", 1000);
 		repositionButtonID = (int)ini.GetLongValue(INI_SECTION_MAIN, "RepositionButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger); // 33
 		offHandActivateButtonID = (int)ini.GetLongValue(INI_SECTION_MAIN, "OffHandActivateButtonID", vr::EVRButtonId::k_EButton_A); // 7
@@ -375,7 +374,6 @@ namespace F4VRBody {
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableArmsOnlyMode", armsOnly);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableStaticGripping", staticGripping);
-		//rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableRepositionMode", c_weaponRepositionMasterMode);  Handled by Config Mode. 
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "HideTheHead", hideHead);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "handUI_X", handUI_X);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "handUI_Y", handUI_Y);
