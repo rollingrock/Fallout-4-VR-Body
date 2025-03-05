@@ -114,7 +114,6 @@ namespace F4VRBody {
 		pipBoyOffDelay = (int)ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 5000);
 		pipBoyOnDelay = (int)ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 5000);
 		gripLetGoThreshold = ini.GetDoubleValue(INI_SECTION_MAIN, "GripLetGoThreshold", 15.0f);
-		pipBoyButtonMode = ini.GetBoolValue(INI_SECTION_MAIN, "OperatePipboyWithButton", false);
 		pipBoyOpenWhenLookAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", false);
 		pipBoyAllowMovementNotLooking = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true);
 		pipBoyButtonArm = (int)ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonArm", 0);

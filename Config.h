@@ -85,7 +85,6 @@ namespace F4VRBody {
 		bool isHoloPipboy = true; // false = Default, true = HoloPipBoy
 		bool isPipBoyTorchOnArm = true; // false = Head Based Torch, true = PipBoy Based Torch
 		bool leftHandedPipBoy = false;
-		bool pipBoyButtonMode = false;
 		bool pipBoyOpenWhenLookAt = false;
 		bool pipBoyAllowMovementNotLooking = true;
 		bool switchUIControltoPrimary = true; // if the player wants to switch controls or not.
