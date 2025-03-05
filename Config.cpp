@@ -374,7 +374,6 @@ namespace F4VRBody {
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableArmsOnlyMode", armsOnly);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableStaticGripping", staticGripping);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "HideTheHead", hideHead);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "handUI_X", handUI_X);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "handUI_Y", handUI_Y);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "handUI_Z", handUI_Z);
