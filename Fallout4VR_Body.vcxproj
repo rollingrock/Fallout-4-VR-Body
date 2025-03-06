@@ -196,7 +196,13 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClCompile Include="weaponOffset.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="api\openvr.h" />
+    <ClInclude Include="api\OpenVRTypes.h" />
+    <ClInclude Include="api\openvr_capi.h" />
+    <ClInclude Include="api\openvr_driver.h" />
     <ClInclude Include="api\PapyrusVRAPI.h" />
+    <ClInclude Include="api\PapyrusVRTypes.h" />
+    <ClInclude Include="api\VRHookAPI.h" />
     <ClInclude Include="api\VRManagerAPI.h" />
     <ClInclude Include="BSFlattenedBoneTree.h" />
     <ClInclude Include="Config.h" />
@@ -206,6 +212,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="GunReload.h" />
     <ClInclude Include="HandPose.h" />
     <ClInclude Include="hook.h" />
+    <ClInclude Include="include\json.hpp" />
     <ClInclude Include="include\SimpleIni.h" />
     <ClInclude Include="include\version.h" />
     <ClInclude Include="matrix.h" />
@@ -215,7 +222,6 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="MuzzleFlash.h" />
     <ClInclude Include="NiCloneProcess.h" />
     <ClInclude Include="Offsets.h" />
-    <ClInclude Include="openvr\openvr.h" />
     <ClInclude Include="patches.h" />
     <ClInclude Include="Pipboy.h" />
     <ClInclude Include="Quaternion.h" />
@@ -228,6 +234,9 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <None Include="data\FRIK.ini" />
+    <None Include="data\mesh_hide_face.ini" />
+    <None Include="data\mesh_hide_skins.ini" />
+    <None Include="data\mesh_hide_slots.ini" />
     <None Include="exports.def" />
   </ItemGroup>
   <ItemGroup>

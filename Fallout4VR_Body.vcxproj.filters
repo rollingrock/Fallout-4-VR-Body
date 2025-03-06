@@ -101,9 +101,6 @@
     <ClInclude Include="matrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="openvr\openvr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="api\PapyrusVRAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -170,12 +167,42 @@
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
+    <ClInclude Include="api\openvr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\OpenVRTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\openvr_capi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\openvr_driver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\PapyrusVRTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\VRHookAPI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">
       <Filter>Source Files</Filter>
     </None>
     <None Include="data\FRIK.ini">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\mesh_hide_face.ini">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\mesh_hide_skins.ini">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\mesh_hide_slots.ini">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

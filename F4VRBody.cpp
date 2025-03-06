@@ -165,7 +165,7 @@ namespace F4VRBody {
 		}
 
 		if (g_config->hideEquipment) {
-			for (auto slot : g_config->hideSlotIndexes) {
+			for (auto slot : g_config->hideEquipSlotIndexes) {
 				adjustSlotVisibility(slot, true);
 			}
 		}

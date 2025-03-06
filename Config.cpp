@@ -10,6 +10,9 @@ namespace F4VRBody {
 
 	constexpr const int FRIK_INI_VERSION = 2;
 	constexpr const char* FRIK_INI_PATH = ".\\Data\\F4SE\\plugins\\FRIK.ini";
+	constexpr const char* MESH_HIDE_FACE_INI_PATH = ".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\face.ini";
+	constexpr const char* MESH_HIDE_SKINS_INI_PATH = ".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\skins.ini";
+	constexpr const char* MESH_HIDE_SLOTS_INI_PATH = ".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\slots.ini";
 	constexpr const char* INI_SECTION_MAIN = "Fallout4VRBody";
 	constexpr const char* INI_SECTION_DEBUG = "Debug";
 	constexpr const char* INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
@@ -30,6 +33,7 @@ namespace F4VRBody {
 			_VMESSAGE("Reloading FRIK.ini file...");
 			lastReloadTime = now;
 			loadFrikINI();
+			loadHideMeshes();
 		}
 		catch (const std::exception& e) {
 			_WARNING("Failed to reload FRIK.ini file: %s", e.what());
@@ -42,25 +46,23 @@ namespace F4VRBody {
 	/// Handle updating the FRIK.ini file if the version is old.
 	/// </summary>
 	void Config::load() {
-		if (!std::filesystem::exists(FRIK_INI_PATH)) {
-			_MESSAGE("No existing FRIK.ini file found, creating default...");
-			createDefaultFrikINI(FRIK_INI_PATH);
-		}
+		// create FRIK.ini if it doesn't exist
+		createFileFromResourceIfNotExists(FRIK_INI_PATH, IDR_FRIK_INI);
 
 		loadFrikINI();
 
 		updateLoggerLogLevel();
 
 		if (version < FRIK_INI_VERSION) {
+			_MESSAGE("Updating FRIK.ini from version %d to %d", version, FRIK_INI_VERSION);
 			updateFrikINIVersion();
 		}
 
-		loadWeaponOffsetsJsons();
+		_MESSAGE("Load hide meshes...");
+		loadHideMeshes();
 
-		// load hide meshes
-		loadHideFace();
-		loadHideSkins();
-		loadHideSlots();
+		_MESSAGE("Load weapon offsets...");
+		loadWeaponOffsetsJsons();
 	}
 
 	void Config::save() const {
@@ -166,44 +168,6 @@ namespace F4VRBody {
 	}
 
 	/// <summary>
-	/// Get default FRIK.ini as dll resource and write it to the FRIK.ini file.
-	/// </summary>
-	void Config::createDefaultFrikINI(std::string filePath) {
-
-		auto data = getEmbededResourceAsString(IDR_FRIK_INI);
-
-		std::ofstream outFile(filePath, std::ios::trunc);
-		if (!outFile) {
-			throw std::runtime_error("Failed to create FRIK.ini file");
-		}
-		if (!outFile.write(data.data(), data.size())) {
-			outFile.close();
-			std::remove(filePath.c_str());
-			throw std::runtime_error("Failed to write to FRIK.ini file");
-		}
-		outFile.close();
-
-		_MESSAGE("Default FRIK.ini file created successfully (size: %d)", data.size());
-	}
-
-	void Config::loadHideFace() {
-		std::ifstream cullList;
-
-		cullList.open(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\face.ini");
-
-		if (cullList.is_open()) {
-			while (cullList) {
-				std::string input;
-				cullList >> input;
-				if (!input.empty())
-					faceGeometry.push_back(trim(str_tolower(input)));
-			}
-		}
-
-		cullList.close();
-	}
-
-	/// <summary>
 	/// Update the global logger log level based on the config setting.
 	/// </summary>
 	void Config::updateLoggerLogLevel() const {
@@ -221,8 +185,6 @@ namespace F4VRBody {
 	/// A backup of the previous file is created with the version number for safety.
 	/// </summary>
 	void Config::updateFrikINIVersion() {
-		_MESSAGE("Updating FRIK.ini from version %d to %d", version, FRIK_INI_VERSION);
-		
 		CSimpleIniA oldIni;
 		SI_Error rc = oldIni.LoadFile(FRIK_INI_PATH);
 		if (rc < 0) 
@@ -230,7 +192,7 @@ namespace F4VRBody {
 
 		// override the file with the default FRIK.ini resource.
 		auto tmpIniPath = std::string(FRIK_INI_PATH) + ".tmp";
-		createDefaultFrikINI(tmpIniPath.c_str());
+		createFileFromResourceIfNotExists(tmpIniPath.c_str(), IDR_FRIK_INI);
 
 		CSimpleIniA newIni;
 		rc = newIni.LoadFile(tmpIniPath.c_str());
@@ -277,79 +239,44 @@ namespace F4VRBody {
 		_MESSAGE("FRIK.ini updated successfully");
 	}
 
-	void Config::loadHideSkins() {
-		std::ifstream cullList;
-		cullList.open(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\skins.ini");
+	/// <summary>
+	/// Load hide meshes from config ini files. Creating if don't exists on the disk.
+	/// </summary>
+	void Config::loadHideMeshes() {
+		createFileFromResourceIfNotExists(MESH_HIDE_FACE_INI_PATH, IDR_MESH_HIDE_FACE);
+		faceGeometry = loadListFromFile(MESH_HIDE_FACE_INI_PATH);
 
-		if (cullList.is_open()) {
-			while (cullList) {
-				std::string input;
-				cullList >> input;
-				if (!input.empty())
-					skinGeometry.push_back(trim(str_tolower(input)));
-			}
-		}
-
-		cullList.close();
+		createFileFromResourceIfNotExists(MESH_HIDE_SKINS_INI_PATH, IDR_MESH_HIDE_SKINS);
+		skinGeometry = loadListFromFile(MESH_HIDE_SKINS_INI_PATH);
+		
+		createFileFromResourceIfNotExists(MESH_HIDE_SLOTS_INI_PATH, IDR_MESH_HIDE_SLOTS);
+		loadHideEquipmentSlots();
 	}
 
-	void Config::loadHideSlots() {
-		hideSlotIndexes.clear();
+	/// <summary>
+	/// Slot Ids base on this link: https://falloutck.uesp.net/wiki/Biped_Slots
+	/// </summary>
+	void Config::loadHideEquipmentSlots() {
+		auto slotsGeometry = loadListFromFile(MESH_HIDE_SLOTS_INI_PATH);
 
-		std::ifstream cullList;
-		cullList.open(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\slots.ini");
+		std::unordered_map<std::string, int> slotToIndexMap = {
+			{"hairtop", 0}, // i.e. helmet
+			{"hairlong", 1},
+			{"head", 2},
+			{"headband", 16},
+			{"eyes", 17}, // i.e. glasses
+			{"beard", 18},
+			{"mouth", 19},
+			{"neck", 20},
+			{"scalp", 22}
+		};
 
-		if (cullList.is_open()) {
-			while (cullList) {
-				std::string input;
-				cullList >> input;
-
-				if (input.empty())
-					continue;
-
-				input = trim(str_tolower(input));
-
-				// Slot Ids base on this link: https://falloutck.uesp.net/wiki/Biped_Slots
-
-				if (input.find("hairtop") != std::string::npos) {
-					hideSlotIndexes.push_back(0);
-				}
-
-				if (input.find("hairlong") != std::string::npos) {
-					hideSlotIndexes.push_back(1);
-				}
-
-				if (input.find("head") != std::string::npos) {
-					hideSlotIndexes.push_back(2);
-				}
-
-				if (input.find("headband") != std::string::npos) {
-					hideSlotIndexes.push_back(16);
-				}
-
-				if (input.find("eyes") != std::string::npos) {
-					hideSlotIndexes.push_back(17);
-				}
-
-				if (input.find("beard") != std::string::npos) {
-					hideSlotIndexes.push_back(18);
-				}
-
-				if (input.find("mouth") != std::string::npos) {
-					hideSlotIndexes.push_back(19);
-				}
-
-				if (input.find("neck") != std::string::npos) {
-					hideSlotIndexes.push_back(20);
-				}
-
-				if (input.find("scalp") != std::string::npos) {
-					hideSlotIndexes.push_back(22);
-				}
+		hideEquipSlotIndexes.clear();
+		for (auto& geometry : slotsGeometry) {
+			if (slotToIndexMap.find(geometry) != slotToIndexMap.end()) {
+				hideEquipSlotIndexes.push_back(slotToIndexMap[geometry]);
 			}
 		}
-
-		cullList.close();
 	}
 
 	void Config::saveFrikINI() const

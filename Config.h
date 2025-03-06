@@ -127,17 +127,15 @@ namespace F4VRBody {
 		// hide meshes
 		std::vector<std::string> faceGeometry;
 		std::vector<std::string> skinGeometry;
-		std::vector<int> hideSlotIndexes;
+		std::vector<int> hideEquipSlotIndexes;
 
 	private:
-		void createDefaultFrikINI(std::string filePath);
 		void loadFrikINI();
 		void saveFrikINI() const;
 		void updateLoggerLogLevel() const;
 		void updateFrikINIVersion();
-		void loadHideFace();
-		void loadHideSkins();
-		void loadHideSlots();
+		void loadHideMeshes();
+		void loadHideEquipmentSlots();
 		void saveBoolValue(const char* pKey, bool value);
 
 		// Reload config interval in seconds (0 - no reload)
