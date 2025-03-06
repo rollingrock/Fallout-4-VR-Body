@@ -371,7 +371,7 @@ namespace F4VRBody {
 			if (ExitandSave && !_exitAndSavePressed) {
 				_exitAndSavePressed = true;
 				g_configurationMode->configModeExit();
-				g_config->saveSettings();
+				g_config->save();
 				if (_vrhook != nullptr) {
 					g_config->leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
 				}
@@ -631,7 +631,7 @@ namespace F4VRBody {
 				if (SaveButtonPressed && !_isSaveButtonPressed) {
 					_isSaveButtonPressed = true;
 					g_config->isHoloPipboy ? g_weaponOffsets->addOffset("HoloPipboyPosition", pbRoot->m_localTransform, Mode::normal) : g_weaponOffsets->addOffset("PipboyPosition", pbRoot->m_localTransform, Mode::normal);
-					writeOffsetJson();
+					saveWeaponOffsetsJsons();
 
 					// TODO: move save INI to common code instead or repeating it
 					// why do some buttons (glance, dumpen, model) save on toggle and not wait for save button?

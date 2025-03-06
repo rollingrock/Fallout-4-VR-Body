@@ -3,7 +3,8 @@
 #include "f4se/PluginAPI.h"  // SKSEInterface, PluginInfo
 #include "f4sE_common/Relocation.h"
 #include "F4SE_common/SafeWrite.h"
-
+#include <chrono>
+#include <iomanip>
 
 #include <ShlObj.h>  // CSIDL_MYDOCUMENTS
 
@@ -19,57 +20,33 @@
 #include "VR.h"
 
 
-
-void* g_moduleHandle = nullptr;
-
-
-uint64_t g_mainLoopCounter = 0;
-
-
-void PatchBody() {
-	_MESSAGE("Patch Body In");
-	_MESSAGE("addr = %016I64X", RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr());
-	
-	// For new game
-	SafeWrite8(RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr(), 0x74);
-	
-	// now for existing games to update
-	SafeWrite32(RelocAddr<uintptr_t>(0xf29ac8), 0x9090D231);   // This was movzx EDX,R14B.   Want to just zero out EDX with an xor instead
-	_MESSAGE("Patch Body Succeeded");
-}
-
-
 void OnBetterScopesMessage(F4SEMessagingInterface::Message* msg) {
-	if (msg) {
-		if (msg->type == 15) {
-			F4VRBody::c_isLookingThroughScope = (bool)msg->data;
-		}
+	if (!msg)
+		return;
+
+	if (msg->type == 15) {
+		F4VRBody::c_isLookingThroughScope = (bool)msg->data;
 	}
 }
 
-
 //Listener for F4SE Messages
-void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
-{
-	if (msg)
-	{
-		if (msg->type == F4SEMessagingInterface::kMessage_GameLoaded)
-		{
-			F4VRBody::startUp();
-			SmoothMovementVR::StartFunctions();
+void OnF4SEMessage(F4SEMessagingInterface::Message* msg) {
+	if (!msg)
+		return;
 
-			SmoothMovementVR::MenuOpenCloseHandler::Register();
+	if (msg->type == F4SEMessagingInterface::kMessage_GameLoaded) {
+		F4VRBody::startUp();
+		VRHook::InitVRSystem();
+		SmoothMovementVR::StartFunctions();
+		SmoothMovementVR::MenuOpenCloseHandler::Register();
+		_MESSAGE("kMessage_GameLoaded Completed");
+	}
 
-			VRHook::InitVRSystem();
-			_MESSAGE("kMessage_GameLoaded Completed");
-
-		}
-		if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
-			bool gripConfig = !F4VRBody::g_config->staticGripping;
-			g_messaging->Dispatch(g_pluginHandle, 15, (void*) gripConfig, sizeof(bool), "FO4VRBETTERSCOPES");
-
-			g_messaging->RegisterListener(g_pluginHandle, "FO4VRBETTERSCOPES", OnBetterScopesMessage);
-		}
+	if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
+		bool gripConfig = !F4VRBody::g_config->staticGripping;
+		g_messaging->Dispatch(g_pluginHandle, 15, (void*)gripConfig, sizeof(bool), "FO4VRBETTERSCOPES");
+		g_messaging->RegisterListener(g_pluginHandle, "FO4VRBETTERSCOPES", OnBetterScopesMessage);
+		_MESSAGE("kMessage_PostLoad Completed");
 	}
 }
 
@@ -81,9 +58,7 @@ extern "C" {
 		gLog.SetPrintLevel(IDebugLog::kLevel_Message);
 		gLog.SetLogLevel(IDebugLog::kLevel_Message);
 
-		g_moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("FRIK.dll"));
-
-		_MESSAGE("F4VRBODY v%s", F4VRBODY_VERSION_VERSTRING);
+		_MESSAGE("F4VRBody v%s", F4VRBODY_VERSION_VERSTRING);
 
 		a_info->infoVersion = PluginInfo::kInfoVersion;
 		a_info->name = "F4VRBody";
@@ -105,65 +80,53 @@ extern "C" {
 	}
 
 
-	bool F4SEPlugin_Load(const F4SEInterface* a_f4se)
-	{
-		_MESSAGE("F4VRBody Init");
+	bool F4SEPlugin_Load(const F4SEInterface* a_f4se) {
+		try {
+			_MESSAGE("F4VRBody Init - %s", F4VRBody::getCurrentTimeString().data());
 
-		g_pluginHandle = a_f4se->GetPluginHandle();
+			g_pluginHandle = a_f4se->GetPluginHandle();
 
-		if (g_pluginHandle == kPluginHandle_Invalid) {
-			return false;
+			if (g_pluginHandle == kPluginHandle_Invalid) {
+				throw std::exception("Invalid plugin handle");
+			}
+
+			g_messaging = (F4SEMessagingInterface*)a_f4se->QueryInterface(kInterface_Messaging);
+			g_messaging->RegisterListener(g_pluginHandle, "F4SE", OnF4SEMessage);
+
+			if (!g_branchTrampoline.Create(1024 * 128)) {
+				throw std::exception("couldn't create branch trampoline");
+			}
+
+			auto moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("FRIK.dll"));
+			if (!g_localTrampoline.Create(1024 * 128, moduleHandle)) {
+				throw std::exception("couldn't create codegen buffer");
+			}
+
+			_MESSAGE("Init config...");
+			F4VRBody::initConfig();
+
+			_MESSAGE("Register papyrus funcs...");
+			g_papyrus = (F4SEPapyrusInterface*)a_f4se->QueryInterface(kInterface_Papyrus);
+			if (!g_papyrus->Register(F4VRBody::RegisterFuncs)) {
+				throw std::exception("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
+			}
+
+			_MESSAGE("Run patches...");
+			patches::patchAll();
+
+			_MESSAGE("Init gun reaload system...");
+			F4VRBody::InitGunReloadSystem();
+
+			_MESSAGE("Hook main...");
+			hookMain();
+
+			_MESSAGE("F4VRBody Loaded successfully");
+			return true;
 		}
-
-		g_messaging = (F4SEMessagingInterface*)a_f4se->QueryInterface(kInterface_Messaging);
-		g_messaging->RegisterListener(g_pluginHandle, "F4SE", OnF4SEMessage);
-
-		if (!g_branchTrampoline.Create(1024 * 128))
+		catch (const std::exception& e)
 		{
-			_ERROR("couldn't create branch trampoline. this is fatal. skipping remainder of init process.");
+			_FATALERROR("Fatal error in F4SEPlugin_Load: %s", e.what());
 			return false;
 		}
-
-		if (!g_localTrampoline.Create(1024 * 128, g_moduleHandle))
-		{
-			_ERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
-
-			return false;
-		}
-
-		;
-		if (!F4VRBody::initConfig()) {
-			_ERROR("could not open ini config file");
-			return false;
-		}
-
-		auto logLevel = F4VRBody::g_config->verbose ? IDebugLog::kLevel_DebugMessage : IDebugLog::kLevel_Message;
-		_MESSAGE("Set log level = %d", logLevel);
-		gLog.SetPrintLevel(logLevel);
-		gLog.SetLogLevel(logLevel);
-
-		g_papyrus = (F4SEPapyrusInterface*)a_f4se->QueryInterface(kInterface_Papyrus);
-
-
-		_MESSAGE("register papyrus funcs");
-
-		if (!g_papyrus->Register(F4VRBody::RegisterFuncs)) {
-			_ERROR("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
-			return false;
-		}
-
-		PatchBody();
-		
-		if (!patches::patchAll()) {
-			_ERROR("error loading misc patches");
-			return false;
-		}
-
-		F4VRBody::InitGunReloadSystem();
-		hookMain();
-
-		_MESSAGE("F4VRBody Loaded");
-
-		return true;
 	}
 };

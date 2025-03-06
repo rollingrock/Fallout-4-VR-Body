@@ -24,7 +24,7 @@ namespace patches {
 	RelocAddr<std::uint64_t> shaderEffectContinue(0x28d323f);
 	RelocAddr<std::uint64_t> shaderEffectReturn(0x28d4ec8);
 
-	void patchInventoryInfBug() {
+	static void patchInventoryInfBug() {
 
 		struct PatchShortVar : Xbyak::CodeGenerator {
 			PatchShortVar(void* buf) : Xbyak::CodeGenerator(2048, buf) {
@@ -85,7 +85,7 @@ namespace patches {
 		return;
 	}
 
-	void patchLockForReadMask() {
+	static void patchLockForReadMask() {
 		struct PatchMoreMask : Xbyak::CodeGenerator {
 			PatchMoreMask(void* buf) : Xbyak::CodeGenerator(2048, buf) {
 				Xbyak::Label retLab;
@@ -108,7 +108,7 @@ namespace patches {
 		g_branchTrampoline.Write5Branch(lockForRead_branch.GetUIntPtr(), uintptr_t(code.getCode()));
 	}
 
-	void patchPipeGunScopeCrash() {
+	static void patchPipeGunScopeCrash() {
 		struct PatchMissingR15 : Xbyak::CodeGenerator {
 			PatchMissingR15(void* buf) : Xbyak::CodeGenerator(4096, buf) {
 				Xbyak::Label retLab;
@@ -144,7 +144,7 @@ namespace patches {
 	RelocAddr<uint64_t> DropAddOnPatch2(0x03e9cd3);
 	RelocAddr<uint64_t> DropAddOnPatch3(0x3e9df5);
 
-	void patchDropAddOn3DReplacement() {
+	static void patchDropAddOn3DReplacement() {
 		int bytesToNOP = 0x6;
 
 		for (int i = 0; i < bytesToNOP; ++i) {
@@ -165,14 +165,23 @@ namespace patches {
 
 	}
 
-	bool patchAll() {
+	static void PatchBody() {
+		_MESSAGE("Patch Body In");
+		_MESSAGE("addr = %016I64X", RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr());
+
+		// For new game
+		SafeWrite8(RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr(), 0x74);
+
+		// now for existing games to update
+		SafeWrite32(RelocAddr<uintptr_t>(0xf29ac8), 0x9090D231);   // This was movzx EDX,R14B.   Want to just zero out EDX with an xor instead
+		_MESSAGE("Patch Body Succeeded");
+	}
+
+	void patchAll() {
+		PatchBody();
 		patchInventoryInfBug();
 		patchLockForReadMask();
 		patchPipeGunScopeCrash();
 		//patchDropAddOn3DReplacement();
-		return true;
 	}
-
-
-
 }

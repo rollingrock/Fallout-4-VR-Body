@@ -417,4 +417,42 @@ namespace F4VRBody {
 	std::string trim(std::string s) {
 		return ltrim(rtrim(s));
 	}
+
+	/// <summary>
+	/// Find dll embeded resource by id and return its data as string.
+	/// </summary>
+	std::string getEmbededResourceAsString(WORD idr) {
+
+		// Must specify the dll to read its resources and not the exe
+		HMODULE hModule = GetModuleHandle("FRIK.dll");
+		HRSRC hRes = FindResource(hModule, MAKEINTRESOURCE(idr), RT_RCDATA);
+		if (!hRes) {
+			throw std::runtime_error("Default INI resource not found!");
+		}
+
+		HGLOBAL hResData = LoadResource(hModule, hRes);
+		if (!hResData) {
+			throw std::runtime_error("Failed to load default INI resource!");
+		}
+
+		DWORD dataSize = SizeofResource(hModule, hRes);
+		void* pData = LockResource(hResData);
+		if (!pData) {
+			throw std::runtime_error("Failed to lock default INI resource!");
+		}
+
+		return std::string(static_cast<const char*>(pData), dataSize);
+	}
+
+	/// <summary>
+	/// Get a simple string of the current time in HH:MM:SS format.
+	/// </summary>
+	std::string getCurrentTimeString() {
+		std::time_t now = std::time(nullptr);
+		std::tm localTime;
+		localtime_s(&localTime, &now);
+		char buffer[9];
+		std::strftime(buffer, sizeof(buffer), "%H:%M:%S", &localTime);
+		return std::string(buffer);
+	}
 }

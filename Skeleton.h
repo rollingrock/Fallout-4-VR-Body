@@ -21,12 +21,6 @@
 #include "BSFlattenedBoneTree.h"
 
 
-#define DEFAULT_HEIGHT 56.0;
-
-extern uint64_t g_mainLoopCounter;
-
-
-
 namespace F4VRBody
 {
 	enum WeaponType

@@ -18,7 +18,6 @@
 
 #include <windows.h>
 
-extern uint64_t g_mainLoopCounter;
 extern PluginHandle g_pluginHandle;
 extern F4SEPapyrusInterface* g_papyrus;
 extern F4SEMessagingInterface* g_messaging;

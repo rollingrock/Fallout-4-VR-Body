@@ -12,8 +12,9 @@ namespace F4VRBody {
 	class Config
 	{
 	public:
-		bool loadConfig();
-		void saveSettings();
+		void load();
+		void save() const;
+		void onUpdateFrame();
 
 		inline void togglePipBoyTorchOnArm() {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
@@ -39,7 +40,6 @@ namespace F4VRBody {
 		bool leftHandedMode = false;
 
 		// persistant in FRIK.ini
-		bool verbose = false;
 		float playerHeight = 0.0;
 		float playerHMDHeight = 120.0;
 		float shoulderToHMD = 0.0;
@@ -85,7 +85,6 @@ namespace F4VRBody {
 		bool isHoloPipboy = true; // false = Default, true = HoloPipBoy
 		bool isPipBoyTorchOnArm = true; // false = Head Based Torch, true = PipBoy Based Torch
 		bool leftHandedPipBoy = false;
-		bool pipBoyButtonMode = false;
 		bool pipBoyOpenWhenLookAt = false;
 		bool pipBoyAllowMovementNotLooking = true;
 		bool switchUIControltoPrimary = true; // if the player wants to switch controls or not.
@@ -131,33 +130,36 @@ namespace F4VRBody {
 		std::vector<int> hideSlotIndexes;
 
 	private:
+		void createDefaultFrikINI(std::string filePath);
+		void loadFrikINI();
+		void saveFrikINI() const;
+		void updateLoggerLogLevel() const;
+		void updateFrikINIVersion();
 		void loadHideFace();
 		void loadHideSkins();
 		void loadHideSlots();
 		void saveBoolValue(const char* pKey, bool value);
+
+		// Reload config interval in seconds (0 - no reload)
+		int reloadConfigInterval = 0;
+		time_t lastReloadTime = 0;
+		// The log level to set for the logger
+		int logLevel = 3;
+		// The FRIK.ini version to handle updates/migrations
+		int version = 0;
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now
 	extern Config* g_config;
 
-	static bool initConfig() {
+	static void initConfig() {
 		if (g_config) {
-			_ERROR("ERROR: config already initialized");
-			return false;
+			throw std::exception("Config already initialized");
 		}
 
-		_MESSAGE("Init config...");
 		auto config = new Config();
-		auto success = config->loadConfig();
-		if (success) {
-			_VMESSAGE("Config loaded successfully");
-			g_config = config;
-			return true;
-		}
-		else {
-			_ERROR("ERROR: Failed to load config");
-			delete config;
-			return false;
-		}
+		config->load();
+		g_config = config;
+		_VMESSAGE("Config loaded successfully");
 	}
 }

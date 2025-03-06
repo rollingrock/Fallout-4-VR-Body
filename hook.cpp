@@ -219,8 +219,7 @@ void hook_main_update_player(uint64_t rcx, uint64_t rdx) {
 }
 
 void updateCounter() {
-	g_mainLoopCounter++;
-
+	//g_mainLoopCounter++;
 	//hookedMainLoop();
 }
 
