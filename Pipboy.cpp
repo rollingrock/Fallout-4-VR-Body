@@ -1,6 +1,7 @@
 #include "Pipboy.h"
 #include "ConfigurationMode.h"
 #include "Config.h"
+#include "utils.h"
 #include "VR.h"
 
 #include <chrono>
@@ -110,18 +111,12 @@ namespace F4VRBody {
 		meshesReplaced = true;
 
 		// Cylons Code Start >>>>
-		auto lookup = g_weaponOffsets->getOffset("PipboyPosition", Mode::normal);
-		if (g_config->isHoloPipboy == true) {
-			lookup = g_weaponOffsets->getOffset("HoloPipboyPosition", Mode::normal);
+		static BSFixedString wandPipName("PipboyRoot");
+		NiAVObject* pbRoot = pn->SecondaryWandNode->GetObjectByName(&wandPipName);
+		if (pbRoot) {
+			pbRoot->m_localTransform = g_weaponOffsets->getPipboyOffset();
 		}
-		if (lookup.has_value()) {
-			NiTransform pbTransform = lookup.value();
-			static BSFixedString wandPipName("PipboyRoot");
-			NiAVObject* pbRoot = pn->SecondaryWandNode->GetObjectByName(&wandPipName);
-			if (pbRoot) {
-				pbRoot->m_localTransform = pbTransform;
-			}
-		}
+
 		pn->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0; //prevents the VRPipboy screen from being displayed on first load whilst PB is off.
 		NiNode* _HideNode = getChildNode(itemHide.c_str(), (*g_player)->unkF0->rootNode);
 		if (_HideNode) {

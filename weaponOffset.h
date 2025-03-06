@@ -18,10 +18,8 @@ namespace F4VRBody {
 
 	class WeaponOffset {
 	public:
-
-		WeaponOffset() {
-			offsets.clear();
-		}
+		NiTransform WeaponOffset::getPipboyOffset();
+		void WeaponOffset::savePipboyOffset(NiTransform someData);
 
 		std::optional<NiTransform> getOffset(const std::string& name, const Mode mode = normal);
 		void addOffset(const std::string &name, NiTransform someData, const Mode mode = normal);
@@ -33,13 +31,14 @@ namespace F4VRBody {
 
 	static const std::string powerArmorSuffix{ "-PowerArmor" };
 	static const std::string offHandSuffix{ "-offHand" };
-	static const std::string defaultJson{ ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets.json" };
+	constexpr const char* PIPBOY_HOLO_OFFSETS_PATH = ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets\\HoloPipboyPosition.json";
+	constexpr const char* PIPBOY_SCREEN_OFFSETS_PATH = ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets\\PipboyPosition.json";
 	static const std::string offsetsPath{ ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets" };
 
 	void loadWeaponOffsetsJsons();
-	void loadWeaponOffsetJsonFile(const std::string& file = defaultJson);
+	void loadWeaponOffsetJsonFile(const std::string& file);
 	void saveWeaponOffsetsJsons();
-	void saveOffsetJsonFile(const nlohmann::json& weaponJson, const std::string& file = defaultJson);
+	void saveOffsetJsonFile(const nlohmann::json& weaponJson, const std::string& file);
 
 	extern WeaponOffset* g_weaponOffsets;
 }
