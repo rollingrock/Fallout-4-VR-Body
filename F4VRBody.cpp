@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "MuzzleFlash.h"
 #include "BSFlattenedBoneTree.h"
+#include "CullGeometryHandler.h"
 #include "GunReload.h"
 #include "VR.h"
 #include "Debug.h"
@@ -64,7 +65,6 @@ namespace F4VRBody {
 	UInt32 PALightKW = 0x000B34A6;
 
 	// Papyrus
-
 	const char* boneSphereEventName = "OnBoneSphereEvent";
 	RegistrationSetHolder<NullParameters>      g_boneSphereEventRegs;
 
@@ -72,131 +72,9 @@ namespace F4VRBody {
 	UInt32 nextBoneSphereHandle;
 	UInt32 curDevice;
 
-	bool isHideSlotLoaded = false;
-
-	bool bDumpArray = false;
-
-	static void adjustSlotVisibility(int slotId, bool isHidden) {
-		auto& slot = (*g_player)->equipData->slots[slotId];
-
-		if (slot.item == nullptr)
-			return;
-
-		auto form_type = slot.item->GetFormType();
-		if (form_type != FormType::kFormType_ARMO)
-			return;
-
-		if (slot.node != nullptr) {
-			if (isHidden)
-				slot.node->flags |= 0x1;
-			else
-				slot.node->flags &= 0xfffffffffffffffe; // show
-		}
-	}
-
-	void restoreGeometry() {
-		//Face and Skin
-		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
-
-		if (!rn) {
-			return;
-		}
-
-		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
-			rn->kGeomArray[i].spGeometry->flags &= 0xfffffffffffffffe; // show
-		}
-
-		//Equipment
-		adjustSlotVisibility(0, false);
-		adjustSlotVisibility(1, false);
-		adjustSlotVisibility(2, false);
-		adjustSlotVisibility(16, false);
-		adjustSlotVisibility(17, false);
-		adjustSlotVisibility(18, false);
-		adjustSlotVisibility(19, false);
-		adjustSlotVisibility(20, false);
-		adjustSlotVisibility(22, false);
-	}
-
-	// cull items in skins/faces cull list
-
-	static void cullGeometry() {
-		if (c_selfieMode && g_config->selfieIgnoreHideFlags) {
-			restoreGeometry();
-			return;
-		}
-
-		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
-		if (!rn) {
-			return;
-		}
-
-		if (g_config->hideHead || g_config->hideSkin || c_selfieMode) {
-			for (auto i = 0; i < rn->kGeomArray.count; ++i) {
-				bool hide = false;
-				auto& geometry = rn->kGeomArray[i].spGeometry;
-				auto geometryName = geometry->m_name.c_str();
-				auto geomStr = trim(str_tolower(std::string(geometryName)));
-
-				if (g_config->hideHead) {
-					for (auto& faceGeom : g_config->faceGeometry) {
-						if (geomStr.find(faceGeom) != std::string::npos) {
-							//_MESSAGE("Found %s in %s", faceGeom, geomStr.c_str());
-							hide = true;
-							break;
-						}
-					}
-				}
-
-				if (g_config->hideSkin && !hide) {
-					for (auto& skinGeom : g_config->skinGeometry) {
-						if (geomStr.find(skinGeom) != std::string::npos) {
-							hide = true;
-							break;
-						}
-					}
-				}
-
-				if (hide)
-					geometry->flags |= 0x1; // hide
-				else
-					geometry->flags &= 0xfffffffffffffffe; // show
-			}
-		}
-
-		if (g_config->hideEquipment) {
-			for (auto slot : g_config->hideEquipSlotIndexes) {
-				adjustSlotVisibility(slot, true);
-			}
-		}
-	}
-
-	static void dumpGeometryArrayInUpdate() {
-
-		if (!bDumpArray) {
-			return;
-		}
-
-		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
-
-		if (!rn) {
-			return;
-		}
-
-		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
-			auto& geometry = rn->kGeomArray[i].spGeometry;
-			auto geometryName = geometry->m_name.c_str();
-			_MESSAGE("%s hidden: %d", geometryName, geometry->flags &= 0x1);
-		}
-
-		bDumpArray = false;
-
-	}
-
-
-
-	// Bone sphere detection
-
+	/// <summary>
+	/// Bone sphere detection
+	/// </summary>
 	void detectBoneSphere() {
 
 		if ((*g_player)->firstPersonSkeleton == nullptr) {
@@ -713,7 +591,7 @@ namespace F4VRBody {
 		_skelly->hideFistHelpers();
 		_skelly->showHidePAHUD();
 
-		cullGeometry();
+		cullPlayerGeometry();
 
 		// project body out in front of the camera for debug purposes
 		_DMESSAGE("Selfie Time");
@@ -765,8 +643,6 @@ namespace F4VRBody {
 		
 		_skelly->fixBackOfHand();
 		_skelly->updateDown(_skelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
-
-		dumpGeometryArrayInUpdate();
 
 		debug(_skelly);
 
@@ -1306,11 +1182,6 @@ namespace F4VRBody {
 		}
 
 		 c_weaponRepositionMasterMode = !c_weaponRepositionMasterMode;
-	}
-
-	void dumpGeometryArray(StaticFunctionTag* base) {
-
-		bDumpArray = true;
 	}
 
 

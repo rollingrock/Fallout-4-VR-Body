@@ -81,6 +81,9 @@
     <ClCompile Include="Debug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CullGeometryHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="hook.h">
@@ -184,6 +187,9 @@
     </ClInclude>
     <ClInclude Include="include\SimpleIni.h">
       <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CullGeometryHandler.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

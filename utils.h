@@ -60,6 +60,8 @@ namespace F4VRBody {
 	bool isAnyPipboyOpen();
 	void rotationStickEnabledToggle(bool enable);
 
+	void showHideNode(NiAVObject* node, bool toHide);
+
 	bool isCameraLookingAtObject(NiAVObject* cameraNode, NiAVObject* objectNode, float detectThresh);
 
 	bool getLeftHandedMode();

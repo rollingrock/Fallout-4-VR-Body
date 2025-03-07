@@ -321,6 +321,16 @@ namespace F4VRBody {
 		SetINIFloat("fDirectionalDeadzone:Controls", enable ? g_config->directionalDeadzone : 1.0);
 	}
 
+	/// <summary>
+	/// Update the node flags to show/hide it.
+	/// </summary>
+	void showHideNode(NiAVObject* node, bool toHide) {
+		if (toHide)
+			node->flags |= 0x1; // hide
+		else
+			node->flags &= 0xfffffffffffffffe; // show
+	}
+
 	// Function to check if the camera is looking at the object and the object is facing the camera
 	bool isCameraLookingAtObject(NiAVObject* cameraNode, NiAVObject* objectNode, float detectThresh) {
 		// Get the position of the camera and the object

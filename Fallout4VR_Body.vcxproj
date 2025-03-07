@@ -175,6 +175,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClCompile Include="BSFlattenedBoneTree.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="ConfigurationMode.cpp" />
+    <ClCompile Include="CullGeometryHandler.cpp" />
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="F4VRBody.cpp" />
     <ClCompile Include="GunReload.cpp" />
@@ -206,6 +207,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="BSFlattenedBoneTree.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="ConfigurationMode.h" />
+    <ClInclude Include="CullGeometryHandler.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="F4VRBody.h" />
     <ClInclude Include="GunReload.h" />
