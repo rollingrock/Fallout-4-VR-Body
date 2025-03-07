@@ -1,8 +1,20 @@
 #pragma once
 
 #include "VR.h"
+#include <optional>
 
 namespace F4VRBody {
+
+	/// <summary>
+	/// Type of weapon possition offsets.
+	/// TODO: What is offhand?
+	/// </summary>
+	enum WeaponOffsetsMode {
+		normal = 0,
+		powerArmor,
+		offHand,
+		offHandwithPowerArmor,
+	};
 
 	/// <summary>
 	/// Holds all the configuration variables used in the mod.
@@ -13,7 +25,7 @@ namespace F4VRBody {
 	{
 	public:
 		void load();
-		void save() const;
+		void save() const { saveFrikINI(); }
 		void onUpdateFrame();
 
 		inline void togglePipBoyTorchOnArm() {
@@ -32,6 +44,12 @@ namespace F4VRBody {
 			pipBoyOpenWhenLookAt = !pipBoyOpenWhenLookAt;
 			saveBoolValue("PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
 		}
+
+		NiTransform getPipboyOffset();
+		void savePipboyOffset(const NiTransform& transform);
+		std::optional<NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) const;
+		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode);
+		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode);
 
 		// consts
 		const float selfieOutFrontDistance = 120.0f;
@@ -137,6 +155,9 @@ namespace F4VRBody {
 		void loadHideMeshes();
 		void loadHideEquipmentSlots();
 		void saveBoolValue(const char* pKey, bool value);
+		void loadPipboyOffsets();
+		void loadWeaponsOffsets();
+		void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const;
 
 		// Reload config interval in seconds (0 - no reload)
 		int reloadConfigInterval = 0;
@@ -145,6 +166,9 @@ namespace F4VRBody {
 		int logLevel = 3;
 		// The FRIK.ini version to handle updates/migrations
 		int version = 0;
+
+		std::map<std::string, NiTransform> _pipboyOffsets;
+		std::map<std::string, NiTransform> _weaponsOffsets;
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now

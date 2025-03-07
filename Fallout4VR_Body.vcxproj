@@ -193,7 +193,6 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClCompile Include="SmoothMovement.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="VR.cpp" />
-    <ClCompile Include="weaponOffset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="api\openvr.h" />
@@ -230,7 +229,6 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="SmoothMovementVR.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="VR.h" />
-    <ClInclude Include="weaponOffset.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="data\FRIK.ini" />

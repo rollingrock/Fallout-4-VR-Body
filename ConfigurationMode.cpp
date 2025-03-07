@@ -630,7 +630,7 @@ namespace F4VRBody {
 				}
 				if (SaveButtonPressed && !_isSaveButtonPressed) {
 					_isSaveButtonPressed = true;
-					g_weaponOffsets->savePipboyOffset(pbRoot->m_localTransform);
+					g_config->savePipboyOffset(pbRoot->m_localTransform);
 
 					// TODO: move save INI to common code instead or repeating it
 					// why do some buttons (glance, dumpen, model) save on toggle and not wait for save button?

@@ -4,7 +4,6 @@
 #include "Skeleton.h"
 #include "Pipboy.h"
 #include "HandPose.h"
-#include "weaponOffset.h"
 #include "utils.h"
 #include "MuzzleFlash.h"
 #include "BSFlattenedBoneTree.h"

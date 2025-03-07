@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Skeleton.h"
-#include "weaponOffset.h"
 
 namespace F4VRBody {
 

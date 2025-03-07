@@ -1,18 +1,27 @@
 #include "Config.h"
-#include "weaponOffset.h"
 #include "include/SimpleIni.h"
 #include "utils.h"
 #include "resource.h"
+#include "include/json.hpp"
+
+using json = nlohmann::json;
 
 namespace F4VRBody {
 
 	Config* g_config = nullptr;
 
 	constexpr const int FRIK_INI_VERSION = 2;
+	
 	constexpr const char* FRIK_INI_PATH = ".\\Data\\F4SE\\plugins\\FRIK.ini";
+	
 	constexpr const char* MESH_HIDE_FACE_INI_PATH = ".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\face.ini";
 	constexpr const char* MESH_HIDE_SKINS_INI_PATH = ".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\skins.ini";
 	constexpr const char* MESH_HIDE_SLOTS_INI_PATH = ".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\slots.ini";
+
+	constexpr const char* PIPBOY_HOLO_OFFSETS_PATH = ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets\\HoloPipboyPosition.json";
+	constexpr const char* PIPBOY_SCREEN_OFFSETS_PATH = ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets\\PipboyPosition.json";
+	static const std::string WEAPONS_OFFSETS_PATH{ ".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets" };
+	
 	constexpr const char* INI_SECTION_MAIN = "Fallout4VRBody";
 	constexpr const char* INI_SECTION_DEBUG = "Debug";
 	constexpr const char* INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
@@ -61,16 +70,11 @@ namespace F4VRBody {
 		_MESSAGE("Load hide meshes...");
 		loadHideMeshes();
 
+		_MESSAGE("Load pipboy offsets...");
+		loadPipboyOffsets();
+
 		_MESSAGE("Load weapon offsets...");
-		loadWeaponOffsetsJsons();
-	}
-
-	void Config::save() const {
-		// save main config
-		saveFrikINI();
-
-		// save off any weapon offsets
-		saveWeaponOffsetsJsons();
+		loadWeaponsOffsets();
 	}
 
 	void Config::loadFrikINI() {
@@ -330,5 +334,175 @@ namespace F4VRBody {
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, key, value);
 		rc = ini.SaveFile(FRIK_INI_PATH);
+	}
+
+	/// <summary>
+	/// Get the Pipboy offset of the currently used Pipboy type.
+	/// </summary>
+	NiTransform Config::getPipboyOffset() {
+		return _pipboyOffsets[isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition"];
+	}
+
+	/// <summary>
+	/// Save the Pipboy offset to the offsets map.
+	/// </summary>
+	void Config::savePipboyOffset(const NiTransform& transform) {
+		auto type = isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
+		_pipboyOffsets[type] = transform;
+		saveOffsetsToJsonFile(type, transform, isHoloPipboy ? PIPBOY_HOLO_OFFSETS_PATH : PIPBOY_SCREEN_OFFSETS_PATH);
+	}
+
+	/// <summary>
+	/// Get the name for the weapon offset to use depending on the mode.
+	/// Basically a hack to store multiple modes of the same weapon by adding suffix to the name.
+	/// </summary>
+	static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode) {
+		static const std::string powerArmorSuffix{ "-PowerArmor" };
+		static const std::string offHandSuffix{ "-offHand" };
+		switch (mode) {
+		case normal:
+			return name;
+		case powerArmor:
+			return name + powerArmorSuffix;
+		case offHand:
+			return name + offHandSuffix;
+		case offHandwithPowerArmor:
+			return name + offHandSuffix + powerArmorSuffix;
+		}
+	}
+
+	/// <summary>
+	/// Get weapon offsets for given weapon name and mode.
+	/// Use non-PA mode if PA mode offsets not found.
+	/// </summary>
+	/// <returns></returns>
+	std::optional<NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) const {
+		auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode));
+		if (it == _weaponsOffsets.end()) {
+			return (mode == powerArmor) || (mode == offHandwithPowerArmor)
+				? getWeaponOffsets(name, mode == offHandwithPowerArmor ? offHand : normal) // Check without PA
+				: std::nullopt;
+		}
+		return it->second;
+	}
+
+	/// <summary>
+	/// Save the weapon offset to config and filesystem.
+	/// </summary>
+	void Config::saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode) {
+		auto fullName = getWeaponNameWithMode(name, mode);
+		_weaponsOffsets[fullName] = transform;
+		saveOffsetsToJsonFile(fullName, transform, WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json");
+	}
+
+	/// <summary>
+	/// Remove the weapon offset from the config and filesystem.
+	/// </summary>
+	void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) {
+		auto fullName = getWeaponNameWithMode(name, mode);
+		_weaponsOffsets.erase(getWeaponNameWithMode(name, mode));
+		auto path = WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json";
+		_MESSAGE("Removing weapon offsets '%s', file: '%s'", fullName.c_str(), path.c_str());
+		if (!std::filesystem::remove(WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json")) {
+			_WARNING("Failed to remove weapon offset file: %s", fullName.c_str());
+		}
+	}
+
+	/// <summary>
+	/// Load offset data from given json file path and store it in the given map.
+	/// Use the entry key in the json file but for everything to work properly the name of the json should match the key.
+	/// </summary>
+	static void loadOffsetJsonFile(const std::string& file, std::map<std::string, NiTransform>& offsetsMap) {
+		std::ifstream inF;
+		inF.open(file, std::ios::in);
+		if (inF.fail()) {
+			_WARNING("cannot open %s", file.c_str());
+			inF.close();
+			return;
+		}
+
+		json weaponJson;
+		try {
+			inF >> weaponJson;
+		}
+		catch (json::parse_error& ex) {
+			_MESSAGE("cannot open %s: parse error at byte %d", file.c_str(), ex.byte);
+			inF.close();
+			return;
+		}
+		inF.close();
+
+		NiTransform data;
+		for (auto& [key, value] : weaponJson.items()) {
+			for (int i = 0; i < 12; i++) {
+				data.rot.arr[i] = value["rotation"][i].get<double>();
+			}
+			data.pos.x = value["x"].get<double>();
+			data.pos.y = value["y"].get<double>();
+			data.pos.z = value["z"].get<double>();
+			data.scale = value["scale"].get<double>();
+
+			_MESSAGE("Successfully loaded offset '%s' from '%s'", key.c_str(), file.c_str());
+			offsetsMap[key] = data;
+		}
+	}
+
+	/// <summary>
+	/// Load the pipboy screen and holo screen offsets from json files.
+	/// </summary>
+	void Config::loadPipboyOffsets() {
+		createFileFromResourceIfNotExists(PIPBOY_HOLO_OFFSETS_PATH, IDR_PIPBOY_HOLO_OFFSETS);
+		createFileFromResourceIfNotExists(PIPBOY_SCREEN_OFFSETS_PATH, IDR_PIPBOY_SCREEN_OFFSETS);
+		loadOffsetJsonFile(PIPBOY_HOLO_OFFSETS_PATH, _pipboyOffsets);
+		loadOffsetJsonFile(PIPBOY_SCREEN_OFFSETS_PATH, _pipboyOffsets);
+	}
+
+	/// <summary>
+	/// Load all the weapons offsets found in json files into the weapon offsets map.
+	/// </summary>
+	void Config::loadWeaponsOffsets() {
+		if (!(std::filesystem::exists(WEAPONS_OFFSETS_PATH) && std::filesystem::is_directory(WEAPONS_OFFSETS_PATH))) {
+			std::filesystem::create_directory(WEAPONS_OFFSETS_PATH);
+		}
+		for (const auto& file : std::filesystem::directory_iterator(WEAPONS_OFFSETS_PATH)) {
+			std::wstring path = L"";
+			try {
+				path = file.path().wstring();
+			}
+			catch (std::exception& e) {
+				_WARNING("Unable to convert path to string: %s", e.what());
+			}
+			if (file.exists() && !file.is_directory()) {
+				loadOffsetJsonFile(file.path().string(), _weaponsOffsets);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Save the given offsets transform to a json file using the given name.
+	/// </summary>
+	void Config::saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const {
+		_MESSAGE("Saving offsets '%s' to '%s'", name.c_str(), file.c_str());
+		json weaponJson;
+		weaponJson[name]["rotation"] = transform.rot.arr;
+		weaponJson[name]["x"] = transform.pos.x;
+		weaponJson[name]["y"] = transform.pos.y;
+		weaponJson[name]["z"] = transform.pos.z;
+		weaponJson[name]["scale"] = transform.scale;
+		
+		std::ofstream outF;
+		outF.open(file, std::ios::out);
+		if (outF.fail()) {
+			_MESSAGE("cannot open '%s' for writing", file.c_str());
+			return;
+		}
+		try {
+			outF << std::setw(4) << weaponJson;
+			outF.close();
+		}
+		catch (std::exception& e) {
+			outF.close();
+			_WARNING("Unable to save json '%s': %s", file.c_str(), e.what());
+		}
 	}
 }

@@ -3,7 +3,6 @@
 #include "F4VRBody.h"
 #include "Pipboy.h"
 #include "HandPose.h"
-#include "weaponOffset.h"
 #include "f4se/GameForms.h"
 #include "VR.h"
 #include "Menu.h"
@@ -2243,19 +2242,20 @@ namespace F4VRBody {
 						//	updateTransforms(dynamic_cast<NiNode*>(_playerNodes->primaryWeaponScopeCamera));
 					}
 				}
-				auto newWeapon = (_inPowerArmor ? weapname + powerArmorSuffix : weapname) != _lastWeapon;
-				if (newWeapon) {
-					_lastWeapon = (_inPowerArmor ? weapname + powerArmorSuffix : weapname);
+
+				auto newWeapon = _inPowerArmor ? weapname + "-PA" : weapname;
+				if (newWeapon != _lastWeapon) {
+					_lastWeapon = newWeapon;
 					_useCustomWeaponOffset = false;
 					_useCustomOffHandOffset = false;
-					auto lookup = g_weaponOffsets->getOffset(weapname, _inPowerArmor ? Mode::offHandwithPowerArmor : Mode::offHand);
+					auto lookup = g_config->getWeaponOffsets(weapname, _inPowerArmor ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
 					if (lookup.has_value()) {
 						_useCustomOffHandOffset = true;
 						_offhandOffset = lookup.value();
 						_MESSAGE("Found offHandOffset for %s pos (%f, %f, %f) scale %f: powerArmor: %d",
 							weapname.c_str(), _offhandOffset.pos.x, _offhandOffset.pos.y, _offhandOffset.pos.z, _offhandOffset.scale, _inPowerArmor);
 					}
-					lookup = g_weaponOffsets->getOffset(weapname, _inPowerArmor ? Mode::powerArmor : Mode::normal);
+					lookup = g_config->getWeaponOffsets(weapname, _inPowerArmor ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
 					if (lookup.has_value()) {
 						_useCustomWeaponOffset = true;
 						_customTransform = lookup.value();
@@ -2338,7 +2338,7 @@ namespace F4VRBody {
 							_repositionButtonHoldStart = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 							_startFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos - _curPos;
 							_offsetPreview = weap->m_localTransform.pos;
-							_MESSAGE("Reposition Button Hold start: weapon %s mode: %d", weapname, _repositionMode);
+							_MESSAGE("Reposition Button Hold start: weapon %s mode: %d", weapname.c_str(), _repositionMode);
 						}
 					}
 					else {
@@ -2347,7 +2347,7 @@ namespace F4VRBody {
 							if (_vrhook)
 								_vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1 * (_repositionMode + 1), 0.3);
 							_repositionModeSwitched = true;
-							_MESSAGE("Reposition Mode Switch: weapon %s %d ms mode: %d", weapname, _pressLength, _repositionMode);
+							_MESSAGE("Reposition Mode Switch: weapon %s %d ms mode: %d", weapname.c_str(), _pressLength, _repositionMode);
 						}
 						else if (_repositionModeSwitched && !(reg & vr::ButtonMaskFromId((vr::EVRButtonId)g_config->offHandActivateButtonID))) {
 							_repositionModeSwitched = false;
@@ -2363,7 +2363,7 @@ namespace F4VRBody {
 							_hasLetGoRepositionButton = true;
 							_inRepositionMode = false;
 							_endFingerBonePos = rt->transforms[boneTreeMap[offHandBone]].world.pos - _curPos;
-							_MESSAGE("Reposition Button Hold stop: weapon %s %d ms mode: %d", weapname, _pressLength, _repositionMode);
+							_MESSAGE("Reposition Button Hold stop: weapon %s %d ms mode: %d", weapname.c_str(), _pressLength, _repositionMode);
 						}
 					}
 
@@ -2442,43 +2442,41 @@ namespace F4VRBody {
 						}
 						//_hasLetGoRepositionButton is always one frame after _repositionButtonHolding
 						if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength < g_config->holdDelay && c_weaponRepositionMasterMode) {
-							_MESSAGE("Updating grip rotation for %s: powerArmor: %d", weapname, _inPowerArmor);
+							_MESSAGE("Updating grip rotation for %s: powerArmor: %d", weapname.c_str(), _inPowerArmor);
 							_customTransform.rot = weap->m_localTransform.rot;
 							_hasLetGoRepositionButton = false;
 							_useCustomWeaponOffset = true;
-							g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor ? Mode::powerArmor : Mode::normal);
-							saveWeaponOffsetsJsons();
+							g_config->saveWeaponOffsets(weapname, _customTransform, _inPowerArmor ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
 						}
 						else if (_hasLetGoRepositionButton && _pressLength > 0 && _pressLength > g_config->holdDelay && c_weaponRepositionMasterMode) {
 							switch (_repositionMode) {
 							case weapon:
-								_MESSAGE("Saving position translation for %s from (%f, %f, %f) -> (%f, %f, %f): powerArmor: %d", weapname, weap->m_localTransform.pos.x, weap->m_localTransform.pos.y, weap->m_localTransform.pos.z, _offsetPreview.x, _offsetPreview.y, _offsetPreview.z, _inPowerArmor);
+								_MESSAGE("Saving position translation for %s from (%f, %f, %f) -> (%f, %f, %f): powerArmor: %d", weapname.c_str(), weap->m_localTransform.pos.x, weap->m_localTransform.pos.y, weap->m_localTransform.pos.z, _offsetPreview.x, _offsetPreview.y, _offsetPreview.z, _inPowerArmor);
 								weap->m_localTransform.pos.x += _offsetPreview.x; // x is a distance delta
 								weap->m_localTransform.pos.y = _offsetPreview.y; // y, z are cumulative
 								weap->m_localTransform.pos.z = _offsetPreview.z;
 								_customTransform.pos = weap->m_localTransform.pos;
 								_useCustomWeaponOffset = true;
-								g_weaponOffsets->addOffset(weapname, _customTransform, _inPowerArmor ? Mode::powerArmor : Mode::normal);
+								g_config->saveWeaponOffsets(weapname, _customTransform, _inPowerArmor ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
 								break;
 							case offhand:
 								_offhandOffset.rot = weap->m_localTransform.rot;
 								_offhandOffset.pos = rt->transforms[boneTreeMap[offHandBone]].world.pos - rt->transforms[boneTreeMap[onHandBone]].world.pos;
 								_useCustomOffHandOffset = true;
-								g_weaponOffsets->addOffset(weapname, _offhandOffset, _inPowerArmor ? Mode::offHandwithPowerArmor : Mode::offHand);
+								g_config->saveWeaponOffsets(weapname, _offhandOffset, _inPowerArmor ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
 								_MESSAGE("Saving offHandOffset (%f, %f, %f,) for %s: powerArmor: %d", _offhandOffset.pos.x, _offhandOffset.pos.y, _offhandOffset.pos.z, weapname, _inPowerArmor);
 								break;
 							case resetToDefault:
 								_MESSAGE("Resetting grip to defaults for %s: powerArmor: %d", weapname, _inPowerArmor);
 								_useCustomWeaponOffset = false;
 								_useCustomOffHandOffset = false;
-								g_weaponOffsets->deleteOffset(weapname, _inPowerArmor ? Mode::powerArmor : Mode::normal);
-								g_weaponOffsets->deleteOffset(weapname, _inPowerArmor ? Mode::offHandwithPowerArmor : Mode::offHand);
+								g_config->removeWeaponOffsets(weapname, _inPowerArmor ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
+								g_config->removeWeaponOffsets(weapname, _inPowerArmor ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
 								_repositionMode = weapon;
 								break;
 							}
 							hideWands();
 							_hasLetGoRepositionButton = false;
-							saveWeaponOffsetsJsons();
 						}
 					}
 				}

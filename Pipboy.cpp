@@ -114,7 +114,7 @@ namespace F4VRBody {
 		static BSFixedString wandPipName("PipboyRoot");
 		NiAVObject* pbRoot = pn->SecondaryWandNode->GetObjectByName(&wandPipName);
 		if (pbRoot) {
-			pbRoot->m_localTransform = g_weaponOffsets->getPipboyOffset();
+			pbRoot->m_localTransform = g_config->getPipboyOffset();
 		}
 
 		pn->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0; //prevents the VRPipboy screen from being displayed on first load whilst PB is off.
