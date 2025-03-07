@@ -160,12 +160,13 @@ namespace F4VRBody {
 		void loadPipboyOffsets();
 		void loadWeaponsOffsets();
 		void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const;
+		void migrateConfigFilesIfNeeded();
 
 		// Reload config interval in seconds (0 - no reload)
 		int reloadConfigInterval = 0;
 		time_t lastReloadTime = 0;
 		// The log level to set for the logger
-		int logLevel = 3;
+		int logLevel = 0;
 		// The FRIK.ini version to handle updates/migrations
 		int version = 0;
 
