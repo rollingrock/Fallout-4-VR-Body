@@ -630,16 +630,8 @@ namespace F4VRBody {
 				}
 				if (SaveButtonPressed && !_isSaveButtonPressed) {
 					_isSaveButtonPressed = true;
-					g_config->isHoloPipboy ? g_weaponOffsets->addOffset("HoloPipboyPosition", pbRoot->m_localTransform, Mode::normal) : g_weaponOffsets->addOffset("PipboyPosition", pbRoot->m_localTransform, Mode::normal);
-					saveWeaponOffsetsJsons();
-
-					// TODO: move save INI to common code instead or repeating it
-					// why do some buttons (glance, dumpen, model) save on toggle and not wait for save button?
-					_MESSAGE("Saving Pipboy scale config to FRIK.ini");
-					CSimpleIniA ini;
-					SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
-					rc = ini.SetDoubleValue("Fallout4VRBody", "PipboyScale", (double)_3rdPipboy->m_localTransform.scale);
-					rc = ini.SaveFile(".\\Data\\F4SE\\plugins\\FRIK.ini");
+					g_config->savePipboyOffset(pbRoot->m_localTransform);
+					g_config->savePipboyScale((double)_3rdPipboy->m_localTransform.scale);
 				}
 				else if (!SaveButtonPressed) {
 					_isSaveButtonPressed = false;

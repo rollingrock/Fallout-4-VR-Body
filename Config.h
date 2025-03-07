@@ -1,8 +1,20 @@
 #pragma once
 
 #include "VR.h"
+#include <optional>
 
 namespace F4VRBody {
+
+	/// <summary>
+	/// Type of weapon possition offsets.
+	/// TODO: What is offhand?
+	/// </summary>
+	enum WeaponOffsetsMode {
+		normal = 0,
+		powerArmor,
+		offHand,
+		offHandwithPowerArmor,
+	};
 
 	/// <summary>
 	/// Holds all the configuration variables used in the mod.
@@ -13,28 +25,34 @@ namespace F4VRBody {
 	{
 	public:
 		void load();
-		void save() const;
+		void save() const { saveFrikINI(); }
 		void onUpdateFrame();
 
 		inline void togglePipBoyTorchOnArm() {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
-			saveBoolValue("PipBoyTorchOnArm", isPipBoyTorchOnArm);
+			saveFrikIniValue("PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		}
 		inline void toggleIsHoloPipboy() {
 			isHoloPipboy = !isHoloPipboy;
-			saveBoolValue("HoloPipBoyEnabled", isHoloPipboy);
+			saveFrikIniValue("HoloPipBoyEnabled", isHoloPipboy);
 		}
 		inline void toggleDampenPipboyScreen() {
 			dampenPipboyScreen = !dampenPipboyScreen;
-			saveBoolValue("DampenPipboyScreen", dampenPipboyScreen);
+			saveFrikIniValue("DampenPipboyScreen", dampenPipboyScreen);
 		}
 		inline void togglePipBoyOpenWhenLookAt() {
 			pipBoyOpenWhenLookAt = !pipBoyOpenWhenLookAt;
-			saveBoolValue("PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+			saveFrikIniValue("PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+		}
+		inline void savePipboyScale(double pipboyScale) {
+			saveFrikIniValue("PipboyScale", pipboyScale);
 		}
 
-		// consts
-		const float selfieOutFrontDistance = 120.0f;
+		NiTransform getPipboyOffset();
+		void savePipboyOffset(const NiTransform& transform);
+		std::optional<NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) const;
+		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode);
+		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode);
 
 		// from F4 INIs
 		bool leftHandedMode = false;
@@ -75,10 +93,11 @@ namespace F4VRBody {
 		float scopeAdjustDistance = 15.0f;
 
 		// In-game configuration
-		int UISelfieButton = 2; //TODO: UNUSED! probably a bug
 		int repositionButtonID = vr::EVRButtonId::k_EButton_SteamVR_Trigger; //33
 		float directionalDeadzone = 0.5; // Default value of fDirectionalDeadzone, used when turning off Pipboy to restore directionial control to the player.
 		bool autoFocusWindow = false;
+		float selfieOutFrontDistance = 120.0f;
+		bool selfieIgnoreHideFlags = false;
 
 		// Pipboy
 		bool hidePipboy = false;
@@ -127,26 +146,32 @@ namespace F4VRBody {
 		// hide meshes
 		std::vector<std::string> faceGeometry;
 		std::vector<std::string> skinGeometry;
-		std::vector<int> hideSlotIndexes;
+		std::vector<int> hideEquipSlotIndexes;
 
 	private:
-		void createDefaultFrikINI(std::string filePath);
 		void loadFrikINI();
 		void saveFrikINI() const;
 		void updateLoggerLogLevel() const;
 		void updateFrikINIVersion();
-		void loadHideFace();
-		void loadHideSkins();
-		void loadHideSlots();
-		void saveBoolValue(const char* pKey, bool value);
+		void loadHideMeshes();
+		void loadHideEquipmentSlots();
+		void saveFrikIniValue(const char* pKey, bool value);
+		void saveFrikIniValue(const char* pKey, double value);
+		void loadPipboyOffsets();
+		void loadWeaponsOffsets();
+		void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const;
+		void migrateConfigFilesIfNeeded();
 
 		// Reload config interval in seconds (0 - no reload)
 		int reloadConfigInterval = 0;
 		time_t lastReloadTime = 0;
 		// The log level to set for the logger
-		int logLevel = 3;
+		int logLevel = 0;
 		// The FRIK.ini version to handle updates/migrations
 		int version = 0;
+
+		std::map<std::string, NiTransform> _pipboyOffsets;
+		std::map<std::string, NiTransform> _weaponsOffsets;
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now

@@ -2555,6 +2555,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::OutputMultiLineText(
     const SI_CHAR * a_pText
     ) const
 {
+	
     const SI_CHAR * pEndOfLine;
     SI_CHAR cEndOfLineChar = *a_pText;
     while (cEndOfLineChar) {
