@@ -2451,7 +2451,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::Save(
         if (!OutputMultiLineText(a_oOutput, convert, m_pFileComment)) {
             return SI_FAIL;
         }
-        //bNeedNewLine = true; (add extra lines in multiline comments for some reason)
+        bNeedNewLine = true;
     }
 
     // iterate through our sections and output the data
