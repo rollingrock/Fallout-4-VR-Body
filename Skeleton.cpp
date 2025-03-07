@@ -218,7 +218,7 @@ namespace F4VRBody {
 		_lastPos = _curPos;
 	}
 
-	void Skeleton::selfieSkelly(float offsetOutFront) {    // Projects the 3rd person body out in front of the player by offset amount
+	void Skeleton::selfieSkelly() {    // Projects the 3rd person body out in front of the player by offset amount
 		if (!c_selfieMode || !_root) {
 			return;
 		}
@@ -234,7 +234,7 @@ namespace F4VRBody {
 		mat.rotateVectoVec(back, bodydir);
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
 		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
-		_root->m_localTransform.pos.y += offsetOutFront;
+		_root->m_localTransform.pos.y += g_config->selfieOutFrontDistance;
 		_root->m_localTransform.pos.z = z;
 	}
 

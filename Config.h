@@ -30,19 +30,22 @@ namespace F4VRBody {
 
 		inline void togglePipBoyTorchOnArm() {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
-			saveBoolValue("PipBoyTorchOnArm", isPipBoyTorchOnArm);
+			saveFrikIniValue("PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		}
 		inline void toggleIsHoloPipboy() {
 			isHoloPipboy = !isHoloPipboy;
-			saveBoolValue("HoloPipBoyEnabled", isHoloPipboy);
+			saveFrikIniValue("HoloPipBoyEnabled", isHoloPipboy);
 		}
 		inline void toggleDampenPipboyScreen() {
 			dampenPipboyScreen = !dampenPipboyScreen;
-			saveBoolValue("DampenPipboyScreen", dampenPipboyScreen);
+			saveFrikIniValue("DampenPipboyScreen", dampenPipboyScreen);
 		}
 		inline void togglePipBoyOpenWhenLookAt() {
 			pipBoyOpenWhenLookAt = !pipBoyOpenWhenLookAt;
-			saveBoolValue("PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+			saveFrikIniValue("PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+		}
+		inline void savePipboyScale(double pipboyScale) {
+			saveFrikIniValue("PipboyScale", pipboyScale);
 		}
 
 		NiTransform getPipboyOffset();
@@ -50,9 +53,6 @@ namespace F4VRBody {
 		std::optional<NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) const;
 		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode);
 		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode);
-
-		// consts
-		const float selfieOutFrontDistance = 120.0f;
 
 		// from F4 INIs
 		bool leftHandedMode = false;
@@ -93,10 +93,11 @@ namespace F4VRBody {
 		float scopeAdjustDistance = 15.0f;
 
 		// In-game configuration
-		int UISelfieButton = 2; //TODO: UNUSED! probably a bug
 		int repositionButtonID = vr::EVRButtonId::k_EButton_SteamVR_Trigger; //33
 		float directionalDeadzone = 0.5; // Default value of fDirectionalDeadzone, used when turning off Pipboy to restore directionial control to the player.
 		bool autoFocusWindow = false;
+		float selfieOutFrontDistance = 120.0f;
+		bool selfieIgnoreHideFlags = false;
 
 		// Pipboy
 		bool hidePipboy = false;
@@ -154,7 +155,8 @@ namespace F4VRBody {
 		void updateFrikINIVersion();
 		void loadHideMeshes();
 		void loadHideEquipmentSlots();
-		void saveBoolValue(const char* pKey, bool value);
+		void saveFrikIniValue(const char* pKey, bool value);
+		void saveFrikIniValue(const char* pKey, double value);
 		void loadPipboyOffsets();
 		void loadWeaponsOffsets();
 		void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const;

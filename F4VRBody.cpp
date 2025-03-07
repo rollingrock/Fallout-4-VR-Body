@@ -47,9 +47,6 @@ namespace F4VRBody {
 	float c_dynamicCameraHeight = 0.0;
 	bool c_selfieMode = false;
 	bool GameVarsConfigured = false;
-	bool c_loadedHideHead = false;
-	bool c_loadedHideEquipment = false;
-	bool c_loadedHideSkin = false;
 	bool _controlSleepStickyX = false;
 	bool _controlSleepStickyY = false;
 	bool _controlSleepStickyT = false;
@@ -97,7 +94,7 @@ namespace F4VRBody {
 		}
 	}
 
-	static void restoreGeometry() {
+	void restoreGeometry() {
 		//Face and Skin
 		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
 
@@ -124,13 +121,17 @@ namespace F4VRBody {
 	// cull items in skins/faces cull list
 
 	static void cullGeometry() {
-		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
+		if (c_selfieMode && g_config->selfieIgnoreHideFlags) {
+			restoreGeometry();
+			return;
+		}
 
+		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
 		if (!rn) {
 			return;
 		}
 
-		if (g_config->hideHead || g_config->hideSkin) {
+		if (g_config->hideHead || g_config->hideSkin || c_selfieMode) {
 			for (auto i = 0; i < rn->kGeomArray.count; ++i) {
 				bool hide = false;
 				auto& geometry = rn->kGeomArray[i].spGeometry;
@@ -716,7 +717,7 @@ namespace F4VRBody {
 
 		// project body out in front of the camera for debug purposes
 		_DMESSAGE("Selfie Time");
-		_skelly->selfieSkelly(g_config->selfieOutFrontDistance);
+		_skelly->selfieSkelly();
 		_skelly->updateDown(_skelly->getRoot(), true);
 
 		_DMESSAGE("fix the missing screen");
@@ -952,13 +953,7 @@ namespace F4VRBody {
 		if ((*g_ui)->IsMenuRegistered(menuName)) {
 			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 		}
-
 		 g_config->hideHead = !g_config->hideHead;
-		 c_loadedHideHead = g_config->hideHead;
-
-		if (g_config->hideHead) {
-			restoreGeometry();
-		}
 	}
 
 	void togglePipboyVis(StaticFunctionTag* base) {
@@ -978,17 +973,6 @@ namespace F4VRBody {
 		}
 
 		 c_selfieMode = !c_selfieMode;
-		if (c_selfieMode) {
-			restoreGeometry();
-			 g_config->hideHead = false;
-			 g_config->hideEquipment = false;
-			 g_config->hideSkin = false;
-		}
-		else {
-			 g_config->hideHead = c_loadedHideHead;
-			 g_config->hideEquipment = c_loadedHideEquipment;
-			 g_config->hideSkin = c_loadedHideSkin;
-		}
 	}
 
 	static void setSelfieMode(StaticFunctionTag* base, bool isSelfieMode) {

@@ -32,9 +32,6 @@ namespace F4VRBody {
 	extern float c_dynamicCameraHeight;
 	extern bool c_selfieMode;
 	extern bool GameVarsConfigured;
-	extern bool c_loadedHideHead;
-	extern bool c_loadedHideEquipment;
-	extern bool c_loadedHideSkin;
 	extern bool _controlSleepStickyX;
 	extern bool _controlSleepStickyY;
 	extern bool _controlSleepStickyT;
@@ -117,12 +114,9 @@ namespace F4VRBody {
 
 	NiNode* loadNifFromFile(char* path);
 
-	bool loadConfig();
-
 	void smoothMovement();
 	void update();
 	void startUp();
-	void saveSettings();
 	// Native funcs to expose to papyrus
 	bool HasKeyword();
 	void saveStates(StaticFunctionTag* base);
@@ -140,6 +134,7 @@ namespace F4VRBody {
 	void holsterWeapon();
 	void drawWeapon();
 	bool RegisterFuncs(VirtualMachine* vm);
+	void restoreGeometry();
 
 	inline NiNode* loadNifFromFile(char* path) {
 		uint64_t flags[2];

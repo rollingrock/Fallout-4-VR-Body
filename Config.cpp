@@ -111,11 +111,8 @@ namespace F4VRBody {
 		handUI_Y = ini.GetDoubleValue(INI_SECTION_MAIN, "handUI_Y", 0.0);
 		handUI_Z = ini.GetDoubleValue(INI_SECTION_MAIN, "handUI_Z", 0.0);
 		hideHead = ini.GetBoolValue(INI_SECTION_MAIN, "HideHead");
-		c_loadedHideHead = hideHead;
 		hideEquipment = ini.GetBoolValue(INI_SECTION_MAIN, "HideEquipment");
-		c_loadedHideEquipment = hideEquipment;
 		hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "HideSkin");
-		c_loadedHideSkin = hideSkin;
 		pipBoyLookAtGate = ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.7);
 		pipBoyOffDelay = (int)ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 5000);
 		pipBoyOnDelay = (int)ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 5000);
@@ -146,12 +143,13 @@ namespace F4VRBody {
 		directionalDeadzone = ini.GetDoubleValue(INI_SECTION_MAIN, "fDirectionalDeadzone", 0.5);
 		playerHMDHeight = ini.GetDoubleValue(INI_SECTION_MAIN, "fHMDHeight", 109.0);
 		shoulderToHMD = ini.GetDoubleValue(INI_SECTION_MAIN, "fShouldertoHMD", 109.0);
+		selfieOutFrontDistance = ini.GetDoubleValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0);
+		selfieIgnoreHideFlags = ini.GetBoolValue(INI_SECTION_MAIN, "selfieIgnoreHideFlags", false);
 
 		//Pipboy & Main Config Mode Buttons
 		pipBoyScale = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "PipboyScale", 1.0);
 		switchUIControltoPrimary = (bool)ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
 		autoFocusWindow = (bool)ini.GetBoolValue(INI_SECTION_MAIN, "AutoFocusWindow", false);
-		UISelfieButton = (int)ini.GetLongValue("ConfigModeUIButtons", "ToggleSelfieModeButton", 2);
 
 		// weaponPositioning
 		holdDelay = (int)ini.GetLongValue(INI_SECTION_MAIN, "HoldDelay", 1000);
@@ -328,11 +326,22 @@ namespace F4VRBody {
 	/// <summary>
 	/// Save specific key and bool value into FRIK.ini file.
 	/// </summary>
-	void Config::saveBoolValue(const char* key, bool value) {
+	void Config::saveFrikIniValue(const char* key, bool value) {
 		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value ? "true" : "false");
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, key, value);
+		rc = ini.SaveFile(FRIK_INI_PATH);
+	}
+
+	/// <summary>
+	/// Save specific key and double value into FRIK.ini file.
+	/// </summary>
+	void Config::saveFrikIniValue(const char* key, double value) {
+		_MESSAGE("Config: Saving \"%s = %f\" to FRIK.ini", key, value);
+		CSimpleIniA ini;
+		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
+		rc = ini.SetDoubleValue(INI_SECTION_MAIN, key, value);
 		rc = ini.SaveFile(FRIK_INI_PATH);
 	}
 

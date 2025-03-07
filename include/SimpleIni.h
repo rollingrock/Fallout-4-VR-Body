@@ -2451,7 +2451,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::Save(
         if (!OutputMultiLineText(a_oOutput, convert, m_pFileComment)) {
             return SI_FAIL;
         }
-        bNeedNewLine = true;
+        //bNeedNewLine = true; (add extra lines in multiline comments for some reason)
     }
 
     // iterate through our sections and output the data
@@ -2555,6 +2555,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::OutputMultiLineText(
     const SI_CHAR * a_pText
     ) const
 {
+	
     const SI_CHAR * pEndOfLine;
     SI_CHAR cEndOfLineChar = *a_pText;
     while (cEndOfLineChar) {
