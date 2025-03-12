@@ -314,14 +314,13 @@ namespace F4VRBody {
 	}
 
 	bool setSkelly(bool inPowerArmor) {
-
-		_DMESSAGE("setSkelly Start");
+		
 		if (!(*g_player)->unkF0) {
 			_DMESSAGE("loaded Data Not Set Yet");
 			return false;
 		}
 
-		_MESSAGE("loadedData = %016I64X", (*g_player)->unkF0);
+		_MESSAGE("Init Skelly - %s (Data: %016I64X)", inPowerArmor ? "PowerArmor" : "Regular", (*g_player)->unkF0);
 		if (!(*g_player)->unkF0->rootNode) {
 			_MESSAGE("rootnode not set yet!");
 			return false;
@@ -354,6 +353,8 @@ namespace F4VRBody {
 			turnPipBoyOff();
 
 			initConfigurationMode(_skelly, _vrhook);
+
+			initCullGeometryHandler();
 
 			if (g_config->setScale) {
 				Setting* set = GetINISetting("fVrScale:VR");
@@ -445,35 +446,30 @@ namespace F4VRBody {
 
 		g_config->onUpdateFrame();
 
-		if (!inPowerArmorSticky) {
-			inPowerArmorSticky = detectInPowerArmor();
-
-			if (inPowerArmorSticky) {
-				delete _skelly;
-				firstTime = true;
-				return;
-			}
+		auto wasInPowerArmor = inPowerArmorSticky;
+		inPowerArmorSticky = detectInPowerArmor();
+		if (wasInPowerArmor != inPowerArmorSticky) {
+			_MESSAGE("Power Armor State Changed, reset skelly");
+			// TODO: better handling of all globals and skelly state!
+			delete _skelly;
+			delete g_pipboy;
+			g_pipboy = nullptr;
+			delete g_configurationMode;
+			g_configurationMode = nullptr;
+			delete g_cullGeometry;
+			g_cullGeometry = nullptr;
+			firstTime = true;
+			return;
 		}
-		else {
-			inPowerArmorSticky = detectInPowerArmor();
-
-			if (!inPowerArmorSticky) {
-				delete _skelly;
-				firstTime = true;
-				return;
-			}
-		}
-
 
 		if (!_skelly || firstTime) {
 			if (!setSkelly(inPowerArmorSticky)) {
 				return;
 			}
 
-			//	StackPtr<BSAnimationManager*> manager;
-
-				//AIProcess_getAnimationManager((uint64_t)(*g_player)->middleProcess, manager);
-				//BSAnimationManager_setActiveGraph(manager.p, 0);
+			//StackPtr<BSAnimationManager*> manager;
+			//AIProcess_getAnimationManager((uint64_t)(*g_player)->middleProcess, manager);
+			//BSAnimationManager_setActiveGraph(manager.p, 0);
 			firstTime = false;
 			return;
 		}
@@ -591,7 +587,7 @@ namespace F4VRBody {
 		_skelly->hideFistHelpers();
 		_skelly->showHidePAHUD();
 
-		cullPlayerGeometry();
+		g_cullGeometry->cullPlayerGeometry();
 
 		// project body out in front of the camera for debug purposes
 		_DMESSAGE("Selfie Time");

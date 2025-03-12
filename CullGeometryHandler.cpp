@@ -1,14 +1,15 @@
+#include "CullGeometryHandler.h"
 #include "Config.h"
 #include "Debug.h"
 #include "utils.h"
 
 namespace F4VRBody {
-
-	time_t _lastPreProcessTime = 0;
-	std::vector<int> _hideFaceSkinGeometryIndexes;
+	CullGeometryHandler* g_cullGeometry = nullptr;
 	
-	// TODO: remove this in favor of ini setting
 	bool dumpArray = false;
+	void dumpGeometryArray(StaticFunctionTag* base) {
+		dumpArray = true;
+	}
 
 	/// <summary>
 	/// Hide/Show player specific equipment slot found by index.
@@ -33,7 +34,7 @@ namespace F4VRBody {
 	/// May not sounds as much but total of this mod update frame is 0.25ms making it 20% of the time!
 	/// And god dammit the game is slow enough not to waste more time.
 	/// </summary>
-	static void preProcessHideGeometryIndexes(BSFadeNode* rn) {
+	void CullGeometryHandler::preProcessHideGeometryIndexes(BSFadeNode* rn) {
 		auto now = std::time(nullptr);
 		if (now - _lastPreProcessTime < 1) {
 			return;
@@ -78,7 +79,7 @@ namespace F4VRBody {
 	/// Face is things like eyes, mouth, hair, etc.
 	/// Equipment slots are things like helmet, glasses, etc.
 	/// </summary>
-	void cullPlayerGeometry() {
+	void CullGeometryHandler::cullPlayerGeometry() {
 		if (c_selfieMode && g_config->selfieIgnoreHideFlags) {
 			restoreGeometry();
 			return;
@@ -113,7 +114,7 @@ namespace F4VRBody {
 	/// <summary>
 	/// Show all player geometries and equipment slots.
 	/// </summary>
-	void restoreGeometry() {
+	void CullGeometryHandler::restoreGeometry() {
 		//Face and Skin
 		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
 		if (rn) {
@@ -132,9 +133,5 @@ namespace F4VRBody {
 		setEquipmentSlotByIndexVisibility(19, false);
 		setEquipmentSlotByIndexVisibility(20, false);
 		setEquipmentSlotByIndexVisibility(22, false);
-	}
-
-	void dumpGeometryArray(StaticFunctionTag* base) {
-		dumpArray = true;
 	}
 }
