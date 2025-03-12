@@ -81,6 +81,17 @@ namespace F4VRBody {
 		}
 	}
 
+	/// <summary>
+	/// Dump the player body parts and whatever they are hidden.
+	/// </summary>
+	void dumpPlayerGeometry(BSFadeNode* rn) {
+		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
+			auto& geometry = rn->kGeomArray[i].spGeometry;
+			auto geometryName = geometry->m_name.c_str();
+			_MESSAGE("Player Geometry at %d: '%s' isHidden? %d", i, geometryName, geometry->flags &= 0x1);
+		}
+	}
+
 	void debug(Skeleton* skelly) {
 
 		static std::uint64_t fc = 0;
