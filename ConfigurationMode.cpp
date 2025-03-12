@@ -3,10 +3,9 @@
 #include "Skeleton.h"
 #include "Pipboy.h"
 #include "HandPose.h"
+#include "F4VRBody.h"
 
 namespace F4VRBody {
-
-	ConfigurationMode* g_configurationMode = nullptr;
 
 	/// <summary>
 	/// Exit Main FRIK Config Mode

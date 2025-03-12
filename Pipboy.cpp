@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "utils.h"
 #include "VR.h"
+#include "F4VRBody.h"
 
 #include <chrono>
 #include <time.h>
@@ -11,8 +12,6 @@
 using namespace std::chrono;
 
 namespace F4VRBody {
-
-	Pipboy* g_pipboy = nullptr;
 
 	void Pipboy::swapPipboy() {
 		_pipboyStatus = false;
@@ -184,7 +183,7 @@ namespace F4VRBody {
 		if (pipOnButtonPressed && !_stickybpip && !_isOperatingPipboy) {
 			_stickybpip = true;
 			_controlSleepStickyT = true;
-			std::thread t5(SecondaryTriggerSleep, 300); // switches a bool to false after 150ms
+			std::thread t5(&Pipboy::SecondaryTriggerSleep, this, 300); // switches a bool to false after 150ms
 			t5.detach();
 		}
 		else if (!pipOnButtonPressed) {
@@ -376,7 +375,6 @@ namespace F4VRBody {
 			}
 		}
 	}
-
 
 	/* ==============================================PIPBOY CONTOLS================================================================================
 	//
@@ -778,7 +776,7 @@ namespace F4VRBody {
 										_controlSleepStickyY = true;
 										std::thread t1(SimulateExtendedButtonPress, VK_UP); // Scroll up list
 										t1.detach();
-										std::thread t2(RightStickYSleep, 155);
+										std::thread t2(&Pipboy::RightStickYSleep, this, 155);
 										t2.detach();
 									}
 								}
@@ -787,7 +785,7 @@ namespace F4VRBody {
 										_controlSleepStickyY = true;
 										std::thread t1(SimulateExtendedButtonPress, VK_DOWN); // Scroll down list
 										t1.detach();
-										std::thread t2(RightStickYSleep, 155);
+										std::thread t2(&Pipboy::RightStickYSleep, this, 155);
 										t2.detach();
 									}
 								}
@@ -795,7 +793,7 @@ namespace F4VRBody {
 									if (!_controlSleepStickyX) {
 										_controlSleepStickyX = true;
 										root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0); // Next Sub Page
-										std::thread t3(RightStickXSleep, 170);
+										std::thread t3(&Pipboy::RightStickXSleep, this, 170);
 										t3.detach();
 									}
 								}
@@ -803,7 +801,7 @@ namespace F4VRBody {
 									if (!_controlSleepStickyX) {
 										_controlSleepStickyX = true;
 										root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0); // Previous Sub Page
-										std::thread t3(RightStickXSleep, 170);
+										std::thread t3(&Pipboy::RightStickXSleep, this, 170);
 										t3.detach();
 									}
 								}
@@ -930,5 +928,29 @@ namespace F4VRBody {
 		//float dot = vec3_dot(vec3_norm(pipBoyOut), vec3_norm(lookDir));
 
 		//return dot < -(pipBoyLookAtGate);
+	}
+
+	/// <summary>
+	/// Prevents Continous Input from Right Stick X Axis
+	/// </summary>
+	void Pipboy::RightStickXSleep(int time) {
+		Sleep(time);
+		_controlSleepStickyX = false;
+	}
+
+	/// <summary>
+	/// Prevents Continous Input from Right Stick Y Axis
+	/// </summary>
+	void Pipboy::RightStickYSleep(int time) {
+		Sleep(time);
+		_controlSleepStickyY = false;
+	}
+
+	/// <summary>
+	/// Used to determine if secondary trigger received a long or short press
+	/// </summary>
+	void Pipboy::SecondaryTriggerSleep(int time) {
+		Sleep(time);
+		_controlSleepStickyT = false;
 	}
 }

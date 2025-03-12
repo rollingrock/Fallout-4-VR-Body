@@ -6,7 +6,6 @@
 #include "f4se/GameRTTI.h"
 #include "matrix.h"
 #include "Offsets.h"
-#include "F4VRBody.h"
 
 #include <chrono>
 
@@ -48,9 +47,6 @@ namespace F4VRBody {
 	void WindowFocus();
 	void TurnPlayerRadioOn(bool isActive);
 	void SimulateExtendedButtonPress(WORD vkey);
-	void RightStickXSleep(int time);
-	void RightStickYSleep(int time);
-	void SecondaryTriggerSleep(int time);
 	//void PipboyReopen();
 	void ShowMessagebox(std::string asText);
 	void ShowNotification(std::string asText);

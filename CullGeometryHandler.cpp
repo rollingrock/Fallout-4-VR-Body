@@ -2,10 +2,9 @@
 #include "Config.h"
 #include "Debug.h"
 #include "utils.h"
+#include "F4VRBody.h"
 
 namespace F4VRBody {
-	CullGeometryHandler* g_cullGeometry = nullptr;
-	
 	bool dumpArray = false;
 	void dumpGeometryArray(StaticFunctionTag* base) {
 		dumpArray = true;
