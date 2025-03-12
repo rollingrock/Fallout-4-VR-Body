@@ -4,6 +4,7 @@
 #include "utils.h"
 #include <algorithm>
 #include "f4se/PapyrusEvents.h"
+#include <filesystem>
 
 #define PI 3.14159265358979323846
 
@@ -421,24 +422,24 @@ namespace F4VRBody {
 	/// <summary>
 	/// Find dll embeded resource by id and return its data as string.
 	/// </summary>
-	std::string getEmbededResourceAsString(WORD idr) {
+	std::string getEmbededResourceAsString(WORD resourceId) {
 
 		// Must specify the dll to read its resources and not the exe
 		HMODULE hModule = GetModuleHandle("FRIK.dll");
-		HRSRC hRes = FindResource(hModule, MAKEINTRESOURCE(idr), RT_RCDATA);
+		HRSRC hRes = FindResource(hModule, MAKEINTRESOURCE(resourceId), RT_RCDATA);
 		if (!hRes) {
-			throw std::runtime_error("Default INI resource not found!");
+			throw std::runtime_error("Resource not found for id: " + std::to_string(resourceId));
 		}
 
 		HGLOBAL hResData = LoadResource(hModule, hRes);
 		if (!hResData) {
-			throw std::runtime_error("Failed to load default INI resource!");
+			throw std::runtime_error("Failed to load resource for id: " + std::to_string(resourceId));
 		}
 
 		DWORD dataSize = SizeofResource(hModule, hRes);
 		void* pData = LockResource(hResData);
 		if (!pData) {
-			throw std::runtime_error("Failed to lock default INI resource!");
+			throw std::runtime_error("Failed to lock resource for id: " + std::to_string(resourceId));
 		}
 
 		return std::string(static_cast<const char*>(pData), dataSize);
@@ -454,5 +455,52 @@ namespace F4VRBody {
 		char buffer[9];
 		std::strftime(buffer, sizeof(buffer), "%H:%M:%S", &localTime);
 		return std::string(buffer);
+	}
+
+	/// <summary>
+	/// Loads a list of string values from a file.
+	/// Each value is expected to be on a new line.
+	/// </summary>
+	std::vector<std::string> loadListFromFile(std::string filePath) {
+		std::ifstream input;
+		input.open(filePath);
+
+		std::vector<std::string> list;
+		if (input.is_open()) {
+			while (input) {
+				std::string lineStr;
+				input >> lineStr;
+				if (!lineStr.empty())
+					list.push_back(trim(str_tolower(lineStr)));
+			}
+		}
+
+		input.close();
+		return list;
+	}
+
+	/// <summary>
+	/// If file at a given path doesn't exists then create it from the embeded resource.
+	/// </summary>
+	void createFileFromResourceIfNotExists(std::string filePath, WORD resourceId) {
+		if (std::filesystem::exists(filePath)) {
+			return;
+		}
+
+		_MESSAGE("Creating '%s' file from resource id: %d...", filePath.c_str(), resourceId);
+		auto data = getEmbededResourceAsString(resourceId);
+
+		std::ofstream outFile(filePath, std::ios::trunc);
+		if (!outFile) {
+			throw std::runtime_error("Failed to create '" + filePath + "' file");
+		}
+		if (!outFile.write(data.data(), data.size())) {
+			outFile.close();
+			std::remove(filePath.c_str());
+			throw std::runtime_error("Failed to write to '" + filePath + "' file");
+		}
+		outFile.close();
+
+		_VMESSAGE("File '%s' created successfully (size: %d)", filePath.c_str(), data.size());
 	}
 }

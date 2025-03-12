@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Include Files">
+      <UniqueIdentifier>{1a15371c-de19-4a5e-b282-4c9342d80cdd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -48,9 +51,6 @@
     <ClCompile Include="patches.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="weaponOffset.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="BSFlattenedBoneTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -83,9 +83,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\version.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="hook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -101,19 +98,7 @@
     <ClInclude Include="matrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="openvr\openvr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="api\PapyrusVRAPI.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="api\VRManagerAPI.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Quaternion.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\SimpleIni.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NiCloneProcess.h">
@@ -132,9 +117,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="patches.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="weaponOffset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MuzzleFlash.h">
@@ -170,12 +152,60 @@
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
+    <ClInclude Include="api\VRManagerAPI.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\VRHookAPI.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\openvr.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\openvr_capi.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\openvr_driver.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\OpenVRTypes.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\PapyrusVRAPI.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\PapyrusVRTypes.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\json.hpp">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\version.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SimpleIni.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">
       <Filter>Source Files</Filter>
     </None>
     <None Include="data\FRIK.ini">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\mesh_hide_face.ini">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\mesh_hide_skins.ini">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\mesh_hide_slots.ini">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\pipboy_screen_offsets.json">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\pipboy_holo_offsets.json">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

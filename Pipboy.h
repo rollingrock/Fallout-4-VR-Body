@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Skeleton.h"
-#include "weaponOffset.h"
 
 namespace F4VRBody {
 
@@ -75,8 +74,8 @@ namespace F4VRBody {
 	
 	static void initPipboy(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
 		if (g_pipboy) {
-			_ERROR("ERROR: pipboy already initialized");
-			return;
+			_MESSAGE("Delete existing pipboy handler");
+			delete g_pipboy;
 		}
 
 		_MESSAGE("Init pipboy...");
