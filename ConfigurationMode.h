@@ -82,8 +82,8 @@ namespace F4VRBody {
 
 	static void initConfigurationMode(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
 		if (g_configurationMode) {
-			_ERROR("ERROR: configuration mode already initialized");
-			return;
+			_MESSAGE("Delete existing configuration mode handler");
+			delete g_configurationMode;
 		}
 
 		_MESSAGE("Init configuration mode...");
