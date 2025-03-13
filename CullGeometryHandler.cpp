@@ -32,18 +32,27 @@ namespace F4VRBody {
 	/// It reduces the "cullPlayerGeometry" time from ~0.05ms to ~0.0002ms (for 89 frames, if framerate is 90).
 	/// May not sounds as much but total of this mod update frame is 0.25ms making it 20% of the time!
 	/// And god dammit the game is slow enough not to waste more time.
+	/// <p>
+	/// The geometry array can change when equipment is changed, weapon is drawned, etc. To handle it we check if the last
+	/// hidden geometry didn't change. If it did, we re-calculate the indexes to hide.
 	/// </summary>
 	void CullGeometryHandler::preProcessHideGeometryIndexes(BSFadeNode* rn) {
 		auto now = std::time(nullptr);
-		if (now - _lastPreProcessTime < 1) {
-			return;
+		if (now - _lastPreProcessTime < 2) {
+			// check that the geometries array didn't change by verifying the last hidden geometry is the same we expect
+			if (_lastHiddenGeometryIdx >= 0 && _lastHiddenGeometryIdx < rn->kGeomArray.count ) {
+				auto gemName = std::string(rn->kGeomArray[_lastHiddenGeometryIdx].spGeometry->m_name.c_str());
+				if (_lastHiddenGeometryName == gemName)
+					return;
+			}
 		}
 		_lastPreProcessTime = now;
 
 		_hideFaceSkinGeometryIndexes.clear();
 		for (auto i = 0; i < rn->kGeomArray.count; i++) {
 			auto& geometry = rn->kGeomArray[i].spGeometry;
-			auto geomStr = str_tolower(trim(std::string(geometry->m_name.c_str())));
+			auto geomName = std::string(geometry->m_name.c_str());
+			auto geomStr = str_tolower(trim(geomName));
 
 			bool toHide = false;
 			if (g_config->hideHead) {
@@ -69,6 +78,8 @@ namespace F4VRBody {
 
 			if (toHide) {
 				_hideFaceSkinGeometryIndexes.push_back(i);
+				_lastHiddenGeometryIdx = i;
+				_lastHiddenGeometryName = geomName;
 			}
 		}
 	}

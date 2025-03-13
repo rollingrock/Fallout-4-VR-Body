@@ -17,6 +17,8 @@ namespace F4VRBody {
 		void preProcessHideGeometryIndexes(BSFadeNode* rn);
 
 		time_t _lastPreProcessTime = 0;
+		int _lastHiddenGeometryIdx = -1;
+		std::string _lastHiddenGeometryName;
 		std::vector<int> _hideFaceSkinGeometryIndexes;
 	};
 }
