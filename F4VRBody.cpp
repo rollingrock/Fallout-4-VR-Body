@@ -519,6 +519,7 @@ namespace F4VRBody {
 		_DMESSAGE("Start of Frame");
 
 		if (!GameVarsConfigured) {
+			// TODO: move to common single time init code
 			ConfigureGameVars();
 			GameVarsConfigured = true;
 		}
@@ -660,6 +661,10 @@ namespace F4VRBody {
 		}
 		else {
 			_skelly->fixArmor();
+		}
+
+		if (g_config->checkDebugDumpDataOnceFor("skelly")) {
+			printNodes((*g_player)->firstPersonSkeleton->GetAsNiNode());
 		}
 	}
 
@@ -1235,7 +1240,6 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, UInt32, bool>("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheresAtBone, vm));
 		vm->RegisterFunction(new NativeFunction6<StaticFunctionTag, void, bool, float, float, float, float, float>("setFingerPositionScalar", "FRIK:FRIK", F4VRBody::setFingerPositionScalar, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("restoreFingerPoseControl", "FRIK:FRIK", F4VRBody::restoreFingerPoseControl, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("dumpGeometryArray", "FRIK:FRIK", F4VRBody::dumpGeometryArray, vm));
 
 		return true;
 	}

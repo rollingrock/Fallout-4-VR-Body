@@ -5,10 +5,6 @@
 #include "F4VRBody.h"
 
 namespace F4VRBody {
-	bool dumpArray = false;
-	void dumpGeometryArray(StaticFunctionTag* base) {
-		dumpArray = true;
-	}
 
 	/// <summary>
 	/// Hide/Show player specific equipment slot found by index.
@@ -115,8 +111,7 @@ namespace F4VRBody {
 			}
 		}
 
-		if (dumpArray) {
-			dumpArray = false;
+		if (g_config->checkDebugDumpDataOnceFor("geometry")) {
 			dumpPlayerGeometry(rn);
 		}
 	}

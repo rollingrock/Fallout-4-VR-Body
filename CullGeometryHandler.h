@@ -4,9 +4,7 @@
 #include "f4se/NiNodes.h"
 
 namespace F4VRBody {
-	// TODO: remove this in favor of ini setting
-	void dumpGeometryArray(StaticFunctionTag* base);
-
+	
 	class CullGeometryHandler
 	{
 	public:
