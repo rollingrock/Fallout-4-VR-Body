@@ -1664,12 +1664,12 @@ namespace F4VRBody {
         }
 
         NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-        NiNode* leftWeapon = getNode("WeaponLeft", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-
+		NiNode* leftWeapon = _playerNodes->WeaponLeftNode; // "WeaponLeft" can return incorect node for left-handed with throwable weapons
+		
         bool handleLeftMode = g_config->leftHandedMode ^ isLeft;
 
         NiNode* weaponNode = handleLeftMode ? leftWeapon : rightWeapon;
-        NiNode* offsetNode = handleLeftMode ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
+		NiNode* offsetNode = handleLeftMode ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
 
         if (handleLeftMode) {
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->m_localTransform = _playerNodes->primaryWeaponOffsetNOde->m_localTransform;
@@ -1719,10 +1719,10 @@ namespace F4VRBody {
 
         weaponNode->m_localTransform.pos = g_config->leftHandedMode ? (isLeft ? NiPoint3(3.389, -2.099, 3.133) : NiPoint3(0, -4.8, 0)) : (isLeft ? NiPoint3(0, 0, 0) : NiPoint3(6.389, -2.099, -3.133));
 
-        dampenHand(offsetNode, isLeft);
-
-        weaponNode->IncRef();
-        set1stPersonArm(weaponNode, offsetNode);
+		dampenHand(offsetNode, isLeft);
+			
+		weaponNode->IncRef();
+		set1stPersonArm(weaponNode, offsetNode);
 
         NiPoint3 handPos = isLeft ? _leftHand->m_worldTransform.pos : _rightHand->m_worldTransform.pos;
         NiMatrix43 handRot = isLeft ? _leftHand->m_worldTransform.rot : _rightHand->m_worldTransform.rot;
