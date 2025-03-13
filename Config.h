@@ -27,6 +27,7 @@ namespace F4VRBody {
 		void load();
 		void save() const { saveFrikINI(); }
 		void onUpdateFrame();
+		bool checkDebugDumpDataOnceFor(const char* name);
 
 		inline void togglePipBoyTorchOnArm() {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
@@ -148,6 +149,10 @@ namespace F4VRBody {
 		std::vector<std::string> skinGeometry;
 		std::vector<int> hideEquipSlotIndexes;
 
+		// Can be used to test things at runtime during development
+		// i.e. check "debugFlowFlag==1" somewhere in code and use config reload to change the value at runtime.
+		int debugFlowFlag = 0;
+
 	private:
 		void loadFrikINI();
 		void saveFrikINI() const;
@@ -157,6 +162,7 @@ namespace F4VRBody {
 		void loadHideEquipmentSlots();
 		void saveFrikIniValue(const char* pKey, bool value);
 		void saveFrikIniValue(const char* pKey, double value);
+		void saveFrikIniValue(const char* pKey, const char* section, const char* value);
 		void loadPipboyOffsets();
 		void loadWeaponsOffsets();
 		void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const;
@@ -172,6 +178,8 @@ namespace F4VRBody {
 
 		std::map<std::string, NiTransform> _pipboyOffsets;
 		std::map<std::string, NiTransform> _weaponsOffsets;
+
+		std::string _debugDumpDataOnceNames = "";
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now

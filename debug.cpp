@@ -87,8 +87,7 @@ namespace F4VRBody {
 	void dumpPlayerGeometry(BSFadeNode* rn) {
 		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
 			auto& geometry = rn->kGeomArray[i].spGeometry;
-			auto geometryName = geometry->m_name.c_str();
-			_MESSAGE("Player Geometry at %d: '%s' isHidden? %d", i, geometryName, geometry->flags &= 0x1);
+			_MESSAGE("Geometry[%d] = '%s' (%s)", i, geometry->m_name.c_str(), geometry->flags & 0x1 ? "Hidden" : "Visible");
 		}
 	}
 

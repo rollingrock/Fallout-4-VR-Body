@@ -12,7 +12,7 @@ namespace F4VRBody {
 
 	Config* g_config = nullptr;
 
-	constexpr const int FRIK_INI_VERSION = 3;
+	constexpr const int FRIK_INI_VERSION = 4;
 
 	constexpr const char* FRIK_INI_PATH = ".\\Data\\FRIK_Config\\FRIK.ini";
 
@@ -27,6 +27,25 @@ namespace F4VRBody {
 	constexpr const char* INI_SECTION_MAIN = "Fallout4VRBody";
 	constexpr const char* INI_SECTION_DEBUG = "Debug";
 	constexpr const char* INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
+
+	/// <summary>
+	/// Check if debug data dump is requested for the given name.
+	/// If matched, the name will be removed from the list to prevent multiple dumps.
+	/// Also saved into INI to prevent reloading the same dump name on next config reload.
+	/// Support specifying multiple names by any seperator as only the matched sub-string is removed.
+	/// </summary>
+	bool Config::checkDebugDumpDataOnceFor(const char* name) {
+		auto idx = _debugDumpDataOnceNames.find(name);
+		if (idx == std::string::npos) {
+			return false;
+		}
+		_debugDumpDataOnceNames = _debugDumpDataOnceNames.erase(idx, strlen(name));
+		// write to INI for auto-reload not to re-enable it
+		saveFrikIniValue("DebugDumpDataOnceNames", INI_SECTION_DEBUG, _debugDumpDataOnceNames.c_str());
+		
+		_MESSAGE("---- Debug Dump Data check passed for '%s' ----", name);
+		return true;
+	}
 
 	/// <summary>
 	/// Runs on every game frame.
@@ -91,6 +110,8 @@ namespace F4VRBody {
 		version = ini.GetLongValue(INI_SECTION_DEBUG, "Version", 0);
 		logLevel = ini.GetLongValue(INI_SECTION_DEBUG, "LogLevel", 3);
 		reloadConfigInterval = ini.GetLongValue(INI_SECTION_DEBUG, "ReloadConfigInterval", 3);
+		debugFlowFlag = (int)ini.GetLongValue(INI_SECTION_DEBUG, "DebugFlowFlag", 0);
+		_debugDumpDataOnceNames = ini.GetValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", "");
 
 
 		playerHeight = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f);
@@ -346,6 +367,17 @@ namespace F4VRBody {
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, key, value);
+		rc = ini.SaveFile(FRIK_INI_PATH);
+	}
+
+	/// <summary>
+	/// Save specific key and string value into FRIK.ini file.
+	/// </summary>
+	void Config::saveFrikIniValue(const char* key, const char* section, const char* value) {
+		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value);
+		CSimpleIniA ini;
+		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
+		rc = ini.SetValue(section, key, value);
 		rc = ini.SaveFile(FRIK_INI_PATH);
 	}
 

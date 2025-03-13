@@ -4,9 +4,7 @@
 #include "f4se/NiNodes.h"
 
 namespace F4VRBody {
-	// TODO: remove this in favor of ini setting
-	void dumpGeometryArray(StaticFunctionTag* base);
-
+	
 	class CullGeometryHandler
 	{
 	public:
@@ -17,6 +15,8 @@ namespace F4VRBody {
 		void preProcessHideGeometryIndexes(BSFadeNode* rn);
 
 		time_t _lastPreProcessTime = 0;
+		int _lastHiddenGeometryIdx = -1;
+		std::string _lastHiddenGeometryName;
 		std::vector<int> _hideFaceSkinGeometryIndexes;
 	};
 }
