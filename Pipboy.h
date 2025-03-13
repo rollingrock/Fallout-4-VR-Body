@@ -39,6 +39,9 @@ namespace F4VRBody {
 		void pipboyManagement();
 		void dampenPipboyScreen();
 		bool isLookingAtPipBoy();
+		void RightStickXSleep(int time);
+		void RightStickYSleep(int time);
+		void SecondaryTriggerSleep(int time);
 
 		Skeleton* _skelly;
 		OpenVRHookManagerAPI* _vrhook;
@@ -67,18 +70,9 @@ namespace F4VRBody {
 		bool _weaponStateDetected = false;
 		UInt32 _lastPipboyPage = 0;
 		float lastRadioFreq = 0.0;
+
+		bool _controlSleepStickyX = false;
+		bool _controlSleepStickyY = false;
+		bool _controlSleepStickyT = false;
 	};
-
-	// Not a fan of globals but it may be easiest to refactor code right now
-	extern Pipboy* g_pipboy;
-	
-	static void initPipboy(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
-		if (g_pipboy) {
-			_MESSAGE("Delete existing pipboy handler");
-			delete g_pipboy;
-		}
-
-		_MESSAGE("Init pipboy...");
-		g_pipboy = new Pipboy(skelly, hook);
-	}
 }

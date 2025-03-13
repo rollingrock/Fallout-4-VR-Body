@@ -12,9 +12,11 @@
 #include "f4se/PapyrusVM.h"
 //#include "f4se/GameForms.h"
 
-#include "include/SimpleIni.h"
 #include "SmoothMovementVR.h"
 #include "Offsets.h"
+#include "Pipboy.h"
+#include "ConfigurationMode.h"
+#include "CullGeometryHandler.h"
 
 #include <windows.h>
 
@@ -23,8 +25,11 @@ extern F4SEPapyrusInterface* g_papyrus;
 extern F4SEMessagingInterface* g_messaging;
 
 
-
 namespace F4VRBody {
+	
+	extern Pipboy* g_pipboy;
+	extern ConfigurationMode* g_configurationMode;
+	extern CullGeometryHandler* g_cullGeometry;
 
 	// TODO: bad global state variable that should be refactored
 	extern bool c_isLookingThroughScope;

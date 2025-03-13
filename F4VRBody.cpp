@@ -35,6 +35,10 @@ OpenVRHookManagerAPI* _vrhook;
 
 namespace F4VRBody {
 
+	Pipboy* g_pipboy = nullptr;
+	ConfigurationMode* g_configurationMode = nullptr;
+	CullGeometryHandler* g_cullGeometry = nullptr;
+
 	Skeleton* _skelly = nullptr;
 
 	bool isLoaded = false;
@@ -48,9 +52,6 @@ namespace F4VRBody {
 	float c_dynamicCameraHeight = 0.0;
 	bool c_selfieMode = false;
 	bool GameVarsConfigured = false;
-	bool _controlSleepStickyX = false;
-	bool _controlSleepStickyY = false;
-	bool _controlSleepStickyT = false;
 	bool c_weaponRepositionMasterMode = false;
 
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
@@ -313,15 +314,14 @@ namespace F4VRBody {
 		updateTransformsDown(node, true);
 	}
 
-	bool setSkelly(bool inPowerArmor) {
-
-		_DMESSAGE("setSkelly Start");
+	static bool InitSkelly(bool inPowerArmor) {
+		
 		if (!(*g_player)->unkF0) {
 			_DMESSAGE("loaded Data Not Set Yet");
 			return false;
 		}
 
-		_MESSAGE("loadedData = %016I64X", (*g_player)->unkF0);
+		_MESSAGE("Init Skelly - %s (Data: %016I64X)", inPowerArmor ? "PowerArmor" : "Regular", (*g_player)->unkF0);
 		if (!(*g_player)->unkF0->rootNode) {
 			_MESSAGE("rootnode not set yet!");
 			return false;
@@ -349,11 +349,12 @@ namespace F4VRBody {
 
 			_vrhook = RequestOpenVRHookManagerObject();
 
-			initPipboy(_skelly, _vrhook);
+			// init global handlers
+			g_pipboy = new Pipboy(_skelly, _vrhook);
+			g_configurationMode = new ConfigurationMode(_skelly, _vrhook);
+			g_cullGeometry = new CullGeometryHandler();
 
 			turnPipBoyOff();
-
-			initConfigurationMode(_skelly, _vrhook);
 
 			if (g_config->setScale) {
 				Setting* set = GetINISetting("fVrScale:VR");
@@ -368,6 +369,23 @@ namespace F4VRBody {
 		else {
 			return false;
 		}
+	}
+
+	/// <summary>
+	/// On switch from normal and power armor, reset the skelly and all dependencies with persistant data.
+	/// </summary>
+	static void resetSkellyAndDependencies() {
+		delete _skelly;
+		_skelly = nullptr;
+
+		delete g_pipboy;
+		g_pipboy = nullptr;
+
+		delete g_configurationMode;
+		g_configurationMode = nullptr;
+
+		delete g_cullGeometry;
+		g_cullGeometry = nullptr;
 	}
 
 	void smoothMovement()
@@ -445,35 +463,23 @@ namespace F4VRBody {
 
 		g_config->onUpdateFrame();
 
-		if (!inPowerArmorSticky) {
-			inPowerArmorSticky = detectInPowerArmor();
-
-			if (inPowerArmorSticky) {
-				delete _skelly;
-				firstTime = true;
-				return;
-			}
+		auto wasInPowerArmor = inPowerArmorSticky;
+		inPowerArmorSticky = detectInPowerArmor();
+		if (wasInPowerArmor != inPowerArmorSticky) {
+			_MESSAGE("Power Armor State Changed, reset skelly");
+			resetSkellyAndDependencies();
+			firstTime = true;
+			return;
 		}
-		else {
-			inPowerArmorSticky = detectInPowerArmor();
-
-			if (!inPowerArmorSticky) {
-				delete _skelly;
-				firstTime = true;
-				return;
-			}
-		}
-
 
 		if (!_skelly || firstTime) {
-			if (!setSkelly(inPowerArmorSticky)) {
+			if (!InitSkelly(inPowerArmorSticky)) {
 				return;
 			}
 
-			//	StackPtr<BSAnimationManager*> manager;
-
-				//AIProcess_getAnimationManager((uint64_t)(*g_player)->middleProcess, manager);
-				//BSAnimationManager_setActiveGraph(manager.p, 0);
+			//StackPtr<BSAnimationManager*> manager;
+			//AIProcess_getAnimationManager((uint64_t)(*g_player)->middleProcess, manager);
+			//BSAnimationManager_setActiveGraph(manager.p, 0);
 			firstTime = false;
 			return;
 		}
@@ -591,7 +597,7 @@ namespace F4VRBody {
 		_skelly->hideFistHelpers();
 		_skelly->showHidePAHUD();
 
-		cullPlayerGeometry();
+		g_cullGeometry->cullPlayerGeometry();
 
 		// project body out in front of the camera for debug purposes
 		_DMESSAGE("Selfie Time");

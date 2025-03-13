@@ -76,17 +76,4 @@ namespace F4VRBody {
 		float _cameraHeight_bkup = 0;
 		float _PACameraHeight_bkup = 0;
 	};
-
-	// Not a fan of globals but it may be easiest to refactor code right now
-	extern ConfigurationMode* g_configurationMode;
-
-	static void initConfigurationMode(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
-		if (g_configurationMode) {
-			_MESSAGE("Delete existing configuration mode handler");
-			delete g_configurationMode;
-		}
-
-		_MESSAGE("Init configuration mode...");
-		g_configurationMode = new ConfigurationMode(skelly, hook);
-	}
 }

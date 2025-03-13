@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "f4se/PapyrusEvents.h"
 #include <filesystem>
+#include <fstream>
 
 #define PI 3.14159265358979323846
 
@@ -240,21 +241,6 @@ namespace F4VRBody {
 				SendInput(1, &input, sizeof(INPUT));
 			}
 		}
-	}
-
-	void RightStickXSleep(int time) { // Prevents Continous Input from Right Stick X Axis
-		Sleep(time);
-		_controlSleepStickyX = false;
-	}
-
-	void RightStickYSleep(int time) { // Prevents Continous Input from Right Stick Y Axis
-		Sleep(time);
-		_controlSleepStickyY = false;
-	}
-
-	void SecondaryTriggerSleep(int time) { // Used to determine if secondary trigger received a long or short press 
-		Sleep(time);
-		_controlSleepStickyT = false;
 	}
 
 	void turnPipBoyOn() {
