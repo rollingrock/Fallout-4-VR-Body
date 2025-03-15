@@ -24,9 +24,12 @@ namespace F4VRBody {
 	constexpr const char* PIPBOY_SCREEN_OFFSETS_PATH = ".\\Data\\FRIK_Config\\Pipboy_Offsets\\PipboyPosition.json";
 	static const std::string WEAPONS_OFFSETS_PATH{ ".\\Data\\FRIK_Config\\Weapons_Offsets" };
 
-	constexpr const char* INI_SECTION_MAIN = "Fallout4VRBody";
-	constexpr const char* INI_SECTION_DEBUG = "Debug";
-	constexpr const char* INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
+	/// <summary>
+	/// Open the FRIK.ini file in Notepad for editing.
+	/// </summary>
+	void Config::OpenInNotepad() const {
+		ShellExecute(0, "open", "notepad.exe", FRIK_INI_PATH, 0, SW_SHOWNORMAL);
+	}
 
 	/// <summary>
 	/// Check if debug data dump is requested for the given name.
@@ -41,7 +44,7 @@ namespace F4VRBody {
 		}
 		_debugDumpDataOnceNames = _debugDumpDataOnceNames.erase(idx, strlen(name));
 		// write to INI for auto-reload not to re-enable it
-		saveFrikIniValue("DebugDumpDataOnceNames", INI_SECTION_DEBUG, _debugDumpDataOnceNames.c_str());
+		saveFrikIniValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", _debugDumpDataOnceNames.c_str());
 		
 		_MESSAGE("---- Debug Dump Data check passed for '%s' ----", name);
 		return true;
@@ -53,11 +56,11 @@ namespace F4VRBody {
 	/// </summary>
 	void Config::onUpdateFrame() {
 		try {
-			if (reloadConfigInterval <= 0)
+			if (_reloadConfigInterval <= 0)
 				return;
 
 			auto now = std::time(nullptr);
-			if (now - lastReloadTime < reloadConfigInterval)
+			if (now - lastReloadTime < _reloadConfigInterval)
 				return;
 
 			_VMESSAGE("Reloading FRIK.ini file...");
@@ -109,7 +112,7 @@ namespace F4VRBody {
 
 		version = ini.GetLongValue(INI_SECTION_DEBUG, "Version", 0);
 		logLevel = ini.GetLongValue(INI_SECTION_DEBUG, "LogLevel", 3);
-		reloadConfigInterval = ini.GetLongValue(INI_SECTION_DEBUG, "ReloadConfigInterval", 3);
+		_reloadConfigInterval = ini.GetLongValue(INI_SECTION_DEBUG, "ReloadConfigInterval", 3);
 		debugFlowFlag = (int)ini.GetLongValue(INI_SECTION_DEBUG, "DebugFlowFlag", 0);
 		_debugDumpDataOnceNames = ini.GetValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", "");
 
@@ -351,29 +354,29 @@ namespace F4VRBody {
 	/// <summary>
 	/// Save specific key and bool value into FRIK.ini file.
 	/// </summary>
-	void Config::saveFrikIniValue(const char* key, bool value) {
+	void Config::saveFrikIniValue(const char* section, const char* key, bool value) {
 		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value ? "true" : "false");
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, key, value);
+		rc = ini.SetBoolValue(section, key, value);
 		rc = ini.SaveFile(FRIK_INI_PATH);
 	}
 
 	/// <summary>
 	/// Save specific key and double value into FRIK.ini file.
 	/// </summary>
-	void Config::saveFrikIniValue(const char* key, double value) {
+	void Config::saveFrikIniValue(const char* section, const char* key, double value) {
 		_MESSAGE("Config: Saving \"%s = %f\" to FRIK.ini", key, value);
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, key, value);
+		rc = ini.SetDoubleValue(section, key, value);
 		rc = ini.SaveFile(FRIK_INI_PATH);
 	}
 
 	/// <summary>
 	/// Save specific key and string value into FRIK.ini file.
 	/// </summary>
-	void Config::saveFrikIniValue(const char* key, const char* section, const char* value) {
+	void Config::saveFrikIniValue(const char* section, const char* key, const char* value) {
 		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value);
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);

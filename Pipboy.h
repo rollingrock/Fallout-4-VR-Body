@@ -28,6 +28,7 @@ namespace F4VRBody {
 			return _isOperatingPipboy; 
 		}
 
+		void turnOn();
 		void swapPipboy();
 		void replaceMeshes(bool force);
 		void onUpdate();

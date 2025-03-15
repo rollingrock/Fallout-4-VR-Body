@@ -123,23 +123,9 @@ namespace F4VRBody {
 	void update();
 	void startUp();
 	// Native funcs to expose to papyrus
-	bool HasKeyword();
-	void saveStates(StaticFunctionTag* base);
-	void calibrate(StaticFunctionTag* base);
-	void togglePipboyVis(StaticFunctionTag* base);
-	void toggleSelfieMode(StaticFunctionTag* base);
-	void makeTaller(StaticFunctionTag* base);
-	void makeShorter(StaticFunctionTag* base);
-	void moveUp(StaticFunctionTag* base);
-	void moveDown(StaticFunctionTag* base);
-	void moveForward(StaticFunctionTag* base);
-	void moveBackward(StaticFunctionTag* base);
-	void increaseScale(StaticFunctionTag* base);
-	void decreaseScale(StaticFunctionTag* base);
 	void holsterWeapon();
 	void drawWeapon();
-	bool RegisterFuncs(VirtualMachine* vm);
-	void restoreGeometry();
+	bool registerPapyrusFuncs(VirtualMachine* vm);
 
 	inline NiNode* loadNifFromFile(char* path) {
 		uint64_t flags[2];

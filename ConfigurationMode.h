@@ -24,21 +24,32 @@ namespace F4VRBody {
 			return _calibrateModeActive; 
 		}
 
+		inline void enterConfigurationMode() {
+			_calibrateModeActive = true;
+		}
+
 		inline bool isPipBoyConfigModeActive() const {
 			return _isPBConfigModeActive;
 		}
 
 		void onUpdate();
 		void exitPBConfig();
+		void openPipboyConfigurationMode();
+		void calibratePlayerHeightAndArms();
 
 	private:
 		void configModeExit();
 		void pipboyConfigurationMode();
 		void mainConfigurationMode();
+		void enterPipboyConfigMode();
 		void checkWeaponRepositionPipboyConflict();
+		void calibratePlayerHeightAndArmsAfterDelay();
 
 		Skeleton* _skelly;
 		OpenVRHookManagerAPI* _vrhook;
+
+		// height calibration
+		time_t _calibratePlayerHeightTime = 0;
 
 		// persistant fields to be used for general configuration menu
 		bool _MCTouchbuttons[10] = { false, false, false, false, false, false, false, false, false, false };

@@ -5,6 +5,10 @@
 
 namespace F4VRBody {
 
+	constexpr const char* INI_SECTION_MAIN = "Fallout4VRBody";
+	constexpr const char* INI_SECTION_DEBUG = "Debug";
+	constexpr const char* INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
+
 	/// <summary>
 	/// Type of weapon possition offsets.
 	/// TODO: What is offhand?
@@ -31,22 +35,33 @@ namespace F4VRBody {
 
 		inline void togglePipBoyTorchOnArm() {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
-			saveFrikIniValue("PipBoyTorchOnArm", isPipBoyTorchOnArm);
+			saveFrikIniValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		}
 		inline void toggleIsHoloPipboy() {
 			isHoloPipboy = !isHoloPipboy;
-			saveFrikIniValue("HoloPipBoyEnabled", isHoloPipboy);
+			saveFrikIniValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
 		}
 		inline void toggleDampenPipboyScreen() {
 			dampenPipboyScreen = !dampenPipboyScreen;
-			saveFrikIniValue("DampenPipboyScreen", dampenPipboyScreen);
+			saveFrikIniValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
 		}
 		inline void togglePipBoyOpenWhenLookAt() {
 			pipBoyOpenWhenLookAt = !pipBoyOpenWhenLookAt;
-			saveFrikIniValue("PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+			saveFrikIniValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
 		}
 		inline void savePipboyScale(double pipboyScale) {
-			saveFrikIniValue("PipboyScale", pipboyScale);
+			saveFrikIniValue(INI_SECTION_MAIN, "PipboyScale", pipboyScale);
+		}
+		inline void savePlayerHeight(double pPlayerHeight) {
+			playerHeight = pPlayerHeight;
+			saveFrikIniValue(INI_SECTION_MAIN, "PlayerHeight", pPlayerHeight);
+		}
+		inline int getAutoReloadConfigInterval() const {
+			return _reloadConfigInterval;
+		}
+		inline void toggleAutoReloadConfig() {
+			_reloadConfigInterval = _reloadConfigInterval == 0 ? 5 : 0;
+			saveFrikIniValue(INI_SECTION_DEBUG, "ReloadConfigInterval", std::to_string(_reloadConfigInterval).c_str());
 		}
 
 		NiTransform getPipboyOffset();
@@ -54,6 +69,7 @@ namespace F4VRBody {
 		std::optional<NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) const;
 		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode);
 		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode);
+		void OpenInNotepad() const;
 
 		// from F4 INIs
 		bool leftHandedMode = false;
@@ -160,16 +176,16 @@ namespace F4VRBody {
 		void updateFrikINIVersion();
 		void loadHideMeshes();
 		void loadHideEquipmentSlots();
-		void saveFrikIniValue(const char* pKey, bool value);
-		void saveFrikIniValue(const char* pKey, double value);
-		void saveFrikIniValue(const char* pKey, const char* section, const char* value);
+		void saveFrikIniValue(const char* section, const char* pKey, bool value);
+		void saveFrikIniValue(const char* section, const char* pKey, double value);
+		void saveFrikIniValue(const char* section, const char* pKey, const char* value);
 		void loadPipboyOffsets();
 		void loadWeaponsOffsets();
 		void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const;
 		void migrateConfigFilesIfNeeded();
 
 		// Reload config interval in seconds (0 - no reload)
-		int reloadConfigInterval = 0;
+		int _reloadConfigInterval = 0;
 		time_t lastReloadTime = 0;
 		// The log level to set for the logger
 		int logLevel = 0;

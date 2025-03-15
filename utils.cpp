@@ -6,6 +6,7 @@
 #include "f4se/PapyrusEvents.h"
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 
 #define PI 3.14159265358979323846
 
@@ -16,6 +17,12 @@ namespace F4VRBody {
 
 	typedef Setting* (*_SettingCollectionList_GetPtr)(SettingCollectionList* list, const char* name);
 	RelocAddr<_SettingCollectionList_GetPtr> SettingCollectionList_GetPtr(0x501500);
+
+	std::string toStringWithPrecision(double value, int precision) {
+		std::ostringstream stream;
+		stream << std::fixed << std::setprecision(precision) << value;
+		return stream.str();
+	}
 
     float vec3_len(const NiPoint3& v1) {
         return sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
