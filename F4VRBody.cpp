@@ -702,10 +702,6 @@ namespace F4VRBody {
 		}
 	}
 
-	void saveStates(StaticFunctionTag* base) {
-		g_config->save();
-	}
-
 	void setFingerPositionScalar(StaticFunctionTag* base, bool isLeft, float thumb, float index, float middle, float ring, float pinky) {
 		if (isLeft) {
 			handPapyrusHasControl["LArm_Finger11"] = true;
@@ -810,216 +806,62 @@ namespace F4VRBody {
 		}
 	}
 
-	void calibrate(StaticFunctionTag* base) {
-
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		Sleep(2000);
-		PlayerNodes* pn = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
-
-		 g_config->playerHeight = pn->UprightHmdNode->m_localTransform.pos.z;
-
-		_MESSAGE("Calibrated Height: %f  arm length: %f %f", g_config->playerHeight, g_config->armLength);
-		ShowMessagebox("FRIK Config Mode");
+	static void calibratePlayerHeightAndArms(StaticFunctionTag* base) {
+		_MESSAGE("Calibrate player height...");
+		g_configurationMode->calibratePlayerHeightAndArms();
 	}
 
-	void togglePAHUD(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->showPAHUD = !g_config->showPAHUD;
+	static void openMainConfigurationMode(StaticFunctionTag* base) {
+		_MESSAGE("Open Main Configuration Mode...");
+		g_configurationMode->enterConfigurationMode();
 	}
 
-	void toggleHeadVis(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-		 g_config->hideHead = !g_config->hideHead;
+	static void openPipboyConfigurationMode(StaticFunctionTag* base) {
+		_MESSAGE("Open Pipboy Configuration Mode...");
+		g_configurationMode->openPipboyConfigurationMode();
 	}
 
-	void togglePipboyVis(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->hidePipboy = !g_config->hidePipboy;
-
+	static void openFrikIniFile(StaticFunctionTag* base) {
+		_MESSAGE("Open FRIK.ini file in notepad...");
+		g_config->OpenInNotepad();
 	}
 
-	void toggleSelfieMode(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 c_selfieMode = !c_selfieMode;
+	static UInt32 getFrikIniAutoReloading(StaticFunctionTag* base) {
+		return g_config->getAutoReloadConfigInterval() > 0 ? 1 : 0;
 	}
 
-	static void setSelfieMode(StaticFunctionTag* base, bool isSelfieMode) {
-		if (c_selfieMode == isSelfieMode)
-			return;
-
-		toggleSelfieMode(base);
+	static UInt32 toggleReloadFrikIniConfig(StaticFunctionTag* base) {
+		_MESSAGE("Toggle reload FRIK.ini config file...");
+		g_config->toggleAutoReloadConfig();
+		return getFrikIniAutoReloading(base);
 	}
 
-	void toggleArmsOnlyMode(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->armsOnly = !g_config->armsOnly;
+	static UInt32 getWeaponRepositionMode(StaticFunctionTag* base) {
+		return c_weaponRepositionMasterMode ? 1 : 0;
 	}
 
-	void toggleStaticGripping(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->staticGripping = !g_config->staticGripping;
-
-		bool gripConfig = !g_config->staticGripping;
-		g_messaging->Dispatch(g_pluginHandle, 15, (void*)gripConfig, sizeof(bool), "FO4VRBETTERSCOPES");
+	static UInt32 toggleWeaponRepositionMode(StaticFunctionTag* base) {
+		_MESSAGE("Toggle Weapon Reposition Mode: %s", !c_weaponRepositionMasterMode ? "ON" : "OFF");
+		c_weaponRepositionMasterMode = !c_weaponRepositionMasterMode;
+		return getWeaponRepositionMode(base);
 	}
 
-	bool isLeftHandedMode(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
+	static bool isLeftHandedMode(StaticFunctionTag* base) {
 		return *Offsets::iniLeftHandedMode;
 	}
 
-
-	void moveCameraUp(StaticFunctionTag* base){
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->cameraHeight += 2.0f;
+	static void setSelfieMode(StaticFunctionTag* base, bool isSelfieMode) {
+		_MESSAGE("Set Selfie Mode: %s", isSelfieMode ? "ON" : "OFF");
+		c_selfieMode = isSelfieMode;
 	}
 
-	void moveCameraDown(StaticFunctionTag* base){
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->cameraHeight -= 2.0f;
+	static void toggleSelfieMode(StaticFunctionTag* base) {
+		setSelfieMode(base, !c_selfieMode);
 	}
-
-	void setDynamicCameraHeight(StaticFunctionTag* base, float dynamicCameraHeight) {
-		 c_dynamicCameraHeight = dynamicCameraHeight;
-	}
-
-	void makeTaller(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->playerHeight += 2.0f;
-	}
-
-	void makeShorter(StaticFunctionTag* base){
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->playerHeight -= 2.0f;
-	}
-
-	void moveUp(StaticFunctionTag* base){
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->playerOffset_up += 1.0f;
-	}
-
-	void moveDown(StaticFunctionTag* base){
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->playerOffset_up -= 1.0f;
-	}
-
-	void moveForward(StaticFunctionTag* base){
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->playerOffset_forward += 1.0f;
-	}
-
-	void moveBackward(StaticFunctionTag* base){
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->playerOffset_forward -= 1.0f;
-	}
-
-	void increaseScale(StaticFunctionTag* base){
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->fVrScale += 1.0f;
-		Setting* set = GetINISetting("fVrScale:VR");
-		set->SetDouble(g_config->fVrScale);
-	}
-
-	void decreaseScale(StaticFunctionTag* base){
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->fVrScale -= 1.0f;
-		Setting* set = GetINISetting("fVrScale:VR");
-		set->SetDouble(g_config->fVrScale);
-	}
-
-	void handUiXUp(StaticFunctionTag* base) {
-		 g_config->handUI_X += 1.0f;
-	}
-
-	void handUiXDown(StaticFunctionTag* base) {
-		 g_config->handUI_X -= 1.0f;
-	}
-
-	void handUiYUp(StaticFunctionTag* base) {
-		 g_config->handUI_Y += 1.0f;
-	}
-
-	void handUiYDown(StaticFunctionTag* base) {
-		 g_config->handUI_Y -= 1.0f;
-	}
-
-	void handUiZUp(StaticFunctionTag* base) {
-		 g_config->handUI_Z += 1.0f;
-	}
-
-	void handUiZDown(StaticFunctionTag* base) {
-		 g_config->handUI_Z -= 1.0f;
+	
+	static void setDynamicCameraHeight(StaticFunctionTag* base, float dynamicCameraHeight) {
+		_MESSAGE("Set Dynamic Camera Height: %f", dynamicCameraHeight);
+		c_dynamicCameraHeight = dynamicCameraHeight;
 	}
 
 	// Sphere bone detection funcs
@@ -1136,101 +978,26 @@ namespace F4VRBody {
 		}
 	}
 
-	void toggleDampenHands(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
+	/// <summary>
+	/// Register code for Papyrus scripts.
+	/// </summary>
+	bool registerPapyrusFuncs(VirtualMachine* vm) {
+		// Register code to be accisible from Settings Holotabe via Papyrus scripts
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Calibrate", "FRIK:FRIK", F4VRBody::calibratePlayerHeightAndArms, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenMainConfigurationMode", "FRIK:FRIK", F4VRBody::openMainConfigurationMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenPipboyConfigurationMode", "FRIK:FRIK", F4VRBody::openPipboyConfigurationMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleWeaponRepositionMode", "FRIK:FRIK", F4VRBody::toggleWeaponRepositionMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenFrikIniFile", "FRIK:FRIK", F4VRBody::openFrikIniFile, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleReloadFrikIniConfig", "FRIK:FRIK", F4VRBody::toggleReloadFrikIniConfig, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetWeaponRepositionMode", "FRIK:FRIK", F4VRBody::getWeaponRepositionMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetFrikIniAutoReloading", "FRIK:FRIK", F4VRBody::getFrikIniAutoReloading, vm));
 
-		 g_config->dampenHands = !g_config->dampenHands;
-	}
-
-	void increaseDampenRotation(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->dampenHandsRotation += 0.05f;
-		 g_config->dampenHandsRotation = g_config->dampenHandsRotation >= 1.0f ? 0.95f : g_config->dampenHandsRotation;
-	}
-
-	void decreaseDampenRotation(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->dampenHandsRotation -= 0.05f;
-		 g_config->dampenHandsRotation = g_config->dampenHandsRotation <= 0.0f ? 0.05f : g_config->dampenHandsRotation;
-	}
-
-	void increaseDampenTranslation(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->dampenHandsTranslation += 0.05f;
-
-		 g_config->dampenHandsTranslation = g_config->dampenHandsTranslation >= 1.0f ? 0.95f : g_config->dampenHandsTranslation;
-	}
-
-	void decreaseDampenTranslation(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 g_config->dampenHandsTranslation -= 0.05f;
-		 g_config->dampenHandsTranslation = g_config->dampenHandsTranslation <= 0.0f ? 0.5f : g_config->dampenHandsTranslation;
-	}
-
-	void toggleRepositionMasterMode(StaticFunctionTag* base) {
-		BSFixedString menuName("BookMenu");
-		if ((*g_ui)->IsMenuRegistered(menuName)) {
-			CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-		}
-
-		 c_weaponRepositionMasterMode = !c_weaponRepositionMasterMode;
-	}
-
-
-	bool RegisterFuncs(VirtualMachine* vm) {
-
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("saveStates", "FRIK:FRIK", F4VRBody::saveStates, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Calibrate", "FRIK:FRIK", F4VRBody::calibrate, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePAHud", "FRIK:FRIK", F4VRBody::togglePAHUD, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleHeadVis", "FRIK:FRIK", F4VRBody::toggleHeadVis, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("togglePipboyVis", "FRIK:FRIK", F4VRBody::togglePipboyVis, vm));
+		/// Register mod public API to be used by other mods via Papyrus scripts
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("isLeftHandedMode", "FRIK:FRIK", F4VRBody::isLeftHandedMode, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, float>("setDynamicCameraHeight", "FRIK:FRIK", F4VRBody::setDynamicCameraHeight, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", F4VRBody::toggleSelfieMode, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("setSelfieMode", "FRIK:FRIK", F4VRBody::setSelfieMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleArmsOnlyMode", "FRIK:FRIK", F4VRBody::toggleArmsOnlyMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleStaticGripping", "FRIK:FRIK", F4VRBody::toggleStaticGripping, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("isLeftHandedMode", "FRIK:FRIK", F4VRBody::isLeftHandedMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraUp", "FRIK:FRIK", F4VRBody::moveCameraUp, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveCameraDown", "FRIK:FRIK", F4VRBody::moveCameraDown, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, float>("setDynamicCameraHeight", "FRIK:FRIK", F4VRBody::setDynamicCameraHeight, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeTaller", "FRIK:FRIK", F4VRBody::makeTaller, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("makeShorter", "FRIK:FRIK", F4VRBody::makeShorter, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveUp", "FRIK:FRIK", F4VRBody::moveUp, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveDown", "FRIK:FRIK", F4VRBody::moveDown, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveForward", "FRIK:FRIK", F4VRBody::moveForward, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", F4VRBody::moveBackward, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("increaseScale", "FRIK:FRIK", F4VRBody::increaseScale, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("decreaseScale", "FRIK:FRIK", F4VRBody::decreaseScale, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleDampenHands", "FRIK:FRIK", F4VRBody::toggleDampenHands, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("increaseDampenRotation", "FRIK:FRIK", F4VRBody::increaseDampenRotation, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("decreaseDampenRotation", "FRIK:FRIK", F4VRBody::decreaseDampenRotation, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("increaseDampenTranslation", "FRIK:FRIK", F4VRBody::increaseDampenTranslation, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("decreaseDampenTranslation", "FRIK:FRIK", F4VRBody::decreaseDampenTranslation, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleRepositionMasterMode", "FRIK:FRIK", F4VRBody::toggleRepositionMasterMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiXUp", "FRIK:FRIK", F4VRBody::handUiXUp, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiXDown", "FRIK:FRIK", F4VRBody::handUiXDown, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiYUp", "FRIK:FRIK", F4VRBody::handUiYUp, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiYDown", "FRIK:FRIK", F4VRBody::handUiYDown, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiZUp", "FRIK:FRIK", F4VRBody::handUiZUp, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("handUiZDown", "FRIK:FRIK", F4VRBody::handUiZDown, vm));
+		// TODO: Bone Sphere interaction related APIs
 		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, UInt32, float, BSFixedString>("RegisterBoneSphere", "FRIK:FRIK", F4VRBody::RegisterBoneSphere, vm));
 		vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, UInt32, float, BSFixedString, VMArray<float> >("RegisterBoneSphereOffset", "FRIK:FRIK", F4VRBody::RegisterBoneSphereOffset, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("DestroyBoneSphere", "FRIK:FRIK", F4VRBody::DestroyBoneSphere, vm));
@@ -1243,5 +1010,4 @@ namespace F4VRBody {
 
 		return true;
 	}
-
 }

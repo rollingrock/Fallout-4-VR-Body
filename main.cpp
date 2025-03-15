@@ -107,7 +107,7 @@ extern "C" {
 
 			_MESSAGE("Register papyrus funcs...");
 			g_papyrus = (F4SEPapyrusInterface*)a_f4se->QueryInterface(kInterface_Papyrus);
-			if (!g_papyrus->Register(F4VRBody::RegisterFuncs)) {
+			if (!g_papyrus->Register(F4VRBody::registerPapyrusFuncs)) {
 				throw std::exception("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
 			}
 
