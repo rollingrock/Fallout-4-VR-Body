@@ -7,6 +7,17 @@
 
 namespace F4VRBody {
 
+	constexpr const char* meshName[12] = { "PB-MainTitleTrans", "PB-Tile07Trans", "PB-Tile03Trans", "PB-Tile08Trans", "PB-Tile02Trans", "PB-Tile01Trans", "PB-Tile04Trans", "PB-Tile05Trans", "PB-Tile06Trans", "PB-Tile09Trans", "PB-Tile10Trans", "PB-Tile11Trans" };
+	constexpr const char* meshName2[12] = { "PB-MainTitle", "PB-Tile07", "PB-Tile03", "PB-Tile08", "PB-Tile02", "PB-Tile01", "PB-Tile04", "PB-Tile05", "PB-Tile06", "PB-Tile09", "PB-Tile10", "PB-Tile11" };
+
+	/// <summary>
+	/// Open Pipboy configuration mode which also requires Pipboy to be open.
+	/// </summary>
+	void ConfigurationMode::openPipboyConfigurationMode() {
+		g_pipboy->turnOn();
+		enterPipboyConfigMode();
+	}
+
 	/// <summary>
 	/// Exit Main FRIK Config Mode
 	/// </summary>
@@ -355,6 +366,7 @@ namespace F4VRBody {
 
 	void ConfigurationMode::onUpdate() {
 		
+		calibratePlayerHeightAndArmsAfterDelay();
 		checkWeaponRepositionPipboyConflict();
 		pipboyConfigurationMode();
 		mainConfigurationMode();
@@ -458,8 +470,6 @@ namespace F4VRBody {
 			bool ExitButtonPressed = _PBTouchbuttons[9];
 			bool GlanceButtonPressed = _PBTouchbuttons[10];
 			bool DampenScreenButtonPressed = _PBTouchbuttons[11];
-			char* meshName[12] = { "PB-MainTitleTrans", "PB-Tile07Trans", "PB-Tile03Trans", "PB-Tile08Trans", "PB-Tile02Trans", "PB-Tile01Trans", "PB-Tile04Trans", "PB-Tile05Trans", "PB-Tile06Trans", "PB-Tile09Trans", "PB-Tile10Trans", "PB-Tile11Trans" };
-			char* meshName2[12] = { "PB-MainTitle", "PB-Tile07", "PB-Tile03", "PB-Tile08", "PB-Tile02", "PB-Tile01", "PB-Tile04", "PB-Tile05", "PB-Tile06", "PB-Tile09", "PB-Tile10", "PB-Tile11" };
 			static BSFixedString wandPipName("PipboyRoot");
 			NiAVObject* pbRoot = _skelly->getPlayerNodes()->SecondaryWandNode->GetObjectByName(&wandPipName);
 			if (!pbRoot) {
@@ -476,56 +486,12 @@ namespace F4VRBody {
 				_3rdPipboy = _skelly->getRightArm().forearm3->GetObjectByName(&pipName);
 
 			}
-			if (PBConfigButtonPressed && !_isPBConfigModeActive) { // Enter Pipboy Config Mode by holding down favorites button.
+			// Enter Pipboy Config Mode by holding down favorites button.
+			if (PBConfigButtonPressed && !_isPBConfigModeActive) { 
+				// TODO: change from counter to timer so it will be fps independent
 				_PBConfigModeEnterCounter += 1;
 				if (_PBConfigModeEnterCounter > 200) {
-					BSFixedString menuName("FavoritesMenu");
-					if ((*g_ui)->IsMenuOpen(menuName)) {
-						if ((*g_ui)->IsMenuRegistered(menuName)) {
-							CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
-						}
-					}
-					if (_vrhook != nullptr) {
-						g_config->leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
-					}
-					NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
-					NiCloneProcess proc;
-					proc.unk18 = Offsets::cloneAddr1;
-					proc.unk48 = Offsets::cloneAddr2;
-					NiNode* HUD = Offsets::cloneNode(retNode, &proc);
-					HUD->m_name = BSFixedString("PBCONFIGHUD");
-					NiNode* UIATTACH = _skelly->getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
-					UIATTACH->AttachChild((NiAVObject*)HUD, true);
-					char* MainHud[12] = { "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif", "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile09.nif" , "Data/Meshes/FRIK/UI-Tile10.nif", "Data/Meshes/FRIK/UI-Tile11.nif" };
-					char* MainHud2[12] = { "Data/Meshes/FRIK/PB-MainTitle.nif", "Data/Meshes/FRIK/PB-Tile07.nif", "Data/Meshes/FRIK/PB-Tile03.nif", "Data/Meshes/FRIK/PB-Tile08.nif", "Data/Meshes/FRIK/PB-Tile02.nif", "Data/Meshes/FRIK/PB-Tile01.nif", "Data/Meshes/FRIK/PB-Tile04.nif", "Data/Meshes/FRIK/PB-Tile05.nif", "Data/Meshes/FRIK/PB-Tile06.nif", "Data/Meshes/FRIK/PB-Tile09.nif", "Data/Meshes/FRIK/PB-Tile10.nif" , "Data/Meshes/FRIK/PB-Tile11.nif" };
-					for (int i = 0; i <= 11; i++) {
-						NiNode* retNode = loadNifFromFile(MainHud[i]);
-						NiCloneProcess proc;
-						proc.unk18 = Offsets::cloneAddr1;
-						proc.unk48 = Offsets::cloneAddr2;
-						NiNode* UI = Offsets::cloneNode(retNode, &proc);
-						UI->m_name = BSFixedString(meshName2[i]);
-						HUD->AttachChild((NiAVObject*)UI, true);
-						retNode = loadNifFromFile(MainHud2[i]);
-						NiNode* UI2 = Offsets::cloneNode(retNode, &proc);
-						UI2->m_name = BSFixedString(meshName[i]);
-						UI->AttachChild((NiAVObject*)UI2, true);
-						if (i == 10 && g_config->pipBoyOpenWhenLookAt) {
-							retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-							NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
-							UI3->m_name = BSFixedString("PBGlanceMarker");
-							UI->AttachChild((NiAVObject*)UI3, true);
-						}
-						if (i == 11 && g_config->dampenPipboyScreen) {
-							retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-							NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
-							UI3->m_name = BSFixedString("PBDampenMarker");
-							UI->AttachChild((NiAVObject*)UI3, true);
-						}
-					}
-					_skelly->setConfigModeHandPose();
-					_isPBConfigModeActive = true;
-					_PBConfigModeEnterCounter = 0;
+					enterPipboyConfigMode();
 				}
 			}
 			else if (!PBConfigButtonPressed && !_isPBConfigModeActive) {
@@ -722,6 +688,56 @@ namespace F4VRBody {
 		}
 	}
 
+	void ConfigurationMode::enterPipboyConfigMode() {
+		BSFixedString menuName("FavoritesMenu");
+		if ((*g_ui)->IsMenuOpen(menuName)) {
+			if ((*g_ui)->IsMenuRegistered(menuName)) {
+				CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+			}
+		}
+		if (_vrhook != nullptr) {
+			g_config->leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
+		}
+		NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
+		NiCloneProcess proc;
+		proc.unk18 = Offsets::cloneAddr1;
+		proc.unk48 = Offsets::cloneAddr2;
+		NiNode* HUD = Offsets::cloneNode(retNode, &proc);
+		HUD->m_name = BSFixedString("PBCONFIGHUD");
+		NiNode* UIATTACH = _skelly->getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
+		UIATTACH->AttachChild((NiAVObject*)HUD, true);
+		char* MainHud[12] = { "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif", "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile09.nif" , "Data/Meshes/FRIK/UI-Tile10.nif", "Data/Meshes/FRIK/UI-Tile11.nif" };
+		char* MainHud2[12] = { "Data/Meshes/FRIK/PB-MainTitle.nif", "Data/Meshes/FRIK/PB-Tile07.nif", "Data/Meshes/FRIK/PB-Tile03.nif", "Data/Meshes/FRIK/PB-Tile08.nif", "Data/Meshes/FRIK/PB-Tile02.nif", "Data/Meshes/FRIK/PB-Tile01.nif", "Data/Meshes/FRIK/PB-Tile04.nif", "Data/Meshes/FRIK/PB-Tile05.nif", "Data/Meshes/FRIK/PB-Tile06.nif", "Data/Meshes/FRIK/PB-Tile09.nif", "Data/Meshes/FRIK/PB-Tile10.nif" , "Data/Meshes/FRIK/PB-Tile11.nif" };
+		for (int i = 0; i <= 11; i++) {
+			NiNode* retNode = loadNifFromFile(MainHud[i]);
+			NiCloneProcess proc;
+			proc.unk18 = Offsets::cloneAddr1;
+			proc.unk48 = Offsets::cloneAddr2;
+			NiNode* UI = Offsets::cloneNode(retNode, &proc);
+			UI->m_name = BSFixedString(meshName2[i]);
+			HUD->AttachChild((NiAVObject*)UI, true);
+			retNode = loadNifFromFile(MainHud2[i]);
+			NiNode* UI2 = Offsets::cloneNode(retNode, &proc);
+			UI2->m_name = BSFixedString(meshName[i]);
+			UI->AttachChild((NiAVObject*)UI2, true);
+			if (i == 10 && g_config->pipBoyOpenWhenLookAt) {
+				retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+				NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
+				UI3->m_name = BSFixedString("PBGlanceMarker");
+				UI->AttachChild((NiAVObject*)UI3, true);
+			}
+			if (i == 11 && g_config->dampenPipboyScreen) {
+				retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+				NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
+				UI3->m_name = BSFixedString("PBDampenMarker");
+				UI->AttachChild((NiAVObject*)UI3, true);
+			}
+		}
+		_skelly->setConfigModeHandPose();
+		_isPBConfigModeActive = true;
+		_PBConfigModeEnterCounter = 0;
+	}
+
 	/// <summary>
 	/// Check if currently in weapon reposition mode to enable or disable the rotation stick depending if pipboy is open.
 	/// Needed to operate vanilla in-fron or projected pipboy when also doing weapon repositioning.
@@ -732,4 +748,29 @@ namespace F4VRBody {
 			return;
 		rotationStickEnabledToggle(isAnyPipboyOpen() && !g_pipboy->isOperatingPipboy());
 	}
+
+	/// <summary>
+	/// Actual callibration will happen after 4-5 seconds to let the player stand.
+	/// </summary>
+	void ConfigurationMode::calibratePlayerHeightAndArms() {
+		ShowNotification("FRIK Calibration: Stand Up Straight and Tall for 5 seconds");
+		_calibratePlayerHeightTime = std::time(nullptr);
+	}
+
+	/// <summary>
+	/// Use the on frame update tick to run player hight calculation after a delay to allow for the player to get into position.
+	/// </summary>
+	void ConfigurationMode::calibratePlayerHeightAndArmsAfterDelay() {
+		if (_calibratePlayerHeightTime == 0)
+			return;
+		
+		// TODO: can we measure arm lenght?
+		if (time(nullptr) - _calibratePlayerHeightTime > 4) {
+			_calibratePlayerHeightTime = 0;
+			PlayerNodes* pn = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
+			g_config->savePlayerHeight(pn->UprightHmdNode->m_localTransform.pos.z);
+			ShowNotification("FRIK Calibrated Height: " + toStringWithPrecision(g_config->playerHeight));
+		}
+	}
+
 }

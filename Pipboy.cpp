@@ -13,6 +13,18 @@ using namespace std::chrono;
 
 namespace F4VRBody {
 
+	/// <summary>
+	/// Turn on the Pipboy and set the status flags.
+	/// </summary>
+	void Pipboy::turnOn() {
+		_pipboyStatus = true;
+		_isOperatingPipboy = true;
+		_stickybpip = false;
+		// errr... without this line the pipboy screen is not visible...
+		_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+		turnPipBoyOn();
+	}
+
 	void Pipboy::swapPipboy() {
 		_pipboyStatus = false;
 		_pipTimer = 0;
