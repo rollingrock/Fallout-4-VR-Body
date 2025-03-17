@@ -17,6 +17,7 @@
 #include "Pipboy.h"
 #include "ConfigurationMode.h"
 #include "CullGeometryHandler.h"
+#include "BoneSpheresHandler.h"
 
 #include <windows.h>
 
@@ -30,6 +31,7 @@ namespace F4VRBody {
 	extern Pipboy* g_pipboy;
 	extern ConfigurationMode* g_configurationMode;
 	extern CullGeometryHandler* g_cullGeometry;
+	extern BoneSpheresHandler* g_boneSpheres;
 
 	// TODO: bad global state variable that should be refactored
 	extern bool c_isLookingThroughScope;
@@ -42,43 +44,7 @@ namespace F4VRBody {
 	extern bool _controlSleepStickyT;
 	extern bool c_weaponRepositionMasterMode;
 
-	class BoneSphere {
-	public:
-		BoneSphere() {
-			radius = 0;
-			bone = nullptr;
-			stickyRight = false;
-			stickyLeft = false;
-			turnOnDebugSpheres = false;
-			offset.x = 0;
-			offset.y = 0;
-			offset.z = 0;
-			debugSphere = nullptr;
-		}
-
-		BoneSphere(float a_radius, NiNode* a_bone, NiPoint3 a_offset) : radius(a_radius), bone(a_bone), offset(a_offset) {
-			stickyRight = false;
-			stickyLeft = false;
-			turnOnDebugSpheres = false;
-			debugSphere = nullptr;
-		}
-
-		float radius;
-		NiNode* bone;
-		NiPoint3 offset;
-		bool stickyRight;
-		bool stickyLeft;
-		bool turnOnDebugSpheres;
-		NiNode* debugSphere;
-	};
-
-	enum BoneSphereEvent {
-		BoneSphereEvent_None = 0,
-		BoneSphereEvent_Enter = 1,
-		BoneSphereEvent_Exit = 2,
-		BoneSphereEvent_Holster = 3,
-		BoneSphereEvent_Draw  = 4
-	};
+	
 
 	enum BIPED_SLOTS {
 		slot_None = 0,
@@ -123,8 +89,6 @@ namespace F4VRBody {
 	void update();
 	void startUp();
 	// Native funcs to expose to papyrus
-	void holsterWeapon();
-	void drawWeapon();
 	bool registerPapyrusFuncs(VirtualMachine* vm);
 
 	inline NiNode* loadNifFromFile(char* path) {
@@ -136,6 +100,4 @@ namespace F4VRBody {
 
 		return (NiNode*)mem;
 	}
-
-
 }

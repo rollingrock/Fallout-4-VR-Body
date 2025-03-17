@@ -173,7 +173,7 @@ namespace F4VRBody {
 				turnPipBoyOff();
 				g_configurationMode->exitPBConfig();
 				if (_isWeaponinHand) {
-					drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_boneSpheres->drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					_weaponStateDetected = false;
 				}
 				_skelly->disablePipboyHandPose();
@@ -205,7 +205,7 @@ namespace F4VRBody {
 				if (!_weaponStateDetected) {
 					_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 					if (_isWeaponinHand) {
-						holsterWeapon(); // holster weapon so we can use primary trigger as an input.
+						g_boneSpheres->holsterWeapon(); // holster weapon so we can use primary trigger as an input.
 					}
 				}
 				turnPipBoyOn();
@@ -229,7 +229,7 @@ namespace F4VRBody {
 				turnPipBoyOff();
 				_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
-					drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_boneSpheres->drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					_weaponStateDetected = false;
 				}
 				_skelly->disablePipboyHandPose();
@@ -241,7 +241,7 @@ namespace F4VRBody {
 				_pipboyStatus = false;
 				_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
-					drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_boneSpheres->drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					_weaponStateDetected = false;
 				}
 				_skelly->disablePipboyHandPose();
@@ -266,7 +266,7 @@ namespace F4VRBody {
 					if (!_weaponStateDetected) {
 						_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 						if (_isWeaponinHand) {
-							holsterWeapon(); // holster weapon so we can use primary trigger as an input.
+							g_boneSpheres->holsterWeapon(); // holster weapon so we can use primary trigger as an input.
 						}
 					}
 					turnPipBoyOn();
@@ -478,7 +478,7 @@ namespace F4VRBody {
 					_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 					if (_isWeaponinHand) {
 						_weaponStateDetected = true;
-						holsterWeapon();
+						g_boneSpheres->holsterWeapon();
 					}
 					_skelly->setPipboyHandPose();
 				}
@@ -487,7 +487,7 @@ namespace F4VRBody {
 					_skelly->disablePipboyHandPose();
 					if (_isWeaponinHand) {
 						_weaponStateDetected = false;
-						drawWeapon();
+						g_boneSpheres->drawWeapon();
 					}
 				}
 			}
@@ -503,7 +503,7 @@ namespace F4VRBody {
 				}
 				if (_isWeaponinHand) {
 					_weaponStateDetected = false;
-					drawWeapon();
+					g_boneSpheres->drawWeapon();
 				}
 				_isOperatingPipboy = false;
 			}
