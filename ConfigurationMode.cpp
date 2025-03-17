@@ -35,7 +35,7 @@ namespace F4VRBody {
 				MCConfigUI->m_localTransform.scale = 0;
 				MCConfigUI->m_parent->RemoveChild(MCConfigUI);
 			}
-			_skelly->disableConfigModePose();
+			disableConfigModePose();
 			_calibrateModeActive = false;
 		}
 	}
@@ -53,7 +53,7 @@ namespace F4VRBody {
 				PBConfigUI->m_localTransform.scale = 0;
 				PBConfigUI->m_parent->RemoveChild(PBConfigUI);
 			}
-			_skelly->disableConfigModePose();
+			disableConfigModePose();
 			_isPBConfigModeActive = false;
 		}
 	}
@@ -126,7 +126,7 @@ namespace F4VRBody {
 					}
 				}
 			}
-			_skelly->setConfigModeHandPose();
+			setConfigModeHandPose();
 			_calibrationModeUIActive = true;
 			_armLength_bkup = g_config->armLength;
 			_powerArmor_up_bkup = g_config->powerArmor_up;
@@ -733,7 +733,7 @@ namespace F4VRBody {
 				UI->AttachChild((NiAVObject*)UI3, true);
 			}
 		}
-		_skelly->setConfigModeHandPose();
+		setConfigModeHandPose();
 		_isPBConfigModeActive = true;
 		_PBConfigModeEnterCounter = 0;
 	}

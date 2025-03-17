@@ -240,10 +240,6 @@ namespace F4VRBody
 		void dampenHand(NiNode* node, bool isLeft);
 		void hidePipboy();
 		bool armorHasHeadLamp();
-		void setPipboyHandPose();
-		void disablePipboyHandPose();
-		void setConfigModeHandPose();
-		void disableConfigModePose();
 
 		// two handed
 		void offHandToBarrel();

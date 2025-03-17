@@ -44,10 +44,6 @@ namespace F4VRBody {
 
 	bool isLoaded = false;
 
-	uint64_t updateCounter = 0;
-	uint64_t prevCounter = 0;
-	uint64_t localCounter = 0;
-
 	bool c_isLookingThroughScope = false;
 	bool c_jumping = false;
 	float c_dynamicCameraHeight = 0.0;
@@ -55,19 +51,8 @@ namespace F4VRBody {
 	bool GameVarsConfigured = false;
 	bool c_weaponRepositionMasterMode = false;
 
-	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
-	std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
 
-	std::map<std::string, float> handPapyrusPose;
-	std::map<std::string, bool> handPapyrusHasControl;
-
-	UInt32 PipboyAA = 0x0001ED3D;
-	UInt32 PipboyArmor = 0x00021B3B;
-	UInt32 MiningHelmet = 0x0022DD1F;
-	UInt32 PALightKW = 0x000B34A6;
-
-
-	void fixSkeleton() {
+	static void fixSkeleton() {
 
 		NiNode* pn = (*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
 
@@ -117,7 +102,7 @@ namespace F4VRBody {
 		}
 	}
 
-	void fixMissingScreen(PlayerNodes* pn) {
+	static void fixMissingScreen(PlayerNodes* pn) {
 		NiNode* screenNode = pn->ScreenNode;
 
 		if (screenNode) {
@@ -133,7 +118,7 @@ namespace F4VRBody {
 		}
 	}
 
-	void setHandUI(PlayerNodes* pn) {
+	static void setHandUI(PlayerNodes* pn) {
 		static NiPoint3 origLoc(0, 0, 0);
 
 		NiNode* wand = pn->primaryUIAttachNode;
@@ -251,7 +236,7 @@ namespace F4VRBody {
 		return false;
 	}
 
-	bool detectInPowerArmor() {
+	static bool detectInPowerArmor() {
 
 		// Thanks Shizof and SmoothtMovementVR for below code
 		if ((*g_player)->equipData) {
@@ -518,110 +503,7 @@ namespace F4VRBody {
 
 	// Papyrus Native Funcs
 
-	static void setFingerPositionScalar(StaticFunctionTag* base, bool isLeft, float thumb, float index, float middle, float ring, float pinky) {
-		if (isLeft) {
-			handPapyrusHasControl["LArm_Finger11"] = true;
-			handPapyrusHasControl["LArm_Finger12"] = true;
-			handPapyrusHasControl["LArm_Finger13"] = true;
-			handPapyrusHasControl["LArm_Finger21"] = true;
-			handPapyrusHasControl["LArm_Finger22"] = true;
-			handPapyrusHasControl["LArm_Finger23"] = true;
-			handPapyrusHasControl["LArm_Finger31"] = true;
-			handPapyrusHasControl["LArm_Finger32"] = true;
-			handPapyrusHasControl["LArm_Finger33"] = true;
-			handPapyrusHasControl["LArm_Finger41"] = true;
-			handPapyrusHasControl["LArm_Finger42"] = true;
-			handPapyrusHasControl["LArm_Finger43"] = true;
-			handPapyrusHasControl["LArm_Finger51"] = true;
-			handPapyrusHasControl["LArm_Finger52"] = true;
-			handPapyrusHasControl["LArm_Finger53"] = true;
-			handPapyrusPose["LArm_Finger11"] = thumb;
-			handPapyrusPose["LArm_Finger12"] = thumb;
-			handPapyrusPose["LArm_Finger13"] = thumb;
-			handPapyrusPose["LArm_Finger21"] = index;
-			handPapyrusPose["LArm_Finger22"] = index;
-			handPapyrusPose["LArm_Finger23"] = index;
-			handPapyrusPose["LArm_Finger31"] = middle;
-			handPapyrusPose["LArm_Finger32"] = middle;
-			handPapyrusPose["LArm_Finger33"] = middle;
-			handPapyrusPose["LArm_Finger41"] = ring;
-			handPapyrusPose["LArm_Finger42"] = ring;
-			handPapyrusPose["LArm_Finger43"] = ring;
-			handPapyrusPose["LArm_Finger51"] = pinky;
-			handPapyrusPose["LArm_Finger52"] = pinky;
-			handPapyrusPose["LArm_Finger53"] = pinky;
-		}
-		else {
-			handPapyrusHasControl["RArm_Finger11"] = true;
-			handPapyrusHasControl["RArm_Finger12"] = true;
-			handPapyrusHasControl["RArm_Finger13"] = true;
-			handPapyrusHasControl["RArm_Finger21"] = true;
-			handPapyrusHasControl["RArm_Finger22"] = true;
-			handPapyrusHasControl["RArm_Finger23"] = true;
-			handPapyrusHasControl["RArm_Finger31"] = true;
-			handPapyrusHasControl["RArm_Finger32"] = true;
-			handPapyrusHasControl["RArm_Finger33"] = true;
-			handPapyrusHasControl["RArm_Finger41"] = true;
-			handPapyrusHasControl["RArm_Finger42"] = true;
-			handPapyrusHasControl["RArm_Finger43"] = true;
-			handPapyrusHasControl["RArm_Finger51"] = true;
-			handPapyrusHasControl["RArm_Finger52"] = true;
-			handPapyrusHasControl["RArm_Finger53"] = true;
-			handPapyrusPose["RArm_Finger11"] = thumb;
-			handPapyrusPose["RArm_Finger12"] = thumb;
-			handPapyrusPose["RArm_Finger13"] = thumb;
-			handPapyrusPose["RArm_Finger21"] = index;
-			handPapyrusPose["RArm_Finger22"] = index;
-			handPapyrusPose["RArm_Finger23"] = index;
-			handPapyrusPose["RArm_Finger31"] = middle;
-			handPapyrusPose["RArm_Finger32"] = middle;
-			handPapyrusPose["RArm_Finger33"] = middle;
-			handPapyrusPose["RArm_Finger41"] = ring;
-			handPapyrusPose["RArm_Finger42"] = ring;
-			handPapyrusPose["RArm_Finger43"] = ring;
-			handPapyrusPose["RArm_Finger51"] = pinky;
-			handPapyrusPose["RArm_Finger52"] = pinky;
-			handPapyrusPose["RArm_Finger53"] = pinky;
-		}
-	}
-
-	static void restoreFingerPoseControl(StaticFunctionTag* base, bool isLeft) {
-		if (isLeft) {
-			handPapyrusHasControl["LArm_Finger11"] = false;
-			handPapyrusHasControl["LArm_Finger12"] = false;
-			handPapyrusHasControl["LArm_Finger13"] = false;
-			handPapyrusHasControl["LArm_Finger21"] = false;
-			handPapyrusHasControl["LArm_Finger22"] = false;
-			handPapyrusHasControl["LArm_Finger23"] = false;
-			handPapyrusHasControl["LArm_Finger31"] = false;
-			handPapyrusHasControl["LArm_Finger32"] = false;
-			handPapyrusHasControl["LArm_Finger33"] = false;
-			handPapyrusHasControl["LArm_Finger41"] = false;
-			handPapyrusHasControl["LArm_Finger42"] = false;
-			handPapyrusHasControl["LArm_Finger43"] = false;
-			handPapyrusHasControl["LArm_Finger51"] = false;
-			handPapyrusHasControl["LArm_Finger52"] = false;
-			handPapyrusHasControl["LArm_Finger53"] = false;
-		}
-		else {
-			handPapyrusHasControl["RArm_Finger11"] = false;
-			handPapyrusHasControl["RArm_Finger12"] = false;
-			handPapyrusHasControl["RArm_Finger13"] = false;
-			handPapyrusHasControl["RArm_Finger21"] = false;
-			handPapyrusHasControl["RArm_Finger22"] = false;
-			handPapyrusHasControl["RArm_Finger23"] = false;
-			handPapyrusHasControl["RArm_Finger31"] = false;
-			handPapyrusHasControl["RArm_Finger32"] = false;
-			handPapyrusHasControl["RArm_Finger33"] = false;
-			handPapyrusHasControl["RArm_Finger41"] = false;
-			handPapyrusHasControl["RArm_Finger42"] = false;
-			handPapyrusHasControl["RArm_Finger43"] = false;
-			handPapyrusHasControl["RArm_Finger51"] = false;
-			handPapyrusHasControl["RArm_Finger52"] = false;
-			handPapyrusHasControl["RArm_Finger53"] = false;
-		}
-	}
-
+	// Settings Holotape related funcs
 	static void calibratePlayerHeightAndArms(StaticFunctionTag* base) {
 		_MESSAGE("Calibrate player height...");
 		g_configurationMode->calibratePlayerHeightAndArms();
@@ -709,11 +591,20 @@ namespace F4VRBody {
 		g_boneSpheres->toggleDebugBoneSpheresAtBone(handle, turnOn);
 	}
 
+	// Finger pose related APIs
+	static void setFingerPositionScalar(StaticFunctionTag* base, bool isLeft, float thumb, float index, float middle, float ring, float pinky) {
+		setFingerPositionScalar(isLeft, thumb, index, middle, ring, pinky);
+	}
+
+	static void restoreFingerPoseControl(StaticFunctionTag* base, bool isLeft) {
+		restoreFingerPoseControl(isLeft);
+	}
+
 	/// <summary>
 	/// Register code for Papyrus scripts.
 	/// </summary>
 	bool registerPapyrusFuncs(VirtualMachine* vm) {
-		// Register code to be accisible from Settings Holotabe via Papyrus scripts
+		// Register code to be accisible from Settings Holotape via Papyrus scripts
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Calibrate", "FRIK:FRIK", F4VRBody::calibratePlayerHeightAndArms, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenMainConfigurationMode", "FRIK:FRIK", F4VRBody::openMainConfigurationMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenPipboyConfigurationMode", "FRIK:FRIK", F4VRBody::openPipboyConfigurationMode, vm));

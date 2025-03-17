@@ -44,44 +44,6 @@ namespace F4VRBody {
 	extern bool _controlSleepStickyT;
 	extern bool c_weaponRepositionMasterMode;
 
-	
-
-	enum BIPED_SLOTS {
-		slot_None = 0,
-		slot_HairTop = 1 << 0,
-		slot_HairLong = 1 << 1,
-		slot_Head = 1 << 2,
-		slot_Body = 1 << 3,
-		slot_LHand = 1 << 4,
-		slot_RHand = 1 << 5,
-		slot_UTorso = 1 << 6,
-		slot_ULArm = 1 << 7,
-		slot_URArm = 1 << 8,
-		slot_ULLeg = 1 << 9,
-		slot_URLeg = 1 << 10,
-		slot_ATorso = 1 << 11,
-		slot_ALArm = 1 << 12,
-		slot_ARArm = 1 << 13,
-		slot_ALLeg = 1 << 14,
-		slot_ARLeg = 1 << 15,
-		slot_Headband = 1 << 16,
-		slot_Eyes = 1 << 17,
-		slot_Beard = 1 << 18,
-		slot_Mouth = 1 << 19,
-		slot_Neck = 1 << 20,
-		slot_Ring = 1 << 21,
-		slot_Scalp = 1 << 22,
-		slot_Decapitation = 1 << 23,
-		slot_Unnamed1 = 1 << 24,
-		slot_Unnamed2 = 1 << 25,
-		slot_Unnamed3 = 1 << 26,
-		slot_Unnamed4 = 1 << 27,
-		slot_Unnamed5 = 1 << 28,
-		slot_Shield = 1 << 29,
-		slot_Pipboy = 1 << 30,
-		slot_FX = 1 << 31
-	};
-
 
 	NiNode* loadNifFromFile(char* path);
 

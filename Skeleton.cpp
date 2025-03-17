@@ -1491,80 +1491,6 @@ namespace F4VRBody {
 
 	// Cylons Code Start >>>>
 
-	void Skeleton::setPipboyHandPose() {
-		float position[15] = { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-		if (g_config->leftHandedPipBoy) {
-			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = true;
-				handPapyrusPose[f.c_str()] = position[x];
-			}
-		}
-		else {
-			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = true;
-				handPapyrusPose[f.c_str()] = position[x];
-			}
-		}
-	}
-
-	void Skeleton::disablePipboyHandPose() {
-		if (g_config->leftHandedPipBoy) {
-			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = false;
-			}
-		}
-		else {
-			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = false;
-			}
-		}
-	}
-
-	void Skeleton::setConfigModeHandPose() {
-		float position[15] = { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-		if (g_config->leftHandedMode) {
-			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = true;
-				handPapyrusPose[f.c_str()] = position[x];
-			}
-		}
-		else {
-			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = true;
-				handPapyrusPose[f.c_str()] = position[x];
-			}
-		}
-	}
-
-	void Skeleton::disableConfigModePose() {
-		if (g_config->leftHandedMode) {
-			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = false;
-			}
-		}
-		else {
-			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = false;
-			}
-		}
-	}
-
     /// <summary>
     /// detect if the player has an armor item which uses the headlamp equipped as not to overwrite it
     /// </summary>
@@ -2047,54 +1973,53 @@ namespace F4VRBody {
 		_root->m_worldTransform.pos += _forwardDir * -10.0f;
 		_root->m_worldTransform.pos.z = rwp.z;
 		updateDown(_root, false);
-
 	}
+	void Skeleton::calculateHandPose(std::string bone, float gripProx, bool thumbUp, bool isLeft) {
+		Quaternion qc, qt;
+		int sign = isLeft ? -1 : 1;
 
-    void Skeleton::calculateHandPose(std::string bone, float gripProx, bool thumbUp, bool isLeft) {
-        Quaternion qc, qt;
-        int sign = isLeft ? -1 : 1;
-
-        // if a mod is using the papyrus interface to manually set finger poses
-        if (handPapyrusHasControl[bone]) {
-            qt.fromRot(handOpen[bone].rot);
-            Quaternion qo;
-            qo.fromRot(handClosed[bone].rot);
-            qo.slerp(std::clamp(handPapyrusPose[bone], 0.0f, 1.0f), qt);
-            qt = qo;
-        }
-        // thumbUp pose
-        else if (thumbUp && bone.find("Finger1") != std::string::npos) {
-            Matrix44 rot;
-            if (bone.find("Finger11") != std::string::npos) {
-                rot.setEulerAngles(sign * 0.5, sign * 0.4, -0.3);
+		// if a mod is using the papyrus interface to manually set finger poses
+		if (handPapyrusHasControl[bone]) {
+			qt.fromRot(handOpen[bone].rot);
+			Quaternion qo;
+			qo.fromRot(handClosed[bone].rot);
+			qo.slerp(std::clamp(handPapyrusPose[bone], 0.0f, 1.0f), qt);
+			qt = qo;
+		}
+		// thumbUp pose
+		else if (thumbUp && bone.find("Finger1") != std::string::npos) {
+			Matrix44 rot;
+			if (bone.find("Finger11") != std::string::npos) {
+				rot.setEulerAngles(sign * 0.5, sign * 0.4, -0.3);
 				NiMatrix43 wr = handOpen[bone].rot;
 				wr = rot.multiply43Left(wr);
 				qt.fromRot(wr);
-            } else if (bone.find("Finger13") != std::string::npos) {
-                rot.setEulerAngles(0, 0, degrees_to_rads(-35.0));
+			}
+			else if (bone.find("Finger13") != std::string::npos) {
+				rot.setEulerAngles(0, 0, degrees_to_rads(-35.0));
 				NiMatrix43 wr = handOpen[bone].rot;
 				wr = rot.multiply43Left(wr);
 				qt.fromRot(wr);
-            }
-        }
-        else if (_closedHand[bone]) {
-            qt.fromRot(handClosed[bone].rot);
-        }
-        else {
-            qt.fromRot(handOpen[bone].rot);
-            if (_handBonesButton[bone] == vr::k_EButton_Grip) {
-                Quaternion qo;
-                qo.fromRot(handClosed[bone].rot);
-                qo.slerp(1.0 - gripProx, qt);
-                qt = qo;
-            }
-        }
+			}
+		}
+		else if (_closedHand[bone]) {
+			qt.fromRot(handClosed[bone].rot);
+		}
+		else {
+			qt.fromRot(handOpen[bone].rot);
+			if (_handBonesButton[bone] == vr::k_EButton_Grip) {
+				Quaternion qo;
+				qo.fromRot(handClosed[bone].rot);
+				qo.slerp(1.0 - gripProx, qt);
+				qt = qo;
+			}
+		}
 
-        qc.fromRot(_handBones[bone].rot);
-        float blend = std::clamp(_frameTime * 7, 0.0, 1.0);
-        qc.slerp(blend, qt);
-        _handBones[bone].rot = qc.getRot().make43();
-    }
+		qc.fromRot(_handBones[bone].rot);
+		float blend = std::clamp(_frameTime * 7, 0.0, 1.0);
+		qc.slerp(blend, qt);
+		_handBones[bone].rot = qc.getRot().make43();
+	}
 
 	void Skeleton::copy1stPerson(std::string bone) {
 		BSFlattenedBoneTree* fpTree = (BSFlattenedBoneTree*)(*g_player)->firstPersonSkeleton->m_children.m_data[0]->GetAsNiNode();
@@ -2163,7 +2088,7 @@ namespace F4VRBody {
 					this->copy1stPerson(name);
 				}
 				else {
-					this->calculateHandPose(name, gripProx, thumbUp, isLeft);
+					calculateHandPose(name, gripProx, thumbUp, isLeft);
 				}
 				
 				NiTransform trans = _handBones[name];

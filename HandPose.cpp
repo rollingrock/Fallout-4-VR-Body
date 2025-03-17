@@ -1,8 +1,16 @@
 #include "HandPose.h"
+#include "Config.h"
+
 #include <algorithm>
 #include <vector>
 
 namespace F4VRBody {
+
+	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
+	std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
+
+	std::map<std::string, float> handPapyrusPose;
+	std::map<std::string, bool> handPapyrusHasControl;
 
 	void initHandPoses(bool inPowerArmor) {
 		std::vector<std::vector<float>> data;
@@ -199,6 +207,185 @@ namespace F4VRBody {
 			handOpen["RArm_Finger51"].pos = NiPoint3(6.637259, -0.35742, 3.01848);
 			handOpen["RArm_Finger52"].pos = NiPoint3(2.238261, 0.000018, 0.000003);
 			handOpen["RArm_Finger53"].pos = NiPoint3(1.665912, 0, 0);
+		}
+	}
+
+
+	void setFingerPositionScalar(bool isLeft, float thumb, float index, float middle, float ring, float pinky) {
+		if (isLeft) {
+			handPapyrusHasControl["LArm_Finger11"] = true;
+			handPapyrusHasControl["LArm_Finger12"] = true;
+			handPapyrusHasControl["LArm_Finger13"] = true;
+			handPapyrusHasControl["LArm_Finger21"] = true;
+			handPapyrusHasControl["LArm_Finger22"] = true;
+			handPapyrusHasControl["LArm_Finger23"] = true;
+			handPapyrusHasControl["LArm_Finger31"] = true;
+			handPapyrusHasControl["LArm_Finger32"] = true;
+			handPapyrusHasControl["LArm_Finger33"] = true;
+			handPapyrusHasControl["LArm_Finger41"] = true;
+			handPapyrusHasControl["LArm_Finger42"] = true;
+			handPapyrusHasControl["LArm_Finger43"] = true;
+			handPapyrusHasControl["LArm_Finger51"] = true;
+			handPapyrusHasControl["LArm_Finger52"] = true;
+			handPapyrusHasControl["LArm_Finger53"] = true;
+			handPapyrusPose["LArm_Finger11"] = thumb;
+			handPapyrusPose["LArm_Finger12"] = thumb;
+			handPapyrusPose["LArm_Finger13"] = thumb;
+			handPapyrusPose["LArm_Finger21"] = index;
+			handPapyrusPose["LArm_Finger22"] = index;
+			handPapyrusPose["LArm_Finger23"] = index;
+			handPapyrusPose["LArm_Finger31"] = middle;
+			handPapyrusPose["LArm_Finger32"] = middle;
+			handPapyrusPose["LArm_Finger33"] = middle;
+			handPapyrusPose["LArm_Finger41"] = ring;
+			handPapyrusPose["LArm_Finger42"] = ring;
+			handPapyrusPose["LArm_Finger43"] = ring;
+			handPapyrusPose["LArm_Finger51"] = pinky;
+			handPapyrusPose["LArm_Finger52"] = pinky;
+			handPapyrusPose["LArm_Finger53"] = pinky;
+		}
+		else {
+			handPapyrusHasControl["RArm_Finger11"] = true;
+			handPapyrusHasControl["RArm_Finger12"] = true;
+			handPapyrusHasControl["RArm_Finger13"] = true;
+			handPapyrusHasControl["RArm_Finger21"] = true;
+			handPapyrusHasControl["RArm_Finger22"] = true;
+			handPapyrusHasControl["RArm_Finger23"] = true;
+			handPapyrusHasControl["RArm_Finger31"] = true;
+			handPapyrusHasControl["RArm_Finger32"] = true;
+			handPapyrusHasControl["RArm_Finger33"] = true;
+			handPapyrusHasControl["RArm_Finger41"] = true;
+			handPapyrusHasControl["RArm_Finger42"] = true;
+			handPapyrusHasControl["RArm_Finger43"] = true;
+			handPapyrusHasControl["RArm_Finger51"] = true;
+			handPapyrusHasControl["RArm_Finger52"] = true;
+			handPapyrusHasControl["RArm_Finger53"] = true;
+			handPapyrusPose["RArm_Finger11"] = thumb;
+			handPapyrusPose["RArm_Finger12"] = thumb;
+			handPapyrusPose["RArm_Finger13"] = thumb;
+			handPapyrusPose["RArm_Finger21"] = index;
+			handPapyrusPose["RArm_Finger22"] = index;
+			handPapyrusPose["RArm_Finger23"] = index;
+			handPapyrusPose["RArm_Finger31"] = middle;
+			handPapyrusPose["RArm_Finger32"] = middle;
+			handPapyrusPose["RArm_Finger33"] = middle;
+			handPapyrusPose["RArm_Finger41"] = ring;
+			handPapyrusPose["RArm_Finger42"] = ring;
+			handPapyrusPose["RArm_Finger43"] = ring;
+			handPapyrusPose["RArm_Finger51"] = pinky;
+			handPapyrusPose["RArm_Finger52"] = pinky;
+			handPapyrusPose["RArm_Finger53"] = pinky;
+		}
+	}
+
+	void restoreFingerPoseControl(bool isLeft) {
+		if (isLeft) {
+			handPapyrusHasControl["LArm_Finger11"] = false;
+			handPapyrusHasControl["LArm_Finger12"] = false;
+			handPapyrusHasControl["LArm_Finger13"] = false;
+			handPapyrusHasControl["LArm_Finger21"] = false;
+			handPapyrusHasControl["LArm_Finger22"] = false;
+			handPapyrusHasControl["LArm_Finger23"] = false;
+			handPapyrusHasControl["LArm_Finger31"] = false;
+			handPapyrusHasControl["LArm_Finger32"] = false;
+			handPapyrusHasControl["LArm_Finger33"] = false;
+			handPapyrusHasControl["LArm_Finger41"] = false;
+			handPapyrusHasControl["LArm_Finger42"] = false;
+			handPapyrusHasControl["LArm_Finger43"] = false;
+			handPapyrusHasControl["LArm_Finger51"] = false;
+			handPapyrusHasControl["LArm_Finger52"] = false;
+			handPapyrusHasControl["LArm_Finger53"] = false;
+		}
+		else {
+			handPapyrusHasControl["RArm_Finger11"] = false;
+			handPapyrusHasControl["RArm_Finger12"] = false;
+			handPapyrusHasControl["RArm_Finger13"] = false;
+			handPapyrusHasControl["RArm_Finger21"] = false;
+			handPapyrusHasControl["RArm_Finger22"] = false;
+			handPapyrusHasControl["RArm_Finger23"] = false;
+			handPapyrusHasControl["RArm_Finger31"] = false;
+			handPapyrusHasControl["RArm_Finger32"] = false;
+			handPapyrusHasControl["RArm_Finger33"] = false;
+			handPapyrusHasControl["RArm_Finger41"] = false;
+			handPapyrusHasControl["RArm_Finger42"] = false;
+			handPapyrusHasControl["RArm_Finger43"] = false;
+			handPapyrusHasControl["RArm_Finger51"] = false;
+			handPapyrusHasControl["RArm_Finger52"] = false;
+			handPapyrusHasControl["RArm_Finger53"] = false;
+		}
+	}
+
+	void setPipboyHandPose() {
+		float position[15] = { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+		if (g_config->leftHandedPipBoy) {
+			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
+			for (int x = 0; x < 15; x++) {
+				std::string f = finger[x];
+				handPapyrusHasControl[f.c_str()] = true;
+				handPapyrusPose[f.c_str()] = position[x];
+			}
+		}
+		else {
+			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
+			for (int x = 0; x < 15; x++) {
+				std::string f = finger[x];
+				handPapyrusHasControl[f.c_str()] = true;
+				handPapyrusPose[f.c_str()] = position[x];
+			}
+		}
+	}
+
+	void disablePipboyHandPose() {
+		if (g_config->leftHandedPipBoy) {
+			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
+			for (int x = 0; x < 15; x++) {
+				std::string f = finger[x];
+				handPapyrusHasControl[f.c_str()] = false;
+			}
+		}
+		else {
+			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
+			for (int x = 0; x < 15; x++) {
+				std::string f = finger[x];
+				handPapyrusHasControl[f.c_str()] = false;
+			}
+		}
+	}
+
+	void setConfigModeHandPose() {
+		float position[15] = { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+		if (g_config->leftHandedMode) {
+			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
+			for (int x = 0; x < 15; x++) {
+				std::string f = finger[x];
+				handPapyrusHasControl[f.c_str()] = true;
+				handPapyrusPose[f.c_str()] = position[x];
+			}
+		}
+		else {
+			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
+			for (int x = 0; x < 15; x++) {
+				std::string f = finger[x];
+				handPapyrusHasControl[f.c_str()] = true;
+				handPapyrusPose[f.c_str()] = position[x];
+			}
+		}
+	}
+
+	void disableConfigModePose() {
+		if (g_config->leftHandedMode) {
+			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
+			for (int x = 0; x < 15; x++) {
+				std::string f = finger[x];
+				handPapyrusHasControl[f.c_str()] = false;
+			}
+		}
+		else {
+			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
+			for (int x = 0; x < 15; x++) {
+				std::string f = finger[x];
+				handPapyrusHasControl[f.c_str()] = false;
+			}
 		}
 	}
 }
