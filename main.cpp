@@ -43,7 +43,7 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg) {
 	}
 
 	if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
-		bool gripConfig = !F4VRBody::g_config->staticGripping;
+		bool gripConfig = false; // !F4VRBody::g_config->staticGripping;
 		g_messaging->Dispatch(g_pluginHandle, 15, (void*)gripConfig, sizeof(bool), "FO4VRBETTERSCOPES");
 		g_messaging->RegisterListener(g_pluginHandle, "FO4VRBETTERSCOPES", OnBetterScopesMessage);
 		_MESSAGE("kMessage_PostLoad Completed");

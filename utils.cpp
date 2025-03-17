@@ -18,6 +18,16 @@ namespace F4VRBody {
 	typedef Setting* (*_SettingCollectionList_GetPtr)(SettingCollectionList* list, const char* name);
 	RelocAddr<_SettingCollectionList_GetPtr> SettingCollectionList_GetPtr(0x501500);
 
+	/// <summary>
+	/// Get the current time in milliseconds.
+	/// </summary>
+	long nowMillis() {
+		auto now = std::chrono::system_clock::now();
+		return std::chrono::duration_cast<std::chrono::milliseconds>(
+			now.time_since_epoch()
+		).count();
+	}
+
 	std::string toStringWithPrecision(double value, int precision) {
 		std::ostringstream stream;
 		stream << std::fixed << std::setprecision(precision) << value;

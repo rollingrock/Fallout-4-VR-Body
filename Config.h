@@ -102,7 +102,6 @@ namespace F4VRBody {
 		float handUI_Z = 0.0;
 
 		// Weapon
-		bool staticGripping = false;
 		bool enableOffHandGripping = true;
 		bool enableGripButtonToGrap = true;
 		bool enableGripButtonToLetGo = true;

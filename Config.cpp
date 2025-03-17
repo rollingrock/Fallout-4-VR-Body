@@ -134,7 +134,6 @@ namespace F4VRBody {
 		hidePipboy = ini.GetBoolValue(INI_SECTION_MAIN, "hidePipboy");
 		leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
 		armsOnly = ini.GetBoolValue(INI_SECTION_MAIN, "EnableArmsOnlyMode");
-		staticGripping = ini.GetBoolValue(INI_SECTION_MAIN, "EnableStaticGripping");
 		handUI_X = ini.GetDoubleValue(INI_SECTION_MAIN, "handUI_X", 0.0);
 		handUI_Y = ini.GetDoubleValue(INI_SECTION_MAIN, "handUI_Y", 0.0);
 		handUI_Z = ini.GetDoubleValue(INI_SECTION_MAIN, "handUI_Z", 0.0);
@@ -329,7 +328,6 @@ namespace F4VRBody {
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableArmsOnlyMode", armsOnly);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableStaticGripping", staticGripping);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "handUI_X", handUI_X);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "handUI_Y", handUI_Y);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "handUI_Z", handUI_Z);

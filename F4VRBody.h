@@ -18,6 +18,7 @@
 #include "ConfigurationMode.h"
 #include "CullGeometryHandler.h"
 #include "BoneSpheresHandler.h"
+#include "WeaponPositionHandler.h"
 
 #include <windows.h>
 
@@ -32,6 +33,7 @@ namespace F4VRBody {
 	extern ConfigurationMode* g_configurationMode;
 	extern CullGeometryHandler* g_cullGeometry;
 	extern BoneSpheresHandler* g_boneSpheres;
+	extern WeaponPositionHandler* g_weaponPosition;
 
 	// TODO: bad global state variable that should be refactored
 	extern bool c_isLookingThroughScope;
@@ -39,10 +41,6 @@ namespace F4VRBody {
 	extern float c_dynamicCameraHeight;
 	extern bool c_selfieMode;
 	extern bool GameVarsConfigured;
-	extern bool _controlSleepStickyX;
-	extern bool _controlSleepStickyY;
-	extern bool _controlSleepStickyT;
-	extern bool c_weaponRepositionMasterMode;
 
 
 	NiNode* loadNifFromFile(char* path);

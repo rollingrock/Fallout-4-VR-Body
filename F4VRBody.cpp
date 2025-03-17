@@ -39,6 +39,7 @@ namespace F4VRBody {
 	ConfigurationMode* g_configurationMode = nullptr;
 	CullGeometryHandler* g_cullGeometry = nullptr;
 	BoneSpheresHandler* g_boneSpheres = nullptr;
+	WeaponPositionHandler* g_weaponPosition = nullptr;
 
 	Skeleton* _skelly = nullptr;
 
@@ -49,7 +50,6 @@ namespace F4VRBody {
 	float c_dynamicCameraHeight = 0.0;
 	bool c_selfieMode = false;
 	bool GameVarsConfigured = false;
-	bool c_weaponRepositionMasterMode = false;
 
 
 	static void fixSkeleton() {
@@ -176,6 +176,7 @@ namespace F4VRBody {
 			g_pipboy = new Pipboy(_skelly, _vrhook);
 			g_configurationMode = new ConfigurationMode(_skelly, _vrhook);
 			g_cullGeometry = new CullGeometryHandler();
+			g_weaponPosition = new WeaponPositionHandler(_skelly, _vrhook);
 
 			turnPipBoyOff();
 
@@ -209,6 +210,9 @@ namespace F4VRBody {
 
 		delete g_cullGeometry;
 		g_cullGeometry = nullptr;
+
+		delete g_weaponPosition;
+		g_weaponPosition = nullptr;
 	}
 
 	void smoothMovement()
@@ -437,18 +441,19 @@ namespace F4VRBody {
 			_skelly->showOnlyArms();
 		}
 
+		_DMESSAGE("Operate Skelly hands");
 		_skelly->setHandPose();
+		
 		_DMESSAGE("Operate Pipboy");
 		g_pipboy->operatePipBoy();
 		
 		_DMESSAGE("bone sphere stuff");
 		g_boneSpheres->onFrameUpdate();
 
+		_DMESSAGE("Weapon position");
+		g_weaponPosition->onFrameUpdate();
+
 		//g_gunReloadSystem->Update();
-
-
-		_skelly->offHandToBarrel();
-		_skelly->offHandToScope();
 
 		Offsets::BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
 		BSFlattenedBoneTree_UpdateBoneArray((*g_player)->unkF0->rootNode->m_children.m_data[0]); // just in case any transforms missed because they are not in the tree do a full flat bone array update
@@ -535,12 +540,12 @@ namespace F4VRBody {
 	}
 
 	static UInt32 getWeaponRepositionMode(StaticFunctionTag* base) {
-		return c_weaponRepositionMasterMode ? 1 : 0;
+		return g_weaponPosition->inWeaponRepositionMode() ? 1 : 0;
 	}
 
 	static UInt32 toggleWeaponRepositionMode(StaticFunctionTag* base) {
-		_MESSAGE("Toggle Weapon Reposition Mode: %s", !c_weaponRepositionMasterMode ? "ON" : "OFF");
-		c_weaponRepositionMasterMode = !c_weaponRepositionMasterMode;
+		_MESSAGE("Toggle Weapon Reposition Mode: %s", !g_weaponPosition->inWeaponRepositionMode() ? "ON" : "OFF");
+		g_weaponPosition->toggleWeaponRepositionMode();
 		return getWeaponRepositionMode(base);
 	}
 
