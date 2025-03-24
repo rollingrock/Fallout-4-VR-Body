@@ -138,6 +138,9 @@ namespace F4VRBody {
 			_powerArmor_forward_bkup = g_config->powerArmor_forward;
 			_cameraHeight_bkup = g_config->cameraHeight;
 			_PACameraHeight_bkup = g_config->PACameraHeight;
+			enableGripButtonToGrap_bkup = g_config->enableGripButtonToGrap;
+			onePressGripButton_bkup = g_config->onePressGripButton;
+			enableGripButtonToLetGo_bkup = g_config->enableGripButtonToLetGo;
 		}
 		else {
 			NiNode* UIElement = nullptr;
@@ -366,7 +369,6 @@ namespace F4VRBody {
 
 	void ConfigurationMode::onUpdate() {
 		
-		calibratePlayerHeightAndArmsAfterDelay();
 		checkWeaponRepositionPipboyConflict();
 		pipboyConfigurationMode();
 		mainConfigurationMode();
@@ -403,6 +405,9 @@ namespace F4VRBody {
 				g_config->powerArmor_forward = _powerArmor_forward_bkup;
 				g_config->cameraHeight = _cameraHeight_bkup;
 				g_config->PACameraHeight = _PACameraHeight_bkup;
+				g_config->enableGripButtonToGrap = enableGripButtonToGrap_bkup;
+				g_config->onePressGripButton = onePressGripButton_bkup;
+				g_config->enableGripButtonToLetGo = enableGripButtonToLetGo_bkup;
 			}
 			else if (!ExitnoSave) {
 				_exitWithoutSavePressed = false;
@@ -748,29 +753,4 @@ namespace F4VRBody {
 			return;
 		rotationStickEnabledToggle(isAnyPipboyOpen() && !g_pipboy->isOperatingPipboy());
 	}
-
-	/// <summary>
-	/// Actual callibration will happen after 4-5 seconds to let the player stand.
-	/// </summary>
-	void ConfigurationMode::calibratePlayerHeightAndArms() {
-		ShowNotification("FRIK Calibration: Stand Up Straight and Tall for 5 seconds");
-		_calibratePlayerHeightTime = std::time(nullptr);
-	}
-
-	/// <summary>
-	/// Use the on frame update tick to run player hight calculation after a delay to allow for the player to get into position.
-	/// </summary>
-	void ConfigurationMode::calibratePlayerHeightAndArmsAfterDelay() {
-		if (_calibratePlayerHeightTime == 0)
-			return;
-		
-		// TODO: can we measure arm lenght?
-		if (time(nullptr) - _calibratePlayerHeightTime > 4) {
-			_calibratePlayerHeightTime = 0;
-			PlayerNodes* pn = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
-			g_config->savePlayerHeight(pn->UprightHmdNode->m_localTransform.pos.z);
-			ShowNotification("FRIK Calibrated Height: " + toStringWithPrecision(g_config->playerHeight));
-		}
-	}
-
 }

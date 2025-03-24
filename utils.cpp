@@ -21,7 +21,7 @@ namespace F4VRBody {
 	/// <summary>
 	/// Get the current time in milliseconds.
 	/// </summary>
-	long nowMillis() {
+	uint64_t nowMillis() {
 		auto now = std::chrono::system_clock::now();
 		return std::chrono::duration_cast<std::chrono::milliseconds>(
 			now.time_since_epoch()

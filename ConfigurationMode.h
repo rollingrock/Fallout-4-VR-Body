@@ -35,7 +35,6 @@ namespace F4VRBody {
 		void onUpdate();
 		void exitPBConfig();
 		void openPipboyConfigurationMode();
-		void calibratePlayerHeightAndArms();
 
 	private:
 		void configModeExit();
@@ -43,7 +42,6 @@ namespace F4VRBody {
 		void mainConfigurationMode();
 		void enterPipboyConfigMode();
 		void checkWeaponRepositionPipboyConflict();
-		void calibratePlayerHeightAndArmsAfterDelay();
 
 		Skeleton* _skelly;
 		OpenVRHookManagerAPI* _vrhook;
@@ -86,5 +84,8 @@ namespace F4VRBody {
 		float _powerArmor_forward_bkup = 0;
 		float _cameraHeight_bkup = 0;
 		float _PACameraHeight_bkup = 0;
+		bool enableGripButtonToGrap_bkup = false;
+		bool onePressGripButton_bkup = false;
+		bool enableGripButtonToLetGo_bkup = false;
 	};
 }

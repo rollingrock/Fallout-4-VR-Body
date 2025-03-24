@@ -509,11 +509,7 @@ namespace F4VRBody {
 	// Papyrus Native Funcs
 
 	// Settings Holotape related funcs
-	static void calibratePlayerHeightAndArms(StaticFunctionTag* base) {
-		_MESSAGE("Calibrate player height...");
-		g_configurationMode->calibratePlayerHeightAndArms();
-	}
-
+	
 	static void openMainConfigurationMode(StaticFunctionTag* base) {
 		_MESSAGE("Open Main Configuration Mode...");
 		g_configurationMode->enterConfigurationMode();
@@ -562,6 +558,14 @@ namespace F4VRBody {
 		setSelfieMode(base, !c_selfieMode);
 	}
 	
+	static void moveForward(StaticFunctionTag* base){
+		g_config->playerOffset_forward += 1.0f;
+	}
+
+	static void moveBackward(StaticFunctionTag* base){
+		g_config->playerOffset_forward -= 1.0f;
+	}
+
 	static void setDynamicCameraHeight(StaticFunctionTag* base, float dynamicCameraHeight) {
 		_MESSAGE("Set Dynamic Camera Height: %f", dynamicCameraHeight);
 		c_dynamicCameraHeight = dynamicCameraHeight;
@@ -610,7 +614,6 @@ namespace F4VRBody {
 	/// </summary>
 	bool registerPapyrusFuncs(VirtualMachine* vm) {
 		// Register code to be accisible from Settings Holotape via Papyrus scripts
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Calibrate", "FRIK:FRIK", F4VRBody::calibratePlayerHeightAndArms, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenMainConfigurationMode", "FRIK:FRIK", F4VRBody::openMainConfigurationMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenPipboyConfigurationMode", "FRIK:FRIK", F4VRBody::openPipboyConfigurationMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleWeaponRepositionMode", "FRIK:FRIK", F4VRBody::toggleWeaponRepositionMode, vm));
@@ -624,6 +627,8 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, float>("setDynamicCameraHeight", "FRIK:FRIK", F4VRBody::setDynamicCameraHeight, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", F4VRBody::toggleSelfieMode, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("setSelfieMode", "FRIK:FRIK", F4VRBody::setSelfieMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveForward", "FRIK:FRIK", F4VRBody::moveForward, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", F4VRBody::moveBackward, vm));
 		
 		// Bone Sphere interaction related APIs
 		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, UInt32, float, BSFixedString>("RegisterBoneSphere", "FRIK:FRIK", F4VRBody::registerBoneSphere, vm));

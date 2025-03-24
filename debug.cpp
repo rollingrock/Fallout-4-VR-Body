@@ -6,6 +6,11 @@
 
 namespace F4VRBody {
 
+	void printRoot() {
+		auto* node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
+		printNodes(node);
+	}
+
 	void positionDiff(Skeleton* skelly) {
 		NiPoint3 firstpos = skelly->getPlayerNodes()->HmdNode->m_worldTransform.pos;
 		NiPoint3 skellypos = skelly->getRoot()->m_worldTransform.pos;
@@ -15,7 +20,7 @@ namespace F4VRBody {
 
 	void printNodes(NiNode* nde) {
 		// print root node info first
-		_MESSAGE("%s : children = %d hidden: %d: local (%f, %f, %f)", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, (nde->flags & 0x1),
+		_MESSAGE("%s : children = %d hidden: %d: local (%2.3f, %2.3f, %2.3f)", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, (nde->flags & 0x1),
 			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z);
 
 		std::string padding = "";
@@ -31,7 +36,7 @@ namespace F4VRBody {
 
 	void printChildren(NiNode* child, std::string padding) {
 		padding += "....";
-		_MESSAGE("%s%s : children = %d hidden: %d: local (%2f, %2f, %2f) world (%2f, %2f, %2f)", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart, (child->flags & 0x1),
+		_MESSAGE("%s%s : children = %d hidden: %d: local (%2.3f, %2.3f, %2.3f) world (%5.2f, %5.2f, %5.2f)", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart, (child->flags & 0x1),
 			child->m_localTransform.pos.x,
 			child->m_localTransform.pos.y,
 			child->m_localTransform.pos.z,
@@ -79,6 +84,23 @@ namespace F4VRBody {
 				}
 			}
 		}
+	}
+
+	void printTransform(std::string name, NiTransform& transform) {
+		_MESSAGE("Transform '%s', Pos: (%2.3f, %2.3f, %2.3f), Rot: [[%2.3f, %2.3f, %2.3f][%2.3f, %2.3f, %2.3f][%2.3f, %2.3f, %2.3f][%2.3f, %2.3f, %2.3f]]",
+			name.c_str(),
+			transform.pos.x,
+			transform.pos.y,
+			transform.pos.z,
+			transform.rot.data[0][0],
+			transform.rot.data[1][0],
+			transform.rot.data[2][0],
+			transform.rot.data[0][1],
+			transform.rot.data[1][1],
+			transform.rot.data[2][1],
+			transform.rot.data[0][2],
+			transform.rot.data[1][2],
+			transform.rot.data[2][2]);
 	}
 
 	/// <summary>
