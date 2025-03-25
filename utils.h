@@ -6,6 +6,7 @@
 #include "f4se/GameRTTI.h"
 #include "matrix.h"
 #include "Offsets.h"
+#include "VR.h"
 
 #include <chrono>
 
@@ -59,9 +60,16 @@ namespace F4VRBody {
 	void rotationStickEnabledToggle(bool enable);
 
 	void showHideNode(NiAVObject* node, bool toHide);
+	vr::VRControllerState_t getControllerState(bool primary);
+	bool isButtonPressedOnController(bool primary, int buttonId);
+	bool isButtonPressHeldDownOnController(bool primary, int buttonId);
+	bool isButtonReleasedOnController(bool primary, int buttonId);
+	bool isButtonLongPressedOnController(bool primary, int buttonId, int longPressSuration = 1500);
+	bool checkAndClearButtonLongPressedOnController(bool primary, int buttonId, int longPressSuration = 1500);
 
 	bool isCameraLookingAtObject(NiAVObject* cameraNode, NiAVObject* objectNode, float detectThresh);
 
+	std::string getEquippedWeaponName();
 	bool getLeftHandedMode();
 
 	NiNode* getChildNode(const char* nodeName, NiNode* nde);

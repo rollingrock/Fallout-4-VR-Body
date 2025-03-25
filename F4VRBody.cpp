@@ -492,6 +492,9 @@ namespace F4VRBody {
 			_skelly->fixArmor();
 		}
 
+		if (g_config->checkDebugDumpDataOnceFor("nodes")) {
+			printAllNodes(_skelly);
+		}
 		if (g_config->checkDebugDumpDataOnceFor("skelly")) {
 			printNodes((*g_player)->firstPersonSkeleton->GetAsNiNode());
 		}

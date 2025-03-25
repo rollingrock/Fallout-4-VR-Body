@@ -4,11 +4,68 @@
 #include "utils.h"
 #include "Skeleton.h"
 
+#include <sstream>
+#include <iomanip>
+
 namespace F4VRBody {
 
-	void printRoot() {
-		auto* node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
-		printNodes(node);
+	/// <summary>
+	/// Holds the the last time of a log message per key.
+	/// </summary>
+	std::map<std::string, uint64_t> _tMessageMap;
+
+	/// <summary>
+	/// Get a simple string of the current time in HH:MM:SS.ms format.
+	/// </summary>
+	static std::string getCurrentTimeString() {
+		auto now = std::chrono::system_clock::now();
+		auto now_c = std::chrono::system_clock::to_time_t(now);
+		std::tm localTime;
+		localtime_s(&localTime, &now_c);
+		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000;
+		std::ostringstream oss;
+		oss << std::put_time(&localTime, "%H:%M:%S")
+			<< '.' << std::setfill('0') << std::setw(3) << ms;
+		return oss.str();
+	}
+
+	/// <summary>
+	/// Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
+	/// </summary>
+	static void _SmsMESSAGEImpl(const std::string key, int time, const char* fmt, va_list args) {
+		if (_tMessageMap.find(key) == _tMessageMap.end()) {
+			_tMessageMap[key] = nowMillis();
+		}
+		else if (nowMillis() - _tMessageMap[key] <= time) {
+			return;
+		}
+		else {
+			_tMessageMap[key] = nowMillis();
+		}
+		auto msg = getCurrentTimeString() + " SMPL " + fmt;
+		gLog.Log(IDebugLog::kLevel_Message, msg.c_str(), args);
+	}
+
+	/// <summary>
+	/// Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
+	/// Use static key to identify the log messages that should be sampled.
+	/// </summary>
+	void _SmsMESSAGE(const std::string key, int time, const char* fmt, ...) {
+		va_list args;
+		va_start(args, fmt);
+		_SmsMESSAGEImpl(key, time, fmt, args);
+		va_end(args);
+	}
+
+	/// <summary>
+	/// Same as calling _MESSAGE but only one message log per second, other logs are dropped.
+	/// Use static key to identify the log messages that should be sampled.
+	/// </summary>
+	void _S1sMESSAGE(const std::string key, const char* fmt, ...) {
+		va_list args;
+		va_start(args, fmt);
+		_SmsMESSAGEImpl(key, 1000, fmt, args);
+		va_end(args);
 	}
 
 	void positionDiff(Skeleton* skelly) {
@@ -18,13 +75,21 @@ namespace F4VRBody {
 		_MESSAGE("difference = %f %f %f", (firstpos.x - skellypos.x), (firstpos.y - skellypos.y), (firstpos.z - skellypos.z));
 	}
 
+	void printAllNodes(Skeleton* skelly) {
+		auto* node = (BSFadeNode*)(*g_player)->unkF0->rootNode;
+		_MESSAGE("--- Player Root Node ---");
+		printNodes(node);
+		_MESSAGE("--- Global UI node ---");
+		printNodes(skelly->getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent);
+	}
+
 	void printNodes(NiNode* nde) {
 		// print root node info first
-		_MESSAGE("%s : children = %d hidden: %d: local (%2.3f, %2.3f, %2.3f)", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, (nde->flags & 0x1),
-			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z);
+		_MESSAGE("%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f),  World(%5.2f, %5.2f, %5.2f)", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, (nde->flags & 0x1),
+			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z,
+			nde->m_worldTransform.pos.x, nde->m_worldTransform.pos.y, nde->m_worldTransform.pos.z);
 
 		std::string padding = "";
-
 		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			//	auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
 			auto nextNode = nde->m_children.m_data[i];
@@ -35,14 +100,10 @@ namespace F4VRBody {
 	}
 
 	void printChildren(NiNode* child, std::string padding) {
-		padding += "....";
-		_MESSAGE("%s%s : children = %d hidden: %d: local (%2.3f, %2.3f, %2.3f) world (%5.2f, %5.2f, %5.2f)", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart, (child->flags & 0x1),
-			child->m_localTransform.pos.x,
-			child->m_localTransform.pos.y,
-			child->m_localTransform.pos.z,
-			child->m_worldTransform.pos.x,
-			child->m_worldTransform.pos.y,
-			child->m_worldTransform.pos.z);
+		padding += "..";
+		_MESSAGE("%s%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f), World(%5.2f, %5.2f, %5.2f)", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart, (child->flags & 0x1),
+			child->m_localTransform.pos.x, child->m_localTransform.pos.y, child->m_localTransform.pos.z,
+			child->m_worldTransform.pos.x, child->m_worldTransform.pos.y, child->m_worldTransform.pos.z);
 
 		//_MESSAGE("%s%s : children = %d : worldbound %f %f %f %f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart,
 		//	child->m_worldBound.m_kCenter.x, child->m_worldBound.m_kCenter.y, child->m_worldBound.m_kCenter.z, child->m_worldBound.m_fRadius);
@@ -86,8 +147,34 @@ namespace F4VRBody {
 		}
 	}
 
+	/// <summary>
+	/// Print the local transform data of nodes tree.
+	/// </summary>
+	void printNodesTransform(NiNode* node, std::string padding) {
+		_MESSAGE("%s%s child=%d, %s, Pos:(%2.3f, %2.3f, %2.3f), Rot:[[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f]]",
+			padding.c_str(), node->m_name.c_str(),
+			node->m_children.m_emptyRunStart, (node->flags & 0x1) ? "hidden" : "visible",
+			node->m_localTransform.pos.x,
+			node->m_localTransform.pos.y,
+			node->m_localTransform.pos.z,
+			node->m_localTransform.rot.data[0][0], node->m_localTransform.rot.data[1][0], node->m_localTransform.rot.data[2][0],
+			node->m_localTransform.rot.data[0][1], node->m_localTransform.rot.data[1][1], node->m_localTransform.rot.data[2][1],
+			node->m_localTransform.rot.data[0][2], node->m_localTransform.rot.data[1][2], node->m_localTransform.rot.data[2][2]);
+		if (!node->GetAsNiNode()) {
+			return; // no childerns for non NiNodes
+		}
+
+		padding += "..";
+		for (auto i = 0; i < node->m_children.m_emptyRunStart; ++i) {
+			auto nextNode = node->m_children.m_data[i];
+			if (nextNode) {
+				printNodesTransform((NiNode*)nextNode, padding);
+			}
+		}
+	}
+
 	void printTransform(std::string name, NiTransform& transform) {
-		_MESSAGE("Transform '%s', Pos: (%2.3f, %2.3f, %2.3f), Rot: [[%2.3f, %2.3f, %2.3f][%2.3f, %2.3f, %2.3f][%2.3f, %2.3f, %2.3f][%2.3f, %2.3f, %2.3f]]",
+		_MESSAGE("Transform '%s', Pos: (%2.4f, %2.4f, %2.4f), Rot: [[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.3f, %2.3f, %2.3f]]",
 			name.c_str(),
 			transform.pos.x,
 			transform.pos.y,
