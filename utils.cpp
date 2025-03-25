@@ -34,45 +34,46 @@ namespace F4VRBody {
 		return stream.str();
 	}
 
-    float vec3_len(const NiPoint3& v1) {
-        return sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
-    }
+	float vec3_len(const NiPoint3& v1) {
+		return sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
+	}
 
-    NiPoint3 vec3_norm(NiPoint3 v1) {
-        double mag = vec3_len(v1);
+	NiPoint3 vec3_norm(NiPoint3 v1) {
+		double mag = vec3_len(v1);
 
-        if (mag < 0.000001) {
-            float maxX = abs(v1.x);
-            float maxY = abs(v1.y);
-            float maxZ = abs(v1.z);
+		if (mag < 0.000001) {
+			float maxX = abs(v1.x);
+			float maxY = abs(v1.y);
+			float maxZ = abs(v1.z);
 
-            if (maxX >= maxY && maxX >= maxZ) {
-                return (v1.x >= 0 ? NiPoint3(1, 0, 0) : NiPoint3(-1, 0, 0));
-            } else if (maxY > maxZ) {
-                return (v1.y >= 0 ? NiPoint3(0, 1, 0) : NiPoint3(0, -1, 0));
-            }
-            return (v1.z >= 0 ? NiPoint3(0, 0, 1) : NiPoint3(0, 0, -1));
-        }
+			if (maxX >= maxY && maxX >= maxZ) {
+				return (v1.x >= 0 ? NiPoint3(1, 0, 0) : NiPoint3(-1, 0, 0));
+			}
+			else if (maxY > maxZ) {
+				return (v1.y >= 0 ? NiPoint3(0, 1, 0) : NiPoint3(0, -1, 0));
+			}
+			return (v1.z >= 0 ? NiPoint3(0, 0, 1) : NiPoint3(0, 0, -1));
+		}
 
-        v1.x /= mag;
-        v1.y /= mag;
-        v1.z /= mag;
+		v1.x /= mag;
+		v1.y /= mag;
+		v1.z /= mag;
 
-        return v1;
-    }
+		return v1;
+	}
 
 	float vec3_dot(const NiPoint3& v1, const NiPoint3& v2) {
 		return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 	}
 
-    NiPoint3 vec3_cross(const NiPoint3& v1, const NiPoint3& v2) {
-        return NiPoint3(
-            v1.y * v2.z - v1.z * v2.y,
-            v1.z * v2.x - v1.x * v2.z,
-            v1.x * v2.y - v1.y * v2.x
-        );
-    }
-	
+	NiPoint3 vec3_cross(const NiPoint3& v1, const NiPoint3& v2) {
+		return NiPoint3(
+			v1.y * v2.z - v1.z * v2.y,
+			v1.z * v2.x - v1.x * v2.z,
+			v1.x * v2.y - v1.y * v2.x
+		);
+	}
+
 	// the determinant is proportional to the sin of the angle between two vectors.   In 3d case find the sin of the angle between v1 and v2
 	// along their angle of rotation with unit vector n
 	// https://stackoverflow.com/questions/14066933/direct-way-of-computing-clockwise-angle-between-2-vectors/16544330#16544330
@@ -82,11 +83,11 @@ namespace F4VRBody {
 
 	float degrees_to_rads(float deg) {
 		return (deg * PI) / 180;
-	 }
+	}
 
 	float rads_to_degrees(float rad) {
 		return (rad * 180) / PI;
-	 }
+	}
 
 
 	NiPoint3 rotateXY(NiPoint3 vec, float angle) {
@@ -134,52 +135,53 @@ namespace F4VRBody {
 		return result.Transpose();
 	}
 
-    void updateTransforms(NiNode* node) {
-        if (!node->m_parent) {
-            return;
-        }
+	void updateTransforms(NiNode* node) {
+		if (!node->m_parent) {
+			return;
+		}
 
-        const auto& parentTransform = node->m_parent->m_worldTransform;
-        const auto& localTransform = node->m_localTransform;
+		const auto& parentTransform = node->m_parent->m_worldTransform;
+		const auto& localTransform = node->m_localTransform;
 
-        // Calculate world position
-        NiPoint3 pos = parentTransform.rot * (localTransform.pos * parentTransform.scale);
-        node->m_worldTransform.pos = parentTransform.pos + pos;
+		// Calculate world position
+		NiPoint3 pos = parentTransform.rot * (localTransform.pos * parentTransform.scale);
+		node->m_worldTransform.pos = parentTransform.pos + pos;
 
-        // Calculate world rotation
-        Matrix44 loc;
-        loc.makeTransformMatrix(localTransform.rot, NiPoint3(0, 0, 0));
-        node->m_worldTransform.rot = loc.multiply43Left(parentTransform.rot);
+		// Calculate world rotation
+		Matrix44 loc;
+		loc.makeTransformMatrix(localTransform.rot, NiPoint3(0, 0, 0));
+		node->m_worldTransform.rot = loc.multiply43Left(parentTransform.rot);
 
-        // Calculate world scale
-        node->m_worldTransform.scale = parentTransform.scale * localTransform.scale;
-    }
+		// Calculate world scale
+		node->m_worldTransform.scale = parentTransform.scale * localTransform.scale;
+	}
 
-    void updateTransformsDown(NiNode* nde, bool updateSelf) {
-        if (updateSelf) {
-            updateTransforms(nde);
-        }
+	void updateTransformsDown(NiNode* nde, bool updateSelf) {
+		if (updateSelf) {
+			updateTransforms(nde);
+		}
 
-        for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-            if (auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-                updateTransformsDown(nextNode, true);
-            } else if (auto triNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsBSTriShape() : nullptr) {
-                updateTransforms(reinterpret_cast<NiNode*>(triNode));
-            }
-        }
-    }
+		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			if (auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+				updateTransformsDown(nextNode, true);
+			}
+			else if (auto triNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsBSTriShape() : nullptr) {
+				updateTransforms(reinterpret_cast<NiNode*>(triNode));
+			}
+		}
+	}
 
-    void toggleVis(NiNode* nde, bool hide, bool updateSelf) {
-        if (updateSelf) {
-            nde->flags = hide ? (nde->flags | 0x1) : (nde->flags & ~0x1);
-        }
+	void toggleVis(NiNode* nde, bool hide, bool updateSelf) {
+		if (updateSelf) {
+			nde->flags = hide ? (nde->flags | 0x1) : (nde->flags & ~0x1);
+		}
 
-        for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-            if (auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-                toggleVis(nextNode, hide, true);
-            }
-        }
-    }
+		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			if (auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+				toggleVis(nextNode, hide, true);
+			}
+		}
+	}
 
 	void SetINIBool(BSFixedString name, bool value) {
 		CallGlobalFunctionNoWait2<BSFixedString, bool>("Utility", "SetINIBool", BSFixedString(name.c_str()), value);
@@ -242,7 +244,7 @@ namespace F4VRBody {
 				input.ki.dwExtraInfo = 0;
 				input.ki.wVk = vkey;
 				if (vkey == VK_UP || vkey == VK_DOWN) {
-				input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;//0; //KEYEVENTF_KEYDOWN
+					input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;//0; //KEYEVENTF_KEYDOWN
 				}
 				else {
 					input.ki.dwFlags = 0;
@@ -261,12 +263,12 @@ namespace F4VRBody {
 	}
 
 	void turnPipBoyOn() {
-/*  From IdleHands
-    Utility.SetINIFloat("fHMDToPipboyScaleOuterAngle:VRPipboy", 0.0000)
-    Utility.SetINIFloat("fHMDToPipboyScaleInnerAngle:VRPipboy", 0.0000) 
-    Utility.SetINIFloat("fPipboyScaleOuterAngle:VRPipboy", 0.0000) 
-    Utility.SetINIFloat("fPipboyScaleInnerAngle:VRPipboy", 0.0000) 
-*/
+		/*  From IdleHands
+			Utility.SetINIFloat("fHMDToPipboyScaleOuterAngle:VRPipboy", 0.0000)
+			Utility.SetINIFloat("fHMDToPipboyScaleInnerAngle:VRPipboy", 0.0000)
+			Utility.SetINIFloat("fPipboyScaleOuterAngle:VRPipboy", 0.0000)
+			Utility.SetINIFloat("fPipboyScaleInnerAngle:VRPipboy", 0.0000)
+		*/
 		Setting* set = GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
 		set->SetDouble(0.0);
 
@@ -282,7 +284,7 @@ namespace F4VRBody {
 		if (g_config->autoFocusWindow && g_config->switchUIControltoPrimary) {
 			WindowFocus();
 		}
-		
+
 	}
 
 	void turnPipBoyOff() {
@@ -334,6 +336,93 @@ namespace F4VRBody {
 			node->flags &= 0xfffffffffffffffe; // show
 	}
 
+	/// <summary>
+	/// Get the correct right/left handed config and whatever primary or secondary is requested.
+	/// Example: right is primary for right handed mode, but left is primary for left handed mode.
+	/// </summary>
+	static VRHook::VRSystem::TrackerType getTrackerTypeForCorrectHand(bool primary) {
+		return g_config->leftHandedMode
+			? primary ? VRHook::VRSystem::TrackerType::Left : VRHook::VRSystem::TrackerType::Right
+			: primary ? VRHook::VRSystem::TrackerType::Right : VRHook::VRSystem::TrackerType::Left;
+	}
+
+	/// <summary>
+	/// Get the input controller state object for the primary controller depending on left handmode.
+	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	/// </summary>
+	vr::VRControllerState_t getControllerState(bool primary) {
+		auto tracker = getTrackerTypeForCorrectHand(primary);
+		return VRHook::g_vrHook->getControllerState(tracker);
+	}
+
+	/// <summary>
+	/// Check if the given button is pressed AFTER NOT being pressed on the primary/secondary input controller.
+	/// This will return true for ONE frame only when the button is first pressed.
+	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	/// </summary>
+	bool isButtonPressedOnController(bool primary, int buttonId) {
+		auto tracker = getTrackerTypeForCorrectHand(primary);
+		auto prevInput = VRHook::g_vrHook->getControllerPreviousState(tracker).ulButtonPressed;
+		auto input = VRHook::g_vrHook->getControllerState(tracker).ulButtonPressed;
+		auto button = vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(buttonId));
+		return !(prevInput & button) && (input & button);
+	}
+
+	/// <summary>
+	/// Check if the given button is pressed and is HELD down on the primary/secondary input controller.
+	/// This will return true for EVERY frame while the button is pressed.
+	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	/// </summary>
+	bool isButtonPressHeldDownOnController(bool primary, int buttonId) {
+		auto tracker = getTrackerTypeForCorrectHand(primary);
+		auto prevInput = VRHook::g_vrHook->getControllerPreviousState(tracker).ulButtonPressed;
+		auto input = VRHook::g_vrHook->getControllerState(tracker).ulButtonPressed;
+		auto button = vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(buttonId));
+		return (prevInput & button) && (input & button);
+	}
+
+	/// <summary>
+	/// Check if the given button was released AFTER beeing pressed on the primary/secondary input controller.
+	/// This will return true for ONE frame only when the button is first released.
+	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	/// </summary>
+	bool isButtonReleasedOnController(bool primary, int buttonId) {
+		auto tracker = getTrackerTypeForCorrectHand(primary);
+		auto prevInput = VRHook::g_vrHook->getControllerPreviousState(tracker).ulButtonPressed;
+		auto input = VRHook::g_vrHook->getControllerState(tracker).ulButtonPressed;
+		auto button = vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(buttonId));
+		return (prevInput & button) && !(input & button);
+	}
+
+	/// <summary>
+	/// Check if the given button is long pressed on the primary/secondary input controller.
+	/// This will return true for EVERY frame when the button is pressed for longer then longPressSuration.
+	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	/// </summary>
+	bool isButtonLongPressedOnController(bool primary, int buttonId, int longPressSuration) {
+		auto tracker = getTrackerTypeForCorrectHand(primary);
+		auto longPress = VRHook::g_vrHook->getControllerLongButtonPressedState(tracker);
+		if (longPress.startTimeMilisec == 0 || nowMillis() - longPress.startTimeMilisec < longPressSuration) {
+			return false;
+		}
+		auto button = vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(buttonId));
+		return longPress.ulButtonPressed & button;
+	}
+
+	/// <summary>
+	/// Check if the given button is long pressed on the primary/secondary input controller and clear the state if it is.
+	/// This will return true for ONE frame when the button is pressed for longer then longPressSuration. But if the
+	/// player continues to hold the button it will return true again after longPressSuration passed again.
+	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	/// </summary>
+	bool checkAndClearButtonLongPressedOnController(bool primary, int buttonId, int longPressSuration) {
+		auto isButtonLongPressed = isButtonLongPressedOnController(primary, buttonId, longPressSuration);
+		if (isButtonLongPressed) {
+			VRHook::g_vrHook->clearControllerLongButtonPressedState(getTrackerTypeForCorrectHand(primary));
+		}
+		return isButtonLongPressed;
+	}
+
 	// Function to check if the camera is looking at the object and the object is facing the camera
 	bool isCameraLookingAtObject(NiAVObject* cameraNode, NiAVObject* objectNode, float detectThresh) {
 		// Get the position of the camera and the object
@@ -360,42 +449,47 @@ namespace F4VRBody {
 		return isCameraLooking && isObjectFacing;
 	}
 
+	std::string getEquippedWeaponName() {
+		auto* equipData = (*g_player)->middleProcess->unk08->equipData;
+		return equipData ? equipData->item->GetFullName() : "";
+	}
+
 	bool getLeftHandedMode() {
 		Setting* set = GetINISetting("bLeftHandedMode:VR");
 
 		return set->data.u8;
-	 }
+	}
 
-    NiNode* getChildNode(const char* nodeName, NiNode* nde) {
-        if (!nde->m_name) {
-            return nullptr;
-        }
+	NiNode* getChildNode(const char* nodeName, NiNode* nde) {
+		if (!nde->m_name) {
+			return nullptr;
+		}
 
-        if (!_stricmp(nodeName, nde->m_name.c_str())) {
-            return nde;
-        }
+		if (!_stricmp(nodeName, nde->m_name.c_str())) {
+			return nde;
+		}
 
-        for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-            if (auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-                if (auto ret = getChildNode(nodeName, nextNode)) {
-                    return ret;
-                }
-            }
-        }
+		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			if (auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+				if (auto ret = getChildNode(nodeName, nextNode)) {
+					return ret;
+				}
+			}
+		}
 
-        return nullptr;
-    }
+		return nullptr;
+	}
 
-    NiNode* get1stChildNode(const char* nodeName, NiNode* nde) {
-        for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-            if (auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-                if (!_stricmp(nodeName, nextNode->m_name.c_str())) {
-                    return nextNode;
-                }
-            }
-        }
-        return nullptr;
-    }
+	NiNode* get1stChildNode(const char* nodeName, NiNode* nde) {
+		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			if (auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+				if (!_stricmp(nodeName, nextNode->m_name.c_str())) {
+					return nextNode;
+				}
+			}
+		}
+		return nullptr;
+	}
 
 	Setting* GetINISettingNative(const char* name)
 	{
