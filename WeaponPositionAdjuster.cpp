@@ -25,13 +25,18 @@ namespace F4VRBody {
 
 		checkEquippedWeaponChanged();
 
-		handleWeaponRepositionConfigMode(weapon);
+		_configMode.onFrameUpdate();
+		_configMode.handleWeaponReposition(_vrhook, weapon, _weaponOffsetTransform, _weaponOriginalTransform, _lastWeapon, _lastWeaponInPA);
+		_configMode.handleOffhandReposition(_vrhook, weapon, _offhandOffsetPos, _lastWeapon, _lastWeaponInPA);
+		_configMode.handleBetterScopesConfig(_vrhook);
 
 		checkIfOffhandIsGripping(weapon);
 
 		handleWeaponGrippingRotationAdjustment(weapon);
 
 		handleScopeCameraAdjustmentByWeaponOffset(weapon);
+
+		handleBetterScopes(weapon);
 
 		_skelly->updateDown(weapon, true);
 
@@ -69,76 +74,16 @@ namespace F4VRBody {
 		// Load stored offsets for offhand for the new weapon 
 		auto offhandOffsetLookup = g_config->getWeaponOffsets(weapname, _skelly->inPowerArmor() ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
 		if (offhandOffsetLookup.has_value()) {
-			_offhandOffsetTransform = offhandOffsetLookup.value();
-			_MESSAGE("Use offHand offset for '%s'; Pos: (%2.2f, %2.2f, %2.2f), Scale: %2.3f, InPA: %d",
-				weapname.c_str(), _offhandOffsetTransform.pos.x, _offhandOffsetTransform.pos.y, _offhandOffsetTransform.pos.z, _offhandOffsetTransform.scale, _skelly->inPowerArmor());
+			_offhandOffsetPos = offhandOffsetLookup.value().pos;
+			_MESSAGE("Use offHand offset for '%s'; Pos: (%2.2f, %2.2f, %2.2f), InPA: %d",
+				weapname.c_str(), _offhandOffsetPos.x, _offhandOffsetPos.y, _offhandOffsetPos.z, _skelly->inPowerArmor());
 		}
 		else {
 			// No stored offset for offhand, use default values (small vertical offset)
-			_offhandOffsetTransform = NiTransform();
-			_offhandOffsetTransform.pos = NiPoint3(0, 0, 2);
+			_offhandOffsetPos = _configMode.getDefaultOffhandTransform();
 		}
 	}
 	
-	/// <summary>
-	/// In weapon reposition mode handle controllers input to adjust weapon position.
-	/// Depending on buttons pressed we can horizontal/vertical position or rotation.
-	/// </summary>
-	void WeaponPositionAdjuster::handleWeaponRepositionConfigMode(NiNode* weapon) {
-		if (isButtonReleasedOnController(true, vr::EVRButtonId::k_EButton_A)) {
-			// TODO: remove after testing (quick enter/exit reposition mode)
-			_inRepositionConfigMode = !_inRepositionConfigMode;
-			rotationStickEnabledToggle(!_inRepositionConfigMode);
-			std::string state = _inRepositionConfigMode ? "Enabled" : "Disabled";
-			ShowNotification("Testing: Weapon Reposition Mode - " + state);
-		}
-
-		if (!_inRepositionConfigMode) {
-			return;
-		}
-
-		if (checkAndClearButtonLongPressedOnController(true, vr::EVRButtonId::k_EButton_Grip)) {
-			ShowNotification("Reset Weapon Position to Default");
-			_vrhook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4);
-			_weaponOffsetTransform = _weaponOriginalTransform;
-		}
-
-		if (checkAndClearButtonLongPressedOnController(true, vr::EVRButtonId::k_EButton_A)) {
-			ShowNotification("Saving Weapon Position");
-			_vrhook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4);
-			g_config->saveWeaponOffsets(_lastWeapon, _weaponOffsetTransform, _lastWeaponInPA ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
-		}
-
-		vr::VRControllerAxis_t axis_state = getControllerState(true).rAxis[0];
-		if (axis_state.x == 0.f && axis_state.y == 0.f) {
-			return;
-		}
-		if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_A)) {
-			Matrix44 rot;
-			if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
-				// roll rotation
-				rot.setEulerAngles(0, -degrees_to_rads(axis_state.x / 3), 0);
-			}
-			else {
-				// pitch and yaw rotation
-				rot.setEulerAngles(-degrees_to_rads(axis_state.y / 5), 0, degrees_to_rads(axis_state.x / 5));
-			}
-			_weaponOffsetTransform.rot = rot.multiply43Left(_weaponOffsetTransform.rot);
-		}
-		else if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
-			// adjust vertical (z - up/down)
-			_weaponOffsetTransform.pos.z -= axis_state.y / 10;
-		}
-		else {
-			// adjust horizontal (y - right/left, x - forward/backward) (default - no buttons pressed)
-			_weaponOffsetTransform.pos.y += axis_state.x / 10;
-			_weaponOffsetTransform.pos.x += axis_state.y / 10;
-		}
-
-		// update the weapon with the offset change
-		weapon->m_localTransform = _weaponOffsetTransform;
-	}
-
 	/// <summary>
 	/// Update the vanilla scope camera node to match weapon reposition.
 	/// Offset is a simple adjustment of the diff between original and offset transform.
@@ -237,16 +182,16 @@ namespace F4VRBody {
 	/// Calculate the weapon to offhand vector and then adjust the weapon and scope camera rotation to match the vector.
 	/// </summary>
 	void WeaponPositionAdjuster::handleWeaponGrippingRotationAdjustment(NiNode* weapon) {
-		if (!g_config->enableOffHandGripping || !_offHandGripping) {
+		if (!_offHandGripping && !_configMode.isInOffhandRepositioning()) {
 			return;
 		}
 
 		// calculate the vector from weapon to offhand in world coordinates
 		// This vector will be used to adjust the rotation of the weapon and scope camera
-		auto weaponToOffhandVec = getOffhand2WeaponVector(weapon);
+		auto weaponToOffhandVec = getOffhandPosition(weapon) - weapon->m_worldTransform.pos;
 		
 		// adjust by the saved offhand offset
-		weaponToOffhandVec += _offhandOffsetTransform.pos;
+		weaponToOffhandVec += _offhandOffsetPos;
 		
 		// Handle weapon:
 		// Calculate the rotation adjustment using quaternion by diff between weapon vector and straight
@@ -272,7 +217,7 @@ namespace F4VRBody {
 	/// to prevent grabbing when two hands are just close.
 	/// </summary>
 	bool WeaponPositionAdjuster::isOffhandCloseToBarrel(NiNode* weapon) {
-		auto offhand2WeaponVec = getOffhand2WeaponVector(weapon);
+		auto offhand2WeaponVec = getOffhandPosition(weapon) - weapon->m_worldTransform.pos;
 		float distanceFromPrimaryHand = vec3_len(offhand2WeaponVec);
 		auto NormalizedVec = weapon->m_worldTransform.rot.Transpose() * vec3_norm(offhand2WeaponVec) / weapon->m_worldTransform.scale;
 		float angleDiffToWeaponVec = vec3_dot(vec3_norm(NormalizedVec), NiPoint3(0, 1, 0));
@@ -312,13 +257,40 @@ namespace F4VRBody {
 	}
 
 	/// <summary>
-	/// calculate the vector from weapon to offhand in world coordinates
-	/// This vector will be used to adjust the rotation of the weapon and scope camera
+	/// Get the world coordinates of the offhand.
 	/// </summary>
-	NiPoint3 WeaponPositionAdjuster::getOffhand2WeaponVector(NiNode* weapon) {
+	NiPoint3 WeaponPositionAdjuster::getOffhandPosition(NiNode* weapon) {
 		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_skelly->getRoot();
 		auto offHandBone = g_config->leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
-		return rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos - weapon->m_worldTransform.pos;
+		return rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos;
+	}
+
+	/// <summary>
+	/// Handle toggling of scope zoom for BetterScopesVR mod.
+	/// Toggle only when player presses offhand X/A button and the hand is close to the weapon scope.
+	/// </summary>
+	void WeaponPositionAdjuster::handleBetterScopes(NiNode* weapon) {
+		if (!isButtonPressedOnController(false, vr::EVRButtonId::k_EButton_A)) {
+			// fast return not to make additional calculations, checking button is cheap
+			return;
+		}
+
+		static BSFixedString reticleNodeName = "ReticleNode";
+		NiAVObject* scopeRet = weapon->GetObjectByName(&reticleNodeName);
+		if (!scopeRet) {
+			return;
+		}
+		auto reticlePos = scopeRet->GetAsNiNode()->m_worldTransform.pos;
+		auto offhandPos = getOffhandPosition(weapon);
+		auto offset = vec3_len(reticlePos - offhandPos);
+		auto handNearScope = (offset < g_config->scopeAdjustDistance);
+
+		if (handNearScope) {
+			// Zoom toggling
+			_MESSAGE("Zoom Toggle pressed; sending message to switch zoom state");
+			g_messaging->Dispatch(g_pluginHandle, 16, nullptr, 0, "FO4VRBETTERSCOPES");
+			_vrhook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1, 0.3);
+		}
 	}
 
 	void WeaponPositionAdjuster::debugPrintWeaponPositionData() {

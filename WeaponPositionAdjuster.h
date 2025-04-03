@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Skeleton.h"
-#include "api/VRHookAPI.h"
 #include "f4se/NiNodes.h"
+#include "WeaponPositionConfigMode.h"
 
 namespace F4VRBody {
 
@@ -22,10 +22,10 @@ namespace F4VRBody {
 		}
 
 		inline bool inWeaponRepositionMode() const {
-			return _inRepositionConfigMode;
+			return _configMode.inWeaponRepositionMode();
 		}
 		inline void toggleWeaponRepositionMode() {
-			_inRepositionConfigMode = !_inRepositionConfigMode;
+			_configMode.toggleWeaponRepositionMode();
 		}
 
 		void onFrameUpdate();
@@ -33,12 +33,12 @@ namespace F4VRBody {
 	private:
 		void checkEquippedWeaponChanged();
 		void handleScopeCameraAdjustmentByWeaponOffset(NiNode* weapon);
-		void handleWeaponRepositionConfigMode(NiNode* weapon);
 		void checkIfOffhandIsGripping(NiNode* weapon);
 		void handleWeaponGrippingRotationAdjustment(NiNode* weapon);
 		bool isOffhandCloseToBarrel(NiNode* weapon);
 		bool isOffhandMovedFastAway();
-		NiPoint3 getOffhand2WeaponVector(NiNode* weapon);
+		NiPoint3 getOffhandPosition(NiNode* weapon);
+		void handleBetterScopes(NiNode* weapon);
 		void debugPrintWeaponPositionData();
 
 		// Define a basis remapping matrix to correct coordinate system for scope camera
@@ -53,12 +53,17 @@ namespace F4VRBody {
 
 		// is offhand (secondary hand) gripping the weapon barrel
 		bool _offHandGripping = false;
-
-		// configuration mode to adjust weapon offset, offhand offset, and ??
-		bool _inRepositionConfigMode = false;
-
+		
+		// weapon original transform before changing it
 		NiTransform _weaponOriginalTransform;
+		
+		// custom weapon transform to update
 		NiTransform _weaponOffsetTransform;
-		NiTransform _offhandOffsetTransform;
+		
+		// custom offhand position offsets
+		NiPoint3 _offhandOffsetPos;
+
+		// configuration mode to update custom transforms
+		WeaponPositionConfigMode _configMode;
 	};
 }
