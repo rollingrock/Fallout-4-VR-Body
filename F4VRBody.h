@@ -18,7 +18,6 @@
 #include "ConfigurationMode.h"
 #include "CullGeometryHandler.h"
 #include "BoneSpheresHandler.h"
-#include "WeaponPositionHandler.h"
 #include "WeaponPositionAdjuster.h"
 
 #include <windows.h>
