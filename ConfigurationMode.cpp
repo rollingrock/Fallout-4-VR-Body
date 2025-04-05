@@ -35,7 +35,7 @@ namespace F4VRBody {
 				MCConfigUI->m_localTransform.scale = 0;
 				MCConfigUI->m_parent->RemoveChild(MCConfigUI);
 			}
-			_skelly->disableConfigModePose();
+			disableConfigModePose();
 			_calibrateModeActive = false;
 		}
 	}
@@ -53,7 +53,7 @@ namespace F4VRBody {
 				PBConfigUI->m_localTransform.scale = 0;
 				PBConfigUI->m_parent->RemoveChild(PBConfigUI);
 			}
-			_skelly->disableConfigModePose();
+			disableConfigModePose();
 			_isPBConfigModeActive = false;
 		}
 	}
@@ -126,7 +126,7 @@ namespace F4VRBody {
 					}
 				}
 			}
-			_skelly->setConfigModeHandPose();
+			setConfigModeHandPose();
 			_calibrationModeUIActive = true;
 			_armLength_bkup = g_config->armLength;
 			_powerArmor_up_bkup = g_config->powerArmor_up;
@@ -138,6 +138,9 @@ namespace F4VRBody {
 			_powerArmor_forward_bkup = g_config->powerArmor_forward;
 			_cameraHeight_bkup = g_config->cameraHeight;
 			_PACameraHeight_bkup = g_config->PACameraHeight;
+			enableGripButtonToGrap_bkup = g_config->enableGripButtonToGrap;
+			onePressGripButton_bkup = g_config->onePressGripButton;
+			enableGripButtonToLetGo_bkup = g_config->enableGripButtonToLetGo;
 		}
 		else {
 			NiNode* UIElement = nullptr;
@@ -146,7 +149,7 @@ namespace F4VRBody {
 			g_config->dampenHands ? UIElement->m_localTransform.scale = 1 : UIElement->m_localTransform.scale = 0;
 			// Weapon Reposition Mode
 			UIElement = _skelly->getNode("MC-Tile08On", _skelly->getPlayerNodes()->primaryUIAttachNode);
-			UIElement->m_localTransform.scale = c_weaponRepositionMasterMode ? 1 : 0;
+			UIElement->m_localTransform.scale = g_weaponPosition->inWeaponRepositionMode() ? 1 : 0;
 			// Grip Mode
 			if (!g_config->enableGripButtonToGrap && !g_config->onePressGripButton && !g_config->enableGripButtonToLetGo) { // Standard Sticky Grip on / off
 				for (int i = 0; i < 4; i++) {
@@ -272,8 +275,8 @@ namespace F4VRBody {
 			}
 			if (WeaponButtonPressed && !_isWeaponButtonPressed) {
 				_isWeaponButtonPressed = true;
-				c_weaponRepositionMasterMode = !c_weaponRepositionMasterMode;
-				rotationStickEnabledToggle(!c_weaponRepositionMasterMode);
+				g_weaponPosition->toggleWeaponRepositionMode();
+				rotationStickEnabledToggle(!g_weaponPosition->inWeaponRepositionMode());
 			}
 			else if (!WeaponButtonPressed) {
 				_isWeaponButtonPressed = false;
@@ -366,7 +369,6 @@ namespace F4VRBody {
 
 	void ConfigurationMode::onUpdate() {
 		
-		calibratePlayerHeightAndArmsAfterDelay();
 		checkWeaponRepositionPipboyConflict();
 		pipboyConfigurationMode();
 		mainConfigurationMode();
@@ -403,6 +405,9 @@ namespace F4VRBody {
 				g_config->powerArmor_forward = _powerArmor_forward_bkup;
 				g_config->cameraHeight = _cameraHeight_bkup;
 				g_config->PACameraHeight = _PACameraHeight_bkup;
+				g_config->enableGripButtonToGrap = enableGripButtonToGrap_bkup;
+				g_config->onePressGripButton = onePressGripButton_bkup;
+				g_config->enableGripButtonToLetGo = enableGripButtonToLetGo_bkup;
 			}
 			else if (!ExitnoSave) {
 				_exitWithoutSavePressed = false;
@@ -733,7 +738,7 @@ namespace F4VRBody {
 				UI->AttachChild((NiAVObject*)UI3, true);
 			}
 		}
-		_skelly->setConfigModeHandPose();
+		setConfigModeHandPose();
 		_isPBConfigModeActive = true;
 		_PBConfigModeEnterCounter = 0;
 	}
@@ -744,33 +749,8 @@ namespace F4VRBody {
 	/// On-wrist pipboy needs the rotation stick disabled to override its own UI.
 	/// </summary>
 	void ConfigurationMode::checkWeaponRepositionPipboyConflict() {
-		if (!c_weaponRepositionMasterMode)
+		if (!g_weaponPosition->inWeaponRepositionMode())
 			return;
 		rotationStickEnabledToggle(isAnyPipboyOpen() && !g_pipboy->isOperatingPipboy());
 	}
-
-	/// <summary>
-	/// Actual callibration will happen after 4-5 seconds to let the player stand.
-	/// </summary>
-	void ConfigurationMode::calibratePlayerHeightAndArms() {
-		ShowNotification("FRIK Calibration: Stand Up Straight and Tall for 5 seconds");
-		_calibratePlayerHeightTime = std::time(nullptr);
-	}
-
-	/// <summary>
-	/// Use the on frame update tick to run player hight calculation after a delay to allow for the player to get into position.
-	/// </summary>
-	void ConfigurationMode::calibratePlayerHeightAndArmsAfterDelay() {
-		if (_calibratePlayerHeightTime == 0)
-			return;
-		
-		// TODO: can we measure arm lenght?
-		if (time(nullptr) - _calibratePlayerHeightTime > 4) {
-			_calibratePlayerHeightTime = 0;
-			PlayerNodes* pn = (PlayerNodes*)((char*)(*g_player) + 0x6E0);
-			g_config->savePlayerHeight(pn->UprightHmdNode->m_localTransform.pos.z);
-			ShowNotification("FRIK Calibrated Height: " + toStringWithPrecision(g_config->playerHeight));
-		}
-	}
-
 }

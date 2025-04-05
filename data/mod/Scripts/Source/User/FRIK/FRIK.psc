@@ -9,6 +9,8 @@ int Function ToggleReloadFrikIniConfig() global native
 int Function GetWeaponRepositionMode() global native
 Function toggleSelfieMode() global native
 Function setSelfieMode(bool selfieMode) global native
+Function moveForward() global native
+Function moveBackward() global native
 bool Function isLeftHandedMode() global native
 Function setDynamicCameraHeight(float dynamicCameraHeight) global native
 int Function GetFrikIniAutoReloading() global native

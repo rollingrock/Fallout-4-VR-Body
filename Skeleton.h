@@ -23,6 +23,13 @@
 
 namespace F4VRBody
 {
+
+	enum wandMode {
+		both = 0,
+		mainhandWand,
+		offhandWand,
+	};
+
 	enum WeaponType
 	{
 		kWeaponType_Hand_To_Hand_Melee,
@@ -171,7 +178,7 @@ namespace F4VRBody
 			_cury /= mag;
 		}
 
-		BSFadeNode* getRoot() {
+		inline BSFadeNode* getRoot() const {
 			return _root;
 		}
 
@@ -179,20 +186,28 @@ namespace F4VRBody
 			_root = node;
 		}
 
-		ArmNodes getLeftArm() {
+		inline ArmNodes getLeftArm() const {
 			return leftArm;
 		}
 
-		ArmNodes getRightArm() {
+		inline ArmNodes getRightArm() const {
 			return rightArm;
 		}
 
-		PlayerNodes* getPlayerNodes() {
+		inline PlayerNodes* getPlayerNodes() const {
 			return _playerNodes;
 		}
 
 		void setCommonNode() {
 			_common = this->getNode("COM", _root);
+		}
+
+		inline bool inPowerArmor() const {
+			return _inPowerArmor;
+		}
+
+		inline NiPoint3 getCurrentBodyPos() const {
+			return _curPos;
 		}
 
 		int getBoneInMap(std::string boneName);
@@ -222,12 +237,6 @@ namespace F4VRBody
 		// movement
 		void walk();
 
-		enum wandMode {
-			both = 0,
-			mainhandWand,
-			offhandWand,
-		};
-
 		void setWandsVisibility(bool a_show = true, wandMode a_mode = both);
 		void showWands(wandMode a_mode = both);
 		void hideWands(wandMode a_mode = both);
@@ -240,13 +249,6 @@ namespace F4VRBody
 		void dampenHand(NiNode* node, bool isLeft);
 		void hidePipboy();
 		bool armorHasHeadLamp();
-		void setPipboyHandPose();
-		void disablePipboyHandPose();
-		void setConfigModeHandPose();
-		void disableConfigModePose();
-
-		// two handed
-		void offHandToBarrel();
 
 		// utility
 		NiNode* getNode(const char* nodeName, NiNode* nde);
@@ -267,7 +269,6 @@ namespace F4VRBody
 		void copy1stPerson(std::string bone);
 		void insertSaveState(const std::string& name, NiNode* node);
 		void rotateLeg(uint32_t pos, float angle);
-		void offHandToScope();
 		void moveBack();
 		void initLocalDefaults();
 		void fixBoneTree();
@@ -278,12 +279,6 @@ namespace F4VRBody
 		float getNeckPitch();
 		float getBodyPitch();
 
-		enum repositionMode {
-			weapon = 0, // move weapon
-			offhand, // move offhand grip position
-			resetToDefault, // reset to default and exit reposition mode
-			total = resetToDefault
-		};
 
 	private:
 		BSFadeNode* _root;
@@ -344,32 +339,6 @@ namespace F4VRBody
 		std::map<std::string, NiTransform, CaseInsensitiveComparator> _handBones;
 		std::map<std::string, bool, CaseInsensitiveComparator> _closedHand;
 		std::map<std::string, vr::EVRButtonId, CaseInsensitiveComparator> _handBonesButton;
-
-		NiTransform _weapSave;
-		NiTransform _customTransform;
-		bool _useCustomWeaponOffset = false;
-		bool _useCustomOffHandOffset = false;
-
-		bool _offHandGripping;
-		bool _repositionButtonHolding = false;
-		bool _inRepositionMode = false;
-		bool _repositionModeSwitched = false;
-		repositionMode _repositionMode = repositionMode::weapon;
-		uint64_t _repositionButtonHoldStart = 0;
-		NiPoint3 _startFingerBonePos = NiPoint3(0, 0, 0);
-		NiPoint3 _endFingerBonePos = NiPoint3(0, 0, 0);
-		NiPoint3 _offsetPreview = NiPoint3(0, 0, 0);
-		bool _hasLetGoGripButton;
-		bool _hasLetGoRepositionButton = false;
-		bool _hasLetGoZoomModeButton = false;
-		bool _zoomModeButtonHeld = false;
-		std::string _lastWeapon = "";
-		Quaternion _aimAdjust;
-
-		NiMatrix43 _originalWeaponRot;
-		NiPoint3 _offhandPos {0, 0, 0};
-		NiTransform _offhandOffset; // Saving as NiTransform in case we need rotation in future
-		NiPoint3 msgData{ 0, 0, 0 }; // used for msg passing
 
 		NiTransform _rightHandPrevFrame;
 		NiTransform _leftHandPrevFrame;

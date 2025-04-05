@@ -11,8 +11,6 @@ namespace F4VRBody {
 	
 	ScopeMenuEventHandler scopeMenuEvent;
 
-	bool dynamicGripEnabled = false;
-
 	bool isInScopeMenu() {
 		return inScopeMenu;
 	}
@@ -23,21 +21,10 @@ namespace F4VRBody {
 		if (!_stricmp(name, "ScopeMenu")) {
 			if (a_event->isOpen) {
 			//	_MESSAGE("scope opened");
-				if (!g_config->staticGripping) {
-					g_config->staticGripping = true;
-			//		dynamicGripEnabled = true;
-				}
-				else {
-					dynamicGripEnabled = false;
-				}
-
 				inScopeMenu = true;
 			}
 			else {
 				//_MESSAGE("scope closed");
-				if (dynamicGripEnabled && g_config->staticGripping) {
-		//			staticGripping = false;
-				}
 				inScopeMenu = false;
 			}
 		}

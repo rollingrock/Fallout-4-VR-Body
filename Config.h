@@ -52,10 +52,6 @@ namespace F4VRBody {
 		inline void savePipboyScale(double pipboyScale) {
 			saveFrikIniValue(INI_SECTION_MAIN, "PipboyScale", pipboyScale);
 		}
-		inline void savePlayerHeight(double pPlayerHeight) {
-			playerHeight = pPlayerHeight;
-			saveFrikIniValue(INI_SECTION_MAIN, "PlayerHeight", pPlayerHeight);
-		}
 		inline int getAutoReloadConfigInterval() const {
 			return _reloadConfigInterval;
 		}
@@ -102,7 +98,6 @@ namespace F4VRBody {
 		float handUI_Z = 0.0;
 
 		// Weapon
-		bool staticGripping = false;
 		bool enableOffHandGripping = true;
 		bool enableGripButtonToGrap = true;
 		bool enableGripButtonToLetGo = true;
@@ -115,6 +110,7 @@ namespace F4VRBody {
 		bool autoFocusWindow = false;
 		float selfieOutFrontDistance = 120.0f;
 		bool selfieIgnoreHideFlags = false;
+		int offHandActivateButtonID = vr::EVRButtonId::k_EButton_A; // 7
 
 		// Pipboy
 		bool hidePipboy = false;
@@ -134,7 +130,6 @@ namespace F4VRBody {
 		int holdDelay = 1000; // 1000 ms
 		int pipBoyOffDelay = 5000; // 5000 ms
 		int pipBoyOnDelay = 100; // 100 ms
-		int offHandActivateButtonID = vr::EVRButtonId::k_EButton_A; // 7
 		float pipBoyLookAtGate = 0.7;
 		float pipboyDetectionRange = 15.0f;
 

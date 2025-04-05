@@ -38,198 +38,21 @@ namespace F4VRBody {
 	Pipboy* g_pipboy = nullptr;
 	ConfigurationMode* g_configurationMode = nullptr;
 	CullGeometryHandler* g_cullGeometry = nullptr;
+	BoneSpheresHandler* g_boneSpheres = nullptr;
+	WeaponPositionHandler* g_weaponPosition = nullptr;
 
 	Skeleton* _skelly = nullptr;
 
 	bool isLoaded = false;
-
-	uint64_t updateCounter = 0;
-	uint64_t prevCounter = 0;
-	uint64_t localCounter = 0;
 
 	bool c_isLookingThroughScope = false;
 	bool c_jumping = false;
 	float c_dynamicCameraHeight = 0.0;
 	bool c_selfieMode = false;
 	bool GameVarsConfigured = false;
-	bool c_weaponRepositionMasterMode = false;
 
-	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
-	std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
 
-	std::map<std::string, float> handPapyrusPose;
-	std::map<std::string, bool> handPapyrusHasControl;
-
-	UInt32 PipboyAA = 0x0001ED3D;
-	UInt32 PipboyArmor = 0x00021B3B;
-	UInt32 MiningHelmet = 0x0022DD1F;
-	UInt32 PALightKW = 0x000B34A6;
-
-	// Papyrus
-	const char* boneSphereEventName = "OnBoneSphereEvent";
-	RegistrationSetHolder<NullParameters>      g_boneSphereEventRegs;
-
-	std::map<UInt32, BoneSphere*> boneSphereRegisteredObjects;
-	UInt32 nextBoneSphereHandle;
-	UInt32 curDevice;
-
-	/// <summary>
-	/// Bone sphere detection
-	/// </summary>
-	void detectBoneSphere() {
-
-		if ((*g_player)->firstPersonSkeleton == nullptr) {
-			return;
-		}
-
-		// prefer to use fingers but these aren't always rendered.    so default to hand if nothing else
-
-		NiAVObject* rFinger = getChildNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-		NiAVObject* lFinger = getChildNode("LArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-
-		if (rFinger == nullptr) {
-			rFinger = getChildNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-		}
-
-		if (lFinger == nullptr) {
-			lFinger = getChildNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-		}
-
-		if ((lFinger == nullptr) || (rFinger == nullptr)) {
-			return;
-		}
-
-		NiPoint3 offset;
-
-		for (auto const& element : boneSphereRegisteredObjects) {
-			offset = element.second->bone->m_worldTransform.rot * element.second->offset;
-			offset = element.second->bone->m_worldTransform.pos + offset;
-
-			double dist = (double)vec3_len(rFinger->m_worldTransform.pos - offset);
-
-			if (dist <= ((double)element.second->radius - 0.1)) {
-				if (!element.second->stickyRight) {
-					element.second->stickyRight = true;
-
-					SInt32 evt = BoneSphereEvent_Enter;
-					UInt32 handle = element.first;
-					UInt32 device = 1;
-					curDevice = device;
-
-					if (g_boneSphereEventRegs.m_data.size() > 0) {
-						g_boneSphereEventRegs.ForEach(
-							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
-							}
-						);
-					}
-				}
-			}
-			else if (dist >= ((double)element.second->radius + 0.1)) {
-				if (element.second->stickyRight) {
-					element.second->stickyRight = false;
-
-					SInt32 evt = BoneSphereEvent_Exit;
-					UInt32 handle = element.first;
-					UInt32 device = 1;
-					curDevice = 0;
-
-					if (g_boneSphereEventRegs.m_data.size() > 0) {
-						g_boneSphereEventRegs.ForEach(
-							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
-							}
-						);
-					}
-				}
-			}
-
-			dist = (double)vec3_len(lFinger->m_worldTransform.pos - offset);
-
-			if (dist <= ((double)element.second->radius - 0.1)) {
-				if (!element.second->stickyLeft) {
-					element.second->stickyLeft = true;
-
-					SInt32 evt = BoneSphereEvent_Enter;
-					UInt32 handle = element.first;
-					UInt32 device = 2;
-					curDevice = device;
-
-					if (g_boneSphereEventRegs.m_data.size() > 0) {
-						g_boneSphereEventRegs.ForEach(
-							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
-							}
-						);
-					}
-				}
-			}
-			else if (dist >= ((double)element.second->radius + 0.1)) {
-				if (element.second->stickyLeft) {
-					element.second->stickyLeft = false;
-
-					SInt32 evt = BoneSphereEvent_Exit;
-					UInt32 handle = element.first;
-					UInt32 device = 2;
-					curDevice = 0;
-
-					if (g_boneSphereEventRegs.m_data.size() > 0) {
-						g_boneSphereEventRegs.ForEach(
-							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt, handle, device);
-							}
-						);
-					}
-				}
-			}
-		}
-	}
-
-	void handleDebugBoneSpheres() {
-
-		for (auto const& element : boneSphereRegisteredObjects) {
-			NiNode* bone = element.second->bone;
-			NiNode* sphere = element.second->debugSphere;
-
-			if (element.second->turnOnDebugSpheres && !element.second->debugSphere) {
-				NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/1x1Sphere.nif");
-				NiCloneProcess proc;
-				proc.unk18 = Offsets::cloneAddr1;
-				proc.unk48 = Offsets::cloneAddr2;
-
-				sphere = Offsets::cloneNode(retNode, &proc);
-				if (sphere) {
-					sphere->m_name = BSFixedString("Sphere01");
-
-					bone->AttachChild((NiAVObject*)sphere, true);
-					sphere->flags &= 0xfffffffffffffffe;
-					sphere->m_localTransform.scale = (element.second->radius * 2);
-					element.second->debugSphere = sphere;
-				}
-			}
-			else if (sphere && !element.second->turnOnDebugSpheres) {
-				sphere->flags |= 0x1;
-				sphere->m_localTransform.scale = 0;
-			}
-			else if (sphere && element.second->turnOnDebugSpheres) {
-				sphere->flags &= 0xfffffffffffffffe;
-				sphere->m_localTransform.scale = (element.second->radius * 2);
-			}
-
-			if (sphere) {
-				NiPoint3 offset;
-
-				offset = bone->m_worldTransform.rot * element.second->offset;
-				offset = bone->m_worldTransform.pos + offset;
-
-				// wp = parWp + parWr * lp =>   lp = (wp - parWp) * parWr'
-				sphere->m_localTransform.pos = bone->m_worldTransform.rot.Transpose() * (offset - bone->m_worldTransform.pos);
-			}
-		}
-
-	}
-
-	void fixSkeleton() {
+	static void fixSkeleton() {
 
 		NiNode* pn = (*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
 
@@ -279,7 +102,7 @@ namespace F4VRBody {
 		}
 	}
 
-	void fixMissingScreen(PlayerNodes* pn) {
+	static void fixMissingScreen(PlayerNodes* pn) {
 		NiNode* screenNode = pn->ScreenNode;
 
 		if (screenNode) {
@@ -295,7 +118,7 @@ namespace F4VRBody {
 		}
 	}
 
-	void setHandUI(PlayerNodes* pn) {
+	static void setHandUI(PlayerNodes* pn) {
 		static NiPoint3 origLoc(0, 0, 0);
 
 		NiNode* wand = pn->primaryUIAttachNode;
@@ -353,6 +176,7 @@ namespace F4VRBody {
 			g_pipboy = new Pipboy(_skelly, _vrhook);
 			g_configurationMode = new ConfigurationMode(_skelly, _vrhook);
 			g_cullGeometry = new CullGeometryHandler();
+			g_weaponPosition = new WeaponPositionHandler(_skelly, _vrhook);
 
 			turnPipBoyOff();
 
@@ -386,6 +210,9 @@ namespace F4VRBody {
 
 		delete g_cullGeometry;
 		g_cullGeometry = nullptr;
+
+		delete g_weaponPosition;
+		g_weaponPosition = nullptr;
 	}
 
 	void smoothMovement()
@@ -413,7 +240,7 @@ namespace F4VRBody {
 		return false;
 	}
 
-	bool detectInPowerArmor() {
+	static bool detectInPowerArmor() {
 
 		// Thanks Shizof and SmoothtMovementVR for below code
 		if ((*g_player)->equipData) {
@@ -614,17 +441,19 @@ namespace F4VRBody {
 			_skelly->showOnlyArms();
 		}
 
+		_DMESSAGE("Operate Skelly hands");
 		_skelly->setHandPose();
+		
 		_DMESSAGE("Operate Pipboy");
 		g_pipboy->operatePipBoy();
+		
 		_DMESSAGE("bone sphere stuff");
-		detectBoneSphere();
-		handleDebugBoneSpheres();
+		g_boneSpheres->onFrameUpdate();
+
+		_DMESSAGE("Weapon position");
+		g_weaponPosition->onFrameUpdate();
+
 		//g_gunReloadSystem->Update();
-
-
-		_skelly->offHandToBarrel();
-		_skelly->offHandToScope();
 
 		Offsets::BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
 		BSFlattenedBoneTree_UpdateBoneArray((*g_player)->unkF0->rootNode->m_children.m_data[0]); // just in case any transforms missed because they are not in the tree do a full flat bone array update
@@ -671,8 +500,7 @@ namespace F4VRBody {
 	void startUp() {
 		_MESSAGE("Starting up F4Body");
 		isLoaded = true;
-		nextBoneSphereHandle = 1;
-		curDevice = 0;
+		g_boneSpheres = new BoneSpheresHandler();
 		scopeMenuEvent.Register();
 		return;
 	}
@@ -680,137 +508,8 @@ namespace F4VRBody {
 
 	// Papyrus Native Funcs
 
-	void holsterWeapon() { // Sends Papyrus Event to holster weapon when inside of Pipboy usage zone
-		SInt32 evt = BoneSphereEvent_Holster;
-		if (g_boneSphereEventRegs.m_data.size() > 0) {
-			g_boneSphereEventRegs.ForEach(
-				[&evt](const EventRegistration<NullParameters>& reg) {
-					SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt);
-				}
-			);
-		}
-	}
-
-	void drawWeapon() {  // Sends Papyrus to draw weapon when outside of Pipboy usage zone
-		SInt32 evt = BoneSphereEvent_Draw;
-		if (g_boneSphereEventRegs.m_data.size() > 0) {
-			g_boneSphereEventRegs.ForEach(
-				[&evt](const EventRegistration<NullParameters>& reg) {
-					SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, boneSphereEventName, evt);
-				}
-			);
-		}
-	}
-
-	void setFingerPositionScalar(StaticFunctionTag* base, bool isLeft, float thumb, float index, float middle, float ring, float pinky) {
-		if (isLeft) {
-			handPapyrusHasControl["LArm_Finger11"] = true;
-			handPapyrusHasControl["LArm_Finger12"] = true;
-			handPapyrusHasControl["LArm_Finger13"] = true;
-			handPapyrusHasControl["LArm_Finger21"] = true;
-			handPapyrusHasControl["LArm_Finger22"] = true;
-			handPapyrusHasControl["LArm_Finger23"] = true;
-			handPapyrusHasControl["LArm_Finger31"] = true;
-			handPapyrusHasControl["LArm_Finger32"] = true;
-			handPapyrusHasControl["LArm_Finger33"] = true;
-			handPapyrusHasControl["LArm_Finger41"] = true;
-			handPapyrusHasControl["LArm_Finger42"] = true;
-			handPapyrusHasControl["LArm_Finger43"] = true;
-			handPapyrusHasControl["LArm_Finger51"] = true;
-			handPapyrusHasControl["LArm_Finger52"] = true;
-			handPapyrusHasControl["LArm_Finger53"] = true;
-			handPapyrusPose["LArm_Finger11"] = thumb;
-			handPapyrusPose["LArm_Finger12"] = thumb;
-			handPapyrusPose["LArm_Finger13"] = thumb;
-			handPapyrusPose["LArm_Finger21"] = index;
-			handPapyrusPose["LArm_Finger22"] = index;
-			handPapyrusPose["LArm_Finger23"] = index;
-			handPapyrusPose["LArm_Finger31"] = middle;
-			handPapyrusPose["LArm_Finger32"] = middle;
-			handPapyrusPose["LArm_Finger33"] = middle;
-			handPapyrusPose["LArm_Finger41"] = ring;
-			handPapyrusPose["LArm_Finger42"] = ring;
-			handPapyrusPose["LArm_Finger43"] = ring;
-			handPapyrusPose["LArm_Finger51"] = pinky;
-			handPapyrusPose["LArm_Finger52"] = pinky;
-			handPapyrusPose["LArm_Finger53"] = pinky;
-		}
-		else {
-			handPapyrusHasControl["RArm_Finger11"] = true;
-			handPapyrusHasControl["RArm_Finger12"] = true;
-			handPapyrusHasControl["RArm_Finger13"] = true;
-			handPapyrusHasControl["RArm_Finger21"] = true;
-			handPapyrusHasControl["RArm_Finger22"] = true;
-			handPapyrusHasControl["RArm_Finger23"] = true;
-			handPapyrusHasControl["RArm_Finger31"] = true;
-			handPapyrusHasControl["RArm_Finger32"] = true;
-			handPapyrusHasControl["RArm_Finger33"] = true;
-			handPapyrusHasControl["RArm_Finger41"] = true;
-			handPapyrusHasControl["RArm_Finger42"] = true;
-			handPapyrusHasControl["RArm_Finger43"] = true;
-			handPapyrusHasControl["RArm_Finger51"] = true;
-			handPapyrusHasControl["RArm_Finger52"] = true;
-			handPapyrusHasControl["RArm_Finger53"] = true;
-			handPapyrusPose["RArm_Finger11"] = thumb;
-			handPapyrusPose["RArm_Finger12"] = thumb;
-			handPapyrusPose["RArm_Finger13"] = thumb;
-			handPapyrusPose["RArm_Finger21"] = index;
-			handPapyrusPose["RArm_Finger22"] = index;
-			handPapyrusPose["RArm_Finger23"] = index;
-			handPapyrusPose["RArm_Finger31"] = middle;
-			handPapyrusPose["RArm_Finger32"] = middle;
-			handPapyrusPose["RArm_Finger33"] = middle;
-			handPapyrusPose["RArm_Finger41"] = ring;
-			handPapyrusPose["RArm_Finger42"] = ring;
-			handPapyrusPose["RArm_Finger43"] = ring;
-			handPapyrusPose["RArm_Finger51"] = pinky;
-			handPapyrusPose["RArm_Finger52"] = pinky;
-			handPapyrusPose["RArm_Finger53"] = pinky;
-		}
-	}
-
-	void restoreFingerPoseControl(StaticFunctionTag* base, bool isLeft) {
-		if (isLeft) {
-			handPapyrusHasControl["LArm_Finger11"] = false;
-			handPapyrusHasControl["LArm_Finger12"] = false;
-			handPapyrusHasControl["LArm_Finger13"] = false;
-			handPapyrusHasControl["LArm_Finger21"] = false;
-			handPapyrusHasControl["LArm_Finger22"] = false;
-			handPapyrusHasControl["LArm_Finger23"] = false;
-			handPapyrusHasControl["LArm_Finger31"] = false;
-			handPapyrusHasControl["LArm_Finger32"] = false;
-			handPapyrusHasControl["LArm_Finger33"] = false;
-			handPapyrusHasControl["LArm_Finger41"] = false;
-			handPapyrusHasControl["LArm_Finger42"] = false;
-			handPapyrusHasControl["LArm_Finger43"] = false;
-			handPapyrusHasControl["LArm_Finger51"] = false;
-			handPapyrusHasControl["LArm_Finger52"] = false;
-			handPapyrusHasControl["LArm_Finger53"] = false;
-		}
-		else {
-			handPapyrusHasControl["RArm_Finger11"] = false;
-			handPapyrusHasControl["RArm_Finger12"] = false;
-			handPapyrusHasControl["RArm_Finger13"] = false;
-			handPapyrusHasControl["RArm_Finger21"] = false;
-			handPapyrusHasControl["RArm_Finger22"] = false;
-			handPapyrusHasControl["RArm_Finger23"] = false;
-			handPapyrusHasControl["RArm_Finger31"] = false;
-			handPapyrusHasControl["RArm_Finger32"] = false;
-			handPapyrusHasControl["RArm_Finger33"] = false;
-			handPapyrusHasControl["RArm_Finger41"] = false;
-			handPapyrusHasControl["RArm_Finger42"] = false;
-			handPapyrusHasControl["RArm_Finger43"] = false;
-			handPapyrusHasControl["RArm_Finger51"] = false;
-			handPapyrusHasControl["RArm_Finger52"] = false;
-			handPapyrusHasControl["RArm_Finger53"] = false;
-		}
-	}
-
-	static void calibratePlayerHeightAndArms(StaticFunctionTag* base) {
-		_MESSAGE("Calibrate player height...");
-		g_configurationMode->calibratePlayerHeightAndArms();
-	}
-
+	// Settings Holotape related funcs
+	
 	static void openMainConfigurationMode(StaticFunctionTag* base) {
 		_MESSAGE("Open Main Configuration Mode...");
 		g_configurationMode->enterConfigurationMode();
@@ -837,12 +536,12 @@ namespace F4VRBody {
 	}
 
 	static UInt32 getWeaponRepositionMode(StaticFunctionTag* base) {
-		return c_weaponRepositionMasterMode ? 1 : 0;
+		return g_weaponPosition->inWeaponRepositionMode() ? 1 : 0;
 	}
 
 	static UInt32 toggleWeaponRepositionMode(StaticFunctionTag* base) {
-		_MESSAGE("Toggle Weapon Reposition Mode: %s", !c_weaponRepositionMasterMode ? "ON" : "OFF");
-		c_weaponRepositionMasterMode = !c_weaponRepositionMasterMode;
+		_MESSAGE("Toggle Weapon Reposition Mode: %s", !g_weaponPosition->inWeaponRepositionMode() ? "ON" : "OFF");
+		g_weaponPosition->toggleWeaponRepositionMode();
 		return getWeaponRepositionMode(base);
 	}
 
@@ -859,131 +558,62 @@ namespace F4VRBody {
 		setSelfieMode(base, !c_selfieMode);
 	}
 	
+	static void moveForward(StaticFunctionTag* base){
+		g_config->playerOffset_forward += 1.0f;
+	}
+
+	static void moveBackward(StaticFunctionTag* base){
+		g_config->playerOffset_forward -= 1.0f;
+	}
+
 	static void setDynamicCameraHeight(StaticFunctionTag* base, float dynamicCameraHeight) {
 		_MESSAGE("Set Dynamic Camera Height: %f", dynamicCameraHeight);
 		c_dynamicCameraHeight = dynamicCameraHeight;
 	}
 
 	// Sphere bone detection funcs
-
-	UInt32 RegisterBoneSphere(StaticFunctionTag* base, float radius, BSFixedString bone) {
-		if (radius == 0.0) {
-			return 0;
-		}
-
-		NiNode* boneNode = getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsNiNode();
-
-		if (!boneNode) {
-			_MESSAGE("RegisterBoneSphere: BONE DOES NOT EXIST!!");
-			return 0;
-		}
-
-		BoneSphere* sphere = new BoneSphere(radius, boneNode, NiPoint3(0,0,0));
-		UInt32 handle = nextBoneSphereHandle++;
-
-		boneSphereRegisteredObjects[handle] = sphere;
-
-		return handle;
+	static UInt32 registerBoneSphere(StaticFunctionTag* base, float radius, BSFixedString bone) {
+		return g_boneSpheres->registerBoneSphere(radius, bone);
 	}
 
-	UInt32 RegisterBoneSphereOffset(StaticFunctionTag* base, float radius, BSFixedString bone, VMArray<float> pos) {
-		if (radius == 0.0) {
-			return 0;
-		}
-
-		if (pos.Length() != 3) {
-			return 0;
-		}
-
-		if (!(*g_player)->unkF0) {
-			_MESSAGE("can't register yet as new game");
-			return 0;
-		}
-
-		NiNode* boneNode = (NiNode*)getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode);
-
-		if (!boneNode) {
-
-			auto n = (*g_player)->unkF0->rootNode->GetAsNiNode();
-
-			while (n->m_parent) {
-				n = n->m_parent->GetAsNiNode();
-			}
-
-			boneNode = getChildNode(bone.c_str(), n);  // ObjectLODRoot
-
-			if (!boneNode) {
-				_MESSAGE("RegisterBoneSphere: BONE DOES NOT EXIST!!");
-				return 0;
-			}
-		}
-
-		NiPoint3 offsetVec;
-
-		pos.Get(&(offsetVec.x), 0);
-		pos.Get(&(offsetVec.y), 1);
-		pos.Get(&(offsetVec.z), 2);
-
-
-		BoneSphere* sphere = new BoneSphere(radius, boneNode, offsetVec);
-		UInt32 handle = nextBoneSphereHandle++;
-
-		boneSphereRegisteredObjects[handle] = sphere;
-
-		return handle;
+	static UInt32 registerBoneSphereOffset(StaticFunctionTag* base, float radius, BSFixedString bone, VMArray<float> pos) {
+		return g_boneSpheres->registerBoneSphereOffset(radius, bone, pos);
 	}
 
-	void DestroyBoneSphere(StaticFunctionTag* base, UInt32 handle) {
-		if (boneSphereRegisteredObjects.count(handle)) {
-			NiNode* sphere = boneSphereRegisteredObjects[handle]->debugSphere;
-
-			if (sphere) {
-				sphere->flags |= 0x1;
-				sphere->m_localTransform.scale = 0;
-				sphere->m_parent->RemoveChild(sphere);
-			}
-
-			delete boneSphereRegisteredObjects[handle];
-			boneSphereRegisteredObjects.erase(handle);
-		}
+	static void destroyBoneSphere(StaticFunctionTag* base, UInt32 handle) {
+		g_boneSpheres->destroyBoneSphere(handle);
 	}
 
-	void RegisterForBoneSphereEvents(StaticFunctionTag* base, VMObject* thisObject) {
-		_MESSAGE("RegisterForBoneSphereEvents");
-		if (!thisObject) {
-			return;
-		}
-
-		g_boneSphereEventRegs.Register(thisObject->GetHandle(), thisObject->GetObjectType());
+	static void registerForBoneSphereEvents(StaticFunctionTag* base, VMObject* thisObject) {
+		g_boneSpheres->registerForBoneSphereEvents(thisObject);
 	}
 
-	void UnRegisterForBoneSphereEvents(StaticFunctionTag* base, VMObject* thisObject) {
-		if (!thisObject) {
-			return;
-		}
-
-		_MESSAGE("UnRegisterForBoneSphereEvents");
-		g_boneSphereEventRegs.Unregister(thisObject->GetHandle(), thisObject->GetObjectType());
+	static void unRegisterForBoneSphereEvents(StaticFunctionTag* base, VMObject* thisObject) {
+		g_boneSpheres->unRegisterForBoneSphereEvents(thisObject);
 	}
 
-	void toggleDebugBoneSpheres(StaticFunctionTag* base, bool turnOn) {
-		for (auto const& element : boneSphereRegisteredObjects) {
-			element.second->turnOnDebugSpheres = turnOn;
-		}
+	static void toggleDebugBoneSpheres(StaticFunctionTag* base, bool turnOn) {
+		g_boneSpheres->toggleDebugBoneSpheres(turnOn);
 	}
 
-	void toggleDebugBoneSpheresAtBone(StaticFunctionTag* base, UInt32 handle, bool turnOn) {
-		if (boneSphereRegisteredObjects.count(handle)) {
-			boneSphereRegisteredObjects[handle]->turnOnDebugSpheres = turnOn;
-		}
+	static void toggleDebugBoneSpheresAtBone(StaticFunctionTag* base, UInt32 handle, bool turnOn) {
+		g_boneSpheres->toggleDebugBoneSpheresAtBone(handle, turnOn);
+	}
+
+	// Finger pose related APIs
+	static void setFingerPositionScalar(StaticFunctionTag* base, bool isLeft, float thumb, float index, float middle, float ring, float pinky) {
+		setFingerPositionScalar(isLeft, thumb, index, middle, ring, pinky);
+	}
+
+	static void restoreFingerPoseControl(StaticFunctionTag* base, bool isLeft) {
+		restoreFingerPoseControl(isLeft);
 	}
 
 	/// <summary>
 	/// Register code for Papyrus scripts.
 	/// </summary>
 	bool registerPapyrusFuncs(VirtualMachine* vm) {
-		// Register code to be accisible from Settings Holotabe via Papyrus scripts
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("Calibrate", "FRIK:FRIK", F4VRBody::calibratePlayerHeightAndArms, vm));
+		// Register code to be accisible from Settings Holotape via Papyrus scripts
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenMainConfigurationMode", "FRIK:FRIK", F4VRBody::openMainConfigurationMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenPipboyConfigurationMode", "FRIK:FRIK", F4VRBody::openPipboyConfigurationMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleWeaponRepositionMode", "FRIK:FRIK", F4VRBody::toggleWeaponRepositionMode, vm));
@@ -997,14 +627,19 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, float>("setDynamicCameraHeight", "FRIK:FRIK", F4VRBody::setDynamicCameraHeight, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", F4VRBody::toggleSelfieMode, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("setSelfieMode", "FRIK:FRIK", F4VRBody::setSelfieMode, vm));
-		// TODO: Bone Sphere interaction related APIs
-		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, UInt32, float, BSFixedString>("RegisterBoneSphere", "FRIK:FRIK", F4VRBody::RegisterBoneSphere, vm));
-		vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, UInt32, float, BSFixedString, VMArray<float> >("RegisterBoneSphereOffset", "FRIK:FRIK", F4VRBody::RegisterBoneSphereOffset, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("DestroyBoneSphere", "FRIK:FRIK", F4VRBody::DestroyBoneSphere, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("RegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::RegisterForBoneSphereEvents, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("UnRegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::UnRegisterForBoneSphereEvents, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveForward", "FRIK:FRIK", F4VRBody::moveForward, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", F4VRBody::moveBackward, vm));
+		
+		// Bone Sphere interaction related APIs
+		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, UInt32, float, BSFixedString>("RegisterBoneSphere", "FRIK:FRIK", F4VRBody::registerBoneSphere, vm));
+		vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, UInt32, float, BSFixedString, VMArray<float> >("RegisterBoneSphereOffset", "FRIK:FRIK", F4VRBody::registerBoneSphereOffset, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("DestroyBoneSphere", "FRIK:FRIK", F4VRBody::destroyBoneSphere, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("RegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::registerForBoneSphereEvents, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("UnRegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::unRegisterForBoneSphereEvents, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("toggleDebugBoneSpheres", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheres, vm));
 		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, UInt32, bool>("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheresAtBone, vm));
+		
+		// Finger pose related APIs
 		vm->RegisterFunction(new NativeFunction6<StaticFunctionTag, void, bool, float, float, float, float, float>("setFingerPositionScalar", "FRIK:FRIK", F4VRBody::setFingerPositionScalar, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("restoreFingerPoseControl", "FRIK:FRIK", F4VRBody::restoreFingerPoseControl, vm));
 

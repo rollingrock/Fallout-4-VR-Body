@@ -172,6 +172,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BoneSpheresHandler.cpp" />
     <ClCompile Include="BSFlattenedBoneTree.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="ConfigurationMode.cpp" />
@@ -194,6 +195,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClCompile Include="SmoothMovement.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="VR.cpp" />
+    <ClCompile Include="WeaponPositionHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="api\openvr.h" />
@@ -204,6 +206,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="api\PapyrusVRTypes.h" />
     <ClInclude Include="api\VRHookAPI.h" />
     <ClInclude Include="api\VRManagerAPI.h" />
+    <ClInclude Include="BoneSpheresHandler.h" />
     <ClInclude Include="BSFlattenedBoneTree.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="ConfigurationMode.h" />
@@ -231,6 +234,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="SmoothMovementVR.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="VR.h" />
+    <ClInclude Include="WeaponPositionHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="data\FRIK.ini" />

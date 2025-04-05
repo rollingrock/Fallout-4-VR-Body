@@ -17,6 +17,7 @@ namespace F4VRBody {
 	typedef void* (*_AIProcess_CreateMuzzleFlash)(Actor::MiddleProcess* middleProcess, uint64_t projectile, Actor* actor);
 	extern RelocAddr<_AIProcess_CreateMuzzleFlash> AIProcess_CreateMuzzleFlash;
 
+	uint64_t nowMillis();
 	std::string toStringWithPrecision(double value, int precision = 2);
 	float vec3_len(const NiPoint3& v1);
 	NiPoint3 vec3_norm(NiPoint3 v1);

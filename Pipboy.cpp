@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "utils.h"
 #include "VR.h"
+#include "HandPose.h"
 #include "F4VRBody.h"
 
 #include <chrono>
@@ -173,10 +174,10 @@ namespace F4VRBody {
 				turnPipBoyOff();
 				g_configurationMode->exitPBConfig();
 				if (_isWeaponinHand) {
-					drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_boneSpheres->drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					_weaponStateDetected = false;
 				}
-				_skelly->disablePipboyHandPose();
+				disablePipboyHandPose();
 				_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				_MESSAGE("Disabling Pipboy with button");
 				_stickyoffpip = true;
@@ -205,11 +206,11 @@ namespace F4VRBody {
 				if (!_weaponStateDetected) {
 					_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 					if (_isWeaponinHand) {
-						holsterWeapon(); // holster weapon so we can use primary trigger as an input.
+						g_boneSpheres->holsterWeapon(); // holster weapon so we can use primary trigger as an input.
 					}
 				}
 				turnPipBoyOn();
-				_skelly->setPipboyHandPose();
+				setPipboyHandPose();
 				_isOperatingPipboy = true;
 				_MESSAGE("Enabling Pipboy with button");
 				_stickybpip = false;
@@ -229,10 +230,10 @@ namespace F4VRBody {
 				turnPipBoyOff();
 				_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
-					drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_boneSpheres->drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					_weaponStateDetected = false;
 				}
-				_skelly->disablePipboyHandPose();
+				disablePipboyHandPose();
 				_isOperatingPipboy = false;
 				//		_MESSAGE("Disabling PipBoy due to inactivity for %d more than %d ms", timeElapsed, g_config->pipBoyOffDelay);
 			}
@@ -241,10 +242,10 @@ namespace F4VRBody {
 				_pipboyStatus = false;
 				_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
-					drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_boneSpheres->drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					_weaponStateDetected = false;
 				}
-				_skelly->disablePipboyHandPose();
+				disablePipboyHandPose();
 				_isOperatingPipboy = false;
 				//		_MESSAGE("Disabling PipBoy due to movement when not looking at pipboy. input: (%f, %f)", axis_state.x, axis_state.y);
 			}
@@ -266,11 +267,11 @@ namespace F4VRBody {
 					if (!_weaponStateDetected) {
 						_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 						if (_isWeaponinHand) {
-							holsterWeapon(); // holster weapon so we can use primary trigger as an input.
+							g_boneSpheres->holsterWeapon(); // holster weapon so we can use primary trigger as an input.
 						}
 					}
 					turnPipBoyOn();
-					_skelly->setPipboyHandPose();
+					setPipboyHandPose();
 					_isOperatingPipboy = true;
 					_startedLookingAtPip = 0;
 				}
@@ -478,21 +479,21 @@ namespace F4VRBody {
 					_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 					if (_isWeaponinHand) {
 						_weaponStateDetected = true;
-						holsterWeapon();
+						g_boneSpheres->holsterWeapon();
 					}
-					_skelly->setPipboyHandPose();
+					setPipboyHandPose();
 				}
 				if ((distance > g_config->pipboyDetectionRange) && _isOperatingPipboy && !_pipboyStatus) { // Restores Weapon and releases hand pose
 					_isOperatingPipboy = false;
-					_skelly->disablePipboyHandPose();
+					disablePipboyHandPose();
 					if (_isWeaponinHand) {
 						_weaponStateDetected = false;
-						drawWeapon();
+						g_boneSpheres->drawWeapon();
 					}
 				}
 			}
 			else if (!isLookingAtPipBoy() && _isOperatingPipboy && !_pipboyStatus) { // Catches if you're not looking at the pipboy when your hand moves outside of the control area and restores weapon / releases hand pose							
-				_skelly->disablePipboyHandPose();
+				disablePipboyHandPose();
 				for (int i = 0; i < 7; i++) {  // Remove any stuck helper orbs if Pipboy times out for any reason.
 					NiAVObject* orb = g_config->leftHandedPipBoy ? _skelly->getRightArm().forearm3->GetObjectByName(&orbNames[i]) : _skelly->getLeftArm().forearm3->GetObjectByName(&orbNames[i]);
 					if (orb != nullptr) {
@@ -503,7 +504,7 @@ namespace F4VRBody {
 				}
 				if (_isWeaponinHand) {
 					_weaponStateDetected = false;
-					drawWeapon();
+					g_boneSpheres->drawWeapon();
 				}
 				_isOperatingPipboy = false;
 			}
