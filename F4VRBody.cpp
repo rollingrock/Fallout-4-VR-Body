@@ -39,7 +39,7 @@ namespace F4VRBody {
 	ConfigurationMode* g_configurationMode = nullptr;
 	CullGeometryHandler* g_cullGeometry = nullptr;
 	BoneSpheresHandler* g_boneSpheres = nullptr;
-	WeaponPositionHandler* g_weaponPosition = nullptr;
+	WeaponPositionAdjuster* g_weaponPosition = nullptr;
 
 	Skeleton* _skelly = nullptr;
 
@@ -176,7 +176,7 @@ namespace F4VRBody {
 			g_pipboy = new Pipboy(_skelly, _vrhook);
 			g_configurationMode = new ConfigurationMode(_skelly, _vrhook);
 			g_cullGeometry = new CullGeometryHandler();
-			g_weaponPosition = new WeaponPositionHandler(_skelly, _vrhook);
+			g_weaponPosition = new WeaponPositionAdjuster(_skelly, _vrhook);
 
 			turnPipBoyOff();
 

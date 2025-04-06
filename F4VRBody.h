@@ -19,6 +19,7 @@
 #include "CullGeometryHandler.h"
 #include "BoneSpheresHandler.h"
 #include "WeaponPositionHandler.h"
+#include "WeaponPositionAdjuster.h"
 
 #include <windows.h>
 
@@ -33,7 +34,7 @@ namespace F4VRBody {
 	extern ConfigurationMode* g_configurationMode;
 	extern CullGeometryHandler* g_cullGeometry;
 	extern BoneSpheresHandler* g_boneSpheres;
-	extern WeaponPositionHandler* g_weaponPosition;
+	extern WeaponPositionAdjuster* g_weaponPosition;
 
 	// TODO: bad global state variable that should be refactored
 	extern bool c_isLookingThroughScope;
