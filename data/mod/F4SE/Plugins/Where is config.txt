@@ -1,2 +1,0 @@
-Config file are located in "...\data\FRIK_Config" folder.
-If you're using MO2 the folder is located in the "overwrite" MO2 folder: "...\[mod list]\overwrite\FRIK_Config"

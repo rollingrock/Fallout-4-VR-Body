@@ -66,8 +66,8 @@ Prerequisites:
   - `Fallout4VRBody.log` for FRIK logs
   - `crash-<date time>.log` for crash logs
 
-- Weapons Offset Overrides are in `<mod_list_folder>\overwrite\F4SE\Plugins\FRIK_weapon_offsets`  
-  Where `<mod_list_folder>` can be `VR Essentials Overhaul` for example.
+- Config files are located in "...\data\FRIK_Config" folder.  
+  If you're using MO2 the folder is located in the "overwrite" MO2 folder: "...\[mod list]\overwrite\FRIK_Config"
 
 - Don't keep more than one `.dll` file in the `...\F4SE\Plugins` folder. For example, if you're backing up `FRIK.dll`, avoid renaming it to `FRIK_org.dll` in the same folder. This is because `F4SEVR` loads all `.dll` files in the directory, which results in the plugin being loaded twice. It appears to load plugins in alphabetical order, so `FRIK_org.dll` will be loaded after `FRIK.dll`, potentially causing issues and making it unclear why your code isn't running.
 
