@@ -1,17 +1,38 @@
 Welcome to the FRIK wiki!
 
-Inspired by the wildly successful and immersive VRIK mod developed by prog I bring you FRIK - Full Player Body for Fallout 4 VR!
+### Shortcuts
+Open Main Configuration - Press & hold both thumbsticks ('Sprint' & 'Favorites' buttons).
+Open Pipboy Configuration - While Pipboy is open, press & hold right thumbstick ('Favorites' button).
 
-While not a straight port of VRIK the aim is to bring similar functionality into Fallout 4 VR that has been enjoyed for a while in Skyrim VR.   The arm and leg IK solver are heavily adapted from VRIK.
+### Body Adjustments
+Use main configuration mode or "FRIK.ini" to fine tune your avatar body.
+Use selfie mode to see how your body looks in the world.
+Make sure to adjust both in and out of power armor.
 
-## Features:
-- Full Body Inverse Kinematics including arm and walking animation
-- Pipboy wrist control on the left arm with touch on/off operation
-- Configuration holotape to calibrate height and move body around to taste
-- Papyrus support to add detection sphere events to bones on the player skeleton
-- Selfie Mode!
-- Arms only mode!  - This hides the body so only arms visible like in first person mode.    Useful for sitting play!
-- Left handed mode supported - Still in development but basic functionality is present.   
+### Pipboy Configuration
+Only applicable is using on-wrist Pipboy.
+Note: Game window must be in-focus for primary hand control to work.
+
+### Weapon Grip Modes
+Mode 1: Hand automatically snap to the barrel when in range, move hand quickly to let go.
+Mode 2: Hand automatically snap to the barrel when in range, press grip button to let go.
+Mode 3: Holding grip button to snap to the barrel, release to let go.
+Mode 4: Press grip button to snap to the barrel, press again to let go.
+
+### Weapon Adjust Mode
+Enter weapon adjust mode while holding a weapon.
+Use secondary hand to grip the weapon.
+Pressing secondary trigger will set the direction of the weapon.
+Holding secondary trigger will enter spatial adjustment, use primary thumbstick to move the weapon. 
+
+### FRIK.ini
+Most configuration is stored in FRIK.ini file. Much more than can be configured via in-game configuration interfaces.
+Enable FRIK.ini auto reloading to have changed loaded live into the running game to experience the effects.
+CAUTION: FRIK.ini auto reload will override in-game configuration changes.
+
+### Configuration Files
+All configuration files are found in "...Data\FRIK_Config"
+For MO2 it would be "[modelist]\overwrite\FRIK_Config"
 
 ## Links
 [README](https://github.com/rollingrock/Fallout-4-VR-Body/blob/main/README.md)
