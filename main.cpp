@@ -18,6 +18,7 @@
 #include "patches.h"
 #include "GunReload.h"
 #include "VR.h"
+#include "ui/UIManager.h"
 
 
 void OnBetterScopesMessage(F4SEMessagingInterface::Message* msg) {
@@ -104,6 +105,9 @@ extern "C" {
 
 			_MESSAGE("Init config...");
 			F4VRBody::initConfig();
+
+			_MESSAGE("Init UI Manager...");
+			ui::initUIManager();
 
 			_MESSAGE("Register papyrus funcs...");
 			g_papyrus = (F4SEPapyrusInterface*)a_f4se->QueryInterface(kInterface_Papyrus);

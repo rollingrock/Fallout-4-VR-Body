@@ -11,6 +11,8 @@
 #include "GunReload.h"
 #include "VR.h"
 #include "Debug.h"
+#include "ui/UIManager.h"
+#include "ui/IUIModAdapter.h"
 
 #include "api/PapyrusVRAPI.h"
 #include "api/VRManagerAPI.h"
@@ -51,6 +53,26 @@ namespace F4VRBody {
 	bool c_selfieMode = false;
 	bool GameVarsConfigured = false;
 
+	/// <summary>
+	/// TODO: think about it, is it the best way to handle this dependency indaraction.
+	/// </summary>
+	class FrameUpdateContext : public ui::IUIModAdapter {
+	public:
+		FrameUpdateContext(Skeleton* skelly, OpenVRHookManagerAPI* vrhook)
+			: _skelly(skelly), _vrhook(vrhook)
+		{
+		}
+		NiPoint3 getInteractionBonePosition() {
+			return _skelly->getOffhandIndexFingerTipWorldPosition();
+		}
+		void fireInteractionHeptic() {
+			_vrhook->StartHaptics(g_config->leftHandedMode ? 2 : 1, 0.2, 0.3);
+		}
+
+	private:
+		Skeleton* _skelly;
+		OpenVRHookManagerAPI* _vrhook;
+	};
 
 	static void fixSkeleton() {
 
@@ -477,6 +499,9 @@ namespace F4VRBody {
 		g_pipboy->onUpdate();
 		g_configurationMode->onUpdate();
 		
+		FrameUpdateContext context(_skelly, _vrhook);
+		ui::g_uiManager->onFrameUpdate(&context);
+
 		_skelly->fixBackOfHand();
 		_skelly->updateDown(_skelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
 
