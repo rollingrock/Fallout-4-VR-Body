@@ -16,6 +16,9 @@
     <Filter Include="Include Files">
       <UniqueIdentifier>{1a15371c-de19-4a5e-b282-4c9342d80cdd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{c287477d-2641-4ea1-b5c6-5e8d45fc15e4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -87,8 +90,32 @@
     <ClCompile Include="BoneSpheresHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WeaponRepositionHandler.cpp">
+    <ClCompile Include="WeaponPositionConfigMode.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponPositionAdjuster.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\IUIModAdapter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIContainer.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIDebugWidget.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIElement.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIManager.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIUtils.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIWidget.cpp">
+      <Filter>UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -200,8 +227,32 @@
     <ClInclude Include="BoneSpheresHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WeaponRepositionHandler.h">
+    <ClInclude Include="WeaponPositionConfigMode.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WeaponPositionAdjuster.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\IUIModAdapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIContainer.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIDebugWidget.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIElement.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIManager.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIUtils.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIWidget.h">
+      <Filter>UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

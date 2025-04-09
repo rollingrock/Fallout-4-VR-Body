@@ -214,6 +214,8 @@ namespace F4VRBody
 
 		NiNode* Skeleton::getWeaponNode() const;
 
+		NiPoint3 getOffhandIndexFingerTipWorldPosition();
+
 		// reposition stuff
 		void rotateWorld(NiNode* nde);
 		void updatePos(NiNode* nde, NiPoint3 offset);

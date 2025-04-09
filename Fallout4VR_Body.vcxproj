@@ -193,6 +193,13 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="Skeleton.cpp" />
     <ClCompile Include="SmoothMovement.cpp" />
+    <ClCompile Include="ui\UIDebugWidget.cpp" />
+    <ClCompile Include="ui\IUIModAdapter.cpp" />
+    <ClCompile Include="ui\UIContainer.cpp" />
+    <ClCompile Include="ui\UIElement.cpp" />
+    <ClCompile Include="ui\UIManager.cpp" />
+    <ClCompile Include="ui\UIWidget.cpp" />
+    <ClCompile Include="ui\UIUtils.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="VR.cpp" />
     <ClCompile Include="WeaponPositionConfigMode.cpp" />
@@ -233,6 +240,13 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="resource.h" />
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SmoothMovementVR.h" />
+    <ClInclude Include="ui\UIDebugWidget.h" />
+    <ClInclude Include="ui\IUIModAdapter.h" />
+    <ClInclude Include="ui\UIContainer.h" />
+    <ClInclude Include="ui\UIElement.h" />
+    <ClInclude Include="ui\UIManager.h" />
+    <ClInclude Include="ui\UIWidget.h" />
+    <ClInclude Include="ui\UIUtils.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="VR.h" />
     <ClInclude Include="WeaponPositionConfigMode.h" />

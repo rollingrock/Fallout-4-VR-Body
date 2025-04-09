@@ -6,6 +6,7 @@
 #include "f4se/GameForms.h"
 #include "VR.h"
 #include "Menu.h"
+#include "Debug.h"
 
 #include <chrono>
 #include <time.h>
@@ -240,6 +241,18 @@ namespace F4VRBody {
 
 	NiNode* Skeleton::getWeaponNode() const {
 		return getNode("Weapon", (*g_player)->firstPersonSkeleton);
+	}
+
+	/// <summary>
+	/// Get the world position of the offhand index finger tip.
+	/// Make small adjustment as the finger bone position is the center of the finger.
+	/// Would be nice to know how long the bone is instead of magic numbers, didn't find a way so far.
+	/// </summary>
+	NiPoint3 Skeleton::getOffhandIndexFingerTipWorldPosition() {
+		auto offhandIndexFinger = g_config->leftHandedMode ? "RArm_Finger23" : "LArm_Finger23";
+		auto boneTransform = ((BSFlattenedBoneTree*)_root)->transforms[getBoneInMap("LArm_Finger23")];
+		auto forward = boneTransform.world.rot * NiPoint3(1, 0, 0);
+		return boneTransform.world.pos + forward * (_inPowerArmor ? 3 : 1.8);
 	}
 
 	NiNode* Skeleton::getNode(const char* nodeName, NiNode* nde) const {
