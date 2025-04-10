@@ -530,44 +530,49 @@ namespace F4VRBody {
 	}
 
 	static UInt32 toggleReloadFrikIniConfig(StaticFunctionTag* base) {
-		_MESSAGE("Toggle reload FRIK.ini config file...");
+		_MESSAGE("Papyrus: Toggle reload FRIK.ini config file...");
 		g_config->toggleAutoReloadConfig();
 		return getFrikIniAutoReloading(base);
 	}
 
 	static UInt32 getWeaponRepositionMode(StaticFunctionTag* base) {
+		_MESSAGE("Papyrus: Get Weapon Reposition Mode");
 		return g_weaponPosition->inWeaponRepositionMode() ? 1 : 0;
 	}
 
 	static UInt32 toggleWeaponRepositionMode(StaticFunctionTag* base) {
-		_MESSAGE("Toggle Weapon Reposition Mode: %s", !g_weaponPosition->inWeaponRepositionMode() ? "ON" : "OFF");
+		_MESSAGE("Papyrus: Toggle Weapon Reposition Mode: %s", !g_weaponPosition->inWeaponRepositionMode() ? "ON" : "OFF");
 		g_weaponPosition->toggleWeaponRepositionMode();
 		return getWeaponRepositionMode(base);
 	}
 
 	static bool isLeftHandedMode(StaticFunctionTag* base) {
+		_MESSAGE("Papyrus: Is Left Handed Mode");
 		return *Offsets::iniLeftHandedMode;
 	}
 
 	static void setSelfieMode(StaticFunctionTag* base, bool isSelfieMode) {
-		_MESSAGE("Set Selfie Mode: %s", isSelfieMode ? "ON" : "OFF");
+		_MESSAGE("Papyrus: Set Selfie Mode: %s", isSelfieMode ? "ON" : "OFF");
 		c_selfieMode = isSelfieMode;
 	}
 
 	static void toggleSelfieMode(StaticFunctionTag* base) {
+		_MESSAGE("Papyrus: toggle selfie mode");
 		setSelfieMode(base, !c_selfieMode);
 	}
 	
 	static void moveForward(StaticFunctionTag* base){
+		_MESSAGE("Papyrus: Move Forward");
 		g_config->playerOffset_forward += 1.0f;
 	}
 
 	static void moveBackward(StaticFunctionTag* base){
+		_MESSAGE("Papyrus: Move Backward");
 		g_config->playerOffset_forward -= 1.0f;
 	}
 
 	static void setDynamicCameraHeight(StaticFunctionTag* base, float dynamicCameraHeight) {
-		_MESSAGE("Set Dynamic Camera Height: %f", dynamicCameraHeight);
+		_MESSAGE("Papyrus: Set Dynamic Camera Height: %f", dynamicCameraHeight);
 		c_dynamicCameraHeight = dynamicCameraHeight;
 	}
 
@@ -602,10 +607,12 @@ namespace F4VRBody {
 
 	// Finger pose related APIs
 	static void setFingerPositionScalar(StaticFunctionTag* base, bool isLeft, float thumb, float index, float middle, float ring, float pinky) {
+		_MESSAGE("Papyrus: Set Finger Position Scalar '%s' (%.3f, %.3f, %.3f, %.3f, %.3f)", isLeft ? "Left" : "Right", thumb, index, middle, ring, pinky);
 		setFingerPositionScalar(isLeft, thumb, index, middle, ring, pinky);
 	}
 
 	static void restoreFingerPoseControl(StaticFunctionTag* base, bool isLeft) {
+		_MESSAGE("Papyrus: Restore Finger Pose Control '%s'", isLeft ? "Left" : "Right");
 		restoreFingerPoseControl(isLeft);
 	}
 

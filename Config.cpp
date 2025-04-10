@@ -79,6 +79,7 @@ namespace F4VRBody {
 	/// Handle updating the FRIK.ini file if the version is old.
 	/// </summary>
 	void Config::load() {
+		setupFolders();
 		migrateConfigFilesIfNeeded();
 
 		// create FRIK.ini if it doesn't exist
@@ -512,9 +513,6 @@ namespace F4VRBody {
 	/// Load all the weapons offsets found in json files into the weapon offsets map.
 	/// </summary>
 	void Config::loadWeaponsOffsets() {
-		if (!(std::filesystem::exists(WEAPONS_OFFSETS_PATH) && std::filesystem::is_directory(WEAPONS_OFFSETS_PATH))) {
-			std::filesystem::create_directory(WEAPONS_OFFSETS_PATH);
-		}
 		for (const auto& file : std::filesystem::directory_iterator(WEAPONS_OFFSETS_PATH)) {
 			std::wstring path = L"";
 			try {
@@ -565,6 +563,16 @@ namespace F4VRBody {
 		catch (const std::exception& e) {
 			_ERROR("Failed to move file to new location: %s", e.what());
 		}
+	}
+
+	/// <summary>
+	/// Create all the folders needed for config to not handle later creating folders that don't exists.
+	/// </summary>
+	void Config::setupFolders() {
+		createDirDeep(FRIK_INI_PATH);
+		createDirDeep(MESH_HIDE_FACE_INI_PATH);
+		createDirDeep(PIPBOY_HOLO_OFFSETS_PATH);
+		createDirDeep(WEAPONS_OFFSETS_PATH);
 	}
 
 	/// <summary>
