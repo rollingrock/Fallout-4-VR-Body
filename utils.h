@@ -88,5 +88,6 @@ namespace F4VRBody {
 	std::string getEmbededResourceAsString(WORD idr);
 	std::string getCurrentTimeString();
 	std::vector<std::string> loadListFromFile(std::string filePath);
+	void createDirDeep(std::string pathStr);
 	void createFileFromResourceIfNotExists(std::string filePath, WORD resourceId);
 }

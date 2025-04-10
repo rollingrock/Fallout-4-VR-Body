@@ -493,6 +493,21 @@ namespace F4VRBody {
 	}
 
 	/// <summary>
+	/// Create a folder structure if it doesn't exists.
+	/// Check if the given path ends with a file name and if so, remove it.
+	/// </summary>
+	void createDirDeep(std::string pathStr) {
+		auto path = std::filesystem::path(pathStr);
+		if (path.has_extension()) {
+			path = path.parent_path();
+		}
+		if (!std::filesystem::exists(path)) {
+			_MESSAGE("Creating directory: %s", path.string().c_str());
+			std::filesystem::create_directories(path);
+		}
+	}
+
+	/// <summary>
 	/// If file at a given path doesn't exists then create it from the embeded resource.
 	/// </summary>
 	void createFileFromResourceIfNotExists(std::string filePath, WORD resourceId) {
