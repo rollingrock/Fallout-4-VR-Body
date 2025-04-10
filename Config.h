@@ -177,6 +177,7 @@ namespace F4VRBody {
 		void loadPipboyOffsets();
 		void loadWeaponsOffsets();
 		void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const;
+		void setupFolders();
 		void migrateConfigFilesIfNeeded();
 
 		// Reload config interval in seconds (0 - no reload)
