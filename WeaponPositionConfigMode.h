@@ -2,46 +2,52 @@
 
 #include "utils.h"
 #include "api/VRHookAPI.h"
-#include "f4se/NiNodes.h"
 
 namespace F4VRBody {
+	class WeaponPositionAdjuster;
 
-	enum RepostionTarget {
+	/**
+	 * What is currently being configured
+	 */
+	enum class RepositionTarget : uint8_t {
 		Weapon = 0,
 		Offhand,
 		BetterScopes,
 	};
 
-	// configuration mode to adjust weapon offset, offhand offset, and BetterScopesVR
-	class WeaponPositionConfigMode
-	{
-	public:
-		inline bool inWeaponRepositionMode() const {
-			return _isInRepositionConfigMode;
-		}
-		inline void toggleWeaponRepositionMode() {
-			_isInRepositionConfigMode = !_isInRepositionConfigMode;
-			rotationStickEnabledToggle(!_isInRepositionConfigMode);
-			if (_isInRepositionConfigMode) {
-				_repositionTarget = RepostionTarget::Weapon;
-			}
-		}
-		inline bool isInOffhandRepositioning() const {
-			return _isInRepositionConfigMode && _repositionTarget == RepostionTarget::Offhand;
-		}
+	/**
+	 * Configuration mode to adjust weapon offset, offhand offset, and BetterScopesVR
+	 */
+	class WeaponPositionConfigMode {
+	public :
+		explicit WeaponPositionConfigMode(WeaponPositionAdjuster* adjuster)
+			: _adjuster(adjuster) {}
 
-		NiPoint3 getDefaultOffhandTransform();
-		void onFrameUpdate();
-		void handleWeaponReposition(OpenVRHookManagerAPI* vrhook, NiNode* weapon, NiTransform& offsetTransform, const NiTransform& originalTransform, std::string weaponName, bool isInPA);
-		void handleOffhandReposition(OpenVRHookManagerAPI* vrhook, NiNode* weapon, NiPoint3& offsetPos, std::string weaponName, bool isInPA);
-		void handleBetterScopesConfig(OpenVRHookManagerAPI* vrhook) const;
+		// Default small offset to use if no custom transform exist.
+		static NiPoint3 getDefaultOffhandTransform() { return {0, 0, 2}; }
 
+		[[nodiscard]] bool isInOffhandRepositioning() const { return _repositionTarget == RepositionTarget::Offhand; }
+
+		void onFrameUpdate(NiNode* weapon);
 
 	private:
-		// is in configuration mode
-		bool _isInRepositionConfigMode = false;
+		void handleReposition(NiNode* weapon) const;
+		void handleWeaponReposition(NiNode* weapon) const;
+		void handleOffhandReposition(NiNode* weapon) const;
+		static void handleBetterScopesReposition();
+		void resetConfig() const;
+		void saveConfig() const;
+		void resetWeaponConfig() const;
+		void saveWeaponConfig() const;
+		void resetOffhandConfig() const;
+		void saveOffhandConfig() const;
+		void resetBetterScopesConfig() const;
+		void saveBetterScopesConfig() const;
 
-		// what is corrently being repositioned
-		RepostionTarget _repositionTarget = RepostionTarget::Weapon;
+		// access the weapon/offhand transform to change
+		WeaponPositionAdjuster* _adjuster;
+
+		// what is currently being repositioned
+		RepositionTarget _repositionTarget = RepositionTarget::Weapon;
 	};
 }

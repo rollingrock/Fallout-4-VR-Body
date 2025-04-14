@@ -11,7 +11,6 @@
 #define PI 3.14159265358979323846
 
 namespace F4VRBody {
-
 	RelocAddr<_AIProcess_ClearMuzzleFlashes> AIProcess_ClearMuzzleFlashes(0xecc710);
 	RelocAddr<_AIProcess_CreateMuzzleFlash> AIProcess_CreateMuzzleFlash(0xecc570);
 
@@ -48,8 +47,7 @@ namespace F4VRBody {
 
 			if (maxX >= maxY && maxX >= maxZ) {
 				return (v1.x >= 0 ? NiPoint3(1, 0, 0) : NiPoint3(-1, 0, 0));
-			}
-			else if (maxY > maxZ) {
+			} else if (maxY > maxZ) {
 				return (v1.y >= 0 ? NiPoint3(0, 1, 0) : NiPoint3(0, -1, 0));
 			}
 			return (v1.z >= 0 ? NiPoint3(0, 0, 1) : NiPoint3(0, 0, -1));
@@ -164,8 +162,7 @@ namespace F4VRBody {
 		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			if (auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
 				updateTransformsDown(nextNode, true);
-			}
-			else if (auto triNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsBSTriShape() : nullptr) {
+			} else if (auto triNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsBSTriShape() : nullptr) {
 				updateTransforms(reinterpret_cast<NiNode*>(triNode));
 			}
 		}
@@ -229,14 +226,11 @@ namespace F4VRBody {
 		}
 	}
 
-	void SimulateExtendedButtonPress(WORD vkey)
-	{
+	void SimulateExtendedButtonPress(WORD vkey) {
 		HWND hwnd = ::FindWindowEx(0, 0, "Fallout4VR", 0);
-		if (hwnd)
-		{
+		if (hwnd) {
 			HWND foreground = GetForegroundWindow();
-			if (foreground && hwnd == foreground)
-			{
+			if (foreground && hwnd == foreground) {
 				INPUT input;
 				input.type = INPUT_KEYBOARD;
 				input.ki.wScan = MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
@@ -244,17 +238,15 @@ namespace F4VRBody {
 				input.ki.dwExtraInfo = 0;
 				input.ki.wVk = vkey;
 				if (vkey == VK_UP || vkey == VK_DOWN) {
-					input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;//0; //KEYEVENTF_KEYDOWN
-				}
-				else {
+					input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY; //0; //KEYEVENTF_KEYDOWN
+				} else {
 					input.ki.dwFlags = 0;
 				}
 				SendInput(1, &input, sizeof(INPUT));
 				Sleep(30);
 				if (vkey == VK_UP || vkey == VK_DOWN) {
 					input.ki.dwFlags = KEYEVENTF_KEYUP | KEYEVENTF_EXTENDEDKEY;
-				}
-				else {
+				} else {
 					input.ki.dwFlags = KEYEVENTF_KEYUP;
 				}
 				SendInput(1, &input, sizeof(INPUT));
@@ -284,7 +276,6 @@ namespace F4VRBody {
 		if (g_config->autoFocusWindow && g_config->switchUIControltoPrimary) {
 			WindowFocus();
 		}
-
 	}
 
 	void turnPipBoyOff() {
@@ -318,6 +309,34 @@ namespace F4VRBody {
 		return (*g_ui)->GetMenu(pipboyMenu) != nullptr;
 	}
 
+	// TODO: move those to the VR handler that will handle all controls logic like press
+	static bool _controlsThumbstickEnableState = true;
+	static float _controlsThumbstickOriginalDeadzone = 0.25f;
+	static float _controlsThumbstickOriginalDeadzoneMax = 0.94f;
+	static float _controlsDirectionalOriginalDeadzone = 0.5f;
+
+	/// <summary>
+	/// If to enable/disable the use of both controllers analog thumbstick.
+	/// </summary>
+	void setControlsThumbstickEnableState(const bool toEnable) {
+		if (_controlsThumbstickEnableState == toEnable) {
+			return; // no change
+		}
+		_controlsThumbstickEnableState = toEnable;
+		if (toEnable) {
+			SetINIFloat("fLThumbDeadzone:Controls", _controlsThumbstickOriginalDeadzone);
+			SetINIFloat("fLThumbDeadzoneMax:Controls", _controlsThumbstickOriginalDeadzoneMax);
+			SetINIFloat("fDirectionalDeadzone:Controls", _controlsDirectionalOriginalDeadzone);
+		} else {
+			_controlsThumbstickOriginalDeadzone = GetINISetting("fLThumbDeadzone:Controls")->data.f32;
+			_controlsThumbstickOriginalDeadzoneMax = GetINISetting("fLThumbDeadzoneMax:Controls")->data.f32;
+			_controlsDirectionalOriginalDeadzone = GetINISetting("fDirectionalDeadzone:Controls")->data.f32;
+			SetINIFloat("fLThumbDeadzone:Controls", 1.0);
+			SetINIFloat("fLThumbDeadzoneMax:Controls", 1.0);
+			SetINIFloat("fDirectionalDeadzone:Controls", 1.0);
+		}
+	}
+
 	/// <summary>
 	/// If to enable/disable the use of right stick for player rotattion.
 	/// Used to disable for pipboy usage and weapon repositions.
@@ -342,8 +361,12 @@ namespace F4VRBody {
 	/// </summary>
 	static VRHook::VRSystem::TrackerType getTrackerTypeForCorrectHand(bool primary) {
 		return g_config->leftHandedMode
-			? primary ? VRHook::VRSystem::TrackerType::Left : VRHook::VRSystem::TrackerType::Right
-			: primary ? VRHook::VRSystem::TrackerType::Right : VRHook::VRSystem::TrackerType::Left;
+			? primary
+			? VRHook::VRSystem::TrackerType::Left
+			: VRHook::VRSystem::TrackerType::Right
+			: primary
+			? VRHook::VRSystem::TrackerType::Right
+			: VRHook::VRSystem::TrackerType::Left;
 	}
 
 	/// <summary>
@@ -491,8 +514,7 @@ namespace F4VRBody {
 		return nullptr;
 	}
 
-	Setting* GetINISettingNative(const char* name)
-	{
+	Setting* GetINISettingNative(const char* name) {
 		Setting* setting = SettingCollectionList_GetPtr(*g_iniSettings, name);
 		if (!setting)
 			setting = SettingCollectionList_GetPtr(*g_iniPrefSettings, name);
@@ -500,8 +522,7 @@ namespace F4VRBody {
 		return setting;
 	}
 
-	std::string str_tolower(std::string s)
-	{
+	std::string str_tolower(std::string s) {
 		std::transform(s.begin(), s.end(), s.begin(),
 			[](unsigned char c) { return std::tolower(c); }
 		);
@@ -511,14 +532,14 @@ namespace F4VRBody {
 	std::string ltrim(std::string s) {
 		s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
 			return !std::isspace(ch);
-			}));
+		}));
 		return s;
 	}
 
 	std::string rtrim(std::string s) {
 		s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
 			return !std::isspace(ch);
-			}).base(), s.end());
+		}).base(), s.end());
 		return s;
 	}
 
@@ -530,7 +551,6 @@ namespace F4VRBody {
 	/// Find dll embeded resource by id and return its data as string.
 	/// </summary>
 	std::string getEmbededResourceAsString(WORD resourceId) {
-
 		// Must specify the dll to read its resources and not the exe
 		HMODULE hModule = GetModuleHandle("FRIK.dll");
 		HRSRC hRes = FindResource(hModule, MAKEINTRESOURCE(resourceId), RT_RCDATA);

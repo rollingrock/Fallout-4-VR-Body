@@ -1,19 +1,19 @@
 #pragma once
 
 #include "Skeleton.h"
-#include "f4se/NiNodes.h"
 #include "WeaponPositionConfigMode.h"
 
 namespace F4VRBody {
+	class WeaponPositionAdjuster {
+		// To simplify changing offsets during configuration
+		friend class WeaponPositionConfigMode;
 
-	class WeaponPositionAdjuster
-	{
 	public:
 		WeaponPositionAdjuster(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
 			_skelly = skelly;
-			_vrhook = hook;
+			_vrHook = hook;
 
-			Matrix44 ident = Matrix44();
+			auto ident = Matrix44();
 			ident.data[2][0] = 1.0; // new X = old Z
 			ident.data[0][1] = 1.0; // new Y = old X
 			ident.data[1][2] = 1.0; // new Z = old Y
@@ -21,49 +21,47 @@ namespace F4VRBody {
 			_scopeCameraBaseMatrix = ident.make43();
 		}
 
-		inline bool inWeaponRepositionMode() const {
-			return _configMode.inWeaponRepositionMode();
-		}
-		inline void toggleWeaponRepositionMode() {
-			_configMode.toggleWeaponRepositionMode();
-		}
+		[[nodiscard]] bool inWeaponRepositionMode() const { return _configMode != nullptr; }
+
+		void toggleWeaponRepositionMode();
 
 		void onFrameUpdate();
+		void loadStoredOffsets(const std::string& weaponName);
 
 	private:
 		void checkEquippedWeaponChanged();
-		void handleScopeCameraAdjustmentByWeaponOffset(NiNode* weapon);
+		void handleScopeCameraAdjustmentByWeaponOffset(const NiNode* weapon) const;
 		void checkIfOffhandIsGripping(NiNode* weapon);
-		void handleWeaponGrippingRotationAdjustment(NiNode* weapon);
-		bool isOffhandCloseToBarrel(NiNode* weapon);
-		bool isOffhandMovedFastAway();
-		NiPoint3 getOffhandPosition(NiNode* weapon);
-		void handleBetterScopes(NiNode* weapon);
+		void handleWeaponGrippingRotationAdjustment(NiNode* weapon) const;
+		bool isOffhandCloseToBarrel(NiNode* weapon) const;
+		bool isOffhandMovedFastAway() const;
+		NiPoint3 getOffhandPosition(NiNode* weapon) const;
+		void handleBetterScopes(NiNode* weapon) const;
 		void debugPrintWeaponPositionData();
 
 		// Define a basis remapping matrix to correct coordinate system for scope camera
 		NiMatrix43 _scopeCameraBaseMatrix;
 
 		Skeleton* _skelly;
-		OpenVRHookManagerAPI* _vrhook;
+		OpenVRHookManagerAPI* _vrHook;
 
 		// used to know if weapon changed to load saved offsets
-		std::string _lastWeapon = "";
+		std::string _lastWeapon;
 		bool _lastWeaponInPA = false;
 
 		// is offhand (secondary hand) gripping the weapon barrel
 		bool _offHandGripping = false;
-		
+
 		// weapon original transform before changing it
-		NiTransform _weaponOriginalTransform;
-		
+		NiTransform _weaponOriginalTransform = NiTransform();
+
 		// custom weapon transform to update
-		NiTransform _weaponOffsetTransform;
-		
+		NiTransform _weaponOffsetTransform = NiTransform();
+
 		// custom offhand position offsets
 		NiPoint3 _offhandOffsetPos;
 
 		// configuration mode to update custom transforms
-		WeaponPositionConfigMode _configMode;
+		std::unique_ptr<WeaponPositionConfigMode> _configMode;
 	};
 }
