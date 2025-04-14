@@ -1,6 +1,17 @@
 #include "UIElement.h"
 
 namespace ui {
+	std::string UIElement::toString() const {
+		return std::format("UIElement: {}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f})",
+			_visible ? "V" : "H",
+			_transform.pos.x,
+			_transform.pos.y,
+			_transform.pos.z,
+			_size.width,
+			_size.height
+		);
+	}
+
 	void UIElement::attachToNode(NiNode* attachNode) {
 		if (_attachNode)
 			throw std::runtime_error(

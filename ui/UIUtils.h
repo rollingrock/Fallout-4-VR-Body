@@ -11,6 +11,8 @@ namespace ui {
 	static std::string getToggleButtonFrameNifName() { return "FRIK/UI-ConfigMarker.nif"; }
 	static std::string getPrimaryWandNodeName() { return "world_primaryWand.nif"; }
 
+	static UISize getButtonDefaultSize() { return {4.4f, 4.4f}; }
+
 	F4VRBody::PlayerNodes* getPlayerNodes();
 	void setNodeVisibility(NiNode* node, bool visible);
 	NiNode* getClonedNiNodeForNifFile(const std::string& path);

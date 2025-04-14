@@ -1,4 +1,5 @@
 #include "UIManager.h"
+#include "../Config.h"
 
 namespace ui {
 	// globals, globals everywhere...
@@ -9,11 +10,17 @@ namespace ui {
 	 */
 	void UIManager::onFrameUpdate(UIModAdapter* adapter) {
 		_releaseSafeList.clear();
+
 		for (const auto& element : _rootElements) {
 			element->onLayoutUpdate(adapter);
 		}
+
 		for (const auto& element : _rootElements) {
 			element->onFrameUpdate(adapter);
+		}
+
+		if (F4VRBody::g_config->checkDebugDumpDataOnceFor("ui_tree")) {
+			dumpUITree();
 		}
 	}
 
@@ -50,6 +57,33 @@ namespace ui {
 				_rootElements.erase(it);
 				break;
 			}
+		}
+	}
+
+	/**
+	 * Dump all the managed UI elements trees in a nice tree format.
+	 */
+	void UIManager::dumpUITree() const {
+		if (_rootElements.empty()) {
+			_MESSAGE("--- UI Manager EMPTY ---");
+			return;
+		}
+
+		for (const auto& element : _rootElements) {
+			_MESSAGE("--- UI Manager Root ---");
+			dumpUITreeRecursive(element.get(), "");
+		}
+	}
+
+	void UIManager::dumpUITreeRecursive(UIElement* element, std::string padding) {
+		_MESSAGE("%s%s", padding.c_str(), element->toString().c_str());
+		const auto container = dynamic_cast<UIContainer*>(element);
+		if (!container) {
+			return;
+		}
+		padding += "..";
+		for (const auto& child : container->childElements()) {
+			dumpUITreeRecursive(child.get(), padding);
 		}
 	}
 }

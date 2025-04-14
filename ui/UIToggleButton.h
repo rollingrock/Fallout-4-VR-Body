@@ -9,7 +9,10 @@ namespace ui {
 			: UIToggleButton(getClonedNiNodeForNifFile(nifPath)) {}
 
 		explicit UIToggleButton(NiNode* node)
-			: UIWidget(node), _toggleFrameNode(getClonedNiNodeForNifFile(getToggleButtonFrameNifName())) {}
+			: UIWidget(node), _toggleFrameNode(getClonedNiNodeForNifFile(getToggleButtonFrameNifName())) {
+			// TODO: replace with proper calculation of node size
+			_size = getButtonDefaultSize();
+		}
 
 		// is the button is currently toggled ON or OFF
 		[[nodiscard]] bool isToggleOn() const { return _isToggleOn; }
@@ -23,10 +26,12 @@ namespace ui {
 			_onToggleEventHandler = std::move(handler);
 		}
 
+		[[nodiscard]] virtual std::string toString() const override;
+
 	protected:
 		virtual void attachToNode(NiNode* node) override;
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
-		virtual bool isPressable() override;
+		[[nodiscard]] virtual bool isPressable() const override;
 		virtual void onFrameUpdate(UIModAdapter* adapter) override;
 		virtual void onPressEventFired(UIElement* element, UIModAdapter* adapter) override;
 

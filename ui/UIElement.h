@@ -6,6 +6,14 @@
 #include "../matrix.h"
 
 namespace ui {
+	struct UISize {
+		float width;
+		float height;
+
+		UISize(const float width, const float height)
+			: width(width), height(height) {}
+	};
+
 	class UIElement {
 	public:
 		UIElement() {
@@ -21,18 +29,24 @@ namespace ui {
 		/**
 		 * Set the position of the UI element relative to the parent.
 		 * @param x horizontal: positive-right, negative-left
-		 * @param y positive-forward, negative-backward
+		 * @param y depth: positive-forward, negative-backward
 		 * @param z vertical: positive-up, negative-down
 		 */
 		void setPosition(const float x, const float y, const float z) { _transform.pos = NiPoint3(x, y, z); }
 		void updatePosition(const float x, const float y, const float z) { _transform.pos += NiPoint3(x, y, z); }
-		[[nodiscard]] NiPoint3 getPosition(float x, float y, float z) const { return _transform.pos; }
+		[[nodiscard]] NiPoint3 getPosition() const { return _transform.pos; }
 
 		[[nodiscard]] bool isVisible() const { return _visible; }
 		void setVisibility(const bool visible) { _visible = visible; }
 
+		[[nodiscard]] UISize getSize() const { return _size; }
+		void setSize(const UISize size) { _size = size; }
+		void setSize(const float width, const float height) { _size = {width, height}; }
+
 		[[nodiscard]] UIElement* getParent() const { return _parent; }
 		void setParent(UIElement* parent) { _parent = parent; }
+
+		[[nodiscard]] virtual std::string toString() const;
 
 		// Internal: 
 		virtual void onLayoutUpdate(UIModAdapter* adapter) {}
@@ -53,6 +67,9 @@ namespace ui {
 		UIElement* _parent = nullptr;
 		NiTransform _transform;
 		bool _visible = true;
+
+		// the width (x) and height (y) of the widget
+		UISize _size = UISize(0, 0);
 
 		// Game node the main node is attached to
 		NiPointer<NiNode> _attachNode = nullptr;

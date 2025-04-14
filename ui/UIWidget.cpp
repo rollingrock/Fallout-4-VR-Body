@@ -1,9 +1,21 @@
 #include "UIWidget.h"
 
-#include "../Config.h"
 #include "../Debug.h"
 
 namespace ui {
+	std::string UIWidget::toString() const {
+		return std::format("UIWidget({}): {}{}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f})",
+			_node->m_name.c_str(),
+			_visible ? "V" : "H",
+			isPressable() ? "P" : ".",
+			_transform.pos.x,
+			_transform.pos.y,
+			_transform.pos.z,
+			_size.width,
+			_size.height
+		);
+	}
+
 	/**
 	 * Attach this widget NiNode to the given node.
 	 */

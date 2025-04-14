@@ -1,6 +1,20 @@
 #include "UIToggleButton.h"
 
 namespace ui {
+	std::string UIToggleButton::toString() const {
+		return std::format("UIToggleButton({}): {}{}{}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f})",
+			_node->m_name.c_str(),
+			_visible ? "V" : "H",
+			isPressable() ? "P" : ".",
+			_isToggleOn ? "T" : ".",
+			_transform.pos.x,
+			_transform.pos.y,
+			_transform.pos.z,
+			_size.width,
+			_size.height
+		);
+	}
+
 	void UIToggleButton::attachToNode(NiNode* node) {
 		UIWidget::attachToNode(node);
 		_attachNode->AttachChild(_toggleFrameNode, true);
@@ -17,8 +31,8 @@ namespace ui {
 	/**
 	 * Toggle button is pressable if there is press handler, and it is not already toggled on when toggling off is not allowed.
 	 */
-	bool UIToggleButton::isPressable() {
-		return _onToggleEventHandler != nullptr && !(_isToggleOn && !_isUnToggleAllowed);
+	bool UIToggleButton::isPressable() const {
+		return _visible && _onToggleEventHandler != nullptr && !(_isToggleOn && !_isUnToggleAllowed);
 	}
 
 	/**
