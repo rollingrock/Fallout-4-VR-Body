@@ -7,22 +7,27 @@
 #include <vector>
 
 namespace ui {
-
-	class UIManager
-	{
+	class UIManager {
 	public:
-		void onFrameUpdate(IUIModAdapter* adapter);
-		void onFrameUpdate(IUIModAdapter* adapter, UIElement* element);
-		void attachElement(UIElement* element, NiNode* attachNode);
-		void attachElementToPrimaryWand(UIElement* element) { attachElement(element, getPrimaryWandAttachNode()); }
+		void onFrameUpdate(UIModAdapter* adapter);
+		void attachElement(const std::shared_ptr<UIElement>& element, NiNode* attachNode);
 
-		/// <summary>
-		/// Get attachment node for the primary wand (primary/right hand).
-		/// </summary>
-		NiNode* getPrimaryWandAttachNode() { return findNode(getPrimaryWandNodeName().c_str(), getPlayerNodes()->primaryUIAttachNode); }
+		void attachElementToPrimaryWand(const std::shared_ptr<UIElement>& element) {
+			attachElement(element, getPrimaryWandAttachNode());
+		}
+
+		void detachElement(const std::shared_ptr<UIElement>& element, bool releaseSafe);
+
+		// Get attachment node for the primary wand (primary/right hand).
+		static NiNode* getPrimaryWandAttachNode() {
+			return findNode(getPrimaryWandNodeName().c_str(), getPlayerNodes()->primaryUIAttachNode);
+		}
 
 	private:
-		std::vector<UIElement*> _elements;
+		std::vector<std::shared_ptr<UIElement>> _rootElements;
+
+		// used to release child elements in a safe way (on the next frame update)
+		std::vector<std::shared_ptr<UIElement>> _releaseSafeList;
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now
@@ -35,4 +40,3 @@ namespace ui {
 		g_uiManager = new UIManager();
 	}
 }
-

@@ -2,33 +2,44 @@
 #include "UIManager.h"
 
 namespace ui {
-	
-	void UIContainer::onFrameUpdate(IUIModAdapter* adapter) {
-		for (auto element : _elements) {
-			g_uiManager->onFrameUpdate(adapter, element);
+	/**
+	 * Propagate frame update to all child elements.
+	 */
+	void UIContainer::onFrameUpdate(UIModAdapter* adapter) {
+		for (const auto& childElm : _childElements) {
+			childElm->onFrameUpdate(adapter);
 		}
 	}
 
-	/// <summary>
-	/// Attach all the elements in this container to the given node.
-	/// DO NOT call this method directly, use UIManager::attachElement() instead.
-	/// </summary>
-	void UIContainer::attachToNode(NiNode* node) {
+	/**
+	 * Attach all the elements in this container to the given node.
+	 */
+	void UIContainer::attachToNode(NiNode* attachNode) {
 		if (_attachNode)
 			throw std::runtime_error("Attempt to attach already attached container");
 
-		_attachNode = node;
-		for (auto element : _elements) {
-			g_uiManager->attachElement(element, node);
+		_attachNode = attachNode;
+		for (const auto& childElm : _childElements) {
+			g_uiManager->attachElement(childElm, attachNode);
 		}
 	}
 
-	/// <summary>
-	/// Add a widget to this container.
-	/// </summary>
-	void UIContainer::addElement(UIElement* element) {
+	/**
+	 * Detach all the elements in this container from the attached node.
+	 */
+	void UIContainer::detachFromAttachedNode(const bool releaseSafe) {
+		UIElement::detachFromAttachedNode(releaseSafe);
+		for (const auto& childElm : _childElements) {
+			g_uiManager->detachElement(childElm, releaseSafe);
+		}
+	}
+
+	/**
+	 * Add a widget to this container.
+	 */
+	void UIContainer::addElement(const std::shared_ptr<UIElement>& element) {
 		element->setParent(this);
-		_elements.emplace_back(element);
+		_childElements.emplace_back(element);
 		if (_attachNode) {
 			g_uiManager->attachElement(element, _attachNode);
 		}

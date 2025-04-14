@@ -3,8 +3,7 @@
 #include "f4se/NiNodes.h"
 
 namespace ui {
-
-	class IUIModAdapter	{
+	class UIModAdapter {
 	public:
 		/// <summary>
 		/// Get the world position to be used for all UI interactions.
@@ -17,5 +16,7 @@ namespace ui {
 		/// Used to indicate press handling.
 		/// </summary>
 		virtual void fireInteractionHeptic() = 0;
+
+		virtual ~UIModAdapter() = default;
 	};
 }

@@ -12,7 +12,7 @@
 #include "VR.h"
 #include "Debug.h"
 #include "ui/UIManager.h"
-#include "ui/IUIModAdapter.h"
+#include "ui/UIModAdapter.h"
 
 #include "api/PapyrusVRAPI.h"
 #include "api/VRManagerAPI.h"
@@ -36,7 +36,6 @@ UInt32 KeywordPowerArmorFrame = 0x15503F;
 OpenVRHookManagerAPI* _vrhook;
 
 namespace F4VRBody {
-
 	Pipboy* g_pipboy = nullptr;
 	ConfigurationMode* g_configurationMode = nullptr;
 	CullGeometryHandler* g_cullGeometry = nullptr;
@@ -56,15 +55,15 @@ namespace F4VRBody {
 	/// <summary>
 	/// TODO: think about it, is it the best way to handle this dependency indaraction.
 	/// </summary>
-	class FrameUpdateContext : public ui::IUIModAdapter {
+	class FrameUpdateContext : public ui::UIModAdapter {
 	public:
 		FrameUpdateContext(Skeleton* skelly, OpenVRHookManagerAPI* vrhook)
-			: _skelly(skelly), _vrhook(vrhook)
-		{
-		}
+			: _skelly(skelly), _vrhook(vrhook) {}
+
 		NiPoint3 getInteractionBonePosition() {
 			return _skelly->getOffhandIndexFingerTipWorldPosition();
 		}
+
 		void fireInteractionHeptic() {
 			_vrhook->StartHaptics(g_config->leftHandedMode ? 2 : 1, 0.2, 0.3);
 		}
@@ -75,7 +74,6 @@ namespace F4VRBody {
 	};
 
 	static void fixSkeleton() {
-
 		NiNode* pn = (*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
 
 		static BSFixedString lHand("LArm_Hand");
@@ -160,7 +158,6 @@ namespace F4VRBody {
 	}
 
 	static bool InitSkelly(bool inPowerArmor) {
-		
 		if (!(*g_player)->unkF0) {
 			_DMESSAGE("loaded Data Not Set Yet");
 			return false;
@@ -237,23 +234,17 @@ namespace F4VRBody {
 		g_weaponPosition = nullptr;
 	}
 
-	void smoothMovement()
-	{
+	void smoothMovement() {
 		if (!g_config->disableSmoothMovement) {
 			SmoothMovementVR::everyFrame();
 		}
 	}
 
-	bool HasKeywordPA(TESObjectARMO* armor, UInt32 keywordFormId)
-	{
-		if (armor)
-		{
-			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++)
-			{
-				if (armor->keywordForm.keywords[i])
-				{
-					if (armor->keywordForm.keywords[i]->formID == keywordFormId)
-					{
+	bool HasKeywordPA(TESObjectARMO* armor, UInt32 keywordFormId) {
+		if (armor) {
+			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++) {
+				if (armor->keywordForm.keywords[i]) {
+					if (armor->keywordForm.keywords[i]->formID == keywordFormId) {
 						return true;
 					}
 				}
@@ -263,26 +254,19 @@ namespace F4VRBody {
 	}
 
 	static bool detectInPowerArmor() {
-
 		// Thanks Shizof and SmoothtMovementVR for below code
 		if ((*g_player)->equipData) {
-			if ((*g_player)->equipData->slots[0x03].item != nullptr)
-			{
+			if ((*g_player)->equipData->slots[0x03].item != nullptr) {
 				TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item;
-				if (equippedForm)
-				{
-					if (equippedForm->formType == TESObjectARMO::kTypeID)
-					{
+				if (equippedForm) {
+					if (equippedForm->formType == TESObjectARMO::kTypeID) {
 						TESObjectARMO* armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO);
 
-						if (armor)
-						{
-							if (HasKeywordPA(armor, KeywordPowerArmor) || HasKeywordPA(armor, KeywordPowerArmorFrame))
-							{
+						if (armor) {
+							if (HasKeywordPA(armor, KeywordPowerArmor) || HasKeywordPA(armor, KeywordPowerArmorFrame)) {
 								return true;
 							}
-							else
-							{
+							else {
 								return false;
 							}
 						}
@@ -291,7 +275,6 @@ namespace F4VRBody {
 			}
 		}
 		return false;
-
 	}
 
 	void update() {
@@ -343,7 +326,6 @@ namespace F4VRBody {
 		}
 
 		if (_skelly->getRoot() != (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode()) {
-
 			auto node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
 			if (!node) {
 				return;
@@ -361,7 +343,7 @@ namespace F4VRBody {
 		}
 
 		// do stuff now
-		 g_config->leftHandedMode = *Offsets::iniLeftHandedMode;
+		g_config->leftHandedMode = *Offsets::iniLeftHandedMode;
 		_skelly->setLeftHandedSticky();
 
 
@@ -373,12 +355,12 @@ namespace F4VRBody {
 			GameVarsConfigured = true;
 		}
 
-		 g_config->leftHandedMode = *Offsets::iniLeftHandedMode;
-		
+		g_config->leftHandedMode = *Offsets::iniLeftHandedMode;
+
 		g_pipboy->replaceMeshes(false);
 
 		// check if jumping or in air;
-		 c_jumping = SmoothMovementVR::checkIfJumpingOrInAir();
+		c_jumping = SmoothMovementVR::checkIfJumpingOrInAir();
 
 		_skelly->setTime();
 
@@ -408,12 +390,12 @@ namespace F4VRBody {
 		//// set up the body underneath the headset in a proper scale and orientation
 		_DMESSAGE("Set body under HMD");
 		_skelly->setUnderHMD(groundHeight);
-		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
+		_skelly->updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		// Now Set up body Posture and hook up the legs
 		_DMESSAGE("Set body posture");
 		_skelly->setBodyPosture();
-		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
+		_skelly->updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		_DMESSAGE("Set Knee Posture");
 		_skelly->setKneePos();
@@ -428,7 +410,7 @@ namespace F4VRBody {
 		_skelly->setSingleLeg(true);
 
 		// Do another update before setting arms
-		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
+		_skelly->updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		// do arm IK - Right then Left
 		_DMESSAGE("Set Arms");
@@ -436,7 +418,7 @@ namespace F4VRBody {
 		_skelly->setArms(false);
 		_skelly->setArms(true);
 		_skelly->leftHandedModePipboy();
-		_skelly->updateDown(_skelly->getRoot(), true);  // Do world update now so that IK calculations have proper world reference
+		_skelly->updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		// Misc stuff to showahide things and also setup the wrist pipboy
 		_DMESSAGE("Pipboy and Weapons");
@@ -465,10 +447,10 @@ namespace F4VRBody {
 
 		_DMESSAGE("Operate Skelly hands");
 		_skelly->setHandPose();
-		
+
 		_DMESSAGE("Operate Pipboy");
 		g_pipboy->operatePipBoy();
-		
+
 		_DMESSAGE("bone sphere stuff");
 		g_boneSpheres->onFrameUpdate();
 
@@ -478,7 +460,8 @@ namespace F4VRBody {
 		//g_gunReloadSystem->Update();
 
 		Offsets::BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
-		BSFlattenedBoneTree_UpdateBoneArray((*g_player)->unkF0->rootNode->m_children.m_data[0]); // just in case any transforms missed because they are not in the tree do a full flat bone array update
+		BSFlattenedBoneTree_UpdateBoneArray((*g_player)->unkF0->rootNode->m_children.m_data[0]);
+		// just in case any transforms missed because they are not in the tree do a full flat bone array update
 		Offsets::BSFadeNode_UpdateGeomArray((*g_player)->unkF0->rootNode, 1);
 
 		if ((*g_player)->middleProcess->unk08->equipData && (*g_player)->middleProcess->unk08->equipData->equippedData) {
@@ -498,16 +481,17 @@ namespace F4VRBody {
 
 		g_pipboy->onUpdate();
 		g_configurationMode->onUpdate();
-		
+
 		FrameUpdateContext context(_skelly, _vrhook);
 		ui::g_uiManager->onFrameUpdate(&context);
 
 		_skelly->fixBackOfHand();
-		_skelly->updateDown(_skelly->getRoot(), true);  // Last world update before exit.    Probably not necessary.
+		_skelly->updateDown(_skelly->getRoot(), true); // Last world update before exit.    Probably not necessary.
 
 		debug(_skelly);
 
-		if (!detectInPowerArmor()) { // sets 3rd Person Pipboy Scale
+		if (!detectInPowerArmor()) {
+			// sets 3rd Person Pipboy Scale
 			NiNode* _Pipboy3rd = getChildNode("PipboyBone", (*g_player)->unkF0->rootNode);
 			if (_Pipboy3rd) {
 				_Pipboy3rd->m_localTransform.scale = g_config->pipBoyScale;
@@ -537,7 +521,7 @@ namespace F4VRBody {
 	// Papyrus Native Funcs
 
 	// Settings Holotape related funcs
-	
+
 	static void openMainConfigurationMode(StaticFunctionTag* base) {
 		_MESSAGE("Open Main Configuration Mode...");
 		g_configurationMode->enterConfigurationMode();
@@ -589,12 +573,12 @@ namespace F4VRBody {
 		setSelfieMode(base, !c_selfieMode);
 	}
 	
-	static void moveForward(StaticFunctionTag* base){
+	static void moveForward(StaticFunctionTag* base) {
 		_MESSAGE("Papyrus: Move Forward");
 		g_config->playerOffset_forward += 1.0f;
 	}
 
-	static void moveBackward(StaticFunctionTag* base){
+	static void moveBackward(StaticFunctionTag* base) {
 		_MESSAGE("Papyrus: Move Backward");
 		g_config->playerOffset_forward -= 1.0f;
 	}
@@ -664,18 +648,20 @@ namespace F4VRBody {
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("setSelfieMode", "FRIK:FRIK", F4VRBody::setSelfieMode, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveForward", "FRIK:FRIK", F4VRBody::moveForward, vm));
 		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", F4VRBody::moveBackward, vm));
-		
+
 		// Bone Sphere interaction related APIs
 		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, UInt32, float, BSFixedString>("RegisterBoneSphere", "FRIK:FRIK", F4VRBody::registerBoneSphere, vm));
-		vm->RegisterFunction(new NativeFunction3<StaticFunctionTag, UInt32, float, BSFixedString, VMArray<float> >("RegisterBoneSphereOffset", "FRIK:FRIK", F4VRBody::registerBoneSphereOffset, vm));
+		vm->RegisterFunction(
+			new NativeFunction3<StaticFunctionTag, UInt32, float, BSFixedString, VMArray<float>>("RegisterBoneSphereOffset", "FRIK:FRIK", F4VRBody::registerBoneSphereOffset, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("DestroyBoneSphere", "FRIK:FRIK", F4VRBody::destroyBoneSphere, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("RegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::registerForBoneSphereEvents, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("UnRegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::unRegisterForBoneSphereEvents, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("toggleDebugBoneSpheres", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheres, vm));
 		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, UInt32, bool>("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheresAtBone, vm));
-		
+
 		// Finger pose related APIs
-		vm->RegisterFunction(new NativeFunction6<StaticFunctionTag, void, bool, float, float, float, float, float>("setFingerPositionScalar", "FRIK:FRIK", F4VRBody::setFingerPositionScalar, vm));
+		vm->RegisterFunction(
+			new NativeFunction6<StaticFunctionTag, void, bool, float, float, float, float, float>("setFingerPositionScalar", "FRIK:FRIK", F4VRBody::setFingerPositionScalar, vm));
 		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("restoreFingerPoseControl", "FRIK:FRIK", F4VRBody::restoreFingerPoseControl, vm));
 
 		return true;

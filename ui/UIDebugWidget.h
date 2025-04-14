@@ -3,13 +3,20 @@
 #include "UIWidget.h"
 
 namespace ui {
-
 	class UIDebugWidget : public UIWidget {
 	public:
 		UIDebugWidget()
-			: UIWidget(getDebugSphereNif()) {
+			: UIWidget(getDebugSphereNifName()) {}
+
+		virtual void onFrameUpdate(UIModAdapter* adapter) override;
+
+		[[nodiscard]] bool isFollowInteractionPosition() const { return _followInteractionPosition; }
+
+		void setFollowInteractionPosition(const bool followInteractionPosition) {
+			_followInteractionPosition = followInteractionPosition;
 		}
 
-		void onFrameUpdate(IUIModAdapter* adapter) override;
+	protected:
+		bool _followInteractionPosition = false;
 	};
 }

@@ -2,38 +2,30 @@
 
 #include "UIElement.h"
 #include "UIUtils.h"
-#include "../Config.h"
 
 namespace ui {
-
-	class UIWidget : public UIElement
-	{
+	class UIWidget : public UIElement {
 	public:
-		UIWidget(const std::string& nifPath)
-			: _node(getClonedNiNodeForNifFile(nifPath)) {
-		}
+		explicit UIWidget(const std::string& nifPath)
+			: UIWidget(getClonedNiNodeForNifFile(nifPath)) {}
 
-		UIWidget(NiNode* node)
-			: _node(node) {
-		}
-
-		void onFrameUpdate(IUIModAdapter* adapter) override;
-
-		void setOnPressHandler(std::function<void(UIWidget*)> handler) {
-			_onPressEventHandler = std::move(handler);
-		}
+		explicit UIWidget(NiNode* node)
+			: _node(node) {}
 
 	protected:
-		void attachToNode(NiNode* node) override;
+		virtual bool isPressable() { return false; }
+		virtual void attachToNode(NiNode* attachNode) override;
+		virtual void detachFromAttachedNode(bool releaseSafe) override;
+		virtual void onFrameUpdate(UIModAdapter* adapter) override;
 		virtual NiTransform calculateTransform() override;
-		void handlePressEvent(IUIModAdapter* adapter);
-		
+		virtual void onPressEventFired(UIElement* element, UIModAdapter* adapter) override;
+		void handlePressEvent(UIModAdapter* adapter);
+
 		// UI node to render
-		NiNode* _node;
+		NiPointer<NiNode> _node;
 
 		// Press handling
 		bool _pressEventFired = false;
-		std::function<void(UIWidget*)> _onPressEventHandler;
 		float _pressYOffset = 0;
 	};
 }
