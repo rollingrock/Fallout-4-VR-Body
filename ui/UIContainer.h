@@ -4,18 +4,16 @@
 #include "UIWidget.h"
 
 namespace ui {
-
-	class UIContainer : public UIElement
-	{
+	class UIContainer : public UIElement {
 	public:
-		void onFrameUpdate(IUIModAdapter* adapter) override;
-		void UIContainer::addElement(UIElement* element);
+		virtual void onFrameUpdate(UIModAdapter* adapter) override;
+		void addElement(const std::shared_ptr<UIElement>& element);
 
-	private:
-		void attachToNode(NiNode* node) override;
-		
+	protected:
+		virtual void attachToNode(NiNode* attachNode) override;
+		virtual void detachFromAttachedNode(bool releaseSafe) override;
+
 		// all the elements under this container
-		std::vector<UIElement*> _elements;
+		std::vector<std::shared_ptr<UIElement>> _childElements;
 	};
 }
-

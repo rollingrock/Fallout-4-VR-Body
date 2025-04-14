@@ -182,6 +182,8 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClCompile Include="GunReload.cpp" />
     <ClCompile Include="HandPose.cpp" />
     <ClCompile Include="hook.cpp" />
+    <ClCompile Include="ui\UIToggleGroupContainer.cpp" />
+    <ClCompile Include="ui\UIButton.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="Menu.cpp" />
@@ -193,8 +195,8 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="Skeleton.cpp" />
     <ClCompile Include="SmoothMovement.cpp" />
+    <ClCompile Include="ui\UIToggleButton.cpp" />
     <ClCompile Include="ui\UIDebugWidget.cpp" />
-    <ClCompile Include="ui\IUIModAdapter.cpp" />
     <ClCompile Include="ui\UIContainer.cpp" />
     <ClCompile Include="ui\UIElement.cpp" />
     <ClCompile Include="ui\UIManager.cpp" />
@@ -227,6 +229,9 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="include\json.hpp" />
     <ClInclude Include="include\SimpleIni.h" />
     <ClInclude Include="include\version.h" />
+    <ClInclude Include="ui\UIModAdapter.h" />
+    <ClInclude Include="ui\UIToggleGroupContainer.h" />
+    <ClInclude Include="ui\UIButton.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="MenuChecker.h" />
@@ -240,8 +245,8 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="resource.h" />
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SmoothMovementVR.h" />
+    <ClInclude Include="ui\UIToggleButton.h" />
     <ClInclude Include="ui\UIDebugWidget.h" />
-    <ClInclude Include="ui\IUIModAdapter.h" />
     <ClInclude Include="ui\UIContainer.h" />
     <ClInclude Include="ui\UIElement.h" />
     <ClInclude Include="ui\UIManager.h" />

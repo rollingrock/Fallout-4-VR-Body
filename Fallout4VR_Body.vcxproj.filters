@@ -60,9 +60,6 @@
     <ClCompile Include="Menu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VR.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GunReload.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -96,9 +93,6 @@
     <ClCompile Include="WeaponPositionAdjuster.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ui\IUIModAdapter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ui\UIContainer.cpp">
       <Filter>UI</Filter>
     </ClCompile>
@@ -116,6 +110,18 @@
     </ClCompile>
     <ClCompile Include="ui\UIWidget.cpp">
       <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIToggleButton.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIButton.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIToggleGroupContainer.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="VR.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -233,9 +239,6 @@
     <ClInclude Include="WeaponPositionAdjuster.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ui\IUIModAdapter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ui\UIContainer.h">
       <Filter>UI</Filter>
     </ClInclude>
@@ -252,6 +255,18 @@
       <Filter>UI</Filter>
     </ClInclude>
     <ClInclude Include="ui\UIWidget.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIToggleButton.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIModAdapter.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIButton.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UIToggleGroupContainer.h">
       <Filter>UI</Filter>
     </ClInclude>
   </ItemGroup>

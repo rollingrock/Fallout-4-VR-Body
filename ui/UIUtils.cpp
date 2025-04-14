@@ -2,57 +2,61 @@
 
 #include "UIUtils.h"
 
-// TODO: refactor to move this dependancy to common code
+// TODO: refactor to move this dependency to common code
 #include "../Offsets.h"
-#include "../Config.h"
+#include "../Debug.h"
 
 namespace ui {
-
-	/// <summary>
-	/// Get struct with usefull NiNodes references related to player.
-	/// </summary>
+	/**
+	 * Get struct with useful NiNodes references related to player.
+	 */
 	F4VRBody::PlayerNodes* getPlayerNodes() {
 		return reinterpret_cast<F4VRBody::PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
 	}
 
-	/// <summary>
-	/// Update the node flags to show/hide it.
-	/// </summary>
-	void setNodeVisibility(NiNode* node, bool visible) {
-		if (visible)
-			node->flags &= 0xfffffffffffffffe; // show
-		else
-			node->flags |= 0x1; // hide
+	/**
+	 * Update the node flags to show/hide it.
+	 */
+	void setNodeVisibility(NiNode* node, const bool visible) {
+		node->m_localTransform.scale = visible ? 1 : 0;
+
+		// TODO: try to understand why it's not working for our nifs.
+		//if (visible)
+		//	node->flags &= 0xfffffffffffffffe; // show
+		//else
+		//	node->flags |= 0x1; // hide
+		//NiAVObject::NiUpdateData* ud = nullptr;
+		//node->UpdateWorldData(ud);
 	}
 
-	/// <summary>
-	/// Get a NiNode that can be used in game UI for the given .nif file.
-	/// Why is just loading not enough?
-	/// </summary>
+	/**
+	 * Get a NiNode that can be used in game UI for the given .nif file.
+	 * Why is just loading not enough?
+	 */
 	NiNode* getClonedNiNodeForNifFile(const std::string& path) {
 		auto& normPath = path._Starts_with("Data") ? path : "Data/Meshes/" + path;
 		NiNode* nifNode = loadNifFromFile(normPath.c_str());
 		NiCloneProcess proc;
 		proc.unk18 = Offsets::cloneAddr1;
 		proc.unk48 = Offsets::cloneAddr2;
-		auto uiNode = Offsets::cloneNode(nifNode, &proc);
-        uiNode->m_name = BSFixedString(path.c_str());
+		const auto uiNode = Offsets::cloneNode(nifNode, &proc);
+		uiNode->m_name = BSFixedString(path.c_str());
 		return uiNode;
 	}
 
-	/// <summary>
-	/// Load .nif file from the filesystem and return the root node.
-	/// </summary>
+	/**
+	 * Load .nif file from the filesystem and return the root node.
+	 */
 	NiNode* loadNifFromFile(const char* path) {
-		uint64_t flags[2] = { 0x0, 0xed };
+		uint64_t flags[2] = {0x0, 0xed};
 		uint64_t mem = 0;
-		int ret = Offsets::loadNif((uint64_t) & (*path), (uint64_t)&mem, (uint64_t)&flags);
-		return (NiNode*)mem;
+		int ret = Offsets::loadNif((uint64_t)&(*path), (uint64_t)&mem, (uint64_t)&flags);
+		return reinterpret_cast<NiNode*>(mem);
 	}
 
-	/// <summary>
-	/// Find node by name in the given sub-tree of the given root node.
-	/// </summary>
+	/**
+	 * Find node by name in the given subtree of the given root node.
+	 */
 	NiNode* findNode(const char* nodeName, NiNode* node) {
 		if (!node || !node->m_name) {
 			return nullptr;
@@ -64,9 +68,8 @@ namespace ui {
 
 		if (node->GetAsNiNode()) {
 			for (auto i = 0; i < node->m_children.m_emptyRunStart; ++i) {
-				auto nextNode = node->m_children.m_data[i];
-				if (nextNode) {
-					if (auto ret = findNode(nodeName, (NiNode*)nextNode)) {
+				if (const auto nextNode = node->m_children.m_data[i]) {
+					if (const auto ret = findNode(nodeName, dynamic_cast<NiNode*>(nextNode))) {
 						return ret;
 					}
 				}
@@ -75,14 +78,20 @@ namespace ui {
 		return nullptr;
 	}
 
-	/// <summary>
-	/// Attach the given node to the primary wand node to be rendered near it.
-	/// </summary>
-	void attachNodeToPrimaryWand(const NiNode* node) {
-		auto primaryWandNode = findNode("world_primaryWand.nif", getPlayerNodes()->primaryUIAttachNode);
-		if(primaryWandNode)
-			primaryWandNode->AttachChild((NiAVObject*)node, true);
-		else
+	/**
+	 * Attach the given node to the primary wand node to be rendered near it.
+	 */
+	void attachNodeToPrimaryWand(NiNode* node) {
+		if (const auto primaryWandNode = findNode("world_primaryWand.nif", getPlayerNodes()->primaryUIAttachNode)) {
+			primaryWandNode->AttachChild(node, true);
+		}
+		else {
 			_WARNING("Primary wand node not found!");
+		}
+	}
+
+	static void getNodeWidthHeight(NiNode* node) {
+		const auto shape = node->GetAsBSTriShape();
+		auto bla = shape->geometryData->vertexData->vertexBlock[0];
 	}
 }
