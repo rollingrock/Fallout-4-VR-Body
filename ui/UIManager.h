@@ -24,6 +24,9 @@ namespace ui {
 		}
 
 	private:
+		void dumpUITree() const;
+		static void dumpUITreeRecursive(UIElement* element, std::string padding);
+
 		std::vector<std::shared_ptr<UIElement>> _rootElements;
 
 		// used to release child elements in a safe way (on the next frame update)

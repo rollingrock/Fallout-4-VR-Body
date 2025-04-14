@@ -2,6 +2,19 @@
 #include "UIManager.h"
 
 namespace ui {
+	std::string UIToggleGroupContainer::toString() const {
+		return std::format("UIToggleGroupContainer: {}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f}), Children({}), Layout({})",
+			_visible ? "V" : "H",
+			_transform.pos.x,
+			_transform.pos.y,
+			_transform.pos.z,
+			_size.width,
+			_size.height,
+			_childElements.size(),
+			static_cast<int>(_layout)
+		);
+	}
+
 	/**
 	 * Add a toggle button and don't allow un-toggling it
 	 */

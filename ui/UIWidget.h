@@ -12,8 +12,10 @@ namespace ui {
 		explicit UIWidget(NiNode* node)
 			: _node(node) {}
 
+		[[nodiscard]] virtual std::string toString() const override;
+
 	protected:
-		virtual bool isPressable() { return false; }
+		[[nodiscard]] virtual bool isPressable() const { return false; }
 		virtual void attachToNode(NiNode* attachNode) override;
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
 		virtual void onFrameUpdate(UIModAdapter* adapter) override;

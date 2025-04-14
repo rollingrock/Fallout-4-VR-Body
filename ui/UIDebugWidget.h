@@ -16,6 +16,8 @@ namespace ui {
 			_followInteractionPosition = followInteractionPosition;
 		}
 
+		[[nodiscard]] virtual std::string toString() const override;
+
 	protected:
 		bool _followInteractionPosition = false;
 	};
