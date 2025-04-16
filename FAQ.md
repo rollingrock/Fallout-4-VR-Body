@@ -4,6 +4,11 @@ Check the [CHANGELOG](https://github.com/rollingrock/Fallout-4-VR-Body/blob/main
 ## How Do I configure?
 See [In‐Game-Configuration-Guide](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/In%E2%80%90Game-Configuration-Guide-(v69)).
 
+## I don't see my head!
+The head hiding is all in FRIK.ini config.  
+Set `HideHead` and `HideEquipment` to false if you want full head to be rendered but it may obscure/clip your vision.  
+If you just want to see the head in selfie set `selfieIgnoreHideFlags` to true.
+
 ## When I launch the game, I do not see a body!!
 
 Most commonly caused by not launching your game with `f4sevr_loader.exe`. Make sure you have your F4SEVR install up to date and that you're launching it correctly with your mod manager.
