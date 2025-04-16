@@ -24,7 +24,10 @@ namespace F4VRBody {
 	 */
 	void WeaponPositionAdjuster::onFrameUpdate() {
 		const auto weapon = _skelly->getWeaponNode();
-		if (!weapon || !(*g_player)->actorState.IsWeaponDrawn()) {
+		if (!isNodeVisible(weapon) || !(*g_player)->actorState.IsWeaponDrawn() || g_configurationMode->isCalibrateModeActive()) {
+			if (_configMode) {
+				_configMode->onFrameUpdate(nullptr);
+			}
 			return;
 		}
 
@@ -57,7 +60,7 @@ namespace F4VRBody {
 
 		_skelly->updateDown(weapon, true);
 
-		debugPrintWeaponPositionData();
+		debugPrintWeaponPositionData(weapon);
 	}
 
 	/**
@@ -313,14 +316,14 @@ namespace F4VRBody {
 		}
 	}
 
-	void WeaponPositionAdjuster::debugPrintWeaponPositionData() {
+	void WeaponPositionAdjuster::debugPrintWeaponPositionData(NiNode* weapon) {
 		if (!g_config->checkDebugDumpDataOnceFor("weapon_pos"))
 			return;
 
+		_MESSAGE("Weapon: %s, InPA: %d", _lastWeapon.c_str(), _lastWeaponInPA);
 		printTransform("Weapon Original: ", _weaponOriginalTransform);
 		printTransform("Weapon Offset  : ", _weaponOffsetTransform);
 		printTransform("Scope Offset   : ", _skelly->getPlayerNodes()->primaryWeaponScopeCamera->m_localTransform);
-		const auto weapon = _skelly->getWeaponNode();
 		printNodes(weapon);
 		printNodesTransform(weapon);
 	}

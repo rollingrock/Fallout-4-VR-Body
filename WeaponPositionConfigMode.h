@@ -2,6 +2,7 @@
 
 #include "utils.h"
 #include "api/VRHookAPI.h"
+#include "ui/UIContainer.h"
 
 namespace F4VRBody {
 	class WeaponPositionAdjuster;
@@ -21,14 +22,18 @@ namespace F4VRBody {
 	class WeaponPositionConfigMode {
 	public :
 		explicit WeaponPositionConfigMode(WeaponPositionAdjuster* adjuster)
-			: _adjuster(adjuster) {}
+			: _adjuster(adjuster) {
+			_configUI = createConfigUI();
+		}
+
+		~WeaponPositionConfigMode();
 
 		// Default small offset to use if no custom transform exist.
 		static NiPoint3 getDefaultOffhandTransform() { return {0, 0, 2}; }
 
 		[[nodiscard]] bool isInOffhandRepositioning() const { return _repositionTarget == RepositionTarget::Offhand; }
 
-		void onFrameUpdate(NiNode* weapon);
+		void onFrameUpdate(NiNode* weapon) const;
 
 	private:
 		void handleReposition(NiNode* weapon) const;
@@ -43,11 +48,15 @@ namespace F4VRBody {
 		void saveOffhandConfig() const;
 		void resetBetterScopesConfig() const;
 		void saveBetterScopesConfig() const;
+		std::shared_ptr<ui::UIContainer> createConfigUI();
 
 		// access the weapon/offhand transform to change
 		WeaponPositionAdjuster* _adjuster;
 
 		// what is currently being repositioned
 		RepositionTarget _repositionTarget = RepositionTarget::Weapon;
+
+		// configuration UI
+		std::shared_ptr<ui::UIContainer> _configUI = nullptr;
 	};
 }

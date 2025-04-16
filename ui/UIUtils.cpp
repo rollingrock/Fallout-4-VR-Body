@@ -84,10 +84,16 @@ namespace ui {
 	void attachNodeToPrimaryWand(NiNode* node) {
 		if (const auto primaryWandNode = findNode("world_primaryWand.nif", getPlayerNodes()->primaryUIAttachNode)) {
 			primaryWandNode->AttachChild(node, true);
-		}
-		else {
+		} else {
 			_WARNING("Primary wand node not found!");
 		}
+	}
+
+	/**
+	 * @return true if BetterScopesVR mod is loaded in the game, false otherwise.
+	 */
+	bool isBetterScopesVRModLoaded() {
+		return F4VRBody::isModLoaded("FO4VRBETTERSCOPES");
 	}
 
 	static void getNodeWidthHeight(NiNode* node) {
