@@ -37,7 +37,7 @@ namespace F4VRBody {
 		bool isOffhandMovedFastAway() const;
 		NiPoint3 getOffhandPosition(NiNode* weapon) const;
 		void handleBetterScopes(NiNode* weapon) const;
-		void debugPrintWeaponPositionData();
+		void debugPrintWeaponPositionData(NiNode* weapon);
 
 		// Define a basis remapping matrix to correct coordinate system for scope camera
 		NiMatrix43 _scopeCameraBaseMatrix;

@@ -300,6 +300,7 @@ namespace F4VRBody {
 			if (WeaponButtonPressed && !_isWeaponButtonPressed) {
 				_isWeaponButtonPressed = true;
 				g_weaponPosition->toggleWeaponRepositionMode();
+				// TODO: close main config on toggling this on
 			} else if (!WeaponButtonPressed) {
 				_isWeaponButtonPressed = false;
 			}

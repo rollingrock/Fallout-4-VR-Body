@@ -59,6 +59,7 @@ namespace F4VRBody {
 	void setControlsThumbstickEnableState(bool toEnable);
 	void rotationStickEnabledToggle(bool enable);
 
+	bool isNodeVisible(const NiNode* node);
 	void showHideNode(NiAVObject* node, bool toHide);
 	vr::VRControllerState_t getControllerState(bool primary);
 	bool isButtonPressedOnController(bool primary, int buttonId);
@@ -96,4 +97,7 @@ namespace F4VRBody {
 	std::vector<std::string> loadListFromFile(std::string filePath);
 	void createDirDeep(std::string pathStr);
 	void createFileFromResourceIfNotExists(std::string filePath, WORD resourceId);
+
+	bool isBetterScopesVRModLoaded();
+	bool isModLoaded(const char* modName);
 }

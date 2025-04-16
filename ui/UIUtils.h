@@ -19,4 +19,5 @@ namespace ui {
 	NiNode* loadNifFromFile(const char* path);
 	NiNode* findNode(const char* nodeName, NiNode* node);
 	void attachNodeToPrimaryWand(const NiNode* node);
+	bool isBetterScopesVRModLoaded();
 }

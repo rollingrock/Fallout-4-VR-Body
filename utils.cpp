@@ -345,6 +345,13 @@ namespace F4VRBody {
 		SetINIFloat("fDirectionalDeadzone:Controls", enable ? g_config->directionalDeadzone : 1.0);
 	}
 
+	/**
+	 * Return true if the node is visible, false if it is hidden or null.
+	 */
+	bool isNodeVisible(const NiNode* node) {
+		return node && !(node->flags & 0x1);
+	}
+
 	/// <summary>
 	/// Update the node flags to show/hide it.
 	/// </summary>
@@ -644,5 +651,29 @@ namespace F4VRBody {
 		outFile.close();
 
 		_VMESSAGE("File '%s' created successfully (size: %d)", filePath.c_str(), data.size());
+	}
+
+	/**
+	 * @return true if BetterScopesVR mod is loaded in the game, false otherwise.
+	 */
+	bool isBetterScopesVRModLoaded() {
+		return isModLoaded("FO4VRBETTERSCOPES");
+	}
+
+	/**
+	 * @return true if a mod by specific name is loaded in the game, false otherwise.
+	 */
+	bool isModLoaded(const char* modName) {
+		const DataHandler* dataHandler = *g_dataHandler;
+		if (!dataHandler) {
+			return false;
+		}
+		for (auto i = 0; i < dataHandler->modList.loadedModCount; ++i) {
+			const auto modInfo = dataHandler->modList.loadedMods[i];
+			if (_stricmp(modInfo->name, modName) == 0) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

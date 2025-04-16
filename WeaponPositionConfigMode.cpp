@@ -3,17 +3,34 @@
 #include "utils.h"
 #include "Skeleton.h"
 #include "F4VRBody.h"
+#include "ui/UIManager.h"
+#include "ui/UIButton.h"
+#include "ui/UIToggleButton.h"
+#include "ui/UIContainer.h"
+#include "ui/UIToggleGroupContainer.h"
+
 
 namespace F4VRBody {
 	/**
+	 * On release, we need to remove the UI from global manager.
+	 */
+	WeaponPositionConfigMode::~WeaponPositionConfigMode() {
+		if (_configUI) {
+			// remove the UI
+			ui::g_uiManager->detachElement(_configUI, true);
+		}
+	}
+
+	/**
 	 * Handle configuration UI interaction.
 	 */
-	void WeaponPositionConfigMode::onFrameUpdate(NiNode* weapon) {
-		// TODO: remove after testing (quick change of reposition target)
-		if (isButtonPressedOnController(true, vr::EVRButtonId::k_EButton_ApplicationMenu)) {
-			_repositionTarget = static_cast<RepositionTarget>((static_cast<int>(_repositionTarget) + 1) % 3);
-			_MESSAGE("Change Reposition Config Target to: %d", _repositionTarget);
+	void WeaponPositionConfigMode::onFrameUpdate(NiNode* weapon) const {
+		if (!weapon) {
+			// don't handle repositioning if no weapon is drawn
+			_configUI->setVisibility(false);
+			return;
 		}
+		_configUI->setVisibility(true);
 
 		// reposition
 		handleReposition(weapon);
@@ -81,6 +98,7 @@ namespace F4VRBody {
 		// Update the offset position by player thumbstick.
 		const auto [axisX, axisY] = getControllerState(true).rAxis[0];
 		if (axisX != 0.f || axisY != 0.f) {
+			// _MESSAGE("Offhand: %.4f  -  %4f", _adjuster->_offhandOffsetPos.x, axisX);
 			// adjust horizontal (y - up/down, x - right/left)
 			_adjuster->_offhandOffsetPos.z += axisY / 10;
 			_adjuster->_offhandOffsetPos.x += axisX / 10;
@@ -100,6 +118,7 @@ namespace F4VRBody {
 	}
 
 	void WeaponPositionConfigMode::resetConfig() const {
+		_MESSAGE("Reset Reposition Config for target: %d, Weapon: %s", _repositionTarget, _adjuster->_lastWeapon.c_str());
 		switch (_repositionTarget) {
 		case RepositionTarget::Weapon:
 			resetWeaponConfig();
@@ -114,6 +133,7 @@ namespace F4VRBody {
 	}
 
 	void WeaponPositionConfigMode::saveConfig() const {
+		_MESSAGE("Save Reposition Config for target: %d, Weapon: %s", _repositionTarget, _adjuster->_lastWeapon.c_str());
 		switch (_repositionTarget) {
 		case RepositionTarget::Weapon:
 			saveWeaponConfig();
@@ -169,5 +189,56 @@ namespace F4VRBody {
 		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
 		NiPoint3 msgData(0.f, 1, 0.f);
 		g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+	}
+
+	/**
+	 * Create the configuration UI
+	 */
+	std::shared_ptr<ui::UIContainer> WeaponPositionConfigMode::createConfigUI() {
+		const auto weaponModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_weapon.nif");
+		weaponModeButton->setToggleState(true);
+		weaponModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Weapon; });
+
+		const auto offhandModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
+		offhandModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Offhand; });
+
+		const auto firstRowContainer = std::make_shared<ui::UIToggleGroupContainer>(ui::UIContainerLayout::HorizontalCenter, 0.3f);
+		firstRowContainer->addElement(weaponModeButton);
+		firstRowContainer->addElement(offhandModeButton);
+
+		if (isBetterScopesVRModLoaded()) {
+			const auto betterScopesModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_better_scopes_vr.nif");
+			betterScopesModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BetterScopes; });
+			firstRowContainer->addElement(betterScopesModeButton);
+		}
+
+		const auto saveButton = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_save.nif");
+		saveButton->setOnPressHandler([this](ui::UIWidget* widget) { saveConfig(); });
+
+		const auto resetButton = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_reset.nif");
+		resetButton->setOnPressHandler([this](ui::UIWidget* widget) { resetConfig(); });
+
+		const auto exitButton = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_exit.nif");
+		exitButton->setOnPressHandler([this](ui::UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
+
+		const auto secondRowContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.4f);
+		secondRowContainer->addElement(saveButton);
+		secondRowContainer->addElement(resetButton);
+		secondRowContainer->addElement(exitButton);
+
+		const auto header = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_header.nif");
+		header->setSize(10, 2.8f);
+		const auto footer = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer.nif");
+		footer->setSize(10, 4.5);
+
+		auto configUI = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalCenter, 0.6f);
+		configUI->setPosition(-14, 8, -7);
+		configUI->addElement(header);
+		configUI->addElement(firstRowContainer);
+		configUI->addElement(secondRowContainer);
+		configUI->addElement(footer);
+
+		ui::g_uiManager->attachElementToPrimaryWand(configUI);
+		return configUI;
 	}
 }
