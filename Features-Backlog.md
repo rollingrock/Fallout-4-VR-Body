@@ -3,6 +3,7 @@
 ### P1
 - Fix vanilla scope broken by weapon reposition.
 - Fix any issues with left-handed weapon reposition ([#92](https://github.com/rollingrock/Fallout-4-VR-Body/issues/92)).
+- Support reposition of back-of-hand UI for each weapon to handle it being hidden on some weapons. 
 - Support torch on right hand ([suggested code](https://github.com/rollingrock/Fallout-4-VR-Body/discussions/91))
 
 ### P2
