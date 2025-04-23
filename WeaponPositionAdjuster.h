@@ -31,11 +31,11 @@ namespace F4VRBody {
 	private:
 		void checkEquippedWeaponChanged();
 		void handleScopeCameraAdjustmentByWeaponOffset(const NiNode* weapon) const;
-		void checkIfOffhandIsGripping(NiNode* weapon);
+		void checkIfOffhandIsGripping(const NiNode* weapon);
 		void handleWeaponGrippingRotationAdjustment(NiNode* weapon) const;
-		bool isOffhandCloseToBarrel(NiNode* weapon) const;
+		bool isOffhandCloseToBarrel(const NiNode* weapon) const;
 		bool isOffhandMovedFastAway() const;
-		NiPoint3 getOffhandPosition(NiNode* weapon) const;
+		NiPoint3 getOffhandPosition() const;
 		void handleBetterScopes(NiNode* weapon) const;
 		void debugPrintWeaponPositionData(NiNode* weapon);
 
@@ -58,8 +58,8 @@ namespace F4VRBody {
 		// custom weapon transform to update
 		NiTransform _weaponOffsetTransform = NiTransform();
 
-		// custom offhand position offsets
-		NiPoint3 _offhandOffsetPos;
+		// custom offhand rotation offsets matrix
+		NiMatrix43 _offhandOffsetRot = NiMatrix43();
 
 		// configuration mode to update custom transforms
 		std::unique_ptr<WeaponPositionConfigMode> _configMode;

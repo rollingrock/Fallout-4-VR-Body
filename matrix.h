@@ -8,7 +8,6 @@
 #define PI 3.14159265358979323846
 
 namespace F4VRBody {
-	
 	class Matrix44 {
 	public:
 		Matrix44() {
@@ -65,22 +64,22 @@ namespace F4VRBody {
 			data[3][2] = pos.z;
 		}
 
-		NiMatrix43 make43();
+		NiMatrix43 make43() const;
 
-		void getEulerAngles(float *heading, float *roll, float *attitude);
+		void getEulerAngles(float* heading, float* roll, float* attitude);
 		void setEulerAngles(float heading, float roll, float attitude);
 
 		void rotateVectoVec(NiPoint3 toVec, NiPoint3 fromVec);
 
-		NiMatrix43 multiply43Left(NiMatrix43 mat);
-		NiMatrix43 multiply43Right(NiMatrix43 mat);
-		NiMatrix43 mult(NiMatrix43 left, NiMatrix43 right);
+		NiMatrix43 multiply43Left(NiMatrix43 mat) const;
+		NiMatrix43 multiply43Right(NiMatrix43 mat) const;
+		NiMatrix43 mult(NiMatrix43 left, NiMatrix43 right) const;
 
 		// Fallout Func
 		static void matrixMultiply(Matrix44* worldMat, Matrix44* retMat, Matrix44* localMat);
 
 		//overload
-		void operator = (float a_num){
+		void operator =(float a_num) {
 			for (auto i = 0; i < 4; i++) {
 				for (auto j = 0; j < 4; j++) {
 					data[i][j] = a_num;
@@ -89,6 +88,28 @@ namespace F4VRBody {
 		}
 
 		float data[4][4];
-	};
 
+		static Matrix44 getIdentity() {
+			Matrix44 ident;
+			ident.makeIdentity();
+			return ident;
+		}
+
+		static NiMatrix43 getIdentity43() {
+			NiMatrix43 ident;
+			ident.data[0][0] = 1.0;
+			ident.data[0][1] = 0.0;
+			ident.data[0][2] = 0.0;
+			ident.data[0][3] = 0.0;
+			ident.data[1][0] = 0.0;
+			ident.data[1][1] = 1.0;
+			ident.data[1][2] = 0.0;
+			ident.data[1][3] = 0.0;
+			ident.data[2][0] = 0.0;
+			ident.data[2][1] = 0.0;
+			ident.data[2][2] = 1.0;
+			ident.data[2][3] = 0.0;
+			return ident;
+		}
+	};
 }

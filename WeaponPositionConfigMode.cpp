@@ -98,10 +98,9 @@ namespace F4VRBody {
 		// Update the offset position by player thumbstick.
 		const auto [axisX, axisY] = getControllerState(true).rAxis[0];
 		if (axisX != 0.f || axisY != 0.f) {
-			// _MESSAGE("Offhand: %.4f  -  %4f", _adjuster->_offhandOffsetPos.x, axisX);
-			// adjust horizontal (y - up/down, x - right/left)
-			_adjuster->_offhandOffsetPos.z += axisY / 10;
-			_adjuster->_offhandOffsetPos.x += axisX / 10;
+			Matrix44 rot;
+			rot.setEulerAngles(-degrees_to_rads(axisY / 5), 0, degrees_to_rads(axisX / 5));
+			_adjuster->_offhandOffsetRot = rot.multiply43Left(_adjuster->_offhandOffsetRot);
 		}
 	}
 
@@ -163,16 +162,16 @@ namespace F4VRBody {
 	void WeaponPositionConfigMode::resetOffhandConfig() const {
 		ShowNotification("Reset Offhand Position to Default");
 		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
-		_adjuster->_offhandOffsetPos = getDefaultOffhandTransform();
+		_adjuster->_offhandOffsetRot = Matrix44::getIdentity43();
 	}
 
 	void WeaponPositionConfigMode::saveOffhandConfig() const {
 		ShowNotification("Saving Offhand Position");
 		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
 		NiTransform transform;
-		transform.rot = Matrix44().make43();
 		transform.scale = 1;
-		transform.pos = _adjuster->_offhandOffsetPos;
+		transform.pos = NiPoint3(0, 0, 0);
+		transform.rot = _adjuster->_offhandOffsetRot;
 		g_config->saveWeaponOffsets(_adjuster->_lastWeapon, transform,
 			_adjuster->_lastWeaponInPA ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
 	}

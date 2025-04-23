@@ -87,7 +87,7 @@ namespace F4VRBody {
 		const auto weaponOffsetLookup = g_config->getWeaponOffsets(weaponName, _skelly->inPowerArmor() ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
 		if (weaponOffsetLookup.has_value()) {
 			_weaponOffsetTransform = weaponOffsetLookup.value();
-			_MESSAGE("Use weapon offset for '%s'; Pos: (%2.2f, %2.2f, %2.2f), Scale: %2.3f, InPA: %d",
+			_MESSAGE("Use weapon offset for '%s'; Pos: (%2.2f, %2.2f, %2.2f), Scale: %1.3f, InPA: %d",
 				weaponName.c_str(), _weaponOffsetTransform.pos.x, _weaponOffsetTransform.pos.y, _weaponOffsetTransform.pos.z, _weaponOffsetTransform.scale,
 				_skelly->inPowerArmor());
 		} else {
@@ -98,12 +98,11 @@ namespace F4VRBody {
 		// Load stored offsets for offhand for the new weapon 
 		const auto offhandOffsetLookup = g_config->getWeaponOffsets(weaponName, _skelly->inPowerArmor() ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
 		if (offhandOffsetLookup.has_value()) {
-			_offhandOffsetPos = offhandOffsetLookup.value().pos;
-			_MESSAGE("Use offHand offset for '%s'; Pos: (%2.2f, %2.2f, %2.2f), InPA: %d",
-				weaponName.c_str(), _offhandOffsetPos.x, _offhandOffsetPos.y, _offhandOffsetPos.z, _skelly->inPowerArmor());
+			_offhandOffsetRot = offhandOffsetLookup.value().rot;
+			_MESSAGE("Use offHand offset for '%s'; InPA: %d", weaponName.c_str(), _skelly->inPowerArmor());
 		} else {
-			// No stored offset for offhand, use default values (small vertical offset)
-			_offhandOffsetPos = WeaponPositionConfigMode::getDefaultOffhandTransform();
+			// No stored offset for offhand, use identity for no change
+			_offhandOffsetRot = Matrix44::getIdentity43();
 		}
 	}
 
@@ -150,7 +149,7 @@ namespace F4VRBody {
 	 * Mode 3: holding grip button to snap to the barrel, release grib button to let go                                  | true                   | true               | false                   |
 	 * Mode 4: press grip button to snap to the barrel, press grib button again to let go                                | true                   | false              | true                    |
 	 */
-	void WeaponPositionAdjuster::checkIfOffhandIsGripping(NiNode* weapon) {
+	void WeaponPositionAdjuster::checkIfOffhandIsGripping(const NiNode* weapon) {
 		if (!g_config->enableOffHandGripping) {
 			return;
 		}
@@ -210,38 +209,47 @@ namespace F4VRBody {
 			return;
 		}
 
-		// calculate the vector from weapon to offhand in world coordinates
-		// This vector will be used to adjust the rotation of the weapon and scope camera
-		auto weaponToOffhandVec = getOffhandPosition(weapon) - weapon->m_worldTransform.pos;
-
-		// adjust by the saved offhand offset
-		weaponToOffhandVec += _offhandOffsetPos;
-
-		// Handle weapon:
-		// Calculate the rotation adjustment using quaternion by diff between weapon vector and straight
 		Quaternion rotAdjust;
-		const auto offhandNormVecInWeaponTransform = weapon->m_worldTransform.rot.Transpose() * vec3_norm(weaponToOffhandVec) / weapon->m_worldTransform.scale;
-		rotAdjust.vec2vec(offhandNormVecInWeaponTransform, NiPoint3(0, 1, 0));
+
+		// World-space vector from weapon to offhand
+		const auto weaponToOffhandVecWorld = getOffhandPosition() - weapon->m_worldTransform.pos;
+
+		// Convert world-space vector into weapon space
+		const auto weaponLocalVec = weapon->m_worldTransform.rot.Transpose() * vec3_norm(weaponToOffhandVecWorld) / weapon->m_worldTransform.scale;
+
+		// Desired weapon forward direction after applying offhand offset
+		const auto adjustedWeaponVec = _offhandOffsetRot * weaponLocalVec;
+
+		// Compute rotation from canonical forward (Y) to adjusted direction
+		rotAdjust.vec2vec(adjustedWeaponVec, NiPoint3(0, 1, 0));
+
+		// Compose into final local transform
 		weapon->m_localTransform.rot = rotAdjust.getRot().multiply43Left(_weaponOffsetTransform.rot);
 
-		// Handle scope camera:
-		// need to adjust the scope camera and update world transform so we can use it for scope vector
+		// Handle Scope:
+		// Set base camera matrix first (remaps axes from weapon to scope system)
 		const auto scopeCamera = _skelly->getPlayerNodes()->primaryWeaponScopeCamera;
 		scopeCamera->m_localTransform.rot = _scopeCameraBaseMatrix;
 		updateTransforms(scopeCamera);
 
-		// Calculate the rotation adjustment using quaternion by diff between scope camera vector and straight
-		const auto weaponToOffhandScopeTransform = scopeCamera->m_worldTransform.rot.Transpose() * vec3_norm(weaponToOffhandVec) / scopeCamera->m_worldTransform.scale;
-		rotAdjust.vec2vec(weaponToOffhandScopeTransform, NiPoint3(1, 0, 0));
+		// Transform the offhand offset adjusted vector from weapon space to world space so we can adjust it into scope space
+		const auto adjustedVecWorld = weapon->m_worldTransform.rot * (adjustedWeaponVec * weapon->m_worldTransform.scale);
+
+		// Convert it into scope space
+		const auto scopeLocalVec = scopeCamera->m_worldTransform.rot.Transpose() * adjustedVecWorld / scopeCamera->m_worldTransform.scale;
+
+		// Compute scope rotation: align local X with this direction
+		rotAdjust.vec2vec(scopeLocalVec, NiPoint3(1, 0, 0));
 		scopeCamera->m_localTransform.rot = rotAdjust.getRot().multiply43Left(_scopeCameraBaseMatrix);
 	}
+
 
 	/**
 	 * Return true if the angle of offhand to weapon to grip is close to barrel but far in distance from main hand 
 	 * to prevent grabbing when two hands are just close.
 	 */
-	bool WeaponPositionAdjuster::isOffhandCloseToBarrel(NiNode* weapon) const {
-		const auto offhand2WeaponVec = getOffhandPosition(weapon) - weapon->m_worldTransform.pos;
+	bool WeaponPositionAdjuster::isOffhandCloseToBarrel(const NiNode* weapon) const {
+		const auto offhand2WeaponVec = getOffhandPosition() - weapon->m_worldTransform.pos;
 		const float distanceFromPrimaryHand = vec3_len(offhand2WeaponVec);
 		const auto normalizedVec = weapon->m_worldTransform.rot.Transpose() * vec3_norm(offhand2WeaponVec) / weapon->m_worldTransform.scale;
 		const float angleDiffToWeaponVec = vec3_dot(vec3_norm(normalizedVec), NiPoint3(0, 1, 0));
@@ -282,7 +290,7 @@ namespace F4VRBody {
 	/**
 	 * Get the world coordinates of the offhand.
 	 */
-	NiPoint3 WeaponPositionAdjuster::getOffhandPosition(NiNode* weapon) const {
+	NiPoint3 WeaponPositionAdjuster::getOffhandPosition() const {
 		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_skelly->getRoot());
 		const auto offHandBone = g_config->leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
 		return rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos;
@@ -304,7 +312,7 @@ namespace F4VRBody {
 			return;
 		}
 		const auto reticlePos = scopeRet->GetAsNiNode()->m_worldTransform.pos;
-		const auto offhandPos = getOffhandPosition(weapon);
+		const auto offhandPos = getOffhandPosition();
 		const auto offset = vec3_len(reticlePos - offhandPos);
 
 		// is hand near scope

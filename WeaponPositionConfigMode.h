@@ -28,9 +28,6 @@ namespace F4VRBody {
 
 		~WeaponPositionConfigMode();
 
-		// Default small offset to use if no custom transform exist.
-		static NiPoint3 getDefaultOffhandTransform() { return {0, 0, 2}; }
-
 		[[nodiscard]] bool isInOffhandRepositioning() const { return _repositionTarget == RepositionTarget::Offhand; }
 
 		void onFrameUpdate(NiNode* weapon) const;
