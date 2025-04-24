@@ -9,6 +9,12 @@ The head hiding is all in FRIK.ini config.
 Set `HideHead` and `HideEquipment` to false if you want full head to be rendered but it may obscure/clip your vision.  
 If you just want to see the head in selfie set `selfieIgnoreHideFlags` to true.
 
+## Reporting Crash Log
+Please attach the crash log file and FRIK main log file.
+Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`  
+- `crash-<date time>.log` for crash logs
+- `Fallout4VRBody.log` for FRIK logs
+
 ## When I launch the game, I do not see a body!!
 
 Most commonly caused by not launching your game with `f4sevr_loader.exe`. Make sure you have your F4SEVR install up to date and that you're launching it correctly with your mod manager.
