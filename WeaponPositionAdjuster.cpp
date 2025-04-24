@@ -31,12 +31,6 @@ namespace F4VRBody {
 			return;
 		}
 
-		if (isButtonReleasedOnController(true, vr::EVRButtonId::k_EButton_A)) {
-			// TODO: remove after testing (quick enter/exit reposition mode)
-			toggleWeaponRepositionMode();
-			ShowNotification(std::format("Testing: Weapon Reposition Mode - {}", inWeaponRepositionMode() ? "Enabled" : "Disabled"));
-		}
-
 		// store original weapon transform in case we need it later
 		_weaponOriginalTransform = weapon->m_localTransform;
 		// override the weapon transform to the saved offset

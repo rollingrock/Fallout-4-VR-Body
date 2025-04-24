@@ -72,6 +72,8 @@ namespace F4VRBody {
 			return;
 		}
 
+		const float leftHandedMult = g_config->leftHandedMode ? -1.f : 1.f;
+
 		// Update the weapon transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
 		if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
@@ -81,10 +83,10 @@ namespace F4VRBody {
 			_adjuster->_weaponOffsetTransform.rot = rot.multiply43Left(_adjuster->_weaponOffsetTransform.rot);
 		} else {
 			// adjust horizontal (y - right/left, x - forward/backward) by primary stick
-			_adjuster->_weaponOffsetTransform.pos.y += primAxisX / 10;
+			_adjuster->_weaponOffsetTransform.pos.y += leftHandedMult * primAxisX / 10;
 			_adjuster->_weaponOffsetTransform.pos.x += primAxisY / 10;
 			// adjust vertical (z - up/down) by secondary stick
-			_adjuster->_weaponOffsetTransform.pos.z -= secAxisY / 10;
+			_adjuster->_weaponOffsetTransform.pos.z -= leftHandedMult * secAxisY / 10;
 		}
 
 		// update the weapon with the offset change
@@ -150,6 +152,7 @@ namespace F4VRBody {
 		ShowNotification("Reset Weapon Position to Default");
 		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
 		_adjuster->_weaponOffsetTransform = _adjuster->_weaponOriginalTransform;
+		g_config->removeWeaponOffsets(_adjuster->_lastWeapon, _adjuster->_lastWeaponInPA ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
 	}
 
 	void WeaponPositionConfigMode::saveWeaponConfig() const {
@@ -163,6 +166,7 @@ namespace F4VRBody {
 		ShowNotification("Reset Offhand Position to Default");
 		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
 		_adjuster->_offhandOffsetRot = Matrix44::getIdentity43();
+		g_config->removeWeaponOffsets(_adjuster->_lastWeapon, _adjuster->_lastWeaponInPA ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
 	}
 
 	void WeaponPositionConfigMode::saveOffhandConfig() const {
@@ -172,8 +176,7 @@ namespace F4VRBody {
 		transform.scale = 1;
 		transform.pos = NiPoint3(0, 0, 0);
 		transform.rot = _adjuster->_offhandOffsetRot;
-		g_config->saveWeaponOffsets(_adjuster->_lastWeapon, transform,
-			_adjuster->_lastWeaponInPA ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
+		g_config->saveWeaponOffsets(_adjuster->_lastWeapon, transform, _adjuster->_lastWeaponInPA ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
 	}
 
 	void WeaponPositionConfigMode::resetBetterScopesConfig() const {

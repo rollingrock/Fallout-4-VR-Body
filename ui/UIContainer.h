@@ -50,12 +50,12 @@ namespace ui {
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
 		void calculateSizeManualLayout(UIModAdapter* adapter);
 		void calculateSizeHorizontalVerticalLayout(UIModAdapter* adapter);
-		void layoutHorizontalCenter() const;
-		void layoutHorizontalRight() const;
-		void layoutHorizontalLeft() const;
-		void layoutVerticalCenter() const;
-		void layoutVerticalUp() const;
-		void layoutVerticalDown() const;
+		void layoutHorizontalCenter(float leftHandedMult) const;
+		void layoutHorizontalRight(float leftHandedMult) const;
+		void layoutHorizontalLeft(float leftHandedMult) const;
+		void layoutVerticalCenter(float leftHandedMult) const;
+		void layoutVerticalUp(float leftHandedMult) const;
+		void layoutVerticalDown(float leftHandedMult) const;
 
 		// how to lay out the child elements
 		UIContainerLayout _layout = UIContainerLayout::Manual;

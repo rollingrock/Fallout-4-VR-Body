@@ -3,13 +3,15 @@
 #include <fstream>
 
 #include "Config.h"
+
+#include <filesystem>
+
 #include "utils.h"
 #include "resource.h"
 
 using json = nlohmann::json;
 
 namespace F4VRBody {
-
 	Config* g_config = nullptr;
 
 	constexpr const int FRIK_INI_VERSION = 5;
@@ -22,7 +24,7 @@ namespace F4VRBody {
 
 	constexpr const char* PIPBOY_HOLO_OFFSETS_PATH = ".\\Data\\FRIK_Config\\Pipboy_Offsets\\HoloPipboyPosition.json";
 	constexpr const char* PIPBOY_SCREEN_OFFSETS_PATH = ".\\Data\\FRIK_Config\\Pipboy_Offsets\\PipboyPosition.json";
-	static const std::string WEAPONS_OFFSETS_PATH{ ".\\Data\\FRIK_Config\\Weapons_Offsets" };
+	static const std::string WEAPONS_OFFSETS_PATH{".\\Data\\FRIK_Config\\Weapons_Offsets"};
 
 	/// <summary>
 	/// Open the FRIK.ini file in Notepad for editing.
@@ -45,7 +47,7 @@ namespace F4VRBody {
 		_debugDumpDataOnceNames = _debugDumpDataOnceNames.erase(idx, strlen(name));
 		// write to INI for auto-reload not to re-enable it
 		saveFrikIniValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", _debugDumpDataOnceNames.c_str());
-		
+
 		_MESSAGE("---- Debug Dump Data check passed for '%s' ----", name);
 		return true;
 	}
@@ -67,8 +69,7 @@ namespace F4VRBody {
 			lastReloadTime = now;
 			loadFrikINI();
 			loadHideMeshes();
-		}
-		catch (const std::exception& e) {
+		} catch (const std::exception& e) {
 			_WARNING("Failed to reload FRIK.ini file: %s", e.what());
 		}
 	}
@@ -244,8 +245,7 @@ namespace F4VRBody {
 				if (newVal != nullptr && std::strcmp(oldVal, newVal) != 0) {
 					_MESSAGE("Migrating %s.%s = %s", section.pItem, key.pItem, oldIni.GetValue(section.pItem, key.pItem));
 					newIni.SetValue(section.pItem, key.pItem, oldIni.GetValue(section.pItem, key.pItem));
-				}
-				else {
+				} else {
 					_VMESSAGE("Skipping %s.%s (%s)", section.pItem, key.pItem, newVal == nullptr ? "removed" : "unchanged");
 				}
 			}
@@ -309,8 +309,7 @@ namespace F4VRBody {
 		}
 	}
 
-	void Config::saveFrikINI() const
-	{
+	void Config::saveFrikINI() const {
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
 
@@ -347,8 +346,7 @@ namespace F4VRBody {
 
 		if (rc < 0) {
 			_ERROR("Config: Failed to save FRIK.ini. Error: %d", rc);
-		}
-		else {
+		} else {
 			_MESSAGE("Config: Saving FRIK.ini successful");
 		}
 	}
@@ -406,21 +404,25 @@ namespace F4VRBody {
 	/// Get the name for the weapon offset to use depending on the mode.
 	/// Basically a hack to store multiple modes of the same weapon by adding suffix to the name.
 	/// </summary>
-	static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode) {
-		static const std::string powerArmorSuffix{ "-PowerArmor" };
-		static const std::string offHandSuffix{ "-offHand" };
+	static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, const bool leftHanded) {
+		static const std::string POWER_ARMOR_SUFFIX{"-PowerArmor"};
+		static const std::string OFF_HAND_SUFFIX{"-offHand"};
+		static const std::string LEFT_HANDED_SUFFIX{"-leftHanded"};
+		std::string res = name;
 		switch (mode) {
 		case normal:
-			return name;
+			break;
 		case powerArmor:
-			return name + powerArmorSuffix;
+			res += POWER_ARMOR_SUFFIX;
+			break;
 		case offHand:
-			return name + offHandSuffix;
+			res += OFF_HAND_SUFFIX;
+			break;
 		case offHandwithPowerArmor:
-			return name + offHandSuffix + powerArmorSuffix;
-		default:
-			throw std::runtime_error("Invalid WeaponOffsetsMode");
+			res += OFF_HAND_SUFFIX + POWER_ARMOR_SUFFIX;
+			break;
 		}
+		return leftHanded ? res + LEFT_HANDED_SUFFIX : res;
 	}
 
 	/// <summary>
@@ -429,20 +431,21 @@ namespace F4VRBody {
 	/// </summary>
 	/// <returns></returns>
 	std::optional<NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) const {
-		auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode));
-		if (it == _weaponsOffsets.end()) {
-			return (mode == powerArmor) || (mode == offHandwithPowerArmor)
-				? getWeaponOffsets(name, mode == offHandwithPowerArmor ? offHand : normal) // Check without PA
-				: std::nullopt;
+		const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, leftHandedMode));
+		if (it != _weaponsOffsets.end()) {
+			return it->second;
 		}
-		return it->second;
+		// Check without PA (historic)
+		return (mode == powerArmor) || (mode == offHandwithPowerArmor)
+			? getWeaponOffsets(name, mode == offHandwithPowerArmor ? offHand : normal)
+			: std::nullopt;
 	}
 
 	/// <summary>
 	/// Save the weapon offset to config and filesystem.
 	/// </summary>
 	void Config::saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode) {
-		auto fullName = getWeaponNameWithMode(name, mode);
+		const auto fullName = getWeaponNameWithMode(name, mode, leftHandedMode);
 		_weaponsOffsets[fullName] = transform;
 		saveOffsetsToJsonFile(fullName, transform, WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json");
 	}
@@ -451,9 +454,9 @@ namespace F4VRBody {
 	/// Remove the weapon offset from the config and filesystem.
 	/// </summary>
 	void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) {
-		auto fullName = getWeaponNameWithMode(name, mode);
-		_weaponsOffsets.erase(getWeaponNameWithMode(name, mode));
-		auto path = WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json";
+		const auto fullName = getWeaponNameWithMode(name, mode, leftHandedMode);
+		_weaponsOffsets.erase(fullName);
+		const auto path = WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json";
 		_MESSAGE("Removing weapon offsets '%s', file: '%s'", fullName.c_str(), path.c_str());
 		if (!std::filesystem::remove(WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json")) {
 			_WARNING("Failed to remove weapon offset file: %s", fullName.c_str());
@@ -476,8 +479,7 @@ namespace F4VRBody {
 		json weaponJson;
 		try {
 			inF >> weaponJson;
-		}
-		catch (json::parse_error& ex) {
+		} catch (json::parse_error& ex) {
 			_MESSAGE("cannot open %s: parse error at byte %d", file.c_str(), ex.byte);
 			inF.close();
 			return;
@@ -517,8 +519,7 @@ namespace F4VRBody {
 			std::wstring path = L"";
 			try {
 				path = file.path().wstring();
-			}
-			catch (std::exception& e) {
+			} catch (std::exception& e) {
 				_WARNING("Unable to convert path to string: %s", e.what());
 			}
 			if (file.exists() && !file.is_directory()) {
@@ -548,8 +549,7 @@ namespace F4VRBody {
 		try {
 			outF << std::setw(4) << weaponJson;
 			outF.close();
-		}
-		catch (std::exception& e) {
+		} catch (std::exception& e) {
 			outF.close();
 			_WARNING("Unable to save json '%s': %s", file.c_str(), e.what());
 		}
@@ -559,8 +559,7 @@ namespace F4VRBody {
 		try {
 			_MESSAGE("Moving '%s'...", fromPath.c_str());
 			std::filesystem::rename(fromPath, toPath);
-		}
-		catch (const std::exception& e) {
+		} catch (const std::exception& e) {
 			_ERROR("Failed to move file to new location: %s", e.what());
 		}
 	}

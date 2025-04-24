@@ -96,6 +96,13 @@ namespace ui {
 		return F4VRBody::isModLoaded("FO4VRBETTERSCOPES");
 	}
 
+	/**
+	 * Add 180 degree rotation to the given node's local transform to adjust for left-handed mode.
+	 */
+	void adjustForLeftHandedMode(NiNode* node) {
+		node->m_localTransform.rot = getLeftHandInvertMatrix().multiply43Left(node->m_localTransform.rot);
+	}
+
 	static void getNodeWidthHeight(NiNode* node) {
 		const auto shape = node->GetAsBSTriShape();
 		auto bla = shape->geometryData->vertexData->vertexBlock[0];

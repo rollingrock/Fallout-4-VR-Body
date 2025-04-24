@@ -5,8 +5,10 @@
 namespace ui {
 	class UIDebugWidget : public UIWidget {
 	public:
-		UIDebugWidget()
-			: UIWidget(getDebugSphereNifName()) {}
+		explicit UIDebugWidget(const bool followInteractPos = false)
+			: UIWidget(getDebugSphereNifName()) {
+			_followInteractionPosition = followInteractPos;
+		}
 
 		virtual void onFrameUpdate(UIModAdapter* adapter) override;
 

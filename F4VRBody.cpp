@@ -60,12 +60,16 @@ namespace F4VRBody {
 		FrameUpdateContext(Skeleton* skelly, OpenVRHookManagerAPI* vrhook)
 			: _skelly(skelly), _vrhook(vrhook) {}
 
-		NiPoint3 getInteractionBonePosition() {
+		virtual bool isLeftHandedMode() override {
+			return g_config->leftHandedMode;
+		}
+
+		virtual NiPoint3 getInteractionBonePosition() override {
 			return _skelly->getOffhandIndexFingerTipWorldPosition();
 		}
 
-		void fireInteractionHeptic() {
-			_vrhook->StartHaptics(g_config->leftHandedMode ? 2 : 1, 0.2, 0.3);
+		virtual void fireInteractionHeptic() override {
+			_vrhook->StartHaptics(g_config->leftHandedMode ? 2 : 1, 0.2f, 0.3f);
 		}
 
 	private:
@@ -97,8 +101,7 @@ namespace F4VRBody {
 				arm->RemoveChildAt(0);
 				if (pipboy) {
 					pipboy->m_parent->RemoveChild(pipboy);
-				}
-				else {
+				} else {
 					pipboy = (NiNode*)pn->GetObjectByName(&pipboyName);
 				}
 				forearm->m_parent->RemoveChild(forearm);
@@ -208,8 +211,7 @@ namespace F4VRBody {
 			_skelly->setBodyLen();
 			_MESSAGE("initialized");
 			return true;
-		}
-		else {
+		} else {
 			return false;
 		}
 	}
@@ -265,8 +267,7 @@ namespace F4VRBody {
 						if (armor) {
 							if (HasKeywordPA(armor, KeywordPowerArmor) || HasKeywordPA(armor, KeywordPowerArmorFrame)) {
 								return true;
-							}
-							else {
+							} else {
 								return false;
 							}
 						}
@@ -496,8 +497,7 @@ namespace F4VRBody {
 			if (_Pipboy3rd) {
 				_Pipboy3rd->m_localTransform.scale = g_config->pipBoyScale;
 			}
-		}
-		else {
+		} else {
 			_skelly->fixArmor();
 		}
 
@@ -572,7 +572,7 @@ namespace F4VRBody {
 		_MESSAGE("Papyrus: toggle selfie mode");
 		setSelfieMode(base, !c_selfieMode);
 	}
-	
+
 	static void moveForward(StaticFunctionTag* base) {
 		_MESSAGE("Papyrus: Move Forward");
 		g_config->playerOffset_forward += 1.0f;

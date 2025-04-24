@@ -249,10 +249,10 @@ namespace F4VRBody {
 	/// Would be nice to know how long the bone is instead of magic numbers, didn't find a way so far.
 	/// </summary>
 	NiPoint3 Skeleton::getOffhandIndexFingerTipWorldPosition() {
-		auto offhandIndexFinger = g_config->leftHandedMode ? "RArm_Finger23" : "LArm_Finger23";
-		auto boneTransform = ((BSFlattenedBoneTree*)_root)->transforms[getBoneInMap("LArm_Finger23")];
-		auto forward = boneTransform.world.rot * NiPoint3(1, 0, 0);
-		return boneTransform.world.pos + forward * (_inPowerArmor ? 3 : 1.8);
+		const auto offhandIndexFinger = g_config->leftHandedMode ? "RArm_Finger23" : "LArm_Finger23";
+		const auto boneTransform = reinterpret_cast<BSFlattenedBoneTree*>(_root)->transforms[getBoneInMap(offhandIndexFinger)];
+		const auto forward = boneTransform.world.rot * NiPoint3(1, 0, 0);
+		return boneTransform.world.pos + forward * (_inPowerArmor ? 3 : 1.8f);
 	}
 
 	NiNode* Skeleton::getNode(const char* nodeName, NiNode* nde) const {

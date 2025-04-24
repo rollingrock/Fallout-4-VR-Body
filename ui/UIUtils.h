@@ -20,4 +20,15 @@ namespace ui {
 	NiNode* findNode(const char* nodeName, NiNode* node);
 	void attachNodeToPrimaryWand(const NiNode* node);
 	bool isBetterScopesVRModLoaded();
+	void adjustForLeftHandedMode(NiNode* node);
+
+	// Const matrix to invert objects for left-handed mode.
+	static const F4VRBody::Matrix44& getLeftHandInvertMatrix() {
+		static const F4VRBody::Matrix44 ROT = [] {
+			F4VRBody::Matrix44 rot;
+			rot.setEulerAngles(0, F4VRBody::degrees_to_rads(180), 0);
+			return rot;
+		}();
+		return ROT;
+	}
 }
