@@ -23,7 +23,7 @@ namespace F4VRBody {
 	public :
 		explicit WeaponPositionConfigMode(WeaponPositionAdjuster* adjuster)
 			: _adjuster(adjuster) {
-			_configUI = createConfigUI();
+			createConfigUI();
 		}
 
 		~WeaponPositionConfigMode();
@@ -45,7 +45,7 @@ namespace F4VRBody {
 		void saveOffhandConfig() const;
 		void resetBetterScopesConfig() const;
 		void saveBetterScopesConfig() const;
-		std::shared_ptr<ui::UIContainer> createConfigUI();
+		void createConfigUI();
 
 		// access the weapon/offhand transform to change
 		WeaponPositionAdjuster* _adjuster;
@@ -54,6 +54,10 @@ namespace F4VRBody {
 		RepositionTarget _repositionTarget = RepositionTarget::Weapon;
 
 		// configuration UI
-		std::shared_ptr<ui::UIContainer> _configUI = nullptr;
+		std::shared_ptr<ui::UIContainer> _configUI;
+		std::shared_ptr<ui::UIContainer> _mainContainer;
+		std::shared_ptr<ui::UIContainer> _noEquippedWeaponContainer;
+		std::shared_ptr<ui::UIWidget> _footerForWeaponAdjust;
+		std::shared_ptr<ui::UIWidget> _footerForOtherAdjust;
 	};
 }

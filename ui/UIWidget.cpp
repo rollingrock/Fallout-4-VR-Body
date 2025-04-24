@@ -62,7 +62,7 @@ namespace ui {
 	/**
 	 * Add soft press mimic to the transform.
 	 */
-	NiTransform UIWidget::calculateTransform() {
+	NiTransform UIWidget::calculateTransform() const {
 		auto trans = UIElement::calculateTransform();
 		trans.pos += NiPoint3(0, _pressYOffset, 0);
 		return trans;

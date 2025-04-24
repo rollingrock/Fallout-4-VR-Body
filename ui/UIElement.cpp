@@ -28,7 +28,7 @@ namespace ui {
 	/**
 	 * calculate the transform of the element with respect to all parents.
 	 */
-	NiTransform UIElement::calculateTransform() {
+	NiTransform UIElement::calculateTransform() const {
 		if (!_parent) {
 			return _transform;
 		}
@@ -43,7 +43,7 @@ namespace ui {
 	/**
 	 * Calculate if the element should be visible with respect to all parents.
 	 */
-	bool UIElement::calculateVisibility() {
+	bool UIElement::calculateVisibility() const {
 		return _visible && (_parent ? _parent->calculateVisibility() : true);
 	}
 

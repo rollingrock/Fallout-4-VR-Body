@@ -38,7 +38,6 @@ namespace ui {
 	 * 1. Call onLayoutUpdate all the child elements first to have their size.
 	 * 2. Calculate the size of the container by all the children and layout type.
 	 * 3. Arrange the child elements in the container by the layout type.
-	 * TODO: handle visibility calculation is layout and don't lay out invisible elements.
 	 */
 	void UIContainer::onLayoutUpdate(UIModAdapter* adapter) {
 		// run layout on all children
@@ -87,6 +86,9 @@ namespace ui {
 	void UIContainer::calculateSizeManualLayout(UIModAdapter* adapter) {
 		float leftMost = 0, rightMost = 0, topMost = 0, bottomMost = 0;
 		for (const auto& childElm : _childElements) {
+			if (!childElm->calculateVisibility()) {
+				continue; // skip invisible elements
+			}
 			leftMost = min(leftMost, childElm->getPosition().x);
 			bottomMost = min(bottomMost, childElm->getPosition().z);
 			rightMost = max(rightMost, childElm->getPosition().x + childElm->getSize().width);
@@ -101,8 +103,13 @@ namespace ui {
 	 * Same idea for vertical layout but switched.
 	 */
 	void UIContainer::calculateSizeHorizontalVerticalLayout(UIModAdapter* adapter) {
+		int visibleChildCount = 0;
 		UISize size(0, 0);
 		for (const auto& childElm : _childElements) {
+			if (!childElm->calculateVisibility()) {
+				continue; // skip invisible elements
+			}
+			visibleChildCount++;
 			if (isHorizontalLayout()) {
 				size.width = size.width + childElm->getSize().width;
 				size.height = max(size.height, childElm->getSize().height);
@@ -111,10 +118,12 @@ namespace ui {
 				size.height = size.height + childElm->getSize().height;
 			}
 		}
-		if (isHorizontalLayout()) {
-			size.width += _padding * static_cast<float>(_childElements.size() - 1);
-		} else {
-			size.height += _padding * static_cast<float>(_childElements.size() - 1);
+		if (visibleChildCount > 0) {
+			if (isHorizontalLayout()) {
+				size.width += _padding * static_cast<float>(visibleChildCount - 1);
+			} else {
+				size.height += _padding * static_cast<float>(visibleChildCount - 1);
+			}
 		}
 		_size = size;
 	}
@@ -124,10 +133,12 @@ namespace ui {
 	 * Small adjustment because 0,0 is the center of the element.
 	 */
 	void UIContainer::layoutHorizontalCenter(const float leftHandedMult) const {
-		float layoutOffset = leftHandedMult * (-_size.width / 2 + _size.width / static_cast<float>(_childElements.size()) / 2);
+		float layoutOffset = -leftHandedMult * _size.width / 2;
 		for (const auto& childElm : _childElements) {
-			childElm->setPosition(layoutOffset, 0, 0);
-			layoutOffset += leftHandedMult * (childElm->getSize().width + _padding);
+			if (childElm->calculateVisibility()) {
+				childElm->setPosition(layoutOffset + leftHandedMult * childElm->getSize().width / 2, 0, 0);
+				layoutOffset += leftHandedMult * (childElm->getSize().width + _padding);
+			}
 		}
 	}
 
@@ -137,8 +148,10 @@ namespace ui {
 	void UIContainer::layoutHorizontalRight(const float leftHandedMult) const {
 		float layoutOffset = 0;
 		for (const auto& childElm : _childElements) {
-			childElm->setPosition(layoutOffset, 0, 0);
-			layoutOffset += leftHandedMult * (childElm->getSize().width + _padding);
+			if (childElm->calculateVisibility()) {
+				childElm->setPosition(layoutOffset + leftHandedMult * childElm->getSize().width / 2, 0, 0);
+				layoutOffset += leftHandedMult * (childElm->getSize().width + _padding);
+			}
 		}
 	}
 
@@ -148,8 +161,10 @@ namespace ui {
 	void UIContainer::layoutHorizontalLeft(const float leftHandedMult) const {
 		float layoutOffset = 0;
 		for (const auto& childElm : _childElements) {
-			childElm->setPosition(layoutOffset, 0, 0);
-			layoutOffset -= leftHandedMult * (childElm->getSize().width + _padding);
+			if (childElm->calculateVisibility()) {
+				childElm->setPosition(layoutOffset - leftHandedMult * childElm->getSize().width / 2, 0, 0);
+				layoutOffset -= leftHandedMult * (childElm->getSize().width + _padding);
+			}
 		}
 	}
 
@@ -158,10 +173,12 @@ namespace ui {
 	 * Small adjustment because 0,0 is the center of the element.
 	 */
 	void UIContainer::layoutVerticalCenter(const float leftHandedMult) const {
-		float layoutOffset = leftHandedMult * (_size.height / 2 - _size.height / static_cast<float>(_childElements.size()) / 2);
+		float layoutOffset = leftHandedMult * _size.height / 2;
 		for (const auto& childElm : _childElements) {
-			childElm->setPosition(0, 0, layoutOffset);
-			layoutOffset -= leftHandedMult * (childElm->getSize().height + _padding);
+			if (childElm->calculateVisibility()) {
+				childElm->setPosition(0, 0, layoutOffset - leftHandedMult * childElm->getSize().height / 2);
+				layoutOffset -= leftHandedMult * (childElm->getSize().height + _padding);
+			}
 		}
 	}
 
@@ -171,8 +188,10 @@ namespace ui {
 	void UIContainer::layoutVerticalUp(const float leftHandedMult) const {
 		float layoutOffset = 0;
 		for (const auto& childElm : _childElements) {
-			childElm->setPosition(0, 0, layoutOffset);
-			layoutOffset += leftHandedMult * (childElm->getSize().height + _padding);
+			if (childElm->calculateVisibility()) {
+				childElm->setPosition(0, 0, layoutOffset + leftHandedMult * childElm->getSize().height / 2);
+				layoutOffset += leftHandedMult * (childElm->getSize().height + _padding);
+			}
 		}
 	}
 
@@ -182,8 +201,10 @@ namespace ui {
 	void UIContainer::layoutVerticalDown(const float leftHandedMult) const {
 		float layoutOffset = 0;
 		for (const auto& childElm : _childElements) {
-			childElm->setPosition(0, 0, layoutOffset);
-			layoutOffset -= leftHandedMult * (childElm->getSize().height + _padding);
+			if (childElm->calculateVisibility()) {
+				childElm->setPosition(0, 0, layoutOffset - leftHandedMult * childElm->getSize().height / 2);
+				layoutOffset -= leftHandedMult * (childElm->getSize().height + _padding);
+			}
 		}
 	}
 

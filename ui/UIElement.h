@@ -34,12 +34,12 @@ namespace ui {
 		 */
 		void setPosition(const float x, const float y, const float z) { _transform.pos = NiPoint3(x, y, z); }
 		void updatePosition(const float x, const float y, const float z) { _transform.pos += NiPoint3(x, y, z); }
-		[[nodiscard]] NiPoint3 getPosition() const { return _transform.pos; }
+		[[nodiscard]] const NiPoint3& getPosition() const { return _transform.pos; }
 
 		[[nodiscard]] bool isVisible() const { return _visible; }
 		void setVisibility(const bool visible) { _visible = visible; }
 
-		[[nodiscard]] UISize getSize() const { return _size; }
+		[[nodiscard]] const UISize& getSize() const { return _size; }
 		void setSize(const UISize size) { _size = size; }
 		void setSize(const float width, const float height) { _size = {width, height}; }
 
@@ -54,9 +54,11 @@ namespace ui {
 		// Internal: Handle UI interaction code on each frame of the game.
 		virtual void onFrameUpdate(UIModAdapter* adapter) = 0;
 
+		// Internal: for layout calculation
+		virtual bool calculateVisibility() const;
+
 	protected:
-		virtual NiTransform calculateTransform();
-		virtual bool calculateVisibility();
+		virtual NiTransform calculateTransform() const;
 		virtual void onPressEventFired(UIElement* element, UIModAdapter* adapter) {}
 		void onPressEventFiredPropagate(UIElement* element, UIModAdapter* adapter);
 

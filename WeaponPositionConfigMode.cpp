@@ -25,12 +25,26 @@ namespace F4VRBody {
 	 * Handle configuration UI interaction.
 	 */
 	void WeaponPositionConfigMode::onFrameUpdate(NiNode* weapon) const {
-		if (!weapon) {
-			// don't handle repositioning if no weapon is drawn
+		if (g_configurationMode->isCalibrateModeActive()) {
+			// don't show this config UI if main config UI is shown
 			_configUI->setVisibility(false);
 			return;
 		}
 		_configUI->setVisibility(true);
+
+		if (!weapon) {
+			// don't handle repositioning if no weapon is drawn
+			_mainContainer->setVisibility(false);
+			_noEquippedWeaponContainer->setVisibility(true);
+			return;
+		}
+		_mainContainer->setVisibility(true);
+		_noEquippedWeaponContainer->setVisibility(false);
+
+		// show the right footer
+		const bool weaponAdjust = _repositionTarget == RepositionTarget::Weapon;
+		_footerForWeaponAdjust->setVisibility(weaponAdjust);
+		_footerForOtherAdjust->setVisibility(!weaponAdjust);
 
 		// reposition
 		handleReposition(weapon);
@@ -196,7 +210,7 @@ namespace F4VRBody {
 	/**
 	 * Create the configuration UI
 	 */
-	std::shared_ptr<ui::UIContainer> WeaponPositionConfigMode::createConfigUI() {
+	void WeaponPositionConfigMode::createConfigUI() {
 		const auto weaponModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_weapon.nif");
 		weaponModeButton->setToggleState(true);
 		weaponModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Weapon; });
@@ -223,24 +237,39 @@ namespace F4VRBody {
 		const auto exitButton = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_exit.nif");
 		exitButton->setOnPressHandler([this](ui::UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
 
-		const auto secondRowContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.4f);
+		const auto secondRowContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.3f);
 		secondRowContainer->addElement(saveButton);
 		secondRowContainer->addElement(resetButton);
 		secondRowContainer->addElement(exitButton);
 
 		const auto header = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_header.nif");
-		header->setSize(10, 2.8f);
-		const auto footer = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer.nif");
-		footer->setSize(10, 4.5);
+		header->setSize(14, 2);
+		_footerForWeaponAdjust = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer.nif");
+		_footerForWeaponAdjust->setSize(14, 4.5);
+		_footerForOtherAdjust = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer_2.nif");
+		_footerForOtherAdjust->setSize(10, 4.5);
 
-		auto configUI = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalCenter, 0.6f);
-		configUI->setPosition(-14, 8, -7);
-		configUI->addElement(header);
-		configUI->addElement(firstRowContainer);
-		configUI->addElement(secondRowContainer);
-		configUI->addElement(footer);
+		_mainContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalCenter, 0.4f);
+		_mainContainer->addElement(firstRowContainer);
+		_mainContainer->addElement(secondRowContainer);
+		_mainContainer->addElement(_footerForWeaponAdjust);
+		_mainContainer->addElement(_footerForOtherAdjust);
 
-		ui::g_uiManager->attachElementToPrimaryWand(configUI);
-		return configUI;
+		const auto footerEmpty = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer_empty.nif");
+		footerEmpty->setSize(7.2, 4.5);
+		const auto exitButtonOnFooter = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_exit.nif");
+		exitButtonOnFooter->setOnPressHandler([this](ui::UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
+
+		_noEquippedWeaponContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.4f);
+		_noEquippedWeaponContainer->addElement(footerEmpty);
+		_noEquippedWeaponContainer->addElement(exitButtonOnFooter);
+
+		_configUI = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalCenter, 0.5f);
+		_configUI->setPosition(-14, 8, -7);
+		_configUI->addElement(header);
+		_configUI->addElement(_mainContainer);
+		_configUI->addElement(_noEquippedWeaponContainer);
+
+		ui::g_uiManager->attachElementToPrimaryWand(_configUI);
 	}
 }

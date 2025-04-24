@@ -19,7 +19,7 @@ namespace ui {
 		virtual void attachToNode(NiNode* attachNode) override;
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
 		virtual void onFrameUpdate(UIModAdapter* adapter) override;
-		virtual NiTransform calculateTransform() override;
+		virtual NiTransform calculateTransform() const override;
 		virtual void onPressEventFired(UIElement* element, UIModAdapter* adapter) override;
 		void handlePressEvent(UIModAdapter* adapter);
 
