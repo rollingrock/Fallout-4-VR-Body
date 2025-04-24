@@ -258,12 +258,12 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="WeaponPositionAdjuster.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="data\FRIK.ini" />
-    <None Include="data\mesh_hide_face.ini" />
-    <None Include="data\mesh_hide_skins.ini" />
-    <None Include="data\mesh_hide_slots.ini" />
-    <None Include="data\pipboy_holo_offsets.json" />
-    <None Include="data\pipboy_screen_offsets.json" />
+  <None Include="data\FRIK.ini" />
+    <None Include="data\config\mesh_hide_face.ini" />
+    <None Include="data\config\mesh_hide_skins.ini" />
+    <None Include="data\config\mesh_hide_slots.ini" />
+    <None Include="data\config\pipboy_holo_offsets.json" />
+    <None Include="data\config\pipboy_screen_offsets.json" />
     <None Include="exports.def" />
   </ItemGroup>
   <ItemGroup>

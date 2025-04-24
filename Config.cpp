@@ -101,8 +101,11 @@ namespace F4VRBody {
 		_MESSAGE("Load pipboy offsets...");
 		loadPipboyOffsets();
 
-		_MESSAGE("Load weapon offsets...");
-		loadWeaponsOffsets();
+		_MESSAGE("Load weapon embedded offsets...");
+		loadWeaponsOffsetsFromEmbedded();
+
+		_MESSAGE("Load weapon custom offsets...");
+		loadWeaponsOffsetsFromFilesystem();
 	}
 
 	void Config::loadFrikINI() {
@@ -463,6 +466,28 @@ namespace F4VRBody {
 		}
 	}
 
+
+	/**
+	 * Load the given json object with offset data into an offset map.
+	 */
+	static void loadOffsetJsonToMap(const json& json, std::map<std::string, NiTransform>& offsetsMap, const bool log) {
+		for (auto& [key, value] : json.items()) {
+			NiTransform data;
+			for (int i = 0; i < 12; i++) {
+				data.rot.arr[i] = value["rotation"][i].get<double>();
+			}
+			data.pos.x = value["x"].get<double>();
+			data.pos.y = value["y"].get<double>();
+			data.pos.z = value["z"].get<double>();
+			data.scale = value["scale"].get<double>();
+
+			if (log) {
+				_MESSAGE("Successfully loaded offset override '%s' (%s)", key.c_str(), offsetsMap.contains(key) ? "Override" : "New");
+			}
+			offsetsMap[key] = data;
+		}
+	}
+
 	/// <summary>
 	/// Load offset data from given json file path and store it in the given map.
 	/// Use the entry key in the json file but for everything to work properly the name of the json should match the key.
@@ -486,19 +511,7 @@ namespace F4VRBody {
 		}
 		inF.close();
 
-		NiTransform data;
-		for (auto& [key, value] : weaponJson.items()) {
-			for (int i = 0; i < 12; i++) {
-				data.rot.arr[i] = value["rotation"][i].get<double>();
-			}
-			data.pos.x = value["x"].get<double>();
-			data.pos.y = value["y"].get<double>();
-			data.pos.z = value["z"].get<double>();
-			data.scale = value["scale"].get<double>();
-
-			_MESSAGE("Successfully loaded offset '%s' from '%s'", key.c_str(), file.c_str());
-			offsetsMap[key] = data;
-		}
+		loadOffsetJsonToMap(weaponJson, offsetsMap, true);
 	}
 
 	/// <summary>
@@ -511,21 +524,32 @@ namespace F4VRBody {
 		loadOffsetJsonFile(PIPBOY_SCREEN_OFFSETS_PATH, _pipboyOffsets);
 	}
 
+
+	/**
+	 * Load all embedded weapons offsets.
+	 */
+	void Config::loadWeaponsOffsetsFromEmbedded() {
+		for (WORD resourceId = 200; resourceId < 400; resourceId++) {
+			auto resourceOpt = getEmbeddedResourceAsStringIfExists(resourceId);
+			if (!resourceOpt.has_value()) {
+				break;
+			}
+			json json = json::parse(resourceOpt.value());
+			loadOffsetJsonToMap(json, _weaponsOffsets, false);
+		}
+		_MESSAGE("Loaded (%d) embedded weapon offsets", _weaponsOffsets.size());
+	}
+
 	/// <summary>
 	/// Load all the weapons offsets found in json files into the weapon offsets map.
 	/// </summary>
-	void Config::loadWeaponsOffsets() {
+	void Config::loadWeaponsOffsetsFromFilesystem() {
 		for (const auto& file : std::filesystem::directory_iterator(WEAPONS_OFFSETS_PATH)) {
-			std::wstring path = L"";
-			try {
-				path = file.path().wstring();
-			} catch (std::exception& e) {
-				_WARNING("Unable to convert path to string: %s", e.what());
-			}
 			if (file.exists() && !file.is_directory()) {
 				loadOffsetJsonFile(file.path().string(), _weaponsOffsets);
 			}
 		}
+		_MESSAGE("Loaded (%d) total weapon offsets", _weaponsOffsets.size());
 	}
 
 	/// <summary>

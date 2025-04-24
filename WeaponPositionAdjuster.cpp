@@ -245,8 +245,9 @@ namespace F4VRBody {
 	bool WeaponPositionAdjuster::isOffhandCloseToBarrel(const NiNode* weapon) const {
 		const auto offhand2WeaponVec = getOffhandPosition() - weapon->m_worldTransform.pos;
 		const float distanceFromPrimaryHand = vec3_len(offhand2WeaponVec);
-		const auto normalizedVec = weapon->m_worldTransform.rot.Transpose() * vec3_norm(offhand2WeaponVec) / weapon->m_worldTransform.scale;
-		const float angleDiffToWeaponVec = vec3_dot(vec3_norm(normalizedVec), NiPoint3(0, 1, 0));
+		const auto weaponLocalVec = weapon->m_worldTransform.rot.Transpose() * vec3_norm(offhand2WeaponVec) / weapon->m_worldTransform.scale;
+		const auto adjustedWeaponVec = _offhandOffsetRot * weaponLocalVec;
+		const float angleDiffToWeaponVec = vec3_dot(vec3_norm(adjustedWeaponVec), NiPoint3(0, 1, 0));
 		return angleDiffToWeaponVec > 0.955 && distanceFromPrimaryHand > 15;
 	}
 

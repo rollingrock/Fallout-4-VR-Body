@@ -554,6 +554,33 @@ namespace F4VRBody {
 		return ltrim(rtrim(s));
 	}
 
+
+	/**
+	 * Find dll embedded resource by id and return its data as string if exists.
+	 * Return null if the resource is not found.
+	 */
+	std::optional<std::string> getEmbeddedResourceAsStringIfExists(const WORD resourceId) {
+		// Must specify the dll to read its resources and not the exe
+		const HMODULE hModule = GetModuleHandle("FRIK.dll");
+		const HRSRC hRes = FindResource(hModule, MAKEINTRESOURCE(resourceId), RT_RCDATA);
+		if (!hRes) {
+			return std::nullopt;
+		}
+
+		const HGLOBAL hResData = LoadResource(hModule, hRes);
+		if (!hResData) {
+			return std::nullopt;
+		}
+
+		const DWORD dataSize = SizeofResource(hModule, hRes);
+		const void* pData = LockResource(hResData);
+		if (!pData) {
+			return std::nullopt;
+		}
+
+		return std::string(static_cast<const char*>(pData), dataSize);
+	}
+
 	/// <summary>
 	/// Find dll embeded resource by id and return its data as string.
 	/// </summary>
@@ -629,15 +656,15 @@ namespace F4VRBody {
 	}
 
 	/// <summary>
-	/// If file at a given path doesn't exists then create it from the embeded resource.
+	/// If file at a given path doesn't exist then create it from the embedded resource.
 	/// </summary>
-	void createFileFromResourceIfNotExists(std::string filePath, WORD resourceId) {
+	void createFileFromResourceIfNotExists(const std::string& filePath, const WORD resourceId) {
 		if (std::filesystem::exists(filePath)) {
 			return;
 		}
 
 		_MESSAGE("Creating '%s' file from resource id: %d...", filePath.c_str(), resourceId);
-		auto data = getEmbededResourceAsString(resourceId);
+		const auto data = getEmbededResourceAsString(resourceId);
 
 		std::ofstream outFile(filePath, std::ios::trunc);
 		if (!outFile) {

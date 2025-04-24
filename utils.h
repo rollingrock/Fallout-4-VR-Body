@@ -92,11 +92,12 @@ namespace F4VRBody {
 	std::string rtrim(std::string s);
 	std::string trim(std::string s);
 
+	std::optional<std::string> getEmbeddedResourceAsStringIfExists(const WORD resourceId);
 	std::string getEmbededResourceAsString(WORD idr);
 	std::string getCurrentTimeString();
 	std::vector<std::string> loadListFromFile(std::string filePath);
 	void createDirDeep(std::string pathStr);
-	void createFileFromResourceIfNotExists(std::string filePath, WORD resourceId);
+	void createFileFromResourceIfNotExists(const std::string& filePath, WORD resourceId);
 
 	bool isBetterScopesVRModLoaded();
 	bool isModLoaded(const char* modName);

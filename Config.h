@@ -4,7 +4,6 @@
 #include <optional>
 
 namespace F4VRBody {
-
 	constexpr const char* INI_SECTION_MAIN = "Fallout4VRBody";
 	constexpr const char* INI_SECTION_DEBUG = "Debug";
 	constexpr const char* INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
@@ -25,8 +24,7 @@ namespace F4VRBody {
 	/// Most of the configuration variables are loaded from the FRIK.ini file.
 	/// Some values can be changed in-game and persisted into the FRIK.ini file.
 	/// </summary>
-	class Config
-	{
+	class Config {
 	public:
 		void load();
 		void save() const { saveFrikINI(); }
@@ -37,24 +35,30 @@ namespace F4VRBody {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
 			saveFrikIniValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		}
+
 		inline void toggleIsHoloPipboy() {
 			isHoloPipboy = !isHoloPipboy;
 			saveFrikIniValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
 		}
+
 		inline void toggleDampenPipboyScreen() {
 			dampenPipboyScreen = !dampenPipboyScreen;
 			saveFrikIniValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
 		}
+
 		inline void togglePipBoyOpenWhenLookAt() {
 			pipBoyOpenWhenLookAt = !pipBoyOpenWhenLookAt;
 			saveFrikIniValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
 		}
+
 		inline void savePipboyScale(double pipboyScale) {
 			saveFrikIniValue(INI_SECTION_MAIN, "PipboyScale", pipboyScale);
 		}
+
 		inline int getAutoReloadConfigInterval() const {
 			return _reloadConfigInterval;
 		}
+
 		inline void toggleAutoReloadConfig() {
 			_reloadConfigInterval = _reloadConfigInterval == 0 ? 5 : 0;
 			saveFrikIniValue(INI_SECTION_DEBUG, "ReloadConfigInterval", std::to_string(_reloadConfigInterval).c_str());
@@ -122,9 +126,9 @@ namespace F4VRBody {
 		bool switchUIControltoPrimary = true; // if the player wants to switch controls or not.
 		float pipBoyScale = 1.0;
 		int switchTorchButton = 2; // button to switch torch from head to hand
-		int pipBoyButtonArm = 0;  // 0 for left 1 for right
+		int pipBoyButtonArm = 0; // 0 for left 1 for right
 		int pipBoyButtonID = vr::EVRButtonId::k_EButton_Grip; // grip button is 2
-		int pipBoyButtonOffArm = 0;  // 0 for left 1 for right
+		int pipBoyButtonOffArm = 0; // 0 for left 1 for right
 		int pipBoyButtonOffID = vr::EVRButtonId::k_EButton_Grip; // grip button is 2
 		int gripButtonID = vr::EVRButtonId::k_EButton_Grip; // 2
 		int holdDelay = 1000; // 1000 ms
@@ -175,7 +179,8 @@ namespace F4VRBody {
 		void saveFrikIniValue(const char* section, const char* pKey, double value);
 		void saveFrikIniValue(const char* section, const char* pKey, const char* value);
 		void loadPipboyOffsets();
-		void loadWeaponsOffsets();
+		void loadWeaponsOffsetsFromEmbedded();
+		void loadWeaponsOffsetsFromFilesystem();
 		void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const;
 		void setupFolders();
 		void migrateConfigFilesIfNeeded();
