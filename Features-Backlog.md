@@ -13,6 +13,7 @@
 ### Backlog
 - Fix Pipboy on right arm not working.
 - Fix not able to switch between on-wrist and in-front Pipboy config in game (in-front is invisible).
+- Fix flashlight doesn't have shadow on objects
 
 ## Requested
 Please put your feature requests here to be triaged.  
