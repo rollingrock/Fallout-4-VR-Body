@@ -8,13 +8,12 @@
 
 namespace ui {
 	static std::string getDebugSphereNifName() { return "FRIK/1x1Sphere.nif"; }
-	static std::string getToggleButtonFrameNifName() { return "FRIK/UI-ConfigMarker.nif"; }
-	static std::string getPrimaryWandNodeName() { return "world_primaryWand.nif"; }
+	static std::string getToggleButtonFrameNifName() { return "FRIK/ui_common_btn_border.nif"; }
 
-	static UISize getButtonDefaultSize() { return {4.4f, 4.4f}; }
+	static UISize getButtonDefaultSize() { return {2.2f, 2.2f}; }
 
 	F4VRBody::PlayerNodes* getPlayerNodes();
-	void setNodeVisibility(NiNode* node, bool visible);
+	void setNodeVisibility(NiNode* node, bool visible, float originalScale);
 	NiNode* getClonedNiNodeForNifFile(const std::string& path);
 	NiNode* loadNifFromFile(const char* path);
 	NiNode* findNode(const char* nodeName, NiNode* node);

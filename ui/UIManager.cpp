@@ -37,6 +37,31 @@ namespace ui {
 	}
 
 	/**
+	 * Attach the UI on top of the primary hand and bound to the hand movement.
+	 */
+	void UIManager::attachPresetToPrimaryWandTop(const std::shared_ptr<UIElement>& element, const float zOffset) {
+		element->setPosition(0, 0, 5 + zOffset);
+		attachElement(element, getPlayerNodes()->primaryUIAttachNode);
+	}
+
+	/**
+	 * Attach the UI on left of the primary hand and bound to the hand movement.
+	 */
+	void UIManager::attachPresetToPrimaryWandLeft(const std::shared_ptr<UIElement>& element, const NiPoint3 offset) {
+		element->setPosition(offset.x - 15, offset.y, offset.z - 5);
+		attachElement(element, findNode("world_primaryWand.nif", getPlayerNodes()->primaryWandNode));
+		// attachElement(element, getPlayerNodes()->primaryUIAttachNode);
+	}
+
+	/**
+	 * Attach the UI just below the HMD (head mounted display) direct view. Bound to horizontal but not vertical head movement.
+	 */
+	void UIManager::attachPresetToHMDBottom(const std::shared_ptr<UIElement>& element) {
+		element->setPosition(0, 35, -40);
+		attachElement(element, findNode("world_HMD_info.nif", getPlayerNodes()->UprightHmdNode));
+	}
+
+	/**
 	 * Remove the element and subtree from attached game node.
 	 * Safe Release: If <true>, the element will be added to release queue to be released on the next frame update
 	 * so finishing access to it on this frame update is still safe (release UI while handling UI event).

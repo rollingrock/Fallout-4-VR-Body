@@ -44,8 +44,8 @@ namespace ui {
 			return;
 		}
 
-		const auto visible = calculateVisibility();
-		setNodeVisibility(_node, visible);
+		const auto visible = calcVisibility();
+		setNodeVisibility(_node, visible, getScale());
 		if (!visible) {
 			return;
 		}

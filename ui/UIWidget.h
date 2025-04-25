@@ -6,8 +6,10 @@
 namespace ui {
 	class UIWidget : public UIElement {
 	public:
-		explicit UIWidget(const std::string& nifPath)
-			: UIWidget(getClonedNiNodeForNifFile(nifPath)) {}
+		explicit UIWidget(const std::string& nifPath, const float scale = 1)
+			: UIWidget(getClonedNiNodeForNifFile(nifPath)) {
+			setScale(scale);
+		}
 
 		explicit UIWidget(NiNode* node)
 			: _node(node) {}

@@ -218,7 +218,7 @@ namespace F4VRBody {
 		const auto offhandModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
 		offhandModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Offhand; });
 
-		const auto firstRowContainer = std::make_shared<ui::UIToggleGroupContainer>(ui::UIContainerLayout::HorizontalCenter, 0.3f);
+		const auto firstRowContainer = std::make_shared<ui::UIToggleGroupContainer>(ui::UIContainerLayout::HorizontalCenter, 0.15f);
 		firstRowContainer->addElement(weaponModeButton);
 		firstRowContainer->addElement(offhandModeButton);
 
@@ -237,39 +237,38 @@ namespace F4VRBody {
 		const auto exitButton = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_exit.nif");
 		exitButton->setOnPressHandler([this](ui::UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
 
-		const auto secondRowContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.3f);
+		const auto secondRowContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.2f);
 		secondRowContainer->addElement(saveButton);
 		secondRowContainer->addElement(resetButton);
 		secondRowContainer->addElement(exitButton);
 
-		const auto header = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_header.nif");
-		header->setSize(14, 2);
-		_footerForWeaponAdjust = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer.nif");
-		_footerForWeaponAdjust->setSize(14, 4.5);
-		_footerForOtherAdjust = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer_2.nif");
-		_footerForOtherAdjust->setSize(10, 4.5);
+		const auto header = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_header.nif", 0.7f);
+		header->setSize(8, 1);
+		_footerForWeaponAdjust = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer.nif", 0.7f);
+		_footerForWeaponAdjust->setSize(7, 2.2f);
+		_footerForOtherAdjust = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer_2.nif", 0.7f);
+		_footerForOtherAdjust->setSize(5, 2.2f);
 
-		_mainContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalCenter, 0.4f);
+		_mainContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalCenter, 0.2f);
 		_mainContainer->addElement(firstRowContainer);
 		_mainContainer->addElement(secondRowContainer);
 		_mainContainer->addElement(_footerForWeaponAdjust);
 		_mainContainer->addElement(_footerForOtherAdjust);
 
 		const auto footerEmpty = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer_empty.nif");
-		footerEmpty->setSize(7.2, 4.5);
+		footerEmpty->setSize(3.6f, 2.2f);
 		const auto exitButtonOnFooter = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_exit.nif");
 		exitButtonOnFooter->setOnPressHandler([this](ui::UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
 
-		_noEquippedWeaponContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.4f);
+		_noEquippedWeaponContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.2f);
 		_noEquippedWeaponContainer->addElement(footerEmpty);
 		_noEquippedWeaponContainer->addElement(exitButtonOnFooter);
 
-		_configUI = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalCenter, 0.5f);
-		_configUI->setPosition(-14, 8, -7);
+		_configUI = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalDown, 0.3f, 1.7f);
 		_configUI->addElement(header);
 		_configUI->addElement(_mainContainer);
 		_configUI->addElement(_noEquippedWeaponContainer);
 
-		ui::g_uiManager->attachElementToPrimaryWand(_configUI);
+		ui::g_uiManager->attachPresetToPrimaryWandLeft(_configUI, {0, -4, 0});
 	}
 }

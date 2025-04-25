@@ -26,9 +26,11 @@ namespace ui {
 
 	class UIContainer : public UIElement {
 	public:
-		explicit UIContainer(const UIContainerLayout layout = UIContainerLayout::Manual, const float padding = 0)
+		explicit UIContainer(const UIContainerLayout layout = UIContainerLayout::Manual, const float padding = 0, const float scale = 1)
 			: _layout(layout),
-			  _padding(padding) {}
+			  _padding(padding) {
+			setScale(scale);
+		}
 
 		virtual void onFrameUpdate(UIModAdapter* adapter) override;
 		virtual void onLayoutUpdate(UIModAdapter* adapter) override;
@@ -48,14 +50,15 @@ namespace ui {
 	protected:
 		virtual void attachToNode(NiNode* attachNode) override;
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
-		void calculateSizeManualLayout(UIModAdapter* adapter);
-		void calculateSizeHorizontalVerticalLayout(UIModAdapter* adapter);
+		void calculateSizeManualLayout();
+		void calculateSizeHorizontalVerticalLayout();
 		void layoutHorizontalCenter(float leftHandedMult) const;
 		void layoutHorizontalRight(float leftHandedMult) const;
 		void layoutHorizontalLeft(float leftHandedMult) const;
 		void layoutVerticalCenter(float leftHandedMult) const;
 		void layoutVerticalUp(float leftHandedMult) const;
 		void layoutVerticalDown(float leftHandedMult) const;
+		float calcPadding() const { return _padding * calcScale(); }
 
 		// how to lay out the child elements
 		UIContainerLayout _layout = UIContainerLayout::Manual;

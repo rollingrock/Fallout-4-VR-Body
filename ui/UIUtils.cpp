@@ -1,5 +1,3 @@
-#pragma once
-
 #include "UIUtils.h"
 
 // TODO: refactor to move this dependency to common code
@@ -17,8 +15,8 @@ namespace ui {
 	/**
 	 * Update the node flags to show/hide it.
 	 */
-	void setNodeVisibility(NiNode* node, const bool visible) {
-		node->m_localTransform.scale = visible ? 1 : 0;
+	void setNodeVisibility(NiNode* node, const bool visible, const float originalScale) {
+		node->m_localTransform.scale = visible ? originalScale : 0;
 
 		// TODO: try to understand why it's not working for our nifs.
 		//if (visible)

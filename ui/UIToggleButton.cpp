@@ -44,8 +44,8 @@ namespace ui {
 			return;
 		}
 
-		const bool visible = _isToggleOn && calculateVisibility();
-		setNodeVisibility(_toggleFrameNode, visible);
+		const bool visible = _isToggleOn && calcVisibility();
+		setNodeVisibility(_toggleFrameNode, visible, getScale());
 		if (visible) {
 			_toggleFrameNode->m_localTransform = _node->m_localTransform;
 		}

@@ -11,17 +11,11 @@ namespace ui {
 	public:
 		void onFrameUpdate(UIModAdapter* adapter);
 		void attachElement(const std::shared_ptr<UIElement>& element, NiNode* attachNode);
-
-		void attachElementToPrimaryWand(const std::shared_ptr<UIElement>& element) {
-			attachElement(element, getPrimaryWandAttachNode());
-		}
-
 		void detachElement(const std::shared_ptr<UIElement>& element, bool releaseSafe);
 
-		// Get attachment node for the primary wand (primary/right hand).
-		static NiNode* getPrimaryWandAttachNode() {
-			return findNode(getPrimaryWandNodeName().c_str(), getPlayerNodes()->primaryUIAttachNode);
-		}
+		void attachPresetToPrimaryWandTop(const std::shared_ptr<UIElement>& element, float zOffset = 0);
+		void attachPresetToPrimaryWandLeft(const std::shared_ptr<UIElement>& element, NiPoint3 offset = {0, 0, 0});
+		void attachPresetToHMDBottom(const std::shared_ptr<UIElement>& element);
 
 	private:
 		void dumpUITree() const;

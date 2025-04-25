@@ -36,15 +36,9 @@ namespace ui {
 		auto calTransform = _transform;
 		const auto parentTransform = _parent->calculateTransform();
 		calTransform.pos += parentTransform.pos;
+		calTransform.scale *= parentTransform.scale;
 		// TODO: add rotation handling
 		return calTransform;
-	}
-
-	/**
-	 * Calculate if the element should be visible with respect to all parents.
-	 */
-	bool UIElement::calculateVisibility() const {
-		return _visible && (_parent ? _parent->calculateVisibility() : true);
 	}
 
 	/**
