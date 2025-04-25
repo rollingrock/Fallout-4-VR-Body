@@ -52,12 +52,12 @@ namespace ui {
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
 		void calculateSizeManualLayout();
 		void calculateSizeHorizontalVerticalLayout();
-		void layoutHorizontalCenter(float leftHandedMult) const;
-		void layoutHorizontalRight(float leftHandedMult) const;
-		void layoutHorizontalLeft(float leftHandedMult) const;
-		void layoutVerticalCenter(float leftHandedMult) const;
-		void layoutVerticalUp(float leftHandedMult) const;
-		void layoutVerticalDown(float leftHandedMult) const;
+		void layoutHorizontalCenter() const;
+		void layoutHorizontalRight() const;
+		void layoutHorizontalLeft() const;
+		void layoutVerticalCenter() const;
+		void layoutVerticalUp() const;
+		void layoutVerticalDown() const;
 		float calcPadding() const { return _padding * calcScale(); }
 
 		// how to lay out the child elements

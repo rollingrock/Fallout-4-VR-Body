@@ -52,27 +52,25 @@ namespace ui {
 			calculateSizeHorizontalVerticalLayout();
 		}
 
-		const float leftHandedMult = adapter->isLeftHandedMode() ? -1.f : 1.f;
-
 		// do the actual layout of the child elements
 		switch (_layout) {
 		case UIContainerLayout::HorizontalCenter:
-			layoutHorizontalCenter(leftHandedMult);
+			layoutHorizontalCenter();
 			break;
 		case UIContainerLayout::HorizontalRight:
-			layoutHorizontalRight(leftHandedMult);
+			layoutHorizontalRight();
 			break;
 		case UIContainerLayout::HorizontalLeft:
-			layoutHorizontalLeft(leftHandedMult);
+			layoutHorizontalLeft();
 			break;
 		case UIContainerLayout::VerticalCenter:
-			layoutVerticalCenter(leftHandedMult);
+			layoutVerticalCenter();
 			break;
 		case UIContainerLayout::VerticalUp:
-			layoutVerticalUp(leftHandedMult);
+			layoutVerticalUp();
 			break;
 		case UIContainerLayout::VerticalDown:
-			layoutVerticalDown(leftHandedMult);
+			layoutVerticalDown();
 			break;
 		case UIContainerLayout::Manual:
 			break; // noop
@@ -132,12 +130,12 @@ namespace ui {
 	 * Layout horizontally with starting offset that is half of the total width of all the elements.
 	 * Small adjustment because 0,0 is the center of the element.
 	 */
-	void UIContainer::layoutHorizontalCenter(const float leftHandedMult) const {
-		float layoutOffset = -leftHandedMult * calcSize().width / 2;
+	void UIContainer::layoutHorizontalCenter() const {
+		float layoutOffset = -calcSize().width / 2;
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
-				childElm->setPosition(layoutOffset + leftHandedMult * childElm->calcSize().width / 2, 0, 0);
-				layoutOffset += leftHandedMult * (childElm->calcSize().width + calcPadding());
+				childElm->setPosition(layoutOffset + childElm->calcSize().width / 2, 0, 0);
+				layoutOffset += (childElm->calcSize().width + calcPadding());
 			}
 		}
 	}
@@ -145,12 +143,12 @@ namespace ui {
 	/**
 	 * Layout horizontally from 0 adding positive offset with each child and padding.
 	 */
-	void UIContainer::layoutHorizontalRight(const float leftHandedMult) const {
+	void UIContainer::layoutHorizontalRight() const {
 		float layoutOffset = 0;
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
-				childElm->setPosition(layoutOffset + leftHandedMult * childElm->calcSize().width / 2, 0, 0);
-				layoutOffset += leftHandedMult * (childElm->calcSize().width + calcPadding());
+				childElm->setPosition(layoutOffset + childElm->calcSize().width / 2, 0, 0);
+				layoutOffset += (childElm->calcSize().width + calcPadding());
 			}
 		}
 	}
@@ -158,12 +156,12 @@ namespace ui {
 	/**
 	 * Layout horizontally from 0 adding negative offset with each child and padding.
 	 */
-	void UIContainer::layoutHorizontalLeft(const float leftHandedMult) const {
+	void UIContainer::layoutHorizontalLeft() const {
 		float layoutOffset = 0;
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
-				childElm->setPosition(layoutOffset - leftHandedMult * childElm->calcSize().width / 2, 0, 0);
-				layoutOffset -= leftHandedMult * (childElm->calcSize().width + calcPadding());
+				childElm->setPosition(layoutOffset - childElm->calcSize().width / 2, 0, 0);
+				layoutOffset -= (childElm->calcSize().width + calcPadding());
 			}
 		}
 	}
@@ -172,12 +170,12 @@ namespace ui {
 	 * Layout vertically with starting offset that is half of the total height of all the elements.
 	 * Small adjustment because 0,0 is the center of the element.
 	 */
-	void UIContainer::layoutVerticalCenter(const float leftHandedMult) const {
-		float layoutOffset = leftHandedMult * calcSize().height / 2;
+	void UIContainer::layoutVerticalCenter() const {
+		float layoutOffset = calcSize().height / 2;
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
-				childElm->setPosition(0, 0, layoutOffset - leftHandedMult * childElm->calcSize().height / 2);
-				layoutOffset -= leftHandedMult * (childElm->calcSize().height + calcPadding());
+				childElm->setPosition(0, 0, layoutOffset - childElm->calcSize().height / 2);
+				layoutOffset -= (childElm->calcSize().height + calcPadding());
 			}
 		}
 	}
@@ -185,12 +183,12 @@ namespace ui {
 	/**
 	 * Layout vertically from 0 adding positive offset with each child and padding.
 	 */
-	void UIContainer::layoutVerticalUp(const float leftHandedMult) const {
+	void UIContainer::layoutVerticalUp() const {
 		float layoutOffset = 0;
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
-				childElm->setPosition(0, 0, layoutOffset + leftHandedMult * childElm->calcSize().height / 2);
-				layoutOffset += leftHandedMult * (childElm->calcSize().height + calcPadding());
+				childElm->setPosition(0, 0, layoutOffset + childElm->calcSize().height / 2);
+				layoutOffset += (childElm->calcSize().height + calcPadding());
 			}
 		}
 	}
@@ -198,12 +196,12 @@ namespace ui {
 	/**
 	 * Layout vertically from 0 adding negative offset with each child and padding.
 	 */
-	void UIContainer::layoutVerticalDown(const float leftHandedMult) const {
+	void UIContainer::layoutVerticalDown() const {
 		float layoutOffset = 0;
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
-				childElm->setPosition(0, 0, layoutOffset - leftHandedMult * childElm->calcSize().height / 2);
-				layoutOffset -= leftHandedMult * (childElm->calcSize().height + calcPadding());
+				childElm->setPosition(0, 0, layoutOffset - childElm->calcSize().height / 2);
+				layoutOffset -= (childElm->calcSize().height + calcPadding());
 			}
 		}
 	}

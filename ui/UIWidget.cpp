@@ -53,10 +53,6 @@ namespace ui {
 		handlePressEvent(adapter);
 
 		_node->m_localTransform = calculateTransform();
-
-		if (adapter->isLeftHandedMode()) {
-			adjustForLeftHandedMode(_node);
-		}
 	}
 
 	/**

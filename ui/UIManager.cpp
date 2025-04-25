@@ -47,10 +47,9 @@ namespace ui {
 	/**
 	 * Attach the UI on left of the primary hand and bound to the hand movement.
 	 */
-	void UIManager::attachPresetToPrimaryWandLeft(const std::shared_ptr<UIElement>& element, const NiPoint3 offset) {
-		element->setPosition(offset.x - 15, offset.y, offset.z - 5);
-		attachElement(element, findNode("world_primaryWand.nif", getPlayerNodes()->primaryWandNode));
-		// attachElement(element, getPlayerNodes()->primaryUIAttachNode);
+	void UIManager::attachPresetToPrimaryWandLeft(const std::shared_ptr<UIElement>& element, const bool leftHanded, const NiPoint3 offset) {
+		element->setPosition((leftHanded ? -1.f : 1.f) * (offset.x - 15), offset.y, offset.z - 5);
+		attachElement(element, getPlayerNodes()->primaryUIAttachNode);
 	}
 
 	/**

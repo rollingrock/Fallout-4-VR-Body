@@ -25,7 +25,7 @@ namespace F4VRBody {
 	 * Handle configuration UI interaction.
 	 */
 	void WeaponPositionConfigMode::onFrameUpdate(NiNode* weapon) const {
-		if (g_configurationMode->isCalibrateModeActive()) {
+		if (g_configurationMode->isCalibrateModeActive() || g_configurationMode->isPipBoyConfigModeActive()) {
 			// don't show this config UI if main config UI is shown
 			_configUI->setVisibility(false);
 			return;
@@ -269,6 +269,6 @@ namespace F4VRBody {
 		_configUI->addElement(_mainContainer);
 		_configUI->addElement(_noEquippedWeaponContainer);
 
-		ui::g_uiManager->attachPresetToPrimaryWandLeft(_configUI, {0, -4, 0});
+		ui::g_uiManager->attachPresetToPrimaryWandLeft(_configUI, g_config->leftHandedMode, {0, -4, 0});
 	}
 }

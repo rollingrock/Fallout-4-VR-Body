@@ -77,28 +77,10 @@ namespace ui {
 	}
 
 	/**
-	 * Attach the given node to the primary wand node to be rendered near it.
-	 */
-	void attachNodeToPrimaryWand(NiNode* node) {
-		if (const auto primaryWandNode = findNode("world_primaryWand.nif", getPlayerNodes()->primaryUIAttachNode)) {
-			primaryWandNode->AttachChild(node, true);
-		} else {
-			_WARNING("Primary wand node not found!");
-		}
-	}
-
-	/**
 	 * @return true if BetterScopesVR mod is loaded in the game, false otherwise.
 	 */
 	bool isBetterScopesVRModLoaded() {
 		return F4VRBody::isModLoaded("FO4VRBETTERSCOPES");
-	}
-
-	/**
-	 * Add 180 degree rotation to the given node's local transform to adjust for left-handed mode.
-	 */
-	void adjustForLeftHandedMode(NiNode* node) {
-		node->m_localTransform.rot = getLeftHandInvertMatrix().multiply43Left(node->m_localTransform.rot);
 	}
 
 	static void getNodeWidthHeight(NiNode* node) {

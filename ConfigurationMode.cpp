@@ -106,7 +106,10 @@ namespace F4VRBody {
 			proc.unk48 = Offsets::cloneAddr2;
 			NiNode* HUD = Offsets::cloneNode(retNode, &proc);
 			HUD->m_name = BSFixedString("MCCONFIGHUD");
-			NiNode* UIATTACH = _skelly->getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
+			// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
+			NiNode* UIATTACH = g_config->leftHandedMode
+				? _skelly->getPlayerNodes()->primaryUIAttachNode
+				: _skelly->getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
 			UIATTACH->AttachChild((NiAVObject*)HUD, true);
 			char* MainHud[10] = {
 				"Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile03.nif",
@@ -727,7 +730,10 @@ namespace F4VRBody {
 		proc.unk48 = Offsets::cloneAddr2;
 		NiNode* HUD = Offsets::cloneNode(retNode, &proc);
 		HUD->m_name = BSFixedString("PBCONFIGHUD");
-		NiNode* UIATTACH = _skelly->getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
+		// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
+		NiNode* UIATTACH = g_config->leftHandedMode
+			? _skelly->getPlayerNodes()->primaryUIAttachNode
+			: _skelly->getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
 		UIATTACH->AttachChild((NiAVObject*)HUD, true);
 		char* MainHud[12] = {
 			"Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif",

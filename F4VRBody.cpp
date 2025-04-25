@@ -60,10 +60,6 @@ namespace F4VRBody {
 		FrameUpdateContext(Skeleton* skelly, OpenVRHookManagerAPI* vrhook)
 			: _skelly(skelly), _vrhook(vrhook) {}
 
-		virtual bool isLeftHandedMode() override {
-			return g_config->leftHandedMode;
-		}
-
 		virtual NiPoint3 getInteractionBonePosition() override {
 			return _skelly->getOffhandIndexFingerTipWorldPosition();
 		}

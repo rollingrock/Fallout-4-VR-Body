@@ -17,9 +17,7 @@ namespace ui {
 	NiNode* getClonedNiNodeForNifFile(const std::string& path);
 	NiNode* loadNifFromFile(const char* path);
 	NiNode* findNode(const char* nodeName, NiNode* node);
-	void attachNodeToPrimaryWand(const NiNode* node);
 	bool isBetterScopesVRModLoaded();
-	void adjustForLeftHandedMode(NiNode* node);
 
 	// Const matrix to invert objects for left-handed mode.
 	static const F4VRBody::Matrix44& getLeftHandInvertMatrix() {
