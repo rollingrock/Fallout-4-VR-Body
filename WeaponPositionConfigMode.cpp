@@ -269,6 +269,9 @@ namespace F4VRBody {
 		_configUI->addElement(_mainContainer);
 		_configUI->addElement(_noEquippedWeaponContainer);
 
+		// start hidden by default (will be set visible in frame update if it should be)
+		_configUI->setVisibility(false);
+
 		ui::g_uiManager->attachPresetToPrimaryWandLeft(_configUI, g_config->leftHandedMode, {0, -4, 0});
 	}
 }

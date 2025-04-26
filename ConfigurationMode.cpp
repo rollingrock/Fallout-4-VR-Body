@@ -73,6 +73,8 @@ namespace F4VRBody {
 			return;
 		}
 
+		setConfigModeHandPose();
+
 		float rAxisOffsetY;
 		char* meshName[10] = {
 			"MC-MainTitleTrans", "MC-Tile01Trans", "MC-Tile02Trans", "MC-Tile03Trans", "MC-Tile04Trans", "MC-Tile05Trans", "MC-Tile06Trans", "MC-Tile07Trans",
@@ -151,7 +153,6 @@ namespace F4VRBody {
 					}
 				}
 			}
-			setConfigModeHandPose();
 			_calibrationModeUIActive = true;
 			_armLength_bkup = g_config->armLength;
 			_powerArmor_up_bkup = g_config->powerArmor_up;
@@ -530,6 +531,8 @@ namespace F4VRBody {
 				_PBConfigModeEnterCounter = 0;
 			}
 			if (_isPBConfigModeActive) {
+				setConfigModeHandPose();
+
 				BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)_skelly->getRoot();
 				NiPoint3 finger;
 				g_config->leftHandedMode
@@ -770,7 +773,6 @@ namespace F4VRBody {
 				UI->AttachChild((NiAVObject*)UI3, true);
 			}
 		}
-		setConfigModeHandPose();
 		_isPBConfigModeActive = true;
 		_PBConfigModeEnterCounter = 0;
 	}

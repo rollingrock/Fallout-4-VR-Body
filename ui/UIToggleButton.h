@@ -32,8 +32,8 @@ namespace ui {
 		virtual void attachToNode(NiNode* node) override;
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
 		[[nodiscard]] virtual bool isPressable() const override;
-		virtual void onFrameUpdate(UIModAdapter* adapter) override;
-		virtual void onPressEventFired(UIElement* element, UIModAdapter* adapter) override;
+		virtual void onFrameUpdate(UIFrameUpdateContext* adapter) override;
+		virtual void onPressEventFired(UIElement* element, UIFrameUpdateContext* context) override;
 
 		std::function<void(UIToggleButton*, bool)> _onToggleEventHandler;
 		bool _isToggleOn = false;

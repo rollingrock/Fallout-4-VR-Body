@@ -10,7 +10,7 @@ namespace ui {
 			_followInteractionPosition = followInteractPos;
 		}
 
-		virtual void onFrameUpdate(UIModAdapter* adapter) override;
+		virtual void onFrameUpdate(UIFrameUpdateContext* adapter) override;
 
 		[[nodiscard]] bool isFollowInteractionPosition() const { return _followInteractionPosition; }
 

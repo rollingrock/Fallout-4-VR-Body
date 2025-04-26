@@ -18,7 +18,7 @@ namespace ui {
 	/**
 	 * Propagate frame update to all child elements.
 	 */
-	void UIContainer::onFrameUpdate(UIModAdapter* adapter) {
+	void UIContainer::onFrameUpdate(UIFrameUpdateContext* adapter) {
 		for (const auto& childElm : _childElements) {
 			childElm->onFrameUpdate(adapter);
 		}
@@ -39,7 +39,7 @@ namespace ui {
 	 * 2. Calculate the size of the container by all the children and layout type.
 	 * 3. Arrange the child elements in the container by the layout type.
 	 */
-	void UIContainer::onLayoutUpdate(UIModAdapter* adapter) {
+	void UIContainer::onLayoutUpdate(UIFrameUpdateContext* adapter) {
 		// run layout on all children
 		for (const auto& childElm : _childElements) {
 			childElm->onLayoutUpdate(adapter);

@@ -14,8 +14,8 @@ namespace ui {
 		);
 	}
 
-	void UIButton::onPressEventFired(UIElement* element, UIModAdapter* adapter) {
-		UIWidget::onPressEventFired(element, adapter);
+	void UIButton::onPressEventFired(UIElement* element, UIFrameUpdateContext* context) {
+		UIWidget::onPressEventFired(element, context);
 		if (_onPressEventHandler) {
 			_onPressEventHandler(this);
 		}

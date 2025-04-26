@@ -1,5 +1,6 @@
 #include "UIManager.h"
 #include "../Config.h"
+#include "../Debug.h"
 
 namespace ui {
 	// globals, globals everywhere...
@@ -9,14 +10,29 @@ namespace ui {
 	 * Run frame update on all the containers.
 	 */
 	void UIManager::onFrameUpdate(UIModAdapter* adapter) {
-		_releaseSafeList.clear();
+		if (!_releaseSafeList.empty()) {
+			_releaseSafeList.clear();
+			adapter->setInteractionHandPointing(false, false);
+		}
+
+		if (_rootElements.empty()) {
+			return;
+		}
+
+		UIFrameUpdateContext context(adapter);
 
 		for (const auto& element : _rootElements) {
-			element->onLayoutUpdate(adapter);
+			element->onLayoutUpdate(&context);
 		}
 
 		for (const auto& element : _rootElements) {
-			element->onFrameUpdate(adapter);
+			element->onFrameUpdate(&context);
+		}
+
+		// will need to handle exposing which hand we want to handle here
+		const auto isInteractionClose = context.isAnyPressableCloseToInteraction();
+		if (isInteractionClose.has_value()) {
+			adapter->setInteractionHandPointing(false, isInteractionClose.value());
 		}
 
 		if (F4VRBody::g_config->checkDebugDumpDataOnceFor("ui_tree")) {

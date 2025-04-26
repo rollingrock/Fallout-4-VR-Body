@@ -22,7 +22,7 @@ namespace ui {
 
 	protected:
 		[[nodiscard]] virtual bool isPressable() const override { return _visible && _onPressEventHandler != nullptr; }
-		virtual void onPressEventFired(UIElement* element, UIModAdapter* adapter) override;
+		virtual void onPressEventFired(UIElement* element, UIFrameUpdateContext* context) override;
 
 		std::function<void(UIButton*)> _onPressEventHandler;
 	};

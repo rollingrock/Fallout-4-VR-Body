@@ -32,8 +32,8 @@ namespace ui {
 			setScale(scale);
 		}
 
-		virtual void onFrameUpdate(UIModAdapter* adapter) override;
-		virtual void onLayoutUpdate(UIModAdapter* adapter) override;
+		virtual void onFrameUpdate(UIFrameUpdateContext* adapter) override;
+		virtual void onLayoutUpdate(UIFrameUpdateContext* adapter) override;
 		void addElement(const std::shared_ptr<UIElement>& element);
 
 		[[nodiscard]] UIContainerLayout layout() const { return _layout; }

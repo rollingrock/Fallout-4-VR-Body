@@ -38,7 +38,7 @@ namespace ui {
 	/**
 	 * Handle toggle frame visibility.
 	 */
-	void UIToggleButton::onFrameUpdate(UIModAdapter* adapter) {
+	void UIToggleButton::onFrameUpdate(UIFrameUpdateContext* adapter) {
 		UIWidget::onFrameUpdate(adapter);
 		if (!_attachNode) {
 			return;
@@ -54,13 +54,13 @@ namespace ui {
 	/**
 	 * Handle toggle event of press on the button.
 	 */
-	void UIToggleButton::onPressEventFired(UIElement* element, UIModAdapter* adapter) {
+	void UIToggleButton::onPressEventFired(UIElement* element, UIFrameUpdateContext* context) {
 		if (_isToggleOn && !_isUnToggleAllowed) {
 			// not allowed to un-toggle
 			return;
 		}
 
-		UIWidget::onPressEventFired(element, adapter);
+		UIWidget::onPressEventFired(element, context);
 		_isToggleOn = !_isToggleOn;
 		if (_onToggleEventHandler) {
 			_onToggleEventHandler(this, _isToggleOn);

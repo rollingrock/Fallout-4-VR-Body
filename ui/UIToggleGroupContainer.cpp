@@ -26,7 +26,7 @@ namespace ui {
 	/**
 	 * On toggle of one button, un-toggle all other buttons.
 	 */
-	void UIToggleGroupContainer::onPressEventFired(UIElement* eventElement, UIModAdapter* adapter) {
+	void UIToggleGroupContainer::onPressEventFired(UIElement* eventElement, UIFrameUpdateContext* context) {
 		for (const auto& otherElement : _childElements) {
 			const auto otherButton = dynamic_cast<UIToggleButton*>(otherElement.get());
 			if (eventElement != otherButton) {

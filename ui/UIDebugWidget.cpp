@@ -13,14 +13,14 @@ namespace ui {
 		);
 	}
 
-	void UIDebugWidget::onFrameUpdate(UIModAdapter* adapter) {
+	void UIDebugWidget::onFrameUpdate(UIFrameUpdateContext* adapter) {
 		UIWidget::onFrameUpdate(adapter);
 		if (!_attachNode) {
 			return;
 		}
 
 		if (_followInteractionPosition) {
-			const auto finger = adapter->getInteractionBonePosition();
+			const auto finger = adapter->getInteractionBoneWorldPosition();
 			const auto diff = finger - _node->m_worldTransform.pos;
 			if (!std::isnan(diff.x) && !std::isnan(diff.y) && !std::isnan(diff.z) && F4VRBody::vec3_len(diff) < 500) {
 				_node->m_localTransform.pos += diff;

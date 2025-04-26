@@ -60,12 +60,16 @@ namespace F4VRBody {
 		FrameUpdateContext(Skeleton* skelly, OpenVRHookManagerAPI* vrhook)
 			: _skelly(skelly), _vrhook(vrhook) {}
 
-		virtual NiPoint3 getInteractionBonePosition() override {
+		virtual NiPoint3 getInteractionBoneWorldPosition() override {
 			return _skelly->getOffhandIndexFingerTipWorldPosition();
 		}
 
 		virtual void fireInteractionHeptic() override {
 			_vrhook->StartHaptics(g_config->leftHandedMode ? 2 : 1, 0.2f, 0.3f);
+		}
+
+		virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override {
+			setForceHandPointingPose(primaryHand, toPoint);
 		}
 
 	private:

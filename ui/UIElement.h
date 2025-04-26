@@ -50,10 +50,10 @@ namespace ui {
 		[[nodiscard]] virtual std::string toString() const;
 
 		// Internal: 
-		virtual void onLayoutUpdate(UIModAdapter* adapter) {}
+		virtual void onLayoutUpdate(UIFrameUpdateContext* context) {}
 
 		// Internal: Handle UI interaction code on each frame of the game.
-		virtual void onFrameUpdate(UIModAdapter* adapter) = 0;
+		virtual void onFrameUpdate(UIFrameUpdateContext* context) = 0;
 
 		// NOTE: those can be called a lot, shouldn't be an issue for our usage but maybe worth checking one day
 		// Internal: Calculate if the element should be visible with respect to all parents.
@@ -68,8 +68,8 @@ namespace ui {
 
 	protected:
 		virtual NiTransform calculateTransform() const;
-		virtual void onPressEventFired(UIElement* element, UIModAdapter* adapter) {}
-		void onPressEventFiredPropagate(UIElement* element, UIModAdapter* adapter);
+		virtual void onPressEventFired(UIElement* element, UIFrameUpdateContext* context) {}
+		void onPressEventFiredPropagate(UIElement* element, UIFrameUpdateContext* context);
 
 		// Attach the UI element to the given game node.
 		virtual void attachToNode(NiNode* attachNode);

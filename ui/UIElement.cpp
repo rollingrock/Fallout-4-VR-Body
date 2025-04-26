@@ -44,10 +44,10 @@ namespace ui {
 	/**
 	 * Call "onPressEventFired" on this element and all elements up the UI tree.
 	 */
-	void UIElement::onPressEventFiredPropagate(UIElement* element, UIModAdapter* adapter) {
-		onPressEventFired(element, adapter);
+	void UIElement::onPressEventFiredPropagate(UIElement* element, UIFrameUpdateContext* context) {
+		onPressEventFired(element, context);
 		if (_parent) {
-			_parent->onPressEventFiredPropagate(element, adapter);
+			_parent->onPressEventFiredPropagate(element, context);
 		}
 	}
 }

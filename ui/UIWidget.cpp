@@ -39,7 +39,7 @@ namespace ui {
 	/**
 	 * Handle widget visibility, location, and press handling.
 	 */
-	void UIWidget::onFrameUpdate(UIModAdapter* adapter) {
+	void UIWidget::onFrameUpdate(UIFrameUpdateContext* adapter) {
 		if (!_attachNode) {
 			return;
 		}
@@ -69,29 +69,33 @@ namespace ui {
 	 * Detect if interaction bone is close to the widget node and fire press event ONCE when it is.
 	 * Only allow firing of the press event again when interaction bone move away enough from the widget.
 	 */
-	void UIWidget::handlePressEvent(UIModAdapter* adapter) {
+	void UIWidget::handlePressEvent(UIFrameUpdateContext* context) {
 		if (!isPressable()) {
 			return;
 		}
 
-		const auto finger = adapter->getInteractionBonePosition();
+		const auto finger = context->getInteractionBoneWorldPosition();
 		const auto widgetCenter = _node->m_worldTransform.pos;
 
-		// Generally outside the bounds of the widget
-		if (!_pressEventFired && F4VRBody::vec3_len(finger - widgetCenter) > _node->m_worldBound.m_fRadius) {
-			_pressYOffset = 0;
-			return;
-		}
+		const float distance = F4VRBody::vec3_len(finger - widgetCenter);
 
 		// calculate the distance only in the y-axis
 		const NiPoint3 forward = _node->m_worldTransform.rot * NiPoint3(0, 1, 0);
 		const NiPoint3 vectorToCurr = widgetCenter - finger;
-		const float distance = F4VRBody::vec3_dot(forward, vectorToCurr);
+		const float yOnlyDistance = F4VRBody::vec3_dot(forward, vectorToCurr);
+
+		updatePressableCloseToInteraction(context, distance, yOnlyDistance);
+
+		// Generally outside the bounds of the widget
+		if (!_pressEventFired && distance > _node->m_worldBound.m_fRadius) {
+			_pressYOffset = 0;
+			return;
+		}
 
 		// clear press state only when finger in-front of the widget
 		if (_pressEventFired) {
 			// far enough to clear press flag used to prevent multi-press
-			_pressEventFired = distance > 0.4 ? false : _pressEventFired;
+			_pressEventFired = yOnlyDistance > 0.4 ? false : _pressEventFired;
 			return;
 		}
 
@@ -117,14 +121,25 @@ namespace ui {
 		if (_pressYOffset > PRESS_TRIGGER_DISTANCE) {
 			// widget pushed enough, fire press event
 			_MESSAGE("UI Widget '%s' pressed", _node->m_name.c_str());
-			onPressEventFiredPropagate(this, adapter);
+			onPressEventFiredPropagate(this, context);
 		}
 	}
 
-	void UIWidget::onPressEventFired(UIElement* element, UIModAdapter* adapter) {
+	/**
+	 * is interaction bone is relatively close to widget for hand pose to change.
+	 * Use previously set value to create a safe buffer where the pressable won't rapidly change from true to false and back.
+	 */
+	void UIWidget::updatePressableCloseToInteraction(UIFrameUpdateContext* context, const float distance, const float yOnlyDistance) {
+		_wasPressableCloseToInteraction = _wasPressableCloseToInteraction
+			? yOnlyDistance > -12 && distance < 20
+			: yOnlyDistance > -3 && distance < 15;
+		context->markAnyPressableCloseToInteraction(_wasPressableCloseToInteraction);
+	}
+
+	void UIWidget::onPressEventFired(UIElement* element, UIFrameUpdateContext* context) {
 		_pressYOffset = 0;
 		_pressEventFired = true;
-		adapter->fireInteractionHeptic();
-		UIElement::onPressEventFired(element, adapter);
+		context->fireInteractionHeptic();
+		UIElement::onPressEventFired(element, context);
 	}
 }

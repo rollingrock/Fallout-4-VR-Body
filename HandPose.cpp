@@ -316,76 +316,55 @@ namespace F4VRBody {
 	}
 
 	void setPipboyHandPose() {
-		float position[15] = { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-		if (g_config->leftHandedPipBoy) {
-			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = true;
-				handPapyrusPose[f.c_str()] = position[x];
-			}
-		}
-		else {
-			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = true;
-				handPapyrusPose[f.c_str()] = position[x];
-			}
-		}
+		setForceHandPointingPoseExplicitHand(!g_config->leftHandedPipBoy, true);
 	}
 
 	void disablePipboyHandPose() {
-		if (g_config->leftHandedPipBoy) {
-			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = false;
-			}
-		}
-		else {
-			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = false;
-			}
-		}
+		setForceHandPointingPoseExplicitHand(!g_config->leftHandedPipBoy, false);
 	}
 
 	void setConfigModeHandPose() {
-		float position[15] = { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-		if (g_config->leftHandedMode) {
-			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = true;
-				handPapyrusPose[f.c_str()] = position[x];
-			}
-		}
-		else {
-			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = true;
-				handPapyrusPose[f.c_str()] = position[x];
-			}
-		}
+		setForceHandPointingPose(false, true);
 	}
 
 	void disableConfigModePose() {
-		if (g_config->leftHandedMode) {
-			std::string finger[15] = { "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = false;
-			}
+		setForceHandPointingPose(false, false);
+	}
+
+	static const std::string LEFT_HAND_FINGERS[15] = {
+		"LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41",
+		"LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53"
+	};
+	static const std::string RIGHT_HAND_FINGERS[15] = {
+		"RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41",
+		"RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53"
+	};
+	static constexpr float HAND_FINGERS_POINTING_POSE[15] = {0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+	static bool _handPointingPoseSet[2] = {false, false};
+
+	/**
+	 * Set/Release hand to/from pointing pose for primary hand.
+	 * Right hand is primary hand if left-handed mode is off, left hand otherwise.
+	 */
+	void setForceHandPointingPose(const bool primaryHand, const bool forcePointing) {
+		setForceHandPointingPoseExplicitHand(primaryHand ^ g_config->leftHandedMode, forcePointing);
+	}
+
+	/**
+	 * Set/Release hand to/from pointing pose for explicitly right or left hand.
+	 */
+	void setForceHandPointingPoseExplicitHand(const bool rightHand, const bool forcePointing) {
+		if (_handPointingPoseSet[rightHand] == forcePointing) {
+			return;
 		}
-		else {
-			std::string finger[15] = { "LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53" };
-			for (int x = 0; x < 15; x++) {
-				std::string f = finger[x];
-				handPapyrusHasControl[f.c_str()] = false;
-			}
+		_VMESSAGE("Set force pointing pose for '%s' hand: %s)", rightHand ? "Right" : "Left", forcePointing ? "Pointing" : "Release");
+		_handPointingPoseSet[rightHand] = forcePointing;
+		const auto fingers = rightHand ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
+		for (int x = 0; x < 15; x++) {
+			std::string f = fingers[x];
+			handPapyrusHasControl[f.c_str()] = forcePointing;
+			handPapyrusPose[f.c_str()] = HAND_FINGERS_POINTING_POSE[x];
 		}
 	}
 }
