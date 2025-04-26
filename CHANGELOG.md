@@ -1,3 +1,13 @@
+## v0.73
+
+- Rewrite Weapon Position Adjustment UX with new friendly UI.
+- Improve adjustment accuracy by using controllers thumbsticks.
+- Create default adjustments for most game weapons (mostly right-handed).
+- Fixed vanilla scope misalignment with weapon after adjustment.
+- Fixed offhand gripping position adjustment misc issues.
+- Fixed left-handed weapon adjustment and separate saved files from right-handed.
+- Fixed left-handed main and pipboy config UI being inverted.
+
 ## v0.72
 
 - Update FRIK Configuration holotape to use new config modes + readme
