@@ -6,11 +6,11 @@
 #include "f4se/GameRTTI.h"
 #include "matrix.h"
 #include "Offsets.h"
+#include "VR.h"
 
 #include <chrono>
 
 namespace F4VRBody {
-
 	typedef void* (*_AIProcess_ClearMuzzleFlashes)(Actor::MiddleProcess* middleProcess);
 	extern RelocAddr<_AIProcess_ClearMuzzleFlashes> AIProcess_ClearMuzzleFlashes;
 
@@ -56,12 +56,21 @@ namespace F4VRBody {
 	void turnPipBoyOn();
 	void turnPipBoyOff();
 	bool isAnyPipboyOpen();
+	void setControlsThumbstickEnableState(bool toEnable);
 	void rotationStickEnabledToggle(bool enable);
 
+	bool isNodeVisible(const NiNode* node);
 	void showHideNode(NiAVObject* node, bool toHide);
+	vr::VRControllerState_t getControllerState(bool primary);
+	bool isButtonPressedOnController(bool primary, int buttonId);
+	bool isButtonPressHeldDownOnController(bool primary, int buttonId);
+	bool isButtonReleasedOnController(bool primary, int buttonId);
+	bool isButtonLongPressedOnController(bool primary, int buttonId, int longPressSuration = 1500);
+	bool checkAndClearButtonLongPressedOnController(bool primary, int buttonId, int longPressSuration = 1500);
 
 	bool isCameraLookingAtObject(NiAVObject* cameraNode, NiAVObject* objectNode, float detectThresh);
 
+	std::string getEquippedWeaponName();
 	bool getLeftHandedMode();
 
 	NiNode* getChildNode(const char* nodeName, NiNode* nde);
@@ -73,10 +82,8 @@ namespace F4VRBody {
 	template <
 		class result_t = std::chrono::milliseconds,
 		class clock_t = std::chrono::steady_clock,
-		class duration_t = std::chrono::milliseconds
-	>
-	auto since(std::chrono::time_point<clock_t, duration_t> const& start)
-	{
+		class duration_t = std::chrono::milliseconds>
+	auto since(std::chrono::time_point<clock_t, duration_t> const& start) {
 		return std::chrono::duration_cast<result_t>(clock_t::now() - start);
 	}
 
@@ -85,9 +92,13 @@ namespace F4VRBody {
 	std::string rtrim(std::string s);
 	std::string trim(std::string s);
 
+	std::optional<std::string> getEmbeddedResourceAsStringIfExists(const WORD resourceId);
 	std::string getEmbededResourceAsString(WORD idr);
 	std::string getCurrentTimeString();
 	std::vector<std::string> loadListFromFile(std::string filePath);
 	void createDirDeep(std::string pathStr);
-	void createFileFromResourceIfNotExists(std::string filePath, WORD resourceId);
+	void createFileFromResourceIfNotExists(const std::string& filePath, WORD resourceId);
+
+	bool isBetterScopesVRModLoaded();
+	bool isModLoaded(const char* modName);
 }

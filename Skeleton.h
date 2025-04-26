@@ -212,6 +212,10 @@ namespace F4VRBody
 
 		int getBoneInMap(std::string boneName);
 
+		NiNode* Skeleton::getWeaponNode() const;
+
+		NiPoint3 getOffhandIndexFingerTipWorldPosition();
+
 		// reposition stuff
 		void rotateWorld(NiNode* nde);
 		void updatePos(NiNode* nde, NiPoint3 offset);
@@ -251,7 +255,8 @@ namespace F4VRBody
 		bool armorHasHeadLamp();
 
 		// utility
-		NiNode* getNode(const char* nodeName, NiNode* nde);
+		NiNode* getNode(const char* nodeName, NiNode* nde) const;
+		NiNode* getNode2(const char* nodeName, NiNode* nde) const;
 		void setVisibility(NiAVObject* nde, bool a_show = true); // Change flags to show or hide a node
 		void updateDown(NiNode* nde, bool updateSelf);
 		void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);

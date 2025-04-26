@@ -6,6 +6,7 @@
 #include "f4se/GameForms.h"
 #include "VR.h"
 #include "Menu.h"
+#include "Debug.h"
 
 #include <chrono>
 #include <time.h>
@@ -238,7 +239,23 @@ namespace F4VRBody {
 		_root->m_localTransform.pos.z = z;
 	}
 
-	NiNode* Skeleton::getNode(const char* nodeName, NiNode* nde) {
+	NiNode* Skeleton::getWeaponNode() const {
+		return getNode("Weapon", (*g_player)->firstPersonSkeleton);
+	}
+
+	/// <summary>
+	/// Get the world position of the offhand index finger tip.
+	/// Make small adjustment as the finger bone position is the center of the finger.
+	/// Would be nice to know how long the bone is instead of magic numbers, didn't find a way so far.
+	/// </summary>
+	NiPoint3 Skeleton::getOffhandIndexFingerTipWorldPosition() {
+		const auto offhandIndexFinger = g_config->leftHandedMode ? "RArm_Finger23" : "LArm_Finger23";
+		const auto boneTransform = reinterpret_cast<BSFlattenedBoneTree*>(_root)->transforms[getBoneInMap(offhandIndexFinger)];
+		const auto forward = boneTransform.world.rot * NiPoint3(1, 0, 0);
+		return boneTransform.world.pos + forward * (_inPowerArmor ? 3 : 1.8f);
+	}
+
+	NiNode* Skeleton::getNode(const char* nodeName, NiNode* nde) const {
 		if (!nde || !nde->m_name) {
 			return nullptr;
 		}
@@ -250,6 +267,31 @@ namespace F4VRBody {
 		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			if (auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
 				if (auto ret = this->getNode(nodeName, nextNode)) {
+					return ret;
+				}
+			}
+		}
+
+		return nullptr;
+	}
+
+	NiNode* Skeleton::getNode2(const char* nodeName, NiNode* nde) const {
+		if (!nde || !nde->m_name) {
+			return nullptr;
+		}
+
+		if (_stricmp(nodeName, nde->m_name.c_str()) == 0) {
+			return nde;
+		}
+
+		if (!nde->m_children.m_data) {
+			return nullptr;
+		}
+
+		// TODO: explain
+		for (auto i = 0; i < nde->m_children.m_emptyRunStart && nde->m_children.m_emptyRunStart < 5000; ++i) {
+			if (auto nextNode = (NiNode*)nde->m_children.m_data[i]) {
+				if (auto ret = this->getNode2(nodeName, (NiNode*)nextNode)) {
 					return ret;
 				}
 			}
@@ -1587,15 +1629,17 @@ namespace F4VRBody {
             return;
         }
 
-        NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		//NiNode* rightWeapon = _playerNodes->primaryWandNode;
 		NiNode* leftWeapon = _playerNodes->WeaponLeftNode; // "WeaponLeft" can return incorect node for left-handed with throwable weapons
 		
-        bool handleLeftMode = g_config->leftHandedMode ^ isLeft;
+		// handle the NON primary hand (i.e. the hand that is NOT holding the weapon)
+        bool handleOffhand = g_config->leftHandedMode ^ isLeft;
 
-        NiNode* weaponNode = handleLeftMode ? leftWeapon : rightWeapon;
-		NiNode* offsetNode = handleLeftMode ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
+        NiNode* weaponNode = handleOffhand ? leftWeapon : rightWeapon;
+		NiNode* offsetNode = handleOffhand ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
 
-        if (handleLeftMode) {
+        if (handleOffhand) {
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->m_localTransform = _playerNodes->primaryWeaponOffsetNOde->m_localTransform;
             Matrix44 lr;
             lr.setEulerAngles(0, degrees_to_rads(180), 0);
@@ -1628,18 +1672,18 @@ namespace F4VRBody {
         }
         weaponNode->m_localTransform.rot = w.make43();
 
-        if (handleLeftMode) {
+        if (handleOffhand) {
             w.setEulerAngles(degrees_to_rads(0), degrees_to_rads(isLeft ? 45 : -45), degrees_to_rads(0));
             weaponNode->m_localTransform.rot = w.multiply43Right(weaponNode->m_localTransform.rot);
         }
 
-        weaponNode->m_localTransform.pos = g_config->leftHandedMode ? (isLeft ? NiPoint3(3.389, -2.099, 3.133) : NiPoint3(0, -4.8, 0)) : (isLeft ? NiPoint3(0, 0, 0) : NiPoint3(6.389, -2.099, -3.133));
+        weaponNode->m_localTransform.pos = g_config->leftHandedMode ? (isLeft ? NiPoint3(3.389, -2.099, 3.133) : NiPoint3(0, -4.8, 0)) : (isLeft ? NiPoint3(0, 0, 0) : NiPoint3(4.389, -1.899, -3.133));
 
 		dampenHand(offsetNode, isLeft);
 			
 		weaponNode->IncRef();
 		set1stPersonArm(weaponNode, offsetNode);
-
+		
         NiPoint3 handPos = isLeft ? _leftHand->m_worldTransform.pos : _rightHand->m_worldTransform.pos;
         NiMatrix43 handRot = isLeft ? _leftHand->m_worldTransform.rot : _rightHand->m_worldTransform.rot;
 
