@@ -9,6 +9,10 @@ The head hiding is all in FRIK.ini config.
 Set `HideHead` and `HideEquipment` to false if you want full head to be rendered but it may obscure/clip your vision.  
 If you just want to see the head in selfie set `selfieIgnoreHideFlags` to true.
 
+## How do I Operate the Flashlight
+Long press on secondary hand trigger activates the flashlight.  
+To move the flashlight from hand to head: move the Pipboy hand to the head, should feel haptic, press grip.  
+
 ## Reporting Crash Log
 Please attach the crash log file and FRIK main log file.
 Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`  
