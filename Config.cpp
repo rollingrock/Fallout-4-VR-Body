@@ -458,9 +458,13 @@ namespace F4VRBody {
 	/// <summary>
 	/// Remove the weapon offset from the config and filesystem.
 	/// </summary>
-	void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) {
+	void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool replaceWithEmbedded) {
 		const auto fullName = getWeaponNameWithMode(name, mode, leftHandedMode);
 		_weaponsOffsets.erase(fullName);
+		if (replaceWithEmbedded && _weaponsEmbeddedOffsets.contains(fullName)) {
+			_weaponsOffsets[fullName] = _weaponsEmbeddedOffsets[fullName];
+		}
+
 		const auto path = WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json";
 		_MESSAGE("Removing weapon offsets '%s', file: '%s'", fullName.c_str(), path.c_str());
 		if (!std::filesystem::remove(WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json")) {
@@ -537,8 +541,9 @@ namespace F4VRBody {
 				break;
 			}
 			json json = json::parse(resourceOpt.value());
-			loadOffsetJsonToMap(json, _weaponsOffsets, false);
+			loadOffsetJsonToMap(json, _weaponsEmbeddedOffsets, false);
 		}
+		_weaponsOffsets.insert(_weaponsEmbeddedOffsets.begin(), _weaponsEmbeddedOffsets.end());
 		_MESSAGE("Loaded (%d) embedded weapon offsets", _weaponsOffsets.size());
 	}
 

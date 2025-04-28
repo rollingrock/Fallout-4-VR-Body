@@ -186,7 +186,7 @@ namespace F4VRBody {
 		_adjuster->_weaponOffsetTransform = isMeleeWeaponEquipped()
 			? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
 			: _adjuster->_weaponOriginalTransform;
-		g_config->removeWeaponOffsets(_adjuster->_lastWeapon, _adjuster->_lastWeaponInPA ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
+		g_config->removeWeaponOffsets(_adjuster->_lastWeapon, _adjuster->_lastWeaponInPA ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal, true);
 	}
 
 	void WeaponPositionConfigMode::saveWeaponConfig() const {
@@ -200,7 +200,7 @@ namespace F4VRBody {
 		ShowNotification("Reset Offhand Position to Default");
 		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
 		_adjuster->_offhandOffsetRot = Matrix44::getIdentity43();
-		g_config->removeWeaponOffsets(_adjuster->_lastWeapon, _adjuster->_lastWeaponInPA ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
+		g_config->removeWeaponOffsets(_adjuster->_lastWeapon, _adjuster->_lastWeaponInPA ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand, true);
 	}
 
 	void WeaponPositionConfigMode::saveOffhandConfig() const {

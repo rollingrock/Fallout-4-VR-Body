@@ -68,7 +68,7 @@ namespace F4VRBody {
 		void savePipboyOffset(const NiTransform& transform);
 		std::optional<NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) const;
 		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode);
-		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode);
+		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool replaceWithEmbedded);
 		void OpenInNotepad() const;
 
 		// from F4 INIs
@@ -197,8 +197,9 @@ namespace F4VRBody {
 
 		std::map<std::string, NiTransform> _pipboyOffsets;
 		std::map<std::string, NiTransform> _weaponsOffsets;
+		std::map<std::string, NiTransform> _weaponsEmbeddedOffsets;
 
-		std::string _debugDumpDataOnceNames = "";
+		std::string _debugDumpDataOnceNames;
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now

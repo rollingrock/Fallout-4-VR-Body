@@ -2062,6 +2062,7 @@ namespace F4VRBody {
 		//if (rt->numTransforms > 145) {
 		//	return;
 		//}
+		const bool isWeaponVisible = isNodeVisible(getWeaponNode());
 
 		for (auto pos = 0; pos < rt->numTransforms; pos++) {
 
@@ -2074,7 +2075,7 @@ namespace F4VRBody {
 				bool thumbUp = (reg & vr::ButtonMaskFromId(vr::k_EButton_Grip)) && (reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)) && (!(reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
 				_closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton[name]);
 
-				if ((*g_player)->actorState.IsWeaponDrawn() && !g_pipboy->status() && !g_pipboy->isOperatingPipboy() && !(isLeft ^ g_config->leftHandedMode)) { // CylonSurfer Updated conditions to cater for Virtual Pipboy usage (Ensures Index Finger is extended when weapon is drawn)
+				if (isWeaponVisible && !g_pipboy->status() && !g_pipboy->isOperatingPipboy() && !(isLeft ^ g_config->leftHandedMode)) { // CylonSurfer Updated conditions to cater for Virtual Pipboy usage (Ensures Index Finger is extended when weapon is drawn)
 					this->copy1stPerson(name);
 				}
 				else {

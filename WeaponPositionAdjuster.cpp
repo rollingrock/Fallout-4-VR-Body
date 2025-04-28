@@ -24,7 +24,7 @@ namespace F4VRBody {
 	 */
 	void WeaponPositionAdjuster::onFrameUpdate() {
 		const auto weapon = _skelly->getWeaponNode();
-		if (!isNodeVisible(weapon) || !(*g_player)->actorState.IsWeaponDrawn() || g_configurationMode->isCalibrateModeActive()) {
+		if (!isNodeVisible(weapon) || g_configurationMode->isCalibrateModeActive()) {
 			if (_configMode) {
 				_configMode->onFrameUpdate(nullptr);
 			}
@@ -33,12 +33,13 @@ namespace F4VRBody {
 
 		// store original weapon transform in case we need it later
 		_weaponOriginalTransform = weapon->m_localTransform;
+
+		checkEquippedWeaponChanged();
+
 		// override the weapon transform to the saved offset
 		weapon->m_localTransform = _weaponOffsetTransform;
 		// update world transform for later calculations
 		updateTransforms(weapon);
-
-		checkEquippedWeaponChanged();
 
 		if (_configMode) {
 			_configMode->onFrameUpdate(weapon);
@@ -76,6 +77,9 @@ namespace F4VRBody {
 		loadStoredOffsets(weaponName);
 	}
 
+	/**
+	 * Load the stored weapon position adjustment offset for weapon and offhand.
+	 */
 	void WeaponPositionAdjuster::loadStoredOffsets(const std::string& weaponName) {
 		// Load stored offsets for the new weapon
 		const auto weaponOffsetLookup = g_config->getWeaponOffsets(weaponName, _skelly->inPowerArmor() ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
