@@ -1510,15 +1510,6 @@ namespace F4VRBody {
 	}
 
     void Skeleton::showHidePAHUD() {
-        NiNode* wand = this->getPlayerNodes()->primaryUIAttachNode;
-        BSFixedString bname("BackOfHand");
-        NiNode* node = static_cast<NiNode*>(wand->GetObjectByName(&bname));
-
-        if (node && _inPowerArmor) {
-            node->m_worldTransform.pos += NiPoint3(-5.0, -7.0, 2.0);
-            updateTransformsDown(node, false);
-        }
-
         NiNode* hud = getNode("PowerArmorHelmetRoot", _playerNodes->roomnode);
         if (hud) {
             hud->m_localTransform.scale = g_config->showPAHUD ? 1.0f : 0.0f;
@@ -1563,7 +1554,6 @@ namespace F4VRBody {
             rightWeapon->m_localTransform.scale = 0.0;
         }
 
-        fixBackOfHand();
         _leftHandedSticky = g_config->leftHandedMode;
     }
 
@@ -2153,17 +2143,5 @@ namespace F4VRBody {
         updateDown(node, false);
     }
 
-	void Skeleton::fixBackOfHand() {
-		if (g_config->leftHandedMode) {
-			NiNode* backOfHand = getNode("world_primaryWand.nif", _playerNodes->primaryUIAttachNode);
-
-			if (backOfHand) {
-				Matrix44 mat;
-
-				mat.setEulerAngles(degrees_to_rads(180), degrees_to_rads(0), degrees_to_rads(180));
-				backOfHand->m_localTransform.rot = mat.make43();
-				backOfHand->m_localTransform.pos = NiPoint3(7.0, 0.0, -13.0);
-			}
-		}
-	}
+	
 }

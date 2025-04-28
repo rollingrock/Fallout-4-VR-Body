@@ -141,25 +141,6 @@ namespace F4VRBody {
 		}
 	}
 
-	static void setHandUI(PlayerNodes* pn) {
-		static NiPoint3 origLoc(0, 0, 0);
-
-		NiNode* wand = pn->primaryUIAttachNode;
-		BSFixedString bname = "BackOfHand";
-		NiNode* node = (NiNode*)wand->GetObjectByName(&bname);
-
-		if (!node) {
-			return;
-		}
-
-		if (vec3_len(origLoc) == 0.0) {
-			origLoc = node->m_localTransform.pos;
-		}
-		node->m_localTransform.pos = origLoc + NiPoint3(g_config->handUI_X, g_config->handUI_Y, g_config->handUI_Z);
-
-		updateTransformsDown(node, true);
-	}
-
 	static bool InitSkelly(bool inPowerArmor) {
 		if (!(*g_player)->unkF0) {
 			_DMESSAGE("loaded Data Not Set Yet");
@@ -439,8 +420,6 @@ namespace F4VRBody {
 		_DMESSAGE("fix the missing screen");
 		fixMissingScreen(_skelly->getPlayerNodes());
 
-		setHandUI(_skelly->getPlayerNodes());
-
 		if (g_config->armsOnly) {
 			_skelly->showOnlyArms();
 		}
@@ -485,7 +464,6 @@ namespace F4VRBody {
 		FrameUpdateContext context(_skelly, _vrhook);
 		ui::g_uiManager->onFrameUpdate(&context);
 
-		_skelly->fixBackOfHand();
 		_skelly->updateDown(_skelly->getRoot(), true); // Last world update before exit.    Probably not necessary.
 
 		debug(_skelly);

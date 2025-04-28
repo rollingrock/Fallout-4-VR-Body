@@ -37,6 +37,7 @@ namespace F4VRBody {
 		bool isOffhandMovedFastAway() const;
 		NiPoint3 getOffhandPosition() const;
 		void handleBetterScopes(NiNode* weapon) const;
+		void handleBackOfHandUI() const;
 		void debugPrintWeaponPositionData(NiNode* weapon);
 
 		// Define a basis remapping matrix to correct coordinate system for scope camera
@@ -46,8 +47,8 @@ namespace F4VRBody {
 		OpenVRHookManagerAPI* _vrHook;
 
 		// used to know if weapon changed to load saved offsets
-		std::string _lastWeapon;
-		bool _lastWeaponInPA = false;
+		std::string _currentWeapon;
+		bool _currentlyInPA = false;
 
 		// is offhand (secondary hand) gripping the weapon barrel
 		bool _offHandGripping = false;

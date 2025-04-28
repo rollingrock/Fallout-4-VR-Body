@@ -236,7 +236,6 @@ namespace F4VRBody
 		void fixArmor();
 		void showHidePAHUD();
 		void hideHands();
-		void fixBackOfHand();
 
 		// movement
 		void walk();
@@ -247,7 +246,6 @@ namespace F4VRBody
 		void hideWeapon();
 		void leftHandedModePipboy();
 		void positionPipboy();
-		void fixMelee();
 		void hideFistHelpers();
 		void fixPAArmor();
 		void dampenHand(NiNode* node, bool isLeft);

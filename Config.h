@@ -4,19 +4,23 @@
 #include <optional>
 
 namespace F4VRBody {
-	constexpr const char* INI_SECTION_MAIN = "Fallout4VRBody";
-	constexpr const char* INI_SECTION_DEBUG = "Debug";
-	constexpr const char* INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
+	constexpr auto INI_SECTION_MAIN = "Fallout4VRBody";
+	constexpr auto INI_SECTION_DEBUG = "Debug";
+	constexpr auto INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
 
 	/// <summary>
-	/// Type of weapon possition offsets.
-	/// TODO: What is offhand?
+	/// Type of weapon related position offsets.
 	/// </summary>
-	enum WeaponOffsetsMode {
-		normal = 0,
-		powerArmor,
-		offHand,
-		offHandwithPowerArmor,
+	enum class WeaponOffsetsMode : uint8_t {
+		// The weapon offset in the primary hand.
+		Weapon = 0,
+		WeaponInPA,
+		// The secondary hand gripping position offset.
+		OffHand,
+		OffHandInPA,
+		// Back of hand UI (HP,Ammo,etc.) offset on hand.
+		BackOfHandUI,
+		BackOfHandUIInPA,
 	};
 
 	/// <summary>
@@ -97,9 +101,6 @@ namespace F4VRBody {
 		float powerArmor_up = 0.0f;
 		float rootOffset = 0.0f;
 		float PARootOffset = 0.0f;
-		float handUI_X = 0.0;
-		float handUI_Y = 0.0;
-		float handUI_Z = 0.0;
 
 		// Weapon
 		bool enableOffHandGripping = true;

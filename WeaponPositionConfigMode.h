@@ -29,6 +29,7 @@ namespace F4VRBody {
 		~WeaponPositionConfigMode();
 
 		static NiTransform getMeleeWeaponDefaultAdjustment(const NiTransform& originalTransform);
+		static NiTransform getBackOfHandUIDefaultAdjustment(const NiTransform& originalTransform, bool inPA);
 
 		[[nodiscard]] bool isInOffhandRepositioning() const { return _repositionTarget == RepositionTarget::Offhand; }
 

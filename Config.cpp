@@ -141,9 +141,6 @@ namespace F4VRBody {
 		hidePipboy = ini.GetBoolValue(INI_SECTION_MAIN, "hidePipboy");
 		leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
 		armsOnly = ini.GetBoolValue(INI_SECTION_MAIN, "EnableArmsOnlyMode");
-		handUI_X = ini.GetDoubleValue(INI_SECTION_MAIN, "handUI_X", 0.0);
-		handUI_Y = ini.GetDoubleValue(INI_SECTION_MAIN, "handUI_Y", 0.0);
-		handUI_Z = ini.GetDoubleValue(INI_SECTION_MAIN, "handUI_Z", 0.0);
 		hideHead = ini.GetBoolValue(INI_SECTION_MAIN, "HideHead");
 		hideEquipment = ini.GetBoolValue(INI_SECTION_MAIN, "HideEquipment");
 		hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "HideSkin");
@@ -333,9 +330,6 @@ namespace F4VRBody {
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "handUI_X", handUI_X);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "handUI_Y", handUI_Y);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "handUI_Z", handUI_Z);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", dampenHandsRotation);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", dampenHandsTranslation);
@@ -412,19 +406,26 @@ namespace F4VRBody {
 	static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, const bool leftHanded) {
 		static const std::string POWER_ARMOR_SUFFIX{"-PowerArmor"};
 		static const std::string OFF_HAND_SUFFIX{"-offHand"};
+		static const std::string BACK_OF_HAND_SUFFIX{ "-backOfHand" };
 		static const std::string LEFT_HANDED_SUFFIX{"-leftHanded"};
 		std::string res = name;
 		switch (mode) {
-		case normal:
+		case WeaponOffsetsMode::Weapon:
 			break;
-		case powerArmor:
+		case WeaponOffsetsMode::WeaponInPA:
 			res += POWER_ARMOR_SUFFIX;
 			break;
-		case offHand:
+		case WeaponOffsetsMode::OffHand:
 			res += OFF_HAND_SUFFIX;
 			break;
-		case offHandwithPowerArmor:
+		case WeaponOffsetsMode::OffHandInPA:
 			res += OFF_HAND_SUFFIX + POWER_ARMOR_SUFFIX;
+			break;
+		case WeaponOffsetsMode::BackOfHandUI:
+			res += BACK_OF_HAND_SUFFIX;
+			break;
+		case WeaponOffsetsMode::BackOfHandUIInPA:
+			res += BACK_OF_HAND_SUFFIX + POWER_ARMOR_SUFFIX;
 			break;
 		}
 		return leftHanded ? res + LEFT_HANDED_SUFFIX : res;
@@ -441,8 +442,8 @@ namespace F4VRBody {
 			return it->second;
 		}
 		// Check without PA (historic)
-		return (mode == powerArmor) || (mode == offHandwithPowerArmor)
-			? getWeaponOffsets(name, mode == offHandwithPowerArmor ? offHand : normal)
+		return (mode == WeaponOffsetsMode::WeaponInPA) || (mode == WeaponOffsetsMode::OffHandInPA)
+			? getWeaponOffsets(name, mode == WeaponOffsetsMode::OffHandInPA ? WeaponOffsetsMode::OffHand : WeaponOffsetsMode::Weapon)
 			: std::nullopt;
 	}
 

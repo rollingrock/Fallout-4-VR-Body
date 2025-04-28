@@ -22,7 +22,7 @@ namespace F4VRBody {
 	}
 
 	/**
-	 * Set default melee weapon adjustment to match how a human holds it as game default is straight forward.
+	 * Get default melee weapon adjustment to match how a human holds it as game default is straight forward.
 	 */
 	NiTransform WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(const NiTransform& originalTransform) {
 		Matrix44 rot;
@@ -36,6 +36,25 @@ namespace F4VRBody {
 			rot.setEulerAngles(degrees_to_rads(85), degrees_to_rads(-65), 0);
 		}
 		transform.rot = rot.multiply43Right(originalTransform.rot);
+		return transform;
+	}
+
+	/**
+	 * Get default back of the hand UI (HP,Ammo,etc.) default adjustment for empty hand and use as base to adjust for weapon.
+	 */
+	NiTransform WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(const NiTransform& originalTransform, const bool inPA) {
+		NiTransform transform;
+		transform.scale = originalTransform.scale;
+		if (g_config->leftHandedMode) {
+			Matrix44 mat;
+			mat.setEulerAngles(degrees_to_rads(180), 0, degrees_to_rads(180));
+			transform.rot = mat.make43();
+			transform.pos = inPA ? NiPoint3(-3, 5, -12) : NiPoint3(-2, 3.3f, -13);
+		}
+		else {
+			transform.rot = Matrix44::getIdentity43();
+			transform.pos = inPA ? NiPoint3(0.5, 5, 2) : NiPoint3(0, 3, 1);
+		}
 		return transform;
 	}
 
@@ -151,7 +170,7 @@ namespace F4VRBody {
 	}
 
 	void WeaponPositionConfigMode::resetConfig() const {
-		_MESSAGE("Reset Reposition Config for target: %d, Weapon: %s", _repositionTarget, _adjuster->_lastWeapon.c_str());
+		_MESSAGE("Reset Reposition Config for target: %d, Weapon: %s", _repositionTarget, _adjuster->_currentWeapon.c_str());
 		switch (_repositionTarget) {
 		case RepositionTarget::Weapon:
 			resetWeaponConfig();
@@ -166,7 +185,7 @@ namespace F4VRBody {
 	}
 
 	void WeaponPositionConfigMode::saveConfig() const {
-		_MESSAGE("Save Reposition Config for target: %d, Weapon: %s", _repositionTarget, _adjuster->_lastWeapon.c_str());
+		_MESSAGE("Save Reposition Config for target: %d, Weapon: %s", _repositionTarget, _adjuster->_currentWeapon.c_str());
 		switch (_repositionTarget) {
 		case RepositionTarget::Weapon:
 			saveWeaponConfig();
@@ -186,21 +205,21 @@ namespace F4VRBody {
 		_adjuster->_weaponOffsetTransform = isMeleeWeaponEquipped()
 			? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
 			: _adjuster->_weaponOriginalTransform;
-		g_config->removeWeaponOffsets(_adjuster->_lastWeapon, _adjuster->_lastWeaponInPA ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal, true);
+		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_currentlyInPA ? WeaponOffsetsMode::WeaponInPA : WeaponOffsetsMode::Weapon, true);
 	}
 
 	void WeaponPositionConfigMode::saveWeaponConfig() const {
 		ShowNotification("Saving Weapon Position");
 		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
-		g_config->saveWeaponOffsets(_adjuster->_lastWeapon, _adjuster->_weaponOffsetTransform,
-			_adjuster->_lastWeaponInPA ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
+		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform,
+			_adjuster->_currentlyInPA ? WeaponOffsetsMode::WeaponInPA : WeaponOffsetsMode::Weapon);
 	}
 
 	void WeaponPositionConfigMode::resetOffhandConfig() const {
 		ShowNotification("Reset Offhand Position to Default");
 		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
 		_adjuster->_offhandOffsetRot = Matrix44::getIdentity43();
-		g_config->removeWeaponOffsets(_adjuster->_lastWeapon, _adjuster->_lastWeaponInPA ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand, true);
+		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_currentlyInPA ? WeaponOffsetsMode::OffHandInPA : WeaponOffsetsMode::OffHand, true);
 	}
 
 	void WeaponPositionConfigMode::saveOffhandConfig() const {
@@ -210,7 +229,7 @@ namespace F4VRBody {
 		transform.scale = 1;
 		transform.pos = NiPoint3(0, 0, 0);
 		transform.rot = _adjuster->_offhandOffsetRot;
-		g_config->saveWeaponOffsets(_adjuster->_lastWeapon, transform, _adjuster->_lastWeaponInPA ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
+		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, transform, _adjuster->_currentlyInPA ? WeaponOffsetsMode::OffHandInPA : WeaponOffsetsMode::OffHand);
 	}
 
 	void WeaponPositionConfigMode::resetBetterScopesConfig() const {

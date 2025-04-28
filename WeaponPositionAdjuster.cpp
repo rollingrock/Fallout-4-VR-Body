@@ -14,7 +14,7 @@ namespace F4VRBody {
 		setControlsThumbstickEnableState(!inWeaponRepositionMode());
 		if (!inWeaponRepositionMode()) {
 			// reload offset to handle player didn't save changes
-			loadStoredOffsets(_lastWeapon);
+			loadStoredOffsets(_currentWeapon);
 		}
 	}
 
@@ -28,6 +28,8 @@ namespace F4VRBody {
 			if (_configMode) {
 				_configMode->onFrameUpdate(nullptr);
 			}
+			_currentWeapon = "";
+			handleBackOfHandUI();
 			return;
 		}
 
@@ -63,18 +65,20 @@ namespace F4VRBody {
 	 */
 	void WeaponPositionAdjuster::checkEquippedWeaponChanged() {
 		const auto& weaponName = getEquippedWeaponName();
-		if (weaponName == _lastWeapon && _skelly->inPowerArmor() == _lastWeaponInPA) {
+		if (weaponName == _currentWeapon && _skelly->inPowerArmor() == _currentlyInPA) {
 			// no weapon change
 			return;
 		}
 
-		_lastWeapon = weaponName;
-		_lastWeaponInPA = _skelly->inPowerArmor();
+		_currentWeapon = weaponName;
+		_currentlyInPA = _skelly->inPowerArmor();
 
 		// reset state
 		_offHandGripping = false;
 
 		loadStoredOffsets(weaponName);
+
+		handleBackOfHandUI();
 	}
 
 	/**
@@ -82,10 +86,10 @@ namespace F4VRBody {
 	 */
 	void WeaponPositionAdjuster::loadStoredOffsets(const std::string& weaponName) {
 		// Load stored offsets for the new weapon
-		const auto weaponOffsetLookup = g_config->getWeaponOffsets(weaponName, _skelly->inPowerArmor() ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
+		const auto weaponOffsetLookup = g_config->getWeaponOffsets(weaponName, _skelly->inPowerArmor() ? WeaponOffsetsMode::WeaponInPA : WeaponOffsetsMode::Weapon);
 		if (weaponOffsetLookup.has_value()) {
 			_weaponOffsetTransform = weaponOffsetLookup.value();
-			_MESSAGE("Use weapon offset for '%s'; Pos: (%2.2f, %2.2f, %2.2f), Scale: %1.3f, InPA: %d",
+			_VMESSAGE("Use weapon offset for '%s'; Pos: (%2.2f, %2.2f, %2.2f), Scale: %1.3f, InPA: %d",
 				weaponName.c_str(), _weaponOffsetTransform.pos.x, _weaponOffsetTransform.pos.y, _weaponOffsetTransform.pos.z, _weaponOffsetTransform.scale,
 				_skelly->inPowerArmor());
 		} else {
@@ -94,14 +98,16 @@ namespace F4VRBody {
 		}
 
 		// Load stored offsets for offhand for the new weapon 
-		const auto offhandOffsetLookup = g_config->getWeaponOffsets(weaponName, _skelly->inPowerArmor() ? WeaponOffsetsMode::offHandwithPowerArmor : WeaponOffsetsMode::offHand);
+		const auto offhandOffsetLookup = g_config->getWeaponOffsets(weaponName, _skelly->inPowerArmor() ? WeaponOffsetsMode::OffHandInPA : WeaponOffsetsMode::OffHand);
 		if (offhandOffsetLookup.has_value()) {
 			_offhandOffsetRot = offhandOffsetLookup.value().rot;
-			_MESSAGE("Use offHand offset for '%s'; InPA: %d", weaponName.c_str(), _skelly->inPowerArmor());
+			_VMESSAGE("Use offHand offset for '%s'; InPA: %d", weaponName.c_str(), _skelly->inPowerArmor());
 		} else {
 			// No stored offset for offhand, use identity for no change
 			_offhandOffsetRot = Matrix44::getIdentity43();
 		}
+
+		_MESSAGE("Equipped Weapon changed to '%s' (InPA:%d); HasWeaponOffset:%d, HasOffhandOffset:%d", _currentWeapon, _currentlyInPA, weaponOffsetLookup.has_value(), offhandOffsetLookup.has_value());
 	}
 
 	/**
@@ -323,11 +329,33 @@ namespace F4VRBody {
 		}
 	}
 
+
+	/**
+	 * Handle adjusting the back of hand UI position for specific equipped weapon or empty hand.
+	 */
+	void WeaponPositionAdjuster::handleBackOfHandUI() const {
+		const auto backOfHand = _skelly->getNode("BackOfHand", _skelly->getPlayerNodes()->primaryUIAttachNode);
+		if (!backOfHand) {
+			return;
+		}
+
+		const std::string name = _currentWeapon.empty() ? "EmptyHand" : _currentWeapon;
+		const auto backOfHandOffsetLookup = g_config->getWeaponOffsets(name, _skelly->inPowerArmor() ? WeaponOffsetsMode::BackOfHandUIInPA : WeaponOffsetsMode::BackOfHandUI);
+		if (backOfHandOffsetLookup.has_value()) {
+			backOfHand->m_localTransform = backOfHandOffsetLookup.value();
+			_VMESSAGE("Use back of hand offset Pos: (%2.2f, %2.2f, %2.2f), Scale: %1.3f, InPA: %d",
+				name.c_str(), _weaponOffsetTransform.pos.x, _weaponOffsetTransform.pos.y, _weaponOffsetTransform.pos.z, _weaponOffsetTransform.scale, _skelly->inPowerArmor());
+		} else {
+			// No stored offset, use default adjustment
+			backOfHand->m_localTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(backOfHand->m_localTransform, _skelly->inPowerArmor());
+		}
+	}
+
 	void WeaponPositionAdjuster::debugPrintWeaponPositionData(NiNode* weapon) {
 		if (!g_config->checkDebugDumpDataOnceFor("weapon_pos"))
 			return;
 
-		_MESSAGE("Weapon: %s, InPA: %d", _lastWeapon.c_str(), _lastWeaponInPA);
+		_MESSAGE("Weapon: %s, InPA: %d", _currentWeapon.c_str(), _currentlyInPA);
 		printTransform("Weapon Original: ", _weaponOriginalTransform);
 		printTransform("Weapon Offset  : ", _weaponOffsetTransform);
 		printTransform("Scope Offset   : ", _skelly->getPlayerNodes()->primaryWeaponScopeCamera->m_localTransform);
