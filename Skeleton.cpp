@@ -1298,51 +1298,7 @@ namespace F4VRBody {
 		return isLeft ? leftArm : rightArm;
 	}
 
-	/// <summary>
-	/// Fix melle weapon oriantation in hand to match how a human holds it.
-	/// </summary>
-	void Skeleton::fixMelee() {
-
-		if (!(*g_player)->actorState.IsWeaponDrawn()) {
-			// if no weapon is drawn, nothing to fix
-			return;
-		}
-
-		if (!Offsets::CombatUtilities_IsActorUsingMelee(*g_player)) {
-			// no need to fix non-melee weapons
-			return;
-		}
-
-		auto* inventory = (*g_player)->inventoryList;
-		if (!inventory) {
-			return;
-		}
-
-		for (int i = 0; i < inventory->items.count; i++) {
-			BGSInventoryItem item;
-
-			inventory->items.GetNthItem(i, item);
-
-			if (!item.form) {
-				continue;
-			}
-
-			if ((item.form->formType == FormType::kFormType_WEAP) && (item.stack->flags & 0x3)) {
-
-				TESObjectWEAP* weap = static_cast<TESObjectWEAP*>(item.form);
-				NiAVObject* wNode = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-
-				Matrix44 rot;
-				rot.setEulerAngles(degrees_to_rads(85.0f), degrees_to_rads(-70.0f), degrees_to_rads(0.0f));
-				wNode->m_localTransform.rot = rot.multiply43Right(wNode->m_localTransform.rot);
-				updateDown(wNode->GetAsNiNode(), true);
-				break;
-			}
-		}
-	}
-
-
-		// Thanks Shizof and SmoothtMovementVR for below code
+	// Thanks Shizof and SmoothtMovementVR for below code
     bool HasKeyword(TESObjectARMO* armor, UInt32 keywordFormId)
     {
         if (!armor) {

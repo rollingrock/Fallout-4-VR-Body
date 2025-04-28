@@ -426,7 +426,6 @@ namespace F4VRBody {
 		_skelly->hideWeapon();
 		_skelly->positionPipboy();
 		_skelly->hidePipboy();
-		_skelly->fixMelee();
 		_skelly->hideFistHelpers();
 		_skelly->showHidePAHUD();
 

@@ -86,7 +86,7 @@ namespace F4VRBody {
 				_skelly->inPowerArmor());
 		} else {
 			// No stored offset, use original weapon transform
-			_weaponOffsetTransform = _weaponOriginalTransform;
+			_weaponOffsetTransform = isMeleeWeaponEquipped() ? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_weaponOriginalTransform) : _weaponOriginalTransform;
 		}
 
 		// Load stored offsets for offhand for the new weapon 

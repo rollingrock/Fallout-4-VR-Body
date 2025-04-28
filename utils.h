@@ -70,6 +70,7 @@ namespace F4VRBody {
 
 	bool isCameraLookingAtObject(NiAVObject* cameraNode, NiAVObject* objectNode, float detectThresh);
 
+	bool isMeleeWeaponEquipped();
 	std::string getEquippedWeaponName();
 	bool getLeftHandedMode();
 

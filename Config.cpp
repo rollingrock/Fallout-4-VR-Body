@@ -118,7 +118,9 @@ namespace F4VRBody {
 		version = ini.GetLongValue(INI_SECTION_DEBUG, "Version", 0);
 		logLevel = ini.GetLongValue(INI_SECTION_DEBUG, "LogLevel", 3);
 		_reloadConfigInterval = ini.GetLongValue(INI_SECTION_DEBUG, "ReloadConfigInterval", 3);
-		debugFlowFlag = (int)ini.GetLongValue(INI_SECTION_DEBUG, "DebugFlowFlag", 0);
+		debugFlowFlag1 = (float)ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag1", 0);
+		debugFlowFlag2 = (float)ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag2", 0);
+		debugFlowFlag3 = (float)ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag3", 0);
 		_debugDumpDataOnceNames = ini.GetValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", "");
 
 

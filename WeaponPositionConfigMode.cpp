@@ -22,6 +22,24 @@ namespace F4VRBody {
 	}
 
 	/**
+	 * Set default melee weapon adjustment to match how a human holds it as game default is straight forward.
+	 */
+	NiTransform WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(const NiTransform& originalTransform) {
+		Matrix44 rot;
+		NiTransform transform;
+		transform.scale = originalTransform.scale;
+		if (g_config->leftHandedMode) {
+			transform.pos = NiPoint3(5.5f, -2.2f, 1);
+			rot.setEulerAngles(degrees_to_rads(95), degrees_to_rads(60), 0);
+		} else {
+			transform.pos = NiPoint3(4.5f, -2.2f, -1);
+			rot.setEulerAngles(degrees_to_rads(85), degrees_to_rads(-65), 0);
+		}
+		transform.rot = rot.multiply43Right(originalTransform.rot);
+		return transform;
+	}
+
+	/**
 	 * Handle configuration UI interaction.
 	 */
 	void WeaponPositionConfigMode::onFrameUpdate(NiNode* weapon) const {
@@ -165,7 +183,9 @@ namespace F4VRBody {
 	void WeaponPositionConfigMode::resetWeaponConfig() const {
 		ShowNotification("Reset Weapon Position to Default");
 		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
-		_adjuster->_weaponOffsetTransform = _adjuster->_weaponOriginalTransform;
+		_adjuster->_weaponOffsetTransform = isMeleeWeaponEquipped()
+			? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
+			: _adjuster->_weaponOriginalTransform;
 		g_config->removeWeaponOffsets(_adjuster->_lastWeapon, _adjuster->_lastWeaponInPA ? WeaponOffsetsMode::powerArmor : WeaponOffsetsMode::normal);
 	}
 

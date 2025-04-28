@@ -166,7 +166,9 @@ namespace F4VRBody {
 
 		// Can be used to test things at runtime during development
 		// i.e. check "debugFlowFlag==1" somewhere in code and use config reload to change the value at runtime.
-		int debugFlowFlag = 0;
+		float debugFlowFlag1 = 0;
+		float debugFlowFlag2 = 0;
+		float debugFlowFlag3 = 0;
 
 	private:
 		void loadFrikINI();

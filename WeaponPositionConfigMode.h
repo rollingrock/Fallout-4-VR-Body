@@ -28,6 +28,8 @@ namespace F4VRBody {
 
 		~WeaponPositionConfigMode();
 
+		static NiTransform getMeleeWeaponDefaultAdjustment(const NiTransform& originalTransform);
+
 		[[nodiscard]] bool isInOffhandRepositioning() const { return _repositionTarget == RepositionTarget::Offhand; }
 
 		void onFrameUpdate(NiNode* weapon) const;

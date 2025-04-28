@@ -484,6 +484,27 @@ namespace F4VRBody {
 		return equipData ? equipData->item->GetFullName() : "";
 	}
 
+	/**
+	 * @return true if the equipped weapon is a melee weapon type.
+	 */
+	bool isMeleeWeaponEquipped() {
+		if (!Offsets::CombatUtilities_IsActorUsingMelee(*g_player)) {
+			return false;
+		}
+		const auto* inventory = (*g_player)->inventoryList;
+		if (!inventory) {
+			return false;
+		}
+		for (UInt32 i = 0; i < inventory->items.count; i++) {
+			BGSInventoryItem item;
+			inventory->items.GetNthItem(i, item);
+			if (item.form && item.form->formType == FormType::kFormType_WEAP && item.stack->flags & 0x3) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	bool getLeftHandedMode() {
 		Setting* set = GetINISetting("bLeftHandedMode:VR");
 
