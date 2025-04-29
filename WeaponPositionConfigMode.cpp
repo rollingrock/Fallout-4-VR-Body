@@ -53,7 +53,7 @@ namespace F4VRBody {
 		}
 		else {
 			transform.rot = Matrix44::getIdentity43();
-			transform.pos = inPA ? NiPoint3(0.5, 5, 2) : NiPoint3(0, 3, 1);
+			transform.pos = inPA ? NiPoint3(0.5, 5, 2) : NiPoint3(-1, 4, 0.8f);
 		}
 		return transform;
 	}
@@ -69,19 +69,27 @@ namespace F4VRBody {
 		}
 		_configUI->setVisibility(true);
 
-		if (!weapon) {
-			// don't handle repositioning if no weapon is drawn
-			_mainContainer->setVisibility(false);
-			_noEquippedWeaponContainer->setVisibility(true);
-			return;
-		}
-		_mainContainer->setVisibility(true);
-		_noEquippedWeaponContainer->setVisibility(false);
+		// Show/Hide UI that should be visible only when weapon is equipped
+		const bool weaponEquipped = weapon != nullptr;
+		_weaponModeButton->setVisibility(weaponEquipped);
+		_offhandModeButton->setVisibility(weaponEquipped);
+		if (_betterScopesModeButton) 
+			_betterScopesModeButton->setVisibility(weaponEquipped);
+		_emptyHandsMessageBox->setVisibility(!weaponEquipped);
+
+		const bool showAnything = weaponEquipped || _repositionTarget == RepositionTarget::BackOfHandUI;
+		_saveButton->setVisibility(showAnything);
+		_resetButton->setVisibility(showAnything);
 
 		// show the right footer
-		const bool weaponAdjust = _repositionTarget == RepositionTarget::Weapon;
-		_footerForWeaponAdjust->setVisibility(weaponAdjust);
-		_footerForOtherAdjust->setVisibility(!weaponAdjust);
+		const bool complexAdjust = _repositionTarget == RepositionTarget::Weapon || _repositionTarget == RepositionTarget::BackOfHandUI;
+		_complexAdjustFooter->setVisibility(showAnything && complexAdjust);
+		_simpleAdjustFooter->setVisibility(showAnything && !complexAdjust);
+
+		if (!weaponEquipped && _repositionTarget != RepositionTarget::BackOfHandUI) {
+			// only back of hand UI can be repositioned without weapon equipped
+			return;
+		}
 
 		// reposition
 		handleReposition(weapon);
@@ -106,6 +114,9 @@ namespace F4VRBody {
 			break;
 		case RepositionTarget::Offhand:
 			handleOffhandReposition(weapon);
+			break;
+		case RepositionTarget::BackOfHandUI:
+			handleBackOfHandUIReposition();
 			break;
 		case RepositionTarget::BetterScopes:
 			handleBetterScopesReposition();
@@ -134,10 +145,10 @@ namespace F4VRBody {
 			_adjuster->_weaponOffsetTransform.rot = rot.multiply43Left(_adjuster->_weaponOffsetTransform.rot);
 		} else {
 			// adjust horizontal (y - right/left, x - forward/backward) by primary stick
-			_adjuster->_weaponOffsetTransform.pos.y += leftHandedMult * primAxisX / 10;
-			_adjuster->_weaponOffsetTransform.pos.x += primAxisY / 10;
+			_adjuster->_weaponOffsetTransform.pos.y += leftHandedMult * primAxisX / 12;
+			_adjuster->_weaponOffsetTransform.pos.x += primAxisY / 12;
 			// adjust vertical (z - up/down) by secondary stick
-			_adjuster->_weaponOffsetTransform.pos.z -= leftHandedMult * secAxisY / 10;
+			_adjuster->_weaponOffsetTransform.pos.z -= leftHandedMult * secAxisY / 12;
 		}
 
 		// update the weapon with the offset change
@@ -155,6 +166,39 @@ namespace F4VRBody {
 			rot.setEulerAngles(-degrees_to_rads(axisY / 5), 0, degrees_to_rads(axisX / 5));
 			_adjuster->_offhandOffsetRot = rot.multiply43Left(_adjuster->_offhandOffsetRot);
 		}
+	}
+
+	/**
+	 * In back of hand UI reposition mode...
+	 * NOTE: because of minor tweaks on what axis are used for repositioning it doesn't make sense to create common code for it.
+	 */
+	void WeaponPositionConfigMode::handleBackOfHandUIReposition() const {
+		const auto [primAxisX, primAxisY] = getControllerState(true).rAxis[0];
+		const auto [secAxisX, secAxisY] = getControllerState(false).rAxis[0];
+		if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
+			return;
+		}
+
+		const float leftHandedMult = g_config->leftHandedMode ? -1.f : 1.f;
+
+		// Update the transform by player thumbstick and buttons input.
+		// Depending on buttons pressed can horizontal/vertical position or rotation.
+		if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
+			Matrix44 rot;
+			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
+			rot.setEulerAngles(-degrees_to_rads(secAxisY / 6), -degrees_to_rads(primAxisX / 6), -degrees_to_rads(primAxisY / 6));
+			_adjuster->_backOfHandUIOffsetTransform.rot = rot.multiply43Left(_adjuster->_backOfHandUIOffsetTransform.rot);
+		}
+		else {
+			// adjust horizontal (z - right/left, y - forward/backward) by primary stick
+			_adjuster->_backOfHandUIOffsetTransform.pos.z -= leftHandedMult * primAxisX / 14;
+			_adjuster->_backOfHandUIOffsetTransform.pos.y += primAxisY / 14;
+			// adjust vertical (x - up/down) by secondary stick
+			_adjuster->_backOfHandUIOffsetTransform.pos.x += leftHandedMult * secAxisY / 14;
+		}
+
+		// update the weapon with the offset change
+		_adjuster->getBackOfHandUINode()->m_localTransform = _adjuster->_backOfHandUIOffsetTransform;
 	}
 
 	/**
@@ -178,6 +222,9 @@ namespace F4VRBody {
 		case RepositionTarget::Offhand:
 			resetOffhandConfig();
 			break;
+		case RepositionTarget::BackOfHandUI:
+			resetBackOfHandUIConfig();
+			break;
 		case RepositionTarget::BetterScopes:
 			resetBetterScopesConfig();
 			break;
@@ -193,6 +240,9 @@ namespace F4VRBody {
 		case RepositionTarget::Offhand:
 			saveOffhandConfig();
 			break;
+		case RepositionTarget::BackOfHandUI:
+			saveBackOfHandUIConfig();
+			break;
 		case RepositionTarget::BetterScopes:
 			saveBetterScopesConfig();
 			break;
@@ -201,7 +251,7 @@ namespace F4VRBody {
 
 	void WeaponPositionConfigMode::resetWeaponConfig() const {
 		ShowNotification("Reset Weapon Position to Default");
-		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
+		doHaptic();
 		_adjuster->_weaponOffsetTransform = isMeleeWeaponEquipped()
 			? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
 			: _adjuster->_weaponOriginalTransform;
@@ -210,21 +260,21 @@ namespace F4VRBody {
 
 	void WeaponPositionConfigMode::saveWeaponConfig() const {
 		ShowNotification("Saving Weapon Position");
-		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
+		doHaptic();
 		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform,
 			_adjuster->_currentlyInPA ? WeaponOffsetsMode::WeaponInPA : WeaponOffsetsMode::Weapon);
 	}
 
 	void WeaponPositionConfigMode::resetOffhandConfig() const {
 		ShowNotification("Reset Offhand Position to Default");
-		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
+		doHaptic();
 		_adjuster->_offhandOffsetRot = Matrix44::getIdentity43();
 		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_currentlyInPA ? WeaponOffsetsMode::OffHandInPA : WeaponOffsetsMode::OffHand, true);
 	}
 
 	void WeaponPositionConfigMode::saveOffhandConfig() const {
 		ShowNotification("Saving Offhand Position");
-		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
+		doHaptic();
 		NiTransform transform;
 		transform.scale = 1;
 		transform.pos = NiPoint3(0, 0, 0);
@@ -232,16 +282,30 @@ namespace F4VRBody {
 		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, transform, _adjuster->_currentlyInPA ? WeaponOffsetsMode::OffHandInPA : WeaponOffsetsMode::OffHand);
 	}
 
+	void WeaponPositionConfigMode::resetBackOfHandUIConfig() const {
+		ShowNotification("Reset Back of Hand UI Position to Default");
+		doHaptic();
+		_adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_currentlyInPA);
+		_adjuster->getBackOfHandUINode()->m_localTransform = _adjuster->_backOfHandUIOffsetTransform;
+		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_currentlyInPA ? WeaponOffsetsMode::BackOfHandUIInPA : WeaponOffsetsMode::BackOfHandUI, true);
+	}
+
+	void WeaponPositionConfigMode::saveBackOfHandUIConfig() const {
+		ShowNotification("Saving Back of Hand UI Position");
+		doHaptic();
+		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_backOfHandUIOffsetTransform, _adjuster->_currentlyInPA ? WeaponOffsetsMode::BackOfHandUIInPA : WeaponOffsetsMode::BackOfHandUI);
+	}
+
 	void WeaponPositionConfigMode::resetBetterScopesConfig() const {
 		ShowNotification("Reset BetterScopesVR Scope Offset to Default");
-		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
+		doHaptic();
 		NiPoint3 msgData(0.f, 0.f, 0.f);
 		g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
 	}
 
 	void WeaponPositionConfigMode::saveBetterScopesConfig() const {
 		ShowNotification("Saving BetterScopesVR Scopes Offset");
-		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
+		doHaptic();
 		NiPoint3 msgData(0.f, 1, 0.f);
 		g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
 	}
@@ -250,67 +314,77 @@ namespace F4VRBody {
 	 * Create the configuration UI
 	 */
 	void WeaponPositionConfigMode::createConfigUI() {
-		const auto weaponModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_weapon.nif");
-		weaponModeButton->setToggleState(true);
-		weaponModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Weapon; });
+		_weaponModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_weapon.nif");
+		_weaponModeButton->setToggleState(true);
+		_weaponModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Weapon; });
 
-		const auto offhandModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
-		offhandModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Offhand; });
+		_offhandModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
+		_offhandModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Offhand; });
 
-		const auto firstRowContainer = std::make_shared<ui::UIToggleGroupContainer>(ui::UIContainerLayout::HorizontalCenter, 0.15f);
-		firstRowContainer->addElement(weaponModeButton);
-		firstRowContainer->addElement(offhandModeButton);
+		const auto backOfHandUIButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_back_of_hand_ui.nif");
+		backOfHandUIButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BackOfHandUI; });
+
+		const auto firstRowContainerInner = std::make_shared<ui::UIToggleGroupContainer>(ui::UIContainerLayout::HorizontalCenter, 0.15f);
+		firstRowContainerInner->addElement(_weaponModeButton);
+		firstRowContainerInner->addElement(_offhandModeButton);
+		firstRowContainerInner->addElement(backOfHandUIButton);
 
 		if (isBetterScopesVRModLoaded()) {
-			const auto betterScopesModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_better_scopes_vr.nif");
-			betterScopesModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BetterScopes; });
-			firstRowContainer->addElement(betterScopesModeButton);
+			_betterScopesModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_better_scopes_vr.nif");
+			_betterScopesModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BetterScopes; });
+			firstRowContainerInner->addElement(_betterScopesModeButton);
 		}
 
-		const auto saveButton = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_save.nif");
-		saveButton->setOnPressHandler([this](ui::UIWidget* widget) { saveConfig(); });
+		_emptyHandsMessageBox = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_empty_hands_box.nif");
+		_emptyHandsMessageBox->setSize(3.6f, 2.2f);
 
-		const auto resetButton = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_reset.nif");
-		resetButton->setOnPressHandler([this](ui::UIWidget* widget) { resetConfig(); });
+		const auto firstRowContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.15f);
+		firstRowContainer->addElement(_emptyHandsMessageBox);
+		firstRowContainer->addElement(firstRowContainerInner);
+
+		_saveButton = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_save.nif");
+		_saveButton->setOnPressHandler([this](ui::UIWidget* widget) { saveConfig(); });
+
+		_resetButton = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_reset.nif");
+		_resetButton->setOnPressHandler([this](ui::UIWidget* widget) { resetConfig(); });
 
 		const auto exitButton = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_exit.nif");
 		exitButton->setOnPressHandler([this](ui::UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
 
 		const auto secondRowContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.2f);
-		secondRowContainer->addElement(saveButton);
-		secondRowContainer->addElement(resetButton);
+		secondRowContainer->addElement(_saveButton);
+		secondRowContainer->addElement(_resetButton);
 		secondRowContainer->addElement(exitButton);
 
 		const auto header = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_header.nif", 0.7f);
 		header->setSize(8, 1);
-		_footerForWeaponAdjust = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer.nif", 0.7f);
-		_footerForWeaponAdjust->setSize(7, 2.2f);
-		_footerForOtherAdjust = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer_2.nif", 0.7f);
-		_footerForOtherAdjust->setSize(5, 2.2f);
+		_complexAdjustFooter = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer.nif", 0.7f);
+		_complexAdjustFooter->setSize(7, 2.2f);
+		_simpleAdjustFooter = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer_2.nif", 0.7f);
+		_simpleAdjustFooter->setSize(5, 2.2f);
+		_simpleAdjustFooter->setVisibility(false);
 
-		_mainContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalCenter, 0.2f);
-		_mainContainer->addElement(firstRowContainer);
-		_mainContainer->addElement(secondRowContainer);
-		_mainContainer->addElement(_footerForWeaponAdjust);
-		_mainContainer->addElement(_footerForOtherAdjust);
-
-		const auto footerEmpty = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer_empty.nif");
-		footerEmpty->setSize(3.6f, 2.2f);
-		const auto exitButtonOnFooter = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_exit.nif");
-		exitButtonOnFooter->setOnPressHandler([this](ui::UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
-
-		_noEquippedWeaponContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.2f);
-		_noEquippedWeaponContainer->addElement(footerEmpty);
-		_noEquippedWeaponContainer->addElement(exitButtonOnFooter);
-
+		const auto mainContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalCenter, 0.2f);
+		mainContainer->addElement(firstRowContainer);
+		mainContainer->addElement(secondRowContainer);
+		mainContainer->addElement(_complexAdjustFooter);
+		mainContainer->addElement(_simpleAdjustFooter);
+		
 		_configUI = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalDown, 0.3f, 1.7f);
 		_configUI->addElement(header);
-		_configUI->addElement(_mainContainer);
-		_configUI->addElement(_noEquippedWeaponContainer);
+		_configUI->addElement(mainContainer);
 
 		// start hidden by default (will be set visible in frame update if it should be)
 		_configUI->setVisibility(false);
 
 		ui::g_uiManager->attachPresetToPrimaryWandLeft(_configUI, g_config->leftHandedMode, {0, -4, 0});
 	}
+
+	/**
+	 * Run a simple haptic
+	 */
+	void WeaponPositionConfigMode::doHaptic() const {
+		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
+	}
+
 }

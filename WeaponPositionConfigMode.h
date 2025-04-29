@@ -2,7 +2,9 @@
 
 #include "utils.h"
 #include "api/VRHookAPI.h"
+#include "ui/UIButton.h"
 #include "ui/UIContainer.h"
+#include "ui/UIToggleButton.h"
 
 namespace F4VRBody {
 	class WeaponPositionAdjuster;
@@ -13,6 +15,7 @@ namespace F4VRBody {
 	enum class RepositionTarget : uint8_t {
 		Weapon = 0,
 		Offhand,
+		BackOfHandUI,
 		BetterScopes,
 	};
 
@@ -37,8 +40,10 @@ namespace F4VRBody {
 
 	private:
 		void handleReposition(NiNode* weapon) const;
+		void handleTransformRepositionByControllersInput(NiTransform& transform) const;
 		void handleWeaponReposition(NiNode* weapon) const;
 		void handleOffhandReposition(NiNode* weapon) const;
+		void handleBackOfHandUIReposition() const;
 		static void handleBetterScopesReposition();
 		void resetConfig() const;
 		void saveConfig() const;
@@ -46,6 +51,9 @@ namespace F4VRBody {
 		void saveWeaponConfig() const;
 		void resetOffhandConfig() const;
 		void saveOffhandConfig() const;
+		void resetBackOfHandUIConfig() const;
+		void doHaptic() const;
+		void saveBackOfHandUIConfig() const;
 		void resetBetterScopesConfig() const;
 		void saveBetterScopesConfig() const;
 		void createConfigUI();
@@ -58,9 +66,13 @@ namespace F4VRBody {
 
 		// configuration UI
 		std::shared_ptr<ui::UIContainer> _configUI;
-		std::shared_ptr<ui::UIContainer> _mainContainer;
-		std::shared_ptr<ui::UIContainer> _noEquippedWeaponContainer;
-		std::shared_ptr<ui::UIWidget> _footerForWeaponAdjust;
-		std::shared_ptr<ui::UIWidget> _footerForOtherAdjust;
+		std::shared_ptr<ui::UIWidget> _complexAdjustFooter;
+		std::shared_ptr<ui::UIWidget> _simpleAdjustFooter;
+		std::shared_ptr<ui::UIToggleButton> _weaponModeButton;
+		std::shared_ptr<ui::UIToggleButton> _offhandModeButton;
+		std::shared_ptr<ui::UIWidget> _emptyHandsMessageBox;
+		std::shared_ptr<ui::UIToggleButton> _betterScopesModeButton;
+		std::shared_ptr<ui::UIButton> _saveButton;
+		std::shared_ptr<ui::UIButton> _resetButton;
 	};
 }
