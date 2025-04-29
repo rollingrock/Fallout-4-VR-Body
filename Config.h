@@ -14,13 +14,10 @@ namespace F4VRBody {
 	enum class WeaponOffsetsMode : uint8_t {
 		// The weapon offset in the primary hand.
 		Weapon = 0,
-		WeaponInPA,
 		// The secondary hand gripping position offset.
 		OffHand,
-		OffHandInPA,
 		// Back of hand UI (HP,Ammo,etc.) offset on hand.
 		BackOfHandUI,
-		BackOfHandUIInPA,
 	};
 
 	/// <summary>
@@ -70,9 +67,9 @@ namespace F4VRBody {
 
 		NiTransform getPipboyOffset();
 		void savePipboyOffset(const NiTransform& transform);
-		std::optional<NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) const;
-		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode);
-		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool replaceWithEmbedded);
+		std::optional<NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA) const;
+		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
+		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool replaceWithEmbedded);
 		void OpenInNotepad() const;
 
 		// from F4 INIs

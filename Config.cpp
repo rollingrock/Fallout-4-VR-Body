@@ -14,17 +14,17 @@ using json = nlohmann::json;
 namespace F4VRBody {
 	Config* g_config = nullptr;
 
-	constexpr const int FRIK_INI_VERSION = 5;
+	constexpr int FRIK_INI_VERSION = 6;
 
-	constexpr const char* FRIK_INI_PATH = ".\\Data\\FRIK_Config\\FRIK.ini";
+	constexpr auto FRIK_INI_PATH = R"(.\Data\FRIK_Config\FRIK.ini)";
 
-	constexpr const char* MESH_HIDE_FACE_INI_PATH = ".\\Data\\FRIK_Config\\Mesh_Hide\\face.ini";
-	constexpr const char* MESH_HIDE_SKINS_INI_PATH = ".\\Data\\FRIK_Config\\Mesh_Hide\\skins.ini";
-	constexpr const char* MESH_HIDE_SLOTS_INI_PATH = ".\\Data\\FRIK_Config\\Mesh_Hide\\slots.ini";
+	constexpr auto MESH_HIDE_FACE_INI_PATH = R"(.\Data\FRIK_Config\Mesh_Hide\face.ini)";
+	constexpr auto MESH_HIDE_SKINS_INI_PATH = R"(.\Data\FRIK_Config\Mesh_Hide\skins.ini)";
+	constexpr auto MESH_HIDE_SLOTS_INI_PATH = R"(.\Data\FRIK_Config\Mesh_Hide\slots.ini)";
 
-	constexpr const char* PIPBOY_HOLO_OFFSETS_PATH = ".\\Data\\FRIK_Config\\Pipboy_Offsets\\HoloPipboyPosition.json";
-	constexpr const char* PIPBOY_SCREEN_OFFSETS_PATH = ".\\Data\\FRIK_Config\\Pipboy_Offsets\\PipboyPosition.json";
-	static const std::string WEAPONS_OFFSETS_PATH{".\\Data\\FRIK_Config\\Weapons_Offsets"};
+	constexpr auto PIPBOY_HOLO_OFFSETS_PATH = R"(.\Data\FRIK_Config\Pipboy_Offsets\HoloPipboyPosition.json)";
+	constexpr auto PIPBOY_SCREEN_OFFSETS_PATH = R"(.\Data\FRIK_Config\Pipboy_Offsets\PipboyPosition.json)";
+	static const std::string WEAPONS_OFFSETS_PATH{R"(.\Data\FRIK_Config\Weapons_Offsets)"};
 
 	/// <summary>
 	/// Open the FRIK.ini file in Notepad for editing.
@@ -403,32 +403,19 @@ namespace F4VRBody {
 	/// Get the name for the weapon offset to use depending on the mode.
 	/// Basically a hack to store multiple modes of the same weapon by adding suffix to the name.
 	/// </summary>
-	static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, const bool leftHanded) {
-		static const std::string POWER_ARMOR_SUFFIX{"-PowerArmor"};
-		static const std::string OFF_HAND_SUFFIX{"-offHand"};
+	static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool leftHanded) {
+		static const std::string POWER_ARMOR_SUFFIX{ "-PowerArmor" };
+		static const std::string OFF_HAND_SUFFIX{ "-offHand" };
 		static const std::string BACK_OF_HAND_SUFFIX{ "-backOfHand" };
-		static const std::string LEFT_HANDED_SUFFIX{"-leftHanded"};
-		std::string res = name;
+		static const std::string LEFT_HANDED_SUFFIX{ "-leftHanded" };
 		switch (mode) {
 		case WeaponOffsetsMode::Weapon:
-			break;
-		case WeaponOffsetsMode::WeaponInPA:
-			res += POWER_ARMOR_SUFFIX;
-			break;
+			return name + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
 		case WeaponOffsetsMode::OffHand:
-			res += OFF_HAND_SUFFIX;
-			break;
-		case WeaponOffsetsMode::OffHandInPA:
-			res += OFF_HAND_SUFFIX + POWER_ARMOR_SUFFIX;
-			break;
+			return name + OFF_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
 		case WeaponOffsetsMode::BackOfHandUI:
-			res += BACK_OF_HAND_SUFFIX;
-			break;
-		case WeaponOffsetsMode::BackOfHandUIInPA:
-			res += BACK_OF_HAND_SUFFIX + POWER_ARMOR_SUFFIX;
-			break;
+			return name + BACK_OF_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
 		}
-		return leftHanded ? res + LEFT_HANDED_SUFFIX : res;
 	}
 
 	/// <summary>
@@ -436,22 +423,20 @@ namespace F4VRBody {
 	/// Use non-PA mode if PA mode offsets not found.
 	/// </summary>
 	/// <returns></returns>
-	std::optional<NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) const {
-		const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, leftHandedMode));
+	std::optional<NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const {
+		const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, leftHandedMode));
 		if (it != _weaponsOffsets.end()) {
 			return it->second;
 		}
 		// Check without PA (historic)
-		return (mode == WeaponOffsetsMode::WeaponInPA) || (mode == WeaponOffsetsMode::OffHandInPA)
-			? getWeaponOffsets(name, mode == WeaponOffsetsMode::OffHandInPA ? WeaponOffsetsMode::OffHand : WeaponOffsetsMode::Weapon)
-			: std::nullopt;
+		return inPA ? getWeaponOffsets(name, mode, false) : std::nullopt;
 	}
 
 	/// <summary>
 	/// Save the weapon offset to config and filesystem.
 	/// </summary>
-	void Config::saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode) {
-		const auto fullName = getWeaponNameWithMode(name, mode, leftHandedMode);
+	void Config::saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA) {
+		const auto fullName = getWeaponNameWithMode(name, mode, inPA, leftHandedMode);
 		_weaponsOffsets[fullName] = transform;
 		saveOffsetsToJsonFile(fullName, transform, WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json");
 	}
@@ -459,8 +444,8 @@ namespace F4VRBody {
 	/// <summary>
 	/// Remove the weapon offset from the config and filesystem.
 	/// </summary>
-	void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool replaceWithEmbedded) {
-		const auto fullName = getWeaponNameWithMode(name, mode, leftHandedMode);
+	void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool replaceWithEmbedded) {
+		const auto fullName = getWeaponNameWithMode(name, mode, inPA, leftHandedMode);
 		_weaponsOffsets.erase(fullName);
 		if (replaceWithEmbedded && _weaponsEmbeddedOffsets.contains(fullName)) {
 			_weaponsOffsets[fullName] = _weaponsEmbeddedOffsets[fullName];

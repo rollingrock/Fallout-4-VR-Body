@@ -243,6 +243,10 @@ namespace F4VRBody {
 		return getNode("Weapon", (*g_player)->firstPersonSkeleton);
 	}
 
+	NiNode* Skeleton::getPrimaryWandNode() const {
+		return getNode("world_primaryWand.nif", _playerNodes->primaryUIAttachNode);
+	}
+
 	/// <summary>
 	/// Get the world position of the offhand index finger tip.
 	/// Make small adjustment as the finger bone position is the center of the finger.

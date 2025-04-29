@@ -49,11 +49,11 @@ namespace F4VRBody {
 			Matrix44 mat;
 			mat.setEulerAngles(degrees_to_rads(180), 0, degrees_to_rads(180));
 			transform.rot = mat.make43();
-			transform.pos = inPA ? NiPoint3(-3, 5, -12) : NiPoint3(-2, 3.3f, -13);
+			transform.pos = inPA ? NiPoint3(5, 6.5f, -11) : NiPoint3(6.2f, 4.8f, -12.2f);
 		}
 		else {
 			transform.rot = Matrix44::getIdentity43();
-			transform.pos = inPA ? NiPoint3(0.5, 5, 2) : NiPoint3(-1, 4, 0.8f);
+			transform.pos = inPA ? NiPoint3(-5.8f, 5.8f, 1.8f) : NiPoint3(-6.8f, 3.6f, 0.8f);
 		}
 		return transform;
 	}
@@ -255,21 +255,20 @@ namespace F4VRBody {
 		_adjuster->_weaponOffsetTransform = isMeleeWeaponEquipped()
 			? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
 			: _adjuster->_weaponOriginalTransform;
-		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_currentlyInPA ? WeaponOffsetsMode::WeaponInPA : WeaponOffsetsMode::Weapon, true);
+		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveWeaponConfig() const {
 		ShowNotification("Saving Weapon Position");
 		doHaptic();
-		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform,
-			_adjuster->_currentlyInPA ? WeaponOffsetsMode::WeaponInPA : WeaponOffsetsMode::Weapon);
+		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetOffhandConfig() const {
 		ShowNotification("Reset Offhand Position to Default");
 		doHaptic();
 		_adjuster->_offhandOffsetRot = Matrix44::getIdentity43();
-		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_currentlyInPA ? WeaponOffsetsMode::OffHandInPA : WeaponOffsetsMode::OffHand, true);
+		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveOffhandConfig() const {
@@ -279,7 +278,7 @@ namespace F4VRBody {
 		transform.scale = 1;
 		transform.pos = NiPoint3(0, 0, 0);
 		transform.rot = _adjuster->_offhandOffsetRot;
-		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, transform, _adjuster->_currentlyInPA ? WeaponOffsetsMode::OffHandInPA : WeaponOffsetsMode::OffHand);
+		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetBackOfHandUIConfig() const {
@@ -287,13 +286,13 @@ namespace F4VRBody {
 		doHaptic();
 		_adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_currentlyInPA);
 		_adjuster->getBackOfHandUINode()->m_localTransform = _adjuster->_backOfHandUIOffsetTransform;
-		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_currentlyInPA ? WeaponOffsetsMode::BackOfHandUIInPA : WeaponOffsetsMode::BackOfHandUI, true);
+		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveBackOfHandUIConfig() const {
 		ShowNotification("Saving Back of Hand UI Position");
 		doHaptic();
-		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_backOfHandUIOffsetTransform, _adjuster->_currentlyInPA ? WeaponOffsetsMode::BackOfHandUIInPA : WeaponOffsetsMode::BackOfHandUI);
+		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_backOfHandUIOffsetTransform, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetBetterScopesConfig() const {

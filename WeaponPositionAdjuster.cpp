@@ -5,6 +5,9 @@
 #include "Debug.h"
 
 namespace F4VRBody {
+	// use as weapon name when no weapon in equipped. specifically for default back of hand UI offset.
+	constexpr auto EMPTY_HAND = "EmptyHand";
+
 	/**
 	 * Enable/Disable reposition configuration mode.
 	 */
@@ -15,7 +18,6 @@ namespace F4VRBody {
 		if (!inWeaponRepositionMode()) {
 			// reload offset to handle player didn't save changes
 			loadStoredOffsets(_currentWeapon);
-			handleBackOfHandUI();
 		}
 	}
 
@@ -25,11 +27,13 @@ namespace F4VRBody {
 	 */
 	void WeaponPositionAdjuster::onFrameUpdate() {
 		const auto weapon = _skelly->getWeaponNode();
+		const auto backOfHand = getBackOfHandUINode();
 		if (!isNodeVisible(weapon) || g_configurationMode->isCalibrateModeActive()) {
 			if (_configMode) {
 				_configMode->onFrameUpdate(nullptr);
 			}
 			checkEquippedWeaponChanged(true);
+			backOfHand->m_localTransform = _backOfHandUIOffsetTransform;
 			return;
 		}
 
@@ -37,6 +41,9 @@ namespace F4VRBody {
 		_weaponOriginalTransform = weapon->m_localTransform;
 
 		checkEquippedWeaponChanged(false);
+
+		// override the back-of-hand UI transform
+		backOfHand->m_localTransform = _backOfHandUIOffsetTransform;
 
 		// override the weapon transform to the saved offset
 		weapon->m_localTransform = _weaponOffsetTransform;
@@ -64,7 +71,7 @@ namespace F4VRBody {
 	 * If equipped weapon changed set offsets to stored if exists.
 	 */
 	void WeaponPositionAdjuster::checkEquippedWeaponChanged(const bool emptyHand) {
-		const auto& weaponName = emptyHand ? "EmptyHand" : getEquippedWeaponName();
+		const auto& weaponName = emptyHand ? EMPTY_HAND : getEquippedWeaponName();
 		if (weaponName == _currentWeapon && _skelly->inPowerArmor() == _currentlyInPA) {
 			// no weapon change
 			return;
@@ -77,8 +84,6 @@ namespace F4VRBody {
 		_offHandGripping = false;
 
 		loadStoredOffsets(weaponName);
-
-		handleBackOfHandUI();
 	}
 
 	/**
@@ -86,28 +91,40 @@ namespace F4VRBody {
 	 */
 	void WeaponPositionAdjuster::loadStoredOffsets(const std::string& weaponName) {
 		// Load stored offsets for the new weapon
-		const auto weaponOffsetLookup = g_config->getWeaponOffsets(weaponName, _skelly->inPowerArmor() ? WeaponOffsetsMode::WeaponInPA : WeaponOffsetsMode::Weapon);
+		const auto weaponOffsetLookup = g_config->getWeaponOffsets(weaponName, WeaponOffsetsMode::Weapon, _currentlyInPA);
 		if (weaponOffsetLookup.has_value()) {
 			_weaponOffsetTransform = weaponOffsetLookup.value();
-			_VMESSAGE("Use weapon offset for '%s'; Pos: (%2.2f, %2.2f, %2.2f), Scale: %1.3f, InPA: %d",
-				weaponName.c_str(), _weaponOffsetTransform.pos.x, _weaponOffsetTransform.pos.y, _weaponOffsetTransform.pos.z, _weaponOffsetTransform.scale,
-				_skelly->inPowerArmor());
 		} else {
 			// No stored offset, use original weapon transform
 			_weaponOffsetTransform = isMeleeWeaponEquipped() ? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_weaponOriginalTransform) : _weaponOriginalTransform;
 		}
 
 		// Load stored offsets for offhand for the new weapon 
-		const auto offhandOffsetLookup = g_config->getWeaponOffsets(weaponName, _skelly->inPowerArmor() ? WeaponOffsetsMode::OffHandInPA : WeaponOffsetsMode::OffHand);
+		const auto offhandOffsetLookup = g_config->getWeaponOffsets(weaponName, WeaponOffsetsMode::OffHand, _currentlyInPA);
 		if (offhandOffsetLookup.has_value()) {
 			_offhandOffsetRot = offhandOffsetLookup.value().rot;
-			_VMESSAGE("Use offHand offset for '%s'; InPA: %d", weaponName.c_str(), _skelly->inPowerArmor());
 		} else {
 			// No stored offset for offhand, use identity for no change
 			_offhandOffsetRot = Matrix44::getIdentity43();
 		}
 
-		_MESSAGE("Equipped Weapon changed to '%s' (InPA:%d); HasWeaponOffset:%d, HasOffhandOffset:%d", _currentWeapon.c_str(), _currentlyInPA, weaponOffsetLookup.has_value(), offhandOffsetLookup.has_value());
+		// Load stored offsets for back of hand UI for the new weapon 
+		auto backOfHandOffsetLookup = g_config->getWeaponOffsets(_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _currentlyInPA);
+		if (!backOfHandOffsetLookup.has_value()) {
+			// Use empty hand offset as a global default that the player can adjust so they won't have to adjust it for every weapon.
+			backOfHandOffsetLookup = g_config->getWeaponOffsets(EMPTY_HAND, WeaponOffsetsMode::BackOfHandUI, _currentlyInPA);
+		}
+		if (backOfHandOffsetLookup.has_value()) {
+			_backOfHandUIOffsetTransform = backOfHandOffsetLookup.value();
+			_VMESSAGE("Use back of hand offset Pos: (%2.2f, %2.2f, %2.2f), Scale: %1.3f, InPA: %d",
+				_currentWeapon.c_str(), _weaponOffsetTransform.pos.x, _weaponOffsetTransform.pos.y, _weaponOffsetTransform.pos.z, _weaponOffsetTransform.scale, _currentlyInPA);
+		} else {
+			// No stored offset, use default adjustment
+			_backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->m_localTransform, _currentlyInPA);
+		}
+
+		_MESSAGE("Equipped Weapon changed to '%s' (InPA:%d); HasWeaponOffset:%d, HasOffhandOffset:%d, HasBackOfHandOffset:%d",
+			_currentWeapon.c_str(), _currentlyInPA, weaponOffsetLookup.has_value(), offhandOffsetLookup.has_value(), backOfHandOffsetLookup.has_value());
 	}
 
 	/**
@@ -329,34 +346,15 @@ namespace F4VRBody {
 		}
 	}
 
-
-	/**
-	 * Handle adjusting the back of hand UI position for specific equipped weapon or empty hand.
-	 */
-	void WeaponPositionAdjuster::handleBackOfHandUI() {
-		const auto backOfHand = getBackOfHandUINode();
-		if (!backOfHand) {
-			return;
-		}
-
-		const auto backOfHandOffsetLookup = g_config->getWeaponOffsets(_currentWeapon, _skelly->inPowerArmor() ? WeaponOffsetsMode::BackOfHandUIInPA : WeaponOffsetsMode::BackOfHandUI);
-		if (backOfHandOffsetLookup.has_value()) {
-			_backOfHandUIOffsetTransform = backOfHandOffsetLookup.value();
-			_VMESSAGE("Use back of hand offset Pos: (%2.2f, %2.2f, %2.2f), Scale: %1.3f, InPA: %d",
-				_currentWeapon.c_str(), _weaponOffsetTransform.pos.x, _weaponOffsetTransform.pos.y, _weaponOffsetTransform.pos.z, _weaponOffsetTransform.scale, _skelly->inPowerArmor());
-		} else {
-			// No stored offset, use default adjustment
-			_backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(backOfHand->m_localTransform, _skelly->inPowerArmor());
-		}
-
-		backOfHand->m_localTransform = _backOfHandUIOffsetTransform;
-	}
-
 	/**
 	 * Get the game node for the back of hand UI.
+	 * Using Primary Wand Node instead of "BackOfHand" node because wand node local transform is changed by the game by equipped weapons.
+	 * Probably because the original UI is to the left of the weapon and need to be offset by how big the weapon is.
+	 * Because we put the UI on the back of the hand we don't need to offset by the weapon size. And with it, it looks like we don't need per
+	 * weapon adjustment.
 	 */
 	NiNode* WeaponPositionAdjuster::getBackOfHandUINode() const {
-		return _skelly->getNode("BackOfHand", _skelly->getPlayerNodes()->primaryUIAttachNode);
+		return _skelly->getPrimaryWandNode();
 	}
 
 	void WeaponPositionAdjuster::debugPrintWeaponPositionData(NiNode* weapon) {

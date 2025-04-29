@@ -37,7 +37,6 @@ namespace F4VRBody {
 		bool isOffhandMovedFastAway() const;
 		NiPoint3 getOffhandPosition() const;
 		void handleBetterScopes(NiNode* weapon) const;
-		void handleBackOfHandUI();
 		NiNode* getBackOfHandUINode() const;
 		void debugPrintWeaponPositionData(NiNode* weapon);
 
