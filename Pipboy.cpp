@@ -530,27 +530,29 @@ namespace F4VRBody {
 			_pipboyStatus ? pipbone2->m_localTransform.scale = 0 : pipbone->m_localTransform.scale = 0;
 			// Control switching between hand and head based Pipboy light 
 			if (lightOn && !helmetHeadLamp) {
-				NiPoint3 hand;
 				NiNode* head = _skelly->getNode("Head", (*g_player)->GetActorRootNode(false)->GetAsNiNode());
 				if (!head) {
 					return;
 				}
-				g_config->leftHandedPipBoy ? hand = rt->transforms[_skelly->getBoneInMap("RArm_Hand")].world.pos : hand = rt->transforms[_skelly->getBoneInMap("LArm_Hand")].world.pos;
+				const bool useRightHand = g_config->leftHandedPipBoy || g_config->isPipBoyTorchRightArmMode;
+				const auto hand = rt->transforms[_skelly->getBoneInMap(useRightHand ? "RArm_Hand" : "LArm_Hand")].world.pos;
 				float distance = vec3_len(hand - head->m_worldTransform.pos);
 				if (distance < 15.0) {
-					uint64_t _PipboyHand = (g_config->leftHandedPipBoy ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed);
+					uint64_t _PipboyHand = VRHook::g_vrHook->getControllerState(useRightHand ? VRHook::VRSystem::TrackerType::Right : VRHook::VRSystem::Left).ulButtonPressed;
 					const auto SwitchLightButton = _PipboyHand & vr::ButtonMaskFromId((vr::EVRButtonId)g_config->switchTorchButton);
 					if (_vrhook != nullptr && _SwitchLightHaptics) {
-						g_config->leftHandedPipBoy ? _vrhook->StartHaptics(2, 0.1, 0.1) : _vrhook->StartHaptics(1, 0.1, 0.1);
+						_vrhook->StartHaptics(useRightHand ? 2 : 1, 0.1f, 0.1f);
 					}
 					// Control switching between hand and head based Pipboy light
 					if (SwitchLightButton && !_SwithLightButtonSticky) {
 						_SwithLightButtonSticky = true;
 						_SwitchLightHaptics = false;
 						if (_vrhook != nullptr) {
-							g_config->leftHandedPipBoy ? _vrhook->StartHaptics(2, 0.05, 0.3) : _vrhook->StartHaptics(1, 0.05, 0.3);
+							_vrhook->StartHaptics(useRightHand ? 2 : 1, 0.05f, 0.3f);
 						}
-						NiNode* LGHT_ATTACH = g_config->leftHandedPipBoy ? _skelly->getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode()) : _skelly->getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
+						NiNode* LGHT_ATTACH = useRightHand
+							? _skelly->getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode())
+							: _skelly->getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
 						NiNode* lght = g_config->isPipBoyTorchOnArm ? get1stChildNode("HeadLightParent", LGHT_ATTACH) : _skelly->getPlayerNodes()->HeadLightParentNode->GetAsNiNode();
 						if (lght) {
 							BSFixedString parentnode = g_config->isPipBoyTorchOnArm ? lght->m_parent->m_name : _skelly->getPlayerNodes()->HeadLightParentNode->m_parent->m_name;
@@ -577,7 +579,9 @@ namespace F4VRBody {
 			}
 			//Attach light to hand 
 			if (g_config->isPipBoyTorchOnArm) {
-				NiNode* LGHT_ATTACH = g_config->leftHandedPipBoy ? _skelly->getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode()) : _skelly->getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
+				NiNode* LGHT_ATTACH = g_config->leftHandedPipBoy || g_config->isPipBoyTorchRightArmMode
+					? _skelly->getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode())
+					: _skelly->getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
 				if (LGHT_ATTACH) {
 					if (lightOn && !helmetHeadLamp) {
 						NiNode* lght = _skelly->getPlayerNodes()->HeadLightParentNode->GetAsNiNode();

@@ -108,7 +108,7 @@ namespace F4VRBody {
 
 		// In-game configuration
 		int repositionButtonID = vr::EVRButtonId::k_EButton_SteamVR_Trigger; //33
-		float directionalDeadzone = 0.5; // Default value of fDirectionalDeadzone, used when turning off Pipboy to restore directionial control to the player.
+		float directionalDeadzone = 0.5; // Default value of fDirectionalDeadzone, used when turning off Pipboy to restore directional control to the player.
 		bool autoFocusWindow = false;
 		float selfieOutFrontDistance = 120.0f;
 		bool selfieIgnoreHideFlags = false;
@@ -118,6 +118,7 @@ namespace F4VRBody {
 		bool hidePipboy = false;
 		bool isHoloPipboy = true; // false = Default, true = HoloPipBoy
 		bool isPipBoyTorchOnArm = true; // false = Head Based Torch, true = PipBoy Based Torch
+		bool isPipBoyTorchRightArmMode = false; // false = torch on left arm, true = right hand
 		bool leftHandedPipBoy = false;
 		bool pipBoyOpenWhenLookAt = false;
 		bool pipBoyAllowMovementNotLooking = true;
