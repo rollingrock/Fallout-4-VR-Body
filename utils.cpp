@@ -679,13 +679,18 @@ namespace F4VRBody {
 	/// <summary>
 	/// If file at a given path doesn't exist then create it from the embedded resource.
 	/// </summary>
-	void createFileFromResourceIfNotExists(const std::string& filePath, const WORD resourceId) {
+	void createFileFromResourceIfNotExists(const std::string& filePath, const WORD resourceId, const bool fixNewline) {
 		if (std::filesystem::exists(filePath)) {
 			return;
 		}
 
 		_MESSAGE("Creating '%s' file from resource id: %d...", filePath.c_str(), resourceId);
-		const auto data = getEmbededResourceAsString(resourceId);
+		auto data = getEmbededResourceAsString(resourceId);
+
+		if (fixNewline) {
+			// Remove all \r to ensure it uses only \n for new lines as ini library creates empty lines
+			std::erase(data, '\r');
+		}
 
 		std::ofstream outFile(filePath, std::ios::trunc);
 		if (!outFile) {

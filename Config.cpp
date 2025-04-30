@@ -84,7 +84,7 @@ namespace F4VRBody {
 		migrateConfigFilesIfNeeded();
 
 		// create FRIK.ini if it doesn't exist
-		createFileFromResourceIfNotExists(FRIK_INI_PATH, IDR_FRIK_INI);
+		createFileFromResourceIfNotExists(FRIK_INI_PATH, IDR_FRIK_INI, true);
 
 		loadFrikINI();
 
@@ -226,7 +226,7 @@ namespace F4VRBody {
 
 		// override the file with the default FRIK.ini resource.
 		auto tmpIniPath = std::string(FRIK_INI_PATH) + ".tmp";
-		createFileFromResourceIfNotExists(tmpIniPath.c_str(), IDR_FRIK_INI);
+		createFileFromResourceIfNotExists(tmpIniPath.c_str(), IDR_FRIK_INI, true);
 
 		CSimpleIniA newIni;
 		rc = newIni.LoadFile(tmpIniPath.c_str());
@@ -276,13 +276,13 @@ namespace F4VRBody {
 	/// Load hide meshes from config ini files. Creating if don't exists on the disk.
 	/// </summary>
 	void Config::loadHideMeshes() {
-		createFileFromResourceIfNotExists(MESH_HIDE_FACE_INI_PATH, IDR_MESH_HIDE_FACE);
+		createFileFromResourceIfNotExists(MESH_HIDE_FACE_INI_PATH, IDR_MESH_HIDE_FACE, true);
 		faceGeometry = loadListFromFile(MESH_HIDE_FACE_INI_PATH);
 
-		createFileFromResourceIfNotExists(MESH_HIDE_SKINS_INI_PATH, IDR_MESH_HIDE_SKINS);
+		createFileFromResourceIfNotExists(MESH_HIDE_SKINS_INI_PATH, IDR_MESH_HIDE_SKINS, true);
 		skinGeometry = loadListFromFile(MESH_HIDE_SKINS_INI_PATH);
 
-		createFileFromResourceIfNotExists(MESH_HIDE_SLOTS_INI_PATH, IDR_MESH_HIDE_SLOTS);
+		createFileFromResourceIfNotExists(MESH_HIDE_SLOTS_INI_PATH, IDR_MESH_HIDE_SLOTS, true);
 		loadHideEquipmentSlots();
 	}
 
@@ -511,8 +511,8 @@ namespace F4VRBody {
 	/// Load the pipboy screen and holo screen offsets from json files.
 	/// </summary>
 	void Config::loadPipboyOffsets() {
-		createFileFromResourceIfNotExists(PIPBOY_HOLO_OFFSETS_PATH, IDR_PIPBOY_HOLO_OFFSETS);
-		createFileFromResourceIfNotExists(PIPBOY_SCREEN_OFFSETS_PATH, IDR_PIPBOY_SCREEN_OFFSETS);
+		createFileFromResourceIfNotExists(PIPBOY_HOLO_OFFSETS_PATH, IDR_PIPBOY_HOLO_OFFSETS, false);
+		createFileFromResourceIfNotExists(PIPBOY_SCREEN_OFFSETS_PATH, IDR_PIPBOY_SCREEN_OFFSETS, false);
 		loadOffsetJsonFile(PIPBOY_HOLO_OFFSETS_PATH, _pipboyOffsets);
 		loadOffsetJsonFile(PIPBOY_SCREEN_OFFSETS_PATH, _pipboyOffsets);
 	}
@@ -575,6 +575,13 @@ namespace F4VRBody {
 
 	static void moveFileSafe(const std::string& fromPath, const std::string& toPath) {
 		try {
+			if (!std::filesystem::exists(fromPath)) {
+				return;
+			}
+			if (std::filesystem::exists(toPath)) {
+				_MESSAGE("Moving '%s' to '%s' failed, file already exists", fromPath.c_str(), toPath.c_str());
+				return;
+			}
 			_MESSAGE("Moving '%s'...", fromPath.c_str());
 			std::filesystem::rename(fromPath, toPath);
 		} catch (const std::exception& e) {
@@ -598,29 +605,29 @@ namespace F4VRBody {
 	/// </summary>
 	void Config::migrateConfigFilesIfNeeded() {
 		// decide if migration is needed just by finding FRIK.ini in the old location by FRIK.dll
-		if (!std::filesystem::exists(".\\Data\\F4SE\\plugins\\FRIK.ini")) {
-			return;
+		if (std::filesystem::exists(R"(.\Data\F4SE\plugins\FRIK.ini)")) {
+			_MESSAGE("Migrate FRIK.ini and basic configs");
+			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK.ini)", FRIK_INI_PATH);
+
+			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
+			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);
+			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\slots.ini)", MESH_HIDE_SLOTS_INI_PATH);
+
+			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets\HoloPipboyPosition.json)", PIPBOY_HOLO_OFFSETS_PATH);
+			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets\PipboyPosition.json)", PIPBOY_SCREEN_OFFSETS_PATH);
 		}
 
-		_MESSAGE("Start config migration");
-		moveFileSafe(".\\Data\\F4SE\\plugins\\FRIK.ini", FRIK_INI_PATH);
-
-		moveFileSafe(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\face.ini", MESH_HIDE_FACE_INI_PATH);
-		moveFileSafe(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\skins.ini", MESH_HIDE_SKINS_INI_PATH);
-		moveFileSafe(".\\Data\\F4SE\\plugins\\FRIK_Mesh_Hide\\slots.ini", MESH_HIDE_SLOTS_INI_PATH);
-
-		moveFileSafe(".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets\\HoloPipboyPosition.json", PIPBOY_HOLO_OFFSETS_PATH);
-		moveFileSafe(".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets\\PipboyPosition.json", PIPBOY_SCREEN_OFFSETS_PATH);
-
-		// all weapons offsets
-		std::filesystem::create_directory(WEAPONS_OFFSETS_PATH);
-		for (const auto& entry : std::filesystem::directory_iterator(".\\Data\\F4SE\\plugins\\FRIK_weapon_offsets")) {
-			if (entry.is_regular_file()) {
-				std::filesystem::path sourcePath = entry.path();
-				std::filesystem::path destinationPath = WEAPONS_OFFSETS_PATH / sourcePath.filename();
-				moveFileSafe(sourcePath.string(), destinationPath.string());
+		// Always try to migrate weapons offset if found in "old location"
+		// Can be used to create custom weapon offsets at mod-list installation time. (as mod list install can't write to data or MO2 override folder)
+		const auto oldWeaponsOffsetsPath = R"(.\Data\F4SE\plugins\FRIK_weapon_offsets)";
+		if (std::filesystem::exists(oldWeaponsOffsetsPath)) {
+			for (const auto& entry : std::filesystem::directory_iterator(oldWeaponsOffsetsPath)) {
+				if (entry.is_regular_file()) {
+					const auto& sourcePath = entry.path();
+					const auto destinationPath = WEAPONS_OFFSETS_PATH / sourcePath.filename();
+					moveFileSafe(sourcePath.string(), destinationPath.string());
+				}
 			}
 		}
-		_MESSAGE("Migration successful");
 	}
 }

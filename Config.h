@@ -183,8 +183,8 @@ namespace F4VRBody {
 		void loadWeaponsOffsetsFromEmbedded();
 		void loadWeaponsOffsetsFromFilesystem();
 		void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const;
-		void setupFolders();
-		void migrateConfigFilesIfNeeded();
+		static void setupFolders();
+		static void migrateConfigFilesIfNeeded();
 
 		// Reload config interval in seconds (0 - no reload)
 		int _reloadConfigInterval = 0;

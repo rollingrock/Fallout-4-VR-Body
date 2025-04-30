@@ -98,7 +98,7 @@ namespace F4VRBody {
 	std::string getCurrentTimeString();
 	std::vector<std::string> loadListFromFile(std::string filePath);
 	void createDirDeep(std::string pathStr);
-	void createFileFromResourceIfNotExists(const std::string& filePath, WORD resourceId);
+	void createFileFromResourceIfNotExists(const std::string& filePath, WORD resourceId, bool fixNewline);
 
 	bool isBetterScopesVRModLoaded();
 	bool isModLoaded(const char* modName);
