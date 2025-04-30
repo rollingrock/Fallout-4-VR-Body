@@ -4,19 +4,20 @@
 #include <optional>
 
 namespace F4VRBody {
-	constexpr const char* INI_SECTION_MAIN = "Fallout4VRBody";
-	constexpr const char* INI_SECTION_DEBUG = "Debug";
-	constexpr const char* INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
+	constexpr auto INI_SECTION_MAIN = "Fallout4VRBody";
+	constexpr auto INI_SECTION_DEBUG = "Debug";
+	constexpr auto INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
 
 	/// <summary>
-	/// Type of weapon possition offsets.
-	/// TODO: What is offhand?
+	/// Type of weapon related position offsets.
 	/// </summary>
-	enum WeaponOffsetsMode {
-		normal = 0,
-		powerArmor,
-		offHand,
-		offHandwithPowerArmor,
+	enum class WeaponOffsetsMode : uint8_t {
+		// The weapon offset in the primary hand.
+		Weapon = 0,
+		// The secondary hand gripping position offset.
+		OffHand,
+		// Back of hand UI (HP,Ammo,etc.) offset on hand.
+		BackOfHandUI,
 	};
 
 	/// <summary>
@@ -66,9 +67,9 @@ namespace F4VRBody {
 
 		NiTransform getPipboyOffset();
 		void savePipboyOffset(const NiTransform& transform);
-		std::optional<NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode) const;
-		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode);
-		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode);
+		std::optional<NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA) const;
+		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
+		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool replaceWithEmbedded);
 		void OpenInNotepad() const;
 
 		// from F4 INIs
@@ -97,9 +98,6 @@ namespace F4VRBody {
 		float powerArmor_up = 0.0f;
 		float rootOffset = 0.0f;
 		float PARootOffset = 0.0f;
-		float handUI_X = 0.0;
-		float handUI_Y = 0.0;
-		float handUI_Z = 0.0;
 
 		// Weapon
 		bool enableOffHandGripping = true;
@@ -110,7 +108,7 @@ namespace F4VRBody {
 
 		// In-game configuration
 		int repositionButtonID = vr::EVRButtonId::k_EButton_SteamVR_Trigger; //33
-		float directionalDeadzone = 0.5; // Default value of fDirectionalDeadzone, used when turning off Pipboy to restore directionial control to the player.
+		float directionalDeadzone = 0.5; // Default value of fDirectionalDeadzone, used when turning off Pipboy to restore directional control to the player.
 		bool autoFocusWindow = false;
 		float selfieOutFrontDistance = 120.0f;
 		bool selfieIgnoreHideFlags = false;
@@ -120,6 +118,7 @@ namespace F4VRBody {
 		bool hidePipboy = false;
 		bool isHoloPipboy = true; // false = Default, true = HoloPipBoy
 		bool isPipBoyTorchOnArm = true; // false = Head Based Torch, true = PipBoy Based Torch
+		bool isPipBoyTorchRightArmMode = false; // false = torch on left arm, true = right hand
 		bool leftHandedPipBoy = false;
 		bool pipBoyOpenWhenLookAt = false;
 		bool pipBoyAllowMovementNotLooking = true;
@@ -166,7 +165,9 @@ namespace F4VRBody {
 
 		// Can be used to test things at runtime during development
 		// i.e. check "debugFlowFlag==1" somewhere in code and use config reload to change the value at runtime.
-		int debugFlowFlag = 0;
+		float debugFlowFlag1 = 0;
+		float debugFlowFlag2 = 0;
+		float debugFlowFlag3 = 0;
 
 	private:
 		void loadFrikINI();
@@ -182,8 +183,8 @@ namespace F4VRBody {
 		void loadWeaponsOffsetsFromEmbedded();
 		void loadWeaponsOffsetsFromFilesystem();
 		void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const;
-		void setupFolders();
-		void migrateConfigFilesIfNeeded();
+		static void setupFolders();
+		static void migrateConfigFilesIfNeeded();
 
 		// Reload config interval in seconds (0 - no reload)
 		int _reloadConfigInterval = 0;
@@ -195,8 +196,9 @@ namespace F4VRBody {
 
 		std::map<std::string, NiTransform> _pipboyOffsets;
 		std::map<std::string, NiTransform> _weaponsOffsets;
+		std::map<std::string, NiTransform> _weaponsEmbeddedOffsets;
 
-		std::string _debugDumpDataOnceNames = "";
+		std::string _debugDumpDataOnceNames;
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now

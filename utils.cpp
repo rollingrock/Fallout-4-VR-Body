@@ -484,6 +484,27 @@ namespace F4VRBody {
 		return equipData ? equipData->item->GetFullName() : "";
 	}
 
+	/**
+	 * @return true if the equipped weapon is a melee weapon type.
+	 */
+	bool isMeleeWeaponEquipped() {
+		if (!Offsets::CombatUtilities_IsActorUsingMelee(*g_player)) {
+			return false;
+		}
+		const auto* inventory = (*g_player)->inventoryList;
+		if (!inventory) {
+			return false;
+		}
+		for (UInt32 i = 0; i < inventory->items.count; i++) {
+			BGSInventoryItem item;
+			inventory->items.GetNthItem(i, item);
+			if (item.form && item.form->formType == FormType::kFormType_WEAP && item.stack->flags & 0x3) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	bool getLeftHandedMode() {
 		Setting* set = GetINISetting("bLeftHandedMode:VR");
 
@@ -658,13 +679,18 @@ namespace F4VRBody {
 	/// <summary>
 	/// If file at a given path doesn't exist then create it from the embedded resource.
 	/// </summary>
-	void createFileFromResourceIfNotExists(const std::string& filePath, const WORD resourceId) {
+	void createFileFromResourceIfNotExists(const std::string& filePath, const WORD resourceId, const bool fixNewline) {
 		if (std::filesystem::exists(filePath)) {
 			return;
 		}
 
 		_MESSAGE("Creating '%s' file from resource id: %d...", filePath.c_str(), resourceId);
-		const auto data = getEmbededResourceAsString(resourceId);
+		auto data = getEmbededResourceAsString(resourceId);
+
+		if (fixNewline) {
+			// Remove all \r to ensure it uses only \n for new lines as ini library creates empty lines
+			std::erase(data, '\r');
+		}
 
 		std::ofstream outFile(filePath, std::ios::trunc);
 		if (!outFile) {

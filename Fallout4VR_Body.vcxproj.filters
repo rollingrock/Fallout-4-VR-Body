@@ -274,9 +274,6 @@
     <None Include="exports.def">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="data\FRIK.ini">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="data\config\mesh_hide_face.ini">
       <Filter>Resource Files</Filter>
     </None>
@@ -290,6 +287,9 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="data\config\pipboy_screen_offsets.json">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data\config\FRIK.ini">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

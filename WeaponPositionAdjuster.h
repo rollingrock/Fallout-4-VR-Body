@@ -29,7 +29,7 @@ namespace F4VRBody {
 		void loadStoredOffsets(const std::string& weaponName);
 
 	private:
-		void checkEquippedWeaponChanged();
+		void checkEquippedWeaponChanged(bool emptyHand);
 		void handleScopeCameraAdjustmentByWeaponOffset(const NiNode* weapon) const;
 		void checkIfOffhandIsGripping(const NiNode* weapon);
 		void handleWeaponGrippingRotationAdjustment(NiNode* weapon) const;
@@ -37,6 +37,7 @@ namespace F4VRBody {
 		bool isOffhandMovedFastAway() const;
 		NiPoint3 getOffhandPosition() const;
 		void handleBetterScopes(NiNode* weapon) const;
+		NiNode* getBackOfHandUINode() const;
 		void debugPrintWeaponPositionData(NiNode* weapon);
 
 		// Define a basis remapping matrix to correct coordinate system for scope camera
@@ -46,8 +47,8 @@ namespace F4VRBody {
 		OpenVRHookManagerAPI* _vrHook;
 
 		// used to know if weapon changed to load saved offsets
-		std::string _lastWeapon;
-		bool _lastWeaponInPA = false;
+		std::string _currentWeapon;
+		bool _currentlyInPA = false;
 
 		// is offhand (secondary hand) gripping the weapon barrel
 		bool _offHandGripping = false;
@@ -60,6 +61,9 @@ namespace F4VRBody {
 
 		// custom offhand rotation offsets matrix
 		NiMatrix43 _offhandOffsetRot = NiMatrix43();
+
+		// custom back of hand UI transform to update
+		NiTransform _backOfHandUIOffsetTransform = NiTransform();
 
 		// configuration mode to update custom transforms
 		std::unique_ptr<WeaponPositionConfigMode> _configMode;

@@ -243,6 +243,10 @@ namespace F4VRBody {
 		return getNode("Weapon", (*g_player)->firstPersonSkeleton);
 	}
 
+	NiNode* Skeleton::getPrimaryWandNode() const {
+		return getNode("world_primaryWand.nif", _playerNodes->primaryUIAttachNode);
+	}
+
 	/// <summary>
 	/// Get the world position of the offhand index finger tip.
 	/// Make small adjustment as the finger bone position is the center of the finger.
@@ -1298,51 +1302,7 @@ namespace F4VRBody {
 		return isLeft ? leftArm : rightArm;
 	}
 
-	/// <summary>
-	/// Fix melle weapon oriantation in hand to match how a human holds it.
-	/// </summary>
-	void Skeleton::fixMelee() {
-
-		if (!(*g_player)->actorState.IsWeaponDrawn()) {
-			// if no weapon is drawn, nothing to fix
-			return;
-		}
-
-		if (!Offsets::CombatUtilities_IsActorUsingMelee(*g_player)) {
-			// no need to fix non-melee weapons
-			return;
-		}
-
-		auto* inventory = (*g_player)->inventoryList;
-		if (!inventory) {
-			return;
-		}
-
-		for (int i = 0; i < inventory->items.count; i++) {
-			BGSInventoryItem item;
-
-			inventory->items.GetNthItem(i, item);
-
-			if (!item.form) {
-				continue;
-			}
-
-			if ((item.form->formType == FormType::kFormType_WEAP) && (item.stack->flags & 0x3)) {
-
-				TESObjectWEAP* weap = static_cast<TESObjectWEAP*>(item.form);
-				NiAVObject* wNode = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-
-				Matrix44 rot;
-				rot.setEulerAngles(degrees_to_rads(85.0f), degrees_to_rads(-70.0f), degrees_to_rads(0.0f));
-				wNode->m_localTransform.rot = rot.multiply43Right(wNode->m_localTransform.rot);
-				updateDown(wNode->GetAsNiNode(), true);
-				break;
-			}
-		}
-	}
-
-
-		// Thanks Shizof and SmoothtMovementVR for below code
+	// Thanks Shizof and SmoothtMovementVR for below code
     bool HasKeyword(TESObjectARMO* armor, UInt32 keywordFormId)
     {
         if (!armor) {
@@ -1554,15 +1514,6 @@ namespace F4VRBody {
 	}
 
     void Skeleton::showHidePAHUD() {
-        NiNode* wand = this->getPlayerNodes()->primaryUIAttachNode;
-        BSFixedString bname("BackOfHand");
-        NiNode* node = static_cast<NiNode*>(wand->GetObjectByName(&bname));
-
-        if (node && _inPowerArmor) {
-            node->m_worldTransform.pos += NiPoint3(-5.0, -7.0, 2.0);
-            updateTransformsDown(node, false);
-        }
-
         NiNode* hud = getNode("PowerArmorHelmetRoot", _playerNodes->roomnode);
         if (hud) {
             hud->m_localTransform.scale = g_config->showPAHUD ? 1.0f : 0.0f;
@@ -1607,7 +1558,6 @@ namespace F4VRBody {
             rightWeapon->m_localTransform.scale = 0.0;
         }
 
-        fixBackOfHand();
         _leftHandedSticky = g_config->leftHandedMode;
     }
 
@@ -2106,6 +2056,7 @@ namespace F4VRBody {
 		//if (rt->numTransforms > 145) {
 		//	return;
 		//}
+		const bool isWeaponVisible = isNodeVisible(getWeaponNode());
 
 		for (auto pos = 0; pos < rt->numTransforms; pos++) {
 
@@ -2118,7 +2069,7 @@ namespace F4VRBody {
 				bool thumbUp = (reg & vr::ButtonMaskFromId(vr::k_EButton_Grip)) && (reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger)) && (!(reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Touchpad)));
 				_closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton[name]);
 
-				if ((*g_player)->actorState.IsWeaponDrawn() && !g_pipboy->status() && !g_pipboy->isOperatingPipboy() && !(isLeft ^ g_config->leftHandedMode)) { // CylonSurfer Updated conditions to cater for Virtual Pipboy usage (Ensures Index Finger is extended when weapon is drawn)
+				if (isWeaponVisible && !g_pipboy->status() && !g_pipboy->isOperatingPipboy() && !(isLeft ^ g_config->leftHandedMode)) { // CylonSurfer Updated conditions to cater for Virtual Pipboy usage (Ensures Index Finger is extended when weapon is drawn)
 					this->copy1stPerson(name);
 				}
 				else {
@@ -2196,17 +2147,5 @@ namespace F4VRBody {
         updateDown(node, false);
     }
 
-	void Skeleton::fixBackOfHand() {
-		if (g_config->leftHandedMode) {
-			NiNode* backOfHand = getNode("world_primaryWand.nif", _playerNodes->primaryUIAttachNode);
-
-			if (backOfHand) {
-				Matrix44 mat;
-
-				mat.setEulerAngles(degrees_to_rads(180), degrees_to_rads(0), degrees_to_rads(180));
-				backOfHand->m_localTransform.rot = mat.make43();
-				backOfHand->m_localTransform.pos = NiPoint3(7.0, 0.0, -13.0);
-			}
-		}
-	}
+	
 }
