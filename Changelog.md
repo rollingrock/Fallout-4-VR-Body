@@ -4,11 +4,13 @@
 - Improve adjustment accuracy by using controllers thumbsticks.
 - Create default adjustments for most game weapons (mostly right-handed).
 - Support "Back of Hand UI" position adjustment globally and per weapon.
+- Support putting torch (flashlight) on right arm when Pipboy is on left.
 - Fixed vanilla scope misalignment with weapon after adjustment.
 - Fixed offhand gripping position adjustment misc issues.
 - Fixed "Back of Hand UI" moving around and get hidden for some weapons.
 - Fixed left-handed weapon adjustment and separate saved files from right-handed.
 - Fixed left-handed main and pipboy config UI being inverted.
+- Fixed left-handed melee weapon position and rotation.
 
 ## v0.72
 

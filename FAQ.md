@@ -1,5 +1,5 @@
 ## What changed in the last release?
-Check the [CHANGELOG](https://github.com/rollingrock/Fallout-4-VR-Body/blob/main/CHANGELOG.md).
+Check the [Changelog](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Changelog).
 
 ## How Do I configure?
 See [In‐Game-Configuration-Guide](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/In%E2%80%90Game-Configuration-Guide-(v69)).
@@ -65,3 +65,11 @@ Usually due to **permission issues**. Try:
 ## Can I have Holsters for my weapons?
 
 Check out **CylonSurfer's** excellent mod:  [Virtual Holsters](https://www.nexusmods.com/fallout4/mods/51224)
+
+## I don't like the built-in torch, how to remove it?
+1. Open xEdit (F4VREdit)
+2. Click on FRIK.esp
+3. Select "Pipboy" under Armor
+4. Find and Remove "PowerArmorHelmetLightOverride"
+
+![image](https://github.com/user-attachments/assets/fec4c7d4-2c2d-4f80-9b7a-1d177ebdfb5d)
