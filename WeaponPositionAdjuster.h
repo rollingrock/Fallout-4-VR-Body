@@ -24,11 +24,14 @@ namespace F4VRBody {
 		[[nodiscard]] bool inWeaponRepositionMode() const { return _configMode != nullptr; }
 
 		void toggleWeaponRepositionMode();
+		
 
 		void onFrameUpdate();
 		void loadStoredOffsets(const std::string& weaponName);
 
 	private:
+		void handleThrowableWeapon();
+		void handlePrimaryWeapon();	
 		void checkEquippedWeaponChanged(bool emptyHand);
 		void handleScopeCameraAdjustmentByWeaponOffset(const NiNode* weapon) const;
 		void checkIfOffhandIsGripping(const NiNode* weapon);
@@ -61,6 +64,11 @@ namespace F4VRBody {
 
 		// custom offhand rotation offsets matrix
 		NiMatrix43 _offhandOffsetRot = NiMatrix43();
+
+		// custom throwable weapon transform to update
+		NiTransform _throwableWeaponOriginalTransform = NiTransform();
+		NiTransform _throwableWeaponOffsetTransform = NiTransform();
+		std::string _currentThrowableWeaponName;
 
 		// custom back of hand UI transform to update
 		NiTransform _backOfHandUIOffsetTransform = NiTransform();

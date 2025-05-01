@@ -16,6 +16,8 @@ namespace F4VRBody {
 		Weapon = 0,
 		// The secondary hand gripping position offset.
 		OffHand,
+		// The secondary hand gripping position offset.
+		Throwable,
 		// Back of hand UI (HP,Ammo,etc.) offset on hand.
 		BackOfHandUI,
 	};

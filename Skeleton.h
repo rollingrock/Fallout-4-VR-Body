@@ -212,8 +212,9 @@ namespace F4VRBody
 
 		int getBoneInMap(std::string boneName);
 
-		NiNode* Skeleton::getWeaponNode() const;
+		NiNode* getWeaponNode() const;
 		NiNode* getPrimaryWandNode() const;
+		NiNode* getThrowableWeaponNode() const;
 
 		NiPoint3 getOffhandIndexFingerTipWorldPosition();
 

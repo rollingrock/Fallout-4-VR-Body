@@ -247,6 +247,17 @@ namespace F4VRBody {
 		return getNode("world_primaryWand.nif", _playerNodes->primaryUIAttachNode);
 	}
 
+	/**
+	 * The throwable weapon is attached to the melee node but only exists if the player is actively throwing the weapon.
+	 * @return found throwable node or nullptr if not
+	 */
+	NiNode* Skeleton::getThrowableWeaponNode() const {
+		const auto meleeNode = _playerNodes->primaryMeleeWeaponOffsetNode;
+		return meleeNode->m_children.m_emptyRunStart > 0
+			? meleeNode->m_children.m_data[0]->GetAsNiNode()
+			: nullptr;
+	}
+
 	/// <summary>
 	/// Get the world position of the offhand index finger tip.
 	/// Make small adjustment as the finger bone position is the center of the finger.

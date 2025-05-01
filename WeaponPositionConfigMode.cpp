@@ -40,6 +40,19 @@ namespace F4VRBody {
 	}
 
 	/**
+	 * Get default melee weapon adjustment to match how a human holds it as game default is straight forward.
+	 */
+	NiTransform WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(const NiTransform& originalTransform, const bool inPA) {
+		NiTransform transform;
+		transform.scale = originalTransform.scale;
+		transform.rot = originalTransform.rot;
+		transform.pos = g_config->leftHandedMode
+			? (inPA ? NiPoint3(-2.5f, 7.5f, -1) : NiPoint3(-3, 4, 0))
+			: (inPA ? NiPoint3(-0.5f, 6, 2) : NiPoint3(-2, 3, 1));
+		return transform;
+	}
+
+	/**
 	 * Get default back of the hand UI (HP,Ammo,etc.) default adjustment for empty hand and use as base to adjust for weapon.
 	 */
 	NiTransform WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(const NiTransform& originalTransform, const bool inPA) {
@@ -61,7 +74,7 @@ namespace F4VRBody {
 	/**
 	 * Handle configuration UI interaction.
 	 */
-	void WeaponPositionConfigMode::onFrameUpdate(NiNode* weapon) const {
+	void WeaponPositionConfigMode::onFrameUpdate(NiNode* weapon) {
 		if (g_configurationMode->isCalibrateModeActive() || g_configurationMode->isPipBoyConfigModeActive()) {
 			// don't show this config UI if main config UI is shown
 			_configUI->setVisibility(false);
@@ -69,33 +82,25 @@ namespace F4VRBody {
 		}
 		_configUI->setVisibility(true);
 
-		// Show/Hide UI that should be visible only when weapon is equipped
+		const auto throwable = _adjuster->_skelly->getThrowableWeaponNode();
+		if (throwable) {
+			_repositionTarget = RepositionTarget::Throwable;
+			_throwableUIButton->setToggleState(true);
+		}
+
 		const bool weaponEquipped = weapon != nullptr;
-		_weaponModeButton->setVisibility(weaponEquipped);
-		_offhandModeButton->setVisibility(weaponEquipped);
-		if (_betterScopesModeButton) 
-			_betterScopesModeButton->setVisibility(weaponEquipped);
-		_emptyHandsMessageBox->setVisibility(!weaponEquipped);
+		showHideUIElements(weaponEquipped, throwable != nullptr);
 
-		const bool showAnything = weaponEquipped || _repositionTarget == RepositionTarget::BackOfHandUI;
-		_saveButton->setVisibility(showAnything);
-		_resetButton->setVisibility(showAnything);
-
-		// show the right footer
-		const bool complexAdjust = _repositionTarget == RepositionTarget::Weapon || _repositionTarget == RepositionTarget::BackOfHandUI;
-		_complexAdjustFooter->setVisibility(showAnything && complexAdjust);
-		_simpleAdjustFooter->setVisibility(showAnything && !complexAdjust);
-
-		if (!weaponEquipped && _repositionTarget != RepositionTarget::BackOfHandUI) {
+		if (!weaponEquipped && _repositionTarget != RepositionTarget::Throwable && _repositionTarget != RepositionTarget::BackOfHandUI) {
 			// only back of hand UI can be repositioned without weapon equipped
 			return;
 		}
 
 		// reposition
-		handleReposition(weapon);
+		handleReposition(weapon, throwable);
 
 		// reset
-		if (checkAndClearButtonLongPressedOnController(true, vr::EVRButtonId::k_EButton_Grip)) {
+		if (checkAndClearButtonLongPressedOnController(true, vr::EVRButtonId::k_EButton_Grip) && _repositionTarget != RepositionTarget::Throwable) {
 			resetConfig();
 		}
 		// save
@@ -105,15 +110,43 @@ namespace F4VRBody {
 	}
 
 	/**
+	 * Show hide the different config UI elements based on the current state of equipped weapon, throwable, and reposition target.
+	 * Complex number of states to help guide the player through the configuration process.
+	 */
+	void WeaponPositionConfigMode::showHideUIElements(const bool weaponEquipped, const bool throwableEquipped) const {
+		// Show/Hide UI that should be visible only when weapon is equipped
+		_weaponModeButton->setVisibility(weaponEquipped && !throwableEquipped);
+		_offhandModeButton->setVisibility(weaponEquipped && !throwableEquipped);
+		if (_betterScopesModeButton)
+			_betterScopesModeButton->setVisibility(weaponEquipped && !throwableEquipped);
+		_emptyHandsMessageBox->setVisibility(!weaponEquipped && !throwableEquipped);
+
+		const bool showAnything = weaponEquipped || _repositionTarget == RepositionTarget::Throwable || _repositionTarget == RepositionTarget::BackOfHandUI;
+		const bool showSaveReset = showAnything && (_repositionTarget != RepositionTarget::Throwable || throwableEquipped);
+		_saveButton->setVisibility(showSaveReset);
+		_resetButton->setVisibility(showSaveReset);
+		_throwableNotEquippedMessageBox->setVisibility(!showSaveReset && _repositionTarget == RepositionTarget::Throwable);
+
+		// show the right footer
+		const bool complexAdjust = _repositionTarget == RepositionTarget::Weapon || _repositionTarget == RepositionTarget::BackOfHandUI;
+		_complexAdjustFooter->setVisibility(showSaveReset && complexAdjust);
+		_throwableAdjustFooter->setVisibility(showSaveReset && throwableEquipped);
+		_simpleAdjustFooter->setVisibility(showSaveReset && !complexAdjust && !throwableEquipped);
+	}
+
+	/**
 	 * Handle reposition by user input of the target config.
 	 */
-	void WeaponPositionConfigMode::handleReposition(NiNode* weapon) const {
+	void WeaponPositionConfigMode::handleReposition(NiNode* weapon, NiNode* throwable) const {
 		switch (_repositionTarget) {
 		case RepositionTarget::Weapon:
 			handleWeaponReposition(weapon);
 			break;
 		case RepositionTarget::Offhand:
-			handleOffhandReposition(weapon);
+			handleOffhandReposition();
+			break;
+		case RepositionTarget::Throwable:
+			handleThrowableReposition(throwable);
 			break;
 		case RepositionTarget::BackOfHandUI:
 			handleBackOfHandUIReposition();
@@ -126,6 +159,7 @@ namespace F4VRBody {
 
 	/**
 	 * In weapon reposition mode...
+	 * NOTE: because of minor tweaks on what axis are used for repositioning it doesn't make sense to create common code for it.
 	 */
 	void WeaponPositionConfigMode::handleWeaponReposition(NiNode* weapon) const {
 		const auto [primAxisX, primAxisY] = getControllerState(true).rAxis[0];
@@ -134,6 +168,7 @@ namespace F4VRBody {
 			return;
 		}
 
+		auto& transform = _adjuster->_weaponOffsetTransform;
 		const float leftHandedMult = g_config->leftHandedMode ? -1.f : 1.f;
 
 		// Update the weapon transform by player thumbstick and buttons input.
@@ -142,13 +177,13 @@ namespace F4VRBody {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(-degrees_to_rads(primAxisY / 5), -degrees_to_rads(secAxisX / 3), degrees_to_rads(primAxisX / 5));
-			_adjuster->_weaponOffsetTransform.rot = rot.multiply43Left(_adjuster->_weaponOffsetTransform.rot);
+			transform.rot = rot.multiply43Left(transform.rot);
 		} else {
 			// adjust horizontal (y - right/left, x - forward/backward) by primary stick
-			_adjuster->_weaponOffsetTransform.pos.y += leftHandedMult * primAxisX / 12;
-			_adjuster->_weaponOffsetTransform.pos.x += primAxisY / 12;
+			transform.pos.y += leftHandedMult * primAxisX / 12;
+			transform.pos.x += primAxisY / 12;
 			// adjust vertical (z - up/down) by secondary stick
-			_adjuster->_weaponOffsetTransform.pos.z -= leftHandedMult * secAxisY / 12;
+			transform.pos.z -= leftHandedMult * secAxisY / 12;
 		}
 
 		// update the weapon with the offset change
@@ -158,7 +193,7 @@ namespace F4VRBody {
 	/**
 	 * In offhand reposition mode...
 	 */
-	void WeaponPositionConfigMode::handleOffhandReposition(NiNode* weapon) const {
+	void WeaponPositionConfigMode::handleOffhandReposition() const {
 		// Update the offset position by player thumbstick.
 		const auto [axisX, axisY] = getControllerState(true).rAxis[0];
 		if (axisX != 0.f || axisY != 0.f) {
@@ -166,6 +201,42 @@ namespace F4VRBody {
 			rot.setEulerAngles(-degrees_to_rads(axisY / 5), 0, degrees_to_rads(axisX / 5));
 			_adjuster->_offhandOffsetRot = rot.multiply43Left(_adjuster->_offhandOffsetRot);
 		}
+	}
+
+	/**
+	 * In throwable reposition mode...
+	 * NOTE: because of minor tweaks on what axis are used for repositioning it doesn't make sense to create common code for it.
+	 */
+	void WeaponPositionConfigMode::handleThrowableReposition(NiNode* throwable) const {
+		if (!throwable) {
+			return;
+		}
+
+		const auto [primAxisX, primAxisY] = getControllerState(true).rAxis[0];
+		const auto [secAxisX, secAxisY] = getControllerState(false).rAxis[0];
+		if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
+			return;
+		}
+
+		auto& transform = _adjuster->_throwableWeaponOffsetTransform;
+		const float leftHandedMult = g_config->leftHandedMode ? -1.f : 1.f;
+
+		// Update the transform by player thumbstick and buttons input.
+		// Depending on buttons pressed can horizontal/vertical position or rotation.
+		if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
+			Matrix44 rot;
+			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
+			rot.setEulerAngles(degrees_to_rads(secAxisY / 6), degrees_to_rads(secAxisX / 6), degrees_to_rads(primAxisX / 6));
+			transform.rot = rot.multiply43Left(transform.rot);
+		} else {
+			// adjust horizontal (x - right/left, z - forward/backward) by primary stick
+			transform.pos.z += -leftHandedMult * primAxisX / 14 - leftHandedMult * secAxisX / 14;
+			transform.pos.x += -primAxisY / 14;
+			// adjust vertical (y - up/down) by secondary stick
+			transform.pos.y += leftHandedMult * secAxisY / 14;
+		}
+
+		throwable->m_localTransform = transform;
 	}
 
 	/**
@@ -179,6 +250,7 @@ namespace F4VRBody {
 			return;
 		}
 
+		auto& transform = _adjuster->_backOfHandUIOffsetTransform;
 		const float leftHandedMult = g_config->leftHandedMode ? -1.f : 1.f;
 
 		// Update the transform by player thumbstick and buttons input.
@@ -187,18 +259,18 @@ namespace F4VRBody {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(-degrees_to_rads(secAxisY / 6), -degrees_to_rads(primAxisX / 6), -degrees_to_rads(primAxisY / 6));
-			_adjuster->_backOfHandUIOffsetTransform.rot = rot.multiply43Left(_adjuster->_backOfHandUIOffsetTransform.rot);
+			transform.rot = rot.multiply43Left(transform.rot);
 		}
 		else {
 			// adjust horizontal (z - right/left, y - forward/backward) by primary stick
-			_adjuster->_backOfHandUIOffsetTransform.pos.z -= leftHandedMult * primAxisX / 14;
-			_adjuster->_backOfHandUIOffsetTransform.pos.y += primAxisY / 14;
+			transform.pos.z -= leftHandedMult * primAxisX / 14;
+			transform.pos.y += primAxisY / 14;
 			// adjust vertical (x - up/down) by secondary stick
-			_adjuster->_backOfHandUIOffsetTransform.pos.x += leftHandedMult * secAxisY / 14;
+			transform.pos.x += leftHandedMult * secAxisY / 14;
 		}
 
 		// update the weapon with the offset change
-		_adjuster->getBackOfHandUINode()->m_localTransform = _adjuster->_backOfHandUIOffsetTransform;
+		_adjuster->getBackOfHandUINode()->m_localTransform = transform;
 	}
 
 	/**
@@ -222,6 +294,9 @@ namespace F4VRBody {
 		case RepositionTarget::Offhand:
 			resetOffhandConfig();
 			break;
+		case RepositionTarget::Throwable:
+			resetThrowableConfig();
+			break;
 		case RepositionTarget::BackOfHandUI:
 			resetBackOfHandUIConfig();
 			break;
@@ -239,6 +314,9 @@ namespace F4VRBody {
 			break;
 		case RepositionTarget::Offhand:
 			saveOffhandConfig();
+			break;
+		case RepositionTarget::Throwable:
+			saveThrowableConfig();
 			break;
 		case RepositionTarget::BackOfHandUI:
 			saveBackOfHandUIConfig();
@@ -281,6 +359,19 @@ namespace F4VRBody {
 		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA);
 	}
 
+	void WeaponPositionConfigMode::resetThrowableConfig() const {
+		ShowNotification("Reset Throwable Weapon Position to Default");
+		doHaptic();
+		_adjuster->_throwableWeaponOffsetTransform = _adjuster->_throwableWeaponOriginalTransform;
+		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA, true);
+	}
+
+	void WeaponPositionConfigMode::saveThrowableConfig() const {
+		ShowNotification("Saving Throwable Weapon Position");
+		doHaptic();
+		g_config->saveWeaponOffsets(_adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
+	}
+
 	void WeaponPositionConfigMode::resetBackOfHandUIConfig() const {
 		ShowNotification("Reset Back of Hand UI Position to Default");
 		doHaptic();
@@ -320,12 +411,16 @@ namespace F4VRBody {
 		_offhandModeButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
 		_offhandModeButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Offhand; });
 
+		_throwableUIButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_throwable.nif");
+		_throwableUIButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Throwable; });
+
 		const auto backOfHandUIButton = std::make_shared<ui::UIToggleButton>("FRIK/ui_weapconf_btn_back_of_hand_ui.nif");
 		backOfHandUIButton->setOnToggleHandler([this](ui::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BackOfHandUI; });
 
 		const auto firstRowContainerInner = std::make_shared<ui::UIToggleGroupContainer>(ui::UIContainerLayout::HorizontalCenter, 0.15f);
 		firstRowContainerInner->addElement(_weaponModeButton);
 		firstRowContainerInner->addElement(_offhandModeButton);
+		firstRowContainerInner->addElement(_throwableUIButton);
 		firstRowContainerInner->addElement(backOfHandUIButton);
 
 		if (isBetterScopesVRModLoaded()) {
@@ -350,15 +445,21 @@ namespace F4VRBody {
 		const auto exitButton = std::make_shared<ui::UIButton>("FRIK/ui_common_btn_exit.nif");
 		exitButton->setOnPressHandler([this](ui::UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
 
+		_throwableNotEquippedMessageBox = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_throwable_box.nif");
+		_throwableNotEquippedMessageBox->setSize(3.6f, 2.2f);
+
 		const auto secondRowContainer = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::HorizontalCenter, 0.2f);
 		secondRowContainer->addElement(_saveButton);
 		secondRowContainer->addElement(_resetButton);
+		secondRowContainer->addElement(_throwableNotEquippedMessageBox);
 		secondRowContainer->addElement(exitButton);
 
 		const auto header = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_header.nif", 0.7f);
 		header->setSize(8, 1);
 		_complexAdjustFooter = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer.nif", 0.7f);
 		_complexAdjustFooter->setSize(7, 2.2f);
+		_throwableAdjustFooter = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer_throwable.nif", 0.7f);
+		_throwableAdjustFooter->setSize(7, 2.2f);
 		_simpleAdjustFooter = std::make_shared<ui::UIWidget>("FRIK/ui_weapconf_footer_2.nif", 0.7f);
 		_simpleAdjustFooter->setSize(5, 2.2f);
 		_simpleAdjustFooter->setVisibility(false);
@@ -367,6 +468,7 @@ namespace F4VRBody {
 		mainContainer->addElement(firstRowContainer);
 		mainContainer->addElement(secondRowContainer);
 		mainContainer->addElement(_complexAdjustFooter);
+		mainContainer->addElement(_throwableAdjustFooter);
 		mainContainer->addElement(_simpleAdjustFooter);
 		
 		_configUI = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalDown, 0.3f, 1.7f);

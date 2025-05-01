@@ -15,6 +15,6 @@ namespace ui {
 		[[nodiscard]] virtual std::string toString() const override;
 
 	protected:
-		virtual void onPressEventFired(UIElement* eventElement, UIFrameUpdateContext* context) override;
+		virtual void onStateChanged(UIElement* element) override;
 	};
 }

@@ -61,7 +61,7 @@ namespace ui {
 		}
 
 		UIWidget::onPressEventFired(element, context);
-		_isToggleOn = !_isToggleOn;
+		setToggleState(!_isToggleOn);
 		if (_onToggleEventHandler) {
 			_onToggleEventHandler(this, _isToggleOn);
 		}
