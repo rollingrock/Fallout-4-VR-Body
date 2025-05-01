@@ -407,6 +407,7 @@ namespace F4VRBody {
 	static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool leftHanded) {
 		static const std::string POWER_ARMOR_SUFFIX{ "-PowerArmor" };
 		static const std::string OFF_HAND_SUFFIX{ "-offHand" };
+		static const std::string THROWABLE_SUFFIX{ "-throwable" };
 		static const std::string BACK_OF_HAND_SUFFIX{ "-backOfHand" };
 		static const std::string LEFT_HANDED_SUFFIX{ "-leftHanded" };
 		switch (mode) {
@@ -414,6 +415,8 @@ namespace F4VRBody {
 			return name + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
 		case WeaponOffsetsMode::OffHand:
 			return name + OFF_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
+		case WeaponOffsetsMode::Throwable:
+			return name + THROWABLE_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
 		case WeaponOffsetsMode::BackOfHandUI:
 			return name + BACK_OF_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
 		}

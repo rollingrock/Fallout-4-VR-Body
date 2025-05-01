@@ -22,10 +22,51 @@ namespace F4VRBody {
 	}
 
 	/**
-	 * Run every game frame to reposition (position and rotation) the weapon and the scope camera (optical scope)
-	 * with regard to weapon custom offsets and/or weapon gripping by offhand (non-primary hand).
+	 * Run every game frame to do adjustments on all the weapon related nodes\elements.
 	 */
 	void WeaponPositionAdjuster::onFrameUpdate() {
+		// handle throwable first as it's independent of weapon
+		handleThrowableWeapon();
+
+		handlePrimaryWeapon();
+	}
+
+	/**
+	 * Handle adjustment of the throwable weapon position.
+	 * The throwable weapon exists only when the player is actively throwing it, NOT if it is equipped.
+	 * So all the handling needs to happen here with finding the offsets, defaults, and names.
+	 */
+	void WeaponPositionAdjuster::handleThrowableWeapon() {
+		const auto throwableWeapon = _skelly->getThrowableWeaponNode();
+		if (!throwableWeapon) {
+			// no throwable, clear name and noop
+			_currentThrowableWeaponName = "";
+			return;
+		}
+
+		// check throwable weapon is equipped for the first time
+		if (_currentThrowableWeaponName.empty()) {
+			_currentThrowableWeaponName = throwableWeapon->m_name.c_str();
+			_throwableWeaponOriginalTransform = throwableWeapon->m_localTransform;
+
+			// get saved offset or use hard-coded global default
+			const auto offsetLookup = g_config->getWeaponOffsets(_currentThrowableWeaponName, WeaponOffsetsMode::Throwable, _currentlyInPA);
+			_throwableWeaponOffsetTransform = offsetLookup.has_value()
+				? offsetLookup.value()
+				: WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(_throwableWeaponOriginalTransform, _currentlyInPA);
+
+			_MESSAGE("Equipped Throwable Weapon changed to '%s' (InPA:%d); HasWeaponOffset:%d", _currentThrowableWeaponName.c_str(), _currentlyInPA, offsetLookup.has_value());
+		}
+
+		// use custom offset
+		throwableWeapon->m_localTransform = _throwableWeaponOffsetTransform;
+	}
+
+	/**
+	 * Reposition (position and rotation) the weapon, the scope camera (optical scope), and back-of-hand UI
+	 * with regard to weapon custom offsets and/or weapon gripping by offhand (non-primary hand).
+	 */
+	void WeaponPositionAdjuster::handlePrimaryWeapon() {
 		const auto weapon = _skelly->getWeaponNode();
 		const auto backOfHand = getBackOfHandUINode();
 		if (!isNodeVisible(weapon) || g_configurationMode->isCalibrateModeActive()) {

@@ -15,6 +15,7 @@ namespace F4VRBody {
 	enum class RepositionTarget : uint8_t {
 		Weapon = 0,
 		Offhand,
+		Throwable,
 		BackOfHandUI,
 		BetterScopes,
 	};
@@ -32,17 +33,19 @@ namespace F4VRBody {
 		~WeaponPositionConfigMode();
 
 		static NiTransform getMeleeWeaponDefaultAdjustment(const NiTransform& originalTransform);
+		static NiTransform getThrowableWeaponDefaultAdjustment(const NiTransform& originalTransform, bool inPA);
 		static NiTransform getBackOfHandUIDefaultAdjustment(const NiTransform& originalTransform, bool inPA);
+		void showHideUIElements(bool weaponEquipped, bool throwableEquipped) const;
 
 		[[nodiscard]] bool isInOffhandRepositioning() const { return _repositionTarget == RepositionTarget::Offhand; }
 
-		void onFrameUpdate(NiNode* weapon) const;
+		void onFrameUpdate(NiNode* weapon);
 
 	private:
-		void handleReposition(NiNode* weapon) const;
-		void handleTransformRepositionByControllersInput(NiTransform& transform) const;
+		void handleReposition(NiNode* weapon, NiNode* throwable) const;
 		void handleWeaponReposition(NiNode* weapon) const;
-		void handleOffhandReposition(NiNode* weapon) const;
+		void handleOffhandReposition() const;
+		void handleThrowableReposition(NiNode* throwable) const;
 		void handleBackOfHandUIReposition() const;
 		static void handleBetterScopesReposition();
 		void resetConfig() const;
@@ -51,12 +54,14 @@ namespace F4VRBody {
 		void saveWeaponConfig() const;
 		void resetOffhandConfig() const;
 		void saveOffhandConfig() const;
+		void resetThrowableConfig() const;
+		void saveThrowableConfig() const;
 		void resetBackOfHandUIConfig() const;
-		void doHaptic() const;
 		void saveBackOfHandUIConfig() const;
 		void resetBetterScopesConfig() const;
 		void saveBetterScopesConfig() const;
 		void createConfigUI();
+		void doHaptic() const;
 
 		// access the weapon/offhand transform to change
 		WeaponPositionAdjuster* _adjuster;
@@ -67,12 +72,15 @@ namespace F4VRBody {
 		// configuration UI
 		std::shared_ptr<ui::UIContainer> _configUI;
 		std::shared_ptr<ui::UIWidget> _complexAdjustFooter;
+		std::shared_ptr<ui::UIWidget> _throwableAdjustFooter;
 		std::shared_ptr<ui::UIWidget> _simpleAdjustFooter;
 		std::shared_ptr<ui::UIToggleButton> _weaponModeButton;
 		std::shared_ptr<ui::UIToggleButton> _offhandModeButton;
+		std::shared_ptr<ui::UIToggleButton> _throwableUIButton;
 		std::shared_ptr<ui::UIWidget> _emptyHandsMessageBox;
 		std::shared_ptr<ui::UIToggleButton> _betterScopesModeButton;
 		std::shared_ptr<ui::UIButton> _saveButton;
 		std::shared_ptr<ui::UIButton> _resetButton;
+		std::shared_ptr<ui::UIWidget> _throwableNotEquippedMessageBox;
 	};
 }

@@ -50,4 +50,14 @@ namespace ui {
 			_parent->onPressEventFiredPropagate(element, context);
 		}
 	}
+
+	/**
+	 * On state change of the element propagate that it happen up the UI tree to let containers handle child state changes.
+	 * If overridden, make sure to call the parent.
+	 */
+	void UIElement::onStateChanged(UIElement* element) {
+		if (_parent) {
+			_parent->onStateChanged(element);
+		}
+	}
 }

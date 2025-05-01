@@ -16,7 +16,10 @@ namespace ui {
 
 		// is the button is currently toggled ON or OFF
 		[[nodiscard]] bool isToggleOn() const { return _isToggleOn; }
-		void setToggleState(const bool isToggleOn) { _isToggleOn = isToggleOn; }
+		void setToggleState(const bool isToggleOn) {
+			_isToggleOn = isToggleOn;
+			onStateChanged(this);
+		}
 
 		// is a user is allowed to un-toggle the button (useful for toggle group)
 		[[nodiscard]] bool isUnToggleAllowed() const { return _isUnToggleAllowed; }

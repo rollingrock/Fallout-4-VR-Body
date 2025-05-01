@@ -70,6 +70,7 @@ namespace ui {
 		virtual NiTransform calculateTransform() const;
 		virtual void onPressEventFired(UIElement* element, UIFrameUpdateContext* context) {}
 		void onPressEventFiredPropagate(UIElement* element, UIFrameUpdateContext* context);
+		virtual void onStateChanged(UIElement* element);
 
 		// Attach the UI element to the given game node.
 		virtual void attachToNode(NiNode* attachNode);
