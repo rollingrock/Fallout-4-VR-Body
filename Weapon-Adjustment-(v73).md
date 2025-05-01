@@ -30,7 +30,11 @@ There can be 8 of file variants per weapon which can be shared with others.
 
 For back-of-hand UI there is an additional `EmptyHand` "weapon" that is used as a global offset used if no weapon specific offset is found. Player can adjust it in weapon adjustment config mode by unequipping a weapon and switching to back-of-hand adjustment in the UI.
 
-## Offhand Mode
+## Throwable Weapon
+![image](https://github.com/user-attachments/assets/bd538d25-79be-46b1-b816-58b16b50542e)
+
+
+## Offhand Grip
 
 Use this mode to change the x/z-axis (righ/left, up/down to the world) from where your offhand grabs the weapon. This is useful if there is a bigger stock.
 
