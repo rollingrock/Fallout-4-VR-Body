@@ -3,7 +3,7 @@
 #include "f4se/GameEvents.h"
 #include "f4se/GameMenus.h"
 
-namespace F4VRBody {
+namespace FRIK {
 
 
 	class ScopeMenuEventHandler : public BSTEventSink<MenuOpenCloseEvent> {

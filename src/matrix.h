@@ -7,7 +7,7 @@
 
 #define PI 3.14159265358979323846
 
-namespace F4VRBody {
+namespace FRIK {
 	class Matrix44 {
 	public:
 		Matrix44() {

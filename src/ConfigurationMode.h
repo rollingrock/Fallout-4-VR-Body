@@ -2,7 +2,7 @@
 
 #include "Skeleton.h"
 
-namespace F4VRBody {
+namespace FRIK {
 
 	/// <summary>
 	/// Handle the in-game configuration matrix UI.

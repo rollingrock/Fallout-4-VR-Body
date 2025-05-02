@@ -6,7 +6,7 @@
 
 #include <vector>
 
-namespace ui {
+namespace VRUI {
 	class UIManager {
 	public:
 		void onFrameUpdate(UIModAdapter* adapter);

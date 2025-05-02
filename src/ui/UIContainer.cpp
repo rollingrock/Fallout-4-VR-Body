@@ -1,7 +1,7 @@
 #include "UIContainer.h"
 #include "UIManager.h"
 
-namespace ui {
+namespace VRUI {
 	std::string UIContainer::toString() const {
 		return std::format("UIContainer: {}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f}), Children({}), Layout({})",
 			_visible ? "V" : "H",

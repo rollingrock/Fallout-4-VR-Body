@@ -2,7 +2,7 @@
 #include "../Config.h"
 #include "../Debug.h"
 
-namespace ui {
+namespace VRUI {
 	// globals, globals everywhere...
 	UIManager* g_uiManager;
 
@@ -35,7 +35,7 @@ namespace ui {
 			adapter->setInteractionHandPointing(false, isInteractionClose.value());
 		}
 
-		if (F4VRBody::g_config->checkDebugDumpDataOnceFor("ui_tree")) {
+		if (FRIK::g_config->checkDebugDumpDataOnceFor("ui_tree")) {
 			dumpUITree();
 		}
 	}

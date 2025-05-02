@@ -5,7 +5,7 @@
 #include "HandPose.h"
 #include "F4VRBody.h"
 
-namespace F4VRBody {
+namespace FRIK {
 	constexpr const char* meshName[12] = {
 		"PB-MainTitleTrans", "PB-Tile07Trans", "PB-Tile03Trans", "PB-Tile08Trans", "PB-Tile02Trans", "PB-Tile01Trans", "PB-Tile04Trans", "PB-Tile05Trans",
 		"PB-Tile06Trans", "PB-Tile09Trans", "PB-Tile10Trans", "PB-Tile11Trans"

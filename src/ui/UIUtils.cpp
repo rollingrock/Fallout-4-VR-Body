@@ -4,12 +4,12 @@
 #include "../Offsets.h"
 #include "../Debug.h"
 
-namespace ui {
+namespace VRUI {
 	/**
 	 * Get struct with useful NiNodes references related to player.
 	 */
-	F4VRBody::PlayerNodes* getPlayerNodes() {
-		return reinterpret_cast<F4VRBody::PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
+	FRIK::PlayerNodes* getPlayerNodes() {
+		return reinterpret_cast<FRIK::PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
 	}
 
 	/**
@@ -80,7 +80,7 @@ namespace ui {
 	 * @return true if BetterScopesVR mod is loaded in the game, false otherwise.
 	 */
 	bool isBetterScopesVRModLoaded() {
-		return F4VRBody::isModLoaded("FO4VRBETTERSCOPES");
+		return FRIK::isModLoaded("FO4VRBETTERSCOPES");
 	}
 
 	static void getNodeWidthHeight(NiNode* node) {

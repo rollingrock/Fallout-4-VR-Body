@@ -4,7 +4,7 @@
 #include "f4se/GameReferences.h"
 #include "f4se/GameObjects.h"
 
-namespace F4VRBody {
+namespace FRIK {
 
 	constexpr const UInt32 PipboyAA = 0x0001ED3D;
 	constexpr const UInt32 PipboyArmor = 0x00021B3B;

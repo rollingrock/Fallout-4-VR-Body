@@ -7,7 +7,7 @@
 #include <sstream>
 #include <iomanip>
 
-namespace F4VRBody {
+namespace FRIK {
 
 	/// <summary>
 	/// Holds the the last time of a log message per key.

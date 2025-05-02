@@ -17,7 +17,7 @@ extern OpenVRHookManagerAPI* _vrhook;
 
 using namespace std::chrono;
 
-namespace F4VRBody {
+namespace FRIK {
 
 	float defaultCameraHeight = 120.4828;
 	float PACameraHeightDiff = 20.7835;

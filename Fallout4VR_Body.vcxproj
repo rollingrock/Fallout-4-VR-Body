@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{a1228503-390f-4a85-b728-729a8cfdc3a1}</ProjectGuid>
-    <RootNamespace>Fallout4VRBody</RootNamespace>
+    <RootNamespace>FRIK</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>FRIK</ProjectName>
   </PropertyGroup>

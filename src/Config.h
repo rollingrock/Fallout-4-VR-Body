@@ -3,7 +3,7 @@
 #include "VR.h"
 #include <optional>
 
-namespace F4VRBody {
+namespace FRIK {
 	constexpr auto INI_SECTION_MAIN = "Fallout4VRBody";
 	constexpr auto INI_SECTION_DEBUG = "Debug";
 	constexpr auto INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";

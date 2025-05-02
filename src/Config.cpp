@@ -12,7 +12,7 @@
 
 using json = nlohmann::json;
 
-namespace F4VRBody {
+namespace FRIK {
 	Config* g_config = nullptr;
 
 	constexpr int FRIK_INI_VERSION = 7;

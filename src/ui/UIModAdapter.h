@@ -4,7 +4,7 @@
 
 #include "../Debug.h"
 
-namespace ui {
+namespace VRUI {
 	class UIModAdapter {
 	public:
 		/**

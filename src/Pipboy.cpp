@@ -12,7 +12,7 @@
 
 using namespace std::chrono;
 
-namespace F4VRBody {
+namespace FRIK {
 
 	/// <summary>
 	/// Turn on the Pipboy and set the status flags.

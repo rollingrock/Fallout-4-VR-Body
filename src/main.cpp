@@ -26,7 +26,7 @@ void OnBetterScopesMessage(F4SEMessagingInterface::Message* msg) {
 		return;
 
 	if (msg->type == 15) {
-		F4VRBody::c_isLookingThroughScope = (bool)msg->data;
+		FRIK::c_isLookingThroughScope = (bool)msg->data;
 	}
 }
 
@@ -36,7 +36,7 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg) {
 		return;
 
 	if (msg->type == F4SEMessagingInterface::kMessage_GameLoaded) {
-		F4VRBody::startUp();
+		FRIK::startUp();
 		VRHook::InitVRSystem();
 		SmoothMovementVR::StartFunctions();
 		SmoothMovementVR::MenuOpenCloseHandler::Register();
@@ -44,7 +44,7 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg) {
 	}
 
 	if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
-		bool gripConfig = false; // !F4VRBody::g_config->staticGripping;
+		bool gripConfig = false; // !FRIK::g_config->staticGripping;
 		g_messaging->Dispatch(g_pluginHandle, 15, (void*)gripConfig, sizeof(bool), "FO4VRBETTERSCOPES");
 		g_messaging->RegisterListener(g_pluginHandle, "FO4VRBETTERSCOPES", OnBetterScopesMessage);
 		_MESSAGE("kMessage_PostLoad Completed");
@@ -55,15 +55,15 @@ extern "C" {
 	bool F4SEPlugin_Query(const F4SEInterface* a_f4se, PluginInfo* a_info)
 	{
 		Sleep(5000);
-		gLog.OpenRelative(CSIDL_MYDOCUMENTS, R"(\\My Games\\Fallout4VR\\F4SE\\Fallout4VRBody.log)");
+		gLog.OpenRelative(CSIDL_MYDOCUMENTS, R"(\\My Games\\Fallout4VR\\F4SE\\FRIK.log)");
 		gLog.SetPrintLevel(IDebugLog::kLevel_Message);
 		gLog.SetLogLevel(IDebugLog::kLevel_Message);
 
-		_MESSAGE("F4VRBody v%s", F4VRBODY_VERSION_VERSTRING);
+		_MESSAGE("FRIK v%s", FRIK_VERSION_VERSTRING);
 
 		a_info->infoVersion = PluginInfo::kInfoVersion;
-		a_info->name = "F4VRBody";
-		a_info->version = F4VRBODY_VERSION_MAJOR;
+		a_info->name = "FRIK";
+		a_info->version = FRIK_VERSION_MAJOR;
 
 		if (a_f4se->isEditor) {
 			_FATALERROR("[FATAL ERROR] Loaded in editor, marking as incompatible!\n");
@@ -83,7 +83,7 @@ extern "C" {
 
 	bool F4SEPlugin_Load(const F4SEInterface* a_f4se) {
 		try {
-			_MESSAGE("F4VRBody Init - %s", F4VRBody::getCurrentTimeString().data());
+			_MESSAGE("FRIK Init - %s", FRIK::getCurrentTimeString().data());
 
 			g_pluginHandle = a_f4se->GetPluginHandle();
 
@@ -104,14 +104,14 @@ extern "C" {
 			}
 
 			_MESSAGE("Init config...");
-			F4VRBody::initConfig();
+			FRIK::initConfig();
 
 			_MESSAGE("Init UI Manager...");
-			ui::initUIManager();
+			VRUI::initUIManager();
 
 			_MESSAGE("Register papyrus funcs...");
 			g_papyrus = (F4SEPapyrusInterface*)a_f4se->QueryInterface(kInterface_Papyrus);
-			if (!g_papyrus->Register(F4VRBody::registerPapyrusFuncs)) {
+			if (!g_papyrus->Register(FRIK::registerPapyrusFuncs)) {
 				throw std::exception("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
 			}
 
@@ -119,12 +119,12 @@ extern "C" {
 			patches::patchAll();
 
 			_MESSAGE("Init gun reaload system...");
-			F4VRBody::InitGunReloadSystem();
+			FRIK::InitGunReloadSystem();
 
 			_MESSAGE("Hook main...");
 			hookMain();
 
-			_MESSAGE("F4VRBody Loaded successfully");
+			_MESSAGE("FRIK Loaded successfully");
 			return true;
 		}
 		catch (const std::exception& e)

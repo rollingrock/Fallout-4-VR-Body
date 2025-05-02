@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace F4VRBody {
+namespace FRIK {
 
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;

@@ -27,7 +27,7 @@ extern F4SEPapyrusInterface* g_papyrus;
 extern F4SEMessagingInterface* g_messaging;
 
 
-namespace F4VRBody {
+namespace FRIK {
 	
 	extern Pipboy* g_pipboy;
 	extern ConfigurationMode* g_configurationMode;

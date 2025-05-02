@@ -5,7 +5,7 @@
 
 #include "utils.h"
 
-namespace F4VRBody {
+namespace FRIK {
 
 	bool inScopeMenu = false;
 	

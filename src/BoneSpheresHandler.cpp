@@ -1,7 +1,7 @@
 #include "BoneSpheresHandler.h"
 #include "F4VRBody.h"
 
-namespace F4VRBody {
+namespace FRIK {
 
 	void BoneSpheresHandler::onFrameUpdate() {
 		detectBoneSphere();

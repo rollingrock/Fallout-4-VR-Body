@@ -1,7 +1,7 @@
 #include "UIToggleGroupContainer.h"
 #include "UIManager.h"
 
-namespace ui {
+namespace VRUI {
 	std::string UIToggleGroupContainer::toString() const {
 		return std::format("UIToggleGroupContainer: {}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f}), Children({}), Layout({})",
 			_visible ? "V" : "H",

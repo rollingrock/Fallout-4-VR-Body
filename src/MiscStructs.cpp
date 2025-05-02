@@ -1,6 +1,6 @@
 #include "MiscStructs.h"
 
-namespace F4VRBody {
+namespace FRIK {
 
 
 	RelocAddr<uintptr_t> NEW_REFR_DATA_VTABLE(0x2c8d080);

@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "Skeleton.h"
 
-namespace F4VRBody {
+namespace FRIK {
 	void _SmsMESSAGE(const std::string key, int time, const char* fmt, ...);
 	void _S1sMESSAGE(const std::string key, const char* fmt, ...);
 	void positionDiff(Skeleton* skelly);

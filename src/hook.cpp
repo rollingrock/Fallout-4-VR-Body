@@ -80,14 +80,14 @@ RelocAddr<_AIProcess_Set3DUpdateFlags> AIProcess_Set3DUpdateFlags(0xec8ce0);
 
 // Gun Reload Init
 uint64_t gunReloadInit(uint64_t rcx, uint64_t rdx, uint64_t r8) {
-	F4VRBody::g_gunReloadSystem->startAnimationCapture();
+	FRIK::g_gunReloadSystem->startAnimationCapture();
 	return Actor_GetCurrentWeapon(rcx, rdx, r8);
 }
 
 uint64_t updatePlayerAnimationHook(uint64_t rcx, float* rdx) {
 
-	if (F4VRBody::g_animDeltaTime >= 0.0f) {
-		rdx[0] = F4VRBody::g_animDeltaTime;
+	if (FRIK::g_animDeltaTime >= 0.0f) {
+		rdx[0] = FRIK::g_animDeltaTime;
 	}
 	return TESObjectREFR_SetupAnimationUpdateDataForRefernce(rcx, rdx);
 }
@@ -124,7 +124,7 @@ RelocAddr<uint64_t> wandMesh(0x2d686d8);
 
 void hookIt(uint64_t rcx) {
 	uint64_t parm = rcx;
-	F4VRBody::update();
+	FRIK::update();
 	//hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.   
 
 	// so all of this below is an attempt to bypass the functionality in game around my hook at resets the root parent node's world pos which screws up armor
@@ -149,7 +149,7 @@ void hookIt(uint64_t rcx) {
 
 void hook2(uint64_t rcx, uint64_t rdx, uint64_t r8, uint64_t r9) {
 
-	F4VRBody::update();
+	FRIK::update();
 
 	hookedMainDrawCandidateFunc(rcx, rdx, r8, r9);
 
@@ -165,7 +165,7 @@ void hook2(uint64_t rcx, uint64_t rdx, uint64_t r8, uint64_t r9) {
 }
 
 void hook5(uint64_t rcx) {
-	F4VRBody::update();
+	FRIK::update();
 
 	someRandomFunc(rcx);
 
@@ -183,19 +183,19 @@ void hook5(uint64_t rcx) {
 void hook3(double param1, double param2, double param3) {
 
 	hookedPosPlayerFunc(param1, param2, param3);
-	F4VRBody::update();
+	FRIK::update();
 	return;
 }
 
 void hook4() {
-	F4VRBody::update();
+	FRIK::update();
 	hookMultiBoundCullingFunc();
 	return;
 }
 
 void hookSmoothMovement(uint64_t rcx) {
 	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-		F4VRBody::smoothMovement();
+		FRIK::smoothMovement();
 	}
 	smoothMovementHook(rcx);
 }
@@ -243,7 +243,7 @@ void hookMain() {
 	}
 
 
-//	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&F4VRBody::update);
+//	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&FRIK::update);
 
 //	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
 	//g_branchTrampoline.Write5Call(hookMainDrawCandidate.GetUIntPtr(), (uintptr_t)&hook2);

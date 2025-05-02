@@ -10,7 +10,7 @@
 
 #include <chrono>
 
-namespace F4VRBody {
+namespace FRIK {
 	typedef void* (*_AIProcess_ClearMuzzleFlashes)(Actor::MiddleProcess* middleProcess);
 	extern RelocAddr<_AIProcess_ClearMuzzleFlashes> AIProcess_ClearMuzzleFlashes;
 

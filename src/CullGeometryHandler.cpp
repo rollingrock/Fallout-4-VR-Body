@@ -4,7 +4,7 @@
 #include "utils.h"
 #include "F4VRBody.h"
 
-namespace F4VRBody {
+namespace FRIK {
 
 	/// <summary>
 	/// Hide/Show player specific equipment slot found by index.

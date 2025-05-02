@@ -6,7 +6,7 @@
 #include "MiscStructs.h"
 #include "Debug.h"
 
-namespace F4VRBody {
+namespace FRIK {
 	GunReload* g_gunReloadSystem = nullptr;
 
 	float g_animDeltaTime = -1.0f;

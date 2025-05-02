@@ -4,7 +4,7 @@
 #include "UIContainer.h"
 #include "UIToggleButton.h"
 
-namespace ui {
+namespace VRUI {
 	class UIToggleGroupContainer : public UIContainer {
 	public:
 		explicit UIToggleGroupContainer(const UIContainerLayout layout = UIContainerLayout::Manual, const float padding = 0)

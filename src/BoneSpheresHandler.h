@@ -2,7 +2,7 @@
 
 #include "f4se/PapyrusEvents.h"
 
-namespace F4VRBody {
+namespace FRIK {
 
 	constexpr const char* BONE_SPHERE_EVEN_NAME = "OnBoneSphereEvent";
 

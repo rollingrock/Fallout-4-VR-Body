@@ -21,5 +21,5 @@ Config Files location:
 Logs location:
 %USERPROFILE%\Documents\My Games\Fallout4VR\F4SE
 
-- `Fallout4VRBody.log` for FRIK logs
+- `FRIK.log` for FRIK logs
 - `crash-<date time>.log` for crash logs

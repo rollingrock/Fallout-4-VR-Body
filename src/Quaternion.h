@@ -5,7 +5,7 @@
 #include "matrix.h"
 
 
-namespace F4VRBody {
+namespace FRIK {
 	class Quaternion {
 	public:
 		Quaternion() {

@@ -2,7 +2,7 @@
 
 #include "f4se/NiNodes.h"
 
-namespace F4VRBody {
+namespace FRIK {
 	typedef int (*_BSFlattenedBoneTree_GetBoneIndex)(NiAVObject* a_tree, BSFixedString* a_name);
 	extern RelocAddr <_BSFlattenedBoneTree_GetBoneIndex> BSFlattenedBoneTree_GetBoneIndex;
 	typedef NiNode* (*_BSFlattenedBoneTree_GetBoneNode)(NiAVObject* a_tree, BSFixedString* a_name);

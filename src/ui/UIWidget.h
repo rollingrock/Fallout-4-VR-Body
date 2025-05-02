@@ -3,7 +3,7 @@
 #include "UIElement.h"
 #include "UIUtils.h"
 
-namespace ui {
+namespace VRUI {
 	class UIWidget : public UIElement {
 	public:
 		explicit UIWidget(const std::string& nifPath, const float scale = 1)

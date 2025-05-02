@@ -2,7 +2,7 @@
 
 #include "UIWidget.h"
 
-namespace ui {
+namespace VRUI {
 	class UIDebugWidget : public UIWidget {
 	public:
 		explicit UIDebugWidget(const bool followInteractPos = false)

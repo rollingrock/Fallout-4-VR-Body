@@ -4,7 +4,7 @@
 #include "F4VRBody.h"
 #include "Debug.h"
 
-namespace F4VRBody {
+namespace FRIK {
 	// use as weapon name when no weapon in equipped. specifically for default back of hand UI offset.
 	constexpr auto EMPTY_HAND = "EmptyHand";
 

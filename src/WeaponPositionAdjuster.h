@@ -3,7 +3,7 @@
 #include "Skeleton.h"
 #include "WeaponPositionConfigMode.h"
 
-namespace F4VRBody {
+namespace FRIK {
 	class WeaponPositionAdjuster {
 		// To simplify changing offsets during configuration
 		friend class WeaponPositionConfigMode;

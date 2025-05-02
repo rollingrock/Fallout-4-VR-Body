@@ -2,7 +2,7 @@
 #include "f4se/NiTypes.h"
 #include "Skeleton.h"
 
-namespace F4VRBody {
+namespace FRIK {
 	extern std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
 	extern std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
 

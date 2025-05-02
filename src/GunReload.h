@@ -3,7 +3,7 @@
 #include <chrono>
 #include "utils.h"
 
-namespace F4VRBody {
+namespace FRIK {
 
 	enum ReloadState {
 		idle,

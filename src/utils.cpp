@@ -11,7 +11,7 @@
 
 #define PI 3.14159265358979323846
 
-namespace F4VRBody {
+namespace FRIK {
 	RelocAddr<_AIProcess_ClearMuzzleFlashes> AIProcess_ClearMuzzleFlashes(0xecc710);
 	RelocAddr<_AIProcess_CreateMuzzleFlash> AIProcess_CreateMuzzleFlash(0xecc570);
 

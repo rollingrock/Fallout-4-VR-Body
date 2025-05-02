@@ -35,7 +35,7 @@ UInt32 KeywordPowerArmorFrame = 0x15503F;
 
 OpenVRHookManagerAPI* _vrhook;
 
-namespace F4VRBody {
+namespace FRIK {
 	Pipboy* g_pipboy = nullptr;
 	ConfigurationMode* g_configurationMode = nullptr;
 	CullGeometryHandler* g_cullGeometry = nullptr;
@@ -55,7 +55,7 @@ namespace F4VRBody {
 	/// <summary>
 	/// TODO: think about it, is it the best way to handle this dependency indaraction.
 	/// </summary>
-	class FrameUpdateContext : public ui::UIModAdapter {
+	class FrameUpdateContext : public VRUI::UIModAdapter {
 	public:
 		FrameUpdateContext(Skeleton* skelly, OpenVRHookManagerAPI* vrhook)
 			: _skelly(skelly), _vrhook(vrhook) {}
@@ -462,7 +462,7 @@ namespace F4VRBody {
 		g_configurationMode->onUpdate();
 
 		FrameUpdateContext context(_skelly, _vrhook);
-		ui::g_uiManager->onFrameUpdate(&context);
+		VRUI::g_uiManager->onFrameUpdate(&context);
 
 		_skelly->updateDown(_skelly->getRoot(), true); // Last world update before exit.    Probably not necessary.
 
@@ -610,36 +610,36 @@ namespace F4VRBody {
 	/// </summary>
 	bool registerPapyrusFuncs(VirtualMachine* vm) {
 		// Register code to be accisible from Settings Holotape via Papyrus scripts
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenMainConfigurationMode", "FRIK:FRIK", F4VRBody::openMainConfigurationMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenPipboyConfigurationMode", "FRIK:FRIK", F4VRBody::openPipboyConfigurationMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleWeaponRepositionMode", "FRIK:FRIK", F4VRBody::toggleWeaponRepositionMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenFrikIniFile", "FRIK:FRIK", F4VRBody::openFrikIniFile, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleReloadFrikIniConfig", "FRIK:FRIK", F4VRBody::toggleReloadFrikIniConfig, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetWeaponRepositionMode", "FRIK:FRIK", F4VRBody::getWeaponRepositionMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetFrikIniAutoReloading", "FRIK:FRIK", F4VRBody::getFrikIniAutoReloading, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenMainConfigurationMode", "FRIK:FRIK", FRIK::openMainConfigurationMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenPipboyConfigurationMode", "FRIK:FRIK", FRIK::openPipboyConfigurationMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleWeaponRepositionMode", "FRIK:FRIK", FRIK::toggleWeaponRepositionMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenFrikIniFile", "FRIK:FRIK", FRIK::openFrikIniFile, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleReloadFrikIniConfig", "FRIK:FRIK", FRIK::toggleReloadFrikIniConfig, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetWeaponRepositionMode", "FRIK:FRIK", FRIK::getWeaponRepositionMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetFrikIniAutoReloading", "FRIK:FRIK", FRIK::getFrikIniAutoReloading, vm));
 
 		/// Register mod public API to be used by other mods via Papyrus scripts
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("isLeftHandedMode", "FRIK:FRIK", F4VRBody::isLeftHandedMode, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, float>("setDynamicCameraHeight", "FRIK:FRIK", F4VRBody::setDynamicCameraHeight, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", F4VRBody::toggleSelfieMode, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("setSelfieMode", "FRIK:FRIK", F4VRBody::setSelfieMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveForward", "FRIK:FRIK", F4VRBody::moveForward, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", F4VRBody::moveBackward, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("isLeftHandedMode", "FRIK:FRIK", FRIK::isLeftHandedMode, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, float>("setDynamicCameraHeight", "FRIK:FRIK", FRIK::setDynamicCameraHeight, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", FRIK::toggleSelfieMode, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("setSelfieMode", "FRIK:FRIK", FRIK::setSelfieMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveForward", "FRIK:FRIK", FRIK::moveForward, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", FRIK::moveBackward, vm));
 
 		// Bone Sphere interaction related APIs
-		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, UInt32, float, BSFixedString>("RegisterBoneSphere", "FRIK:FRIK", F4VRBody::registerBoneSphere, vm));
+		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, UInt32, float, BSFixedString>("RegisterBoneSphere", "FRIK:FRIK", FRIK::registerBoneSphere, vm));
 		vm->RegisterFunction(
-			new NativeFunction3<StaticFunctionTag, UInt32, float, BSFixedString, VMArray<float>>("RegisterBoneSphereOffset", "FRIK:FRIK", F4VRBody::registerBoneSphereOffset, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("DestroyBoneSphere", "FRIK:FRIK", F4VRBody::destroyBoneSphere, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("RegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::registerForBoneSphereEvents, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("UnRegisterForBoneSphereEvents", "FRIK:FRIK", F4VRBody::unRegisterForBoneSphereEvents, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("toggleDebugBoneSpheres", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheres, vm));
-		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, UInt32, bool>("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", F4VRBody::toggleDebugBoneSpheresAtBone, vm));
+			new NativeFunction3<StaticFunctionTag, UInt32, float, BSFixedString, VMArray<float>>("RegisterBoneSphereOffset", "FRIK:FRIK", FRIK::registerBoneSphereOffset, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("DestroyBoneSphere", "FRIK:FRIK", FRIK::destroyBoneSphere, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("RegisterForBoneSphereEvents", "FRIK:FRIK", FRIK::registerForBoneSphereEvents, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("UnRegisterForBoneSphereEvents", "FRIK:FRIK", FRIK::unRegisterForBoneSphereEvents, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("toggleDebugBoneSpheres", "FRIK:FRIK", FRIK::toggleDebugBoneSpheres, vm));
+		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, UInt32, bool>("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", FRIK::toggleDebugBoneSpheresAtBone, vm));
 
 		// Finger pose related APIs
 		vm->RegisterFunction(
-			new NativeFunction6<StaticFunctionTag, void, bool, float, float, float, float, float>("setFingerPositionScalar", "FRIK:FRIK", F4VRBody::setFingerPositionScalar, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("restoreFingerPoseControl", "FRIK:FRIK", F4VRBody::restoreFingerPoseControl, vm));
+			new NativeFunction6<StaticFunctionTag, void, bool, float, float, float, float, float>("setFingerPositionScalar", "FRIK:FRIK", FRIK::setFingerPositionScalar, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("restoreFingerPoseControl", "FRIK:FRIK", FRIK::restoreFingerPoseControl, vm));
 
 		return true;
 	}

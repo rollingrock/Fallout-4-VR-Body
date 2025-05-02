@@ -3,7 +3,7 @@
 #include <math.h>
 
 
-namespace F4VRBody {
+namespace FRIK {
 
 	float Quaternion::getMag() {
 		return sqrtf(w * w + x * x + y * y + z * z);

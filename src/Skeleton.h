@@ -21,7 +21,7 @@
 #include "BSFlattenedBoneTree.h"
 
 
-namespace F4VRBody
+namespace FRIK
 {
 
 	enum wandMode {

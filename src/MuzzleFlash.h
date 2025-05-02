@@ -3,7 +3,7 @@
 #include "f4se/NiNodes.h"
 
 
-namespace F4VRBody {
+namespace FRIK {
 
 	class MuzzleFlash {
 	public:

@@ -129,16 +129,16 @@ namespace Offsets {
 	typedef TESWorldSpace* (*_TESObjectREFR_GetWorldSpace)(TESObjectREFR* a_refr);
 	extern RelocAddr<_TESObjectREFR_GetWorldSpace> TESObjectREFR_GetWorldSpace;
 
-	typedef void*(*_TESDataHandler_CreateReferenceAtLocation)(DataHandler* dataHandler, void* newRefr, F4VRBody::NEW_REFR_DATA* refrData);
+	typedef void*(*_TESDataHandler_CreateReferenceAtLocation)(DataHandler* dataHandler, void* newRefr, FRIK::NEW_REFR_DATA* refrData);
 	extern RelocAddr<_TESDataHandler_CreateReferenceAtLocation> TESDataHandler_CreateReferenceAtLocation;
 	
-	typedef TESObjectWEAP* (*_Actor_GetCurrentWeapon)(Actor* a_actor, TESObjectWEAP* weap, F4VRBody::BGSEquipIndex idx);
+	typedef TESObjectWEAP* (*_Actor_GetCurrentWeapon)(Actor* a_actor, TESObjectWEAP* weap, FRIK::BGSEquipIndex idx);
 	extern RelocAddr<_Actor_GetCurrentWeapon> Actor_GetCurrentWeapon;
 
-	typedef TESAmmo* (*_Actor_GetCurrentAmmo)(Actor* a_actor, F4VRBody::BGSEquipIndex idx);
+	typedef TESAmmo* (*_Actor_GetCurrentAmmo)(Actor* a_actor, FRIK::BGSEquipIndex idx);
 	extern RelocAddr<_Actor_GetCurrentAmmo> Actor_GetCurrentAmmo;
 
-	typedef void(*_Actor_GetWeaponEquipIndex)(Actor* a_actor, F4VRBody::BGSEquipIndex* idx, F4VRBody::BGSObjectInstance* instance);
+	typedef void(*_Actor_GetWeaponEquipIndex)(Actor* a_actor, FRIK::BGSEquipIndex* idx, FRIK::BGSObjectInstance* instance);
 	extern RelocAddr<_Actor_GetWeaponEquipIndex> Actor_GetWeaponEquipIndex;
 
 	typedef void(*_TESObjectREFR_Set3D)(TESObjectREFR* a_refr, NiAVObject* a_obj, bool unk);
@@ -174,7 +174,7 @@ namespace Offsets {
 	typedef void(*_bhkWorld_RemoveObject)(NiAVObject* root, bool a_bool, bool a_bool2);
 	extern RelocAddr<_bhkWorld_RemoveObject> bhkWorld_RemoveObject;
 
-	typedef void(*_bhkWorld_SetMotion)(NiAVObject* root, F4VRBody::hknpMotionPropertiesId::Preset preset, bool bool1, bool bool2, bool bool3);
+	typedef void(*_bhkWorld_SetMotion)(NiAVObject* root, FRIK::hknpMotionPropertiesId::Preset preset, bool bool1, bool bool2, bool bool3);
 	extern RelocAddr<_bhkWorld_SetMotion> bhkWorld_SetMotion;
 
 	typedef void(*_bhkNPCollisionObject_AddToWorld)(bhkNPCollisionObject* a_obj, bhkWorld* a_world);
@@ -183,13 +183,13 @@ namespace Offsets {
 	typedef bhkWorld*(*_TESObjectCell_GetbhkWorld)(TESObjectCELL* a_cell);
 	extern RelocAddr<_TESObjectCell_GetbhkWorld> TESObjectCell_GetbhkWorld;
 
-	typedef float(*_Actor_GetAmmoClipPercentage)(Actor* a_actor, F4VRBody::BGSEquipIndex a_idx);
+	typedef float(*_Actor_GetAmmoClipPercentage)(Actor* a_actor, FRIK::BGSEquipIndex a_idx);
 	extern RelocAddr<_Actor_GetAmmoClipPercentage> Actor_GetAmmoClipPercentage;
 
-	typedef float(*_Actor_GetCurrentAmmoCount)(Actor* a_actor, F4VRBody::BGSEquipIndex a_idx);
+	typedef float(*_Actor_GetCurrentAmmoCount)(Actor* a_actor, FRIK::BGSEquipIndex a_idx);
 	extern RelocAddr<_Actor_GetCurrentAmmoCount> Actor_GetCurrentAmmoCount;
 
-	typedef float(*_Actor_SetCurrentAmmoCount)(Actor* a_actor, F4VRBody::BGSEquipIndex a_idx, int a_count);
+	typedef float(*_Actor_SetCurrentAmmoCount)(Actor* a_actor, FRIK::BGSEquipIndex a_idx, int a_count);
 	extern RelocAddr<_Actor_SetCurrentAmmoCount> Actor_SetCurrentAmmoCount;
 
 	typedef void(*_ExtraDataList_setAmmoCount)(ExtraDataList* a_list, int a_count);
