@@ -59,6 +59,7 @@ Prerequisites:
 
   - `Fallout4VRBody.log` for FRIK logs
   - `crash-<date time>.log` for crash logs
+  - use `tail -f "%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE\Fallout4VRBody.log"` to tail the log
 
 - Config files are located in "...\data\FRIK_Config" folder.  
   If you're using MO2 the folder is located in the "overwrite" MO2 folder: "...\[mod list]\overwrite\FRIK_Config"

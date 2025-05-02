@@ -1,4 +1,4 @@
-[![image](https://github.com/user-attachments/assets/4b2fcc2c-c98d-45cd-8010-15ef7562a9db)](https://www.youtube.com/watch?v=-ckofGjqbhY)  
+![image](https://github.com/user-attachments/assets/6dd0bc3e-acfd-43bd-b0d8-87d999bf0737)  
 Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 
 ### New Config Mode
