@@ -8,7 +8,7 @@
 #include <shlobj_core.h>
 
 #include "utils.h"
-#include "resource.h"
+#include "res/resource.h"
 
 using json = nlohmann::json;
 

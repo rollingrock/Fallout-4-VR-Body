@@ -260,7 +260,7 @@ namespace CommonLib {
 	{
 		return a_lhs.get() == a_rhs.get();
 	}
-
+	
 	template <class T, template <class> class R>
 	[[nodiscard]] constexpr bool operator==(const BSTSmartPointer<T, R>& a_lhs, std::nullptr_t) noexcept
 	{
