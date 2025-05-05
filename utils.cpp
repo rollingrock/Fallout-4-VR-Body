@@ -6,6 +6,7 @@
 #include "f4se/PapyrusEvents.h"
 #include <filesystem>
 #include <fstream>
+#include <shlobj_core.h>
 #include <sstream>
 
 #define PI 3.14159265358979323846
@@ -86,7 +87,6 @@ namespace F4VRBody {
 	float rads_to_degrees(float rad) {
 		return (rad * 180) / PI;
 	}
-
 
 	NiPoint3 rotateXY(NiPoint3 vec, float angle) {
 		NiPoint3 retV;
@@ -575,7 +575,6 @@ namespace F4VRBody {
 		return ltrim(rtrim(s));
 	}
 
-
 	/**
 	 * Find dll embedded resource by id and return its data as string if exists.
 	 * Return null if the resource is not found.
@@ -704,6 +703,52 @@ namespace F4VRBody {
 		outFile.close();
 
 		_VMESSAGE("File '%s' created successfully (size: %d)", filePath.c_str(), data.size());
+	}
+
+	/**
+	 * Get path in the My Documents folder.
+	 */
+	std::string getRelativePathInDocuments(const std::string& relPath) {
+		char documentsPath[MAX_PATH];
+		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, 0, documentsPath))) {
+			return std::string(documentsPath) + relPath;
+		}
+		throw std::runtime_error("Failed to get My Documents folder path");
+	}
+
+	/**
+	 * Safely (no override, no errors) move a file from fromPath to toPath.
+	 */
+	void moveFileSafe(const std::string& fromPath, const std::string& toPath) {
+		try {
+			if (!std::filesystem::exists(fromPath)) {
+				return;
+			}
+			if (std::filesystem::exists(toPath)) {
+				_MESSAGE("Moving '%s' to '%s' failed, file already exists", fromPath.c_str(), toPath.c_str());
+				return;
+			}
+			_MESSAGE("Moving '%s' to '%s'", fromPath.c_str(), toPath.c_str());
+			std::filesystem::rename(fromPath, toPath);
+		} catch (const std::exception& e) {
+			_ERROR("Failed to move file to new location: %s", e.what());
+		}
+	}
+
+	/**
+	 * Safely (no override, no errors) move all files (and files only) in the fromPath to the toPath.
+	 */
+	void moveAllFilesInFolderSafe(const std::string& fromPath, const std::string& toPath) {
+		if (!std::filesystem::exists(fromPath)) {
+			return;
+		}
+		for (const auto& entry : std::filesystem::directory_iterator(fromPath)) {
+			if (entry.is_regular_file()) {
+				const auto& sourcePath = entry.path();
+				const auto destinationPath = toPath / sourcePath.filename();
+				moveFileSafe(sourcePath.string(), destinationPath.string());
+			}
+		}
 	}
 
 	/**

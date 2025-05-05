@@ -5,6 +5,7 @@
 #include "Config.h"
 
 #include <filesystem>
+#include <shlobj_core.h>
 
 #include "utils.h"
 #include "resource.h"
@@ -14,23 +15,22 @@ using json = nlohmann::json;
 namespace F4VRBody {
 	Config* g_config = nullptr;
 
-	constexpr int FRIK_INI_VERSION = 6;
+	constexpr int FRIK_INI_VERSION = 7;
 
-	constexpr auto FRIK_INI_PATH = R"(.\Data\FRIK_Config\FRIK.ini)";
-
-	constexpr auto MESH_HIDE_FACE_INI_PATH = R"(.\Data\FRIK_Config\Mesh_Hide\face.ini)";
-	constexpr auto MESH_HIDE_SKINS_INI_PATH = R"(.\Data\FRIK_Config\Mesh_Hide\skins.ini)";
-	constexpr auto MESH_HIDE_SLOTS_INI_PATH = R"(.\Data\FRIK_Config\Mesh_Hide\slots.ini)";
-
-	constexpr auto PIPBOY_HOLO_OFFSETS_PATH = R"(.\Data\FRIK_Config\Pipboy_Offsets\HoloPipboyPosition.json)";
-	constexpr auto PIPBOY_SCREEN_OFFSETS_PATH = R"(.\Data\FRIK_Config\Pipboy_Offsets\PipboyPosition.json)";
-	static const std::string WEAPONS_OFFSETS_PATH{R"(.\Data\FRIK_Config\Weapons_Offsets)"};
+	static const auto BASE_PATH = getRelativePathInDocuments(R"(\My Games\Fallout4VR\FRIK_Config)");
+	static const auto FRIK_INI_PATH = BASE_PATH + R"(\FRIK.ini)";
+	static const auto MESH_HIDE_FACE_INI_PATH = BASE_PATH + R"(\Mesh_Hide\face.ini)";
+	static const auto MESH_HIDE_SKINS_INI_PATH = BASE_PATH + R"(\Mesh_Hide\skins.ini)";
+	static const auto MESH_HIDE_SLOTS_INI_PATH = BASE_PATH + R"(\Mesh_Hide\slots.ini)";
+	static const auto PIPBOY_HOLO_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\HoloPipboyPosition.json)";
+	static const auto PIPBOY_SCREEN_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\PipboyPosition.json)";
+	static const auto WEAPONS_OFFSETS_PATH = BASE_PATH + R"(\Weapons_Offsets)";
 
 	/// <summary>
 	/// Open the FRIK.ini file in Notepad for editing.
 	/// </summary>
 	void Config::OpenInNotepad() const {
-		ShellExecute(0, "open", "notepad.exe", FRIK_INI_PATH, 0, SW_SHOWNORMAL);
+		ShellExecute(0, "open", "notepad.exe", FRIK_INI_PATH.c_str(), 0, SW_SHOWNORMAL);
 	}
 
 	/// <summary>
@@ -91,8 +91,10 @@ namespace F4VRBody {
 		updateLoggerLogLevel();
 
 		if (version < FRIK_INI_VERSION) {
-			_MESSAGE("Updating FRIK.ini from version %d to %d", version, FRIK_INI_VERSION);
+			_MESSAGE("Updating FRIK.ini version %d -> %d", version, FRIK_INI_VERSION);
 			updateFrikINIVersion();
+			// reload the config after update
+			loadFrikINI();
 		}
 
 		_MESSAGE("Load hide meshes...");
@@ -110,7 +112,7 @@ namespace F4VRBody {
 
 	void Config::loadFrikINI() {
 		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
+		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
 		if (rc < 0) {
 			throw std::runtime_error("Failed to load FRIK.ini file! Error: " + rc);
 		}
@@ -122,7 +124,6 @@ namespace F4VRBody {
 		debugFlowFlag2 = (float)ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag2", 0);
 		debugFlowFlag3 = (float)ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag3", 0);
 		_debugDumpDataOnceNames = ini.GetValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", "");
-
 
 		playerHeight = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f);
 		setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", false);
@@ -156,7 +157,7 @@ namespace F4VRBody {
 		pipBoyButtonOffID = (int)ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip); //2		
 		isHoloPipboy = ini.GetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", true);
 		isPipBoyTorchOnArm = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", true);
-		isPipBoyTorchRightArmMode = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchRightArmMode", true);
+		isPipBoyTorchRightArmMode = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchRightArmMode", false);
 		switchTorchButton = (int)ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2);
 		gripButtonID = (int)ini.GetLongValue(INI_SECTION_MAIN, "GripButtonID", vr::EVRButtonId::k_EButton_Grip); // 2
 		enableOffHandGripping = ini.GetBoolValue(INI_SECTION_MAIN, "EnableOffHandGripping", true);
@@ -173,8 +174,6 @@ namespace F4VRBody {
 		dampenPipboyRotation = ini.GetDoubleValue(INI_SECTION_MAIN, "DampenPipboyRotation", 0.7);
 		dampenPipboyTranslation = ini.GetDoubleValue(INI_SECTION_MAIN, "DampenPipboyTranslation", 0.7);
 		directionalDeadzone = ini.GetDoubleValue(INI_SECTION_MAIN, "fDirectionalDeadzone", 0.5);
-		playerHMDHeight = ini.GetDoubleValue(INI_SECTION_MAIN, "fHMDHeight", 109.0);
-		shoulderToHMD = ini.GetDoubleValue(INI_SECTION_MAIN, "fShouldertoHMD", 109.0);
 		selfieOutFrontDistance = ini.GetDoubleValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0);
 		selfieIgnoreHideFlags = ini.GetBoolValue(INI_SECTION_MAIN, "selfieIgnoreHideFlags", false);
 
@@ -218,15 +217,15 @@ namespace F4VRBody {
 	/// This preserves the user changed values, including new values and comments, and remove old values completly.
 	/// A backup of the previous file is created with the version number for safety.
 	/// </summary>
-	void Config::updateFrikINIVersion() {
+	void Config::updateFrikINIVersion() const {
 		CSimpleIniA oldIni;
-		SI_Error rc = oldIni.LoadFile(FRIK_INI_PATH);
+		SI_Error rc = oldIni.LoadFile(FRIK_INI_PATH.c_str());
 		if (rc < 0)
 			throw std::runtime_error("Failed to load old FRIK.ini file! Error: " + std::to_string(rc));
 
 		// override the file with the default FRIK.ini resource.
-		auto tmpIniPath = std::string(FRIK_INI_PATH) + ".tmp";
-		createFileFromResourceIfNotExists(tmpIniPath.c_str(), IDR_FRIK_INI, true);
+		const auto tmpIniPath = std::string(FRIK_INI_PATH) + ".tmp";
+		createFileFromResourceIfNotExists(tmpIniPath, IDR_FRIK_INI, true);
 
 		CSimpleIniA newIni;
 		rc = newIni.LoadFile(tmpIniPath.c_str());
@@ -257,15 +256,15 @@ namespace F4VRBody {
 		// set the version to latest
 		newIni.SetLongValue(INI_SECTION_DEBUG, "Version", FRIK_INI_VERSION);
 
-		// backup the old ini file before overwritting
+		// backup the old ini file before overwriting
 		auto nameStr = std::string(FRIK_INI_PATH);
 		nameStr = nameStr.replace(nameStr.length() - 4, 4, "_bkp_v" + std::to_string(version) + ".ini");
-		int res = std::rename(FRIK_INI_PATH, nameStr.c_str());
+		int res = std::rename(FRIK_INI_PATH.c_str(), nameStr.c_str());
 		if (rc != 0)
 			_WARNING("Failed to backup old FRIK.ini file to '%s'. Error: %d", nameStr, rc);
 
 		// save the new ini file
-		rc = newIni.SaveFile(FRIK_INI_PATH);
+		rc = newIni.SaveFile(FRIK_INI_PATH.c_str());
 		if (rc < 0)
 			throw std::runtime_error("Failed to save post update FRIK.ini file! Error: " + std::to_string(rc));
 
@@ -314,7 +313,7 @@ namespace F4VRBody {
 
 	void Config::saveFrikINI() const {
 		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
+		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
 
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "fVrScale", (double)fVrScale);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", (double)playerOffset_forward);
@@ -336,13 +335,11 @@ namespace F4VRBody {
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", dampenHandsTranslation);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", (double)PARootOffset);
 		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "RootOffset", (double)rootOffset);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "fHMDHeight", (double)playerHMDHeight);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "fShouldertoHMD", (double)shoulderToHMD);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButton", enableGripButtonToGrap);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", enableGripButtonToLetGo);
 		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", onePressGripButton);
 
-		rc = ini.SaveFile(FRIK_INI_PATH);
+		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
 
 		if (rc < 0) {
 			_ERROR("Config: Failed to save FRIK.ini. Error: %d", rc);
@@ -357,9 +354,9 @@ namespace F4VRBody {
 	void Config::saveFrikIniValue(const char* section, const char* key, bool value) {
 		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value ? "true" : "false");
 		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
+		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
 		rc = ini.SetBoolValue(section, key, value);
-		rc = ini.SaveFile(FRIK_INI_PATH);
+		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
 	}
 
 	/// <summary>
@@ -368,9 +365,9 @@ namespace F4VRBody {
 	void Config::saveFrikIniValue(const char* section, const char* key, double value) {
 		_MESSAGE("Config: Saving \"%s = %f\" to FRIK.ini", key, value);
 		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
+		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
 		rc = ini.SetDoubleValue(section, key, value);
-		rc = ini.SaveFile(FRIK_INI_PATH);
+		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
 	}
 
 	/// <summary>
@@ -379,9 +376,9 @@ namespace F4VRBody {
 	void Config::saveFrikIniValue(const char* section, const char* key, const char* value) {
 		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value);
 		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(FRIK_INI_PATH);
+		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
 		rc = ini.SetValue(section, key, value);
-		rc = ini.SaveFile(FRIK_INI_PATH);
+		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
 	}
 
 	/// <summary>
@@ -405,11 +402,11 @@ namespace F4VRBody {
 	/// Basically a hack to store multiple modes of the same weapon by adding suffix to the name.
 	/// </summary>
 	static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool leftHanded) {
-		static const std::string POWER_ARMOR_SUFFIX{ "-PowerArmor" };
-		static const std::string OFF_HAND_SUFFIX{ "-offHand" };
-		static const std::string THROWABLE_SUFFIX{ "-throwable" };
-		static const std::string BACK_OF_HAND_SUFFIX{ "-backOfHand" };
-		static const std::string LEFT_HANDED_SUFFIX{ "-leftHanded" };
+		static const std::string POWER_ARMOR_SUFFIX{"-PowerArmor"};
+		static const std::string OFF_HAND_SUFFIX{"-offHand"};
+		static const std::string THROWABLE_SUFFIX{"-throwable"};
+		static const std::string BACK_OF_HAND_SUFFIX{"-backOfHand"};
+		static const std::string LEFT_HANDED_SUFFIX{"-leftHanded"};
 		switch (mode) {
 		case WeaponOffsetsMode::Weapon:
 			return name + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
@@ -461,7 +458,6 @@ namespace F4VRBody {
 			_WARNING("Failed to remove weapon offset file: %s", fullName.c_str());
 		}
 	}
-
 
 	/**
 	 * Load the given json object with offset data into an offset map.
@@ -520,7 +516,6 @@ namespace F4VRBody {
 		loadOffsetJsonFile(PIPBOY_SCREEN_OFFSETS_PATH, _pipboyOffsets);
 	}
 
-
 	/**
 	 * Load all embedded weapons offsets.
 	 */
@@ -576,22 +571,6 @@ namespace F4VRBody {
 		}
 	}
 
-	static void moveFileSafe(const std::string& fromPath, const std::string& toPath) {
-		try {
-			if (!std::filesystem::exists(fromPath)) {
-				return;
-			}
-			if (std::filesystem::exists(toPath)) {
-				_MESSAGE("Moving '%s' to '%s' failed, file already exists", fromPath.c_str(), toPath.c_str());
-				return;
-			}
-			_MESSAGE("Moving '%s'...", fromPath.c_str());
-			std::filesystem::rename(fromPath, toPath);
-		} catch (const std::exception& e) {
-			_ERROR("Failed to move file to new location: %s", e.what());
-		}
-	}
-
 	/// <summary>
 	/// Create all the folders needed for config to not handle later creating folders that don't exists.
 	/// </summary>
@@ -602,35 +581,30 @@ namespace F4VRBody {
 		createDirDeep(WEAPONS_OFFSETS_PATH);
 	}
 
-	/// <summary>
-	/// One time migration of config files (ini,json) to common location to handle MO2 overwrite.
-	/// see https://github.com/rollingrock/Fallout-4-VR-Body/pull/80
-	/// </summary>
+	/**
+	 * One time migration of config files (ini,json) to common location to handle MO2 overwrite.
+	 * See https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Development#frik-config-folder
+	 * and https://github.com/rollingrock/Fallout-4-VR-Body/pull/80
+	 * Always migrate config to handle custom weapon offsets at mod-list installation time.
+	 */
 	void Config::migrateConfigFilesIfNeeded() {
-		// decide if migration is needed just by finding FRIK.ini in the old location by FRIK.dll
-		if (std::filesystem::exists(R"(.\Data\F4SE\plugins\FRIK.ini)")) {
-			_MESSAGE("Migrate FRIK.ini and basic configs");
-			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK.ini)", FRIK_INI_PATH);
+		// migrate pre v72 and v72 config files to v73 location
+		_MESSAGE("Migrate configs if exists in old locations...");
+		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK.ini)", FRIK_INI_PATH);
+		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
+		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);
+		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\slots.ini)", MESH_HIDE_SLOTS_INI_PATH);
+		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets\HoloPipboyPosition.json)", PIPBOY_HOLO_OFFSETS_PATH);
+		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets\PipboyPosition.json)", PIPBOY_SCREEN_OFFSETS_PATH);
+		moveAllFilesInFolderSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets)", WEAPONS_OFFSETS_PATH);
 
-			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
-			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);
-			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\slots.ini)", MESH_HIDE_SLOTS_INI_PATH);
-
-			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets\HoloPipboyPosition.json)", PIPBOY_HOLO_OFFSETS_PATH);
-			moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets\PipboyPosition.json)", PIPBOY_SCREEN_OFFSETS_PATH);
-		}
-
-		// Always try to migrate weapons offset if found in "old location"
-		// Can be used to create custom weapon offsets at mod-list installation time. (as mod list install can't write to data or MO2 override folder)
-		const auto oldWeaponsOffsetsPath = R"(.\Data\F4SE\plugins\FRIK_weapon_offsets)";
-		if (std::filesystem::exists(oldWeaponsOffsetsPath)) {
-			for (const auto& entry : std::filesystem::directory_iterator(oldWeaponsOffsetsPath)) {
-				if (entry.is_regular_file()) {
-					const auto& sourcePath = entry.path();
-					const auto destinationPath = WEAPONS_OFFSETS_PATH / sourcePath.filename();
-					moveFileSafe(sourcePath.string(), destinationPath.string());
-				}
-			}
-		}
+		// migrate v72 config files to v73 location
+		moveFileSafe(R"(.\Data\FRIK_Config\FRIK.ini)", FRIK_INI_PATH);
+		moveFileSafe(R"(.\Data\FRIK_Config\Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
+		moveFileSafe(R"(.\Data\FRIK_Config\Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);
+		moveFileSafe(R"(.\Data\FRIK_Config\Mesh_Hide\slots.ini)", MESH_HIDE_SLOTS_INI_PATH);
+		moveFileSafe(R"(.\Data\FRIK_Config\Pipboy_Offsets\HoloPipboyPosition.json)", PIPBOY_HOLO_OFFSETS_PATH);
+		moveFileSafe(R"(.\Data\FRIK_Config\Pipboy_Offsets\PipboyPosition.json)", PIPBOY_SCREEN_OFFSETS_PATH);
+		moveAllFilesInFolderSafe(R"(.\Data\FRIK_Config\Weapons_Offsets)", WEAPONS_OFFSETS_PATH);
 	}
 }

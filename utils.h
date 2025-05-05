@@ -99,6 +99,9 @@ namespace F4VRBody {
 	std::vector<std::string> loadListFromFile(std::string filePath);
 	void createDirDeep(std::string pathStr);
 	void createFileFromResourceIfNotExists(const std::string& filePath, WORD resourceId, bool fixNewline);
+	std::string getRelativePathInDocuments(const std::string& relPath);
+	void moveFileSafe(const std::string& fromPath, const std::string& toPath);
+	void moveAllFilesInFolderSafe(const std::string& fromPath, const std::string& toPath);
 
 	bool isBetterScopesVRModLoaded();
 	bool isModLoaded(const char* modName);
