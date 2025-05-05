@@ -12,13 +12,13 @@ namespace VRUI {
 
 		virtual void onFrameUpdate(UIFrameUpdateContext* adapter) override;
 
-		[[nodiscard]] bool isFollowInteractionPosition() const { return _followInteractionPosition; }
+		bool isFollowInteractionPosition() const { return _followInteractionPosition; }
 
 		void setFollowInteractionPosition(const bool followInteractionPosition) {
 			_followInteractionPosition = followInteractionPosition;
 		}
 
-		[[nodiscard]] virtual std::string toString() const override;
+		virtual std::string toString() const override;
 
 	protected:
 		bool _followInteractionPosition = false;

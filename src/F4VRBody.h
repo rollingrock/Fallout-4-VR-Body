@@ -1,34 +1,18 @@
 #pragma once
-#include "f4se/GameReferences.h"
-#include "f4se/GameObjects.h"
-#include "f4se/NiNodes.h"
-#include "f4se/NiObjects.h"
-#include "NiCloneProcess.h"
-#include "f4se/BSGeometry.h"
-#include "f4se/GameSettings.h"
-#include "f4se/GameMenus.h"
-#include "f4se/PapyrusNativeFunctions.h"
-#include "f4se/PapyrusEvents.h"
-#include "f4se/PapyrusVM.h"
-//#include "f4se/GameForms.h"
-
-#include "SmoothMovementVR.h"
-#include "Offsets.h"
-#include "Pipboy.h"
+#include "BoneSpheresHandler.h"
 #include "ConfigurationMode.h"
 #include "CullGeometryHandler.h"
-#include "BoneSpheresHandler.h"
+#include "Offsets.h"
+#include "Pipboy.h"
 #include "WeaponPositionAdjuster.h"
-
-#include <windows.h>
+#include "f4se/NiNodes.h"
+#include "f4se/PapyrusEvents.h"
 
 extern PluginHandle g_pluginHandle;
 extern F4SEPapyrusInterface* g_papyrus;
 extern F4SEMessagingInterface* g_messaging;
 
-
 namespace FRIK {
-	
 	extern Pipboy* g_pipboy;
 	extern ConfigurationMode* g_configurationMode;
 	extern CullGeometryHandler* g_cullGeometry;
@@ -41,7 +25,6 @@ namespace FRIK {
 	extern float c_dynamicCameraHeight;
 	extern bool c_selfieMode;
 	extern bool GameVarsConfigured;
-
 
 	NiNode* loadNifFromFile(char* path);
 
@@ -56,7 +39,7 @@ namespace FRIK {
 		flags[0] = 0x0;
 		flags[1] = 0xed | 0x2d;
 		uint64_t mem = 0;
-		int ret = Offsets::loadNif((uint64_t)&(*path), (uint64_t)&mem, (uint64_t)&flags);
+		int ret = Offsets::loadNif((uint64_t)path, (uint64_t)&mem, (uint64_t)&flags);
 
 		return (NiNode*)mem;
 	}

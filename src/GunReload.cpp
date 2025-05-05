@@ -1,10 +1,10 @@
 #include "GunReload.h"
 #include "Config.h"
 #include "F4VRBody.h"
-#include "VR.h"
-#include "Offsets.h"
 #include "MiscStructs.h"
-#include "Debug.h"
+#include "Offsets.h"
+#include "VR.h"
+#include "f4se/GameExtraData.h"
 
 namespace FRIK {
 	GunReload* g_gunReloadSystem = nullptr;
@@ -44,22 +44,23 @@ namespace FRIK {
 
 		//float dist = abs(vec3_len(offhand->m_worldTransform.pos - bolt->m_worldTransform.pos));
 
-		uint64_t handInput = g_config->leftHandedMode ? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed : VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed;
+		uint64_t handInput = g_config->leftHandedMode
+			? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed
+			: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed;
 
 		if ((!reloadButtonPressed) && (handInput & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip))) {
-
-			NEW_REFR_DATA* refrData = new NEW_REFR_DATA();
+			auto refrData = new NEW_REFR_DATA();
 			refrData->location = magNode->m_worldTransform.pos;
 			refrData->direction = (*g_player)->rot;
 			refrData->interior = (*g_player)->parentCell;
 			refrData->world = Offsets::TESObjectREFR_GetWorldSpace(*g_player);
 
-			ExtraDataList* extraData = (ExtraDataList*) Offsets::MemoryManager_Allocate(g_mainHeap, 0x28, 0, false);
+			auto extraData = static_cast<ExtraDataList*>(Offsets::MemoryManager_Allocate(g_mainHeap, 0x28, 0, false));
 			Offsets::ExtraDataList_ExtraDataList(extraData);
 			extraData->m_refCount += 1;
 			Offsets::ExtraDataList_setCount(extraData, 10);
 			refrData->extra = extraData;
-			BGSObjectInstance* instance = new BGSObjectInstance(nullptr, nullptr);
+			auto instance = new BGSObjectInstance(nullptr, nullptr);
 			BGSEquipIndex idx;
 			Offsets::Actor_GetWeaponEquipIndex(*g_player, &idx, instance);
 			currentAmmo = Offsets::Actor_GetCurrentAmmo(*g_player, idx);
@@ -72,7 +73,6 @@ namespace FRIK {
 			int clipAmount = Offsets::Actor_GetCurrentAmmoCount(*g_player, idx);
 			Offsets::ExtraDataList_setAmmoCount(extraData, clipAmount);
 
-
 			refrData->object = currentAmmo;
 			void* ammoDrop = new std::size_t;
 
@@ -82,7 +82,7 @@ namespace FRIK {
 			Offsets::BSPointerHandleManagerInterface_GetSmartPointer(newHandle, &newRefr);
 
 			currentRefr = (TESObjectREFR*)newRefr;
-			
+
 			if (!currentRefr) {
 				return false;
 			}
@@ -91,10 +91,8 @@ namespace FRIK {
 			reloadButtonPressed = true;
 			return true;
 		}
-		else {
-			reloadButtonPressed = handInput && vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip);
-			magNode->flags &= 0xfffffffffffffffe;
-		}
+		reloadButtonPressed = handInput && vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip);
+		magNode->flags &= 0xfffffffffffffffe;
 		return false;
 	}
 
@@ -130,26 +128,25 @@ namespace FRIK {
 	}
 
 	void GunReload::Update() {
-
 		switch (state) {
-		case idle: 
+		case idle:
 			if (StartReloading()) {
 				state = reloadingStart;
 			}
 			break;
-		
-		case reloadingStart: 
+
+		case reloadingStart:
 
 			if (SetAmmoMesh()) {
 				state = idle;
 			}
 
 			break;
-		
-		case newMagReady: 
+
+		case newMagReady:
 			break;
-		
-		case magInserted: 
+
+		case magInserted:
 			break;
 
 		default:

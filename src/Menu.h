@@ -4,15 +4,11 @@
 #include "f4se/GameMenus.h"
 
 namespace FRIK {
-
-
 	class ScopeMenuEventHandler : public BSTEventSink<MenuOpenCloseEvent> {
 	public:
 		virtual EventResult ReceiveEvent(MenuOpenCloseEvent* a_event, void* dispatcher) override;
 
-
-		static void Register()
-		{
+		static void Register() {
 			static auto* pHandler = new ScopeMenuEventHandler();
 			(*g_ui)->menuOpenCloseEventSource.AddEventSink(pHandler);
 		}
@@ -20,7 +16,5 @@ namespace FRIK {
 
 	extern ScopeMenuEventHandler scopeMenuEvent;
 
-
 	bool isInScopeMenu();
-
 }

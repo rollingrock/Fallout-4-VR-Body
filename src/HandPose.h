@@ -1,6 +1,6 @@
 #pragma once
-#include "f4se/NiTypes.h"
 #include "Skeleton.h"
+#include "f4se/NiTypes.h"
 
 namespace FRIK {
 	extern std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;

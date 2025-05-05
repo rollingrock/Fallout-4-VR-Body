@@ -2,17 +2,20 @@
 
 #pragma once
 
-#include "Config.h"
-#include "SmoothMovementVR.h"
-#include "f4se/NiExtraData.h"
-#include "F4VRBody.h"
-#include "utils.h"
 #include <atomic>
 #include <deque>
+#include <thread>
+#include <f4se/GameRTTI.h>
+#include "Config.h"
+#include "F4VRBody.h"
+#include "SmoothMovementVR.h"
+#include "utils.h"
+#include "f4se/NiExtraData.h"
 
-namespace SmoothMovementVR
-{
-	RelocAddr   <_IsInAir>                      IsInAir(0x00DC3230);
+#include "MenuChecker.h"
+
+namespace SmoothMovementVR {
+	RelocAddr<_IsInAir> IsInAir(0x00DC3230);
 
 	//////////////////////////////////////////////////
 
@@ -23,7 +26,6 @@ namespace SmoothMovementVR
 	std::atomic<bool> interiorCell = false;
 
 	std::atomic<bool> usePapyrusDefaultHeight = false;
-
 
 	std::atomic<float> smoothedX = 0;
 	std::atomic<float> smoothedY = 0;
@@ -45,87 +47,72 @@ namespace SmoothMovementVR
 		return IsInAir(*g_player);
 	}
 
-	float distanceNoSqrt(NiPoint3 po1, NiPoint3 po2)
-	{
+	float distanceNoSqrt(NiPoint3 po1, NiPoint3 po2) {
 		const float x = po1.x - po2.x;
 		const float y = po1.y - po2.y;
 		const float z = po1.z - po2.z;
 		return x * x + y * y + z * z;
 	}
 
-	float distanceNoSqrt2d(float x1, float y1, float x2, float y2)
-	{
+	float distanceNoSqrt2d(float x1, float y1, float x2, float y2) {
 		const float x = x1 - x2;
 		const float y = y1 - y2;
 		return x * x + y * y;
 	}
 
-	NiPoint3 smoothedValue(NiPoint3 newPosition)
-	{
+	NiPoint3 smoothedValue(NiPoint3 newPosition) {
 		LARGE_INTEGER newTime;
 		QueryPerformanceCounter(&newTime);
-		m_frameTime.store((float)(newTime.QuadPart - m_prevTime.QuadPart) / m_hpcFrequency.QuadPart);
-		if (m_frameTime.load() > 0.05)
-		{
+		m_frameTime.store(static_cast<float>(newTime.QuadPart - m_prevTime.QuadPart) / m_hpcFrequency.QuadPart);
+		if (m_frameTime.load() > 0.05) {
 			m_frameTime.store(0.05);
 		}
 		m_prevTime = newTime;
 
-		if (IsInAir(*g_player))
-		{
+		if (IsInAir(*g_player)) {
 			smoothedX.store(newPosition.x);
 			smoothedY.store(newPosition.y);
 			smoothedZ.store(newPosition.z);
-		}
-		else if (distanceNoSqrt(newPosition, NiPoint3(smoothedX.load(), smoothedY.load(), smoothedZ.load())) > 4000000.0f)
-		{
+		} else if (distanceNoSqrt(newPosition, NiPoint3(smoothedX.load(), smoothedY.load(), smoothedZ.load())) > 4000000.0f) {
 			smoothedX.store(newPosition.x);
 			smoothedY.store(newPosition.y);
 			smoothedZ.store(newPosition.z);
-		}
-		else
-		{
-			if (FRIK::g_config->disableInteriorSmoothingHorizontal && interiorCell.load())
-			{
+		} else {
+			if (FRIK::g_config->disableInteriorSmoothingHorizontal && interiorCell.load()) {
 				smoothedX.store(newPosition.x);
 				smoothedY.store(newPosition.y);
-			}
-			else
-			{
-				if (FRIK::g_config->dampingMultiplierHorizontal != 0 && FRIK::g_config->smoothingAmountHorizontal != 0)
-				{
+			} else {
+				if (FRIK::g_config->dampingMultiplierHorizontal != 0 && FRIK::g_config->smoothingAmountHorizontal != 0) {
 					float absValX = abs(newPosition.x - smoothedX.load());
-					if (absValX < 0.1f)
-					{
+					if (absValX < 0.1f) {
 						absValX = 0.1f;
 					}
 					float absValY = abs(newPosition.y - smoothedY.load());
-					if (absValY < 0.1f)
-					{
+					if (absValY < 0.1f) {
 						absValY = 0.1f;
 					}
-					smoothedX.store(smoothedX.load() + m_frameTime.load() * ((newPosition.x - smoothedX.load()) / (FRIK::g_config->smoothingAmountHorizontal * (FRIK::g_config->dampingMultiplierHorizontal / absValX) * (notMoving.load() ? (FRIK::g_config->stoppingMultiplierHorizontal) : 1.0f))));
-					smoothedY.store(smoothedY.load() + m_frameTime.load() * ((newPosition.y - smoothedY.load()) / (FRIK::g_config->smoothingAmountHorizontal * (FRIK::g_config->dampingMultiplierHorizontal / absValY) * (notMoving.load() ? (FRIK::g_config->stoppingMultiplierHorizontal) : 1.0f))));
-				}
-				else
-				{
+					smoothedX.store(
+						smoothedX.load() + m_frameTime.load() * ((newPosition.x - smoothedX.load()) / (FRIK::g_config->smoothingAmountHorizontal * (FRIK::g_config->
+							dampingMultiplierHorizontal / absValX) * (notMoving.load() ? (FRIK::g_config->stoppingMultiplierHorizontal) : 1.0f))));
+					smoothedY.store(
+						smoothedY.load() + m_frameTime.load() * ((newPosition.y - smoothedY.load()) / (FRIK::g_config->smoothingAmountHorizontal * (FRIK::g_config->
+							dampingMultiplierHorizontal / absValY) * (notMoving.load() ? (FRIK::g_config->stoppingMultiplierHorizontal) : 1.0f))));
+				} else {
 					smoothedX.store(newPosition.x);
 					smoothedY.store(newPosition.y);
 				}
 			}
 
-			if (FRIK::g_config->disableInteriorSmoothing && interiorCell.load())
-			{
+			if (FRIK::g_config->disableInteriorSmoothing && interiorCell.load()) {
 				smoothedZ.store(newPosition.z);
-			}
-			else
-			{
+			} else {
 				float absVal = abs(newPosition.z - smoothedZ.load());
-				if (absVal < 0.1f)
-				{
+				if (absVal < 0.1f) {
 					absVal = 0.1f;
 				}
-				smoothedZ.store(smoothedZ.load() + m_frameTime.load() * ((newPosition.z - smoothedZ.load()) / (FRIK::g_config->smoothingAmount * (FRIK::g_config->dampingMultiplier / absVal) * (notMoving.load() ? (FRIK::g_config->stoppingMultiplier) : 1.0f))));
+				smoothedZ.store(
+					smoothedZ.load() + m_frameTime.load() * ((newPosition.z - smoothedZ.load()) / (FRIK::g_config->smoothingAmount * (FRIK::g_config->dampingMultiplier / absVal) *
+						(notMoving.load() ? (FRIK::g_config->stoppingMultiplier) : 1.0f))));
 			}
 		}
 
@@ -142,11 +129,9 @@ namespace SmoothMovementVR
 	float oldX;
 	float oldY;
 
-	NiNode* getWorldRoot()
-	{
+	NiNode* getWorldRoot() {
 		NiNode* node = (*g_player)->unkF0->rootNode;
-		while (node && node->m_parent)
-		{
+		while (node && node->m_parent) {
 			node = node->m_parent;
 		}
 		return node;
@@ -155,82 +140,63 @@ namespace SmoothMovementVR
 	std::atomic<float> lastAppliedLocalX;
 	std::atomic<float> lastAppliedLocalY;
 
-	void everyFrame()
-	{
-		if ((*g_player) && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode)
-		{
-			if ((*g_player) && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode)
-			{
+	void everyFrame() {
+		if ((*g_player) && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
+			if ((*g_player) && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 				BSFixedString playerWorld("PlayerWorldNode");
 				BSFixedString Hmd("HmdNode");
 				BSFixedString room("RoomNode");
 				NiNode* worldNiNode = getWorldRoot();
-				if (worldNiNode)
-				{
+				if (worldNiNode) {
 					NiAVObject* worldNiAV = worldNiNode;
 
-					if (worldNiAV)
-					{
+					if (worldNiAV) {
 						NiAVObject* playerWorldNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&playerWorld, true, true);
 						NiAVObject* hmdNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&Hmd, true, true);
 						//NiAVObject * roomNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&room, true, true);
 
-						if (playerWorldNode && hmdNode)
-						{
+						if (playerWorldNode && hmdNode) {
 							const NiPoint3 curPos = (*g_player)->pos;
 
-							if (first && curPos.z != 0)
-							{
+							if (first && curPos.z != 0) {
 								smoothedX.store(curPos.x);
 								smoothedY.store(curPos.y);
 								smoothedZ.store(curPos.z);
 								first = false;
 							}
-							if (lastPositions.size() >= 4)
-							{
+							if (lastPositions.size() >= 4) {
 								NiPoint3 pos = lastPositions.at(0);
 								bool same = true;
-								for (unsigned int i = 1; i < lastPositions.size(); i++)
-								{
-									if (!(lastPositions.at(i).x == pos.x && lastPositions.at(i).y == pos.y))
-									{
+								for (unsigned int i = 1; i < lastPositions.size(); i++) {
+									if (!(lastPositions.at(i).x == pos.x && lastPositions.at(i).y == pos.y)) {
 										same = false;
 										break;
 									}
 								}
-								if (same)
-								{
+								if (same) {
 									notMoving.store(true);
-								}
-								else
-								{
+								} else {
 									notMoving.store(false);
 								}
-							}
-							else
-							{
+							} else {
 								notMoving.store(false);
 							}
 
 							lastPositions.emplace_back((*g_player)->pos);
-							if (lastPositions.size() > 5)
-							{
+							if (lastPositions.size() > 5) {
 								lastPositions.pop_front();
 							}
 
 							NiPoint3 newPos = smoothedValue(curPos);
 
-							if (notMoving.load() && distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, lastAppliedLocalX.load(), lastAppliedLocalY.load()) > 100)
-							{
+							if (notMoving.load() && distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, lastAppliedLocalX.load(), lastAppliedLocalY.load()) > 100) {
 								newPos.x = curPos.x;
 								newPos.y = curPos.y;
 								newPos.z = curPos.z;
 								smoothedX.store(newPos.x);
 								smoothedY.store(newPos.y);
 								playerWorldNode->m_localTransform.pos.z = newPos.z - curPos.z;
-							}
-							else
-							{
+							} else {
 								playerWorldNode->m_localTransform.pos.x = newPos.x - curPos.x;
 								playerWorldNode->m_localTransform.pos.y = newPos.y - curPos.y;
 								playerWorldNode->m_localTransform.pos.z = newPos.z - curPos.z;
@@ -240,38 +206,29 @@ namespace SmoothMovementVR
 							}
 							//_MESSAGE("playerPos: %g %g %g  --newPos:  %g %g %g  --appliedLocal: %g %g %g", curPos.x, curPos.y, curPos.z, newPos.x, newPos.y, newPos.z, playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
-						//	_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
+							//	_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
-							playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load() ? (FRIK::g_config->PACameraHeight + FRIK::g_config->cameraHeight + FRIK::c_dynamicCameraHeight) : FRIK::g_config->cameraHeight + FRIK::c_dynamicCameraHeight;
-						}
-						else
-						{
+							playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load()
+								? (FRIK::g_config->PACameraHeight + FRIK::g_config->cameraHeight + FRIK::c_dynamicCameraHeight)
+								: FRIK::g_config->cameraHeight + FRIK::c_dynamicCameraHeight;
+						} else {
 							_MESSAGE("Cannot get PlayerWorldNode...");
 						}
-					}
-					else
-					{
+					} else {
 						_MESSAGE("Cannot get worldNiAV...");
 					}
-				}
-				else
-				{
+				} else {
 					_MESSAGE("Cannot get worldNiNode...");
 				}
 			}
 		}
 	}
 
-	bool HasKeyword(TESObjectARMO* armor, UInt32 keywordFormId)
-	{
-		if (armor)
-		{
-			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++)
-			{
-				if (armor->keywordForm.keywords[i])
-				{
-					if (armor->keywordForm.keywords[i]->formID == keywordFormId)
-					{
+	bool HasKeyword(TESObjectARMO* armor, UInt32 keywordFormId) {
+		if (armor) {
+			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++) {
+				if (armor->keywordForm.keywords[i]) {
+					if (armor->keywordForm.keywords[i]->formID == keywordFormId) {
 						return true;
 					}
 				}
@@ -282,22 +239,16 @@ namespace SmoothMovementVR
 
 	bool firstRun = true;
 
-	void ArmorCheck()
-	{
-		while (true)
-		{
-			if (!(*g_player) || !(*g_player)->unkF0)
-			{
+	void ArmorCheck() {
+		while (true) {
+			if (!(*g_player) || !(*g_player)->unkF0) {
 				Sleep(5000);
 				continue;
 			}
 
-			if (isGameStoppedNoDialogue())
-			{
+			if (isGameStoppedNoDialogue()) {
 				Sleep(3000);
-			}
-			else
-			{
+			} else {
 				/*if(firstRun)
 				{
 					Setting * scale = GetINISetting("fVrHMDMovementThreshold:VR");
@@ -309,47 +260,32 @@ namespace SmoothMovementVR
 				}
 				*/
 				TESObjectCELL* cell = (*g_player)->parentCell;
-				if (cell)
-				{
+				if (cell) {
 					if ((cell->flags & TESObjectCELL::kFlag_IsInterior) == TESObjectCELL::kFlag_IsInterior) //Interior cell
 					{
-						if (!interiorCell.load())
-						{
+						if (!interiorCell.load()) {
 							interiorCell.store(true);
 						}
-					}
-					else
-					{
-						if (interiorCell.load())
-						{
+					} else {
+						if (interiorCell.load()) {
 							interiorCell.store(false);
 						}
 					}
 				}
-				if ((*g_player)->equipData)
-				{
-					if ((*g_player)->equipData->slots[0x03].item != nullptr)
-					{
+				if ((*g_player)->equipData) {
+					if ((*g_player)->equipData->slots[0x03].item != nullptr) {
 						TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item;
-						if (equippedForm)
-						{
-							if (equippedForm->formType == TESObjectARMO::kTypeID)
-							{
-								TESObjectARMO* armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO);
+						if (equippedForm) {
+							if (equippedForm->formType == TESObjectARMO::kTypeID) {
+								auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO);
 
-								if (armor)
-								{
-									if (HasKeyword(armor, KeywordPowerArmor) || HasKeyword(armor, KeywordPowerArmorFrame))
-									{
-										if (!inPowerArmorFrame.load())
-										{
+								if (armor) {
+									if (HasKeyword(armor, KeywordPowerArmor) || HasKeyword(armor, KeywordPowerArmorFrame)) {
+										if (!inPowerArmorFrame.load()) {
 											inPowerArmorFrame.store(true);
 										}
-									}
-									else
-									{
-										if (inPowerArmorFrame.load())
-										{
+									} else {
+										if (inPowerArmorFrame.load()) {
 											inPowerArmorFrame.store(false);
 										}
 									}
@@ -364,11 +300,9 @@ namespace SmoothMovementVR
 		}
 	}
 
-	void StartFunctions()
-	{
+	void StartFunctions() {
 		QueryPerformanceFrequency(&m_hpcFrequency);
 		QueryPerformanceCounter(&m_prevTime);
-
 
 		_MESSAGE("Starting armor thread");
 
@@ -377,5 +311,4 @@ namespace SmoothMovementVR
 
 		_MESSAGE("Armor Thread Started");
 	}
-
 }

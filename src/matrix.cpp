@@ -1,7 +1,6 @@
 #include "matrix.h"
-
-#include <math.h>
-
+#include <cmath>
+#include "utils.h"
 
 namespace FRIK {
 	void Matrix44::getEulerAngles(float* heading, float* roll, float* attitude) {

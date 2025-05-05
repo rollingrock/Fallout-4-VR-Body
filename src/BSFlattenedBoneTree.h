@@ -3,19 +3,17 @@
 #include "f4se/NiNodes.h"
 
 namespace FRIK {
-	typedef int (*_BSFlattenedBoneTree_GetBoneIndex)(NiAVObject* a_tree, BSFixedString* a_name);
-	extern RelocAddr <_BSFlattenedBoneTree_GetBoneIndex> BSFlattenedBoneTree_GetBoneIndex;
-	typedef NiNode* (*_BSFlattenedBoneTree_GetBoneNode)(NiAVObject* a_tree, BSFixedString* a_name);
-	extern RelocAddr <_BSFlattenedBoneTree_GetBoneNode> BSFlattenedBoneTree_GetBoneNode;
-	typedef NiNode* (*_BSFlattenedBoneTree_GetBoneNodeFromPos)(NiAVObject* a_tree, int a_pos);
-	extern RelocAddr <_BSFlattenedBoneTree_GetBoneNodeFromPos> BSFlattenedBoneTree_GetBoneNodeFromPos;
-	typedef void* (*_BSFlattenedBoneTree_UpdateBoneArray)(NiAVObject* node);
+	using _BSFlattenedBoneTree_GetBoneIndex = int(*)(NiAVObject* a_tree, BSFixedString* a_name);
+	extern RelocAddr<_BSFlattenedBoneTree_GetBoneIndex> BSFlattenedBoneTree_GetBoneIndex;
+	using _BSFlattenedBoneTree_GetBoneNode = NiNode* (*)(NiAVObject* a_tree, BSFixedString* a_name);
+	extern RelocAddr<_BSFlattenedBoneTree_GetBoneNode> BSFlattenedBoneTree_GetBoneNode;
+	using _BSFlattenedBoneTree_GetBoneNodeFromPos = NiNode* (*)(NiAVObject* a_tree, int a_pos);
+	extern RelocAddr<_BSFlattenedBoneTree_GetBoneNodeFromPos> BSFlattenedBoneTree_GetBoneNodeFromPos;
+	using _BSFlattenedBoneTree_UpdateBoneArray = void* (*)(NiAVObject* node);
 	extern RelocAddr<_BSFlattenedBoneTree_UpdateBoneArray> BSFlattenedBoneTree_UpdateBoneArray;
 
-	class BSFlattenedBoneTree : public NiNode
-	{
+	class BSFlattenedBoneTree : public NiNode {
 	public:
-
 		struct BoneTransforms {
 			NiTransform local;
 			NiTransform world;
@@ -34,20 +32,17 @@ namespace FRIK {
 			uintptr_t unk;
 		};
 
-		int GetBoneIndex(std::string a_name)
-		{
-			BSFixedString* name = new BSFixedString(a_name.c_str());
+		int GetBoneIndex(std::string a_name) {
+			auto name = new BSFixedString(a_name.c_str());
 			return BSFlattenedBoneTree_GetBoneIndex(this, name);
 		}
 
-		NiNode* GetBoneNode(std::string a_name)
-		{
-			BSFixedString* name = new BSFixedString(a_name.c_str());
+		NiNode* GetBoneNode(std::string a_name) {
+			auto name = new BSFixedString(a_name.c_str());
 			return BSFlattenedBoneTree_GetBoneNode(this, name);
 		}
 
-		NiNode* GetBoneNode(int a_pos)
-		{
+		NiNode* GetBoneNode(int a_pos) {
 			return BSFlattenedBoneTree_GetBoneNodeFromPos(this, a_pos);
 		}
 
@@ -68,5 +63,3 @@ namespace FRIK {
 
 	STATIC_ASSERT(sizeof(BSFlattenedBoneTree) == 0x1C0);
 }
-
-

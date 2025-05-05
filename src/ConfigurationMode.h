@@ -3,7 +3,6 @@
 #include "Skeleton.h"
 
 namespace FRIK {
-
 	/// <summary>
 	/// Handle the in-game configuration matrix UI.
 	/// Triggered by pressing down both sticks.
@@ -12,23 +11,22 @@ namespace FRIK {
 	/// - Dampen hands
 	/// - Etc.
 	/// </summary>
-	class ConfigurationMode
-	{
+	class ConfigurationMode {
 	public:
 		ConfigurationMode(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
 			_skelly = skelly;
 			_vrhook = hook;
 		}
 
-		inline bool isCalibrateModeActive() const {
-			return _calibrateModeActive; 
+		bool isCalibrateModeActive() const {
+			return _calibrateModeActive;
 		}
 
-		inline void enterConfigurationMode() {
+		void enterConfigurationMode() {
 			_calibrateModeActive = true;
 		}
 
-		inline bool isPipBoyConfigModeActive() const {
+		bool isPipBoyConfigModeActive() const {
 			return _isPBConfigModeActive;
 		}
 
@@ -41,7 +39,7 @@ namespace FRIK {
 		void pipboyConfigurationMode();
 		void mainConfigurationMode();
 		void enterPipboyConfigMode();
-		void checkWeaponRepositionPipboyConflict();
+		static void checkWeaponRepositionPipboyConflict();
 
 		Skeleton* _skelly;
 		OpenVRHookManagerAPI* _vrhook;
@@ -50,7 +48,7 @@ namespace FRIK {
 		time_t _calibratePlayerHeightTime = 0;
 
 		// persistant fields to be used for general configuration menu
-		bool _MCTouchbuttons[10] = { false, false, false, false, false, false, false, false, false, false };
+		bool _MCTouchbuttons[10] = {false, false, false, false, false, false, false, false, false, false};
 		bool _calibrationModeUIActive = false;
 		bool _calibrateModeActive = false;
 		bool _isHandsButtonPressed = false;
@@ -58,7 +56,7 @@ namespace FRIK {
 		bool _isGripButtonPressed = false;
 
 		// persistant fields to be used for pipboy configuration menu
-		bool _PBTouchbuttons[12] = { false, false, false, false, false, false, false, false, false, false, false, false };
+		bool _PBTouchbuttons[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
 		bool _isPBConfigModeActive = false;
 		bool _exitAndSavePressed = false;
 		bool _exitWithoutSavePressed = false;

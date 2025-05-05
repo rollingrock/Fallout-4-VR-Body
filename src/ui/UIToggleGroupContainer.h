@@ -1,7 +1,7 @@
 #pragma once
 
-#include "UIElement.h"
 #include "UIContainer.h"
+#include "UIElement.h"
 #include "UIToggleButton.h"
 
 namespace VRUI {
@@ -12,7 +12,7 @@ namespace VRUI {
 
 		void addElement(const std::shared_ptr<UIToggleButton>& button);
 
-		[[nodiscard]] virtual std::string toString() const override;
+		virtual std::string toString() const override;
 
 	protected:
 		virtual void onStateChanged(UIElement* element) override;

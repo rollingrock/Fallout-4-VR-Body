@@ -1,13 +1,15 @@
 #include "WeaponPositionConfigMode.h"
 #include "Config.h"
-#include "utils.h"
-#include "Skeleton.h"
 #include "F4VRBody.h"
-#include "ui/UIManager.h"
+#include "Skeleton.h"
+#include "utils.h"
 #include "ui/UIButton.h"
-#include "ui/UIToggleButton.h"
 #include "ui/UIContainer.h"
+#include "ui/UIManager.h"
+#include "ui/UIToggleButton.h"
 #include "ui/UIToggleGroupContainer.h"
+
+using namespace VRUI;
 
 namespace FRIK {
 	/**
@@ -16,7 +18,7 @@ namespace FRIK {
 	WeaponPositionConfigMode::~WeaponPositionConfigMode() {
 		if (_configUI) {
 			// remove the UI
-			VRUI::g_uiManager->detachElement(_configUI, true);
+			g_uiManager->detachElement(_configUI, true);
 		}
 	}
 
@@ -47,7 +49,9 @@ namespace FRIK {
 		transform.rot = originalTransform.rot;
 		transform.pos = g_config->leftHandedMode
 			? (inPA ? NiPoint3(-2.5f, 7.5f, -1) : NiPoint3(-3, 4, 0))
-			: (inPA ? NiPoint3(-0.5f, 6, 2) : NiPoint3(-2, 3, 1));
+			: inPA
+			? NiPoint3(-0.5f, 6, 2)
+			: NiPoint3(-2, 3, 1);
 		return transform;
 	}
 
@@ -115,8 +119,9 @@ namespace FRIK {
 		// Show/Hide UI that should be visible only when weapon is equipped
 		_weaponModeButton->setVisibility(weaponEquipped && !throwableEquipped);
 		_offhandModeButton->setVisibility(weaponEquipped && !throwableEquipped);
-		if (_betterScopesModeButton)
+		if (_betterScopesModeButton) {
 			_betterScopesModeButton->setVisibility(weaponEquipped && !throwableEquipped);
+		}
 		_emptyHandsMessageBox->setVisibility(!weaponEquipped && !throwableEquipped);
 
 		const bool showAnything = weaponEquipped || _repositionTarget == RepositionTarget::Throwable || _repositionTarget == RepositionTarget::BackOfHandUI;
@@ -328,7 +333,7 @@ namespace FRIK {
 		ShowNotification("Reset Weapon Position to Default");
 		doHaptic();
 		_adjuster->_weaponOffsetTransform = isMeleeWeaponEquipped()
-			? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
+			? getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
 			: _adjuster->_weaponOriginalTransform;
 		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA, true);
 	}
@@ -401,81 +406,81 @@ namespace FRIK {
 	 * Create the configuration UI
 	 */
 	void WeaponPositionConfigMode::createConfigUI() {
-		_weaponModeButton = std::make_shared<VRUI::UIToggleButton>("FRIK/ui_weapconf_btn_weapon.nif");
+		_weaponModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_weapon.nif");
 		_weaponModeButton->setToggleState(true);
-		_weaponModeButton->setOnToggleHandler([this](VRUI::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Weapon; });
+		_weaponModeButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Weapon; });
 
-		_offhandModeButton = std::make_shared<VRUI::UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
-		_offhandModeButton->setOnToggleHandler([this](VRUI::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Offhand; });
+		_offhandModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
+		_offhandModeButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Offhand; });
 
-		_throwableUIButton = std::make_shared<VRUI::UIToggleButton>("FRIK/ui_weapconf_btn_throwable.nif");
-		_throwableUIButton->setOnToggleHandler([this](VRUI::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Throwable; });
+		_throwableUIButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_throwable.nif");
+		_throwableUIButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Throwable; });
 
-		const auto backOfHandUIButton = std::make_shared<VRUI::UIToggleButton>("FRIK/ui_weapconf_btn_back_of_hand_ui.nif");
-		backOfHandUIButton->setOnToggleHandler([this](VRUI::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BackOfHandUI; });
+		const auto backOfHandUIButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_back_of_hand_ui.nif");
+		backOfHandUIButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BackOfHandUI; });
 
-		const auto firstRowContainerInner = std::make_shared<VRUI::UIToggleGroupContainer>(VRUI::UIContainerLayout::HorizontalCenter, 0.15f);
+		const auto firstRowContainerInner = std::make_shared<UIToggleGroupContainer>(UIContainerLayout::HorizontalCenter, 0.15f);
 		firstRowContainerInner->addElement(_weaponModeButton);
 		firstRowContainerInner->addElement(_offhandModeButton);
 		firstRowContainerInner->addElement(_throwableUIButton);
 		firstRowContainerInner->addElement(backOfHandUIButton);
 
 		if (isBetterScopesVRModLoaded()) {
-			_betterScopesModeButton = std::make_shared<VRUI::UIToggleButton>("FRIK/ui_weapconf_btn_better_scopes_vr.nif");
-			_betterScopesModeButton->setOnToggleHandler([this](VRUI::UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BetterScopes; });
+			_betterScopesModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_better_scopes_vr.nif");
+			_betterScopesModeButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BetterScopes; });
 			firstRowContainerInner->addElement(_betterScopesModeButton);
 		}
 
-		_emptyHandsMessageBox = std::make_shared<VRUI::UIWidget>("FRIK/ui_weapconf_empty_hands_box.nif");
+		_emptyHandsMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_empty_hands_box.nif");
 		_emptyHandsMessageBox->setSize(3.6f, 2.2f);
 
-		const auto firstRowContainer = std::make_shared<VRUI::UIContainer>(VRUI::UIContainerLayout::HorizontalCenter, 0.15f);
+		const auto firstRowContainer = std::make_shared<UIContainer>(UIContainerLayout::HorizontalCenter, 0.15f);
 		firstRowContainer->addElement(_emptyHandsMessageBox);
 		firstRowContainer->addElement(firstRowContainerInner);
 
-		_saveButton = std::make_shared<VRUI::UIButton>("FRIK/ui_common_btn_save.nif");
-		_saveButton->setOnPressHandler([this](VRUI::UIWidget* widget) { saveConfig(); });
+		_saveButton = std::make_shared<UIButton>("FRIK/ui_common_btn_save.nif");
+		_saveButton->setOnPressHandler([this](UIWidget* widget) { saveConfig(); });
 
-		_resetButton = std::make_shared<VRUI::UIButton>("FRIK/ui_common_btn_reset.nif");
-		_resetButton->setOnPressHandler([this](VRUI::UIWidget* widget) { resetConfig(); });
+		_resetButton = std::make_shared<UIButton>("FRIK/ui_common_btn_reset.nif");
+		_resetButton->setOnPressHandler([this](UIWidget* widget) { resetConfig(); });
 
-		const auto exitButton = std::make_shared<VRUI::UIButton>("FRIK/ui_common_btn_exit.nif");
-		exitButton->setOnPressHandler([this](VRUI::UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
+		const auto exitButton = std::make_shared<UIButton>("FRIK/ui_common_btn_exit.nif");
+		exitButton->setOnPressHandler([this](UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
 
-		_throwableNotEquippedMessageBox = std::make_shared<VRUI::UIWidget>("FRIK/ui_weapconf_throwable_box.nif");
+		_throwableNotEquippedMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_throwable_box.nif");
 		_throwableNotEquippedMessageBox->setSize(3.6f, 2.2f);
 
-		const auto secondRowContainer = std::make_shared<VRUI::UIContainer>(VRUI::UIContainerLayout::HorizontalCenter, 0.2f);
+		const auto secondRowContainer = std::make_shared<UIContainer>(UIContainerLayout::HorizontalCenter, 0.2f);
 		secondRowContainer->addElement(_saveButton);
 		secondRowContainer->addElement(_resetButton);
 		secondRowContainer->addElement(_throwableNotEquippedMessageBox);
 		secondRowContainer->addElement(exitButton);
 
-		const auto header = std::make_shared<VRUI::UIWidget>("FRIK/ui_weapconf_header.nif", 0.7f);
+		const auto header = std::make_shared<UIWidget>("FRIK/ui_weapconf_header.nif", 0.7f);
 		header->setSize(8, 1);
-		_complexAdjustFooter = std::make_shared<VRUI::UIWidget>("FRIK/ui_weapconf_footer.nif", 0.7f);
+		_complexAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_footer.nif", 0.7f);
 		_complexAdjustFooter->setSize(7, 2.2f);
-		_throwableAdjustFooter = std::make_shared<VRUI::UIWidget>("FRIK/ui_weapconf_footer_throwable.nif", 0.7f);
+		_throwableAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_footer_throwable.nif", 0.7f);
 		_throwableAdjustFooter->setSize(7, 2.2f);
-		_simpleAdjustFooter = std::make_shared<VRUI::UIWidget>("FRIK/ui_weapconf_footer_2.nif", 0.7f);
+		_simpleAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_footer_2.nif", 0.7f);
 		_simpleAdjustFooter->setSize(5, 2.2f);
 		_simpleAdjustFooter->setVisibility(false);
 
-		const auto mainContainer = std::make_shared<VRUI::UIContainer>(VRUI::UIContainerLayout::VerticalCenter, 0.2f);
+		const auto mainContainer = std::make_shared<UIContainer>(UIContainerLayout::VerticalCenter, 0.2f);
 		mainContainer->addElement(firstRowContainer);
 		mainContainer->addElement(secondRowContainer);
 		mainContainer->addElement(_complexAdjustFooter);
 		mainContainer->addElement(_throwableAdjustFooter);
 		mainContainer->addElement(_simpleAdjustFooter);
 
-		_configUI = std::make_shared<VRUI::UIContainer>(VRUI::UIContainerLayout::VerticalDown, 0.3f, 1.7f);
+		_configUI = std::make_shared<UIContainer>(UIContainerLayout::VerticalDown, 0.3f, 1.7f);
 		_configUI->addElement(header);
 		_configUI->addElement(mainContainer);
 
 		// start hidden by default (will be set visible in frame update if it should be)
 		_configUI->setVisibility(false);
 
-		VRUI::g_uiManager->attachPresetToPrimaryWandLeft(_configUI, g_config->leftHandedMode, {0, -4, 0});
+		g_uiManager->attachPresetToPrimaryWandLeft(_configUI, g_config->leftHandedMode, {0, -4, 0});
 	}
 
 	/**

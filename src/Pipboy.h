@@ -3,29 +3,28 @@
 #include "Skeleton.h"
 
 namespace FRIK {
-
 	/// <summary>
 	/// Hnadle Pipboy:
 	/// 1. On wrist UI override.
 	/// 2. Hand interaction with on-wrist pipboy.
 	/// 3. Flashlight on-wrist / head location toggle.
 	/// </summary>
-	class Pipboy	{
+	class Pipboy {
 	public:
 		Pipboy(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
 			_skelly = skelly;
 			_vrhook = hook;
 		}
 
-		inline bool status() const {
+		bool status() const {
 			return _pipboyStatus;
 		}
 
 		/// <summary>
 		/// True if on-wrist pipboy is open.
 		/// </summary>
-		inline bool isOperatingPipboy() const {
-			return _isOperatingPipboy; 
+		bool isOperatingPipboy() const {
+			return _isOperatingPipboy;
 		}
 
 		void turnOn();
@@ -46,7 +45,7 @@ namespace FRIK {
 
 		Skeleton* _skelly;
 		OpenVRHookManagerAPI* _vrhook;
-		
+
 		bool meshesReplaced = false;
 		bool _stickypip = false;
 		bool _pipboyStatus = false;
@@ -61,7 +60,7 @@ namespace FRIK {
 		bool stickyPBlight = false;
 		bool stickyPBRadio = false;
 		bool _PBConfigSticky = false;
-		bool _PBControlsSticky[7] = { false, false, false,  false,  false,  false, false };
+		bool _PBControlsSticky[7] = {false, false, false, false, false, false, false};
 		bool _SwithLightButtonSticky = false;
 		bool _SwitchLightHaptics = true;
 		bool _UISelectSticky = false;

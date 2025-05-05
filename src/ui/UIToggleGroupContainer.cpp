@@ -20,7 +20,7 @@ namespace VRUI {
 	 */
 	void UIToggleGroupContainer::onStateChanged(UIElement* element) {
 		UIElement::onStateChanged(element);
-		
+
 		const auto changedButton = dynamic_cast<UIToggleButton*>(element);
 		if (!changedButton->isToggleOn()) {
 			return;

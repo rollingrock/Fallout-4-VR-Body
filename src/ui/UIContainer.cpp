@@ -135,7 +135,7 @@ namespace VRUI {
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
 				childElm->setPosition(layoutOffset + childElm->calcSize().width / 2, 0, 0);
-				layoutOffset += (childElm->calcSize().width + calcPadding());
+				layoutOffset += childElm->calcSize().width + calcPadding();
 			}
 		}
 	}
@@ -148,7 +148,7 @@ namespace VRUI {
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
 				childElm->setPosition(layoutOffset + childElm->calcSize().width / 2, 0, 0);
-				layoutOffset += (childElm->calcSize().width + calcPadding());
+				layoutOffset += childElm->calcSize().width + calcPadding();
 			}
 		}
 	}
@@ -161,7 +161,7 @@ namespace VRUI {
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
 				childElm->setPosition(layoutOffset - childElm->calcSize().width / 2, 0, 0);
-				layoutOffset -= (childElm->calcSize().width + calcPadding());
+				layoutOffset -= childElm->calcSize().width + calcPadding();
 			}
 		}
 	}
@@ -175,7 +175,7 @@ namespace VRUI {
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
 				childElm->setPosition(0, 0, layoutOffset - childElm->calcSize().height / 2);
-				layoutOffset -= (childElm->calcSize().height + calcPadding());
+				layoutOffset -= childElm->calcSize().height + calcPadding();
 			}
 		}
 	}
@@ -188,7 +188,7 @@ namespace VRUI {
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
 				childElm->setPosition(0, 0, layoutOffset + childElm->calcSize().height / 2);
-				layoutOffset += (childElm->calcSize().height + calcPadding());
+				layoutOffset += childElm->calcSize().height + calcPadding();
 			}
 		}
 	}
@@ -201,7 +201,7 @@ namespace VRUI {
 		for (const auto& childElm : _childElements) {
 			if (childElm->calcVisibility()) {
 				childElm->setPosition(0, 0, layoutOffset - childElm->calcSize().height / 2);
-				layoutOffset -= (childElm->calcSize().height + calcPadding());
+				layoutOffset -= childElm->calcSize().height + calcPadding();
 			}
 		}
 	}
@@ -210,8 +210,9 @@ namespace VRUI {
 	 * Attach all the elements in this container to the given node.
 	 */
 	void UIContainer::attachToNode(NiNode* attachNode) {
-		if (_attachNode)
+		if (_attachNode) {
 			throw std::runtime_error("Attempt to attach already attached container");
+		}
 
 		_attachNode = attachNode;
 		for (const auto& childElm : _childElements) {

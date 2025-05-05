@@ -18,10 +18,10 @@ namespace VRUI {
 			_onPressEventHandler = std::move(handler);
 		}
 
-		[[nodiscard]] virtual std::string toString() const override;
+		virtual std::string toString() const override;
 
 	protected:
-		[[nodiscard]] virtual bool isPressable() const override { return _visible && _onPressEventHandler != nullptr; }
+		virtual bool isPressable() const override { return _visible && _onPressEventHandler != nullptr; }
 		virtual void onPressEventFired(UIElement* element, UIFrameUpdateContext* context) override;
 
 		std::function<void(UIButton*)> _onPressEventHandler;

@@ -1,37 +1,20 @@
 #pragma once
-#include "f4se/GameReferences.h"
-#include "f4se/GameObjects.h"
-#include "f4se/GameCamera.h"
-#include "f4se/GameRTTI.h"
-#include "f4se/NiNodes.h"
-#include "f4se/NiNodes.h"
-#include "f4se/BSSkin.h"
-#include "f4se/GameFormComponents.h"
-#include "f4se/GameMenus.h"
-#include "api/PapyrusVRAPI.h"
-#include "api/VRManagerAPI.h"
-#include "include/SimpleIni.h"
-#include <algorithm>
-#include <array>
+
 #include <map>
+#include "api/PapyrusVRAPI.h"
+#include "f4se/GameCamera.h"
+#include "f4se/GameReferences.h"
+#include "f4se/NiNodes.h"
+#include "include/SimpleIni.h"
 
-#include "utils.h"
-#include "matrix.h"
-#include "Quaternion.h"
-#include "BSFlattenedBoneTree.h"
-
-
-namespace FRIK
-{
-
+namespace FRIK {
 	enum wandMode {
 		both = 0,
 		mainhandWand,
 		offhandWand,
 	};
 
-	enum WeaponType
-	{
+	enum WeaponType {
 		kWeaponType_Hand_To_Hand_Melee,
 		kWeaponType_One_Hand_Sword,
 		kWeaponType_One_Hand_Dagger,
@@ -49,7 +32,7 @@ namespace FRIK
 		kWeaponType_Torch
 	};
 
-     // part of PlayerCharacter object but making useful struct below since not mapped in F4SE
+	// part of PlayerCharacter object but making useful struct below since not mapped in F4SE
 	struct PlayerNodes {
 		NiNode* playerworldnode; //0x06E0
 		NiNode* roomnode; //0x06E8
@@ -93,7 +76,6 @@ namespace FRIK
 		NiNode* WeaponLeftNode; //0x0818
 		NiNode* unk820; //0x0820
 		NiNode* LockPickParentNode; //0x0828
-
 	};
 
 	struct ArmNodes {
@@ -146,31 +128,30 @@ namespace FRIK
 		NiTransform* RArm_Finger53;
 	};
 
-	struct CaseInsensitiveComparator
-	{
-		bool operator()(const std::string& a, const std::string& b) const noexcept
-		{
-			return ::_stricmp(a.c_str(), b.c_str()) < 0;
+	struct CaseInsensitiveComparator {
+		bool operator()(const std::string& a, const std::string& b) const noexcept {
+			return _stricmp(a.c_str(), b.c_str()) < 0;
 		}
 	};
 
 	class Skeleton {
 	public:
-		Skeleton() : _root(nullptr)
-		{
+		Skeleton()
+			: _root(nullptr) {
 			_curPos = NiPoint3(0, 0, 0);
 			_walkingState = 0;
 		}
 
-		Skeleton(BSFadeNode* a_node) : _root(a_node)
-		{
+		Skeleton(BSFadeNode* a_node)
+			: _root(a_node) {
 			_curPos = NiPoint3(0, 0, 0);
 			_walkingState = 0;
 		}
 
 		void setDirection() {
-			_cury = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
-			_curx = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
+			_cury = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][1];
+			// Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
+			_curx = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][0]; //  Later will use this vector as the basis for the rest of the IK
 
 			float mag = sqrt(_cury * _cury + _curx * _curx);
 
@@ -178,7 +159,7 @@ namespace FRIK
 			_cury /= mag;
 		}
 
-		inline BSFadeNode* getRoot() const {
+		BSFadeNode* getRoot() const {
 			return _root;
 		}
 
@@ -186,15 +167,15 @@ namespace FRIK
 			_root = node;
 		}
 
-		inline ArmNodes getLeftArm() const {
+		ArmNodes getLeftArm() const {
 			return leftArm;
 		}
 
-		inline ArmNodes getRightArm() const {
+		ArmNodes getRightArm() const {
 			return rightArm;
 		}
 
-		inline PlayerNodes* getPlayerNodes() const {
+		PlayerNodes* getPlayerNodes() const {
 			return _playerNodes;
 		}
 
@@ -202,11 +183,11 @@ namespace FRIK
 			_common = this->getNode("COM", _root);
 		}
 
-		inline bool inPowerArmor() const {
+		bool inPowerArmor() const {
 			return _inPowerArmor;
 		}
 
-		inline NiPoint3 getCurrentBodyPos() const {
+		NiPoint3 getCurrentBodyPos() const {
 			return _curPos;
 		}
 
@@ -277,22 +258,21 @@ namespace FRIK
 		void moveBack();
 		void initLocalDefaults();
 		void fixBoneTree();
-		
+
 		void setTime();
 		// Body Positioning
 		float getNeckYaw();
 		float getNeckPitch();
 		float getBodyPitch();
 
-
 	private:
 		BSFadeNode* _root;
 		NiNode* _common;
-		NiPoint3   _lastPos;
-		NiPoint3   _curPos;
-		NiPoint3   _forwardDir;
-		NiPoint3   _sidewaysRDir;
-		NiPoint3   _upDir;
+		NiPoint3 _lastPos;
+		NiPoint3 _curPos;
+		NiPoint3 _forwardDir;
+		NiPoint3 _sidewaysRDir;
+		NiPoint3 _upDir;
 		PlayerNodes* _playerNodes;
 		NiNode* _rightHand;
 		NiNode* _leftHand;
@@ -310,7 +290,7 @@ namespace FRIK
 		std::map<std::string, NiPoint3, CaseInsensitiveComparator> boneLocalDefault;
 
 		NiMatrix43 originalPipboyRotation;
-		
+
 		bool _leftHandedSticky;
 
 		bool _inPowerArmor;
@@ -339,7 +319,6 @@ namespace FRIK
 		int delayFrame;
 
 		HandMeshBoneTransforms* _boneTransforms;
-
 
 		std::map<std::string, NiTransform, CaseInsensitiveComparator> _handBones;
 		std::map<std::string, bool, CaseInsensitiveComparator> _closedHand;

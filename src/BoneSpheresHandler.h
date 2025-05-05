@@ -3,15 +3,14 @@
 #include "f4se/PapyrusEvents.h"
 
 namespace FRIK {
+	constexpr auto BONE_SPHERE_EVEN_NAME = "OnBoneSphereEvent";
 
-	constexpr const char* BONE_SPHERE_EVEN_NAME = "OnBoneSphereEvent";
-
-	enum BoneSphereEvent {
-		BoneSphereEvent_None = 0,
-		BoneSphereEvent_Enter = 1,
-		BoneSphereEvent_Exit = 2,
-		BoneSphereEvent_Holster = 3,
-		BoneSphereEvent_Draw = 4
+	enum class BoneSphereEvent : uint8_t {
+		None = 0,
+		Enter = 1,
+		Exit = 2,
+		Holster = 3,
+		Draw = 4
 	};
 
 	class BoneSphere {
@@ -28,7 +27,8 @@ namespace FRIK {
 			debugSphere = nullptr;
 		}
 
-		BoneSphere(float a_radius, NiNode* a_bone, NiPoint3 a_offset) : radius(a_radius), bone(a_bone), offset(a_offset) {
+		BoneSphere(const float a_radius, NiNode* a_bone, const NiPoint3 a_offset)
+			: radius(a_radius), bone(a_bone), offset(a_offset) {
 			stickyRight = false;
 			stickyLeft = false;
 			turnOnDebugSpheres = false;
@@ -44,8 +44,7 @@ namespace FRIK {
 		NiNode* debugSphere;
 	};
 
-	class BoneSpheresHandler
-	{
+	class BoneSpheresHandler {
 	public:
 		void onFrameUpdate();
 
@@ -57,9 +56,9 @@ namespace FRIK {
 		void destroyBoneSphere(UInt32 handle);
 		void registerForBoneSphereEvents(VMObject* thisObject);
 		void unRegisterForBoneSphereEvents(VMObject* thisObject);
-		void toggleDebugBoneSpheres(bool turnOn);
+		void toggleDebugBoneSpheres(bool turnOn) const;
 		void toggleDebugBoneSpheresAtBone(UInt32 handle, bool turnOn);
-	
+
 	private:
 		void detectBoneSphere();
 		void handleDebugBoneSpheres();

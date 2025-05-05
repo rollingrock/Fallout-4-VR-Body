@@ -36,16 +36,16 @@ namespace VRUI {
 		virtual void onLayoutUpdate(UIFrameUpdateContext* adapter) override;
 		void addElement(const std::shared_ptr<UIElement>& element);
 
-		[[nodiscard]] UIContainerLayout layout() const { return _layout; }
+		UIContainerLayout layout() const { return _layout; }
 		void setLayout(const UIContainerLayout layout) { _layout = layout; }
-		[[nodiscard]] bool isHorizontalLayout() const;
+		bool isHorizontalLayout() const;
 
-		[[nodiscard]] float getPadding() const { return _padding; }
+		float getPadding() const { return _padding; }
 		void setPadding(const float padding) { _padding = padding; }
 
-		[[nodiscard]] std::vector<std::shared_ptr<UIElement>> childElements() const { return _childElements; }
+		std::vector<std::shared_ptr<UIElement>> childElements() const { return _childElements; }
 
-		[[nodiscard]] virtual std::string toString() const override;
+		virtual std::string toString() const override;
 
 	protected:
 		virtual void attachToNode(NiNode* attachNode) override;

@@ -13,15 +13,17 @@ namespace VRUI {
 	}
 
 	void UIElement::attachToNode(NiNode* attachNode) {
-		if (_attachNode)
+		if (_attachNode) {
 			throw std::runtime_error(
 				"Attempt to attach already attached widget: " + std::string(attachNode->m_name.c_str()));
+		}
 		_attachNode = attachNode;
 	}
 
 	void UIElement::detachFromAttachedNode(bool releaseSafe) {
-		if (!_attachNode)
+		if (!_attachNode) {
 			throw std::runtime_error("Attempt to detach NOT attached widget");
+		}
 		_attachNode = nullptr;
 	}
 

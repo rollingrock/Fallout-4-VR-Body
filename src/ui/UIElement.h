@@ -32,22 +32,22 @@ namespace VRUI {
 		 */
 		void setPosition(const float x, const float y, const float z) { _transform.pos = NiPoint3(x, y, z); }
 		void updatePosition(const float x, const float y, const float z) { _transform.pos += NiPoint3(x, y, z); }
-		[[nodiscard]] const NiPoint3& getPosition() const { return _transform.pos; }
+		const NiPoint3& getPosition() const { return _transform.pos; }
 
-		[[nodiscard]] float getScale() const { return _transform.scale; }
+		float getScale() const { return _transform.scale; }
 		void setScale(const float scale) { _transform.scale = scale; }
 
-		[[nodiscard]] bool isVisible() const { return _visible; }
+		bool isVisible() const { return _visible; }
 		void setVisibility(const bool visible) { _visible = visible; }
 
-		[[nodiscard]] const UISize& getSize() const { return _size; }
+		const UISize& getSize() const { return _size; }
 		void setSize(const UISize size) { _size = size; }
 		void setSize(const float width, const float height) { _size = {width, height}; }
 
-		[[nodiscard]] UIElement* getParent() const { return _parent; }
+		UIElement* getParent() const { return _parent; }
 		void setParent(UIElement* parent) { _parent = parent; }
 
-		[[nodiscard]] virtual std::string toString() const;
+		virtual std::string toString() const;
 
 		// Internal: 
 		virtual void onLayoutUpdate(UIFrameUpdateContext* context) {}

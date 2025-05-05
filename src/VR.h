@@ -1,16 +1,14 @@
 #pragma once
 
-#include "api/PapyrusVRAPI.h"
-#include "api/VRManagerAPI.h"
-#include "f4se/NiTypes.h"
-#include "f4se/NiNodes.h"
+#include <chrono>
+#include <map>
 #include <memory>
 #include <string>
-#include <map>
-#include <chrono>
+#include "api/PapyrusVRAPI.h"
+#include "f4se/NiNodes.h"
+#include "f4se/NiTypes.h"
 
 namespace VRHook {
-
 	class VRSystem {
 	public:
 		enum TrackerType {
@@ -20,15 +18,15 @@ namespace VRHook {
 			Vive
 		};
 
-		struct ControllerButtonLongPressState
-		{
+		struct ControllerButtonLongPressState {
 			// bit flags for each of the buttons. Use ButtonMaskFromId to turn an ID into a mask
 			uint64_t ulButtonPressed;
 			// Track the time press started to know if it's long press
 			uint64_t startTimeMilisec;
 		};
 
-		VRSystem() : leftPacket(0), rightPacket(0), vrHook(RequestOpenVRHookManagerObject()), roomNode(nullptr) {
+		VRSystem()
+			: leftPacket(0), rightPacket(0), vrHook(RequestOpenVRHookManagerObject()), roomNode(nullptr) {
 			initializeDevices();
 		}
 
@@ -109,11 +107,9 @@ namespace VRHook {
 			if (longPressState.startTimeMilisec == 0) {
 				longPressState.ulButtonPressed = controllerState.ulButtonPressed;
 				if (longPressState.ulButtonPressed != 0) {
-
 					longPressState.startTimeMilisec = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 				}
-			}
-			else {
+			} else {
 				longPressState.ulButtonPressed &= controllerState.ulButtonPressed;
 				if (longPressState.ulButtonPressed == 0) {
 					longPressState.startTimeMilisec = 0;
@@ -138,8 +134,8 @@ namespace VRHook {
 		vr::VRControllerState_t leftControllerPrevState;
 
 		// Long press data
-		ControllerButtonLongPressState rightControllerButtonLongPressState{ 0, 0 };
-		ControllerButtonLongPressState leftControllerButtonLongPressState{ 0, 0 };
+		ControllerButtonLongPressState rightControllerButtonLongPressState{0, 0};
+		ControllerButtonLongPressState leftControllerButtonLongPressState{0, 0};
 
 		vr::TrackedDevicePose_t renderPoses[vr::k_unMaxTrackedDeviceCount];
 		vr::TrackedDevicePose_t gamePoses[vr::k_unMaxTrackedDeviceCount];
@@ -153,5 +149,4 @@ namespace VRHook {
 	inline void InitVRSystem() {
 		g_vrHook = new VRSystem();
 	}
-
 }

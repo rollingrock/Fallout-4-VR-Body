@@ -1,8 +1,8 @@
 #include "UIUtils.h"
 
 // TODO: refactor to move this dependency to common code
-#include "../Offsets.h"
 #include "../Debug.h"
+#include "../Offsets.h"
 
 namespace VRUI {
 	/**
@@ -33,7 +33,7 @@ namespace VRUI {
 	 */
 	NiNode* getClonedNiNodeForNifFile(const std::string& path) {
 		auto& normPath = path._Starts_with("Data") ? path : "Data/Meshes/" + path;
-		NiNode* nifNode = loadNifFromFile(normPath.c_str());
+		const NiNode* nifNode = loadNifFromFile(normPath.c_str());
 		NiCloneProcess proc;
 		proc.unk18 = Offsets::cloneAddr1;
 		proc.unk48 = Offsets::cloneAddr2;
@@ -48,7 +48,7 @@ namespace VRUI {
 	NiNode* loadNifFromFile(const char* path) {
 		uint64_t flags[2] = {0x0, 0xed};
 		uint64_t mem = 0;
-		int ret = Offsets::loadNif((uint64_t)&(*path), (uint64_t)&mem, (uint64_t)&flags);
+		int ret = Offsets::loadNif((uint64_t)path, (uint64_t)&mem, (uint64_t)&flags);
 		return reinterpret_cast<NiNode*>(mem);
 	}
 

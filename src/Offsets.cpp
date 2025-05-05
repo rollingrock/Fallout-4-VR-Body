@@ -1,13 +1,9 @@
 #include "Offsets.h"
 
-
-
-
 namespace Offsets {
+	RelocPtr<bool> iniLeftHandedMode(0x37d5e48); // location of bLeftHandedMode:VR ini setting
 
-	RelocPtr<bool> iniLeftHandedMode(0x37d5e48);      // location of bLeftHandedMode:VR ini setting
-
-	RelocAddr <UInt64> testin(0x5a3b888);
+	RelocAddr<UInt64> testin(0x5a3b888);
 
 	RelocAddr<_AIProcess_getAnimationManager> AIProcess_getAnimationManager(0xec5400);
 	RelocAddr<_BSAnimationManager_setActiveGraph> BSAnimationManager_setActiveGraph(0x1690240);
@@ -17,7 +13,7 @@ namespace Offsets {
 	RelocAddr<_CombatUtilities_IsActorUsingMagic> CombatUtilities_IsActorUsingMagic(0x1133c30);
 	RelocAddr<_AttackBlockHandler_IsPlayerThrowingWeapon> AttackBlockHandler_IsPlayerThrowingWeapon(0xfcbcd0);
 	RelocAddr<_IAnimationGraphManagerHolder_NotifyAnimationGraph> IAnimationGraphManagerHolder_NotifyAnimationGraph(0x80e7f0);
-	RelocAddr< _TESObjectREFR_UpdateAnimation> TESObjectREFR_UpdateAnimation(0x419b50);
+	RelocAddr<_TESObjectREFR_UpdateAnimation> TESObjectREFR_UpdateAnimation(0x419b50);
 	RelocAddr<_Actor_CanThrow> Actor_CanThrow(0xe52050);
 	RelocAddr<uint32_t> g_equipIndex(0x3706d2c);
 
@@ -32,7 +28,6 @@ namespace Offsets {
 	RelocAddr<_isPlayerRadioEnabled> isPlayerRadioEnabled(0xd0a9d0);
 	RelocAddr<_getPlayerRadioFreq> getPlayerRadioFreq(0xd0a740);
 
-	
 	RelocAddr<_ClearAllKeywords> ClearAllKeywords(0x148270);
 	RelocAddr<_AddKeyword> AddKeyword(0x148310);
 
@@ -75,8 +70,8 @@ namespace Offsets {
 	RelocAddr<_TESObjectREFR_Set3D> TESObjectREFR_Set3D(0x3ece40);
 	RelocAddr<_TESObjectREFR_Set3DSimple> TESObjectREFR_Set3DSimple(0x3edb20);
 
-	RelocAddr< _Actor_GetCurrentWeapon> Actor_GetCurrentWeapon(0xe50da0);
-	RelocAddr< _Actor_GetCurrentAmmo> Actor_GetCurrentAmmo(0xe05ba0);
+	RelocAddr<_Actor_GetCurrentWeapon> Actor_GetCurrentWeapon(0xe50da0);
+	RelocAddr<_Actor_GetCurrentAmmo> Actor_GetCurrentAmmo(0xe05ba0);
 	RelocAddr<_Actor_GetWeaponEquipIndex> Actor_GetWeaponEquipIndex(0xe50e70);
 	RelocAddr<_BSPointerHandleManagerInterface_GetSmartPointer> BSPointerHandleManagerInterface_GetSmartPointer(0xab60);
 	RelocAddr<_TESObjectCell_AttachReference3D> TESObjectCell_AttachReference3D(0x3c8310);
@@ -99,5 +94,5 @@ namespace Offsets {
 	RelocAddr<_ExtraDataListSetPersistentCell> ExtraDataListSetPersistentCell(0x87bc0);
 	RelocAddr<_MemoryManager_Allocate> MemoryManager_Allocate(0x1b91950);
 	RelocAddr<_ControlMap_SaveRemappings> ControlMap_SaveRemappings(0x1bb3f00);
-	RelocAddr<_ForceGamePause> ForceGamePause(0x1323370); 
+	RelocAddr<_ForceGamePause> ForceGamePause(0x1323370);
 }

@@ -2,9 +2,9 @@
 
 #include <math.h>
 
+#include "utils.h"
 
 namespace FRIK {
-
 	float Quaternion::getMag() {
 		return sqrtf(w * w + x * x + y * y + z * z);
 	}
@@ -24,7 +24,7 @@ namespace FRIK {
 	}
 
 	double Quaternion::dot(Quaternion q) {
-		return w*q.w + x*q.x + y*q.y + z*q.z;
+		return w * q.w + x * q.x + y * q.y + z * q.z;
 	}
 
 	Quaternion Quaternion::conjugate() {
@@ -138,21 +138,18 @@ namespace FRIK {
 			z = save.z;
 			return;
 		}
-		else {
-			float theta_0 = acosf(dotp);        // theta_0 = angle between input vectors
-			float theta = theta_0 * interp;    // theta = angle between q1 and result
-			float sin_theta = sinf(theta);     // compute this value only once
-			float sin_theta_0 = sinf(theta_0); // compute this value only once
-			float s0 = cosf(theta) - dotp * sin_theta / sin_theta_0;  // == sin(theta_0 - theta) / sin(theta_0)
-			float s1 = sin_theta / sin_theta_0;
+		float theta_0 = acosf(dotp); // theta_0 = angle between input vectors
+		float theta = theta_0 * interp; // theta = angle between q1 and result
+		float sin_theta = sinf(theta); // compute this value only once
+		float sin_theta_0 = sinf(theta_0); // compute this value only once
+		float s0 = cosf(theta) - dotp * sin_theta / sin_theta_0; // == sin(theta_0 - theta) / sin(theta_0)
+		float s1 = sin_theta / sin_theta_0;
 
-			w = s0 * w + s1 * target.w;
-			x = s0 * x + s1 * target.x;
-			y = s0 * y + s1 * target.y;
-			z = s0 * z + s1 * target.z;
-		}
+		w = s0 * w + s1 * target.w;
+		x = s0 * x + s1 * target.x;
+		y = s0 * y + s1 * target.y;
+		z = s0 * z + s1 * target.z;
 	}
-
 
 	void Quaternion::vec2vec(NiPoint3 v1, NiPoint3 v2) {
 		NiPoint3 cross = vec3_cross(vec3_norm(v1), vec3_norm(v2));
@@ -163,7 +160,7 @@ namespace FRIK {
 			this->makeIdentity();
 			return;
 		}
-		else if (dotP < -0.99999999) {
+		if (dotP < -0.99999999) {
 			// reverse it
 			cross = vec3_norm(vec3_cross(NiPoint3(0, 1, 0), v1));
 			if (vec3_len(cross) < 0.00000001) {
@@ -182,7 +179,7 @@ namespace FRIK {
 		this->normalize();
 	}
 
-	Quaternion Quaternion::operator* (const Quaternion& qr) const {
+	Quaternion Quaternion::operator*(const Quaternion& qr) const {
 		Quaternion q;
 
 		q.w = w * qr.w - x * qr.x - y * qr.y - z * qr.z;
@@ -191,10 +188,9 @@ namespace FRIK {
 		q.z = w * qr.z + x * qr.y - y * qr.x + z * qr.w;
 
 		return q;
-
 	}
 
-	Quaternion Quaternion::operator* (const float& f) const {
+	Quaternion Quaternion::operator*(const float& f) const {
 		Quaternion q;
 
 		q.w = w * f;
@@ -205,7 +201,7 @@ namespace FRIK {
 		return q;
 	}
 
-	Quaternion& Quaternion::operator*= (const Quaternion& qr) {
+	Quaternion& Quaternion::operator*=(const Quaternion& qr) {
 		Quaternion q;
 
 		q.w = w * qr.w - x * qr.x - y * qr.y - z * qr.z;
@@ -217,8 +213,7 @@ namespace FRIK {
 		return *this;
 	}
 
-	Quaternion& Quaternion::operator*= (const float& f) {
-
+	Quaternion& Quaternion::operator*=(const float& f) {
 		w *= f;
 		x *= f;
 		y *= f;
@@ -227,7 +222,7 @@ namespace FRIK {
 		return *this;
 	}
 
-	void Quaternion::operator= (const Quaternion& q)  {
+	void Quaternion::operator=(const Quaternion& q) {
 		w = q.w;
 		x = q.x;
 		y = q.y;

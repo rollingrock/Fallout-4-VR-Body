@@ -1,34 +1,31 @@
 #include "F4VRBody.h"
+#include <algorithm>
+#include <f4se/GameRTTI.h>
+
+#include "BSFlattenedBoneTree.h"
 #include "Config.h"
 #include "ConfigurationMode.h"
-#include "Skeleton.h"
-#include "Pipboy.h"
-#include "HandPose.h"
-#include "utils.h"
-#include "MuzzleFlash.h"
-#include "BSFlattenedBoneTree.h"
 #include "CullGeometryHandler.h"
-#include "GunReload.h"
-#include "VR.h"
 #include "Debug.h"
+#include "GunReload.h"
+#include "HandPose.h"
+#include "Menu.h"
+#include "MuzzleFlash.h"
+#include "Pipboy.h"
+#include "Skeleton.h"
+#include "SmoothMovementVR.h"
+#include "utils.h"
+#include "VR.h"
+#include "f4se/PapyrusNativeFunctions.h"
 #include "ui/UIManager.h"
 #include "ui/UIModAdapter.h"
-
-#include "api/PapyrusVRAPI.h"
-#include "api/VRManagerAPI.h"
-
-#include <algorithm>
-
-#include "Menu.h"
-#include "MiscStructs.h"
-
 
 bool firstTime = true;
 bool printPlayerOnce = true;
 
 PluginHandle g_pluginHandle = kPluginHandle_Invalid;
-F4SEPapyrusInterface* g_papyrus = NULL;
-F4SEMessagingInterface* g_messaging = NULL;
+F4SEPapyrusInterface* g_papyrus = nullptr;
+F4SEMessagingInterface* g_messaging = nullptr;
 
 UInt32 KeywordPowerArmor = 0x4D8A1;
 UInt32 KeywordPowerArmorFrame = 0x15503F;
@@ -91,10 +88,10 @@ namespace FRIK {
 		NiNode* hand = pn->GetObjectByName(&lHand)->GetAsNiNode();
 		NiNode* arm = pn->GetObjectByName(&lArm)->GetAsNiNode();
 		NiNode* forearm = pn->GetObjectByName(&lfarm)->GetAsNiNode();
-		NiNode* pipboy = (NiNode*)pn->m_children.m_data[0]->GetObjectByName(&pipboyName);
+		auto pipboy = static_cast<NiNode*>(pn->m_children.m_data[0]->GetObjectByName(&pipboyName));
 
 		Skeleton sk;
-		bool inPA = sk.detectInPowerArmor();
+		const bool inPA = sk.detectInPowerArmor();
 
 		if (!inPA) {
 			if (arm->m_children.m_data[0] == hand) {
@@ -102,7 +99,7 @@ namespace FRIK {
 				if (pipboy) {
 					pipboy->m_parent->RemoveChild(pipboy);
 				} else {
-					pipboy = (NiNode*)pn->GetObjectByName(&pipboyName);
+					pipboy = static_cast<NiNode*>(pn->GetObjectByName(&pipboyName));
 				}
 				forearm->m_parent->RemoveChild(forearm);
 				arm->AttachChild(forearm, true);
@@ -129,8 +126,8 @@ namespace FRIK {
 		NiNode* screenNode = pn->ScreenNode;
 
 		if (screenNode) {
-			BSFixedString screenName("Screen:0");
-			NiAVObject* newScreen = screenNode->GetObjectByName(&screenName);
+			const BSFixedString screenName("Screen:0");
+			const NiAVObject* newScreen = screenNode->GetObjectByName(&screenName);
 
 			if (!newScreen) {
 				pn->ScreenNode->RemoveChildAt(0);
@@ -141,7 +138,7 @@ namespace FRIK {
 		}
 	}
 
-	static bool InitSkelly(bool inPowerArmor) {
+	static bool InitSkelly(const bool inPowerArmor) {
 		if (!(*g_player)->unkF0) {
 			_DMESSAGE("loaded Data Not Set Yet");
 			return false;
@@ -157,7 +154,7 @@ namespace FRIK {
 
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 			_MESSAGE("set root");
-			auto node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
+			const auto node = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
 			if (!node) {
 				_MESSAGE("root node not found");
 				return false;
@@ -192,9 +189,8 @@ namespace FRIK {
 			_skelly->setBodyLen();
 			_MESSAGE("initialized");
 			return true;
-		} else {
-			return false;
 		}
+		return false;
 	}
 
 	/// <summary>
@@ -223,7 +219,7 @@ namespace FRIK {
 		}
 	}
 
-	bool HasKeywordPA(TESObjectARMO* armor, UInt32 keywordFormId) {
+	bool HasKeywordPA(const TESObjectARMO* armor, const UInt32 keywordFormId) {
 		if (armor) {
 			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++) {
 				if (armor->keywordForm.keywords[i]) {
@@ -243,14 +239,13 @@ namespace FRIK {
 				TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item;
 				if (equippedForm) {
 					if (equippedForm->formType == TESObjectARMO::kTypeID) {
-						TESObjectARMO* armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO);
+						auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO);
 
 						if (armor) {
 							if (HasKeywordPA(armor, KeywordPowerArmor) || HasKeywordPA(armor, KeywordPowerArmorFrame)) {
 								return true;
-							} else {
-								return false;
 							}
+							return false;
 						}
 					}
 				}
@@ -266,18 +261,18 @@ namespace FRIK {
 			return;
 		}
 
-		if (!(*g_player)) {
+		if (!*g_player) {
 			return;
 		}
 
 		if (printPlayerOnce) {
-			_MESSAGE("g_player = %016I64X", (*g_player));
+			_MESSAGE("g_player = %016I64X", *g_player);
 			printPlayerOnce = false;
 		}
 
 		g_config->onUpdateFrame();
 
-		auto wasInPowerArmor = inPowerArmorSticky;
+		const auto wasInPowerArmor = inPowerArmorSticky;
 		inPowerArmorSticky = detectInPowerArmor();
 		if (wasInPowerArmor != inPowerArmorSticky) {
 			_MESSAGE("Power Armor State Changed, reset skelly");
@@ -307,8 +302,8 @@ namespace FRIK {
 			return;
 		}
 
-		if (_skelly->getRoot() != (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode()) {
-			auto node = (BSFadeNode*)(*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
+		if (_skelly->getRoot() != static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode())) {
+			const auto node = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
 			if (!node) {
 				return;
 			}
@@ -327,7 +322,6 @@ namespace FRIK {
 		// do stuff now
 		g_config->leftHandedMode = *Offsets::iniLeftHandedMode;
 		_skelly->setLeftHandedSticky();
-
 
 		_DMESSAGE("Start of Frame");
 
@@ -353,8 +347,8 @@ namespace FRIK {
 
 		//	fixSkeleton();
 
-		NiPoint3 position = (*g_player)->pos;
-		float groundHeight = 0.0f;
+		const NiPoint3 position = (*g_player)->pos;
+		constexpr float groundHeight = 0.0f;
 
 		uint64_t ret = Offsets::TESObjectCell_GetLandHeight((*g_player)->parentCell, &position, &groundHeight);
 
@@ -362,7 +356,6 @@ namespace FRIK {
 		_DMESSAGE("restore locals of skeleton");
 		_skelly->restoreLocals(_skelly->getRoot()->m_parent->GetAsNiNode());
 		_skelly->updateDown(_skelly->getRoot(), true);
-
 
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
 		_DMESSAGE("Setup Head");
@@ -444,10 +437,10 @@ namespace FRIK {
 		Offsets::BSFadeNode_UpdateGeomArray((*g_player)->unkF0->rootNode, 1);
 
 		if ((*g_player)->middleProcess->unk08->equipData && (*g_player)->middleProcess->unk08->equipData->equippedData) {
-			auto obj = (*g_player)->middleProcess->unk08->equipData->equippedData;
-			uint64_t* vfunc = (uint64_t*)obj;
+			const auto obj = (*g_player)->middleProcess->unk08->equipData->equippedData;
+			const auto vfunc = (uint64_t*)obj;
 			if ((*vfunc & 0xFFFF) == (Offsets::EquippedWeaponData_vfunc & 0xFFFF)) {
-				MuzzleFlash* muzzle = reinterpret_cast<MuzzleFlash*>((*g_player)->middleProcess->unk08->equipData->equippedData->unk28);
+				const auto muzzle = reinterpret_cast<MuzzleFlash*>((*g_player)->middleProcess->unk08->equipData->equippedData->unk28);
 				if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
 					muzzle->fireNode->m_localTransform = muzzle->projectileNode->m_worldTransform;
 				}
@@ -491,9 +484,7 @@ namespace FRIK {
 		isLoaded = true;
 		g_boneSpheres = new BoneSpheresHandler();
 		scopeMenuEvent.Register();
-		return;
 	}
-
 
 	// Papyrus Native Funcs
 
@@ -511,7 +502,7 @@ namespace FRIK {
 
 	static void openFrikIniFile(StaticFunctionTag* base) {
 		_MESSAGE("Open FRIK.ini file in notepad...");
-		g_config->OpenInNotepad();
+		g_config->openInNotepad();
 	}
 
 	static UInt32 getFrikIniAutoReloading(StaticFunctionTag* base) {
@@ -540,7 +531,7 @@ namespace FRIK {
 		return *Offsets::iniLeftHandedMode;
 	}
 
-	static void setSelfieMode(StaticFunctionTag* base, bool isSelfieMode) {
+	static void setSelfieMode(StaticFunctionTag* base, const bool isSelfieMode) {
 		_MESSAGE("Papyrus: Set Selfie Mode: %s", isSelfieMode ? "ON" : "OFF");
 		c_selfieMode = isSelfieMode;
 	}
@@ -560,21 +551,21 @@ namespace FRIK {
 		g_config->playerOffset_forward -= 1.0f;
 	}
 
-	static void setDynamicCameraHeight(StaticFunctionTag* base, float dynamicCameraHeight) {
+	static void setDynamicCameraHeight(StaticFunctionTag* base, const float dynamicCameraHeight) {
 		_MESSAGE("Papyrus: Set Dynamic Camera Height: %f", dynamicCameraHeight);
 		c_dynamicCameraHeight = dynamicCameraHeight;
 	}
 
 	// Sphere bone detection funcs
-	static UInt32 registerBoneSphere(StaticFunctionTag* base, float radius, BSFixedString bone) {
+	static UInt32 registerBoneSphere(StaticFunctionTag* base, const float radius, const BSFixedString bone) {
 		return g_boneSpheres->registerBoneSphere(radius, bone);
 	}
 
-	static UInt32 registerBoneSphereOffset(StaticFunctionTag* base, float radius, BSFixedString bone, VMArray<float> pos) {
+	static UInt32 registerBoneSphereOffset(StaticFunctionTag* base, const float radius, const BSFixedString bone, VMArray<float> pos) {
 		return g_boneSpheres->registerBoneSphereOffset(radius, bone, pos);
 	}
 
-	static void destroyBoneSphere(StaticFunctionTag* base, UInt32 handle) {
+	static void destroyBoneSphere(StaticFunctionTag* base, const UInt32 handle) {
 		g_boneSpheres->destroyBoneSphere(handle);
 	}
 
@@ -586,21 +577,21 @@ namespace FRIK {
 		g_boneSpheres->unRegisterForBoneSphereEvents(thisObject);
 	}
 
-	static void toggleDebugBoneSpheres(StaticFunctionTag* base, bool turnOn) {
+	static void toggleDebugBoneSpheres(StaticFunctionTag* base, const bool turnOn) {
 		g_boneSpheres->toggleDebugBoneSpheres(turnOn);
 	}
 
-	static void toggleDebugBoneSpheresAtBone(StaticFunctionTag* base, UInt32 handle, bool turnOn) {
+	static void toggleDebugBoneSpheresAtBone(StaticFunctionTag* base, const UInt32 handle, const bool turnOn) {
 		g_boneSpheres->toggleDebugBoneSpheresAtBone(handle, turnOn);
 	}
 
 	// Finger pose related APIs
-	static void setFingerPositionScalar(StaticFunctionTag* base, bool isLeft, float thumb, float index, float middle, float ring, float pinky) {
+	static void setFingerPositionScalar(StaticFunctionTag* base, const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky) {
 		_MESSAGE("Papyrus: Set Finger Position Scalar '%s' (%.3f, %.3f, %.3f, %.3f, %.3f)", isLeft ? "Left" : "Right", thumb, index, middle, ring, pinky);
 		setFingerPositionScalar(isLeft, thumb, index, middle, ring, pinky);
 	}
 
-	static void restoreFingerPoseControl(StaticFunctionTag* base, bool isLeft) {
+	static void restoreFingerPoseControl(StaticFunctionTag* base, const bool isLeft) {
 		_MESSAGE("Papyrus: Restore Finger Pose Control '%s'", isLeft ? "Left" : "Right");
 		restoreFingerPoseControl(isLeft);
 	}
@@ -610,36 +601,36 @@ namespace FRIK {
 	/// </summary>
 	bool registerPapyrusFuncs(VirtualMachine* vm) {
 		// Register code to be accisible from Settings Holotape via Papyrus scripts
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenMainConfigurationMode", "FRIK:FRIK", FRIK::openMainConfigurationMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenPipboyConfigurationMode", "FRIK:FRIK", FRIK::openPipboyConfigurationMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleWeaponRepositionMode", "FRIK:FRIK", FRIK::toggleWeaponRepositionMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenFrikIniFile", "FRIK:FRIK", FRIK::openFrikIniFile, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleReloadFrikIniConfig", "FRIK:FRIK", FRIK::toggleReloadFrikIniConfig, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetWeaponRepositionMode", "FRIK:FRIK", FRIK::getWeaponRepositionMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetFrikIniAutoReloading", "FRIK:FRIK", FRIK::getFrikIniAutoReloading, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenMainConfigurationMode", "FRIK:FRIK", openMainConfigurationMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenPipboyConfigurationMode", "FRIK:FRIK", openPipboyConfigurationMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleWeaponRepositionMode", "FRIK:FRIK", toggleWeaponRepositionMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("OpenFrikIniFile", "FRIK:FRIK", openFrikIniFile, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("ToggleReloadFrikIniConfig", "FRIK:FRIK", toggleReloadFrikIniConfig, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetWeaponRepositionMode", "FRIK:FRIK", getWeaponRepositionMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, UInt32>("GetFrikIniAutoReloading", "FRIK:FRIK", getFrikIniAutoReloading, vm));
 
 		/// Register mod public API to be used by other mods via Papyrus scripts
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("isLeftHandedMode", "FRIK:FRIK", FRIK::isLeftHandedMode, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, float>("setDynamicCameraHeight", "FRIK:FRIK", FRIK::setDynamicCameraHeight, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", FRIK::toggleSelfieMode, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("setSelfieMode", "FRIK:FRIK", FRIK::setSelfieMode, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveForward", "FRIK:FRIK", FRIK::moveForward, vm));
-		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", FRIK::moveBackward, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>("isLeftHandedMode", "FRIK:FRIK", isLeftHandedMode, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, float>("setDynamicCameraHeight", "FRIK:FRIK", setDynamicCameraHeight, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("toggleSelfieMode", "FRIK:FRIK", toggleSelfieMode, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("setSelfieMode", "FRIK:FRIK", setSelfieMode, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveForward", "FRIK:FRIK", moveForward, vm));
+		vm->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("moveBackward", "FRIK:FRIK", moveBackward, vm));
 
 		// Bone Sphere interaction related APIs
-		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, UInt32, float, BSFixedString>("RegisterBoneSphere", "FRIK:FRIK", FRIK::registerBoneSphere, vm));
+		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, UInt32, float, BSFixedString>("RegisterBoneSphere", "FRIK:FRIK", registerBoneSphere, vm));
 		vm->RegisterFunction(
-			new NativeFunction3<StaticFunctionTag, UInt32, float, BSFixedString, VMArray<float>>("RegisterBoneSphereOffset", "FRIK:FRIK", FRIK::registerBoneSphereOffset, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("DestroyBoneSphere", "FRIK:FRIK", FRIK::destroyBoneSphere, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("RegisterForBoneSphereEvents", "FRIK:FRIK", FRIK::registerForBoneSphereEvents, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("UnRegisterForBoneSphereEvents", "FRIK:FRIK", FRIK::unRegisterForBoneSphereEvents, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("toggleDebugBoneSpheres", "FRIK:FRIK", FRIK::toggleDebugBoneSpheres, vm));
-		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, UInt32, bool>("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", FRIK::toggleDebugBoneSpheresAtBone, vm));
+			new NativeFunction3<StaticFunctionTag, UInt32, float, BSFixedString, VMArray<float>>("RegisterBoneSphereOffset", "FRIK:FRIK", registerBoneSphereOffset, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, UInt32>("DestroyBoneSphere", "FRIK:FRIK", destroyBoneSphere, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("RegisterForBoneSphereEvents", "FRIK:FRIK", registerForBoneSphereEvents, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, VMObject*>("UnRegisterForBoneSphereEvents", "FRIK:FRIK", unRegisterForBoneSphereEvents, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("toggleDebugBoneSpheres", "FRIK:FRIK", toggleDebugBoneSpheres, vm));
+		vm->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, UInt32, bool>("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", toggleDebugBoneSpheresAtBone, vm));
 
 		// Finger pose related APIs
 		vm->RegisterFunction(
-			new NativeFunction6<StaticFunctionTag, void, bool, float, float, float, float, float>("setFingerPositionScalar", "FRIK:FRIK", FRIK::setFingerPositionScalar, vm));
-		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("restoreFingerPoseControl", "FRIK:FRIK", FRIK::restoreFingerPoseControl, vm));
+			new NativeFunction6<StaticFunctionTag, void, bool, float, float, float, float, float>("setFingerPositionScalar", "FRIK:FRIK", setFingerPositionScalar, vm));
+		vm->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, bool>("restoreFingerPoseControl", "FRIK:FRIK", restoreFingerPoseControl, vm));
 
 		return true;
 	}

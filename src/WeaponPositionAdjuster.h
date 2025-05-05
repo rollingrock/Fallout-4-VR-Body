@@ -21,17 +21,16 @@ namespace FRIK {
 			_scopeCameraBaseMatrix = ident.make43();
 		}
 
-		[[nodiscard]] bool inWeaponRepositionMode() const { return _configMode != nullptr; }
+		bool inWeaponRepositionMode() const { return _configMode != nullptr; }
 
 		void toggleWeaponRepositionMode();
-		
 
 		void onFrameUpdate();
 		void loadStoredOffsets(const std::string& weaponName);
 
 	private:
 		void handleThrowableWeapon();
-		void handlePrimaryWeapon();	
+		void handlePrimaryWeapon();
 		void checkEquippedWeaponChanged(bool emptyHand);
 		void handleScopeCameraAdjustmentByWeaponOffset(const NiNode* weapon) const;
 		void checkIfOffhandIsGripping(const NiNode* weapon);
@@ -41,7 +40,7 @@ namespace FRIK {
 		NiPoint3 getOffhandPosition() const;
 		void handleBetterScopes(NiNode* weapon) const;
 		NiNode* getBackOfHandUINode() const;
-		void debugPrintWeaponPositionData(NiNode* weapon);
+		void debugPrintWeaponPositionData(NiNode* weapon) const;
 
 		// Define a basis remapping matrix to correct coordinate system for scope camera
 		NiMatrix43 _scopeCameraBaseMatrix;

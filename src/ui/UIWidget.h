@@ -14,10 +14,10 @@ namespace VRUI {
 		explicit UIWidget(NiNode* node)
 			: _node(node) {}
 
-		[[nodiscard]] virtual std::string toString() const override;
+		virtual std::string toString() const override;
 
 	protected:
-		[[nodiscard]] virtual bool isPressable() const { return false; }
+		virtual bool isPressable() const { return false; }
 		virtual void attachToNode(NiNode* attachNode) override;
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
 		virtual void onFrameUpdate(UIFrameUpdateContext* adapter) override;

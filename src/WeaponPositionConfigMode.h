@@ -37,7 +37,7 @@ namespace FRIK {
 		static NiTransform getBackOfHandUIDefaultAdjustment(const NiTransform& originalTransform, bool inPA);
 		void showHideUIElements(bool weaponEquipped, bool throwableEquipped) const;
 
-		[[nodiscard]] bool isInOffhandRepositioning() const { return _repositionTarget == RepositionTarget::Offhand; }
+		bool isInOffhandRepositioning() const { return _repositionTarget == RepositionTarget::Offhand; }
 
 		void onFrameUpdate(NiNode* weapon);
 

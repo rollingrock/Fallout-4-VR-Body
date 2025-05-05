@@ -1,14 +1,15 @@
 #pragma once
 
 #include "Debug.h"
-#include "utils.h"
 #include "Skeleton.h"
+#include "utils.h"
 
-#include <sstream>
 #include <iomanip>
+#include <sstream>
+
+#include "BSFlattenedBoneTree.h"
 
 namespace FRIK {
-
 	/// <summary>
 	/// Holds the the last time of a log message per key.
 	/// </summary>
@@ -18,11 +19,11 @@ namespace FRIK {
 	/// Get a simple string of the current time in HH:MM:SS.ms format.
 	/// </summary>
 	static std::string getCurrentTimeString() {
-		auto now = std::chrono::system_clock::now();
-		auto now_c = std::chrono::system_clock::to_time_t(now);
+		const auto now = std::chrono::system_clock::now();
+		const auto now_c = std::chrono::system_clock::to_time_t(now);
 		std::tm localTime;
 		localtime_s(&localTime, &now_c);
-		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000;
+		const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000;
 		std::ostringstream oss;
 		oss << std::put_time(&localTime, "%H:%M:%S")
 			<< '.' << std::setfill('0') << std::setw(3) << ms;
@@ -32,17 +33,15 @@ namespace FRIK {
 	/// <summary>
 	/// Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
 	/// </summary>
-	static void _SmsMESSAGEImpl(const std::string key, int time, const char* fmt, va_list args) {
-		if (_tMessageMap.find(key) == _tMessageMap.end()) {
+	static void _SmsMESSAGEImpl(const std::string& key, const int time, const char* fmt, const va_list args) {
+		if (!_tMessageMap.contains(key)) {
 			_tMessageMap[key] = nowMillis();
-		}
-		else if (nowMillis() - _tMessageMap[key] <= time) {
+		} else if (nowMillis() - _tMessageMap[key] <= time) {
 			return;
-		}
-		else {
+		} else {
 			_tMessageMap[key] = nowMillis();
 		}
-		auto msg = getCurrentTimeString() + " SMPL " + fmt;
+		const auto msg = getCurrentTimeString() + " SMPL " + fmt;
 		gLog.Log(IDebugLog::kLevel_Message, msg.c_str(), args);
 	}
 
@@ -50,7 +49,7 @@ namespace FRIK {
 	/// Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
 	/// Use static key to identify the log messages that should be sampled.
 	/// </summary>
-	void _SmsMESSAGE(const std::string key, int time, const char* fmt, ...) {
+	void _SmsMESSAGE(const std::string& key, const int time, const char* fmt, ...) {
 		va_list args;
 		va_start(args, fmt);
 		_SmsMESSAGEImpl(key, time, fmt, args);
@@ -61,67 +60,67 @@ namespace FRIK {
 	/// Same as calling _MESSAGE but only one message log per second, other logs are dropped.
 	/// Use static key to identify the log messages that should be sampled.
 	/// </summary>
-	void _S1sMESSAGE(const std::string key, const char* fmt, ...) {
+	void _S1sMESSAGE(const std::string& key, const char* fmt, ...) {
 		va_list args;
 		va_start(args, fmt);
 		_SmsMESSAGEImpl(key, 1000, fmt, args);
 		va_end(args);
 	}
 
-	void positionDiff(Skeleton* skelly) {
-		NiPoint3 firstpos = skelly->getPlayerNodes()->HmdNode->m_worldTransform.pos;
-		NiPoint3 skellypos = skelly->getRoot()->m_worldTransform.pos;
+	void positionDiff(const Skeleton* skelly) {
+		const NiPoint3 firstpos = skelly->getPlayerNodes()->HmdNode->m_worldTransform.pos;
+		const NiPoint3 skellypos = skelly->getRoot()->m_worldTransform.pos;
 
-		_MESSAGE("difference = %f %f %f", (firstpos.x - skellypos.x), (firstpos.y - skellypos.y), (firstpos.z - skellypos.z));
+		_MESSAGE("difference = %f %f %f", firstpos.x - skellypos.x, firstpos.y - skellypos.y, firstpos.z - skellypos.z);
 	}
 
-	void printAllNodes(Skeleton* skelly) {
-		auto* node = (BSFadeNode*)(*g_player)->unkF0->rootNode;
+	void printAllNodes(const Skeleton* skelly) {
+		const auto* node = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
 		_MESSAGE("--- Player Root Node ---");
 		printNodes(node);
 		_MESSAGE("--- Global UI node ---");
 		printNodes(skelly->getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent);
 	}
 
-	void printNodes(NiNode* nde) {
+	void printNodes(const NiNode* nde) {
 		// print root node info first
-		_MESSAGE("%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f),  World(%5.2f, %5.2f, %5.2f)", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, (nde->flags & 0x1),
+		_MESSAGE("%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f),  World(%5.2f, %5.2f, %5.2f)", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
 			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z,
 			nde->m_worldTransform.pos.x, nde->m_worldTransform.pos.y, nde->m_worldTransform.pos.z);
 
-		std::string padding = "";
+		const std::string padding = "";
 		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			//	auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
-			auto nextNode = nde->m_children.m_data[i];
+			const auto nextNode = nde->m_children.m_data[i];
 			if (nextNode) {
-				printChildren((NiNode*)nextNode, padding);
+				printChildren(static_cast<NiNode*>(nextNode), padding);
 			}
 		}
 	}
 
 	void printChildren(NiNode* child, std::string padding) {
 		padding += "..";
-		_MESSAGE("%s%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f), World(%5.2f, %5.2f, %5.2f)", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart, (child->flags & 0x1),
+		_MESSAGE("%s%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f), World(%5.2f, %5.2f, %5.2f)", padding.c_str(), child->m_name.c_str(),
+			child->m_children.m_emptyRunStart, child->flags & 0x1,
 			child->m_localTransform.pos.x, child->m_localTransform.pos.y, child->m_localTransform.pos.z,
 			child->m_worldTransform.pos.x, child->m_worldTransform.pos.y, child->m_worldTransform.pos.z);
 
 		//_MESSAGE("%s%s : children = %d : worldbound %f %f %f %f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart,
 		//	child->m_worldBound.m_kCenter.x, child->m_worldBound.m_kCenter.y, child->m_worldBound.m_kCenter.z, child->m_worldBound.m_fRadius);
 
-		if (child->GetAsNiNode())
-		{
+		if (child->GetAsNiNode()) {
 			for (auto i = 0; i < child->m_children.m_emptyRunStart; ++i) {
 				//auto nextNode = child->m_children.m_data[i] ? child->m_children.m_data[i]->GetAsNiNode() : nullptr;
-				auto nextNode = child->m_children.m_data[i];
+				const auto nextNode = child->m_children.m_data[i];
 				if (nextNode) {
-					printChildren((NiNode*)nextNode, padding);
+					printChildren(static_cast<NiNode*>(nextNode), padding);
 				}
 			}
 		}
 	}
 
-	void printNodes(NiNode* nde, long long curTime) {
-		_MESSAGE("%d %s : children = %d %d: local %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f", curTime, nde->m_name.c_str(), nde->m_children.m_emptyRunStart, (nde->flags & 0x1),
+	void printNodes(NiNode* nde, const long long curTime) {
+		_MESSAGE("%d %s : children = %d %d: local %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f", curTime, nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
 			nde->m_localTransform.rot.arr[0],
 			nde->m_localTransform.rot.arr[1],
 			nde->m_localTransform.rot.arr[2],
@@ -136,12 +135,11 @@ namespace FRIK {
 			nde->m_localTransform.rot.arr[11],
 			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z);
 
-
 		if (nde->GetAsNiNode()) {
 			for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-				auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
+				const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
 				if (nextNode) {
-					printNodes((NiNode*)nextNode, curTime);
+					printNodes(nextNode, curTime);
 				}
 			}
 		}
@@ -153,7 +151,7 @@ namespace FRIK {
 	void printNodesTransform(NiNode* node, std::string padding) {
 		_MESSAGE("%s%s child=%d, %s, Pos:(%2.3f, %2.3f, %2.3f), Rot:[[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f]]",
 			padding.c_str(), node->m_name.c_str(),
-			node->m_children.m_emptyRunStart, (node->flags & 0x1) ? "hidden" : "visible",
+			node->m_children.m_emptyRunStart, node->flags & 0x1 ? "hidden" : "visible",
 			node->m_localTransform.pos.x,
 			node->m_localTransform.pos.y,
 			node->m_localTransform.pos.z,
@@ -166,14 +164,14 @@ namespace FRIK {
 
 		padding += "..";
 		for (auto i = 0; i < node->m_children.m_emptyRunStart; ++i) {
-			auto nextNode = node->m_children.m_data[i];
+			const auto nextNode = node->m_children.m_data[i];
 			if (nextNode) {
-				printNodesTransform((NiNode*)nextNode, padding);
+				printNodesTransform(static_cast<NiNode*>(nextNode), padding);
 			}
 		}
 	}
 
-	void printTransform(std::string name, NiTransform& transform) {
+	void printTransform(const std::string& name, const NiTransform& transform) {
 		_MESSAGE("Transform '%s', Pos: (%2.4f, %2.4f, %2.4f), Rot: [[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.3f, %2.3f, %2.3f]]",
 			name.c_str(),
 			transform.pos.x,
@@ -195,18 +193,17 @@ namespace FRIK {
 	/// </summary>
 	void dumpPlayerGeometry(BSFadeNode* rn) {
 		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
-			auto& geometry = rn->kGeomArray[i].spGeometry;
+			const auto& geometry = rn->kGeomArray[i].spGeometry;
 			_MESSAGE("Geometry[%d] = '%s' (%s)", i, geometry->m_name.c_str(), geometry->flags & 0x1 ? "Hidden" : "Visible");
 		}
 	}
 
-	void debug(Skeleton* skelly) {
-
+	void debug(const Skeleton* skelly) {
 		static std::uint64_t fc = 0;
 
 		//Offsets::ForceGamePause(*g_menuControls);
 
-		BSFadeNode* rn = static_cast<BSFadeNode*>(skelly->getRoot()->m_parent);
+		auto rn = static_cast<BSFadeNode*>(skelly->getRoot()->m_parent);
 		//_MESSAGE("newrun");
 
 		//for (int i = 0; i < 44; i++) {
@@ -221,8 +218,6 @@ namespace FRIK {
 		//		}
 		//	}
 		//}
-
-
 
 		//static bool runTimer = false;
 		//static auto startTime = std::chrono::high_resolution_clock::now();
@@ -257,20 +252,19 @@ namespace FRIK {
 		//_playerNodes->ScopeParentNode->flags &= 0xfffffffffffffffe;
 		//updateDown(dynamic_cast<NiNode*>(_playerNodes->ScopeParentNode), true);
 
+		//	BSFixedString name("LArm_Hand");
+		////	NiAVObject* node = (*g_player)->firstPersonSkeleton->GetObjectByName(&name);
+		//	NiAVObject* node = _root->GetObjectByName(&name);
+		//	if (!node) { return; }
+		//	_MESSAGE("%d %f %f %f %f %f %f", node->flags & 0xF, node->m_localTransform.pos.x,
+		//									 node->m_localTransform.pos.y,
+		//									 node->m_localTransform.pos.z,
+		//									 node->m_worldTransform.pos.x,
+		//									 node->m_worldTransform.pos.y,
+		//									 node->m_worldTransform.pos.z
+		//									);
 
-	//	BSFixedString name("LArm_Hand");
-	////	NiAVObject* node = (*g_player)->firstPersonSkeleton->GetObjectByName(&name);
-	//	NiAVObject* node = _root->GetObjectByName(&name);
-	//	if (!node) { return; }
-	//	_MESSAGE("%d %f %f %f %f %f %f", node->flags & 0xF, node->m_localTransform.pos.x,
-	//									 node->m_localTransform.pos.y,
-	//									 node->m_localTransform.pos.z,
-	//									 node->m_worldTransform.pos.x,
-	//									 node->m_worldTransform.pos.y,
-	//									 node->m_worldTransform.pos.z
-	//									);
-
-	//	for (auto i = 0; i < (*g_player)->inventoryList->items.count; i++) {
+		//	for (auto i = 0; i < (*g_player)->inventoryList->items.count; i++) {
 		//	_MESSAGE("%d,%d,%x,%x,%s", fc, i, (*g_player)->inventoryList->items[i].form->formID, (*g_player)->inventoryList->items[i].form->formType, (*g_player)->inventoryList->items[i].form->GetFullName());
 		//}
 
@@ -279,7 +273,7 @@ namespace FRIK {
 		//	map->Dump();
 		//}
 
-		BSFlattenedBoneTree* rt = (BSFlattenedBoneTree*)skelly->getRoot();
+		auto rt = (BSFlattenedBoneTree*)skelly->getRoot();
 
 		//for (auto i = 0; i < rt->numTransforms; i++) {
 
@@ -340,7 +334,6 @@ namespace FRIK {
 		//							rt->transforms[pos].world.pos.y,
 		//							rt->transforms[pos].world.pos.z
 		//		);
-
 
 		//	//	if(strstr(rt->bonePositions[i].name->data, "Finger")) {
 		//	//		Matrix44 rot;

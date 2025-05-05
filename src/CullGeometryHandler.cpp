@@ -1,23 +1,24 @@
 #include "CullGeometryHandler.h"
 #include "Config.h"
 #include "Debug.h"
-#include "utils.h"
 #include "F4VRBody.h"
+#include "utils.h"
 
 namespace FRIK {
-
 	/// <summary>
 	/// Hide/Show player specific equipment slot found by index.
 	/// </summary>
-	static void setEquipmentSlotByIndexVisibility(int slotId, bool toHide) {
-		auto& slot = (*g_player)->equipData->slots[slotId];
+	static void setEquipmentSlotByIndexVisibility(const int slotId, const bool toHide) {
+		const auto& slot = (*g_player)->equipData->slots[slotId];
 
-		if (slot.item == nullptr || slot.node == nullptr)
+		if (slot.item == nullptr || slot.node == nullptr) {
 			return;
+		}
 
-		auto form_type = slot.item->GetFormType();
-		if (form_type != FormType::kFormType_ARMO)
+		const auto form_type = slot.item->GetFormType();
+		if (form_type != kFormType_ARMO) {
 			return;
+		}
 
 		showHideNode(slot.node, toHide);
 	}
@@ -33,13 +34,14 @@ namespace FRIK {
 	/// hidden geometry didn't change. If it did, we re-calculate the indexes to hide.
 	/// </summary>
 	void CullGeometryHandler::preProcessHideGeometryIndexes(BSFadeNode* rn) {
-		auto now = std::time(nullptr);
+		const auto now = std::time(nullptr);
 		if (now - _lastPreProcessTime < 2) {
 			// check that the geometries array didn't change by verifying the last hidden geometry is the same we expect
-			if (_lastHiddenGeometryIdx >= 0 && _lastHiddenGeometryIdx < rn->kGeomArray.count ) {
-				auto gemName = std::string(rn->kGeomArray[_lastHiddenGeometryIdx].spGeometry->m_name.c_str());
-				if (_lastHiddenGeometryName == gemName)
+			if (_lastHiddenGeometryIdx >= 0 && _lastHiddenGeometryIdx < rn->kGeomArray.count) {
+				const auto gemName = std::string(rn->kGeomArray[_lastHiddenGeometryIdx].spGeometry->m_name.c_str());
+				if (_lastHiddenGeometryName == gemName) {
 					return;
+				}
 			}
 		}
 		_lastPreProcessTime = now;
@@ -47,7 +49,7 @@ namespace FRIK {
 		_hideFaceSkinGeometryIndexes.clear();
 		for (auto i = 0; i < rn->kGeomArray.count; i++) {
 			auto& geometry = rn->kGeomArray[i].spGeometry;
-			auto geomName = std::string(geometry->m_name.c_str());
+			const auto geomName = std::string(geometry->m_name.c_str());
 			auto geomStr = str_tolower(trim(geomName));
 
 			bool toHide = false;
@@ -91,7 +93,7 @@ namespace FRIK {
 			return;
 		}
 
-		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
+		const auto rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
 		if (!rn) {
 			return;
 		}
@@ -100,13 +102,13 @@ namespace FRIK {
 		// preProcessHideGeometryIndexes will restore them (even equipment) so it's a hacky fix
 		if (g_config->hideHead || g_config->hideSkin || c_selfieMode) {
 			preProcessHideGeometryIndexes(rn);
-			for each(int idx in _hideFaceSkinGeometryIndexes) {
+			for each (int idx in _hideFaceSkinGeometryIndexes) {
 				showHideNode(rn->kGeomArray[idx].spGeometry, true);
 			}
 		}
-		
+
 		if (g_config->hideEquipment) {
-			for (auto slot : g_config->hideEquipSlotIndexes) {
+			for (const auto slot : g_config->hideEquipSlotIndexes) {
 				setEquipmentSlotByIndexVisibility(slot, true);
 			}
 		}
@@ -121,7 +123,7 @@ namespace FRIK {
 	/// </summary>
 	void CullGeometryHandler::restoreGeometry() {
 		//Face and Skin
-		BSFadeNode* rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
+		const auto rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
 		if (rn) {
 			for (auto i = 0; i < rn->kGeomArray.count; ++i) {
 				showHideNode(rn->kGeomArray[i].spGeometry, false);

@@ -28,8 +28,9 @@ namespace VRUI {
 	 * Remove this widget from attached node.
 	 */
 	void UIWidget::detachFromAttachedNode(const bool releaseSafe) {
-		if (!_attachNode)
+		if (!_attachNode) {
 			throw std::runtime_error("Attempt to detach NOT attached widget");
+		}
 		NiPointer<NiAVObject> out;
 		_attachNode->DetachChild(_node, out);
 		UIElement::detachFromAttachedNode(releaseSafe);

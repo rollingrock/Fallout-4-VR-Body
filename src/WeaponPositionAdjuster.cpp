@@ -1,8 +1,11 @@
 #include "WeaponPositionAdjuster.h"
+
+#include "BSFlattenedBoneTree.h"
 #include "Config.h"
-#include "Skeleton.h"
-#include "F4VRBody.h"
 #include "Debug.h"
+#include "F4VRBody.h"
+#include "Quaternion.h"
+#include "Skeleton.h"
 
 namespace FRIK {
 	// use as weapon name when no weapon in equipped. specifically for default back of hand UI offset.
@@ -305,7 +308,6 @@ namespace FRIK {
 		scopeCamera->m_localTransform.rot = rotAdjust.getRot().multiply43Left(_scopeCameraBaseMatrix);
 	}
 
-
 	/**
 	 * Return true if the angle of offhand to weapon to grip is close to barrel but far in distance from main hand 
 	 * to prevent grabbing when two hands are just close.
@@ -398,9 +400,10 @@ namespace FRIK {
 		return _skelly->getPrimaryWandNode();
 	}
 
-	void WeaponPositionAdjuster::debugPrintWeaponPositionData(NiNode* weapon) {
-		if (!g_config->checkDebugDumpDataOnceFor("weapon_pos"))
+	void WeaponPositionAdjuster::debugPrintWeaponPositionData(NiNode* weapon) const {
+		if (!g_config->checkDebugDumpDataOnceFor("weapon_pos")) {
 			return;
+		}
 
 		_MESSAGE("Weapon: %s, InPA: %d", _currentWeapon.c_str(), _currentlyInPA);
 		printTransform("Weapon Original: ", _weaponOriginalTransform);

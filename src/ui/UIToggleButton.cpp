@@ -21,8 +21,9 @@ namespace VRUI {
 	}
 
 	void UIToggleButton::detachFromAttachedNode(const bool releaseSafe) {
-		if (!_attachNode)
+		if (!_attachNode) {
 			throw std::runtime_error("Attempt to detach NOT attached widget");
+		}
 		NiPointer<NiAVObject> out;
 		_attachNode->DetachChild(_toggleFrameNode, out);
 		UIWidget::detachFromAttachedNode(releaseSafe);

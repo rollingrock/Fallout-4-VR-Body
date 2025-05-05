@@ -15,26 +15,27 @@ namespace VRUI {
 		}
 
 		// is the button is currently toggled ON or OFF
-		[[nodiscard]] bool isToggleOn() const { return _isToggleOn; }
+		bool isToggleOn() const { return _isToggleOn; }
+
 		void setToggleState(const bool isToggleOn) {
 			_isToggleOn = isToggleOn;
 			onStateChanged(this);
 		}
 
 		// is a user is allowed to un-toggle the button (useful for toggle group)
-		[[nodiscard]] bool isUnToggleAllowed() const { return _isUnToggleAllowed; }
+		bool isUnToggleAllowed() const { return _isUnToggleAllowed; }
 		void setUnToggleAllowed(const bool allowUnToggle) { _isUnToggleAllowed = allowUnToggle; }
 
 		void setOnToggleHandler(std::function<void(UIWidget*, bool)> handler) {
 			_onToggleEventHandler = std::move(handler);
 		}
 
-		[[nodiscard]] virtual std::string toString() const override;
+		virtual std::string toString() const override;
 
 	protected:
 		virtual void attachToNode(NiNode* node) override;
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
-		[[nodiscard]] virtual bool isPressable() const override;
+		virtual bool isPressable() const override;
 		virtual void onFrameUpdate(UIFrameUpdateContext* adapter) override;
 		virtual void onPressEventFired(UIElement* element, UIFrameUpdateContext* context) override;
 

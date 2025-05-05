@@ -1,9 +1,7 @@
 #pragma once
-#include "f4se/NITypes.h"
 
-#include "utils.h"
 #include "matrix.h"
-
+#include "f4se/NITypes.h"
 
 namespace FRIK {
 	class Quaternion {
@@ -16,7 +14,8 @@ namespace FRIK {
 			z = 0.0;
 		}
 
-		Quaternion(float X, float Y, float Z, float W) : w(W), x(X), y(Y), z(Z) { };
+		Quaternion(float X, float Y, float Z, float W)
+			: w(W), x(X), y(Y), z(Z) {};
 
 		Quaternion(float real, NiPoint3 v) {
 			w = real;
@@ -63,13 +62,12 @@ namespace FRIK {
 		void vec2vec(NiPoint3 v1, NiPoint3 v2);
 
 		//overload
-		Quaternion  operator* (const float& f) const;
-		Quaternion  operator* (const Quaternion& qr) const;
-		Quaternion& operator*= (const float& f);
-		Quaternion& operator*= (const Quaternion& qr);
-		void operator= (const Quaternion& q);
+		Quaternion operator*(const float& f) const;
+		Quaternion operator*(const Quaternion& qr) const;
+		Quaternion& operator*=(const float& f);
+		Quaternion& operator*=(const Quaternion& qr);
+		void operator=(const Quaternion& q);
 
-	public:
 		float w;
 		float x;
 		float y;

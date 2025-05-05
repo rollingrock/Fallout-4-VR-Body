@@ -1,6 +1,6 @@
-#include "include/SimpleIni.h"
-#include "include/json.hpp"
 #include <fstream>
+#include "include/json.hpp"
+#include "include/SimpleIni.h"
 
 #include "Config.h"
 
@@ -29,8 +29,8 @@ namespace FRIK {
 	/// <summary>
 	/// Open the FRIK.ini file in Notepad for editing.
 	/// </summary>
-	void Config::OpenInNotepad() const {
-		ShellExecute(0, "open", "notepad.exe", FRIK_INI_PATH.c_str(), 0, SW_SHOWNORMAL);
+	void Config::openInNotepad() {
+		ShellExecute(nullptr, "open", "notepad.exe", FRIK_INI_PATH.c_str(), nullptr, SW_SHOWNORMAL);
 	}
 
 	/// <summary>
@@ -40,7 +40,7 @@ namespace FRIK {
 	/// Support specifying multiple names by any seperator as only the matched sub-string is removed.
 	/// </summary>
 	bool Config::checkDebugDumpDataOnceFor(const char* name) {
-		auto idx = _debugDumpDataOnceNames.find(name);
+		const auto idx = _debugDumpDataOnceNames.find(name);
 		if (idx == std::string::npos) {
 			return false;
 		}
@@ -58,12 +58,14 @@ namespace FRIK {
 	/// </summary>
 	void Config::onUpdateFrame() {
 		try {
-			if (_reloadConfigInterval <= 0)
+			if (_reloadConfigInterval <= 0) {
 				return;
+			}
 
-			auto now = std::time(nullptr);
-			if (now - lastReloadTime < _reloadConfigInterval)
+			const auto now = std::time(nullptr);
+			if (now - lastReloadTime < _reloadConfigInterval) {
 				return;
+			}
 
 			_VMESSAGE("Reloading FRIK.ini file...");
 			lastReloadTime = now;
@@ -112,7 +114,7 @@ namespace FRIK {
 
 	void Config::loadFrikINI() {
 		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
+		const SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
 		if (rc < 0) {
 			throw std::runtime_error("Failed to load FRIK.ini file! Error: " + rc);
 		}
@@ -120,24 +122,24 @@ namespace FRIK {
 		version = ini.GetLongValue(INI_SECTION_DEBUG, "Version", 0);
 		logLevel = ini.GetLongValue(INI_SECTION_DEBUG, "LogLevel", 3);
 		_reloadConfigInterval = ini.GetLongValue(INI_SECTION_DEBUG, "ReloadConfigInterval", 3);
-		debugFlowFlag1 = (float)ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag1", 0);
-		debugFlowFlag2 = (float)ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag2", 0);
-		debugFlowFlag3 = (float)ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag3", 0);
+		debugFlowFlag1 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag1", 0));
+		debugFlowFlag2 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag2", 0));
+		debugFlowFlag3 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag3", 0));
 		_debugDumpDataOnceNames = ini.GetValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", "");
 
-		playerHeight = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f);
+		playerHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f));
 		setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", false);
-		fVrScale = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "fVrScale", 70.0);
-		playerOffset_forward = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", -4.0);
-		playerOffset_up = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", -2.0);
-		powerArmor_forward = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", 0.0);
-		powerArmor_up = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_up", 0.0);
-		pipboyDetectionRange = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "pipboyDetectionRange", 15.0);
-		armLength = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "armLength", 36.74);
-		cameraHeight = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", 0.0);
-		PACameraHeight = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", 0.0);
-		rootOffset = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "RootOffset", 0.0);
-		PARootOffset = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", 0.0);
+		fVrScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fVrScale", 70.0));
+		playerOffset_forward = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", -4.0));
+		playerOffset_up = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", -2.0));
+		powerArmor_forward = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", 0.0));
+		powerArmor_up = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_up", 0.0));
+		pipboyDetectionRange = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "pipboyDetectionRange", 15.0));
+		armLength = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "armLength", 36.74));
+		cameraHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", 0.0));
+		PACameraHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", 0.0));
+		rootOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "RootOffset", 0.0));
+		PARootOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", 0.0));
 		showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
 		hidePipboy = ini.GetBoolValue(INI_SECTION_MAIN, "hidePipboy");
 		leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
@@ -146,20 +148,20 @@ namespace FRIK {
 		hideEquipment = ini.GetBoolValue(INI_SECTION_MAIN, "HideEquipment");
 		hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "HideSkin");
 		pipBoyLookAtGate = ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.7);
-		pipBoyOffDelay = (int)ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 5000);
-		pipBoyOnDelay = (int)ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 5000);
+		pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 5000));
+		pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 5000));
 		gripLetGoThreshold = ini.GetDoubleValue(INI_SECTION_MAIN, "GripLetGoThreshold", 15.0f);
 		pipBoyOpenWhenLookAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", false);
 		pipBoyAllowMovementNotLooking = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true);
-		pipBoyButtonArm = (int)ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonArm", 0);
-		pipBoyButtonID = (int)ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_Grip); //2
-		pipBoyButtonOffArm = (int)ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffArm", 0);
-		pipBoyButtonOffID = (int)ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip); //2		
+		pipBoyButtonArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonArm", 0));
+		pipBoyButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_Grip)); //2
+		pipBoyButtonOffArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffArm", 0));
+		pipBoyButtonOffID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip)); //2		
 		isHoloPipboy = ini.GetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", true);
 		isPipBoyTorchOnArm = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", true);
 		isPipBoyTorchRightArmMode = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchRightArmMode", false);
-		switchTorchButton = (int)ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2);
-		gripButtonID = (int)ini.GetLongValue(INI_SECTION_MAIN, "GripButtonID", vr::EVRButtonId::k_EButton_Grip); // 2
+		switchTorchButton = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2));
+		gripButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "GripButtonID", vr::EVRButtonId::k_EButton_Grip)); // 2
 		enableOffHandGripping = ini.GetBoolValue(INI_SECTION_MAIN, "EnableOffHandGripping", true);
 		enableGripButtonToGrap = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButton", true);
 		enableGripButtonToLetGo = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", true);
@@ -178,26 +180,26 @@ namespace FRIK {
 		selfieIgnoreHideFlags = ini.GetBoolValue(INI_SECTION_MAIN, "selfieIgnoreHideFlags", false);
 
 		//Pipboy & Main Config Mode Buttons
-		pipBoyScale = (float)ini.GetDoubleValue(INI_SECTION_MAIN, "PipboyScale", 1.0);
-		switchUIControltoPrimary = (bool)ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
-		autoFocusWindow = (bool)ini.GetBoolValue(INI_SECTION_MAIN, "AutoFocusWindow", false);
+		pipBoyScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipboyScale", 1.0));
+		switchUIControltoPrimary = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
+		autoFocusWindow = ini.GetBoolValue(INI_SECTION_MAIN, "AutoFocusWindow", false);
 
 		// weaponPositioning
-		holdDelay = (int)ini.GetLongValue(INI_SECTION_MAIN, "HoldDelay", 1000);
-		repositionButtonID = (int)ini.GetLongValue(INI_SECTION_MAIN, "RepositionButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger); // 33
-		offHandActivateButtonID = (int)ini.GetLongValue(INI_SECTION_MAIN, "OffHandActivateButtonID", vr::EVRButtonId::k_EButton_A); // 7
+		holdDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "HoldDelay", 1000));
+		repositionButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "RepositionButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger)); // 33
+		offHandActivateButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OffHandActivateButtonID", vr::EVRButtonId::k_EButton_A)); // 7
 		scopeAdjustDistance = ini.GetDoubleValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f);
 
 		//Smooth Movement
 		disableSmoothMovement = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableSmoothMovement");
-		smoothingAmount = (float)ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmount", 15.0);
-		smoothingAmountHorizontal = (float)ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmountHorizontal", 5.0);
-		dampingMultiplier = (float)ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "Damping", 1.0);
-		dampingMultiplierHorizontal = (float)ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "DampingHorizontal", 1.0);
-		stoppingMultiplier = (float)ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplier", 0.6);
-		stoppingMultiplierHorizontal = (float)ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplierHorizontal", 0.6);
-		disableInteriorSmoothing = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothing", 1);
-		disableInteriorSmoothingHorizontal = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothingHorizontal", 1);
+		smoothingAmount = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmount", 15.0));
+		smoothingAmountHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmountHorizontal", 5.0));
+		dampingMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "Damping", 1.0));
+		dampingMultiplierHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "DampingHorizontal", 1.0));
+		stoppingMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplier", 0.6));
+		stoppingMultiplierHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplierHorizontal", 0.6));
+		disableInteriorSmoothing = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothing", true);
+		disableInteriorSmoothingHorizontal = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothingHorizontal", true);
 	}
 
 	/// <summary>
@@ -205,7 +207,7 @@ namespace FRIK {
 	/// </summary>
 	void Config::updateLoggerLogLevel() const {
 		_MESSAGE("Set log level = %d", logLevel);
-		auto level = static_cast<IDebugLog::LogLevel>(logLevel);
+		const auto level = static_cast<IDebugLog::LogLevel>(logLevel);
 		gLog.SetPrintLevel(level);
 		gLog.SetLogLevel(level);
 	}
@@ -220,8 +222,9 @@ namespace FRIK {
 	void Config::updateFrikINIVersion() const {
 		CSimpleIniA oldIni;
 		SI_Error rc = oldIni.LoadFile(FRIK_INI_PATH.c_str());
-		if (rc < 0)
+		if (rc < 0) {
 			throw std::runtime_error("Failed to load old FRIK.ini file! Error: " + std::to_string(rc));
+		}
 
 		// override the file with the default FRIK.ini resource.
 		const auto tmpIniPath = std::string(FRIK_INI_PATH) + ".tmp";
@@ -229,8 +232,9 @@ namespace FRIK {
 
 		CSimpleIniA newIni;
 		rc = newIni.LoadFile(tmpIniPath.c_str());
-		if (rc < 0)
+		if (rc < 0) {
 			throw std::runtime_error("Failed to load new FRIK.ini file! Error: " + std::to_string(rc));
+		}
 
 		// remove temp ini file
 		std::remove(tmpIniPath.c_str());
@@ -242,8 +246,8 @@ namespace FRIK {
 			std::list<CSimpleIniA::Entry> keysList;
 			oldIni.GetAllKeys(section.pItem, keysList);
 			for (const auto& key : keysList) {
-				auto oldVal = oldIni.GetValue(section.pItem, key.pItem);
-				auto newVal = newIni.GetValue(section.pItem, key.pItem);
+				const auto oldVal = oldIni.GetValue(section.pItem, key.pItem);
+				const auto newVal = newIni.GetValue(section.pItem, key.pItem);
 				if (newVal != nullptr && std::strcmp(oldVal, newVal) != 0) {
 					_MESSAGE("Migrating %s.%s = %s", section.pItem, key.pItem, oldIni.GetValue(section.pItem, key.pItem));
 					newIni.SetValue(section.pItem, key.pItem, oldIni.GetValue(section.pItem, key.pItem));
@@ -260,13 +264,15 @@ namespace FRIK {
 		auto nameStr = std::string(FRIK_INI_PATH);
 		nameStr = nameStr.replace(nameStr.length() - 4, 4, "_bkp_v" + std::to_string(version) + ".ini");
 		int res = std::rename(FRIK_INI_PATH.c_str(), nameStr.c_str());
-		if (rc != 0)
+		if (rc != 0) {
 			_WARNING("Failed to backup old FRIK.ini file to '%s'. Error: %d", nameStr, rc);
+		}
 
 		// save the new ini file
 		rc = newIni.SaveFile(FRIK_INI_PATH.c_str());
-		if (rc < 0)
+		if (rc < 0) {
 			throw std::runtime_error("Failed to save post update FRIK.ini file! Error: " + std::to_string(rc));
+		}
 
 		_MESSAGE("FRIK.ini updated successfully");
 	}
@@ -289,7 +295,7 @@ namespace FRIK {
 	/// Slot Ids base on this link: https://falloutck.uesp.net/wiki/Biped_Slots
 	/// </summary>
 	void Config::loadHideEquipmentSlots() {
-		auto slotsGeometry = loadListFromFile(MESH_HIDE_SLOTS_INI_PATH);
+		const auto slotsGeometry = loadListFromFile(MESH_HIDE_SLOTS_INI_PATH);
 
 		std::unordered_map<std::string, int> slotToIndexMap = {
 			{"hairtop", 0}, // i.e. helmet
@@ -305,7 +311,7 @@ namespace FRIK {
 
 		hideEquipSlotIndexes.clear();
 		for (auto& geometry : slotsGeometry) {
-			if (slotToIndexMap.find(geometry) != slotToIndexMap.end()) {
+			if (slotToIndexMap.contains(geometry)) {
 				hideEquipSlotIndexes.push_back(slotToIndexMap[geometry]);
 			}
 		}
@@ -315,32 +321,31 @@ namespace FRIK {
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
 
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "fVrScale", (double)fVrScale);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", (double)playerOffset_forward);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", (double)playerOffset_up);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", (double)powerArmor_forward);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_up", (double)powerArmor_up);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "armLength", (double)armLength);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", (double)cameraHeight);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", (double)PACameraHeight);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "showPAHUD", showPAHUD);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "hidePipboy", hidePipboy);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "PipboyScale", (double)pipBoyScale);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", dampenHandsRotation);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", dampenHandsTranslation);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", (double)PARootOffset);
-		rc = ini.SetDoubleValue(INI_SECTION_MAIN, "RootOffset", (double)rootOffset);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButton", enableGripButtonToGrap);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", enableGripButtonToLetGo);
-		rc = ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", onePressGripButton);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "fVrScale", fVrScale);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", playerOffset_forward);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", playerOffset_up);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", powerArmor_forward);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_up", powerArmor_up);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "armLength", armLength);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", cameraHeight);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", PACameraHeight);
+		ini.SetBoolValue(INI_SECTION_MAIN, "showPAHUD", showPAHUD);
+		ini.SetBoolValue(INI_SECTION_MAIN, "hidePipboy", hidePipboy);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
+		ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
+		ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
+		ini.SetBoolValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
+		ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+		ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", dampenHandsRotation);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", dampenHandsTranslation);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", PARootOffset);
+		ini.SetDoubleValue(INI_SECTION_MAIN, "RootOffset", rootOffset);
+		ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButton", enableGripButtonToGrap);
+		ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", enableGripButtonToLetGo);
+		ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", onePressGripButton);
 
 		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
-
 		if (rc < 0) {
 			_ERROR("Config: Failed to save FRIK.ini. Error: %d", rc);
 		} else {
@@ -351,7 +356,7 @@ namespace FRIK {
 	/// <summary>
 	/// Save specific key and bool value into FRIK.ini file.
 	/// </summary>
-	void Config::saveFrikIniValue(const char* section, const char* key, bool value) {
+	void Config::saveFrikIniValue(const char* section, const char* key, const bool value) {
 		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value ? "true" : "false");
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
@@ -362,7 +367,7 @@ namespace FRIK {
 	/// <summary>
 	/// Save specific key and double value into FRIK.ini file.
 	/// </summary>
-	void Config::saveFrikIniValue(const char* section, const char* key, double value) {
+	void Config::saveFrikIniValue(const char* section, const char* key, const double value) {
 		_MESSAGE("Config: Saving \"%s = %f\" to FRIK.ini", key, value);
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
@@ -392,7 +397,7 @@ namespace FRIK {
 	/// Save the Pipboy offset to the offsets map.
 	/// </summary>
 	void Config::savePipboyOffset(const NiTransform& transform) {
-		auto type = isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
+		const auto type = isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
 		_pipboyOffsets[type] = transform;
 		saveOffsetsToJsonFile(type, transform, isHoloPipboy ? PIPBOY_HOLO_OFFSETS_PATH : PIPBOY_SCREEN_OFFSETS_PATH);
 	}
@@ -547,7 +552,7 @@ namespace FRIK {
 	/// <summary>
 	/// Save the given offsets transform to a json file using the given name.
 	/// </summary>
-	void Config::saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const {
+	void Config::saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) {
 		_MESSAGE("Saving offsets '%s' to '%s'", name.c_str(), file.c_str());
 		json weaponJson;
 		weaponJson[name]["rotation"] = transform.rot.arr;

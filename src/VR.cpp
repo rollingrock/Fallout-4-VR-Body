@@ -2,7 +2,6 @@
 #include "matrix.h"
 
 namespace VRHook {
-
 	RelocPtr<uint64_t*> vrDataStruct(0x59429c0);
 
 	void HmdMatrixToNiTransform(NiTransform* a_transform, vr::TrackedDevicePose_t* a_pose) {
@@ -39,8 +38,8 @@ namespace VRHook {
 
 	void VRSystem::applyRoomTransform(NiTransform* transform) {
 		if (vrDataStruct && roomNode) {
-			NiMatrix43* worldSpaceMat = reinterpret_cast<NiMatrix43*>(reinterpret_cast<char*>(*vrDataStruct) + 0x210);
-			NiPoint3* worldSpaceVec = reinterpret_cast<NiPoint3*>(reinterpret_cast<char*>(*vrDataStruct) + 0x158);
+			auto worldSpaceMat = reinterpret_cast<NiMatrix43*>(reinterpret_cast<char*>(*vrDataStruct) + 0x210);
+			auto worldSpaceVec = reinterpret_cast<NiPoint3*>(reinterpret_cast<char*>(*vrDataStruct) + 0x158);
 			transform->pos -= *worldSpaceVec;
 			transform->pos = *worldSpaceMat * transform->pos;
 		}
@@ -65,8 +64,8 @@ namespace VRHook {
 	}
 
 	std::string VRSystem::getProperty(vr::ETrackedDeviceProperty property, vr::TrackedDeviceIndex_t idx) const {
-		const uint32_t bufSize = vr::k_unMaxPropertyStringSize;
-		std::unique_ptr<char[]> pchValue = std::make_unique<char[]>(bufSize);
+		constexpr uint32_t bufSize = vr::k_unMaxPropertyStringSize;
+		auto pchValue = std::make_unique<char[]>(bufSize);
 		vr::TrackedPropertyError pError = vr::TrackedPropertyError::TrackedProp_NotYetAvailable;
 
 		vrHook->GetVRSystem()->GetStringTrackedDeviceProperty(idx, property, pchValue.get(), bufSize, &pError);
@@ -93,5 +92,4 @@ namespace VRHook {
 	}
 
 	VRSystem* g_vrHook = nullptr;
-
 }

@@ -1,17 +1,16 @@
 #pragma once
 
-#include "f4se/PapyrusNativeFunctions.h"
+#include <vector>
+
 #include "f4se/NiNodes.h"
 
 namespace FRIK {
-	
-	class CullGeometryHandler
-	{
+	class CullGeometryHandler {
 	public:
 		void cullPlayerGeometry();
-	
+
 	private:
-		void restoreGeometry();
+		static void restoreGeometry();
 		void preProcessHideGeometryIndexes(BSFadeNode* rn);
 
 		time_t _lastPreProcessTime = 0;

@@ -1,13 +1,15 @@
 #pragma once
 
-#include "Config.h"
 #include "utils.h"
 #include <algorithm>
-#include "f4se/PapyrusEvents.h"
 #include <filesystem>
 #include <fstream>
 #include <shlobj_core.h>
 #include <sstream>
+#include <f4se/GameMenus.h>
+#include "Config.h"
+#include "matrix.h"
+#include "f4se/PapyrusEvents.h"
 
 #define PI 3.14159265358979323846
 
@@ -15,7 +17,7 @@ namespace FRIK {
 	RelocAddr<_AIProcess_ClearMuzzleFlashes> AIProcess_ClearMuzzleFlashes(0xecc710);
 	RelocAddr<_AIProcess_CreateMuzzleFlash> AIProcess_CreateMuzzleFlash(0xecc570);
 
-	typedef Setting* (*_SettingCollectionList_GetPtr)(SettingCollectionList* list, const char* name);
+	using _SettingCollectionList_GetPtr = Setting* (*)(SettingCollectionList* list, const char* name);
 	RelocAddr<_SettingCollectionList_GetPtr> SettingCollectionList_GetPtr(0x501500);
 
 	/// <summary>
@@ -48,7 +50,8 @@ namespace FRIK {
 
 			if (maxX >= maxY && maxX >= maxZ) {
 				return (v1.x >= 0 ? NiPoint3(1, 0, 0) : NiPoint3(-1, 0, 0));
-			} else if (maxY > maxZ) {
+			}
+			if (maxY > maxZ) {
 				return (v1.y >= 0 ? NiPoint3(0, 1, 0) : NiPoint3(0, -1, 0));
 			}
 			return (v1.z >= 0 ? NiPoint3(0, 0, 1) : NiPoint3(0, 0, -1));
@@ -99,7 +102,7 @@ namespace FRIK {
 	}
 
 	NiPoint3 pitchVec(NiPoint3 vec, float angle) {
-		NiPoint3 rotAxis = NiPoint3(vec.y, -vec.x, 0);
+		auto rotAxis = NiPoint3(vec.y, -vec.x, 0);
 		Matrix44 rot;
 
 		rot.makeTransformMatrix(getRotationAxisAngle(vec3_norm(rotAxis), angle), NiPoint3(0, 0, 0));
@@ -207,7 +210,7 @@ namespace FRIK {
 	}
 
 	void WindowFocus() {
-		HWND hwnd = ::FindWindowEx(0, 0, "Fallout4VR", 0);
+		HWND hwnd = ::FindWindowEx(nullptr, nullptr, "Fallout4VR", nullptr);
 		if (!hwnd) {
 			ShowMessagebox("Window Not Found");
 			return;
@@ -227,7 +230,7 @@ namespace FRIK {
 	}
 
 	void SimulateExtendedButtonPress(WORD vkey) {
-		HWND hwnd = ::FindWindowEx(0, 0, "Fallout4VR", 0);
+		HWND hwnd = ::FindWindowEx(nullptr, nullptr, "Fallout4VR", nullptr);
 		if (hwnd) {
 			HWND foreground = GetForegroundWindow();
 			if (foreground && hwnd == foreground) {
@@ -356,10 +359,11 @@ namespace FRIK {
 	/// Update the node flags to show/hide it.
 	/// </summary>
 	void showHideNode(NiAVObject* node, bool toHide) {
-		if (toHide)
+		if (toHide) {
 			node->flags |= 0x1; // hide
-		else
+		} else {
 			node->flags &= 0xfffffffffffffffe; // show
+		}
 	}
 
 	/// <summary>
@@ -498,7 +502,7 @@ namespace FRIK {
 		for (UInt32 i = 0; i < inventory->items.count; i++) {
 			BGSInventoryItem item;
 			inventory->items.GetNthItem(i, item);
-			if (item.form && item.form->formType == FormType::kFormType_WEAP && item.stack->flags & 0x3) {
+			if (item.form && item.form->formType == kFormType_WEAP && item.stack->flags & 0x3) {
 				return true;
 			}
 		}
@@ -544,8 +548,9 @@ namespace FRIK {
 
 	Setting* GetINISettingNative(const char* name) {
 		Setting* setting = SettingCollectionList_GetPtr(*g_iniSettings, name);
-		if (!setting)
+		if (!setting) {
 			setting = SettingCollectionList_GetPtr(*g_iniPrefSettings, name);
+		}
 
 		return setting;
 	}
@@ -651,8 +656,9 @@ namespace FRIK {
 			while (input) {
 				std::string lineStr;
 				input >> lineStr;
-				if (!lineStr.empty())
+				if (!lineStr.empty()) {
 					list.push_back(trim(str_tolower(lineStr)));
+				}
 			}
 		}
 

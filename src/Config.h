@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VR.h"
 #include <optional>
+#include "VR.h"
 
 namespace FRIK {
 	constexpr auto INI_SECTION_MAIN = "Fallout4VRBody";
@@ -34,35 +34,35 @@ namespace FRIK {
 		void onUpdateFrame();
 		bool checkDebugDumpDataOnceFor(const char* name);
 
-		inline void togglePipBoyTorchOnArm() {
+		void togglePipBoyTorchOnArm() {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
 			saveFrikIniValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		}
 
-		inline void toggleIsHoloPipboy() {
+		void toggleIsHoloPipboy() {
 			isHoloPipboy = !isHoloPipboy;
 			saveFrikIniValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
 		}
 
-		inline void toggleDampenPipboyScreen() {
+		void toggleDampenPipboyScreen() {
 			dampenPipboyScreen = !dampenPipboyScreen;
 			saveFrikIniValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
 		}
 
-		inline void togglePipBoyOpenWhenLookAt() {
+		void togglePipBoyOpenWhenLookAt() {
 			pipBoyOpenWhenLookAt = !pipBoyOpenWhenLookAt;
 			saveFrikIniValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
 		}
 
-		inline void savePipboyScale(double pipboyScale) {
+		static void savePipboyScale(const double pipboyScale) {
 			saveFrikIniValue(INI_SECTION_MAIN, "PipboyScale", pipboyScale);
 		}
 
-		inline int getAutoReloadConfigInterval() const {
+		int getAutoReloadConfigInterval() const {
 			return _reloadConfigInterval;
 		}
 
-		inline void toggleAutoReloadConfig() {
+		void toggleAutoReloadConfig() {
 			_reloadConfigInterval = _reloadConfigInterval == 0 ? 5 : 0;
 			saveFrikIniValue(INI_SECTION_DEBUG, "ReloadConfigInterval", std::to_string(_reloadConfigInterval).c_str());
 		}
@@ -72,12 +72,12 @@ namespace FRIK {
 		std::optional<NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA) const;
 		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
 		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool replaceWithEmbedded);
-		void OpenInNotepad() const;
+		static void openInNotepad();
 
 		// from F4 INIs
 		bool leftHandedMode = false;
 
-		// persistant in FRIK.ini
+		// persistent in FRIK.ini
 		float playerHeight = 0.0;
 		float cameraHeight = 0.0;
 		float PACameraHeight = 0.0;
@@ -176,13 +176,13 @@ namespace FRIK {
 		void updateFrikINIVersion() const;
 		void loadHideMeshes();
 		void loadHideEquipmentSlots();
-		void saveFrikIniValue(const char* section, const char* pKey, bool value);
-		void saveFrikIniValue(const char* section, const char* pKey, double value);
-		void saveFrikIniValue(const char* section, const char* pKey, const char* value);
+		static void saveFrikIniValue(const char* section, const char* pKey, bool value);
+		static void saveFrikIniValue(const char* section, const char* pKey, double value);
+		static void saveFrikIniValue(const char* section, const char* pKey, const char* value);
 		void loadPipboyOffsets();
 		void loadWeaponsOffsetsFromEmbedded();
 		void loadWeaponsOffsetsFromFilesystem();
-		void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) const;
+		static void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file);
 		static void setupFolders();
 		static void migrateConfigFilesIfNeeded();
 
@@ -209,7 +209,7 @@ namespace FRIK {
 			throw std::exception("Config already initialized");
 		}
 
-		auto config = new Config();
+		const auto config = new Config();
 		config->load();
 		g_config = config;
 		_VMESSAGE("Config loaded successfully");

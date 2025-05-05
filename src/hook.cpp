@@ -1,18 +1,22 @@
 #include "hook.h"
+
+#include <F4SE_common/BranchTrampoline.h>
+#include <F4SE_common/SafeWrite.h>
+
 #include "F4VRBody.h"
-#include "f4se/GameReferences.h"
-#include "f4se/GameCamera.h"
 #include "GunReload.h"
+#include "f4se/GameCamera.h"
+#include "f4se/GameReferences.h"
 
 #include "xbyak/xbyak.h"
 
-
 //RelocAddr<uintptr_t> hookBeforeRenderer(0xd844bc);   // this hook didn't work as only a few nodes get moved
-RelocAddr<uintptr_t> hookBeforeRenderer(0x1C21156);    // This hook is in member function 0x33 for BSFlattenedBoneTree right before it updates it's own data buffer of all the skeleton world transforms.   I think that buffer is what actually gets rendered
+RelocAddr<uintptr_t> hookBeforeRenderer(0x1C21156);
+// This hook is in member function 0x33 for BSFlattenedBoneTree right before it updates it's own data buffer of all the skeleton world transforms.   I think that buffer is what actually gets rendered
 
 //RelocAddr<uintptr_t> hookMainLoopFunc(0xd8187e);   // now using in fo4vr better scopes
 
-RelocAddr<uintptr_t> hookAnimationVFunc(0xf2f0a8);  // This is PostUpdateAnimationGraphManager virtual function that updates the player skeleton below the hmd. 
+RelocAddr<uintptr_t> hookAnimationVFunc(0xf2f0a8); // This is PostUpdateAnimationGraphManager virtual function that updates the player skeleton below the hmd. 
 
 RelocAddr<uintptr_t> hookPlayerUpdate(0xf1004c);
 
@@ -22,60 +26,60 @@ RelocAddr<uintptr_t> hookEndUpdate(0xd84f2c);
 RelocAddr<uintptr_t> hookMainDrawCandidate(0xd844bc);
 RelocAddr<uintptr_t> hookMainDrawandUi(0xd87ace);
 
-typedef void(*_hookedFunc)(uint64_t param1, uint64_t param2, uint64_t param3);
+using _hookedFunc = void(*)(uint64_t param1, uint64_t param2, uint64_t param3);
 RelocAddr<_hookedFunc> hookedFunc(0x1C18620);
 
-typedef void(*_hookedPosPlayerFunc)(double param1, double param2, double param3);
+using _hookedPosPlayerFunc = void(*)(double param1, double param2, double param3);
 RelocAddr<_hookedPosPlayerFunc> hookedPosPlayerFunc(0x2841530);
 
-typedef void(*_hookedMainDrawCandidateFunc)(uint64_t param1, uint64_t param2, uint64_t param3, uint64_t param4);
+using _hookedMainDrawCandidateFunc = void(*)(uint64_t param1, uint64_t param2, uint64_t param3, uint64_t param4);
 RelocAddr<_hookedMainDrawCandidateFunc> hookedMainDrawCandidateFunc(0xd831f0);
 
 //typedef void(*_hookedMainLoop)();
 //RelocAddr<_hookedMainLoop> hookedMainLoop(0xd83ac0);
 
-typedef void(*_hookedf10ed0)(uint64_t pc);
+using _hookedf10ed0 = void(*)(uint64_t pc);
 RelocAddr<_hookedf10ed0> hookedf10ed0(0xf10ed0);
 
-typedef void(*_hookedda09a0)(uint64_t parm);
+using _hookedda09a0 = void(*)(uint64_t parm);
 RelocAddr<_hookedda09a0> hookedda09a0(0xda09a0);
 
-typedef void(*_hooked1c22fb0)(uint64_t a, uint64_t b);
+using _hooked1c22fb0 = void(*)(uint64_t a, uint64_t b);
 RelocAddr<_hooked1c22fb0> hooked1c22fb0(0x1c22fb0);
 
-typedef void(*_main_update_player)(uint64_t rcx, uint64_t rdx);
+using _main_update_player = void(*)(uint64_t rcx, uint64_t rdx);
 RelocAddr<_main_update_player> main_update_player(0x1c22fb0);
 RelocAddr<uintptr_t> hookMainUpdatePlayer(0x0f0ff6a);
 
-typedef void(*_hookMultiBoundCullingFunc)();
+using _hookMultiBoundCullingFunc = void(*)();
 RelocAddr<_hookMultiBoundCullingFunc> hookMultiBoundCullingFunc(0x0d84930);
 RelocAddr<uintptr_t> hookMultiBoundCulling(0x0d8445d);
 
-typedef void(*_smoothMovementHook)(uint64_t rcx);
+using _smoothMovementHook = void(*)(uint64_t rcx);
 RelocAddr<_smoothMovementHook> smoothMovementHook(0x1ba7ba0);
 RelocAddr<uintptr_t> hook_smoothMovementHook(0xd83ec4);
 
-typedef void(*_someRandomFunc)(uint64_t rcx);
-RelocAddr <_someRandomFunc> someRandomFunc(0xd3c820);
+using _someRandomFunc = void(*)(uint64_t rcx);
+RelocAddr<_someRandomFunc> someRandomFunc(0xd3c820);
 RelocAddr<uintptr_t> hookSomeRandomFunc(0xd8405e);
 
-typedef void(*_Actor_ReEquipAll)(Actor* a_actor);
-RelocAddr <_Actor_ReEquipAll> Actor_ReEquipAll(0xddf050);
+using _Actor_ReEquipAll = void(*)(Actor* a_actor);
+RelocAddr<_Actor_ReEquipAll> Actor_ReEquipAll(0xddf050);
 RelocAddr<uintptr_t> hookActor_ReEquipAllExit(0xf01528);
 
-typedef void(*_ExtraData_SetMultiBoundRef)(std::uint64_t rcx, std::uint64_t rdx);
-RelocAddr <_ExtraData_SetMultiBoundRef> ExtraData_SetMultiBoundRef(0x91320);
+using _ExtraData_SetMultiBoundRef = void(*)(std::uint64_t rcx, std::uint64_t rdx);
+RelocAddr<_ExtraData_SetMultiBoundRef> ExtraData_SetMultiBoundRef(0x91320);
 RelocAddr<uintptr_t> hookExtraData_SetMultiBoundRef(0xf00dc6);
 
-typedef uint64_t(*_Actor_GetCurrentWeapon)(uint64_t rcx, uint64_t rdx, uint64_t r8);
-RelocAddr <_Actor_GetCurrentWeapon> Actor_GetCurrentWeapon(0xe50da0);
+using _Actor_GetCurrentWeapon = uint64_t(*)(uint64_t rcx, uint64_t rdx, uint64_t r8);
+RelocAddr<_Actor_GetCurrentWeapon> Actor_GetCurrentWeapon(0xe50da0);
 RelocAddr<uintptr_t> hookActor_GetCurrentWeaponForGunReload(0xf3027c);
 
-typedef uint64_t(*_TESObjectREFR_SetupAnimationUpdateDataForRefernce)(uint64_t rcx, float* rdx);
-RelocAddr <_TESObjectREFR_SetupAnimationUpdateDataForRefernce> TESObjectREFR_SetupAnimationUpdateDataForRefernce(0x4189c0);
+using _TESObjectREFR_SetupAnimationUpdateDataForRefernce = uint64_t(*)(uint64_t rcx, float* rdx);
+RelocAddr<_TESObjectREFR_SetupAnimationUpdateDataForRefernce> TESObjectREFR_SetupAnimationUpdateDataForRefernce(0x4189c0);
 RelocAddr<uintptr_t> hookActor_SetupAnimationUpdateDataForRefernce(0xf0fbdf);
 
-typedef void(*_AIProcess_Set3DUpdateFlags)(Actor::MiddleProcess* rcx, int rdx);
+using _AIProcess_Set3DUpdateFlags = void(*)(Actor::MiddleProcess* rcx, int rdx);
 RelocAddr<_AIProcess_Set3DUpdateFlags> AIProcess_Set3DUpdateFlags(0xec8ce0);
 
 // Gun Reload Init
@@ -85,7 +89,6 @@ uint64_t gunReloadInit(uint64_t rcx, uint64_t rdx, uint64_t r8) {
 }
 
 uint64_t updatePlayerAnimationHook(uint64_t rcx, float* rdx) {
-
 	if (FRIK::g_animDeltaTime >= 0.0f) {
 		rdx[0] = FRIK::g_animDeltaTime;
 	}
@@ -97,13 +100,11 @@ uint64_t updatePlayerAnimationHook(uint64_t rcx, float* rdx) {
 void fixPA3D() {
 	Actor_ReEquipAll(*g_player);
 	AIProcess_Set3DUpdateFlags((*g_player)->middleProcess, 0x520);
-	return;
 }
 
 void fixPA3DEnter(std::uint64_t rcx, std::uint64_t rdx) {
 	ExtraData_SetMultiBoundRef(rcx, rdx);
 	AIProcess_Set3DUpdateFlags((*g_player)->middleProcess, 0x520);
-	return;
 }
 
 // renderer stuff
@@ -132,8 +133,8 @@ void hookIt(uint64_t rcx) {
 	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 		if ((*g_player)->unkF0->rootNode->m_children.m_emptyRunStart > 0) {
 			if ((*g_player)->unkF0->rootNode->m_children.m_data[0]) {
-				uint64_t arr[5] = { 0, 0, 0, 0, 0 };
-				uint64_t body = (uint64_t) & (*(*g_player)->unkF0->rootNode->m_children.m_data[0]);
+				uint64_t arr[5] = {0, 0, 0, 0, 0};
+				uint64_t body = (uint64_t)((*g_player)->unkF0->rootNode->m_children.m_data[0]);
 				arr[1] = body + 0x180;
 				arr[2] = 0x800;
 				arr[3] = 2;
@@ -144,11 +145,9 @@ void hookIt(uint64_t rcx) {
 	}
 
 	hookedda09a0(parm);
-	return;
 }
 
 void hook2(uint64_t rcx, uint64_t rdx, uint64_t r8, uint64_t r9) {
-
 	FRIK::update();
 
 	hookedMainDrawCandidateFunc(rcx, rdx, r8, r9);
@@ -158,10 +157,8 @@ void hook2(uint64_t rcx, uint64_t rdx, uint64_t r8, uint64_t r9) {
 	std::uint64_t renderer = RendererGetByName(name);
 
 	if (renderer) {
-//		RendererEnable(renderer, false);
+		//		RendererEnable(renderer, false);
 	}
-
-	return;
 }
 
 void hook5(uint64_t rcx) {
@@ -176,21 +173,16 @@ void hook5(uint64_t rcx) {
 	if (renderer) {
 		//		RendererEnable(renderer, false);
 	}
-
-	return;
 }
 
 void hook3(double param1, double param2, double param3) {
-
 	hookedPosPlayerFunc(param1, param2, param3);
 	FRIK::update();
-	return;
 }
 
 void hook4() {
 	FRIK::update();
 	hookMultiBoundCullingFunc();
-	return;
 }
 
 void hookSmoothMovement(uint64_t rcx) {
@@ -201,7 +193,6 @@ void hookSmoothMovement(uint64_t rcx) {
 }
 
 void hook_main_update_player(uint64_t rcx, uint64_t rdx) {
-
 	if ((*g_player) && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 		NiNode* body = (*g_player)->unkF0->rootNode->GetAsNiNode();
 		body->m_localTransform.pos.x = (*g_playerCamera)->cameraNode->m_worldTransform.pos.x;
@@ -225,13 +216,12 @@ void updateCounter() {
 
 void hookMain() {
 	//_MESSAGE("Hooking before main renderer");
-//	g_branchTrampoline.Write5Call(hookBeforeRenderer.GetUIntPtr(), (uintptr_t)hookIt);
+	//	g_branchTrampoline.Write5Call(hookBeforeRenderer.GetUIntPtr(), (uintptr_t)hookIt);
 	//_MESSAGE("Successfully hooked before main renderer");
 
-
 	// replace mesh pointer string
-	const char* mesh = "Data\\Meshes\\FRIK\\_primaryWand.nif";
-	
+	auto mesh = "Data\\Meshes\\FRIK\\_primaryWand.nif";
+
 	for (int i = 0; i < strlen(mesh); ++i) {
 		SafeWrite8(wandMesh.GetUIntPtr() + i, mesh[i]);
 	}
@@ -239,15 +229,14 @@ void hookMain() {
 	int bytesToNOP = 0x1FF;
 
 	for (int i = 0; i < bytesToNOP; ++i) {
-		SafeWrite8(hookAnimationVFunc.GetUIntPtr() + i, 0x90);    // this block resets the body pose to hang off the camera.    Blocking this off so body height is correct.
+		SafeWrite8(hookAnimationVFunc.GetUIntPtr() + i, 0x90); // this block resets the body pose to hang off the camera.    Blocking this off so body height is correct.
 	}
 
+	//	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&FRIK::update);
 
-//	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&FRIK::update);
-
-//	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
+	//	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
 	//g_branchTrampoline.Write5Call(hookMainDrawCandidate.GetUIntPtr(), (uintptr_t)&hook2);
-//	g_branchTrampoline.Write5Call(hookMultiBoundCulling.GetUIntPtr(), (uintptr_t)&hook4);
+	//	g_branchTrampoline.Write5Call(hookMultiBoundCulling.GetUIntPtr(), (uintptr_t)&hook4);
 	g_branchTrampoline.Write5Call(hookSomeRandomFunc.GetUIntPtr(), (uintptr_t)&hook5);
 
 	g_branchTrampoline.Write5Call(hookMainUpdatePlayer.GetUIntPtr(), (uintptr_t)&hook_main_update_player);
@@ -258,9 +247,7 @@ void hookMain() {
 	g_branchTrampoline.Write5Call(hookActor_GetCurrentWeaponForGunReload.GetUIntPtr(), (uintptr_t)&gunReloadInit);
 	g_branchTrampoline.Write5Call(hookActor_SetupAnimationUpdateDataForRefernce.GetUIntPtr(), (uintptr_t)&updatePlayerAnimationHook);
 
-//	_MESSAGE("hooking main loop function");
-//	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);
-//	_MESSAGE("successfully hooked main loop");
+	//	_MESSAGE("hooking main loop function");
+	//	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);
+	//	_MESSAGE("successfully hooked main loop");
 }
-
-

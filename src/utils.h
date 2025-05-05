@@ -1,20 +1,17 @@
 #pragma once
 
-#include "f4se/GameReferences.h"
-#include "f4se/NiNodes.h"
-#include "f4se/GameSettings.h"
-#include "f4se/GameRTTI.h"
-#include "matrix.h"
 #include "Offsets.h"
 #include "VR.h"
+#include "f4se/GameReferences.h"
+#include "f4se/GameSettings.h"
 
 #include <chrono>
 
 namespace FRIK {
-	typedef void* (*_AIProcess_ClearMuzzleFlashes)(Actor::MiddleProcess* middleProcess);
+	using _AIProcess_ClearMuzzleFlashes = void* (*)(Actor::MiddleProcess* middleProcess);
 	extern RelocAddr<_AIProcess_ClearMuzzleFlashes> AIProcess_ClearMuzzleFlashes;
 
-	typedef void* (*_AIProcess_CreateMuzzleFlash)(Actor::MiddleProcess* middleProcess, uint64_t projectile, Actor* actor);
+	using _AIProcess_CreateMuzzleFlash = void* (*)(Actor::MiddleProcess* middleProcess, uint64_t projectile, Actor* actor);
 	extern RelocAddr<_AIProcess_CreateMuzzleFlash> AIProcess_CreateMuzzleFlash;
 
 	uint64_t nowMillis();
@@ -84,7 +81,7 @@ namespace FRIK {
 		class result_t = std::chrono::milliseconds,
 		class clock_t = std::chrono::steady_clock,
 		class duration_t = std::chrono::milliseconds>
-	auto since(std::chrono::time_point<clock_t, duration_t> const& start) {
+	auto since(const std::chrono::time_point<clock_t, duration_t>& start) {
 		return std::chrono::duration_cast<result_t>(clock_t::now() - start);
 	}
 
@@ -93,7 +90,7 @@ namespace FRIK {
 	std::string rtrim(std::string s);
 	std::string trim(std::string s);
 
-	std::optional<std::string> getEmbeddedResourceAsStringIfExists(const WORD resourceId);
+	std::optional<std::string> getEmbeddedResourceAsStringIfExists(WORD resourceId);
 	std::string getEmbededResourceAsString(WORD idr);
 	std::string getCurrentTimeString();
 	std::vector<std::string> loadListFromFile(std::string filePath);
