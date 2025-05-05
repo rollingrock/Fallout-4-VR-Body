@@ -9,7 +9,6 @@
 #include "ui/UIContainer.h"
 #include "ui/UIToggleGroupContainer.h"
 
-
 namespace F4VRBody {
 	/**
 	 * On release, we need to remove the UI from global manager.
@@ -63,10 +62,9 @@ namespace F4VRBody {
 			mat.setEulerAngles(degrees_to_rads(180), 0, degrees_to_rads(180));
 			transform.rot = mat.make43();
 			transform.pos = inPA ? NiPoint3(5, 6.5f, -11) : NiPoint3(6.2f, 4.8f, -12.2f);
-		}
-		else {
+		} else {
 			transform.rot = Matrix44::getIdentity43();
-			transform.pos = inPA ? NiPoint3(-5.8f, 5.8f, 1.8f) : NiPoint3(-6.8f, 3.6f, 0.8f);
+			transform.pos = inPA ? NiPoint3(-5.8f, 5.8f, 1.8f) : NiPoint3(-6.2f, 3.6f, 0.8f);
 		}
 		return transform;
 	}
@@ -260,8 +258,7 @@ namespace F4VRBody {
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(-degrees_to_rads(secAxisY / 6), -degrees_to_rads(primAxisX / 6), -degrees_to_rads(primAxisY / 6));
 			transform.rot = rot.multiply43Left(transform.rot);
-		}
-		else {
+		} else {
 			// adjust horizontal (z - right/left, y - forward/backward) by primary stick
 			transform.pos.z -= leftHandedMult * primAxisX / 14;
 			transform.pos.y += primAxisY / 14;
@@ -470,7 +467,7 @@ namespace F4VRBody {
 		mainContainer->addElement(_complexAdjustFooter);
 		mainContainer->addElement(_throwableAdjustFooter);
 		mainContainer->addElement(_simpleAdjustFooter);
-		
+
 		_configUI = std::make_shared<ui::UIContainer>(ui::UIContainerLayout::VerticalDown, 0.3f, 1.7f);
 		_configUI->addElement(header);
 		_configUI->addElement(mainContainer);
@@ -487,5 +484,4 @@ namespace F4VRBody {
 	void WeaponPositionConfigMode::doHaptic() const {
 		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
 	}
-
 }

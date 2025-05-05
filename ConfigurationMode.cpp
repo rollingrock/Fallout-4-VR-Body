@@ -45,7 +45,6 @@ namespace F4VRBody {
 		}
 	}
 
-
 	void ConfigurationMode::exitPBConfig() {
 		// Exit Pipboy Config Mode / remove UI.
 		if (_isPBConfigModeActive) {
@@ -63,7 +62,6 @@ namespace F4VRBody {
 			_isPBConfigModeActive = false;
 		}
 	}
-
 
 	/// <summary>
 	/// 
@@ -446,10 +444,7 @@ namespace F4VRBody {
 			}
 			if (HeightButton && !_UIHeightButtonPressed) {
 				_UIHeightButtonPressed = true;
-				PlayerNodes* pNodes = _skelly->getPlayerNodes();
-				g_config->playerHMDHeight = pNodes->UprightHmdNode->m_localTransform.pos.z;
-				float x = _skelly->getNode("LArm_Collarbone", _skelly->getRoot())->m_worldTransform.pos.z;
-				g_config->shoulderToHMD = g_config->playerHMDHeight - x;
+				// TODO: remove this height button
 			} else if (!HeightButton) {
 				_UIHeightButtonPressed = false;
 			}

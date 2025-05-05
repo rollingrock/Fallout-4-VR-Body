@@ -79,8 +79,6 @@ namespace F4VRBody {
 
 		// persistant in FRIK.ini
 		float playerHeight = 0.0;
-		float playerHMDHeight = 120.0;
-		float shoulderToHMD = 0.0;
 		float cameraHeight = 0.0;
 		float PACameraHeight = 0.0;
 		bool setScale = false;
@@ -175,7 +173,7 @@ namespace F4VRBody {
 		void loadFrikINI();
 		void saveFrikINI() const;
 		void updateLoggerLogLevel() const;
-		void updateFrikINIVersion();
+		void updateFrikINIVersion() const;
 		void loadHideMeshes();
 		void loadHideEquipmentSlots();
 		void saveFrikIniValue(const char* section, const char* pKey, bool value);
