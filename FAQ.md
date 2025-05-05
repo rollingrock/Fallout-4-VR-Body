@@ -19,6 +19,9 @@ Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`
 - `crash-<date time>.log` for crash logs
 - `Fallout4VRBody.log` for FRIK logs
 
+## Why is the Config in "Documents\My Games\Fallout4VR\FRIK_Config"
+[See this](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Development#frik-config-folder).
+
 ## When I launch the game, I do not see a body!!
 
 Most commonly caused by not launching your game with `f4sevr_loader.exe`. Make sure you have your F4SEVR install up to date and that you're launching it correctly with your mod manager.

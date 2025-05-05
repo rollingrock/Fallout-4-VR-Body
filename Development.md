@@ -53,15 +53,19 @@ Prerequisites:
    2. `\root\f4sevr\src\f4sevr\x64\Release\f4sevr_1_2_72.lib`
    3. `\root\f4sevr\src\f4sevr\x64_vc11\Release\common_vc11.lib`
 
+## FRIK Config Folder
+All FRIK configuration files are located in `%USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config`.  
+This folder is shared across all versions and instances of FRIK.  
+Using a shared location was necessary due to two constraints: configuration files cannot be included in the mod distributable (ZIP file), and Mod Organizer 2 (MO2) restricts write access to the mods folder ([details](https://stepmodifications.org/wiki/Guide:Mod_Organizer#Overwrite), [more details](https://stepmodifications.org/wiki/Guide:Mod_Organizer/Advanced)).  
+We avoid including config files in the distributable to prevent user configuration from being overwritten during upgrades. Instead, FRIK.dll includes a default configuration, which is used if no existing config is found on disk. However, since MO2 does not allow writing to the mods folder and instead redirects all writes to its "[overwrite](https://stepmodifications.org/wiki/Guide:Mod_Organizer#Overwrite)" folder, this causes config files to be stored in an unexpected location. To avoid this confusion, we chose to use the standard %USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config path, which is consistent and accessible outside of MO2’s virtual file system.
+
 ## Tips
 
 - Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`
-
   - `Fallout4VRBody.log` for FRIK logs
   - `crash-<date time>.log` for crash logs
   - use `tail -f "%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE\Fallout4VRBody.log"` to tail the log
 
-- Config files are located in "...\data\FRIK_Config" folder.  
-  If you're using MO2 the folder is located in the "overwrite" MO2 folder: "...\[mod list]\overwrite\FRIK_Config"
+- Open win environment variables edit using `rundll32.exe sysdm.cpl,EditEnvironmentVariables`
 
 - Don't keep more than one `.dll` file in the `...\F4SE\Plugins` folder. For example, if you're backing up `FRIK.dll`, avoid renaming it to `FRIK_org.dll` in the same folder. This is because `F4SEVR` loads all `.dll` files in the directory, which results in the plugin being loaded twice. It appears to load plugins in alphabetical order, so `FRIK_org.dll` will be loaded after `FRIK.dll`, potentially causing issues and making it unclear why your code isn't running.
