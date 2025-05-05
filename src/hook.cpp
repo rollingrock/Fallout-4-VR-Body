@@ -83,12 +83,12 @@ using _AIProcess_Set3DUpdateFlags = void(*)(Actor::MiddleProcess* rcx, int rdx);
 RelocAddr<_AIProcess_Set3DUpdateFlags> AIProcess_Set3DUpdateFlags(0xec8ce0);
 
 // Gun Reload Init
-uint64_t gunReloadInit(uint64_t rcx, uint64_t rdx, uint64_t r8) {
+uint64_t gunReloadInit(const uint64_t rcx, const uint64_t rdx, const uint64_t r8) {
 	FRIK::g_gunReloadSystem->startAnimationCapture();
 	return Actor_GetCurrentWeapon(rcx, rdx, r8);
 }
 
-uint64_t updatePlayerAnimationHook(uint64_t rcx, float* rdx) {
+uint64_t updatePlayerAnimationHook(const uint64_t rcx, float* rdx) {
 	if (FRIK::g_animDeltaTime >= 0.0f) {
 		rdx[0] = FRIK::g_animDeltaTime;
 	}
@@ -102,14 +102,14 @@ void fixPA3D() {
 	AIProcess_Set3DUpdateFlags((*g_player)->middleProcess, 0x520);
 }
 
-void fixPA3DEnter(std::uint64_t rcx, std::uint64_t rdx) {
+void fixPA3DEnter(const std::uint64_t rcx, const std::uint64_t rdx) {
 	ExtraData_SetMultiBoundRef(rcx, rdx);
 	AIProcess_Set3DUpdateFlags((*g_player)->middleProcess, 0x520);
 }
 
 // renderer stuff
 
-void RendererEnable(std::uint64_t a_ptr, bool a_bool) {
+void RendererEnable(const std::uint64_t a_ptr, const bool a_bool) {
 	using func_t = decltype(&RendererEnable);
 	RelocAddr<func_t> func(0x0b00150);
 	return func(a_ptr, a_bool);
@@ -123,8 +123,8 @@ std::uint64_t RendererGetByName(const BSFixedString& a_name) {
 
 RelocAddr<uint64_t> wandMesh(0x2d686d8);
 
-void hookIt(uint64_t rcx) {
-	uint64_t parm = rcx;
+void hookIt(const uint64_t rcx) {
+	const uint64_t parm = rcx;
 	FRIK::update();
 	//hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.   
 
@@ -134,7 +134,7 @@ void hookIt(uint64_t rcx) {
 		if ((*g_player)->unkF0->rootNode->m_children.m_emptyRunStart > 0) {
 			if ((*g_player)->unkF0->rootNode->m_children.m_data[0]) {
 				uint64_t arr[5] = {0, 0, 0, 0, 0};
-				uint64_t body = (uint64_t)((*g_player)->unkF0->rootNode->m_children.m_data[0]);
+				const uint64_t body = (uint64_t)(*g_player)->unkF0->rootNode->m_children.m_data[0];
 				arr[1] = body + 0x180;
 				arr[2] = 0x800;
 				arr[3] = 2;
@@ -147,35 +147,35 @@ void hookIt(uint64_t rcx) {
 	hookedda09a0(parm);
 }
 
-void hook2(uint64_t rcx, uint64_t rdx, uint64_t r8, uint64_t r9) {
+void hook2(const uint64_t rcx, const uint64_t rdx, const uint64_t r8, const uint64_t r9) {
 	FRIK::update();
 
 	hookedMainDrawCandidateFunc(rcx, rdx, r8, r9);
 
-	BSFixedString name("ScopeMenu");
+	const BSFixedString name("ScopeMenu");
 
-	std::uint64_t renderer = RendererGetByName(name);
+	const std::uint64_t renderer = RendererGetByName(name);
 
 	if (renderer) {
 		//		RendererEnable(renderer, false);
 	}
 }
 
-void hook5(uint64_t rcx) {
+void hook5(const uint64_t rcx) {
 	FRIK::update();
 
 	someRandomFunc(rcx);
 
-	BSFixedString name("ScopeMenu");
+	const BSFixedString name("ScopeMenu");
 
-	std::uint64_t renderer = RendererGetByName(name);
+	const std::uint64_t renderer = RendererGetByName(name);
 
 	if (renderer) {
 		//		RendererEnable(renderer, false);
 	}
 }
 
-void hook3(double param1, double param2, double param3) {
+void hook3(const double param1, const double param2, const double param3) {
 	hookedPosPlayerFunc(param1, param2, param3);
 	FRIK::update();
 }
@@ -185,15 +185,15 @@ void hook4() {
 	hookMultiBoundCullingFunc();
 }
 
-void hookSmoothMovement(uint64_t rcx) {
+void hookSmoothMovement(const uint64_t rcx) {
 	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 		FRIK::smoothMovement();
 	}
 	smoothMovementHook(rcx);
 }
 
-void hook_main_update_player(uint64_t rcx, uint64_t rdx) {
-	if ((*g_player) && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
+void hook_main_update_player(const uint64_t rcx, const uint64_t rdx) {
+	if (*g_player && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 		NiNode* body = (*g_player)->unkF0->rootNode->GetAsNiNode();
 		body->m_localTransform.pos.x = (*g_playerCamera)->cameraNode->m_worldTransform.pos.x;
 		body->m_localTransform.pos.y = (*g_playerCamera)->cameraNode->m_worldTransform.pos.y;
@@ -220,13 +220,13 @@ void hookMain() {
 	//_MESSAGE("Successfully hooked before main renderer");
 
 	// replace mesh pointer string
-	auto mesh = "Data\\Meshes\\FRIK\\_primaryWand.nif";
+	const auto mesh = "Data\\Meshes\\FRIK\\_primaryWand.nif";
 
 	for (int i = 0; i < strlen(mesh); ++i) {
 		SafeWrite8(wandMesh.GetUIntPtr() + i, mesh[i]);
 	}
 
-	int bytesToNOP = 0x1FF;
+	const int bytesToNOP = 0x1FF;
 
 	for (int i = 0; i < bytesToNOP; ++i) {
 		SafeWrite8(hookAnimationVFunc.GetUIntPtr() + i, 0x90); // this block resets the body pose to hang off the camera.    Blocking this off so body height is correct.

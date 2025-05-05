@@ -14,10 +14,10 @@ namespace FRIK {
 			z = 0.0;
 		}
 
-		Quaternion(float X, float Y, float Z, float W)
+		Quaternion(const float X, const float Y, const float Z, const float W)
 			: w(W), x(X), y(Y), z(Z) {};
 
-		Quaternion(float real, NiPoint3 v) {
+		Quaternion(const float real, const NiPoint3 v) {
 			w = real;
 			x = v.x;
 			y = v.y;
@@ -33,7 +33,7 @@ namespace FRIK {
 			z = 0.0;
 		}
 
-		Quaternion get() {
+		Quaternion get() const {
 			Quaternion q;
 			q.w = w;
 			q.x = x;
@@ -43,21 +43,21 @@ namespace FRIK {
 			return q;
 		}
 
-		Quaternion conjugate();
+		Quaternion conjugate() const;
 
-		float getMag();
-		Quaternion getNorm();
+		float getMag() const;
+		Quaternion getNorm() const;
 		void normalize();
 
-		double dot(Quaternion q);
+		double dot(const Quaternion& q) const;
 
 		void setAngleAxis(float angle, NiPoint3 axis);
-		float getAngleFromAxisAngle(Quaternion target);
+		float getAngleFromAxisAngle(const Quaternion& target) const;
 
-		Matrix44 getRot();
-		void fromRot(NiMatrix43 rot);
+		Matrix44 getRot() const;
+		void fromRot(const NiMatrix43& rot);
 
-		void slerp(float interp, Quaternion target);
+		void slerp(float interp, const Quaternion& target);
 
 		void vec2vec(NiPoint3 v1, NiPoint3 v2);
 

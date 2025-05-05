@@ -35,10 +35,10 @@ namespace FRIK {
 		void operatePipBoy();
 
 	private:
-		void replaceMeshes(std::string itemHide, std::string itemShow);
+		void replaceMeshes(const std::string& itemHide, const std::string& itemShow);
 		void pipboyManagement();
 		void dampenPipboyScreen();
-		bool isLookingAtPipBoy();
+		bool isLookingAtPipBoy() const;
 		void RightStickXSleep(int time);
 		void RightStickYSleep(int time);
 		void SecondaryTriggerSleep(int time);

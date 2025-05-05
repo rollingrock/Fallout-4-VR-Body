@@ -176,9 +176,9 @@ namespace FRIK {
 		void updateFrikINIVersion() const;
 		void loadHideMeshes();
 		void loadHideEquipmentSlots();
-		static void saveFrikIniValue(const char* section, const char* pKey, bool value);
-		static void saveFrikIniValue(const char* section, const char* pKey, double value);
-		static void saveFrikIniValue(const char* section, const char* pKey, const char* value);
+		static void saveFrikIniValue(const char* section, const char* key, bool value);
+		static void saveFrikIniValue(const char* section, const char* key, double value);
+		static void saveFrikIniValue(const char* section, const char* key, const char* value);
 		void loadPipboyOffsets();
 		void loadWeaponsOffsetsFromEmbedded();
 		void loadWeaponsOffsetsFromFilesystem();

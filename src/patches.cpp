@@ -39,7 +39,7 @@ namespace patches {
 		};
 
 		void* buf = g_localTrampoline.StartAlloc();
-		PatchShortVar code(buf);
+		const PatchShortVar code(buf);
 		g_localTrampoline.EndAlloc(code.getCurr());
 
 		g_branchTrampoline.Write6Branch(invJumpFrom.GetUIntPtr(), uintptr_t(code.getCode()));
@@ -95,7 +95,7 @@ namespace patches {
 		};
 
 		void* buf = g_localTrampoline.StartAlloc();
-		PatchMoreMask code(buf);
+		const PatchMoreMask code(buf);
 		g_localTrampoline.EndAlloc(code.getCurr());
 
 		g_branchTrampoline.Write5Branch(lockForRead_branch.GetUIntPtr(), uintptr_t(code.getCode()));
@@ -127,7 +127,7 @@ namespace patches {
 		};
 
 		void* buf = g_localTrampoline.StartAlloc();
-		PatchMissingR15 code(buf);
+		const PatchMissingR15 code(buf);
 		g_localTrampoline.EndAlloc(code.getCurr());
 
 		g_branchTrampoline.Write5Branch(shaderEffectPatch.GetUIntPtr(), uintptr_t(code.getCode()));

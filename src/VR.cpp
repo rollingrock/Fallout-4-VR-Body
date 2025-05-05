@@ -4,42 +4,42 @@
 namespace VRHook {
 	RelocPtr<uint64_t*> vrDataStruct(0x59429c0);
 
-	void HmdMatrixToNiTransform(NiTransform* a_transform, vr::TrackedDevicePose_t* a_pose) {
+	void HmdMatrixToNiTransform(const NiTransform* a_transform, const vr::TrackedDevicePose_t* a_pose) {
 		using func_t = decltype(&HmdMatrixToNiTransform);
 		RelocAddr<func_t> func(0x1bab210);
 		return func(a_transform, a_pose);
 	}
 
 	void VRSystem::getTrackerNiTransformByName(const std::string& trackerName, NiTransform* transform) {
-		auto it = viveTrackers.find(trackerName);
+		const auto it = viveTrackers.find(trackerName);
 		if (it != viveTrackers.end()) {
-			vr::TrackedDevicePose_t pose = renderPoses[it->second];
+			const vr::TrackedDevicePose_t pose = renderPoses[it->second];
 			HmdMatrixToNiTransform(transform, &pose);
 			applyRoomTransform(transform);
 		}
 	}
 
-	void VRSystem::getTrackerNiTransformByIndex(vr::TrackedDeviceIndex_t idx, NiTransform* transform) {
+	void VRSystem::getTrackerNiTransformByIndex(const vr::TrackedDeviceIndex_t idx, NiTransform* transform) const {
 		if (idx < vr::k_unMaxTrackedDeviceCount) {
-			vr::TrackedDevicePose_t pose = renderPoses[idx];
+			const vr::TrackedDevicePose_t pose = renderPoses[idx];
 			HmdMatrixToNiTransform(transform, &pose);
 			applyRoomTransform(transform);
 		}
 	}
 
 	void VRSystem::getControllerNiTransformByName(const std::string& trackerName, NiTransform* transform) {
-		auto it = controllers.find(trackerName);
+		const auto it = controllers.find(trackerName);
 		if (it != controllers.end()) {
-			vr::TrackedDevicePose_t pose = renderPoses[it->second];
+			const vr::TrackedDevicePose_t pose = renderPoses[it->second];
 			HmdMatrixToNiTransform(transform, &pose);
 			applyRoomTransform(transform);
 		}
 	}
 
-	void VRSystem::applyRoomTransform(NiTransform* transform) {
+	void VRSystem::applyRoomTransform(NiTransform* transform) const {
 		if (vrDataStruct && roomNode) {
-			auto worldSpaceMat = reinterpret_cast<NiMatrix43*>(reinterpret_cast<char*>(*vrDataStruct) + 0x210);
-			auto worldSpaceVec = reinterpret_cast<NiPoint3*>(reinterpret_cast<char*>(*vrDataStruct) + 0x158);
+			const auto worldSpaceMat = reinterpret_cast<NiMatrix43*>(reinterpret_cast<char*>(*vrDataStruct) + 0x210);
+			const auto worldSpaceVec = reinterpret_cast<NiPoint3*>(reinterpret_cast<char*>(*vrDataStruct) + 0x158);
 			transform->pos -= *worldSpaceVec;
 			transform->pos = *worldSpaceMat * transform->pos;
 		}
@@ -47,7 +47,7 @@ namespace VRHook {
 
 	void VRSystem::initializeDevices() {
 		for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; ++i) {
-			auto dc = vrHook->GetVRSystem()->GetTrackedDeviceClass(i);
+			const auto dc = vrHook->GetVRSystem()->GetTrackedDeviceClass(i);
 			std::string prop = getProperty(vr::ETrackedDeviceProperty::Prop_ModelNumber_String, i);
 			if (dc == vr::ETrackedDeviceClass::TrackedDeviceClass_GenericTracker) {
 				viveTrackers[prop] = i;
@@ -63,9 +63,9 @@ namespace VRHook {
 		}
 	}
 
-	std::string VRSystem::getProperty(vr::ETrackedDeviceProperty property, vr::TrackedDeviceIndex_t idx) const {
+	std::string VRSystem::getProperty(const vr::ETrackedDeviceProperty property, const vr::TrackedDeviceIndex_t idx) const {
 		constexpr uint32_t bufSize = vr::k_unMaxPropertyStringSize;
-		auto pchValue = std::make_unique<char[]>(bufSize);
+		const auto pchValue = std::make_unique<char[]>(bufSize);
 		vr::TrackedPropertyError pError = vr::TrackedPropertyError::TrackedProp_NotYetAvailable;
 
 		vrHook->GetVRSystem()->GetStringTrackedDeviceProperty(idx, property, pchValue.get(), bufSize, &pError);
@@ -73,14 +73,14 @@ namespace VRHook {
 	}
 
 	void VRSystem::debugPrint() {
-		vr::VRCompositorError error = vrHook->GetVRCompositor()->GetLastPoses(renderPoses, vr::k_unMaxTrackedDeviceCount, gamePoses, vr::k_unMaxTrackedDeviceCount);
+		const vr::VRCompositorError error = vrHook->GetVRCompositor()->GetLastPoses(renderPoses, vr::k_unMaxTrackedDeviceCount, gamePoses, vr::k_unMaxTrackedDeviceCount);
 		if (error != vr::EVRCompositorError::VRCompositorError_None) {
 			_MESSAGE("Error while retrieving game poses!");
 		}
 
 		for (const auto& tracker : viveTrackers) {
 			vr::TrackedDevicePose_t renderMat = renderPoses[tracker.second];
-			vr::TrackedDevicePose_t gameMat = gamePoses[tracker.second];
+			const vr::TrackedDevicePose_t gameMat = gamePoses[tracker.second];
 
 			NiTransform renderTran;
 			HmdMatrixToNiTransform(&renderTran, &renderMat);

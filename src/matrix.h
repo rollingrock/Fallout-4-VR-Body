@@ -34,19 +34,19 @@ namespace FRIK {
 			data[3][3] = 0.0;
 		}
 
-		void setPosition(float x, float y, float z) {
+		void setPosition(const float x, const float y, const float z) {
 			data[3][0] = x;
 			data[3][1] = y;
 			data[3][2] = z;
 		}
 
-		void setPosition(NiPoint3 pt) {
+		void setPosition(const NiPoint3 pt) {
 			data[3][0] = pt.x;
 			data[3][1] = pt.y;
 			data[3][2] = pt.z;
 		}
 
-		void makeTransformMatrix(NiMatrix43 rot, NiPoint3 pos) {
+		void makeTransformMatrix(const NiMatrix43& rot, const NiPoint3 pos) {
 			for (auto i = 0; i < 3; i++) {
 				for (auto j = 0; j < 3; j++) {
 					data[i][j] = rot.data[i][j];
@@ -63,20 +63,20 @@ namespace FRIK {
 
 		NiMatrix43 make43() const;
 
-		void getEulerAngles(float* heading, float* roll, float* attitude);
+		void getEulerAngles(float* heading, float* roll, float* attitude) const;
 		void setEulerAngles(float heading, float roll, float attitude);
 
-		void rotateVectoVec(NiPoint3 toVec, NiPoint3 fromVec);
+		void rotateVectorVec(NiPoint3 toVec, NiPoint3 fromVec);
 
-		NiMatrix43 multiply43Left(NiMatrix43 mat) const;
-		NiMatrix43 multiply43Right(NiMatrix43 mat) const;
-		NiMatrix43 mult(NiMatrix43 left, NiMatrix43 right) const;
+		NiMatrix43 multiply43Left(const NiMatrix43& mat) const;
+		NiMatrix43 multiply43Right(const NiMatrix43& mat) const;
+		static NiMatrix43 mult(const NiMatrix43& left, const NiMatrix43& right);
 
 		// Fallout Func
-		static void matrixMultiply(Matrix44* worldMat, Matrix44* retMat, Matrix44* localMat);
+		static void matrixMultiply(const Matrix44* worldMat, const Matrix44* retMat, const Matrix44* localMat);
 
 		//overload
-		void operator =(float a_num) {
+		void operator =(const float a_num) {
 			for (auto i = 0; i < 4; i++) {
 				for (auto j = 0; j < 4; j++) {
 					data[i][j] = a_num;

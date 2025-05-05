@@ -1,4 +1,5 @@
 #include "BoneSpheresHandler.h"
+#include <ranges>
 #include "F4VRBody.h"
 
 namespace FRIK {
@@ -8,27 +9,29 @@ namespace FRIK {
 	}
 
 	void BoneSpheresHandler::holsterWeapon() {
-		// Sends Papyrus Event to holster weapon when inside of Pipboy usage zone
-		SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Holster);
-		if (_boneSphereEventRegs.m_data.size() > 0) {
-			_boneSphereEventRegs.ForEach(
-				[&evt](const EventRegistration<NullParameters>& reg) {
-					SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt);
-				}
-			);
+		// Sends Papyrus Event to holster weapon when inside Pipboy usage zone
+		if (_boneSphereEventRegs.m_data.empty()) {
+			return;
 		}
+		SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Holster);
+		_boneSphereEventRegs.ForEach(
+			[&evt](const EventRegistration<NullParameters>& reg) {
+				SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt);
+			}
+		);
 	}
 
 	void BoneSpheresHandler::drawWeapon() {
-		// Sends Papyrus to draw weapon when outside of Pipboy usage zone
-		SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Draw);
-		if (_boneSphereEventRegs.m_data.size() > 0) {
-			_boneSphereEventRegs.ForEach(
-				[&evt](const EventRegistration<NullParameters>& reg) {
-					SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt);
-				}
-			);
+		// Sends Papyrus to draw weapon when outside Pipboy usage zone
+		if (_boneSphereEventRegs.m_data.empty()) {
+			return;
 		}
+		SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Draw);
+		_boneSphereEventRegs.ForEach(
+			[&evt](const EventRegistration<NullParameters>& reg) {
+				SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt);
+			}
+		);
 	}
 
 	UInt32 BoneSpheresHandler::registerBoneSphere(const float radius, const BSFixedString bone) {
@@ -43,7 +46,7 @@ namespace FRIK {
 			return 0;
 		}
 
-		auto sphere = new BoneSphere(radius, boneNode, NiPoint3(0, 0, 0));
+		const auto sphere = new BoneSphere(radius, boneNode, NiPoint3(0, 0, 0));
 		const UInt32 handle = _nextBoneSphereHandle++;
 
 		_boneSphereRegisteredObjects[handle] = sphere;
@@ -88,7 +91,7 @@ namespace FRIK {
 		pos.Get(&offsetVec.y, 1);
 		pos.Get(&offsetVec.z, 2);
 
-		auto sphere = new BoneSphere(radius, boneNode, offsetVec);
+		const auto sphere = new BoneSphere(radius, boneNode, offsetVec);
 		const UInt32 handle = _nextBoneSphereHandle++;
 
 		_boneSphereRegisteredObjects[handle] = sphere;
@@ -98,9 +101,7 @@ namespace FRIK {
 
 	void BoneSpheresHandler::destroyBoneSphere(const UInt32 handle) {
 		if (_boneSphereRegisteredObjects.contains(handle)) {
-			NiNode* sphere = _boneSphereRegisteredObjects[handle]->debugSphere;
-
-			if (sphere) {
+			if (const auto sphere = _boneSphereRegisteredObjects[handle]->debugSphere) {
 				sphere->flags |= 0x1;
 				sphere->m_localTransform.scale = 0;
 				sphere->m_parent->RemoveChild(sphere);
@@ -130,8 +131,8 @@ namespace FRIK {
 	}
 
 	void BoneSpheresHandler::toggleDebugBoneSpheres(const bool turnOn) const {
-		for (const auto& element : _boneSphereRegisteredObjects) {
-			element.second->turnOnDebugSpheres = turnOn;
+		for (const auto& val : _boneSphereRegisteredObjects | std::views::values) {
+			val->turnOnDebugSpheres = turnOn;
 		}
 	}
 
@@ -181,7 +182,7 @@ namespace FRIK {
 					UInt32 device = 1;
 					_curDevice = device;
 
-					if (_boneSphereEventRegs.m_data.size() > 0) {
+					if (!_boneSphereEventRegs.m_data.empty()) {
 						_boneSphereEventRegs.ForEach(
 							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
 								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
@@ -236,7 +237,7 @@ namespace FRIK {
 					UInt32 device = 2;
 					_curDevice = 0;
 
-					if (_boneSphereEventRegs.m_data.size() > 0) {
+					if (!_boneSphereEventRegs.m_data.empty()) {
 						_boneSphereEventRegs.ForEach(
 							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
 								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
@@ -249,11 +250,11 @@ namespace FRIK {
 	}
 
 	void BoneSpheresHandler::handleDebugBoneSpheres() {
-		for (const auto& element : _boneSphereRegisteredObjects) {
-			NiNode* bone = element.second->bone;
-			NiNode* sphere = element.second->debugSphere;
+		for (const auto& val : _boneSphereRegisteredObjects | std::views::values) {
+			NiNode* bone = val->bone;
+			NiNode* sphere = val->debugSphere;
 
-			if (element.second->turnOnDebugSpheres && !element.second->debugSphere) {
+			if (val->turnOnDebugSpheres && !val->debugSphere) {
 				const NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/1x1Sphere.nif");
 				NiCloneProcess proc;
 				proc.unk18 = Offsets::cloneAddr1;
@@ -265,21 +266,21 @@ namespace FRIK {
 
 					bone->AttachChild(sphere, true);
 					sphere->flags &= 0xfffffffffffffffe;
-					sphere->m_localTransform.scale = element.second->radius * 2;
-					element.second->debugSphere = sphere;
+					sphere->m_localTransform.scale = val->radius * 2;
+					val->debugSphere = sphere;
 				}
-			} else if (sphere && !element.second->turnOnDebugSpheres) {
+			} else if (sphere && !val->turnOnDebugSpheres) {
 				sphere->flags |= 0x1;
 				sphere->m_localTransform.scale = 0;
-			} else if (sphere && element.second->turnOnDebugSpheres) {
+			} else if (sphere && val->turnOnDebugSpheres) {
 				sphere->flags &= 0xfffffffffffffffe;
-				sphere->m_localTransform.scale = element.second->radius * 2;
+				sphere->m_localTransform.scale = val->radius * 2;
 			}
 
 			if (sphere) {
 				NiPoint3 offset;
 
-				offset = bone->m_worldTransform.rot * element.second->offset;
+				offset = bone->m_worldTransform.rot * val->offset;
 				offset = bone->m_worldTransform.pos + offset;
 
 				// wp = parWp + parWr * lp =>   lp = (wp - parWp) * parWr'

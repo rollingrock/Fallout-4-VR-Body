@@ -24,7 +24,7 @@ namespace FRIK {
 			startCapTime = std::chrono::high_resolution_clock::now();
 		}
 
-		void DoAnimationCapture();
+		void DoAnimationCapture() const;
 		void Update();
 
 		bool StartReloading();

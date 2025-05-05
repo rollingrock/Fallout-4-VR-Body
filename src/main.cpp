@@ -15,7 +15,7 @@
 #include "f4se_common/f4se_version.h"  // RUNTIME_VERSION
 #include "ui/UIManager.h"
 
-void OnBetterScopesMessage(F4SEMessagingInterface::Message* msg) {
+void onBetterScopesMessage(F4SEMessagingInterface::Message* msg) {
 	if (!msg) {
 		return;
 	}
@@ -26,7 +26,7 @@ void OnBetterScopesMessage(F4SEMessagingInterface::Message* msg) {
 }
 
 //Listener for F4SE Messages
-void OnF4SEMessage(F4SEMessagingInterface::Message* msg) {
+void onF4SEMessage(F4SEMessagingInterface::Message* msg) {
 	if (!msg) {
 		return;
 	}
@@ -42,7 +42,7 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg) {
 	if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
 		constexpr bool gripConfig = false; // !FRIK::g_config->staticGripping;
 		g_messaging->Dispatch(g_pluginHandle, 15, static_cast<void*>(nullptr), sizeof(bool), "FO4VRBETTERSCOPES");
-		g_messaging->RegisterListener(g_pluginHandle, "FO4VRBETTERSCOPES", OnBetterScopesMessage);
+		g_messaging->RegisterListener(g_pluginHandle, "FO4VRBETTERSCOPES", onBetterScopesMessage);
 		_MESSAGE("kMessage_PostLoad Completed");
 	}
 }
@@ -85,13 +85,13 @@ bool F4SEPlugin_Load(const F4SEInterface* f4se) {
 		}
 
 		g_messaging = static_cast<F4SEMessagingInterface*>(f4se->QueryInterface(kInterface_Messaging));
-		g_messaging->RegisterListener(g_pluginHandle, "F4SE", OnF4SEMessage);
+		g_messaging->RegisterListener(g_pluginHandle, "F4SE", onF4SEMessage);
 
 		if (!g_branchTrampoline.Create(1024 * 128)) {
 			throw std::exception("couldn't create branch trampoline");
 		}
 
-		auto moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("FRIK.dll"));
+		const auto moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("FRIK.dll"));
 		if (!g_localTrampoline.Create(1024 * 128, moduleHandle)) {
 			throw std::exception("couldn't create codegen buffer");
 		}
@@ -104,7 +104,7 @@ bool F4SEPlugin_Load(const F4SEInterface* f4se) {
 
 		_MESSAGE("Register papyrus functions...");
 		g_papyrus = static_cast<F4SEPapyrusInterface*>(f4se->QueryInterface(kInterface_Papyrus));
-		if (!g_papyrus->Register(FRIK::registerPapyrusFuncs)) {
+		if (!g_papyrus->Register(FRIK::registerPapyrusFunctions)) {
 			throw std::exception("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
 		}
 

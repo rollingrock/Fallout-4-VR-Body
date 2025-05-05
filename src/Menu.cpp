@@ -1,7 +1,4 @@
 #include "Menu.h"
-#include "Config.h"
-#include "f4sE_common/Relocation.h"
-#include "F4SE_common/SafeWrite.h"
 
 #include "utils.h"
 

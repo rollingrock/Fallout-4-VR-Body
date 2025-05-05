@@ -8,28 +8,28 @@
 #include "include/SimpleIni.h"
 
 namespace FRIK {
-	enum wandMode {
-		both = 0,
-		mainhandWand,
-		offhandWand,
+	enum class WandMode : std::uint8_t {
+		Both = 0,
+		PrimaryHandWand,
+		OffhandWand,
 	};
 
-	enum WeaponType {
-		kWeaponType_Hand_To_Hand_Melee,
-		kWeaponType_One_Hand_Sword,
-		kWeaponType_One_Hand_Dagger,
-		kWeaponType_One_Hand_Axe,
-		kWeaponType_One_Hand_Mace,
-		kWeaponType_Two_Hand_Sword,
-		kWeaponType_Two_Hand_Axe,
-		kWeaponType_Bow,
-		kWeaponType_Staff,
-		kWeaponType_Gun,
-		kWeaponType_Grenade,
-		kWeaponType_Mine,
-		kWeaponType_Spell,
-		kWeaponType_Shield,
-		kWeaponType_Torch
+	enum class WeaponType : std::uint8_t {
+		HandToHandMelee,
+		OneHandSword,
+		OneHandDagger,
+		OneHandAxe,
+		OneHandMace,
+		TwoHandSword,
+		TwoHandAxe,
+		Bow,
+		Staff,
+		Gun,
+		Grenade,
+		Mine,
+		Spell,
+		Shield,
+		Torch
 	};
 
 	// part of PlayerCharacter object but making useful struct below since not mapped in F4SE
@@ -153,7 +153,7 @@ namespace FRIK {
 			// Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
 			_curx = (*g_playerCamera)->cameraNode->m_worldTransform.rot.data[1][0]; //  Later will use this vector as the basis for the rest of the IK
 
-			float mag = sqrt(_cury * _cury + _curx * _curx);
+			const float mag = sqrt(_cury * _cury + _curx * _curx);
 
 			_curx /= mag;
 			_cury /= mag;
@@ -191,79 +191,77 @@ namespace FRIK {
 			return _curPos;
 		}
 
-		int getBoneInMap(std::string boneName);
+		static int getBoneInMap(const std::string& boneName);
 
 		NiNode* getWeaponNode() const;
 		NiNode* getPrimaryWandNode() const;
 		NiNode* getThrowableWeaponNode() const;
 
-		NiPoint3 getOffhandIndexFingerTipWorldPosition();
+		NiPoint3 getOffhandIndexFingerTipWorldPosition() const;
 
 		// reposition stuff
-		void rotateWorld(NiNode* nde);
+		static void rotateWorld(NiNode* nde);
 		void updatePos(NiNode* nde, NiPoint3 offset);
 		void selfieSkelly();
-		void setupHead(NiNode* headNode, bool hideHead);
+		static void setupHead(NiNode* headNode, bool hideHead);
 		void saveStatesTree(NiNode* node);
 		void restoreLocals(NiNode* node);
 		void setUnderHMD(float groundHeight);
 		void setBodyPosture();
 		void setLegs();
-		void setSingleLeg(bool isLeft);
+		void setSingleLeg(bool isLeft) const;
 		void setArms(bool isLeft);
-		void setArms_wp(bool isLeft);
 		void setHandPose();
 		NiPoint3 getPosition();
-		NiPoint3 getPosition2();
-		void makeArmsT(bool);
-		void fixArmor();
-		void showHidePAHUD();
+		void makeArmsT(bool) const;
+		void fixArmor() const;
+		void showHidePAHUD() const;
 		void hideHands();
 
 		// movement
 		void walk();
 
-		void setWandsVisibility(bool a_show = true, wandMode a_mode = both);
-		void showWands(wandMode a_mode = both);
-		void hideWands(wandMode a_mode = both);
-		void hideWeapon();
-		void leftHandedModePipboy();
-		void positionPipboy();
-		void hideFistHelpers();
-		void fixPAArmor();
+		void setWandsVisibility(bool show = true, WandMode mode = WandMode::Both) const;
+		void showWands(WandMode mode = WandMode::Both) const;
+		void hideWands(WandMode mode = WandMode::Both) const;
+		void hideWeapon() const;
+		void leftHandedModePipboy() const;
+		void positionPipboy() const;
+		void hideFistHelpers() const;
+		void fixPAArmor() const;
 		void dampenHand(NiNode* node, bool isLeft);
-		void hidePipboy();
-		bool armorHasHeadLamp();
+		void hidePipboy() const;
+		static bool armorHasHeadLamp();
 
 		// utility
 		NiNode* getNode(const char* nodeName, NiNode* nde) const;
 		NiNode* getNode2(const char* nodeName, NiNode* nde) const;
-		void setVisibility(NiAVObject* nde, bool a_show = true); // Change flags to show or hide a node
+		static void setVisibility(NiAVObject* nde, bool a_show = true); // Change flags to show or hide a node
 		void updateDown(NiNode* nde, bool updateSelf);
 		void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
-		void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
+		static void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 		bool setNodes();
-		ArmNodes getArm(bool isLeft);
-		void set1stPersonArm(NiNode* weapon, NiNode* offsetNode);
+		ArmNodes getArm(bool isLeft) const;
+		static void set1stPersonArm(NiNode* weapon, NiNode* offsetNode);
 		void setBodyLen();
 		bool detectInPowerArmor();
 		void setKneePos();
 		void showOnlyArms();
 		void handleWeaponNodes();
 		void setLeftHandedSticky();
-		void calculateHandPose(std::string bone, float gripProx, bool thumbUp, bool isLeft);
-		void copy1stPerson(std::string bone);
+		void calculateHandPose(const std::string& bone, float gripProx, bool thumbUp, bool isLeft);
+		void copy1stPerson(const std::string& bone);
 		void insertSaveState(const std::string& name, NiNode* node);
-		void rotateLeg(uint32_t pos, float angle);
+		void rotateLeg(uint32_t pos, float angle) const;
 		void moveBack();
 		void initLocalDefaults();
-		void fixBoneTree();
+		void fixBoneTree() const;
 
 		void setTime();
 		// Body Positioning
-		float getNeckYaw();
-		float getNeckPitch();
-		float getBodyPitch();
+		float getNeckYaw() const;
+		float getNeckPitch() const;
+		float getBodyPitch() const;
 
 	private:
 		BSFadeNode* _root;

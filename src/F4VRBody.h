@@ -32,7 +32,7 @@ namespace FRIK {
 	void update();
 	void startUp();
 	// Native funcs to expose to papyrus
-	bool registerPapyrusFuncs(VirtualMachine* vm);
+	bool registerPapyrusFunctions(VirtualMachine* vm);
 
 	inline NiNode* loadNifFromFile(char* path) {
 		uint64_t flags[2];

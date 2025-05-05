@@ -1,6 +1,4 @@
-// From Shizof's mod with permission.  Thanks Shizof!!
-
-#pragma once
+// From Shizof mod with permission.  Thanks Shizof!!
 
 #include <atomic>
 #include <deque>
@@ -47,25 +45,25 @@ namespace SmoothMovementVR {
 		return IsInAir(*g_player);
 	}
 
-	float distanceNoSqrt(NiPoint3 po1, NiPoint3 po2) {
+	float distanceNoSqrt(const NiPoint3 po1, const NiPoint3 po2) {
 		const float x = po1.x - po2.x;
 		const float y = po1.y - po2.y;
 		const float z = po1.z - po2.z;
 		return x * x + y * y + z * z;
 	}
 
-	float distanceNoSqrt2d(float x1, float y1, float x2, float y2) {
+	float distanceNoSqrt2d(const float x1, const float y1, const float x2, const float y2) {
 		const float x = x1 - x2;
 		const float y = y1 - y2;
 		return x * x + y * y;
 	}
 
-	NiPoint3 smoothedValue(NiPoint3 newPosition) {
+	NiPoint3 smoothedValue(const NiPoint3 newPosition) {
 		LARGE_INTEGER newTime;
 		QueryPerformanceCounter(&newTime);
 		m_frameTime.store(static_cast<float>(newTime.QuadPart - m_prevTime.QuadPart) / m_hpcFrequency.QuadPart);
 		if (m_frameTime.load() > 0.05) {
-			m_frameTime.store(0.05);
+			m_frameTime.store(0.05f);
 		}
 		m_prevTime = newTime;
 
@@ -83,20 +81,14 @@ namespace SmoothMovementVR {
 				smoothedY.store(newPosition.y);
 			} else {
 				if (FRIK::g_config->dampingMultiplierHorizontal != 0 && FRIK::g_config->smoothingAmountHorizontal != 0) {
-					float absValX = abs(newPosition.x - smoothedX.load());
-					if (absValX < 0.1f) {
-						absValX = 0.1f;
-					}
-					float absValY = abs(newPosition.y - smoothedY.load());
-					if (absValY < 0.1f) {
-						absValY = 0.1f;
-					}
+					const float absValX = max(0.1f, abs(newPosition.x - smoothedX.load()));
+					const float absValY = max(0.1f, abs(newPosition.y - smoothedY.load()));
 					smoothedX.store(
 						smoothedX.load() + m_frameTime.load() * ((newPosition.x - smoothedX.load()) / (FRIK::g_config->smoothingAmountHorizontal * (FRIK::g_config->
-							dampingMultiplierHorizontal / absValX) * (notMoving.load() ? (FRIK::g_config->stoppingMultiplierHorizontal) : 1.0f))));
+							dampingMultiplierHorizontal / absValX) * (notMoving.load() ? FRIK::g_config->stoppingMultiplierHorizontal : 1.0f))));
 					smoothedY.store(
 						smoothedY.load() + m_frameTime.load() * ((newPosition.y - smoothedY.load()) / (FRIK::g_config->smoothingAmountHorizontal * (FRIK::g_config->
-							dampingMultiplierHorizontal / absValY) * (notMoving.load() ? (FRIK::g_config->stoppingMultiplierHorizontal) : 1.0f))));
+							dampingMultiplierHorizontal / absValY) * (notMoving.load() ? FRIK::g_config->stoppingMultiplierHorizontal : 1.0f))));
 				} else {
 					smoothedX.store(newPosition.x);
 					smoothedY.store(newPosition.y);
@@ -107,12 +99,10 @@ namespace SmoothMovementVR {
 				smoothedZ.store(newPosition.z);
 			} else {
 				float absVal = abs(newPosition.z - smoothedZ.load());
-				if (absVal < 0.1f) {
-					absVal = 0.1f;
-				}
+				absVal = max(absVal, 0.1f);
 				smoothedZ.store(
 					smoothedZ.load() + m_frameTime.load() * ((newPosition.z - smoothedZ.load()) / (FRIK::g_config->smoothingAmount * (FRIK::g_config->dampingMultiplier / absVal) *
-						(notMoving.load() ? (FRIK::g_config->stoppingMultiplier) : 1.0f))));
+						(notMoving.load() ? FRIK::g_config->stoppingMultiplier : 1.0f))));
 			}
 		}
 
@@ -141,18 +131,15 @@ namespace SmoothMovementVR {
 	std::atomic<float> lastAppliedLocalY;
 
 	void everyFrame() {
-		if ((*g_player) && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-			if ((*g_player) && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
+		if (*g_player && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
+			if (*g_player && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 				BSFixedString playerWorld("PlayerWorldNode");
 				BSFixedString Hmd("HmdNode");
 				BSFixedString room("RoomNode");
-				NiNode* worldNiNode = getWorldRoot();
-				if (worldNiNode) {
-					NiAVObject* worldNiAV = worldNiNode;
-
-					if (worldNiAV) {
+				if (const auto worldNiNode = getWorldRoot()) {
+					if (NiAVObject* worldNiAV = worldNiNode) {
 						NiAVObject* playerWorldNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&playerWorld, true, true);
-						NiAVObject* hmdNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&Hmd, true, true);
+						const NiAVObject* hmdNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&Hmd, true, true);
 						//NiAVObject * roomNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&room, true, true);
 
 						if (playerWorldNode && hmdNode) {
@@ -165,7 +152,7 @@ namespace SmoothMovementVR {
 								first = false;
 							}
 							if (lastPositions.size() >= 4) {
-								NiPoint3 pos = lastPositions.at(0);
+								const NiPoint3 pos = lastPositions.at(0);
 								bool same = true;
 								for (unsigned int i = 1; i < lastPositions.size(); i++) {
 									if (!(lastPositions.at(i).x == pos.x && lastPositions.at(i).y == pos.y)) {
@@ -209,7 +196,7 @@ namespace SmoothMovementVR {
 							//	_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
 							playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load()
-								? (FRIK::g_config->PACameraHeight + FRIK::g_config->cameraHeight + FRIK::c_dynamicCameraHeight)
+								? FRIK::g_config->PACameraHeight + FRIK::g_config->cameraHeight + FRIK::c_dynamicCameraHeight
 								: FRIK::g_config->cameraHeight + FRIK::c_dynamicCameraHeight;
 						} else {
 							_MESSAGE("Cannot get PlayerWorldNode...");
@@ -224,7 +211,7 @@ namespace SmoothMovementVR {
 		}
 	}
 
-	bool HasKeyword(TESObjectARMO* armor, UInt32 keywordFormId) {
+	bool HasKeyword(const TESObjectARMO* armor, const UInt32 keywordFormId) {
 		if (armor) {
 			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++) {
 				if (armor->keywordForm.keywords[i]) {
@@ -241,7 +228,7 @@ namespace SmoothMovementVR {
 
 	void ArmorCheck() {
 		while (true) {
-			if (!(*g_player) || !(*g_player)->unkF0) {
+			if (!*g_player || !(*g_player)->unkF0) {
 				Sleep(5000);
 				continue;
 			}
@@ -259,8 +246,7 @@ namespace SmoothMovementVR {
 					firstRun = false;
 				}
 				*/
-				TESObjectCELL* cell = (*g_player)->parentCell;
-				if (cell) {
+				if (const TESObjectCELL* cell = (*g_player)->parentCell) {
 					if ((cell->flags & TESObjectCELL::kFlag_IsInterior) == TESObjectCELL::kFlag_IsInterior) //Interior cell
 					{
 						if (!interiorCell.load()) {
@@ -273,13 +259,10 @@ namespace SmoothMovementVR {
 					}
 				}
 				if ((*g_player)->equipData) {
-					if ((*g_player)->equipData->slots[0x03].item != nullptr) {
-						TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item;
-						if (equippedForm) {
+					if ((*g_player)->equipData->slots[0x03].item == nullptr) {} else {
+						if (TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item) {
 							if (equippedForm->formType == TESObjectARMO::kTypeID) {
-								auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO);
-
-								if (armor) {
+								if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
 									if (HasKeyword(armor, KeywordPowerArmor) || HasKeyword(armor, KeywordPowerArmorFrame)) {
 										if (!inPowerArmorFrame.load()) {
 											inPowerArmorFrame.store(true);

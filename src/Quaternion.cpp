@@ -1,21 +1,19 @@
 #include "Quaternion.h"
-
-#include <math.h>
-
+#include <cmath>
 #include "utils.h"
 
 namespace FRIK {
-	float Quaternion::getMag() {
+	float Quaternion::getMag() const {
 		return sqrtf(w * w + x * x + y * y + z * z);
 	}
 
-	Quaternion Quaternion::getNorm() {
-		float mag = getMag();
+	Quaternion Quaternion::getNorm() const {
+		const float mag = getMag();
 		return Quaternion(w / mag, NiPoint3(x / mag, y / mag, z / mag));
 	}
 
 	void Quaternion::normalize() {
-		float mag = getMag();
+		const float mag = getMag();
 
 		w /= mag;
 		x /= mag;
@@ -23,11 +21,11 @@ namespace FRIK {
 		z /= mag;
 	}
 
-	double Quaternion::dot(Quaternion q) {
+	double Quaternion::dot(const Quaternion& q) const {
 		return w * q.w + x * q.x + y * q.y + z * q.z;
 	}
 
-	Quaternion Quaternion::conjugate() {
+	Quaternion Quaternion::conjugate() const {
 		Quaternion q;
 		q.w = w;
 		q.x = x == 0.0f ? 0 : -x;
@@ -42,7 +40,7 @@ namespace FRIK {
 
 		angle /= 2;
 
-		float sinAngle = sinf(angle);
+		const float sinAngle = sinf(angle);
 
 		w = cosf(angle);
 		x = sinAngle * axis.x;
@@ -50,15 +48,12 @@ namespace FRIK {
 		z = sinAngle * axis.z;
 	}
 
-	float Quaternion::getAngleFromAxisAngle(Quaternion target) {
-		Quaternion ret;
-
-		ret = target * this->conjugate();
-
+	float Quaternion::getAngleFromAxisAngle(const Quaternion& target) const {
+		const auto ret = target * this->conjugate();
 		return 2 * acosf(ret.w);
 	}
 
-	Matrix44 Quaternion::getRot() {
+	Matrix44 Quaternion::getRot() const {
 		Matrix44 mat;
 
 		mat.data[0][0] = 2 * (w * w + x * x) - 1;
@@ -74,7 +69,7 @@ namespace FRIK {
 		return mat;
 	}
 
-	void Quaternion::fromRot(NiMatrix43 rot) {
+	void Quaternion::fromRot(const NiMatrix43& rot) {
 		Quaternion q;
 		//float tr = 0.0f;
 
@@ -105,10 +100,10 @@ namespace FRIK {
 		//y = q.y;
 		//z = q.z;
 
-		q.w = sqrtf(((std::max)(0.0f, 1 + rot.data[0][0] + rot.data[1][1] + rot.data[2][2]))) / 2;
-		q.x = sqrtf(((std::max)(0.0f, 1 + rot.data[0][0] - rot.data[1][1] - rot.data[2][2]))) / 2;
-		q.y = sqrtf(((std::max)(0.0f, 1 - rot.data[0][0] + rot.data[1][1] - rot.data[2][2]))) / 2;
-		q.z = sqrtf(((std::max)(0.0f, 1 - rot.data[0][0] - rot.data[1][1] + rot.data[2][2]))) / 2;
+		q.w = sqrtf((std::max)(0.0f, 1 + rot.data[0][0] + rot.data[1][1] + rot.data[2][2])) / 2;
+		q.x = sqrtf((std::max)(0.0f, 1 + rot.data[0][0] - rot.data[1][1] - rot.data[2][2])) / 2;
+		q.y = sqrtf((std::max)(0.0f, 1 - rot.data[0][0] + rot.data[1][1] - rot.data[2][2])) / 2;
+		q.z = sqrtf((std::max)(0.0f, 1 - rot.data[0][0] - rot.data[1][1] + rot.data[2][2])) / 2;
 
 		w = q.w;
 		x = _copysign(q.x, rot.data[2][1] - rot.data[1][2]);
@@ -118,8 +113,8 @@ namespace FRIK {
 
 	// slerp function adapted from VRIK - credit prog for math
 
-	void Quaternion::slerp(float interp, Quaternion target) {
-		Quaternion save = this->get();
+	void Quaternion::slerp(const float interp, const Quaternion& target) {
+		const Quaternion save = this->get();
 
 		double dotp = this->dot(target);
 
@@ -138,12 +133,12 @@ namespace FRIK {
 			z = save.z;
 			return;
 		}
-		float theta_0 = acosf(dotp); // theta_0 = angle between input vectors
-		float theta = theta_0 * interp; // theta = angle between q1 and result
-		float sin_theta = sinf(theta); // compute this value only once
-		float sin_theta_0 = sinf(theta_0); // compute this value only once
-		float s0 = cosf(theta) - dotp * sin_theta / sin_theta_0; // == sin(theta_0 - theta) / sin(theta_0)
-		float s1 = sin_theta / sin_theta_0;
+		const float theta0 = acosf(dotp); // theta_0 = angle between input vectors
+		const float theta = theta0 * interp; // theta = angle between q1 and result
+		const float sinTheta = sinf(theta); // compute this value only once
+		const float sinTheta0 = sinf(theta0); // compute this value only once
+		const float s0 = cosf(theta) - dotp * sinTheta / sinTheta0; // == sin(theta_0 - theta) / sin(theta_0)
+		const float s1 = sinTheta / sinTheta0;
 
 		w = s0 * w + s1 * target.w;
 		x = s0 * x + s1 * target.x;
@@ -151,10 +146,10 @@ namespace FRIK {
 		z = s0 * z + s1 * target.z;
 	}
 
-	void Quaternion::vec2vec(NiPoint3 v1, NiPoint3 v2) {
+	void Quaternion::vec2vec(const NiPoint3 v1, const NiPoint3 v2) {
 		NiPoint3 cross = vec3_cross(vec3_norm(v1), vec3_norm(v2));
 
-		float dotP = vec3_dot(vec3_norm(v1), vec3_norm(v2));
+		const float dotP = vec3_dot(vec3_norm(v1), vec3_norm(v2));
 
 		if (dotP > 0.99999999) {
 			this->makeIdentity();

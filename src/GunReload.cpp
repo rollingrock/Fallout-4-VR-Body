@@ -11,13 +11,13 @@ namespace FRIK {
 
 	float g_animDeltaTime = -1.0f;
 
-	void GunReload::DoAnimationCapture() {
+	void GunReload::DoAnimationCapture() const {
 		if (!startAnimCap) {
 			g_animDeltaTime = -1.0f;
 			return;
 		}
 
-		auto elapsed = since(startCapTime).count();
+		const auto elapsed = since(startCapTime).count();
 		if (elapsed > 300) {
 			if (elapsed > 2000) {
 				g_animDeltaTime = -1.0f;
@@ -44,33 +44,33 @@ namespace FRIK {
 
 		//float dist = abs(vec3_len(offhand->m_worldTransform.pos - bolt->m_worldTransform.pos));
 
-		uint64_t handInput = g_config->leftHandedMode
+		const uint64_t handInput = g_config->leftHandedMode
 			? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed
 			: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed;
 
-		if ((!reloadButtonPressed) && (handInput & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip))) {
-			auto refrData = new NEW_REFR_DATA();
+		if (!reloadButtonPressed && handInput & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip)) {
+			const auto refrData = new NEW_REFR_DATA();
 			refrData->location = magNode->m_worldTransform.pos;
 			refrData->direction = (*g_player)->rot;
 			refrData->interior = (*g_player)->parentCell;
 			refrData->world = Offsets::TESObjectREFR_GetWorldSpace(*g_player);
 
-			auto extraData = static_cast<ExtraDataList*>(Offsets::MemoryManager_Allocate(g_mainHeap, 0x28, 0, false));
+			const auto extraData = static_cast<ExtraDataList*>(Offsets::MemoryManager_Allocate(g_mainHeap, 0x28, 0, false));
 			Offsets::ExtraDataList_ExtraDataList(extraData);
 			extraData->m_refCount += 1;
 			Offsets::ExtraDataList_setCount(extraData, 10);
 			refrData->extra = extraData;
-			auto instance = new BGSObjectInstance(nullptr, nullptr);
+			const auto instance = new BGSObjectInstance(nullptr, nullptr);
 			BGSEquipIndex idx;
 			Offsets::Actor_GetWeaponEquipIndex(*g_player, &idx, instance);
 			currentAmmo = Offsets::Actor_GetCurrentAmmo(*g_player, idx);
-			float clipAmountPct = Offsets::Actor_GetAmmoClipPercentage(*g_player, idx);
+			const float clipAmountPct = Offsets::Actor_GetAmmoClipPercentage(*g_player, idx);
 
 			if (clipAmountPct == 1.0f) {
 				return false;
 			}
 
-			int clipAmount = Offsets::Actor_GetCurrentAmmoCount(*g_player, idx);
+			const int clipAmount = Offsets::Actor_GetCurrentAmmoCount(*g_player, idx);
 			Offsets::ExtraDataList_setAmmoCount(extraData, clipAmount);
 
 			refrData->object = currentAmmo;

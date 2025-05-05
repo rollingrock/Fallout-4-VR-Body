@@ -37,7 +37,7 @@ namespace FRIK {
 	/// Check if debug data dump is requested for the given name.
 	/// If matched, the name will be removed from the list to prevent multiple dumps.
 	/// Also saved into INI to prevent reloading the same dump name on next config reload.
-	/// Support specifying multiple names by any seperator as only the matched sub-string is removed.
+	/// Support specifying multiple names by any separator as only the matched sub-string is removed.
 	/// </summary>
 	bool Config::checkDebugDumpDataOnceFor(const char* name) {
 		const auto idx = _debugDumpDataOnceNames.find(name);
@@ -239,7 +239,7 @@ namespace FRIK {
 		// remove temp ini file
 		std::remove(tmpIniPath.c_str());
 
-		// update all values in the new ini with the old ini values but only if they exists in the new
+		// update all values in the new ini with the old ini values but only if they exist in the new
 		std::list<CSimpleIniA::Entry> sectionsList;
 		oldIni.GetAllSections(sectionsList);
 		for (const auto& section : sectionsList) {

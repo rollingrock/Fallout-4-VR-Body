@@ -64,8 +64,8 @@ namespace FRIK {
 		TBO_InstanceData* instanceData; // 08
 
 	private:
-		BGSObjectInstance* ctor(TESForm* a_object, TBO_InstanceData* a_instanceData) {
-			return static_cast<BGSObjectInstance*>(BGSObjectInstance_CTOR(static_cast<void*>(this), a_object, a_instanceData));
+		BGSObjectInstance* ctor(TESForm* object, TBO_InstanceData* instanceData) {
+			return static_cast<BGSObjectInstance*>(BGSObjectInstance_CTOR(static_cast<void*>(this), object, instanceData));
 		}
 	};
 

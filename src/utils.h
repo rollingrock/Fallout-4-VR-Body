@@ -47,8 +47,8 @@ namespace FRIK {
 	void TurnPlayerRadioOn(bool isActive);
 	void SimulateExtendedButtonPress(WORD vkey);
 	//void PipboyReopen();
-	void ShowMessagebox(std::string asText);
-	void ShowNotification(std::string asText);
+	void ShowMessagebox(const std::string& asText);
+	void ShowNotification(const std::string& asText);
 
 	void turnPipBoyOn();
 	void turnPipBoyOff();
@@ -65,14 +65,14 @@ namespace FRIK {
 	bool isButtonLongPressedOnController(bool primary, int buttonId, int longPressSuration = 1500);
 	bool checkAndClearButtonLongPressedOnController(bool primary, int buttonId, int longPressSuration = 1500);
 
-	bool isCameraLookingAtObject(NiAVObject* cameraNode, NiAVObject* objectNode, float detectThresh);
+	bool isCameraLookingAtObject(const NiAVObject* cameraNode, const NiAVObject* objectNode, float detectThresh);
 
 	bool isMeleeWeaponEquipped();
 	std::string getEquippedWeaponName();
 	bool getLeftHandedMode();
 
 	NiNode* getChildNode(const char* nodeName, NiNode* nde);
-	NiNode* get1stChildNode(const char* nodeName, NiNode* nde);
+	NiNode* get1stChildNode(const char* nodeName, const NiNode* nde);
 
 	Setting* GetINISettingNative(const char* name);
 
@@ -88,13 +88,13 @@ namespace FRIK {
 	std::string str_tolower(std::string s);
 	std::string ltrim(std::string s);
 	std::string rtrim(std::string s);
-	std::string trim(std::string s);
+	std::string trim(const std::string& s);
 
 	std::optional<std::string> getEmbeddedResourceAsStringIfExists(WORD resourceId);
 	std::string getEmbededResourceAsString(WORD idr);
 	std::string getCurrentTimeString();
-	std::vector<std::string> loadListFromFile(std::string filePath);
-	void createDirDeep(std::string pathStr);
+	std::vector<std::string> loadListFromFile(const std::string& filePath);
+	void createDirDeep(const std::string& pathStr);
 	void createFileFromResourceIfNotExists(const std::string& filePath, WORD resourceId, bool fixNewline);
 	std::string getRelativePathInDocuments(const std::string& relPath);
 	void moveFileSafe(const std::string& fromPath, const std::string& toPath);

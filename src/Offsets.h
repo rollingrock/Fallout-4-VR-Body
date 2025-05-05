@@ -7,7 +7,6 @@
 #include "f4se/GameForms.h"
 #include "f4se/GameObjects.h"
 #include "f4se/GameReferences.h"
-#include "f4se/GameSettings.h"
 #include "f4se/NiNodes.h"
 #include "f4se/NiObjects.h"
 #include "f4sE_common/Relocation.h"
