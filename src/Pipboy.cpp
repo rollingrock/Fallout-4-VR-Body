@@ -14,10 +14,10 @@
 
 using namespace std::chrono;
 
-namespace FRIK {
-	/// <summary>
-	/// Turn on the Pipboy and set the status flags.
-	/// </summary>
+namespace frik {
+	/**
+	 * Turn on the Pipboy and set the status flags.
+	 */
 	void Pipboy::turnOn() {
 		_pipboyStatus = true;
 		_isOperatingPipboy = true;
@@ -43,9 +43,9 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// Run Pipboy mesh replacement if not already done (or forced) to the configured meshes either holo or screen.
-	/// </summary>
+	/**
+	 * Run Pipboy mesh replacement if not already done (or forced) to the configured meshes either holo or screen.
+	 */
 	/// <param name="force">true - run mesh replace, false - only if not previously replaced</param>
 	void Pipboy::replaceMeshes(const bool force) {
 		if (force || !meshesReplaced) {
@@ -57,10 +57,10 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// Executed every frame to update the Pipboy location and handle interaction with pipboy config UX.
-	/// TODO: refactor into separate functions for each functionality
-	/// </summary>
+	/**
+	 * Executed every frame to update the Pipboy location and handle interaction with pipboy config UX.
+	 * TODO: refactor into separate functions for each functionality
+	 */
 	void Pipboy::onUpdate() {
 		pipboyManagement();
 		dampenPipboyScreen();
@@ -78,13 +78,13 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// Hnalde replacing of Pipboy meshes on the arm with either screen or holo emitter.
-	/// </summary>
+	/**
+	 * Handle replacing of Pipboy meshes on the arm with either screen or holo emitter.
+	 */
 	void Pipboy::replaceMeshes(const std::string& itemHide, const std::string& itemShow) {
 		const auto pn = _skelly->getPlayerNodes();
 		const NiNode* ui = pn->primaryUIAttachNode;
-		NiNode* wand = get1stChildNode("world_primaryWand.nif", ui);
+		NiNode* wand = get1StChildNode("world_primaryWand.nif", ui);
 		NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
 		if (retNode) {
 			// ui->RemoveChild(wand);
@@ -92,13 +92,13 @@ namespace FRIK {
 		}
 
 		wand = pn->SecondaryWandNode;
-		NiNode* pipParent = get1stChildNode("PipboyParent", wand);
+		NiNode* pipParent = get1StChildNode("PipboyParent", wand);
 
 		if (!pipParent) {
 			meshesReplaced = false;
 			return;
 		}
-		wand = get1stChildNode("PipboyRoot_NIF_ONLY", pipParent);
+		wand = get1StChildNode("PipboyRoot_NIF_ONLY", pipParent);
 		g_config->isHoloPipboy ? retNode = loadNifFromFile("Data/Meshes/FRIK/HoloPipboyVR.nif") : retNode = loadNifFromFile("Data/Meshes/FRIK/PipboyVR.nif");
 		if (retNode && wand) {
 			const BSFixedString screenName("Screen:0");
@@ -120,10 +120,8 @@ namespace FRIK {
 
 		meshesReplaced = true;
 
-		// Cylons Code Start >>>>
 		static BSFixedString wandPipName("PipboyRoot");
-		NiAVObject* pbRoot = pn->SecondaryWandNode->GetObjectByName(&wandPipName);
-		if (pbRoot) {
+		if (const auto pbRoot = pn->SecondaryWandNode->GetObjectByName(&wandPipName)) {
 			pbRoot->m_localTransform = g_config->getPipboyOffset();
 		}
 
@@ -138,7 +136,6 @@ namespace FRIK {
 			_ShowNode->flags &= 0xfffffffffffffffe;
 			_ShowNode->m_localTransform.scale = 1;
 		}
-		// <<<< Cylons Code End
 
 		_MESSAGE("Pipboy Meshes replaced! Hide: %s, Show: %s", itemHide.c_str(), itemShow.c_str());
 	}
@@ -200,7 +197,7 @@ namespace FRIK {
 		if (pipOnButtonPressed && !_stickybpip && !_isOperatingPipboy) {
 			_stickybpip = true;
 			_controlSleepStickyT = true;
-			std::thread t5(&Pipboy::SecondaryTriggerSleep, this, 300); // switches a bool to false after 150ms
+			std::thread t5(&Pipboy::secondaryTriggerSleep, this, 300); // switches a bool to false after 150ms
 			t5.detach();
 		} else if (!pipOnButtonPressed) {
 			if (_controlSleepStickyT && _stickybpip && isLookingAtPipBoy()) {
@@ -295,7 +292,7 @@ namespace FRIK {
 		if (!pipboyTrans || !pipboy) {
 			return;
 		}
-		float distance = vec3_len(finger - pipboy->m_worldTransform.pos);
+		float distance = vec3Len(finger - pipboy->m_worldTransform.pos);
 		if (distance > 2.0) {
 			_pipTimer = 0;
 			_stickypip = false;
@@ -305,14 +302,14 @@ namespace FRIK {
 				_stickypip = false;
 				_pipTimer++;
 			} else {
-				const float fz = 0 - (2.0 - distance);
+				const float fz = 0 - (2.0f - distance);
 				if (fz >= -0.14 && fz <= 0.0) {
 					pipboyTrans->m_localTransform.pos.z = fz;
 				}
 				if (pipboyTrans->m_localTransform.pos.z < -0.10 && !_stickypip) {
 					_stickypip = true;
 					if (_vrhook != nullptr) {
-						g_config->leftHandedPipBoy ? _vrhook->StartHaptics(1, 0.05, 0.3) : _vrhook->StartHaptics(2, 0.05, 0.3);
+						g_config->leftHandedPipBoy ? _vrhook->StartHaptics(1, 0.05f, 0.3f) : _vrhook->StartHaptics(2, 0.05f, 0.3f);
 					}
 					if (_pipboyStatus) {
 						_pipboyStatus = false;
@@ -338,19 +335,19 @@ namespace FRIK {
 		if (!pipboyTrans || !pipboy) {
 			return;
 		}
-		distance = vec3_len(finger - pipboy->m_worldTransform.pos);
+		distance = vec3Len(finger - pipboy->m_worldTransform.pos);
 		if (distance > 2.0) {
 			stickyPBlight = false;
 			pipboyTrans->m_localTransform.pos.z = 0.0;
 		} else if (distance <= 2.0) {
-			const float fz = 0 - (2.0 - distance);
+			const float fz = 0 - (2.0f - distance);
 			if (fz >= -0.2 && fz <= 0.0) {
 				pipboyTrans->m_localTransform.pos.z = fz;
 			}
 			if (pipboyTrans->m_localTransform.pos.z < -0.14 && !stickyPBlight) {
 				stickyPBlight = true;
 				if (_vrhook != nullptr) {
-					g_config->leftHandedPipBoy ? _vrhook->StartHaptics(1, 0.05, 0.3) : _vrhook->StartHaptics(2, 0.05, 0.3);
+					g_config->leftHandedPipBoy ? _vrhook->StartHaptics(1, 0.05f, 0.3f) : _vrhook->StartHaptics(2, 0.05f, 0.3f);
 				}
 				if (!_pipboyStatus) {
 					Offsets::togglePipboyLight(*g_player);
@@ -368,34 +365,34 @@ namespace FRIK {
 		if (!pipboyTrans || !pipboy) {
 			return;
 		}
-		distance = vec3_len(finger - pipboy->m_worldTransform.pos);
+		distance = vec3Len(finger - pipboy->m_worldTransform.pos);
 		if (distance > 2.0) {
 			stickyPBRadio = false;
 			pipboyTrans->m_localTransform.pos.y = 0.0;
 		} else if (distance <= 2.0) {
-			const float fz = 0 - (2.0 - distance);
+			const float fz = 0 - (2.0f - distance);
 			if (fz >= -0.15 && fz <= 0.0) {
 				pipboyTrans->m_localTransform.pos.y = fz;
 			}
 			if (pipboyTrans->m_localTransform.pos.y < -0.12 && !stickyPBRadio) {
 				stickyPBRadio = true;
 				if (_vrhook != nullptr) {
-					g_config->leftHandedPipBoy ? _vrhook->StartHaptics(1, 0.05, 0.3) : _vrhook->StartHaptics(2, 0.05, 0.3);
+					g_config->leftHandedPipBoy ? _vrhook->StartHaptics(1, 0.05f, 0.3f) : _vrhook->StartHaptics(2, 0.05f, 0.3f);
 				}
 				if (!_pipboyStatus) {
 					if (Offsets::isPlayerRadioEnabled()) {
-						TurnPlayerRadioOn(false);
+						turnPlayerRadioOn(false);
 					} else {
-						TurnPlayerRadioOn(true);
+						turnPlayerRadioOn(true);
 					}
 				}
 			}
 		}
 	}
 
-	/* ==============================================PIPBOY CONTOLS================================================================================
+	/* ==============================================PIPBOY CONTROLS================================================================================
 	//
-	// UNIVERSIAL CONTROLS
+	// UNIVERSAL CONTROLS
 	//
 	// root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0); // changes sub tabs
 	// root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0); // changes sub tabs
@@ -447,10 +444,9 @@ namespace FRIK {
 			auto rt = (BSFlattenedBoneTree*)_skelly->getRoot();
 			bool helmetHeadLamp = _skelly->armorHasHeadLamp();
 			bool lightOn = Offsets::isPipboyLightOn(*g_player);
-			bool RadioOn = Offsets::isPlayerRadioEnabled();
+			bool radioOn = Offsets::isPlayerRadioEnabled();
 			Matrix44 rot;
 			float radFreq = Offsets::getPlayerRadioFreq() - 23;
-			NiTransform Needle;
 			static BSFixedString pwrButtonOn("PowerButton_mesh:2");
 			static BSFixedString pwrButtonOff("PowerButton_mesh:off");
 			static BSFixedString lhtButtonOn("LightButton_mesh:2");
@@ -458,8 +454,8 @@ namespace FRIK {
 			static BSFixedString radButtonOn("RadioOn");
 			static BSFixedString radButtonOff("RadioOff");
 			static BSFixedString radioNeedle("RadioNeedle_mesh");
-			static BSFixedString NewModeKnob("ModeKnobDuplicate");
-			static BSFixedString OriginalModeKnob("ModeKnob02");
+			static BSFixedString newModeKnob("ModeKnobDuplicate");
+			static BSFixedString originalModeKnob("ModeKnob02");
 			NiAVObject* pipbone = g_config->leftHandedPipBoy
 				? _skelly->getRightArm().forearm3->GetObjectByName(&pwrButtonOn)
 				: _skelly->getLeftArm().forearm3->GetObjectByName(&pwrButtonOn);
@@ -482,11 +478,11 @@ namespace FRIK {
 				? _skelly->getRightArm().forearm3->GetObjectByName(&radioNeedle)
 				: _skelly->getLeftArm().forearm3->GetObjectByName(&radioNeedle);
 			NiAVObject* pipbone8 = g_config->leftHandedPipBoy
-				? _skelly->getRightArm().forearm3->GetObjectByName(&NewModeKnob)
-				: _skelly->getLeftArm().forearm3->GetObjectByName(&NewModeKnob);
+				? _skelly->getRightArm().forearm3->GetObjectByName(&newModeKnob)
+				: _skelly->getLeftArm().forearm3->GetObjectByName(&newModeKnob);
 			NiAVObject* pipbone9 = g_config->leftHandedPipBoy
-				? _skelly->getRightArm().forearm3->GetObjectByName(&OriginalModeKnob)
-				: _skelly->getLeftArm().forearm3->GetObjectByName(&OriginalModeKnob);
+				? _skelly->getRightArm().forearm3->GetObjectByName(&originalModeKnob)
+				: _skelly->getLeftArm().forearm3->GetObjectByName(&originalModeKnob);
 			if (!pipbone || !pipbone2 || !pipbone3 || !pipbone4 || !pipbone5 || !pipbone6 || !pipbone7 || !pipbone8) {
 				return;
 			}
@@ -502,7 +498,7 @@ namespace FRIK {
 					? pipboy = _skelly->getNode("PipboyRoot", _skelly->getRightArm().shoulder->GetAsNiNode())
 					: pipboy = _skelly->getNode("PipboyRoot", _skelly->getLeftArm().shoulder->GetAsNiNode());
 				float distance;
-				distance = vec3_len(finger - pipboy->m_worldTransform.pos);
+				distance = vec3Len(finger - pipboy->m_worldTransform.pos);
 				if (distance < g_config->pipboyDetectionRange && !_isOperatingPipboy && !_pipboyStatus) {
 					// Hides Weapon and poses hand for pointing
 					_isOperatingPipboy = true;
@@ -523,7 +519,7 @@ namespace FRIK {
 					}
 				}
 			} else if (!isLookingAtPipBoy() && _isOperatingPipboy && !_pipboyStatus) {
-				// Catches if you're not looking at the pipboy when your hand moves outside of the control area and restores weapon / releases hand pose							
+				// Catches if you're not looking at the pipboy when your hand moves outside the control area and restores weapon / releases hand pose							
 				disablePipboyHandPose();
 				for (int i = 0; i < 7; i++) {
 					// Remove any stuck helper orbs if Pipboy times out for any reason.
@@ -551,7 +547,7 @@ namespace FRIK {
 				rot.getEulerAngles(&rotx, &roty, &rotz);
 				if (rotx < 0.57) {
 					Matrix44 kRot;
-					kRot.setEulerAngles(-0.05, degrees_to_rads(0), degrees_to_rads(0));
+					kRot.setEulerAngles(-0.05, degreesToRads(0), degreesToRads(0));
 					pipbone8->m_localTransform.rot = kRot.multiply43Right(pipbone8->m_localTransform.rot);
 				}
 			} else {
@@ -571,9 +567,10 @@ namespace FRIK {
 				}
 				const bool useRightHand = g_config->leftHandedPipBoy || g_config->isPipBoyTorchRightArmMode;
 				const auto hand = rt->transforms[_skelly->getBoneInMap(useRightHand ? "RArm_Hand" : "LArm_Hand")].world.pos;
-				float distance = vec3_len(hand - head->m_worldTransform.pos);
+				float distance = vec3Len(hand - head->m_worldTransform.pos);
 				if (distance < 15.0) {
-					uint64_t _PipboyHand = VRHook::g_vrHook->getControllerState(useRightHand ? VRHook::VRSystem::TrackerType::Right : VRHook::VRSystem::Left).ulButtonPressed;
+					uint64_t _PipboyHand = VRHook::g_vrHook->getControllerState(useRightHand ? VRHook::VRSystem::TrackerType::Right : VRHook::VRSystem::TrackerType::Left).
+					                                         ulButtonPressed;
 					const auto SwitchLightButton = _PipboyHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(g_config->switchTorchButton));
 					if (_vrhook != nullptr && _SwitchLightHaptics) {
 						_vrhook->StartHaptics(useRightHand ? 2 : 1, 0.1f, 0.1f);
@@ -589,16 +586,16 @@ namespace FRIK {
 							? _skelly->getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode())
 							: _skelly->getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
 						NiNode* lght = g_config->isPipBoyTorchOnArm
-							? get1stChildNode("HeadLightParent", LGHT_ATTACH)
+							? get1StChildNode("HeadLightParent", LGHT_ATTACH)
 							: _skelly->getPlayerNodes()->HeadLightParentNode->GetAsNiNode();
 						if (lght) {
 							BSFixedString parentnode = g_config->isPipBoyTorchOnArm ? lght->m_parent->m_name : _skelly->getPlayerNodes()->HeadLightParentNode->m_parent->m_name;
-							Matrix44 LightRot;
-							int Rotz = g_config->isPipBoyTorchOnArm ? -90 : 90;
-							LightRot.setEulerAngles(degrees_to_rads(0), degrees_to_rads(0), degrees_to_rads(Rotz));
-							lght->m_localTransform.rot = LightRot.multiply43Right(lght->m_localTransform.rot);
-							int PosY = g_config->isPipBoyTorchOnArm ? 0 : 4;
-							lght->m_localTransform.pos.y = PosY;
+							Matrix44 lightRot;
+							int rotz = g_config->isPipBoyTorchOnArm ? -90 : 90;
+							lightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(rotz));
+							lght->m_localTransform.rot = lightRot.multiply43Right(lght->m_localTransform.rot);
+							int posY = g_config->isPipBoyTorchOnArm ? 0 : 4;
+							lght->m_localTransform.pos.y = posY;
 							g_config->isPipBoyTorchOnArm ? lght->m_parent->RemoveChild(lght) : _skelly->getPlayerNodes()->HeadLightParentNode->m_parent->RemoveChild(lght);
 							g_config->isPipBoyTorchOnArm ? _skelly->getPlayerNodes()->HmdNode->AttachChild(lght, true) : LGHT_ATTACH->AttachChild(lght, true);
 							g_config->togglePipBoyTorchOnArm();
@@ -624,7 +621,7 @@ namespace FRIK {
 						if (parentnode == "HMDNode") {
 							_skelly->getPlayerNodes()->HeadLightParentNode->m_parent->RemoveChild(lght);
 							Matrix44 LightRot;
-							LightRot.setEulerAngles(degrees_to_rads(0), degrees_to_rads(0), degrees_to_rads(90));
+							LightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(90));
 							lght->m_localTransform.rot = LightRot.multiply43Right(lght->m_localTransform.rot);
 							lght->m_localTransform.pos.y = 4;
 							LGHT_ATTACH->AttachChild(lght, true);
@@ -632,12 +629,11 @@ namespace FRIK {
 					}
 					//Restore HeadLight to correct node when light is powered off (to avoid any crashes)
 					else if (!lightOn || helmetHeadLamp) {
-						NiNode* lght = get1stChildNode("HeadLightParent", LGHT_ATTACH);
-						if (lght) {
+						if (auto lght = get1StChildNode("HeadLightParent", LGHT_ATTACH)) {
 							BSFixedString parentnode = lght->m_parent->m_name;
 							if (parentnode != "HMDNode") {
 								Matrix44 LightRot;
-								LightRot.setEulerAngles(degrees_to_rads(0), degrees_to_rads(0), degrees_to_rads(-90));
+								LightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(-90));
 								lght->m_localTransform.rot = LightRot.multiply43Right(lght->m_localTransform.rot);
 								lght->m_localTransform.pos.y = 0;
 								lght->m_parent->RemoveChild(lght);
@@ -652,35 +648,35 @@ namespace FRIK {
 			lightOn ? pipbone3->m_localTransform.scale = 1 : pipbone4->m_localTransform.scale = 1;
 			lightOn ? pipbone4->flags |= 0x1 : pipbone3->flags |= 0x1;
 			lightOn ? pipbone4->m_localTransform.scale = 0 : pipbone3->m_localTransform.scale = 0;
-			RadioOn ? pipbone5->flags &= 0xfffffffffffffffe : pipbone6->flags &= 0xfffffffffffffffe;
-			RadioOn ? pipbone5->m_localTransform.scale = 1 : pipbone6->m_localTransform.scale = 1;
-			RadioOn ? pipbone6->flags |= 0x1 : pipbone5->flags |= 0x1;
-			RadioOn ? pipbone6->m_localTransform.scale = 0 : pipbone5->m_localTransform.scale = 0;
+			radioOn ? pipbone5->flags &= 0xfffffffffffffffe : pipbone6->flags &= 0xfffffffffffffffe;
+			radioOn ? pipbone5->m_localTransform.scale = 1 : pipbone6->m_localTransform.scale = 1;
+			radioOn ? pipbone6->flags |= 0x1 : pipbone5->flags |= 0x1;
+			radioOn ? pipbone6->m_localTransform.scale = 0 : pipbone5->m_localTransform.scale = 0;
 			// Controls Radio Needle Position.
-			if (RadioOn && radFreq != lastRadioFreq) {
+			if (radioOn && radFreq != lastRadioFreq) {
 				float x = -1 * (radFreq - lastRadioFreq);
-				rot.setEulerAngles(degrees_to_rads(0), degrees_to_rads(x), degrees_to_rads(0));
+				rot.setEulerAngles(degreesToRads(0), degreesToRads(x), degreesToRads(0));
 				pipbone7->m_localTransform.rot = rot.multiply43Right(pipbone7->m_localTransform.rot);
 				lastRadioFreq = radFreq;
-			} else if (!RadioOn && lastRadioFreq > 0) {
+			} else if (!radioOn && lastRadioFreq > 0) {
 				float x = lastRadioFreq;
-				rot.setEulerAngles(degrees_to_rads(0), degrees_to_rads(x), degrees_to_rads(0));
+				rot.setEulerAngles(degreesToRads(0), degreesToRads(x), degreesToRads(0));
 				pipbone7->m_localTransform.rot = rot.multiply43Right(pipbone7->m_localTransform.rot);
 				lastRadioFreq = 0.0;
 			}
-			// Scaleform code for managing Pipboy menu controls (Virtual and Physical)
+			// Scale-form code for managing Pipboy menu controls (Virtual and Physical)
 			if (_pipboyStatus) {
 				BSFixedString pipboyMenu("PipboyMenu");
 				IMenu* menu = (*g_ui)->GetMenu(pipboyMenu);
 				if (menu != nullptr) {
 					GFxMovieRoot* root = menu->movie->movieRoot;
 					if (root != nullptr) {
-						GFxValue IsProjected;
+						GFxValue isProjected;
 						GFxValue PBCurrentPage;
-						if (root->GetVariable(&IsProjected, "root.Menu_mc.projectedBorder_mc.visible")) {
+						if (root->GetVariable(&isProjected, "root.Menu_mc.projectedBorder_mc.visible")) {
 							//check if Pipboy is projected and disable right stick rotation if it isn't
-							bool UIProjected = IsProjected.GetBool();
-							if (!UIProjected && g_config->switchUIControltoPrimary) {
+							bool uiProjected = isProjected.GetBool();
+							if (!uiProjected && g_config->switchUIControltoPrimary) {
 								//prevents player rotation controls so we can switch controls to the right stick (or left if the Pipboy is on the right arm)
 								rotationStickEnabledToggle(false);
 							}
@@ -715,7 +711,7 @@ namespace FRIK {
 								? _skelly->getRightArm().forearm3->GetObjectByName(&transNames[i])->GetAsNiNode()
 								: _skelly->getLeftArm().forearm3->GetObjectByName(&transNames[i])->GetAsNiNode();
 							if (bone && trans) {
-								float distance = vec3_len(finger - bone->m_worldTransform.pos);
+								float distance = vec3Len(finger - bone->m_worldTransform.pos);
 								if (distance > boneDistance[i]) {
 									trans->m_localTransform.pos.z = 0.0;
 									_PBControlsSticky[i] = false;
@@ -746,7 +742,7 @@ namespace FRIK {
 												? _skelly->getRightArm().forearm3->GetObjectByName(&KnobNode)
 												: _skelly->getLeftArm().forearm3->GetObjectByName(&KnobNode);
 											Matrix44 rot;
-											rot.setEulerAngles(degrees_to_rads(0), degrees_to_rads(fz), degrees_to_rads(0));
+											rot.setEulerAngles(degreesToRads(0), degreesToRads(fz), degreesToRads(0));
 											ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
 										}
 										if (i == 5) {
@@ -757,7 +753,7 @@ namespace FRIK {
 												? _skelly->getRightArm().forearm3->GetObjectByName(&KnobNode)
 												: _skelly->getLeftArm().forearm3->GetObjectByName(&KnobNode);
 											Matrix44 rot;
-											rot.setEulerAngles(degrees_to_rads(0), degrees_to_rads(roty), degrees_to_rads(0));
+											rot.setEulerAngles(degreesToRads(0), degreesToRads(roty), degreesToRads(0));
 											ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
 										}
 									}
@@ -778,15 +774,15 @@ namespace FRIK {
 												root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0); // Next Sub Page
 											}
 											if (i == 4) {
-												std::thread t1(SimulateExtendedButtonPress, VK_UP); // Scroll up list
+												std::thread t1(simulateExtendedButtonPress, VK_UP); // Scroll up list
 												t1.detach();
 											}
 											if (i == 5) {
-												std::thread t1(SimulateExtendedButtonPress, VK_DOWN); // Scroll down list
+												std::thread t1(simulateExtendedButtonPress, VK_DOWN); // Scroll down list
 												t1.detach();
 											}
 											if (i == 6) {
-												std::thread t1(SimulateExtendedButtonPress, VK_RETURN); // Select Current Item
+												std::thread t1(simulateExtendedButtonPress, VK_RETURN); // Select Current Item
 												t1.detach();
 											}
 										}
@@ -836,11 +832,11 @@ namespace FRIK {
 									: _skelly->getLeftArm().forearm3->GetObjectByName(&KnobNode);
 								Matrix44 rot;
 								if (doinantHandStick.y > 0.85) {
-									rot.setEulerAngles(degrees_to_rads(0), degrees_to_rads(0.4), degrees_to_rads(0));
+									rot.setEulerAngles(degreesToRads(0), degreesToRads(0.4), degreesToRads(0));
 									ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
 								}
 								if (doinantHandStick.y < -0.85) {
-									rot.setEulerAngles(degrees_to_rads(0), degrees_to_rads(-0.4), degrees_to_rads(0));
+									rot.setEulerAngles(degreesToRads(0), degreesToRads(-0.4), degreesToRads(0));
 									ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
 								}
 							}
@@ -855,18 +851,18 @@ namespace FRIK {
 								if (doinantHandStick.y > 0.85) {
 									if (!_controlSleepStickyY) {
 										_controlSleepStickyY = true;
-										std::thread t1(SimulateExtendedButtonPress, VK_UP); // Scroll up list
+										std::thread t1(simulateExtendedButtonPress, VK_UP); // Scroll up list
 										t1.detach();
-										std::thread t2(&Pipboy::RightStickYSleep, this, 155);
+										std::thread t2(&Pipboy::rightStickYSleep, this, 155);
 										t2.detach();
 									}
 								}
 								if (doinantHandStick.y < -0.85) {
 									if (!_controlSleepStickyY) {
 										_controlSleepStickyY = true;
-										std::thread t1(SimulateExtendedButtonPress, VK_DOWN); // Scroll down list
+										std::thread t1(simulateExtendedButtonPress, VK_DOWN); // Scroll down list
 										t1.detach();
-										std::thread t2(&Pipboy::RightStickYSleep, this, 155);
+										std::thread t2(&Pipboy::rightStickYSleep, this, 155);
 										t2.detach();
 									}
 								}
@@ -874,7 +870,7 @@ namespace FRIK {
 									if (!_controlSleepStickyX) {
 										_controlSleepStickyX = true;
 										root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0); // Next Sub Page
-										std::thread t3(&Pipboy::RightStickXSleep, this, 170);
+										std::thread t3(&Pipboy::rightStickXSleep, this, 170);
 										t3.detach();
 									}
 								}
@@ -882,14 +878,14 @@ namespace FRIK {
 									if (!_controlSleepStickyX) {
 										_controlSleepStickyX = true;
 										root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0); // Previous Sub Page
-										std::thread t3(&Pipboy::RightStickXSleep, this, 170);
+										std::thread t3(&Pipboy::rightStickXSleep, this, 170);
 										t3.detach();
 									}
 								}
 							}
 							if (UISelectButton && !_UISelectSticky) {
 								_UISelectSticky = true;
-								std::thread t1(SimulateExtendedButtonPress, VK_RETURN); // Select Current Item
+								std::thread t1(simulateExtendedButtonPress, VK_RETURN); // Select Current Item
 								t1.detach();
 							} else if (!UISelectButton) {
 								_UISelectSticky = false;
@@ -932,11 +928,11 @@ namespace FRIK {
 									: _skelly->getLeftArm().forearm3->GetObjectByName(&KnobNode);
 								Matrix44 rot;
 								if (offHandStick.x > 0.85) {
-									rot.setEulerAngles(degrees_to_rads(0), degrees_to_rads(0.4), degrees_to_rads(0));
+									rot.setEulerAngles(degreesToRads(0), degreesToRads(0.4), degreesToRads(0));
 									ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
 								}
 								if (offHandStick.x < -0.85) {
-									rot.setEulerAngles(degrees_to_rads(0), degrees_to_rads(-0.4), degrees_to_rads(0));
+									rot.setEulerAngles(degreesToRads(0), degreesToRads(-0.4), degreesToRads(0));
 									ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
 								}
 							}
@@ -981,7 +977,7 @@ namespace FRIK {
 			rt.fromRot(pipboyScreen->m_worldTransform.rot);
 			rq.slerp(1 - g_config->dampenPipboyRotation, rt);
 			pipboyScreen->m_worldTransform.rot = rq.getRot().make43();
-			// do a linear interprolation  between the position from the previous frame to current frame
+			// do a linear interpolation between the position from the previous frame to current frame
 			NiPoint3 deltaPos = pipboyScreen->m_worldTransform.pos - prevFrame.pos;
 			deltaPos *= g_config->dampenPipboyTranslation; // just use hands dampening value for now
 			pipboyScreen->m_worldTransform.pos -= deltaPos;
@@ -1014,26 +1010,26 @@ namespace FRIK {
 		//return dot < -(pipBoyLookAtGate);
 	}
 
-	/// <summary>
-	/// Prevents Continous Input from Right Stick X Axis
-	/// </summary>
-	void Pipboy::RightStickXSleep(const int time) {
+	/**
+	 * Prevents continuous Input from Right Stick X Axis
+	 */
+	void Pipboy::rightStickXSleep(const int time) {
 		Sleep(time);
 		_controlSleepStickyX = false;
 	}
 
-	/// <summary>
-	/// Prevents Continous Input from Right Stick Y Axis
-	/// </summary>
-	void Pipboy::RightStickYSleep(const int time) {
+	/**
+	 * Prevents continuous Input from Right Stick Y Axis
+	 */
+	void Pipboy::rightStickYSleep(const int time) {
 		Sleep(time);
 		_controlSleepStickyY = false;
 	}
 
-	/// <summary>
-	/// Used to determine if secondary trigger received a long or short press
-	/// </summary>
-	void Pipboy::SecondaryTriggerSleep(const int time) {
+	/**
+	 * Used to determine if secondary trigger received a long or short press
+	 */
+	void Pipboy::secondaryTriggerSleep(const int time) {
 		Sleep(time);
 		_controlSleepStickyT = false;
 	}

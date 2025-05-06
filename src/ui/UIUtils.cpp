@@ -4,12 +4,12 @@
 #include "../Debug.h"
 #include "../Offsets.h"
 
-namespace VRUI {
+namespace vrui {
 	/**
 	 * Get struct with useful NiNodes references related to player.
 	 */
-	FRIK::PlayerNodes* getPlayerNodes() {
-		return reinterpret_cast<FRIK::PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
+	frik::PlayerNodes* getPlayerNodes() {
+		return reinterpret_cast<frik::PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
 	}
 
 	/**
@@ -80,7 +80,7 @@ namespace VRUI {
 	 * @return true if BetterScopesVR mod is loaded in the game, false otherwise.
 	 */
 	bool isBetterScopesVRModLoaded() {
-		return FRIK::isModLoaded("FO4VRBETTERSCOPES");
+		return frik::isModLoaded("FO4VRBETTERSCOPES");
 	}
 
 	static void getNodeWidthHeight(NiNode* node) {

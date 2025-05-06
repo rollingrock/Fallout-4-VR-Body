@@ -84,13 +84,13 @@ RelocAddr<_AIProcess_Set3DUpdateFlags> AIProcess_Set3DUpdateFlags(0xec8ce0);
 
 // Gun Reload Init
 uint64_t gunReloadInit(const uint64_t rcx, const uint64_t rdx, const uint64_t r8) {
-	FRIK::g_gunReloadSystem->startAnimationCapture();
+	frik::g_gunReloadSystem->startAnimationCapture();
 	return Actor_GetCurrentWeapon(rcx, rdx, r8);
 }
 
 uint64_t updatePlayerAnimationHook(const uint64_t rcx, float* rdx) {
-	if (FRIK::g_animDeltaTime >= 0.0f) {
-		rdx[0] = FRIK::g_animDeltaTime;
+	if (frik::g_animDeltaTime >= 0.0f) {
+		rdx[0] = frik::g_animDeltaTime;
 	}
 	return TESObjectREFR_SetupAnimationUpdateDataForRefernce(rcx, rdx);
 }
@@ -125,7 +125,7 @@ RelocAddr<uint64_t> wandMesh(0x2d686d8);
 
 void hookIt(const uint64_t rcx) {
 	const uint64_t parm = rcx;
-	FRIK::update();
+	frik::update();
 	//hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.   
 
 	// so all of this below is an attempt to bypass the functionality in game around my hook at resets the root parent node's world pos which screws up armor
@@ -148,7 +148,7 @@ void hookIt(const uint64_t rcx) {
 }
 
 void hook2(const uint64_t rcx, const uint64_t rdx, const uint64_t r8, const uint64_t r9) {
-	FRIK::update();
+	frik::update();
 
 	hookedMainDrawCandidateFunc(rcx, rdx, r8, r9);
 
@@ -162,7 +162,7 @@ void hook2(const uint64_t rcx, const uint64_t rdx, const uint64_t r8, const uint
 }
 
 void hook5(const uint64_t rcx) {
-	FRIK::update();
+	frik::update();
 
 	someRandomFunc(rcx);
 
@@ -177,17 +177,17 @@ void hook5(const uint64_t rcx) {
 
 void hook3(const double param1, const double param2, const double param3) {
 	hookedPosPlayerFunc(param1, param2, param3);
-	FRIK::update();
+	frik::update();
 }
 
 void hook4() {
-	FRIK::update();
+	frik::update();
 	hookMultiBoundCullingFunc();
 }
 
 void hookSmoothMovement(const uint64_t rcx) {
 	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-		FRIK::smoothMovement();
+		frik::smoothMovement();
 	}
 	smoothMovementHook(rcx);
 }
@@ -232,7 +232,7 @@ void hookMain() {
 		SafeWrite8(hookAnimationVFunc.GetUIntPtr() + i, 0x90); // this block resets the body pose to hang off the camera.    Blocking this off so body height is correct.
 	}
 
-	//	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&FRIK::update);
+	//	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&frik::update);
 
 	//	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
 	//g_branchTrampoline.Write5Call(hookMainDrawCandidate.GetUIntPtr(), (uintptr_t)&hook2);

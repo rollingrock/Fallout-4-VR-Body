@@ -10,6 +10,6 @@ namespace SmoothMovementVR {
 	extern RelocAddr<_IsInAir> IsInAir;
 
 	void everyFrame();
-	void StartFunctions();
+	void startFunctions();
 	bool checkIfJumpingOrInAir();
 }

@@ -4,7 +4,7 @@
 
 #include "f4se/NiNodes.h"
 
-namespace FRIK {
+namespace frik {
 	class CullGeometryHandler {
 	public:
 		void cullPlayerGeometry();

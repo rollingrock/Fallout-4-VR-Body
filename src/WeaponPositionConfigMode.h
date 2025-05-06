@@ -6,7 +6,7 @@
 #include "ui/UIContainer.h"
 #include "ui/UIToggleButton.h"
 
-namespace FRIK {
+namespace frik {
 	class WeaponPositionAdjuster;
 
 	/**
@@ -70,17 +70,17 @@ namespace FRIK {
 		RepositionTarget _repositionTarget = RepositionTarget::Weapon;
 
 		// configuration UI
-		std::shared_ptr<VRUI::UIContainer> _configUI;
-		std::shared_ptr<VRUI::UIWidget> _complexAdjustFooter;
-		std::shared_ptr<VRUI::UIWidget> _throwableAdjustFooter;
-		std::shared_ptr<VRUI::UIWidget> _simpleAdjustFooter;
-		std::shared_ptr<VRUI::UIToggleButton> _weaponModeButton;
-		std::shared_ptr<VRUI::UIToggleButton> _offhandModeButton;
-		std::shared_ptr<VRUI::UIToggleButton> _throwableUIButton;
-		std::shared_ptr<VRUI::UIWidget> _emptyHandsMessageBox;
-		std::shared_ptr<VRUI::UIToggleButton> _betterScopesModeButton;
-		std::shared_ptr<VRUI::UIButton> _saveButton;
-		std::shared_ptr<VRUI::UIButton> _resetButton;
-		std::shared_ptr<VRUI::UIWidget> _throwableNotEquippedMessageBox;
+		std::shared_ptr<vrui::UIContainer> _configUI;
+		std::shared_ptr<vrui::UIWidget> _complexAdjustFooter;
+		std::shared_ptr<vrui::UIWidget> _throwableAdjustFooter;
+		std::shared_ptr<vrui::UIWidget> _simpleAdjustFooter;
+		std::shared_ptr<vrui::UIToggleButton> _weaponModeButton;
+		std::shared_ptr<vrui::UIToggleButton> _offhandModeButton;
+		std::shared_ptr<vrui::UIToggleButton> _throwableUIButton;
+		std::shared_ptr<vrui::UIWidget> _emptyHandsMessageBox;
+		std::shared_ptr<vrui::UIToggleButton> _betterScopesModeButton;
+		std::shared_ptr<vrui::UIButton> _saveButton;
+		std::shared_ptr<vrui::UIButton> _resetButton;
+		std::shared_ptr<vrui::UIWidget> _throwableNotEquippedMessageBox;
 	};
 }

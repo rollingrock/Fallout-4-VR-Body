@@ -7,7 +7,7 @@
 #include "f4se/NiNodes.h"
 #include "include/SimpleIni.h"
 
-namespace FRIK {
+namespace frik {
 	enum class WandMode : std::uint8_t {
 		Both = 0,
 		PrimaryHandWand,
@@ -142,8 +142,8 @@ namespace FRIK {
 			_walkingState = 0;
 		}
 
-		Skeleton(BSFadeNode* a_node)
-			: _root(a_node) {
+		Skeleton(BSFadeNode* node)
+			: _root(node) {
 			_curPos = NiPoint3(0, 0, 0);
 			_walkingState = 0;
 		}
@@ -168,11 +168,11 @@ namespace FRIK {
 		}
 
 		ArmNodes getLeftArm() const {
-			return leftArm;
+			return _leftArm;
 		}
 
 		ArmNodes getRightArm() const {
-			return rightArm;
+			return _rightArm;
 		}
 
 		PlayerNodes* getPlayerNodes() const {
@@ -215,7 +215,7 @@ namespace FRIK {
 		NiPoint3 getPosition();
 		void makeArmsT(bool) const;
 		void fixArmor() const;
-		void showHidePAHUD() const;
+		void showHidePAHud() const;
 		void hideHands();
 
 		// movement
@@ -236,13 +236,13 @@ namespace FRIK {
 		// utility
 		NiNode* getNode(const char* nodeName, NiNode* nde) const;
 		NiNode* getNode2(const char* nodeName, NiNode* nde) const;
-		static void setVisibility(NiAVObject* nde, bool a_show = true); // Change flags to show or hide a node
+		static void setVisibility(NiAVObject* nde, bool show = true); // Change flags to show or hide a node
 		void updateDown(NiNode* nde, bool updateSelf);
 		void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 		static void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 		bool setNodes();
 		ArmNodes getArm(bool isLeft) const;
-		static void set1stPersonArm(NiNode* weapon, NiNode* offsetNode);
+		static void set1StPersonArm(NiNode* weapon, NiNode* offsetNode);
 		void setBodyLen();
 		bool detectInPowerArmor();
 		void setKneePos();
@@ -250,7 +250,7 @@ namespace FRIK {
 		void handleWeaponNodes();
 		void setLeftHandedSticky();
 		void calculateHandPose(const std::string& bone, float gripProx, bool thumbUp, bool isLeft);
-		void copy1stPerson(const std::string& bone);
+		void copy1StPerson(const std::string& bone);
 		void insertSaveState(const std::string& name, NiNode* node);
 		void rotateLeg(uint32_t pos, float angle) const;
 		void moveBack();
@@ -274,28 +274,26 @@ namespace FRIK {
 		PlayerNodes* _playerNodes;
 		NiNode* _rightHand;
 		NiNode* _leftHand;
-		NiNode* _wandRight;
-		NiNode* _wandLeft;
 		NiNode* _spine;
 		NiNode* _chest;
 		float _torsoLen;
 		float _legLen;
-		ArmNodes rightArm;
-		ArmNodes leftArm;
+		ArmNodes _rightArm;
+		ArmNodes _leftArm;
 		float _curx;
 		float _cury;
-		std::map<std::string, NiTransform, CaseInsensitiveComparator> savedStates;
-		std::map<std::string, NiPoint3, CaseInsensitiveComparator> boneLocalDefault;
+		std::map<std::string, NiTransform, CaseInsensitiveComparator> _savedStates;
+		std::map<std::string, NiPoint3, CaseInsensitiveComparator> _boneLocalDefault;
 
-		NiMatrix43 originalPipboyRotation;
+		NiMatrix43 _originalPipboyRotation;
 
 		bool _leftHandedSticky;
 
 		bool _inPowerArmor;
 
-		LARGE_INTEGER freqCounter;
-		LARGE_INTEGER timer;
-		LARGE_INTEGER prevTime;
+		LARGE_INTEGER _freqCounter;
+		LARGE_INTEGER _timer;
+		LARGE_INTEGER _prevTime;
 		double _frameTime;
 
 		int _walkingState;
@@ -314,7 +312,7 @@ namespace FRIK {
 		NiPoint3 _stepDir;
 		double _prevSpeed;
 		double _stepTimeinStep;
-		int delayFrame;
+		int _delayFrame;
 
 		HandMeshBoneTransforms* _boneTransforms;
 

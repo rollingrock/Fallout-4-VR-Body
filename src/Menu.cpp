@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-namespace FRIK {
+namespace frik {
 	bool inScopeMenu = false;
 
 	ScopeMenuEventHandler scopeMenuEvent;

@@ -4,7 +4,7 @@
 #include "F4VRBody.h"
 #include "utils.h"
 
-namespace FRIK {
+namespace frik {
 	/// <summary>
 	/// Hide/Show player specific equipment slot found by index.
 	/// </summary>
@@ -15,8 +15,8 @@ namespace FRIK {
 			return;
 		}
 
-		const auto form_type = slot.item->GetFormType();
-		if (form_type != kFormType_ARMO) {
+		const auto formType = slot.item->GetFormType();
+		if (formType != kFormType_ARMO) {
 			return;
 		}
 

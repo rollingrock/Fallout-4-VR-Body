@@ -3,7 +3,7 @@
 #include "f4se/GameEvents.h"
 #include "f4se/GameMenus.h"
 
-namespace FRIK {
+namespace frik {
 	class ScopeMenuEventHandler : public BSTEventSink<MenuOpenCloseEvent> {
 	public:
 		virtual EventResult ReceiveEvent(MenuOpenCloseEvent* a_event, void* dispatcher) override;

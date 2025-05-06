@@ -20,10 +20,10 @@ namespace SmoothMovementVR {
 	UInt32 KeywordPowerArmor = 0x4D8A1;
 	UInt32 KeywordPowerArmorFrame = 0x15503F;
 
-	std::atomic<bool> inPowerArmorFrame = false;
-	std::atomic<bool> interiorCell = false;
+	std::atomic inPowerArmorFrame = false;
+	std::atomic interiorCell = false;
 
-	std::atomic<bool> usePapyrusDefaultHeight = false;
+	std::atomic usePapyrusDefaultHeight = false;
 
 	std::atomic<float> smoothedX = 0;
 	std::atomic<float> smoothedY = 0;
@@ -33,7 +33,7 @@ namespace SmoothMovementVR {
 	LARGE_INTEGER m_prevTime;
 	std::atomic<float> m_frameTime = 0;
 
-	std::atomic<bool> notMoving = false;
+	std::atomic notMoving = false;
 
 	std::deque<NiPoint3> lastPositions;
 
@@ -76,33 +76,33 @@ namespace SmoothMovementVR {
 			smoothedY.store(newPosition.y);
 			smoothedZ.store(newPosition.z);
 		} else {
-			if (FRIK::g_config->disableInteriorSmoothingHorizontal && interiorCell.load()) {
+			if (frik::g_config->disableInteriorSmoothingHorizontal && interiorCell.load()) {
 				smoothedX.store(newPosition.x);
 				smoothedY.store(newPosition.y);
 			} else {
-				if (FRIK::g_config->dampingMultiplierHorizontal != 0 && FRIK::g_config->smoothingAmountHorizontal != 0) {
+				if (frik::g_config->dampingMultiplierHorizontal != 0 && frik::g_config->smoothingAmountHorizontal != 0) {
 					const float absValX = max(0.1f, abs(newPosition.x - smoothedX.load()));
 					const float absValY = max(0.1f, abs(newPosition.y - smoothedY.load()));
 					smoothedX.store(
-						smoothedX.load() + m_frameTime.load() * ((newPosition.x - smoothedX.load()) / (FRIK::g_config->smoothingAmountHorizontal * (FRIK::g_config->
-							dampingMultiplierHorizontal / absValX) * (notMoving.load() ? FRIK::g_config->stoppingMultiplierHorizontal : 1.0f))));
+						smoothedX.load() + m_frameTime.load() * ((newPosition.x - smoothedX.load()) / (frik::g_config->smoothingAmountHorizontal * (frik::g_config->
+							dampingMultiplierHorizontal / absValX) * (notMoving.load() ? frik::g_config->stoppingMultiplierHorizontal : 1.0f))));
 					smoothedY.store(
-						smoothedY.load() + m_frameTime.load() * ((newPosition.y - smoothedY.load()) / (FRIK::g_config->smoothingAmountHorizontal * (FRIK::g_config->
-							dampingMultiplierHorizontal / absValY) * (notMoving.load() ? FRIK::g_config->stoppingMultiplierHorizontal : 1.0f))));
+						smoothedY.load() + m_frameTime.load() * ((newPosition.y - smoothedY.load()) / (frik::g_config->smoothingAmountHorizontal * (frik::g_config->
+							dampingMultiplierHorizontal / absValY) * (notMoving.load() ? frik::g_config->stoppingMultiplierHorizontal : 1.0f))));
 				} else {
 					smoothedX.store(newPosition.x);
 					smoothedY.store(newPosition.y);
 				}
 			}
 
-			if (FRIK::g_config->disableInteriorSmoothing && interiorCell.load()) {
+			if (frik::g_config->disableInteriorSmoothing && interiorCell.load()) {
 				smoothedZ.store(newPosition.z);
 			} else {
 				float absVal = abs(newPosition.z - smoothedZ.load());
 				absVal = max(absVal, 0.1f);
 				smoothedZ.store(
-					smoothedZ.load() + m_frameTime.load() * ((newPosition.z - smoothedZ.load()) / (FRIK::g_config->smoothingAmount * (FRIK::g_config->dampingMultiplier / absVal) *
-						(notMoving.load() ? FRIK::g_config->stoppingMultiplier : 1.0f))));
+					smoothedZ.load() + m_frameTime.load() * ((newPosition.z - smoothedZ.load()) / (frik::g_config->smoothingAmount * (frik::g_config->dampingMultiplier / absVal) *
+						(notMoving.load() ? frik::g_config->stoppingMultiplier : 1.0f))));
 			}
 		}
 
@@ -134,12 +134,12 @@ namespace SmoothMovementVR {
 		if (*g_player && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 			if (*g_player && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 				BSFixedString playerWorld("PlayerWorldNode");
-				BSFixedString Hmd("HmdNode");
+				BSFixedString hmd("HmdNode");
 				BSFixedString room("RoomNode");
 				if (const auto worldNiNode = getWorldRoot()) {
 					if (NiAVObject* worldNiAV = worldNiNode) {
 						NiAVObject* playerWorldNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&playerWorld, true, true);
-						const NiAVObject* hmdNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&Hmd, true, true);
+						const NiAVObject* hmdNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&hmd, true, true);
 						//NiAVObject * roomNode = CALL_MEMBER_FN(worldNiAV, GetAVObjectByName)(&room, true, true);
 
 						if (playerWorldNode && hmdNode) {
@@ -196,8 +196,8 @@ namespace SmoothMovementVR {
 							//	_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
 							playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load()
-								? FRIK::g_config->PACameraHeight + FRIK::g_config->cameraHeight + FRIK::c_dynamicCameraHeight
-								: FRIK::g_config->cameraHeight + FRIK::c_dynamicCameraHeight;
+								? frik::g_config->PACameraHeight + frik::g_config->cameraHeight + frik::c_dynamicCameraHeight
+								: frik::g_config->cameraHeight + frik::c_dynamicCameraHeight;
 						} else {
 							_MESSAGE("Cannot get PlayerWorldNode...");
 						}
@@ -211,7 +211,7 @@ namespace SmoothMovementVR {
 		}
 	}
 
-	bool HasKeyword(const TESObjectARMO* armor, const UInt32 keywordFormId) {
+	bool hasKeyword(const TESObjectARMO* armor, const UInt32 keywordFormId) {
 		if (armor) {
 			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++) {
 				if (armor->keywordForm.keywords[i]) {
@@ -226,7 +226,7 @@ namespace SmoothMovementVR {
 
 	bool firstRun = true;
 
-	void ArmorCheck() {
+	void armorCheck() {
 		while (true) {
 			if (!*g_player || !(*g_player)->unkF0) {
 				Sleep(5000);
@@ -263,7 +263,7 @@ namespace SmoothMovementVR {
 						if (TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item) {
 							if (equippedForm->formType == TESObjectARMO::kTypeID) {
 								if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
-									if (HasKeyword(armor, KeywordPowerArmor) || HasKeyword(armor, KeywordPowerArmorFrame)) {
+									if (hasKeyword(armor, KeywordPowerArmor) || hasKeyword(armor, KeywordPowerArmorFrame)) {
 										if (!inPowerArmorFrame.load()) {
 											inPowerArmorFrame.store(true);
 										}
@@ -283,13 +283,13 @@ namespace SmoothMovementVR {
 		}
 	}
 
-	void StartFunctions() {
+	void startFunctions() {
 		QueryPerformanceFrequency(&m_hpcFrequency);
 		QueryPerformanceCounter(&m_prevTime);
 
 		_MESSAGE("Starting armor thread");
 
-		std::thread t6(ArmorCheck);
+		std::thread t6(armorCheck);
 		t6.detach();
 
 		_MESSAGE("Armor Thread Started");

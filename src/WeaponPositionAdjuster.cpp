@@ -7,7 +7,7 @@
 #include "Quaternion.h"
 #include "Skeleton.h"
 
-namespace FRIK {
+namespace frik {
 	// use as weapon name when no weapon in equipped. specifically for default back of hand UI offset.
 	constexpr auto EMPTY_HAND = "EmptyHand";
 
@@ -203,7 +203,7 @@ namespace FRIK {
 		// Calculate the rotation adjustment using quaternion by diff between scope camera vector and straight
 		Quaternion rotAdjust;
 		const auto weaponForwardVecInScopeTransform = scopeCamera->m_worldTransform.rot.Transpose() * weaponForwardVec / scopeCamera->m_worldTransform.scale;
-		rotAdjust.vec2vec(weaponForwardVecInScopeTransform, NiPoint3(1, 0, 0));
+		rotAdjust.vec2Vec(weaponForwardVecInScopeTransform, NiPoint3(1, 0, 0));
 		scopeCamera->m_localTransform.rot = rotAdjust.getRot().multiply43Left(_scopeCameraBaseMatrix);
 	}
 
@@ -280,13 +280,13 @@ namespace FRIK {
 		const auto weaponToOffhandVecWorld = getOffhandPosition() - weapon->m_worldTransform.pos;
 
 		// Convert world-space vector into weapon space
-		const auto weaponLocalVec = weapon->m_worldTransform.rot.Transpose() * vec3_norm(weaponToOffhandVecWorld) / weapon->m_worldTransform.scale;
+		const auto weaponLocalVec = weapon->m_worldTransform.rot.Transpose() * vec3Norm(weaponToOffhandVecWorld) / weapon->m_worldTransform.scale;
 
 		// Desired weapon forward direction after applying offhand offset
 		const auto adjustedWeaponVec = _offhandOffsetRot * weaponLocalVec;
 
 		// Compute rotation from canonical forward (Y) to adjusted direction
-		rotAdjust.vec2vec(adjustedWeaponVec, NiPoint3(0, 1, 0));
+		rotAdjust.vec2Vec(adjustedWeaponVec, NiPoint3(0, 1, 0));
 
 		// Compose into final local transform
 		weapon->m_localTransform.rot = rotAdjust.getRot().multiply43Left(_weaponOffsetTransform.rot);
@@ -304,7 +304,7 @@ namespace FRIK {
 		const auto scopeLocalVec = scopeCamera->m_worldTransform.rot.Transpose() * adjustedVecWorld / scopeCamera->m_worldTransform.scale;
 
 		// Compute scope rotation: align local X with this direction
-		rotAdjust.vec2vec(scopeLocalVec, NiPoint3(1, 0, 0));
+		rotAdjust.vec2Vec(scopeLocalVec, NiPoint3(1, 0, 0));
 		scopeCamera->m_localTransform.rot = rotAdjust.getRot().multiply43Left(_scopeCameraBaseMatrix);
 	}
 
@@ -314,10 +314,10 @@ namespace FRIK {
 	 */
 	bool WeaponPositionAdjuster::isOffhandCloseToBarrel(const NiNode* weapon) const {
 		const auto offhand2WeaponVec = getOffhandPosition() - weapon->m_worldTransform.pos;
-		const float distanceFromPrimaryHand = vec3_len(offhand2WeaponVec);
-		const auto weaponLocalVec = weapon->m_worldTransform.rot.Transpose() * vec3_norm(offhand2WeaponVec) / weapon->m_worldTransform.scale;
+		const float distanceFromPrimaryHand = vec3Len(offhand2WeaponVec);
+		const auto weaponLocalVec = weapon->m_worldTransform.rot.Transpose() * vec3Norm(offhand2WeaponVec) / weapon->m_worldTransform.scale;
 		const auto adjustedWeaponVec = _offhandOffsetRot * weaponLocalVec;
-		const float angleDiffToWeaponVec = vec3_dot(vec3_norm(adjustedWeaponVec), NiPoint3(0, 1, 0));
+		const float angleDiffToWeaponVec = vec3Dot(vec3Norm(adjustedWeaponVec), NiPoint3(0, 1, 0));
 		return angleDiffToWeaponVec > 0.955 && distanceFromPrimaryHand > 15;
 	}
 
@@ -334,9 +334,9 @@ namespace FRIK {
 		const auto offHandBone = g_config->leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
 
 		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_skelly->getRoot());
-		const float handFrameMovement = vec3_len(rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos - offhandFingerBonePos);
+		const float handFrameMovement = vec3Len(rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos - offhandFingerBonePos);
 
-		const float bodyFrameMovement = vec3_len(_skelly->getCurrentBodyPos() - bodyPos);
+		const float bodyFrameMovement = vec3Len(_skelly->getCurrentBodyPos() - bodyPos);
 		avgHandV[fc] = abs(handFrameMovement - bodyFrameMovement);
 		fc = (fc + 1) % 3;
 
@@ -378,7 +378,7 @@ namespace FRIK {
 		}
 		const auto reticlePos = scopeRet->GetAsNiNode()->m_worldTransform.pos;
 		const auto offhandPos = getOffhandPosition();
-		const auto offset = vec3_len(reticlePos - offhandPos);
+		const auto offset = vec3Len(reticlePos - offhandPos);
 
 		// is hand near scope
 		if (offset < g_config->scopeAdjustDistance) {

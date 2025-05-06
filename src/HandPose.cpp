@@ -7,7 +7,7 @@
 #include "common/IDebugLog.h"
 #include "f4se/NiTypes.h"
 
-namespace FRIK {
+namespace frik {
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
 

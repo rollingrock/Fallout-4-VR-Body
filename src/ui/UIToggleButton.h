@@ -2,7 +2,7 @@
 
 #include "UIWidget.h"
 
-namespace VRUI {
+namespace vrui {
 	class UIToggleButton : public UIWidget {
 	public:
 		explicit UIToggleButton(const std::string& nifPath)

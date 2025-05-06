@@ -12,7 +12,7 @@
 
 using json = nlohmann::json;
 
-namespace FRIK {
+namespace frik {
 	Config* g_config = nullptr;
 
 	constexpr int FRIK_INI_VERSION = 7;
@@ -26,19 +26,19 @@ namespace FRIK {
 	static const auto PIPBOY_SCREEN_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\PipboyPosition.json)";
 	static const auto WEAPONS_OFFSETS_PATH = BASE_PATH + R"(\Weapons_Offsets)";
 
-	/// <summary>
-	/// Open the FRIK.ini file in Notepad for editing.
-	/// </summary>
+	/**
+	 * Open the FRIK.ini file in Notepad for editing.
+	 */
 	void Config::openInNotepad() {
 		ShellExecute(nullptr, "open", "notepad.exe", FRIK_INI_PATH.c_str(), nullptr, SW_SHOWNORMAL);
 	}
 
-	/// <summary>
-	/// Check if debug data dump is requested for the given name.
-	/// If matched, the name will be removed from the list to prevent multiple dumps.
-	/// Also saved into INI to prevent reloading the same dump name on next config reload.
-	/// Support specifying multiple names by any separator as only the matched sub-string is removed.
-	/// </summary>
+	/**
+	 * Check if debug data dump is requested for the given name.
+	 * If matched, the name will be removed from the list to prevent multiple dumps.
+	 * Also saved into INI to prevent reloading the same dump name on next config reload.
+	 * Support specifying multiple names by any separator as only the matched sub-string is removed.
+	 */
 	bool Config::checkDebugDumpDataOnceFor(const char* name) {
 		const auto idx = _debugDumpDataOnceNames.find(name);
 		if (idx == std::string::npos) {
@@ -52,10 +52,10 @@ namespace FRIK {
 		return true;
 	}
 
-	/// <summary>
-	/// Runs on every game frame.
-	/// Used to reload the config file if the reload interval has passed.
-	/// </summary>
+	/**
+	 * Runs on every game frame.
+	 * Used to reload the config file if the reload interval has passed.
+	 */
 	void Config::onUpdateFrame() {
 		try {
 			if (_reloadConfigInterval <= 0) {
@@ -76,11 +76,11 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// Load the FRIK.ini config, hide meshes, and weapon offsets.
-	/// Handle creating the FRIK.ini file if it doesn't exist.
-	/// Handle updating the FRIK.ini file if the version is old.
-	/// </summary>
+	/**
+	 * Load the FRIK.ini config, hide meshes, and weapon offsets.
+	 * Handle creating the FRIK.ini file if it doesn't exist.
+	 * Handle updating the FRIK.ini file if the version is old.
+	 */
 	void Config::load() {
 		setupFolders();
 		migrateConfigFilesIfNeeded();
@@ -202,9 +202,9 @@ namespace FRIK {
 		disableInteriorSmoothingHorizontal = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothingHorizontal", true);
 	}
 
-	/// <summary>
-	/// Update the global logger log level based on the config setting.
-	/// </summary>
+	/**
+	 * Update the global logger log level based on the config setting.
+	 */
 	void Config::updateLoggerLogLevel() const {
 		_MESSAGE("Set log level = %d", logLevel);
 		const auto level = static_cast<IDebugLog::LogLevel>(logLevel);
@@ -212,13 +212,13 @@ namespace FRIK {
 		gLog.SetLogLevel(level);
 	}
 
-	/// <summary>
-	/// Current FRIK.ini file is older. Need to update it by:
-	/// 1. Overriding the file with the default FRIK.ini resource.
-	/// 2. Saving the current config values read from previous FRIK.ini to the new FRIK.ini file.
-	/// This preserves the user changed values, including new values and comments, and remove old values completly.
-	/// A backup of the previous file is created with the version number for safety.
-	/// </summary>
+	/**
+	 * Current FRIK.ini file is older. Need to update it by:
+	 * 1. Overriding the file with the default FRIK.ini resource.
+	 * 2. Saving the current config values read from previous FRIK.ini to the new FRIK.ini file.
+	 * This preserves the user changed values, including new values and comments, and remove old values completly.
+	 * A backup of the previous file is created with the version number for safety.
+	 */
 	void Config::updateFrikINIVersion() const {
 		CSimpleIniA oldIni;
 		SI_Error rc = oldIni.LoadFile(FRIK_INI_PATH.c_str());
@@ -277,9 +277,9 @@ namespace FRIK {
 		_MESSAGE("FRIK.ini updated successfully");
 	}
 
-	/// <summary>
-	/// Load hide meshes from config ini files. Creating if don't exists on the disk.
-	/// </summary>
+	/**
+	 * Load hide meshes from config ini files. Creating if don't exists on the disk.
+	 */
 	void Config::loadHideMeshes() {
 		createFileFromResourceIfNotExists(MESH_HIDE_FACE_INI_PATH, IDR_MESH_HIDE_FACE, true);
 		faceGeometry = loadListFromFile(MESH_HIDE_FACE_INI_PATH);
@@ -291,9 +291,9 @@ namespace FRIK {
 		loadHideEquipmentSlots();
 	}
 
-	/// <summary>
-	/// Slot Ids base on this link: https://falloutck.uesp.net/wiki/Biped_Slots
-	/// </summary>
+	/**
+	 * Slot Ids base on this link: https://falloutck.uesp.net/wiki/Biped_Slots
+	 */
 	void Config::loadHideEquipmentSlots() {
 		const auto slotsGeometry = loadListFromFile(MESH_HIDE_SLOTS_INI_PATH);
 
@@ -353,9 +353,9 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// Save specific key and bool value into FRIK.ini file.
-	/// </summary>
+	/**
+	 * Save specific key and bool value into FRIK.ini file.
+	 */
 	void Config::saveFrikIniValue(const char* section, const char* key, const bool value) {
 		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value ? "true" : "false");
 		CSimpleIniA ini;
@@ -364,9 +364,9 @@ namespace FRIK {
 		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
 	}
 
-	/// <summary>
-	/// Save specific key and double value into FRIK.ini file.
-	/// </summary>
+	/**
+	 * Save specific key and double value into FRIK.ini file.
+	 */
 	void Config::saveFrikIniValue(const char* section, const char* key, const double value) {
 		_MESSAGE("Config: Saving \"%s = %f\" to FRIK.ini", key, value);
 		CSimpleIniA ini;
@@ -375,9 +375,9 @@ namespace FRIK {
 		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
 	}
 
-	/// <summary>
-	/// Save specific key and string value into FRIK.ini file.
-	/// </summary>
+	/**
+	 * Save specific key and string value into FRIK.ini file.
+	 */
 	void Config::saveFrikIniValue(const char* section, const char* key, const char* value) {
 		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value);
 		CSimpleIniA ini;
@@ -386,26 +386,26 @@ namespace FRIK {
 		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
 	}
 
-	/// <summary>
-	/// Get the Pipboy offset of the currently used Pipboy type.
-	/// </summary>
+	/**
+	 * Get the Pipboy offset of the currently used Pipboy type.
+	 */
 	NiTransform Config::getPipboyOffset() {
 		return _pipboyOffsets[isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition"];
 	}
 
-	/// <summary>
-	/// Save the Pipboy offset to the offsets map.
-	/// </summary>
+	/**
+	 * Save the Pipboy offset to the offsets map.
+	 */
 	void Config::savePipboyOffset(const NiTransform& transform) {
 		const auto type = isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
 		_pipboyOffsets[type] = transform;
 		saveOffsetsToJsonFile(type, transform, isHoloPipboy ? PIPBOY_HOLO_OFFSETS_PATH : PIPBOY_SCREEN_OFFSETS_PATH);
 	}
 
-	/// <summary>
-	/// Get the name for the weapon offset to use depending on the mode.
-	/// Basically a hack to store multiple modes of the same weapon by adding suffix to the name.
-	/// </summary>
+	/**
+	 * Get the name for the weapon offset to use depending on the mode.
+	 * Basically a hack to store multiple modes of the same weapon by adding suffix to the name.
+	 */
 	static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool leftHanded) {
 		static const std::string POWER_ARMOR_SUFFIX{"-PowerArmor"};
 		static const std::string OFF_HAND_SUFFIX{"-offHand"};
@@ -421,13 +421,15 @@ namespace FRIK {
 			return name + THROWABLE_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
 		case WeaponOffsetsMode::BackOfHandUI:
 			return name + BACK_OF_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
+		default:
+			throw std::invalid_argument("Invalid weapon offset mode");
 		}
 	}
 
-	/// <summary>
-	/// Get weapon offsets for given weapon name and mode.
-	/// Use non-PA mode if PA mode offsets not found.
-	/// </summary>
+	/**
+	 * Get weapon offsets for given weapon name and mode.
+	 * Use non-PA mode if PA mode offsets not found.
+	 */
 	/// <returns></returns>
 	std::optional<NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const {
 		const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, leftHandedMode));
@@ -438,18 +440,18 @@ namespace FRIK {
 		return inPA ? getWeaponOffsets(name, mode, false) : std::nullopt;
 	}
 
-	/// <summary>
-	/// Save the weapon offset to config and filesystem.
-	/// </summary>
+	/**
+	 * Save the weapon offset to config and filesystem.
+	 */
 	void Config::saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA) {
 		const auto fullName = getWeaponNameWithMode(name, mode, inPA, leftHandedMode);
 		_weaponsOffsets[fullName] = transform;
 		saveOffsetsToJsonFile(fullName, transform, WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json");
 	}
 
-	/// <summary>
-	/// Remove the weapon offset from the config and filesystem.
-	/// </summary>
+	/**
+	 * Remove the weapon offset from the config and filesystem.
+	 */
 	void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool replaceWithEmbedded) {
 		const auto fullName = getWeaponNameWithMode(name, mode, inPA, leftHandedMode);
 		_weaponsOffsets.erase(fullName);
@@ -485,10 +487,10 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// Load offset data from given json file path and store it in the given map.
-	/// Use the entry key in the json file but for everything to work properly the name of the json should match the key.
-	/// </summary>
+	/**
+	 * Load offset data from given json file path and store it in the given map.
+	 * Use the entry key in the json file but for everything to work properly the name of the json should match the key.
+	 */
 	static void loadOffsetJsonFile(const std::string& file, std::map<std::string, NiTransform>& offsetsMap) {
 		std::ifstream inF;
 		inF.open(file, std::ios::in);
@@ -511,9 +513,9 @@ namespace FRIK {
 		loadOffsetJsonToMap(weaponJson, offsetsMap, true);
 	}
 
-	/// <summary>
-	/// Load the pipboy screen and holo screen offsets from json files.
-	/// </summary>
+	/**
+	 * Load the pipboy screen and holo screen offsets from json files.
+	 */
 	void Config::loadPipboyOffsets() {
 		createFileFromResourceIfNotExists(PIPBOY_HOLO_OFFSETS_PATH, IDR_PIPBOY_HOLO_OFFSETS, false);
 		createFileFromResourceIfNotExists(PIPBOY_SCREEN_OFFSETS_PATH, IDR_PIPBOY_SCREEN_OFFSETS, false);
@@ -537,9 +539,9 @@ namespace FRIK {
 		_MESSAGE("Loaded (%d) embedded weapon offsets", _weaponsOffsets.size());
 	}
 
-	/// <summary>
-	/// Load all the weapons offsets found in json files into the weapon offsets map.
-	/// </summary>
+	/**
+	 * Load all the weapons offsets found in json files into the weapon offsets map.
+	 */
 	void Config::loadWeaponsOffsetsFromFilesystem() {
 		for (const auto& file : std::filesystem::directory_iterator(WEAPONS_OFFSETS_PATH)) {
 			if (file.exists() && !file.is_directory()) {
@@ -549,9 +551,9 @@ namespace FRIK {
 		_MESSAGE("Loaded (%d) total weapon offsets", _weaponsOffsets.size());
 	}
 
-	/// <summary>
-	/// Save the given offsets transform to a json file using the given name.
-	/// </summary>
+	/**
+	 * Save the given offsets transform to a json file using the given name.
+	 */
 	void Config::saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) {
 		_MESSAGE("Saving offsets '%s' to '%s'", name.c_str(), file.c_str());
 		json weaponJson;
@@ -576,9 +578,9 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// Create all the folders needed for config to not handle later creating folders that don't exists.
-	/// </summary>
+	/**
+	 * Create all the folders needed for config to not handle later creating folders that don't exists.
+	 */
 	void Config::setupFolders() {
 		createDirDeep(FRIK_INI_PATH);
 		createDirDeep(MESH_HIDE_FACE_INI_PATH);

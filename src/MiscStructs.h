@@ -3,7 +3,7 @@
 #include "f4se/GameReferences.h"
 #include "f4sE_common/Relocation.h"
 
-namespace FRIK {
+namespace frik {
 	constexpr UInt32 PipboyAA = 0x0001ED3D;
 	constexpr UInt32 PipboyArmor = 0x00021B3B;
 	constexpr UInt32 MiningHelmet = 0x0022DD1F;

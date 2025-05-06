@@ -3,14 +3,14 @@
 #include <optional>
 #include "VR.h"
 
-namespace FRIK {
+namespace frik {
 	constexpr auto INI_SECTION_MAIN = "Fallout4VRBody";
 	constexpr auto INI_SECTION_DEBUG = "Debug";
 	constexpr auto INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
 
-	/// <summary>
-	/// Type of weapon related position offsets.
-	/// </summary>
+	/**
+	 * Type of weapon related position offsets.
+	 */
 	enum class WeaponOffsetsMode : uint8_t {
 		// The weapon offset in the primary hand.
 		Weapon = 0,
@@ -22,11 +22,11 @@ namespace FRIK {
 		BackOfHandUI,
 	};
 
-	/// <summary>
-	/// Holds all the configuration variables used in the mod.
-	/// Most of the configuration variables are loaded from the FRIK.ini file.
-	/// Some values can be changed in-game and persisted into the FRIK.ini file.
-	/// </summary>
+	/**
+	 * Holds all the configuration variables used in the mod.
+	 * Most of the configuration variables are loaded from the FRIK.ini file.
+	 * Some values can be changed in-game and persisted into the FRIK.ini file.
+	 */
 	class Config {
 	public:
 		void load();

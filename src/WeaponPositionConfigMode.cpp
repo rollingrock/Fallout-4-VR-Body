@@ -9,9 +9,9 @@
 #include "ui/UIToggleButton.h"
 #include "ui/UIToggleGroupContainer.h"
 
-using namespace VRUI;
+using namespace vrui;
 
-namespace FRIK {
+namespace frik {
 	/**
 	 * On release, we need to remove the UI from global manager.
 	 */
@@ -31,10 +31,10 @@ namespace FRIK {
 		transform.scale = originalTransform.scale;
 		if (g_config->leftHandedMode) {
 			transform.pos = NiPoint3(5.5f, -2.2f, 1);
-			rot.setEulerAngles(degrees_to_rads(95), degrees_to_rads(60), 0);
+			rot.setEulerAngles(degreesToRads(95), degreesToRads(60), 0);
 		} else {
 			transform.pos = NiPoint3(4.5f, -2.2f, -1);
-			rot.setEulerAngles(degrees_to_rads(85), degrees_to_rads(-65), 0);
+			rot.setEulerAngles(degreesToRads(85), degreesToRads(-65), 0);
 		}
 		transform.rot = rot.multiply43Right(originalTransform.rot);
 		return transform;
@@ -63,7 +63,7 @@ namespace FRIK {
 		transform.scale = originalTransform.scale;
 		if (g_config->leftHandedMode) {
 			Matrix44 mat;
-			mat.setEulerAngles(degrees_to_rads(180), 0, degrees_to_rads(180));
+			mat.setEulerAngles(degreesToRads(180), 0, degreesToRads(180));
 			transform.rot = mat.make43();
 			transform.pos = inPA ? NiPoint3(5, 6.5f, -11) : NiPoint3(6.2f, 4.8f, -12.2f);
 		} else {
@@ -179,7 +179,7 @@ namespace FRIK {
 		if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
-			rot.setEulerAngles(-degrees_to_rads(primAxisY / 5), -degrees_to_rads(secAxisX / 3), degrees_to_rads(primAxisX / 5));
+			rot.setEulerAngles(-degreesToRads(primAxisY / 5), -degreesToRads(secAxisX / 3), degreesToRads(primAxisX / 5));
 			transform.rot = rot.multiply43Left(transform.rot);
 		} else {
 			// adjust horizontal (y - right/left, x - forward/backward) by primary stick
@@ -201,7 +201,7 @@ namespace FRIK {
 		const auto [axisX, axisY] = getControllerState(true).rAxis[0];
 		if (axisX != 0.f || axisY != 0.f) {
 			Matrix44 rot;
-			rot.setEulerAngles(-degrees_to_rads(axisY / 5), 0, degrees_to_rads(axisX / 5));
+			rot.setEulerAngles(-degreesToRads(axisY / 5), 0, degreesToRads(axisX / 5));
 			_adjuster->_offhandOffsetRot = rot.multiply43Left(_adjuster->_offhandOffsetRot);
 		}
 	}
@@ -229,7 +229,7 @@ namespace FRIK {
 		if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
-			rot.setEulerAngles(degrees_to_rads(secAxisY / 6), degrees_to_rads(secAxisX / 6), degrees_to_rads(primAxisX / 6));
+			rot.setEulerAngles(degreesToRads(secAxisY / 6), degreesToRads(secAxisX / 6), degreesToRads(primAxisX / 6));
 			transform.rot = rot.multiply43Left(transform.rot);
 		} else {
 			// adjust horizontal (x - right/left, z - forward/backward) by primary stick
@@ -261,7 +261,7 @@ namespace FRIK {
 		if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
-			rot.setEulerAngles(-degrees_to_rads(secAxisY / 6), -degrees_to_rads(primAxisX / 6), -degrees_to_rads(primAxisY / 6));
+			rot.setEulerAngles(-degreesToRads(secAxisY / 6), -degreesToRads(primAxisX / 6), -degreesToRads(primAxisY / 6));
 			transform.rot = rot.multiply43Left(transform.rot);
 		} else {
 			// adjust horizontal (z - right/left, y - forward/backward) by primary stick
@@ -330,7 +330,7 @@ namespace FRIK {
 	}
 
 	void WeaponPositionConfigMode::resetWeaponConfig() const {
-		ShowNotification("Reset Weapon Position to Default");
+		showNotification("Reset Weapon Position to Default");
 		doHaptic();
 		_adjuster->_weaponOffsetTransform = isMeleeWeaponEquipped()
 			? getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
@@ -339,20 +339,20 @@ namespace FRIK {
 	}
 
 	void WeaponPositionConfigMode::saveWeaponConfig() const {
-		ShowNotification("Saving Weapon Position");
+		showNotification("Saving Weapon Position");
 		doHaptic();
 		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetOffhandConfig() const {
-		ShowNotification("Reset Offhand Position to Default");
+		showNotification("Reset Offhand Position to Default");
 		doHaptic();
 		_adjuster->_offhandOffsetRot = Matrix44::getIdentity43();
 		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveOffhandConfig() const {
-		ShowNotification("Saving Offhand Position");
+		showNotification("Saving Offhand Position");
 		doHaptic();
 		NiTransform transform;
 		transform.scale = 1;
@@ -362,20 +362,20 @@ namespace FRIK {
 	}
 
 	void WeaponPositionConfigMode::resetThrowableConfig() const {
-		ShowNotification("Reset Throwable Weapon Position to Default");
+		showNotification("Reset Throwable Weapon Position to Default");
 		doHaptic();
 		_adjuster->_throwableWeaponOffsetTransform = _adjuster->_throwableWeaponOriginalTransform;
 		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveThrowableConfig() const {
-		ShowNotification("Saving Throwable Weapon Position");
+		showNotification("Saving Throwable Weapon Position");
 		doHaptic();
 		g_config->saveWeaponOffsets(_adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetBackOfHandUIConfig() const {
-		ShowNotification("Reset Back of Hand UI Position to Default");
+		showNotification("Reset Back of Hand UI Position to Default");
 		doHaptic();
 		_adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_currentlyInPA);
 		_adjuster->getBackOfHandUINode()->m_localTransform = _adjuster->_backOfHandUIOffsetTransform;
@@ -383,20 +383,20 @@ namespace FRIK {
 	}
 
 	void WeaponPositionConfigMode::saveBackOfHandUIConfig() const {
-		ShowNotification("Saving Back of Hand UI Position");
+		showNotification("Saving Back of Hand UI Position");
 		doHaptic();
 		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_backOfHandUIOffsetTransform, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetBetterScopesConfig() const {
-		ShowNotification("Reset BetterScopesVR Scope Offset to Default");
+		showNotification("Reset BetterScopesVR Scope Offset to Default");
 		doHaptic();
 		NiPoint3 msgData(0.f, 0.f, 0.f);
 		g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
 	}
 
 	void WeaponPositionConfigMode::saveBetterScopesConfig() const {
-		ShowNotification("Saving BetterScopesVR Scopes Offset");
+		showNotification("Saving BetterScopesVR Scopes Offset");
 		doHaptic();
 		NiPoint3 msgData(0.f, 1, 0.f);
 		g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");

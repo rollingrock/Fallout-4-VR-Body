@@ -1,6 +1,6 @@
 #pragma once
 
-namespace FRIK {
+namespace frik {
 	class MuzzleFlash {
 	public:
 		uint64_t unk00;

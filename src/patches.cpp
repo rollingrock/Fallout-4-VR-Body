@@ -157,7 +157,7 @@ namespace patches {
 		}
 	}
 
-	static void PatchBody() {
+	static void patchBody() {
 		_MESSAGE("Patch Body In");
 		_MESSAGE("addr = %016I64X", RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr());
 
@@ -170,7 +170,7 @@ namespace patches {
 	}
 
 	void patchAll() {
-		PatchBody();
+		patchBody();
 		patchInventoryInfBug();
 		patchLockForReadMask();
 		patchPipeGunScopeCrash();

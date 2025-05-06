@@ -2,15 +2,15 @@
 
 #include "Skeleton.h"
 
-namespace FRIK {
-	/// <summary>
-	/// Handle the in-game configuration matrix UI.
-	/// Triggered by pressing down both sticks.
-	/// Allows configuration of:
-	/// - Player height
-	/// - Dampen hands
-	/// - Etc.
-	/// </summary>
+namespace frik {
+	/**
+	 * Handle the in-game configuration matrix UI.
+	 * Triggered by pressing down both sticks.
+	 * Allows configuration of:
+	 * - Player height
+	 * - Dampen hands
+	 * - Etc.
+	 */
 	class ConfigurationMode {
 	public:
 		ConfigurationMode(Skeleton* skelly, OpenVRHookManagerAPI* hook) {

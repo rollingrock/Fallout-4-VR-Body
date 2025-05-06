@@ -2,7 +2,7 @@
 #include <cmath>
 #include "utils.h"
 
-namespace FRIK {
+namespace frik {
 	void Matrix44::getEulerAngles(float* heading, float* roll, float* attitude) const {
 		if (data[2][0] < 1.0) {
 			if (data[2][0] > -1.0) {
@@ -41,18 +41,18 @@ namespace FRIK {
 	}
 
 	void Matrix44::rotateVectorVec(NiPoint3 toVec, NiPoint3 fromVec) {
-		toVec = vec3_norm(toVec);
-		fromVec = vec3_norm(fromVec);
+		toVec = vec3Norm(toVec);
+		fromVec = vec3Norm(fromVec);
 
-		const float dotP = vec3_dot(fromVec, toVec);
+		const float dotP = vec3Dot(fromVec, toVec);
 
 		if (dotP >= 0.99999) {
 			this->makeIdentity();
 			return;
 		}
 
-		NiPoint3 crossP = vec3_cross(toVec, fromVec);
-		crossP = vec3_norm(crossP);
+		NiPoint3 crossP = vec3Cross(toVec, fromVec);
+		crossP = vec3Norm(crossP);
 
 		const float phi = acosf(dotP);
 		const float rCos = cos(phi);

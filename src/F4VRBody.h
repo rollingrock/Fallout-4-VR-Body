@@ -12,7 +12,7 @@ extern PluginHandle g_pluginHandle;
 extern F4SEPapyrusInterface* g_papyrus;
 extern F4SEMessagingInterface* g_messaging;
 
-namespace FRIK {
+namespace frik {
 	extern Pipboy* g_pipboy;
 	extern ConfigurationMode* g_configurationMode;
 	extern CullGeometryHandler* g_cullGeometry;

@@ -2,7 +2,7 @@
 
 #include "f4se/PapyrusEvents.h"
 
-namespace FRIK {
+namespace frik {
 	constexpr auto BONE_SPHERE_EVEN_NAME = "OnBoneSphereEvent";
 
 	enum class BoneSphereEvent : uint8_t {

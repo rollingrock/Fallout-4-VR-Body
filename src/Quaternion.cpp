@@ -2,7 +2,7 @@
 #include <cmath>
 #include "utils.h"
 
-namespace FRIK {
+namespace frik {
 	float Quaternion::getMag() const {
 		return sqrtf(w * w + x * x + y * y + z * z);
 	}
@@ -36,7 +36,7 @@ namespace FRIK {
 	}
 
 	void Quaternion::setAngleAxis(float angle, NiPoint3 axis) {
-		axis = vec3_norm(axis);
+		axis = vec3Norm(axis);
 
 		angle /= 2;
 
@@ -146,10 +146,10 @@ namespace FRIK {
 		z = s0 * z + s1 * target.z;
 	}
 
-	void Quaternion::vec2vec(const NiPoint3 v1, const NiPoint3 v2) {
-		NiPoint3 cross = vec3_cross(vec3_norm(v1), vec3_norm(v2));
+	void Quaternion::vec2Vec(const NiPoint3 v1, const NiPoint3 v2) {
+		NiPoint3 cross = vec3Cross(vec3Norm(v1), vec3Norm(v2));
 
-		const float dotP = vec3_dot(vec3_norm(v1), vec3_norm(v2));
+		const float dotP = vec3Dot(vec3Norm(v1), vec3Norm(v2));
 
 		if (dotP > 0.99999999) {
 			this->makeIdentity();
@@ -157,16 +157,16 @@ namespace FRIK {
 		}
 		if (dotP < -0.99999999) {
 			// reverse it
-			cross = vec3_norm(vec3_cross(NiPoint3(0, 1, 0), v1));
-			if (vec3_len(cross) < 0.00000001) {
-				cross = vec3_norm(vec3_cross(NiPoint3(1, 0, 0), v1));
+			cross = vec3Norm(vec3Cross(NiPoint3(0, 1, 0), v1));
+			if (vec3Len(cross) < 0.00000001) {
+				cross = vec3Norm(vec3Cross(NiPoint3(1, 0, 0), v1));
 			}
 			this->setAngleAxis(PI, cross);
 			this->normalize();
 			return;
 		}
 
-		w = sqrt(pow(vec3_len(v1), 2) * pow(vec3_len(v2), 2)) + dotP;
+		w = sqrt(pow(vec3Len(v1), 2) * pow(vec3Len(v2), 2)) + dotP;
 		x = cross.x;
 		y = cross.y;
 		z = cross.z;

@@ -3,7 +3,7 @@
 #include <chrono>
 #include "utils.h"
 
-namespace FRIK {
+namespace frik {
 	enum ReloadState {
 		idle,
 		reloadingStart,

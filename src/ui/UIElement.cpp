@@ -1,6 +1,6 @@
 #include "UIElement.h"
 
-namespace VRUI {
+namespace vrui {
 	std::string UIElement::toString() const {
 		return std::format("UIElement: {}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f})",
 			_visible ? "V" : "H",

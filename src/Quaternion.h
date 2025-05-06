@@ -3,7 +3,7 @@
 #include "matrix.h"
 #include "f4se/NITypes.h"
 
-namespace FRIK {
+namespace frik {
 	class Quaternion {
 	public:
 		Quaternion() {
@@ -14,8 +14,8 @@ namespace FRIK {
 			z = 0.0;
 		}
 
-		Quaternion(const float X, const float Y, const float Z, const float W)
-			: w(W), x(X), y(Y), z(Z) {};
+		Quaternion(const float x, const float y, const float z, const float w)
+			: w(w), x(x), y(y), z(z) {}
 
 		Quaternion(const float real, const NiPoint3 v) {
 			w = real;
@@ -59,7 +59,7 @@ namespace FRIK {
 
 		void slerp(float interp, const Quaternion& target);
 
-		void vec2vec(NiPoint3 v1, NiPoint3 v2);
+		void vec2Vec(NiPoint3 v1, NiPoint3 v2);
 
 		//overload
 		Quaternion operator*(const float& f) const;

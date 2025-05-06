@@ -10,7 +10,7 @@
 namespace VRHook {
 	class VRSystem {
 	public:
-		enum TrackerType {
+		enum class TrackerType : std::uint8_t {
 			HMD,
 			Left,
 			Right,
@@ -25,75 +25,75 @@ namespace VRHook {
 		};
 
 		VRSystem()
-			: leftPacket(0), rightPacket(0), vrHook(RequestOpenVRHookManagerObject()), roomNode(nullptr) {
+			: _leftPacket(0), _rightPacket(0), _vrHook(RequestOpenVRHookManagerObject()), _roomNode(nullptr) {
 			initializeDevices();
 		}
 
-		void setRoomNode(NiNode* a_node) {
-			roomNode = a_node;
+		void setRoomNode(NiNode* node) {
+			_roomNode = node;
 		}
 
 		OpenVRHookManagerAPI* getHook() const {
-			return vrHook;
+			return _vrHook;
 		}
 
 		void updatePoses() {
-			vrHook->GetVRCompositor()->GetLastPoses(renderPoses, vr::k_unMaxTrackedDeviceCount, gamePoses, vr::k_unMaxTrackedDeviceCount);
+			_vrHook->GetVRCompositor()->GetLastPoses(_renderPoses, vr::k_unMaxTrackedDeviceCount, _gamePoses, vr::k_unMaxTrackedDeviceCount);
 		}
 
 		bool viveTrackersPresent() const {
-			return !viveTrackers.empty();
+			return !_viveTrackers.empty();
 		}
 
 		void setVRControllerState() {
-			if (!vrHook) {
+			if (!_vrHook) {
 				return;
 			}
-			rightControllerPrevState = rightControllerState;
-			leftControllerPrevState = leftControllerState;
+			_rightControllerPrevState = _rightControllerState;
+			_leftControllerPrevState = _leftControllerState;
 
-			const auto vrSystem = vrHook->GetVRSystem();
+			const auto vrSystem = _vrHook->GetVRSystem();
 			const auto lefthand = vrSystem->GetTrackedDeviceIndexForControllerRole(vr::ETrackedControllerRole::TrackedControllerRole_LeftHand);
 			const auto righthand = vrSystem->GetTrackedDeviceIndexForControllerRole(vr::ETrackedControllerRole::TrackedControllerRole_RightHand);
 
-			vrSystem->GetControllerState(lefthand, &leftControllerState, sizeof(vr::VRControllerState_t));
-			vrSystem->GetControllerState(righthand, &rightControllerState, sizeof(vr::VRControllerState_t));
+			vrSystem->GetControllerState(lefthand, &_leftControllerState, sizeof(vr::VRControllerState_t));
+			vrSystem->GetControllerState(righthand, &_rightControllerState, sizeof(vr::VRControllerState_t));
 
-			if (rightControllerState.unPacketNum != rightPacket) {
-				rightPacket = rightControllerState.unPacketNum;
+			if (_rightControllerState.unPacketNum != _rightPacket) {
+				_rightPacket = _rightControllerState.unPacketNum;
 			}
-			if (leftControllerState.unPacketNum != leftPacket) {
-				leftPacket = leftControllerState.unPacketNum;
+			if (_leftControllerState.unPacketNum != _leftPacket) {
+				_leftPacket = _leftControllerState.unPacketNum;
 			}
 
-			setVRControllerLongPressState(rightControllerButtonLongPressState, rightControllerState);
-			setVRControllerLongPressState(leftControllerButtonLongPressState, leftControllerState);
+			setVRControllerLongPressState(_rightControllerButtonLongPressState, _rightControllerState);
+			setVRControllerLongPressState(_leftControllerButtonLongPressState, _leftControllerState);
 		}
 
 		vr::VRControllerState_t getControllerState(const TrackerType a_tracker) const {
-			return a_tracker == Left ? leftControllerState : rightControllerState;
+			return a_tracker == TrackerType::Left ? _leftControllerState : _rightControllerState;
 		}
 
-		/// <summary>
-		/// Get the controller state for the previous frame.
-		/// Can be used to detect release of buttons (button up event).
-		/// </summary>
+		/**
+		 * Get the controller state for the previous frame.
+		 * Can be used to detect release of buttons (button up event).
+		 */
 		vr::VRControllerState_t getControllerPreviousState(const TrackerType a_tracker) const {
-			return a_tracker == Left ? leftControllerPrevState : rightControllerPrevState;
+			return a_tracker == TrackerType::Left ? _leftControllerPrevState : _rightControllerPrevState;
 		}
 
-		/// <summary>
-		/// Simplified long press mechanism. Tracks the whole buttons mask with single time value.
-		/// </summary>
+		/**
+		 * Simplified long press mechanism. Tracks the whole buttons mask with single time value.
+		 */
 		ControllerButtonLongPressState getControllerLongButtonPressedState(const TrackerType a_tracker) const {
-			return a_tracker == Left ? leftControllerButtonLongPressState : rightControllerButtonLongPressState;
+			return a_tracker == TrackerType::Left ? _leftControllerButtonLongPressState : _rightControllerButtonLongPressState;
 		}
 
-		/// <summary>
-		/// Clear the state of the controller long press to mark it was used.
-		/// </summary>
+		/**
+		 * Clear the state of the controller long press to mark it was used.
+		 */
 		void clearControllerLongButtonPressedState(const TrackerType a_tracker) {
-			(a_tracker == Left ? leftControllerButtonLongPressState : rightControllerButtonLongPressState).startTimeMilisec = 0;
+			(a_tracker == TrackerType::Left ? _leftControllerButtonLongPressState : _rightControllerButtonLongPressState).startTimeMilisec = 0;
 		}
 
 		void getTrackerNiTransformByName(const std::string& trackerName, NiTransform* transform);
@@ -120,27 +120,27 @@ namespace VRHook {
 		void initializeDevices();
 
 		std::string getProperty(vr::ETrackedDeviceProperty property, vr::TrackedDeviceIndex_t idx) const;
-		uint32_t leftPacket;
-		uint32_t rightPacket;
-		OpenVRHookManagerAPI* vrHook;
+		uint32_t _leftPacket;
+		uint32_t _rightPacket;
+		OpenVRHookManagerAPI* _vrHook;
 
 		// current state of right/left controllers
-		vr::VRControllerState_t rightControllerState;
-		vr::VRControllerState_t leftControllerState;
+		vr::VRControllerState_t _rightControllerState;
+		vr::VRControllerState_t _leftControllerState;
 
 		// previous state used to detect button up
-		vr::VRControllerState_t rightControllerPrevState;
-		vr::VRControllerState_t leftControllerPrevState;
+		vr::VRControllerState_t _rightControllerPrevState;
+		vr::VRControllerState_t _leftControllerPrevState;
 
 		// Long press data
-		ControllerButtonLongPressState rightControllerButtonLongPressState{0, 0};
-		ControllerButtonLongPressState leftControllerButtonLongPressState{0, 0};
+		ControllerButtonLongPressState _rightControllerButtonLongPressState{.ulButtonPressed = 0, .startTimeMilisec = 0};
+		ControllerButtonLongPressState _leftControllerButtonLongPressState{.ulButtonPressed = 0, .startTimeMilisec = 0};
 
-		vr::TrackedDevicePose_t renderPoses[vr::k_unMaxTrackedDeviceCount];
-		vr::TrackedDevicePose_t gamePoses[vr::k_unMaxTrackedDeviceCount];
-		std::map<std::string, vr::TrackedDeviceIndex_t> viveTrackers;
-		std::map<std::string, vr::TrackedDeviceIndex_t> controllers;
-		NiNode* roomNode;
+		vr::TrackedDevicePose_t _renderPoses[vr::k_unMaxTrackedDeviceCount];
+		vr::TrackedDevicePose_t _gamePoses[vr::k_unMaxTrackedDeviceCount];
+		std::map<std::string, vr::TrackedDeviceIndex_t> _viveTrackers;
+		std::map<std::string, vr::TrackedDeviceIndex_t> _controllers;
+		NiNode* _roomNode;
 	};
 
 	extern VRSystem* g_vrHook;

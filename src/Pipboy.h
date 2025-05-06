@@ -2,13 +2,13 @@
 
 #include "Skeleton.h"
 
-namespace FRIK {
-	/// <summary>
-	/// Hnadle Pipboy:
-	/// 1. On wrist UI override.
-	/// 2. Hand interaction with on-wrist pipboy.
-	/// 3. Flashlight on-wrist / head location toggle.
-	/// </summary>
+namespace frik {
+	/**
+	 * Handle Pipboy:
+	 * 1. On wrist UI override.
+	 * 2. Hand interaction with on-wrist Pipboy.
+	 * 3. Flashlight on-wrist / head location toggle.
+	 */
 	class Pipboy {
 	public:
 		Pipboy(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
@@ -20,9 +20,9 @@ namespace FRIK {
 			return _pipboyStatus;
 		}
 
-		/// <summary>
-		/// True if on-wrist pipboy is open.
-		/// </summary>
+		/**
+		 * True if on-wrist Pipboy is open.
+		 */
 		bool isOperatingPipboy() const {
 			return _isOperatingPipboy;
 		}
@@ -39,9 +39,9 @@ namespace FRIK {
 		void pipboyManagement();
 		void dampenPipboyScreen();
 		bool isLookingAtPipBoy() const;
-		void RightStickXSleep(int time);
-		void RightStickYSleep(int time);
-		void SecondaryTriggerSleep(int time);
+		void rightStickXSleep(int time);
+		void rightStickYSleep(int time);
+		void secondaryTriggerSleep(int time);
 
 		Skeleton* _skelly;
 		OpenVRHookManagerAPI* _vrhook;

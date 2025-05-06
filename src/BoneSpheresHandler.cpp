@@ -2,7 +2,7 @@
 #include <ranges>
 #include "F4VRBody.h"
 
-namespace FRIK {
+namespace frik {
 	void BoneSpheresHandler::onFrameUpdate() {
 		detectBoneSphere();
 		handleDebugBoneSpheres();
@@ -142,9 +142,9 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// Bone sphere detection
-	/// </summary>
+	/**
+	 * Bone sphere detection
+	 */
 	void BoneSpheresHandler::detectBoneSphere() {
 		if ((*g_player)->firstPersonSkeleton == nullptr) {
 			return;
@@ -171,7 +171,7 @@ namespace FRIK {
 			NiPoint3 offset = element.second->bone->m_worldTransform.rot * element.second->offset;
 			offset = element.second->bone->m_worldTransform.pos + offset;
 
-			double dist = vec3_len(rFinger->m_worldTransform.pos - offset);
+			double dist = vec3Len(rFinger->m_worldTransform.pos - offset);
 
 			if (dist <= static_cast<double>(element.second->radius) - 0.1) {
 				if (!element.second->stickyRight) {
@@ -209,7 +209,7 @@ namespace FRIK {
 				}
 			}
 
-			dist = static_cast<double>(vec3_len(lFinger->m_worldTransform.pos - offset));
+			dist = static_cast<double>(vec3Len(lFinger->m_worldTransform.pos - offset));
 
 			if (dist <= static_cast<double>(element.second->radius) - 0.1) {
 				if (!element.second->stickyLeft) {

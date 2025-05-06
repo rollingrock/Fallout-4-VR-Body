@@ -5,7 +5,7 @@
 #include "UIModAdapter.h"
 #include "../matrix.h"
 
-namespace VRUI {
+namespace vrui {
 	struct UISize {
 		float width;
 		float height;
@@ -18,7 +18,7 @@ namespace VRUI {
 	public:
 		UIElement() {
 			_transform.pos = NiPoint3(0, 0, 0);
-			_transform.rot = FRIK::Matrix44::getIdentity43();
+			_transform.rot = frik::Matrix44::getIdentity43();
 			_transform.scale = 1;
 		}
 

@@ -1,11 +1,13 @@
 #pragma once
 
+#include "matrix.h"
 #include "Skeleton.h"
 #include "utils.h"
 
-namespace FRIK {
+namespace frik {
 	void _SmsMESSAGE(const std::string& key, int time, const char* fmt, ...);
 	void _S1sMESSAGE(const std::string& key, const char* fmt, ...);
+	void printMatrix(const Matrix44* mat);
 	void positionDiff(const Skeleton* skelly);
 	void printAllNodes(const Skeleton* skelly);
 	void printNodes(const NiNode* nde);

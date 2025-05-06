@@ -11,16 +11,16 @@
 
 #define PI 3.14159265358979323846
 
-namespace FRIK {
+namespace frik {
 	RelocAddr<_AIProcess_ClearMuzzleFlashes> AIProcess_ClearMuzzleFlashes(0xecc710);
 	RelocAddr<_AIProcess_CreateMuzzleFlash> AIProcess_CreateMuzzleFlash(0xecc570);
 
 	using _SettingCollectionList_GetPtr = Setting* (*)(SettingCollectionList* list, const char* name);
 	RelocAddr<_SettingCollectionList_GetPtr> SettingCollectionList_GetPtr(0x501500);
 
-	/// <summary>
-	/// Get the current time in milliseconds.
-	/// </summary>
+	/**
+	 * Get the current time in milliseconds.
+	 */
 	uint64_t nowMillis() {
 		const auto now = std::chrono::system_clock::now();
 		return std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -34,12 +34,12 @@ namespace FRIK {
 		return stream.str();
 	}
 
-	float vec3_len(const NiPoint3& v1) {
+	float vec3Len(const NiPoint3& v1) {
 		return sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
 	}
 
-	NiPoint3 vec3_norm(NiPoint3 v1) {
-		const double mag = vec3_len(v1);
+	NiPoint3 vec3Norm(NiPoint3 v1) {
+		const float mag = vec3Len(v1);
 
 		if (mag < 0.000001) {
 			const float maxX = abs(v1.x);
@@ -62,11 +62,11 @@ namespace FRIK {
 		return v1;
 	}
 
-	float vec3_dot(const NiPoint3& v1, const NiPoint3& v2) {
+	float vec3Dot(const NiPoint3& v1, const NiPoint3& v2) {
 		return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 	}
 
-	NiPoint3 vec3_cross(const NiPoint3& v1, const NiPoint3& v2) {
+	NiPoint3 vec3Cross(const NiPoint3& v1, const NiPoint3& v2) {
 		return NiPoint3(
 			v1.y * v2.z - v1.z * v2.y,
 			v1.z * v2.x - v1.x * v2.z,
@@ -77,15 +77,15 @@ namespace FRIK {
 	// the determinant is proportional to the sin of the angle between two vectors.   In 3d case find the sin of the angle between v1 and v2
 	// along their angle of rotation with unit vector n
 	// https://stackoverflow.com/questions/14066933/direct-way-of-computing-clockwise-angle-between-2-vectors/16544330#16544330
-	float vec3_det(const NiPoint3 v1, const NiPoint3 v2, const NiPoint3 n) {
+	float vec3Det(const NiPoint3 v1, const NiPoint3 v2, const NiPoint3 n) {
 		return v1.x * v2.y * n.z + v2.x * n.y * v1.z + n.x * v1.y * v2.z - v1.z * v2.y * n.x - v2.z * n.y * v1.x - n.z * v1.y * v2.x;
 	}
 
-	float degrees_to_rads(const float deg) {
+	float degreesToRads(const float deg) {
 		return deg * PI / 180;
 	}
 
-	float rads_to_degrees(const float rad) {
+	float radsToDegrees(const float rad) {
 		return rad * 180 / PI;
 	}
 
@@ -103,7 +103,7 @@ namespace FRIK {
 		const auto rotAxis = NiPoint3(vec.y, -vec.x, 0);
 		Matrix44 rot;
 
-		rot.makeTransformMatrix(getRotationAxisAngle(vec3_norm(rotAxis), angle), NiPoint3(0, 0, 0));
+		rot.makeTransformMatrix(getRotationAxisAngle(vec3Norm(rotAxis), angle), NiPoint3(0, 0, 0));
 
 		return rot.make43() * vec;
 	}
@@ -112,15 +112,15 @@ namespace FRIK {
 	NiMatrix43 getRotationAxisAngle(NiPoint3 axis, const float theta) {
 		NiMatrix43 result;
 		// This math was found online http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToMatrix/
-		const double c = cosf(theta);
-		const double s = sinf(theta);
-		const double t = 1.0 - c;
-		axis = vec3_norm(axis);
+		const float c = cosf(theta);
+		const float s = sinf(theta);
+		const float t = 1.0 - c;
+		axis = vec3Norm(axis);
 		result.data[0][0] = c + axis.x * axis.x * t;
 		result.data[1][1] = c + axis.y * axis.y * t;
 		result.data[2][2] = c + axis.z * axis.z * t;
-		double tmp1 = axis.x * axis.y * t;
-		double tmp2 = axis.z * s;
+		float tmp1 = axis.x * axis.y * t;
+		float tmp2 = axis.z * s;
 		result.data[1][0] = tmp1 + tmp2;
 		result.data[0][1] = tmp1 - tmp2;
 		tmp1 = axis.x * axis.z * t;
@@ -160,7 +160,7 @@ namespace FRIK {
 			updateTransforms(nde);
 		}
 
-		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
 				updateTransformsDown(nextNode, true);
 			} else if (const auto triNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsBSTriShape() : nullptr) {
@@ -174,43 +174,43 @@ namespace FRIK {
 			nde->flags = hide ? nde->flags | 0x1 : nde->flags & ~0x1;
 		}
 
-		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
 				toggleVis(nextNode, hide, true);
 			}
 		}
 	}
 
-	void SetINIBool(const BSFixedString name, bool value) {
+	void setINIBool(const BSFixedString name, bool value) {
 		CallGlobalFunctionNoWait2<BSFixedString, bool>("Utility", "SetINIBool", BSFixedString(name.c_str()), value);
 	}
 
-	void SetINIFloat(const BSFixedString name, float value) {
+	void setINIFloat(const BSFixedString name, float value) {
 		CallGlobalFunctionNoWait2<BSFixedString, float>("Utility", "SetINIFloat", BSFixedString(name.c_str()), value);
 	}
 
-	void ShowMessagebox(const std::string& asText) {
+	void showMessagebox(const std::string& asText) {
 		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Messagebox", BSFixedString(asText.c_str()));
 	}
 
-	void ShowNotification(const std::string& asText) {
+	void showNotification(const std::string& asText) {
 		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Notification", BSFixedString(asText.c_str()));
 	}
 
-	void TurnPlayerRadioOn(bool isActive) {
+	void turnPlayerRadioOn(bool isActive) {
 		CallGlobalFunctionNoWait1<bool>("Game", "TurnPlayerRadioOn", isActive);
 	}
 
-	void ConfigureGameVars() {
-		SetINIFloat("fPipboyMaxScale:VRPipboy", 3.0000);
-		SetINIFloat("fPipboyMinScale:VRPipboy", 0.0100);
-		SetINIFloat("fVrPowerArmorScaleMultiplier:VR", 1.0000);
+	void configureGameVars() {
+		setINIFloat("fPipboyMaxScale:VRPipboy", 3.0000);
+		setINIFloat("fPipboyMinScale:VRPipboy", 0.0100f);
+		setINIFloat("fVrPowerArmorScaleMultiplier:VR", 1.0000);
 	}
 
-	void WindowFocus() {
+	void windowFocus() {
 		const HWND hwnd = ::FindWindowEx(nullptr, nullptr, "Fallout4VR", nullptr);
 		if (!hwnd) {
-			ShowMessagebox("Window Not Found");
+			showMessagebox("Window Not Found");
 			return;
 		}
 		const HWND foreground = GetForegroundWindow();
@@ -227,9 +227,8 @@ namespace FRIK {
 		}
 	}
 
-	void SimulateExtendedButtonPress(WORD vkey) {
-		HWND hwnd = ::FindWindowEx(nullptr, nullptr, "Fallout4VR", nullptr);
-		if (hwnd) {
+	void simulateExtendedButtonPress(WORD vkey) {
+		if (auto hwnd = ::FindWindowEx(nullptr, nullptr, "Fallout4VR", nullptr)) {
 			HWND foreground = GetForegroundWindow();
 			if (foreground && hwnd == foreground) {
 				INPUT input;
@@ -275,7 +274,7 @@ namespace FRIK {
 		set->SetDouble(0.0);
 
 		if (g_config->autoFocusWindow && g_config->switchUIControltoPrimary) {
-			WindowFocus();
+			windowFocus();
 		}
 	}
 
@@ -301,10 +300,10 @@ namespace FRIK {
 		rotationStickEnabledToggle(true);
 	}
 
-	/// <summary>
-	/// Check if ANY pipboy open by checking if pipboy menu can be found in the UI.
-	/// Returns true for wrist, in-front, and projected pipboy.
-	/// </summary>
+	/**
+	 * Check if ANY pipboy open by checking if pipboy menu can be found in the UI.
+	 * Returns true for wrist, in-front, and projected pipboy.
+	 */
 	bool isAnyPipboyOpen() {
 		BSFixedString pipboyMenu("PipboyMenu");
 		return (*g_ui)->GetMenu(pipboyMenu) != nullptr;
@@ -316,34 +315,34 @@ namespace FRIK {
 	static float _controlsThumbstickOriginalDeadzoneMax = 0.94f;
 	static float _controlsDirectionalOriginalDeadzone = 0.5f;
 
-	/// <summary>
-	/// If to enable/disable the use of both controllers analog thumbstick.
-	/// </summary>
+	/**
+	 * If to enable/disable the use of both controllers analog thumbstick.
+	 */
 	void setControlsThumbstickEnableState(const bool toEnable) {
 		if (_controlsThumbstickEnableState == toEnable) {
 			return; // no change
 		}
 		_controlsThumbstickEnableState = toEnable;
 		if (toEnable) {
-			SetINIFloat("fLThumbDeadzone:Controls", _controlsThumbstickOriginalDeadzone);
-			SetINIFloat("fLThumbDeadzoneMax:Controls", _controlsThumbstickOriginalDeadzoneMax);
-			SetINIFloat("fDirectionalDeadzone:Controls", _controlsDirectionalOriginalDeadzone);
+			setINIFloat("fLThumbDeadzone:Controls", _controlsThumbstickOriginalDeadzone);
+			setINIFloat("fLThumbDeadzoneMax:Controls", _controlsThumbstickOriginalDeadzoneMax);
+			setINIFloat("fDirectionalDeadzone:Controls", _controlsDirectionalOriginalDeadzone);
 		} else {
 			_controlsThumbstickOriginalDeadzone = GetINISetting("fLThumbDeadzone:Controls")->data.f32;
 			_controlsThumbstickOriginalDeadzoneMax = GetINISetting("fLThumbDeadzoneMax:Controls")->data.f32;
 			_controlsDirectionalOriginalDeadzone = GetINISetting("fDirectionalDeadzone:Controls")->data.f32;
-			SetINIFloat("fLThumbDeadzone:Controls", 1.0);
-			SetINIFloat("fLThumbDeadzoneMax:Controls", 1.0);
-			SetINIFloat("fDirectionalDeadzone:Controls", 1.0);
+			setINIFloat("fLThumbDeadzone:Controls", 1.0);
+			setINIFloat("fLThumbDeadzoneMax:Controls", 1.0);
+			setINIFloat("fDirectionalDeadzone:Controls", 1.0);
 		}
 	}
 
-	/// <summary>
-	/// If to enable/disable the use of right stick for player rotattion.
-	/// Used to disable for pipboy usage and weapon repositions.
-	/// </summary>
+	/**
+	 * If to enable/disable the use of right stick for player rotation.
+	 * Used to disable for pipboy usage and weapon repositions.
+	 */
 	void rotationStickEnabledToggle(const bool enable) {
-		SetINIFloat("fDirectionalDeadzone:Controls", enable ? g_config->directionalDeadzone : 1.0);
+		setINIFloat("fDirectionalDeadzone:Controls", enable ? g_config->directionalDeadzone : 1.0);
 	}
 
 	/**
@@ -353,9 +352,9 @@ namespace FRIK {
 		return node && !(node->flags & 0x1);
 	}
 
-	/// <summary>
-	/// Update the node flags to show/hide it.
-	/// </summary>
+	/**
+	 * Update the node flags to show/hide it.
+	 */
 	void showHideNode(NiAVObject* node, const bool toHide) {
 		if (toHide) {
 			node->flags |= 0x1; // hide
@@ -364,10 +363,10 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// Get the correct right/left handed config and whatever primary or secondary is requested.
-	/// Example: right is primary for right handed mode, but left is primary for left handed mode.
-	/// </summary>
+	/**
+	 * Get the correct right/left-handed  config and whatever primary or secondary is requested.
+	 * Example: right is primary for right-handed  mode, but left is primary for left-handed  mode.
+	 */
 	static VRHook::VRSystem::TrackerType getTrackerTypeForCorrectHand(const bool primary) {
 		return g_config->leftHandedMode
 			? primary
@@ -378,20 +377,20 @@ namespace FRIK {
 			: VRHook::VRSystem::TrackerType::Left;
 	}
 
-	/// <summary>
-	/// Get the input controller state object for the primary controller depending on left handmode.
-	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	/// </summary>
+	/**
+	 * Get the input controller state object for the primary controller depending on left handmode.
+	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	 */
 	vr::VRControllerState_t getControllerState(const bool primary) {
 		const auto tracker = getTrackerTypeForCorrectHand(primary);
 		return VRHook::g_vrHook->getControllerState(tracker);
 	}
 
-	/// <summary>
-	/// Check if the given button is pressed AFTER NOT being pressed on the primary/secondary input controller.
-	/// This will return true for ONE frame only when the button is first pressed.
-	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	/// </summary>
+	/**
+	 * Check if the given button is pressed AFTER NOT being pressed on the primary/secondary input controller.
+	 * This will return true for ONE frame only when the button is first pressed.
+	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	 */
 	bool isButtonPressedOnController(const bool primary, int buttonId) {
 		const auto tracker = getTrackerTypeForCorrectHand(primary);
 		const auto prevInput = VRHook::g_vrHook->getControllerPreviousState(tracker).ulButtonPressed;
@@ -400,11 +399,11 @@ namespace FRIK {
 		return !(prevInput & button) && input & button;
 	}
 
-	/// <summary>
-	/// Check if the given button is pressed and is HELD down on the primary/secondary input controller.
-	/// This will return true for EVERY frame while the button is pressed.
-	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	/// </summary>
+	/**
+	 * Check if the given button is pressed and is HELD down on the primary/secondary input controller.
+	 * This will return true for EVERY frame while the button is pressed.
+	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	 */
 	bool isButtonPressHeldDownOnController(const bool primary, int buttonId) {
 		const auto tracker = getTrackerTypeForCorrectHand(primary);
 		const auto prevInput = VRHook::g_vrHook->getControllerPreviousState(tracker).ulButtonPressed;
@@ -413,11 +412,11 @@ namespace FRIK {
 		return prevInput & button && input & button;
 	}
 
-	/// <summary>
-	/// Check if the given button was released AFTER beeing pressed on the primary/secondary input controller.
-	/// This will return true for ONE frame only when the button is first released.
-	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	/// </summary>
+	/**
+	 * Check if the given button was released AFTER being pressed on the primary/secondary input controller.
+	 * This will return true for ONE frame only when the button is first released.
+	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	 */
 	bool isButtonReleasedOnController(const bool primary, int buttonId) {
 		const auto tracker = getTrackerTypeForCorrectHand(primary);
 		const auto prevInput = VRHook::g_vrHook->getControllerPreviousState(tracker).ulButtonPressed;
@@ -426,29 +425,29 @@ namespace FRIK {
 		return prevInput & button && !(input & button);
 	}
 
-	/// <summary>
-	/// Check if the given button is long pressed on the primary/secondary input controller.
-	/// This will return true for EVERY frame when the button is pressed for longer then longPressSuration.
-	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	/// </summary>
-	bool isButtonLongPressedOnController(const bool primary, int buttonId, const int longPressSuration) {
+	/**
+	 * Check if the given button is long pressed on the primary/secondary input controller.
+	 * This will return true for EVERY frame when the button is pressed for longer then longPressDuration.
+	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	 */
+	bool isButtonLongPressedOnController(const bool primary, int buttonId, const int longPressDuration) {
 		const auto tracker = getTrackerTypeForCorrectHand(primary);
 		const auto longPress = VRHook::g_vrHook->getControllerLongButtonPressedState(tracker);
-		if (longPress.startTimeMilisec == 0 || nowMillis() - longPress.startTimeMilisec < longPressSuration) {
+		if (longPress.startTimeMilisec == 0 || nowMillis() - longPress.startTimeMilisec < longPressDuration) {
 			return false;
 		}
 		const auto button = vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(buttonId));
 		return longPress.ulButtonPressed & button;
 	}
 
-	/// <summary>
-	/// Check if the given button is long pressed on the primary/secondary input controller and clear the state if it is.
-	/// This will return true for ONE frame when the button is pressed for longer then longPressSuration. But if the
-	/// player continues to hold the button it will return true again after longPressSuration passed again.
-	/// Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	/// </summary>
-	bool checkAndClearButtonLongPressedOnController(const bool primary, const int buttonId, const int longPressSuration) {
-		const auto isButtonLongPressed = isButtonLongPressedOnController(primary, buttonId, longPressSuration);
+	/**
+	 * Check if the given button is long pressed on the primary/secondary input controller and clear the state if it is.
+	 * This will return true for ONE frame when the button is pressed for longer then longPressDuration. But if the
+	 * player continues to hold the button it will return true again after longPressDuration passed again.
+	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+	 */
+	bool checkAndClearButtonLongPressedOnController(const bool primary, const int buttonId, const int longPressDuration) {
+		const auto isButtonLongPressed = isButtonLongPressedOnController(primary, buttonId, longPressDuration);
 		if (isButtonLongPressed) {
 			VRHook::g_vrHook->clearControllerLongButtonPressedState(getTrackerTypeForCorrectHand(primary));
 		}
@@ -462,20 +461,20 @@ namespace FRIK {
 		const NiPoint3 objectPos = objectNode->m_worldTransform.pos;
 
 		// Calculate the direction vector from the camera to the object
-		const NiPoint3 direction = vec3_norm(NiPoint3(objectPos.x - cameraPos.x, objectPos.y - cameraPos.y, objectPos.z - cameraPos.z));
+		const NiPoint3 direction = vec3Norm(NiPoint3(objectPos.x - cameraPos.x, objectPos.y - cameraPos.y, objectPos.z - cameraPos.z));
 
 		// Get the forward vector of the camera (assuming it's the y-axis)
-		const NiPoint3 cameraForward = vec3_norm(cameraNode->m_worldTransform.rot * NiPoint3(0, 1, 0));
+		const NiPoint3 cameraForward = vec3Norm(cameraNode->m_worldTransform.rot * NiPoint3(0, 1, 0));
 
 		// Get the forward vector of the object (assuming it's the y-axis)
-		const NiPoint3 objectForward = vec3_norm(objectNode->m_worldTransform.rot * NiPoint3(0, 1, 0));
+		const NiPoint3 objectForward = vec3Norm(objectNode->m_worldTransform.rot * NiPoint3(0, 1, 0));
 
 		// Check if the camera is looking at the object
-		const float cameraDot = vec3_dot(cameraForward, direction);
+		const float cameraDot = vec3Dot(cameraForward, direction);
 		const bool isCameraLooking = cameraDot > detectThresh; // Adjust the threshold as needed
 
 		// Check if the object is facing the camera
-		const float objectDot = vec3_dot(objectForward, direction);
+		const float objectDot = vec3Dot(objectForward, direction);
 		const bool isObjectFacing = objectDot > detectThresh; // Adjust the threshold as needed
 
 		return isCameraLooking && isObjectFacing;
@@ -522,7 +521,7 @@ namespace FRIK {
 			return nde;
 		}
 
-		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
 				if (const auto ret = getChildNode(nodeName, nextNode)) {
 					return ret;
@@ -533,8 +532,8 @@ namespace FRIK {
 		return nullptr;
 	}
 
-	NiNode* get1stChildNode(const char* nodeName, const NiNode* nde) {
-		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+	NiNode* get1StChildNode(const char* nodeName, const NiNode* nde) {
+		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
 				if (!_stricmp(nodeName, nextNode->m_name.c_str())) {
 					return nextNode;
@@ -544,7 +543,7 @@ namespace FRIK {
 		return nullptr;
 	}
 
-	Setting* GetINISettingNative(const char* name) {
+	Setting* getINISettingNative(const char* name) {
 		Setting* setting = SettingCollectionList_GetPtr(*g_iniSettings, name);
 		if (!setting) {
 			setting = SettingCollectionList_GetPtr(*g_iniPrefSettings, name);
@@ -604,9 +603,9 @@ namespace FRIK {
 		return std::string(static_cast<const char*>(pData), dataSize);
 	}
 
-	/// <summary>
-	/// Find dll embeded resource by id and return its data as string.
-	/// </summary>
+	/**
+	 * Find dll embedded resource by id and return its data as string.
+	 */
 	std::string getEmbededResourceAsString(const WORD resourceId) {
 		// Must specify the dll to read its resources and not the exe
 		const HMODULE hModule = GetModuleHandle("FRIK.dll");
@@ -629,9 +628,9 @@ namespace FRIK {
 		return std::string(static_cast<const char*>(pData), dataSize);
 	}
 
-	/// <summary>
-	/// Get a simple string of the current time in HH:MM:SS format.
-	/// </summary>
+	/**
+	 * Get a simple string of the current time in HH:MM:SS format.
+	 */
 	std::string getCurrentTimeString() {
 		const std::time_t now = std::time(nullptr);
 		std::tm localTime;
@@ -641,10 +640,10 @@ namespace FRIK {
 		return std::string(buffer);
 	}
 
-	/// <summary>
-	/// Loads a list of string values from a file.
-	/// Each value is expected to be on a new line.
-	/// </summary>
+	/**
+	 * Loads a list of string values from a file.
+	 * Each value is expected to be on a new line.
+	 */
 	std::vector<std::string> loadListFromFile(const std::string& filePath) {
 		std::ifstream input;
 		input.open(filePath);
@@ -664,10 +663,10 @@ namespace FRIK {
 		return list;
 	}
 
-	/// <summary>
-	/// Create a folder structure if it doesn't exists.
-	/// Check if the given path ends with a file name and if so, remove it.
-	/// </summary>
+	/**
+	 * Create a folder structure if it doesn't exist.
+	 * Check if the given path ends with a file name and if so, remove it.
+	 */
 	void createDirDeep(const std::string& pathStr) {
 		auto path = std::filesystem::path(pathStr);
 		if (path.has_extension()) {
@@ -679,9 +678,9 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// If file at a given path doesn't exist then create it from the embedded resource.
-	/// </summary>
+	/**
+	 * If file at a given path doesn't exist then create it from the embedded resource.
+	 */
 	void createFileFromResourceIfNotExists(const std::string& filePath, const WORD resourceId, const bool fixNewline) {
 		if (std::filesystem::exists(filePath)) {
 			return;

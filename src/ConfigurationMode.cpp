@@ -9,7 +9,7 @@
 #include "Pipboy.h"
 #include "Skeleton.h"
 
-namespace FRIK {
+namespace frik {
 	constexpr const char* meshName[12] = {
 		"PB-MainTitleTrans", "PB-Tile07Trans", "PB-Tile03Trans", "PB-Tile08Trans", "PB-Tile02Trans", "PB-Tile01Trans", "PB-Tile04Trans", "PB-Tile05Trans",
 		"PB-Tile06Trans", "PB-Tile09Trans", "PB-Tile10Trans", "PB-Tile11Trans"
@@ -19,17 +19,17 @@ namespace FRIK {
 		"PB-Tile11"
 	};
 
-	/// <summary>
-	/// Open Pipboy configuration mode which also requires Pipboy to be open.
-	/// </summary>
+	/**
+	 * Open Pipboy configuration mode which also requires Pipboy to be open.
+	 */
 	void ConfigurationMode::openPipboyConfigurationMode() {
 		g_pipboy->turnOn();
 		enterPipboyConfigMode();
 	}
 
-	/// <summary>
-	/// Exit Main FRIK Config Mode
-	/// </summary>
+	/**
+	 * Exit Main FRIK Config Mode
+	 */
 	void ConfigurationMode::configModeExit() {
 		_calibrationModeUIActive = false;
 		if (NiNode* c_MBox = _skelly->getNode("messageBoxMenuWider", _skelly->getPlayerNodes()->playerworldnode)) {
@@ -67,9 +67,6 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// 
-	/// </summary>
 	void ConfigurationMode::mainConfigurationMode() {
 		if (!_calibrateModeActive) {
 			return;
@@ -89,7 +86,7 @@ namespace FRIK {
 		char* meshName4[4] = {"MC-ModeA", "MC-ModeB", "MC-ModeC", "MC-ModeD"};
 		if (!_calibrationModeUIActive) {
 			// Create Config UI
-			ShowMessagebox("FRIK Config Mode");
+			showMessagebox("FRIK Config Mode");
 			NiNode* c_MBox = _skelly->getNode("messageBoxMenuWider", _skelly->getPlayerNodes()->playerworldnode);
 			if (c_MBox) {
 				c_MBox->flags |= 0x1;
@@ -240,7 +237,7 @@ namespace FRIK {
 				auto TouchMesh = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName));
 				auto TransMesh = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName));
 				if (TouchMesh && TransMesh) {
-					float distance = vec3_len(finger - TouchMesh->m_worldTransform.pos);
+					float distance = vec3Len(finger - TouchMesh->m_worldTransform.pos);
 					if (distance > 2.0) {
 						TransMesh->m_localTransform.pos.y = 0.0;
 						if (i == 7 || i == 8 || i == 9) {
@@ -478,9 +475,9 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// The Pipboy Configuration Mode function. 
-	/// </summary>
+	/**
+	 * The Pipboy Configuration Mode function.
+	 */
 	void ConfigurationMode::pipboyConfigurationMode() {
 		if (g_pipboy->status()) {
 			float rAxisOffsetX;
@@ -543,7 +540,7 @@ namespace FRIK {
 					auto TouchMesh = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName));
 					auto TransMesh = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName));
 					if (TouchMesh && TransMesh) {
-						float distance = vec3_len(finger - TouchMesh->m_worldTransform.pos);
+						float distance = vec3Len(finger - TouchMesh->m_worldTransform.pos);
 						if (distance > 2.0) {
 							TransMesh->m_localTransform.pos.y = 0.0;
 							if (i == 1 || i == 3 || i == 10 || i == 11) {
@@ -668,7 +665,7 @@ namespace FRIK {
 					} else {
 						rAxisOffsetX = 0 - rAxisOffsetX;
 					}
-					rot.setEulerAngles(degrees_to_rads(rAxisOffsetX), 0, 0);
+					rot.setEulerAngles(degreesToRads(rAxisOffsetX), 0, 0);
 					pbRoot->m_localTransform.rot = rot.multiply43Left(pbRoot->m_localTransform.rot);
 					rot.multiply43Left(pbRoot->m_localTransform.rot);
 				}
@@ -777,11 +774,11 @@ namespace FRIK {
 		_PBConfigModeEnterCounter = 0;
 	}
 
-	/// <summary>
-	/// Check if currently in weapon reposition mode to enable or disable the rotation stick depending if pipboy is open.
-	/// Needed to operate vanilla in-fron or projected pipboy when also doing weapon repositioning.
-	/// On-wrist pipboy needs the rotation stick disabled to override its own UI.
-	/// </summary>
+	/**
+	 * Check if currently in weapon reposition mode to enable or disable the rotation stick depending if pipboy is open.
+	 * Needed to operate vanilla in-fron or projected pipboy when also doing weapon repositioning.
+	 * On-wrist pipboy needs the rotation stick disabled to override its own UI.
+	 */
 	void ConfigurationMode::checkWeaponRepositionPipboyConflict() {
 		if (!g_weaponPosition->inWeaponRepositionMode()) {
 			return;

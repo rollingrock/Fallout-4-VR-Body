@@ -3,7 +3,7 @@
 #include "UIElement.h"
 #include "UIWidget.h"
 
-namespace VRUI {
+namespace vrui {
 	/**
 	 * How the container will lay out the child elements.
 	 */

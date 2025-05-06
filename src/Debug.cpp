@@ -1,23 +1,21 @@
-#pragma once
-
-#include "Debug.h"
-#include "Skeleton.h"
-#include "utils.h"
-
 #include <iomanip>
 #include <sstream>
 
+#include "Debug.h"
 #include "BSFlattenedBoneTree.h"
+#include "matrix.h"
+#include "Skeleton.h"
+#include "utils.h"
 
-namespace FRIK {
-	/// <summary>
-	/// Holds the the last time of a log message per key.
-	/// </summary>
+namespace frik {
+	/**
+	 * Holds the last time of a log message per key.
+	 */
 	std::map<std::string, uint64_t> _tMessageMap;
 
-	/// <summary>
-	/// Get a simple string of the current time in HH:MM:SS.ms format.
-	/// </summary>
+	/**
+	 * Get a simple string of the current time in HH:MM:SS.ms format.
+	 */
 	static std::string getCurrentTimeString() {
 		const auto now = std::chrono::system_clock::now();
 		const auto now_c = std::chrono::system_clock::to_time_t(now);
@@ -30,9 +28,9 @@ namespace FRIK {
 		return oss.str();
 	}
 
-	/// <summary>
-	/// Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
-	/// </summary>
+	/**
+	 * Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
+	 */
 	static void _SmsMESSAGEImpl(const std::string& key, const int time, const char* fmt, const va_list args) {
 		if (!_tMessageMap.contains(key)) {
 			_tMessageMap[key] = nowMillis();
@@ -45,10 +43,10 @@ namespace FRIK {
 		gLog.Log(IDebugLog::kLevel_Message, msg.c_str(), args);
 	}
 
-	/// <summary>
-	/// Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
-	/// Use static key to identify the log messages that should be sampled.
-	/// </summary>
+	/**
+	 * Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
+	 * Use static key to identify the log messages that should be sampled.
+	 */
 	void _SmsMESSAGE(const std::string& key, const int time, const char* fmt, ...) {
 		va_list args;
 		va_start(args, fmt);
@@ -56,15 +54,28 @@ namespace FRIK {
 		va_end(args);
 	}
 
-	/// <summary>
-	/// Same as calling _MESSAGE but only one message log per second, other logs are dropped.
-	/// Use static key to identify the log messages that should be sampled.
-	/// </summary>
+	/**
+	 * Same as calling _MESSAGE but only one message log per second, other logs are dropped.
+	 * Use static key to identify the log messages that should be sampled.
+	 */
 	void _S1sMESSAGE(const std::string& key, const char* fmt, ...) {
 		va_list args;
 		va_start(args, fmt);
 		_SmsMESSAGEImpl(key, 1000, fmt, args);
 		va_end(args);
+	}
+
+	void printMatrix(const Matrix44* mat) {
+		_MESSAGE("Dump matrix:");
+		std::string row;
+		for (auto i = 0; i < 4; i++) {
+			for (auto j = 0; j < 4; j++) {
+				row += std::to_string(mat->data[i][j]);
+				row += " ";
+			}
+			_MESSAGE("%s", row.c_str());
+			row = "";
+		}
 	}
 
 	void positionDiff(const Skeleton* skelly) {
@@ -145,9 +156,9 @@ namespace FRIK {
 		}
 	}
 
-	/// <summary>
-	/// Print the local transform data of nodes tree.
-	/// </summary>
+	/**
+	 * Print the local transform data of nodes tree.
+	 */
 	void printNodesTransform(NiNode* node, std::string padding) {
 		_MESSAGE("%s%s child=%d, %s, Pos:(%2.3f, %2.3f, %2.3f), Rot:[[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f]]",
 			padding.c_str(), node->m_name.c_str(),
@@ -188,9 +199,9 @@ namespace FRIK {
 			transform.rot.data[2][2]);
 	}
 
-	/// <summary>
-	/// Dump the player body parts and whatever they are hidden.
-	/// </summary>
+	/**
+	 * Dump the player body parts and whatever they are hidden.
+	 */
 	void dumpPlayerGeometry(BSFadeNode* rn) {
 		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
 			const auto& geometry = rn->kGeomArray[i].spGeometry;
@@ -277,12 +288,12 @@ namespace FRIK {
 
 		//for (auto i = 0; i < rt->numTransforms; i++) {
 
-		//	//if (rt->transforms[i].refNode) {
-		//	//	_MESSAGE("%d,%s,%d,%d", fc, rt->transforms[i].refNode->m_name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
-		//	//}
-		//	//else {
-		//	//	_MESSAGE("%d,%s,%d,%d", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
-		//	//}
+		//if (rt->transforms[i].refNode) {
+		//	_MESSAGE("%d,%s,%d,%d", fc, rt->transforms[i].refNode->m_name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
+		//}
+		//else {
+		//	_MESSAGE("%d,%s,%d,%d", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
+		//}
 		//		_MESSAGE("%d,%d,%s", fc, i, rt->transforms[i].name.c_str());
 		//}
 		//
@@ -335,28 +346,28 @@ namespace FRIK {
 		//							rt->transforms[pos].world.pos.z
 		//		);
 
-		//	//	if(strstr(rt->bonePositions[i].name->data, "Finger")) {
-		//	//		Matrix44 rot;
-		//	//		rot.makeIdentity();
-		//	//		rt->transforms[pos].local.rot = rot.make43();
+		//	if(strstr(rt->bonePositions[i].name->data, "Finger")) {
+		//		Matrix44 rot;
+		//		rot.makeIdentity();
+		//		rt->transforms[pos].local.rot = rot.make43();
 
-		//	//		if (rt->transforms[pos].refNode) {
-		//	//			rt->transforms[pos].refNode->m_localTransform.rot = rot.make43();
-		//	//		}
+		//		if (rt->transforms[pos].refNode) {
+		//			rt->transforms[pos].refNode->m_localTransform.rot = rot.make43();
+		//		}
 
-		//	//		rot.makeTransformMatrix(rt->transforms[pos].local.rot, NiPoint3(0, 0, 0));
+		//		rot.makeTransformMatrix(rt->transforms[pos].local.rot, NiPoint3(0, 0, 0));
 
-		//	//		short parent = rt->transforms[pos].parPos;
-		//	//		rt->transforms[pos].world.rot = rot.multiply43Left(rt->transforms[parent].world.rot);
+		//		short parent = rt->transforms[pos].parPos;
+		//		rt->transforms[pos].world.rot = rot.multiply43Left(rt->transforms[parent].world.rot);
 
-		//	//		if (rt->transforms[pos].refNode) {
-		//	//			rt->transforms[pos].refNode->m_worldTransform.rot = rt->transforms[pos].world.rot;
-		//	//		}
+		//		if (rt->transforms[pos].refNode) {
+		//			rt->transforms[pos].refNode->m_worldTransform.rot = rt->transforms[pos].world.rot;
+		//		}
 
-		//	//	}
+		//	}
 		//	}
 
-		//	//rt->UpdateWorldBound();
+		//rt->UpdateWorldBound();
 		//}
 
 		fc++;

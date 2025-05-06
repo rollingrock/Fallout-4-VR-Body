@@ -2,7 +2,7 @@
 
 #include "UIWidget.h"
 
-namespace VRUI {
+namespace vrui {
 	class UIButton : public UIWidget {
 	public:
 		explicit UIButton(const std::string& nifPath)

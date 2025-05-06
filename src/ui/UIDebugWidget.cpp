@@ -1,6 +1,6 @@
 #include "UIDebugWidget.h"
 
-namespace VRUI {
+namespace vrui {
 	std::string UIDebugWidget::toString() const {
 		return std::format("UIDebugWidget: {}{}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f})",
 			_visible ? "V" : "H",
@@ -22,7 +22,7 @@ namespace VRUI {
 		if (_followInteractionPosition) {
 			const auto finger = adapter->getInteractionBoneWorldPosition();
 			const auto diff = finger - _node->m_worldTransform.pos;
-			if (!std::isnan(diff.x) && !std::isnan(diff.y) && !std::isnan(diff.z) && FRIK::vec3_len(diff) < 500) {
+			if (!std::isnan(diff.x) && !std::isnan(diff.y) && !std::isnan(diff.z) && frik::vec3Len(diff) < 500) {
 				_node->m_localTransform.pos += diff;
 			} else {
 				_node->m_localTransform.pos = NiPoint3(0, 0, 0);

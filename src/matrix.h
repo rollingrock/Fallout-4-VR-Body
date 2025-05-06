@@ -4,7 +4,7 @@
 
 #define PI 3.14159265358979323846
 
-namespace FRIK {
+namespace frik {
 	class Matrix44 {
 	public:
 		Matrix44() {
@@ -76,10 +76,10 @@ namespace FRIK {
 		static void matrixMultiply(const Matrix44* worldMat, const Matrix44* retMat, const Matrix44* localMat);
 
 		//overload
-		void operator =(const float a_num) {
+		void operator =(const float num) {
 			for (auto i = 0; i < 4; i++) {
 				for (auto j = 0; j < 4; j++) {
-					data[i][j] = a_num;
+					data[i][j] = num;
 				}
 			}
 		}

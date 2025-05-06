@@ -3,7 +3,7 @@
 #include "Skeleton.h"
 #include "WeaponPositionConfigMode.h"
 
-namespace FRIK {
+namespace frik {
 	class WeaponPositionAdjuster {
 		// To simplify changing offsets during configuration
 		friend class WeaponPositionConfigMode;

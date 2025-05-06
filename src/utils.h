@@ -7,7 +7,7 @@
 
 #include <chrono>
 
-namespace FRIK {
+namespace frik {
 	using _AIProcess_ClearMuzzleFlashes = void* (*)(Actor::MiddleProcess* middleProcess);
 	extern RelocAddr<_AIProcess_ClearMuzzleFlashes> AIProcess_ClearMuzzleFlashes;
 
@@ -16,17 +16,17 @@ namespace FRIK {
 
 	uint64_t nowMillis();
 	std::string toStringWithPrecision(double value, int precision = 2);
-	float vec3_len(const NiPoint3& v1);
-	NiPoint3 vec3_norm(NiPoint3 v1);
+	float vec3Len(const NiPoint3& v1);
+	NiPoint3 vec3Norm(NiPoint3 v1);
 
-	float vec3_dot(const NiPoint3& v1, const NiPoint3& v2);
+	float vec3Dot(const NiPoint3& v1, const NiPoint3& v2);
 
-	NiPoint3 vec3_cross(const NiPoint3& v1, const NiPoint3& v2);
+	NiPoint3 vec3Cross(const NiPoint3& v1, const NiPoint3& v2);
 
-	float vec3_det(NiPoint3 v1, NiPoint3 v2, NiPoint3 n);
+	float vec3Det(NiPoint3 v1, NiPoint3 v2, NiPoint3 n);
 
-	float degrees_to_rads(float deg);
-	float rads_to_degrees(float deg);
+	float degreesToRads(float deg);
+	float radsToDegrees(float rad);
 
 	NiPoint3 rotateXY(NiPoint3 vec, float angle);
 	NiPoint3 pitchVec(NiPoint3 vec, float angle);
@@ -39,16 +39,16 @@ namespace FRIK {
 
 	void toggleVis(NiNode* nde, bool hide, bool updateSelf);
 
-	void SetINIBool(BSFixedString name, bool value);
-	void SetINIFloat(BSFixedString name, float value);
+	void setINIBool(BSFixedString name, bool value);
+	void setINIFloat(BSFixedString name, float value);
 	//void SetINIInt(BSFixedString name, int value);
-	void ConfigureGameVars();
-	void WindowFocus();
-	void TurnPlayerRadioOn(bool isActive);
-	void SimulateExtendedButtonPress(WORD vkey);
+	void configureGameVars();
+	void windowFocus();
+	void turnPlayerRadioOn(bool isActive);
+	void simulateExtendedButtonPress(WORD vkey);
 	//void PipboyReopen();
-	void ShowMessagebox(const std::string& asText);
-	void ShowNotification(const std::string& asText);
+	void showMessagebox(const std::string& asText);
+	void showNotification(const std::string& asText);
 
 	void turnPipBoyOn();
 	void turnPipBoyOff();
@@ -62,8 +62,8 @@ namespace FRIK {
 	bool isButtonPressedOnController(bool primary, int buttonId);
 	bool isButtonPressHeldDownOnController(bool primary, int buttonId);
 	bool isButtonReleasedOnController(bool primary, int buttonId);
-	bool isButtonLongPressedOnController(bool primary, int buttonId, int longPressSuration = 1500);
-	bool checkAndClearButtonLongPressedOnController(bool primary, int buttonId, int longPressSuration = 1500);
+	bool isButtonLongPressedOnController(bool primary, int buttonId, int longPressDuration = 1500);
+	bool checkAndClearButtonLongPressedOnController(bool primary, int buttonId, int longPressDuration = 1500);
 
 	bool isCameraLookingAtObject(const NiAVObject* cameraNode, const NiAVObject* objectNode, float detectThresh);
 
@@ -72,9 +72,9 @@ namespace FRIK {
 	bool getLeftHandedMode();
 
 	NiNode* getChildNode(const char* nodeName, NiNode* nde);
-	NiNode* get1stChildNode(const char* nodeName, const NiNode* nde);
+	NiNode* get1StChildNode(const char* nodeName, const NiNode* nde);
 
-	Setting* GetINISettingNative(const char* name);
+	Setting* getINISettingNative(const char* name);
 
 	// get elapsed time when needed
 	template <
@@ -91,7 +91,7 @@ namespace FRIK {
 	std::string trim(const std::string& s);
 
 	std::optional<std::string> getEmbeddedResourceAsStringIfExists(WORD resourceId);
-	std::string getEmbededResourceAsString(WORD idr);
+	std::string getEmbededResourceAsString(WORD resourceId);
 	std::string getCurrentTimeString();
 	std::vector<std::string> loadListFromFile(const std::string& filePath);
 	void createDirDeep(const std::string& pathStr);

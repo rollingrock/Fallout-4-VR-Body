@@ -2,7 +2,7 @@
 
 #include "f4se/NiNodes.h"
 
-namespace FRIK {
+namespace frik {
 	using _BSFlattenedBoneTree_GetBoneIndex = int(*)(NiAVObject* a_tree, BSFixedString* a_name);
 	extern RelocAddr<_BSFlattenedBoneTree_GetBoneIndex> BSFlattenedBoneTree_GetBoneIndex;
 	using _BSFlattenedBoneTree_GetBoneNode = NiNode* (*)(NiAVObject* a_tree, BSFixedString* a_name);

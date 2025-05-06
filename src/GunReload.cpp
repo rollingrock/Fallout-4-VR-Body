@@ -6,7 +6,7 @@
 #include "VR.h"
 #include "f4se/GameExtraData.h"
 
-namespace FRIK {
+namespace frik {
 	GunReload* g_gunReloadSystem = nullptr;
 
 	float g_animDeltaTime = -1.0f;

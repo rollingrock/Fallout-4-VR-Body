@@ -31,7 +31,7 @@ UInt32 KeywordPowerArmorFrame = 0x15503F;
 
 OpenVRHookManagerAPI* _vrhook;
 
-namespace FRIK {
+namespace frik {
 	Pipboy* g_pipboy = nullptr;
 	ConfigurationMode* g_configurationMode = nullptr;
 	CullGeometryHandler* g_cullGeometry = nullptr;
@@ -48,10 +48,10 @@ namespace FRIK {
 	bool c_selfieMode = false;
 	bool GameVarsConfigured = false;
 
-	/// <summary>
-	/// TODO: think about it, is it the best way to handle this dependency indaraction.
-	/// </summary>
-	class FrameUpdateContext : public VRUI::UIModAdapter {
+	/**
+	 * TODO: think about it, is it the best way to handle this dependency indirection.
+	 */
+	class FrameUpdateContext : public vrui::UIModAdapter {
 	public:
 		FrameUpdateContext(Skeleton* skelly, OpenVRHookManagerAPI* vrhook)
 			: _skelly(skelly), _vrhook(vrhook) {}
@@ -190,9 +190,9 @@ namespace FRIK {
 		return false;
 	}
 
-	/// <summary>
-	/// On switch from normal and power armor, reset the skelly and all dependencies with persistent data.
-	/// </summary>
+	/**
+	 * On switch from normal and power armor, reset the skelly and all dependencies with persistent data.
+	 */
 	static void resetSkellyAndDependencies() {
 		delete _skelly;
 		_skelly = nullptr;
@@ -324,7 +324,7 @@ namespace FRIK {
 
 		if (!GameVarsConfigured) {
 			// TODO: move to common single time init code
-			ConfigureGameVars();
+			configureGameVars();
 			GameVarsConfigured = true;
 		}
 
@@ -398,7 +398,7 @@ namespace FRIK {
 		_skelly->positionPipboy();
 		_skelly->hidePipboy();
 		_skelly->hideFistHelpers();
-		_skelly->showHidePAHUD();
+		_skelly->showHidePAHud();
 
 		g_cullGeometry->cullPlayerGeometry();
 
@@ -452,7 +452,7 @@ namespace FRIK {
 		g_configurationMode->onUpdate();
 
 		FrameUpdateContext context(_skelly, _vrhook);
-		VRUI::g_uiManager->onFrameUpdate(&context);
+		vrui::g_uiManager->onFrameUpdate(&context);
 
 		_skelly->updateDown(_skelly->getRoot(), true); // Last world update before exit.    Probably not necessary.
 
@@ -593,9 +593,9 @@ namespace FRIK {
 		restoreFingerPoseControl(isLeft);
 	}
 
-	/// <summary>
-	/// Register code for Papyrus scripts.
-	/// </summary>
+	/**
+	 * Register code for Papyrus scripts.
+	 */
 	bool registerPapyrusFunctions(VirtualMachine* vm) {
 		// Register code to be accessible from Settings Holotape via Papyrus scripts
 		vm->RegisterFunction(new NativeFunction0("OpenMainConfigurationMode", "FRIK:FRIK", openMainConfigurationMode, vm));
