@@ -13,10 +13,13 @@
 #include "Skeleton.h"
 #include "SmoothMovementVR.h"
 #include "utils.h"
+#include "common/Logger.h"
 #include "f4se/PapyrusNativeFunctions.h"
 #include "f4vr/VR.h"
 #include "ui/UIManager.h"
 #include "ui/UIModAdapter.h"
+
+using namespace common;
 
 bool firstTime = true;
 bool printPlayerOnce = true;
@@ -136,30 +139,30 @@ namespace frik {
 
 	static bool InitSkelly(const bool inPowerArmor) {
 		if (!(*g_player)->unkF0) {
-			_DMESSAGE("loaded Data Not Set Yet");
+			Log::debug("loaded Data Not Set Yet");
 			return false;
 		}
 
-		_MESSAGE("Init Skelly - %s (Data: %016I64X)", inPowerArmor ? "PowerArmor" : "Regular", (*g_player)->unkF0);
+		Log::info("Init Skelly - %s (Data: %016I64X)", inPowerArmor ? "PowerArmor" : "Regular", (*g_player)->unkF0);
 		if (!(*g_player)->unkF0->rootNode) {
-			_MESSAGE("root node not set yet!");
+			Log::info("root node not set yet!");
 			return false;
 		}
 
-		_MESSAGE("root node   = %016I64X", (*g_player)->unkF0->rootNode);
+		Log::info("root node   = %016I64X", (*g_player)->unkF0->rootNode);
 
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-			_MESSAGE("set root");
+			Log::info("set root");
 			const auto node = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
 			if (!node) {
-				_MESSAGE("root node not found");
+				Log::info("root node not found");
 				return false;
 			}
 
 			initHandPoses(inPowerArmor);
 
 			_skelly = new Skeleton(node);
-			_MESSAGE("skeleton = %016I64X", _skelly->getRoot());
+			Log::info("skeleton = %016I64X", _skelly->getRoot());
 			if (!_skelly->setNodes()) {
 				return false;
 			}
@@ -180,10 +183,10 @@ namespace frik {
 				Setting* set = GetINISetting("fVrScale:VR");
 				set->SetDouble(g_config->fVrScale);
 			}
-			_MESSAGE("scale set");
+			Log::info("scale set");
 
 			_skelly->setBodyLen();
-			_MESSAGE("initialized");
+			Log::info("initialized");
 			return true;
 		}
 		return false;
@@ -262,7 +265,7 @@ namespace frik {
 		}
 
 		if (printPlayerOnce) {
-			_MESSAGE("g_player = %016I64X", *g_player);
+			Log::info("g_player = %016I64X", *g_player);
 			printPlayerOnce = false;
 		}
 
@@ -271,7 +274,7 @@ namespace frik {
 		const auto wasInPowerArmor = inPowerArmorSticky;
 		inPowerArmorSticky = detectInPowerArmor();
 		if (wasInPowerArmor != inPowerArmorSticky) {
-			_MESSAGE("Power Armor State Changed, reset skelly");
+			Log::info("Power Armor State Changed, reset skelly");
 			resetSkellyAndDependencies();
 			firstTime = true;
 			return;
@@ -311,7 +314,7 @@ namespace frik {
 			_skelly->setBodyLen();
 			// TODO: check if this is needed as the same call is done 10 lines below
 			g_pipboy->replaceMeshes(false);
-			_MESSAGE("initialized for real");
+			Log::info("initialized for real");
 			return;
 		}
 
@@ -319,7 +322,7 @@ namespace frik {
 		g_config->leftHandedMode = *Offsets::iniLeftHandedMode;
 		_skelly->setLeftHandedSticky();
 
-		_DMESSAGE("Start of Frame");
+		Log::debug("Start of Frame");
 
 		if (!GameVarsConfigured) {
 			// TODO: move to common single time init code
@@ -338,7 +341,7 @@ namespace frik {
 
 		f4vr::g_vrHook->setVRControllerState();
 
-		_DMESSAGE("Hide Wands");
+		Log::debug("Hide Wands");
 		_skelly->hideWands();
 
 		//	fixSkeleton();
@@ -349,34 +352,34 @@ namespace frik {
 		uint64_t ret = Offsets::TESObjectCell_GetLandHeight((*g_player)->parentCell, &position, &groundHeight);
 
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
-		_DMESSAGE("restore locals of skeleton");
+		Log::debug("restore locals of skeleton");
 		_skelly->restoreLocals(_skelly->getRoot()->m_parent->GetAsNiNode());
 		f4vr::updateDown(_skelly->getRoot(), true);
 
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
-		_DMESSAGE("Setup Head");
+		Log::debug("Setup Head");
 		NiNode* headNode = f4vr::getNode("Head", _skelly->getRoot());
 		_skelly->setupHead(headNode, g_config->hideHead);
 
 		//// set up the body underneath the headset in a proper scale and orientation
-		_DMESSAGE("Set body under HMD");
+		Log::debug("Set body under HMD");
 		_skelly->setUnderHMD(groundHeight);
 		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		// Now Set up body Posture and hook up the legs
-		_DMESSAGE("Set body posture");
+		Log::debug("Set body posture");
 		_skelly->setBodyPosture();
 		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
-		_DMESSAGE("Set Knee Posture");
+		Log::debug("Set Knee Posture");
 		_skelly->setKneePos();
-		_DMESSAGE("Set Walk");
+		Log::debug("Set Walk");
 
 		if (!g_config->armsOnly) {
 			_skelly->walk();
 		}
 		//_skelly->setLegs();
-		_DMESSAGE("Set Legs");
+		Log::debug("Set Legs");
 		_skelly->setSingleLeg(false);
 		_skelly->setSingleLeg(true);
 
@@ -384,7 +387,7 @@ namespace frik {
 		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		// do arm IK - Right then Left
-		_DMESSAGE("Set Arms");
+		Log::debug("Set Arms");
 		_skelly->handleWeaponNodes();
 		_skelly->setArms(false);
 		_skelly->setArms(true);
@@ -392,7 +395,7 @@ namespace frik {
 		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		// Misc stuff to showahide things and also setup the wrist pipboy
-		_DMESSAGE("Pipboy and Weapons");
+		Log::debug("Pipboy and Weapons");
 		_skelly->hideWeapon();
 		_skelly->positionPipboy();
 		_skelly->hidePipboy();
@@ -402,27 +405,27 @@ namespace frik {
 		g_cullGeometry->cullPlayerGeometry();
 
 		// project body out in front of the camera for debug purposes
-		_DMESSAGE("Selfie Time");
+		Log::debug("Selfie Time");
 		_skelly->selfieSkelly();
 		f4vr::updateDown(_skelly->getRoot(), true);
 
-		_DMESSAGE("fix the missing screen");
+		Log::debug("fix the missing screen");
 		fixMissingScreen(_skelly->getPlayerNodes());
 
 		if (g_config->armsOnly) {
 			_skelly->showOnlyArms();
 		}
 
-		_DMESSAGE("Operate Skelly hands");
+		Log::debug("Operate Skelly hands");
 		_skelly->setHandPose();
 
-		_DMESSAGE("Operate Pipboy");
+		Log::debug("Operate Pipboy");
 		g_pipboy->operatePipBoy();
 
-		_DMESSAGE("bone sphere stuff");
+		Log::debug("bone sphere stuff");
 		g_boneSpheres->onFrameUpdate();
 
-		_DMESSAGE("Weapon position");
+		Log::debug("Weapon position");
 		g_weaponPosition->onFrameUpdate();
 
 		//g_gunReloadSystem->Update();
@@ -476,7 +479,7 @@ namespace frik {
 	}
 
 	void startUp() {
-		_MESSAGE("Starting up F4Body");
+		Log::info("Starting up F4Body");
 		isLoaded = true;
 		g_boneSpheres = new BoneSpheresHandler();
 		scopeMenuEvent.Register();
@@ -487,17 +490,17 @@ namespace frik {
 	// Settings Holotape related funcs
 
 	static void openMainConfigurationMode(StaticFunctionTag* base) {
-		_MESSAGE("Open Main Configuration Mode...");
+		Log::info("Open Main Configuration Mode...");
 		g_configurationMode->enterConfigurationMode();
 	}
 
 	static void openPipboyConfigurationMode(StaticFunctionTag* base) {
-		_MESSAGE("Open Pipboy Configuration Mode...");
+		Log::info("Open Pipboy Configuration Mode...");
 		g_configurationMode->openPipboyConfigurationMode();
 	}
 
 	static void openFrikIniFile(StaticFunctionTag* base) {
-		_MESSAGE("Open FRIK.ini file in notepad...");
+		Log::info("Open FRIK.ini file in notepad...");
 		g_config->openInNotepad();
 	}
 
@@ -506,49 +509,49 @@ namespace frik {
 	}
 
 	static UInt32 toggleReloadFrikIniConfig(StaticFunctionTag* base) {
-		_MESSAGE("Papyrus: Toggle reload FRIK.ini config file...");
+		Log::info("Papyrus: Toggle reload FRIK.ini config file...");
 		g_config->toggleAutoReloadConfig();
 		return getFrikIniAutoReloading(base);
 	}
 
 	static UInt32 getWeaponRepositionMode(StaticFunctionTag* base) {
-		_MESSAGE("Papyrus: Get Weapon Reposition Mode");
+		Log::info("Papyrus: Get Weapon Reposition Mode");
 		return g_weaponPosition->inWeaponRepositionMode() ? 1 : 0;
 	}
 
 	static UInt32 toggleWeaponRepositionMode(StaticFunctionTag* base) {
-		_MESSAGE("Papyrus: Toggle Weapon Reposition Mode: %s", !g_weaponPosition->inWeaponRepositionMode() ? "ON" : "OFF");
+		Log::info("Papyrus: Toggle Weapon Reposition Mode: %s", !g_weaponPosition->inWeaponRepositionMode() ? "ON" : "OFF");
 		g_weaponPosition->toggleWeaponRepositionMode();
 		return getWeaponRepositionMode(base);
 	}
 
 	static bool isLeftHandedMode(StaticFunctionTag* base) {
-		_MESSAGE("Papyrus: Is Left Handed Mode");
+		Log::info("Papyrus: Is Left Handed Mode");
 		return *Offsets::iniLeftHandedMode;
 	}
 
 	static void setSelfieMode(StaticFunctionTag* base, const bool isSelfieMode) {
-		_MESSAGE("Papyrus: Set Selfie Mode: %s", isSelfieMode ? "ON" : "OFF");
+		Log::info("Papyrus: Set Selfie Mode: %s", isSelfieMode ? "ON" : "OFF");
 		c_selfieMode = isSelfieMode;
 	}
 
 	static void toggleSelfieMode(StaticFunctionTag* base) {
-		_MESSAGE("Papyrus: toggle selfie mode");
+		Log::info("Papyrus: toggle selfie mode");
 		setSelfieMode(base, !c_selfieMode);
 	}
 
 	static void moveForward(StaticFunctionTag* base) {
-		_MESSAGE("Papyrus: Move Forward");
+		Log::info("Papyrus: Move Forward");
 		g_config->playerOffset_forward += 1.0f;
 	}
 
 	static void moveBackward(StaticFunctionTag* base) {
-		_MESSAGE("Papyrus: Move Backward");
+		Log::info("Papyrus: Move Backward");
 		g_config->playerOffset_forward -= 1.0f;
 	}
 
 	static void setDynamicCameraHeight(StaticFunctionTag* base, const float dynamicCameraHeight) {
-		_MESSAGE("Papyrus: Set Dynamic Camera Height: %f", dynamicCameraHeight);
+		Log::info("Papyrus: Set Dynamic Camera Height: %f", dynamicCameraHeight);
 		c_dynamicCameraHeight = dynamicCameraHeight;
 	}
 
@@ -583,12 +586,12 @@ namespace frik {
 
 	// Finger pose related APIs
 	static void setFingerPositionScalar(StaticFunctionTag* base, const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky) {
-		_MESSAGE("Papyrus: Set Finger Position Scalar '%s' (%.3f, %.3f, %.3f, %.3f, %.3f)", isLeft ? "Left" : "Right", thumb, index, middle, ring, pinky);
+		Log::info("Papyrus: Set Finger Position Scalar '%s' (%.3f, %.3f, %.3f, %.3f, %.3f)", isLeft ? "Left" : "Right", thumb, index, middle, ring, pinky);
 		setFingerPositionScalar(isLeft, thumb, index, middle, ring, pinky);
 	}
 
 	static void restoreFingerPoseControl(StaticFunctionTag* base, const bool isLeft) {
-		_MESSAGE("Papyrus: Restore Finger Pose Control '%s'", isLeft ? "Left" : "Right");
+		Log::info("Papyrus: Restore Finger Pose Control '%s'", isLeft ? "Left" : "Right");
 		restoreFingerPoseControl(isLeft);
 	}
 

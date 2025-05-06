@@ -124,7 +124,7 @@ namespace frik {
 			Offsets::TESObjectREFR_InitHavokForCollisionObject(currentRefr);
 			Offsets::bhkUtilFunctions_SetLayer(currentRefr->unkF0->rootNode, 5);
 
-			//_MESSAGE("%016I64X", currentRefr);
+			//Log::info("%016I64X", currentRefr);
 			return true;
 		}
 		return false;

@@ -1,4 +1,3 @@
-#include <iomanip>
 #include <sstream>
 
 #include "Debug.h"
@@ -6,77 +5,21 @@
 #include "Skeleton.h"
 #include "utils.h"
 #include "common/CommonUtils.h"
+#include "common/Logger.h"
 #include "common/Matrix.h"
 
 using namespace common;
 
 namespace frik {
-	/**
-	 * Holds the last time of a log message per key.
-	 */
-	std::map<std::string, uint64_t> _tMessageMap;
-
-	/**
-	 * Get a simple string of the current time in HH:MM:SS.ms format.
-	 */
-	static std::string getCurrentTimeString() {
-		const auto now = std::chrono::system_clock::now();
-		const auto now_c = std::chrono::system_clock::to_time_t(now);
-		std::tm localTime;
-		localtime_s(&localTime, &now_c);
-		const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000;
-		std::ostringstream oss;
-		oss << std::put_time(&localTime, "%H:%M:%S")
-			<< '.' << std::setfill('0') << std::setw(3) << ms;
-		return oss.str();
-	}
-
-	/**
-	 * Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
-	 */
-	static void _SmsMESSAGEImpl(const std::string& key, const int time, const char* fmt, const va_list args) {
-		if (!_tMessageMap.contains(key)) {
-			_tMessageMap[key] = nowMillis();
-		} else if (nowMillis() - _tMessageMap[key] <= time) {
-			return;
-		} else {
-			_tMessageMap[key] = nowMillis();
-		}
-		const auto msg = getCurrentTimeString() + " SMPL " + fmt;
-		gLog.Log(IDebugLog::kLevel_Message, msg.c_str(), args);
-	}
-
-	/**
-	 * Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
-	 * Use static key to identify the log messages that should be sampled.
-	 */
-	void _SmsMESSAGE(const std::string& key, const int time, const char* fmt, ...) {
-		va_list args;
-		va_start(args, fmt);
-		_SmsMESSAGEImpl(key, time, fmt, args);
-		va_end(args);
-	}
-
-	/**
-	 * Same as calling _MESSAGE but only one message log per second, other logs are dropped.
-	 * Use static key to identify the log messages that should be sampled.
-	 */
-	void _S1sMESSAGE(const std::string& key, const char* fmt, ...) {
-		va_list args;
-		va_start(args, fmt);
-		_SmsMESSAGEImpl(key, 1000, fmt, args);
-		va_end(args);
-	}
-
 	void printMatrix(const Matrix44* mat) {
-		_MESSAGE("Dump matrix:");
+		Log::info("Dump matrix:");
 		std::string row;
 		for (auto i = 0; i < 4; i++) {
 			for (auto j = 0; j < 4; j++) {
 				row += std::to_string(mat->data[i][j]);
 				row += " ";
 			}
-			_MESSAGE("%s", row.c_str());
+			Log::info("%s", row.c_str());
 			row = "";
 		}
 	}
@@ -85,20 +28,20 @@ namespace frik {
 		const NiPoint3 firstpos = skelly->getPlayerNodes()->HmdNode->m_worldTransform.pos;
 		const NiPoint3 skellypos = skelly->getRoot()->m_worldTransform.pos;
 
-		_MESSAGE("difference = %f %f %f", firstpos.x - skellypos.x, firstpos.y - skellypos.y, firstpos.z - skellypos.z);
+		Log::info("difference = %f %f %f", firstpos.x - skellypos.x, firstpos.y - skellypos.y, firstpos.z - skellypos.z);
 	}
 
 	void printAllNodes(const Skeleton* skelly) {
 		const auto* node = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
-		_MESSAGE("--- Player Root Node ---");
+		Log::info("--- Player Root Node ---");
 		printNodes(node);
-		_MESSAGE("--- Global UI node ---");
+		Log::info("--- Global UI node ---");
 		printNodes(skelly->getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent);
 	}
 
 	void printNodes(const NiNode* nde) {
 		// print root node info first
-		_MESSAGE("%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f),  World(%5.2f, %5.2f, %5.2f)", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
+		Log::info("%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f),  World(%5.2f, %5.2f, %5.2f)", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
 			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z,
 			nde->m_worldTransform.pos.x, nde->m_worldTransform.pos.y, nde->m_worldTransform.pos.z);
 
@@ -114,12 +57,12 @@ namespace frik {
 
 	void printChildren(NiNode* child, std::string padding) {
 		padding += "..";
-		_MESSAGE("%s%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f), World(%5.2f, %5.2f, %5.2f)", padding.c_str(), child->m_name.c_str(),
+		Log::info("%s%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f), World(%5.2f, %5.2f, %5.2f)", padding.c_str(), child->m_name.c_str(),
 			child->m_children.m_emptyRunStart, child->flags & 0x1,
 			child->m_localTransform.pos.x, child->m_localTransform.pos.y, child->m_localTransform.pos.z,
 			child->m_worldTransform.pos.x, child->m_worldTransform.pos.y, child->m_worldTransform.pos.z);
 
-		//_MESSAGE("%s%s : children = %d : worldbound %f %f %f %f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart,
+		//Log::info("%s%s : children = %d : worldbound %f %f %f %f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart,
 		//	child->m_worldBound.m_kCenter.x, child->m_worldBound.m_kCenter.y, child->m_worldBound.m_kCenter.z, child->m_worldBound.m_fRadius);
 
 		if (child->GetAsNiNode()) {
@@ -134,7 +77,7 @@ namespace frik {
 	}
 
 	void printNodes(NiNode* nde, const long long curTime) {
-		_MESSAGE("%d %s : children = %d %d: local %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f", curTime, nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
+		Log::info("%d %s : children = %d %d: local %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f", curTime, nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
 			nde->m_localTransform.rot.arr[0],
 			nde->m_localTransform.rot.arr[1],
 			nde->m_localTransform.rot.arr[2],
@@ -163,7 +106,7 @@ namespace frik {
 	 * Print the local transform data of nodes tree.
 	 */
 	void printNodesTransform(NiNode* node, std::string padding) {
-		_MESSAGE("%s%s child=%d, %s, Pos:(%2.3f, %2.3f, %2.3f), Rot:[[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f]]",
+		Log::info("%s%s child=%d, %s, Pos:(%2.3f, %2.3f, %2.3f), Rot:[[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f]]",
 			padding.c_str(), node->m_name.c_str(),
 			node->m_children.m_emptyRunStart, node->flags & 0x1 ? "hidden" : "visible",
 			node->m_localTransform.pos.x,
@@ -186,7 +129,7 @@ namespace frik {
 	}
 
 	void printTransform(const std::string& name, const NiTransform& transform) {
-		_MESSAGE("Transform '%s', Pos: (%2.4f, %2.4f, %2.4f), Rot: [[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.3f, %2.3f, %2.3f]]",
+		Log::info("Transform '%s', Pos: (%2.4f, %2.4f, %2.4f), Rot: [[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.3f, %2.3f, %2.3f]]",
 			name.c_str(),
 			transform.pos.x,
 			transform.pos.y,
@@ -208,7 +151,7 @@ namespace frik {
 	void dumpPlayerGeometry(BSFadeNode* rn) {
 		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
 			const auto& geometry = rn->kGeomArray[i].spGeometry;
-			_MESSAGE("Geometry[%d] = '%s' (%s)", i, geometry->m_name.c_str(), geometry->flags & 0x1 ? "Hidden" : "Visible");
+			Log::info("Geometry[%d] = '%s' (%s)", i, geometry->m_name.c_str(), geometry->flags & 0x1 ? "Hidden" : "Visible");
 		}
 	}
 
@@ -218,17 +161,17 @@ namespace frik {
 		//Offsets::ForceGamePause(*g_menuControls);
 
 		auto rn = static_cast<BSFadeNode*>(skelly->getRoot()->m_parent);
-		//_MESSAGE("newrun");
+		//Log::info("newrun");
 
 		//for (int i = 0; i < 44; i++) {
 		//	if ((*g_player)->equipData->slots[i].item != nullptr) {
 		//		std::string name = (*g_player)->equipData->slots[i].item->GetFullName();
 		//		auto form_type = (*g_player)->equipData->slots[i].item->GetFormType();
-		//		_MESSAGE("%s formType = %d", name.c_str(), form_type);
+		//		Log::info("%s formType = %d", name.c_str(), form_type);
 		//		if (form_type == FormType::kFormType_ARMO) {
 		//			auto form = reinterpret_cast<TESObjectARMO*>((*g_player)->equipData->slots[i].item);
 		//			auto bipedslot = form->bipedObject.data.parts;
-		//			_MESSAGE("biped slot = %d", bipedslot);
+		//			Log::info("biped slot = %d", bipedslot);
 		//		}
 		//	}
 		//}
@@ -256,11 +199,11 @@ namespace frik {
 		//	}
 		//}
 
-		//_MESSAGE("throwing-> %d", Actor_CanThrow(*g_player, g_equipIndex));
+		//Log::info("throwing-> %d", Actor_CanThrow(*g_player, g_equipIndex));
 
 		//for (auto i = 0; i < rn->kGeomArray.capacity-1; ++i) {
 		//	BSFadeNode::FlattenedGeometryData data = rn->kGeomArray[i];
-		//	_MESSAGE("%s", data.spGeometry->m_name.c_str());
+		//	Log::info("%s", data.spGeometry->m_name.c_str());
 		//}
 
 		//_playerNodes->ScopeParentNode->flags &= 0xfffffffffffffffe;
@@ -270,7 +213,7 @@ namespace frik {
 		////	NiAVObject* node = (*g_player)->firstPersonSkeleton->GetObjectByName(&name);
 		//	NiAVObject* node = _root->GetObjectByName(&name);
 		//	if (!node) { return; }
-		//	_MESSAGE("%d %f %f %f %f %f %f", node->flags & 0xF, node->m_localTransform.pos.x,
+		//	Log::info("%d %f %f %f %f %f %f", node->flags & 0xF, node->m_localTransform.pos.x,
 		//									 node->m_localTransform.pos.y,
 		//									 node->m_localTransform.pos.z,
 		//									 node->m_worldTransform.pos.x,
@@ -279,7 +222,7 @@ namespace frik {
 		//									);
 
 		//	for (auto i = 0; i < (*g_player)->inventoryList->items.count; i++) {
-		//	_MESSAGE("%d,%d,%x,%x,%s", fc, i, (*g_player)->inventoryList->items[i].form->formID, (*g_player)->inventoryList->items[i].form->formType, (*g_player)->inventoryList->items[i].form->GetFullName());
+		//	Log::info("%d,%d,%x,%x,%s", fc, i, (*g_player)->inventoryList->items[i].form->formID, (*g_player)->inventoryList->items[i].form->formType, (*g_player)->inventoryList->items[i].form->GetFullName());
 		//}
 
 		//if (fc < 1) {
@@ -292,21 +235,21 @@ namespace frik {
 		//for (auto i = 0; i < rt->numTransforms; i++) {
 
 		//if (rt->transforms[i].refNode) {
-		//	_MESSAGE("%d,%s,%d,%d", fc, rt->transforms[i].refNode->m_name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
+		//	Log::info("%d,%s,%d,%d", fc, rt->transforms[i].refNode->m_name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
 		//}
 		//else {
-		//	_MESSAGE("%d,%s,%d,%d", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
+		//	Log::info("%d,%s,%d,%d", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
 		//}
-		//		_MESSAGE("%d,%d,%s", fc, i, rt->transforms[i].name.c_str());
+		//		Log::info("%d,%d,%s", fc, i, rt->transforms[i].name.c_str());
 		//}
 		//
 		//for (auto i = 0; i < rt->numTransforms; i++) {
 		//	int pos = rt->bonePositions[i].position;
 		//	if (rt->bonePositions[i].name && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
-		//		_MESSAGE("%d,%d,%s", fc, pos, rt->bonePositions[i].name->data);
+		//		Log::info("%d,%d,%s", fc, pos, rt->bonePositions[i].name->data);
 		//	}
 		//	else {
-		//		_MESSAGE("%d,%d", fc, pos);
+		//		Log::info("%d,%d", fc, pos);
 		//	}
 		//}
 
@@ -315,7 +258,7 @@ namespace frik {
 		//		if (pos > rt->numTransforms) {
 		//			continue;
 		//		}
-		//		_MESSAGE("%d,%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", fc, rt->bonePositions[i].name->data,
+		//		Log::info("%d,%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", fc, rt->bonePositions[i].name->data,
 		//							rt->bonePositions[i].position,
 		//							rt->transforms[pos].local.rot.arr[0],
 		//							rt->transforms[pos].local.rot.arr[1],

@@ -4,6 +4,7 @@
 #include "Skeleton.h"
 #include "utils.h"
 #include "common/CommonUtils.h"
+#include "common/Logger.h"
 #include "f4vr/F4VRUtils.h"
 #include "ui/UIButton.h"
 #include "ui/UIContainer.h"
@@ -291,7 +292,7 @@ namespace frik {
 	}
 
 	void WeaponPositionConfigMode::resetConfig() const {
-		_MESSAGE("Reset Reposition Config for target: %d, Weapon: %s", _repositionTarget, _adjuster->_currentWeapon.c_str());
+		Log::info("Reset Reposition Config for target: %d, Weapon: %s", _repositionTarget, _adjuster->_currentWeapon.c_str());
 		switch (_repositionTarget) {
 		case RepositionTarget::Weapon:
 			resetWeaponConfig();
@@ -312,7 +313,7 @@ namespace frik {
 	}
 
 	void WeaponPositionConfigMode::saveConfig() const {
-		_MESSAGE("Save Reposition Config for target: %d, Weapon: %s", _repositionTarget, _adjuster->_currentWeapon.c_str());
+		Log::info("Save Reposition Config for target: %d, Weapon: %s", _repositionTarget, _adjuster->_currentWeapon.c_str());
 		switch (_repositionTarget) {
 		case RepositionTarget::Weapon:
 			saveWeaponConfig();

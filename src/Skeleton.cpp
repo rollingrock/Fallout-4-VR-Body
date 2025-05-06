@@ -12,6 +12,7 @@
 #include "Pipboy.h"
 #include "f4vr/VR.h"
 #include "common/CommonUtils.h"
+#include "common/Logger.h"
 #include "common/Quaternion.h"
 #include "f4se/GameForms.h"
 #include "f4vr/F4VRUtils.h"
@@ -66,7 +67,7 @@ namespace frik {
 		boneTreeVec.clear();
 
 		for (auto i = 0; i < rt->numTransforms; i++) {
-			_MESSAGE("BoneTree Init -> Push %s into position %d", rt->transforms[i].name.c_str(), i);
+			Log::info("BoneTree Init -> Push %s into position %d", rt->transforms[i].name.c_str(), i);
 			boneTreeMap.insert({rt->transforms[i].name.c_str(), i});
 			boneTreeVec.emplace_back(rt->transforms[i].name.c_str());
 		}
@@ -214,7 +215,7 @@ namespace frik {
 		NiNode* fn = getNode(name.c_str(), node);
 
 		if (!fn) {
-			_MESSAGE("cannot find node %s", name.c_str());
+			Log::info("cannot find node %s", name.c_str());
 			return;
 		}
 
@@ -226,7 +227,7 @@ namespace frik {
 			node->m_localTransform.pos = _boneLocalDefault[name];
 			it->second = node->m_localTransform;
 		}
-		_MESSAGE("inserted %s", name.c_str());
+		Log::info("inserted %s", name.c_str());
 	}
 
 	void Skeleton::initLocalDefaults() {
@@ -294,7 +295,7 @@ namespace frik {
 		initLocalDefaults();
 
 		if (!node) {
-			_MESSAGE("Cannot save states Tree");
+			Log::info("Cannot save states Tree");
 			return;
 		}
 
@@ -328,7 +329,7 @@ namespace frik {
 
 	void Skeleton::restoreLocals(NiNode* node) {
 		if (!node || !node->m_name) {
-			_MESSAGE("cannot restore locals");
+			Log::info("cannot restore locals");
 			return;
 		}
 
@@ -356,7 +357,7 @@ namespace frik {
 		_playerNodes = reinterpret_cast<f4vr::PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
 
 		if (!_playerNodes) {
-			_MESSAGE("player nodes not set");
+			Log::info("player nodes not set");
 			return false;
 		}
 
@@ -365,7 +366,7 @@ namespace frik {
 		setCommonNode();
 
 		if (!_common) {
-			_MESSAGE("Common Node Not Set");
+			Log::info("Common Node Not Set");
 			return false;
 		}
 
@@ -388,9 +389,9 @@ namespace frik {
 		_spine = getNode("SPINE2", _root);
 		_chest = getNode("Chest", _root);
 
-		_MESSAGE("common node = %016I64X", _common);
-		_MESSAGE("righthand node = %016I64X", _rightHand);
-		_MESSAGE("lefthand node = %016I64X", _leftHand);
+		Log::info("common node = %016I64X", _common);
+		Log::info("righthand node = %016I64X", _rightHand);
+		Log::info("lefthand node = %016I64X", _leftHand);
 
 		// Setup Arms
 		const std::vector<std::pair<BSFixedString, NiAVObject**>> armNodes = {
@@ -413,7 +414,7 @@ namespace frik {
 		for (const auto& [name, node] : armNodes) {
 			*node = _common->GetObjectByName(&name);
 		}
-		_MESSAGE("finished set arm nodes");
+		Log::info("finished set arm nodes");
 
 		_handBones = handOpen;
 
@@ -451,7 +452,7 @@ namespace frik {
 
 		_savedStates.clear();
 		saveStatesTree(_root->m_parent->GetAsNiNode());
-		_MESSAGE("finished saving tree");
+		Log::info("finished saving tree");
 
 		initBoneTreeMap(_root);
 		return true;
@@ -472,7 +473,7 @@ namespace frik {
 
 	float Skeleton::getNeckYaw() const {
 		if (!_playerNodes) {
-			_MESSAGE("player nodes not set in neck yaw");
+			Log::info("player nodes not set in neck yaw");
 			return 0.0;
 		}
 
@@ -857,7 +858,7 @@ namespace frik {
 				_currentStepTime = 0.0;
 				_stepDir = dir;
 				_stepTimeinStep = stepTime;
-				//_MESSAGE("%2f %2f", curSpeed, stepTime);
+				//Log::info("%2f %2f", curSpeed, stepTime);
 
 				if (_footStepping == 1) {
 					_footStepping = 2;
@@ -1353,7 +1354,7 @@ namespace frik {
 		NiNode* lHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 		if (!rightWeapon || !rHand || !leftWeapon || !lHand) {
-			_DMESSAGE("Cannot set up weapon nodes");
+			Log::debug("Cannot set up weapon nodes");
 			_leftHandedSticky = g_config->leftHandedMode;
 			return;
 		}
@@ -1546,14 +1547,14 @@ namespace frik {
 		// Blend the two twist angles together, using the primary angle more when the wrist is pointing downward
 		//float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.25f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
 		float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.45f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
-		//		_MESSAGE("%2f %2f %2f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), interpTwist);
+		//		Log::info("%2f %2f %2f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), interpTwist);
 		twistAngle = twistAngle + interpTwist * (twistAngle2 - twistAngle);
 		// Wonkiness is bad.  Interpolate twist angle towards zero to correct it when the angles are pointed a certain way.
 		/*	float fixWonkiness1 = (std::clamp)(vec3_dot(handSide, vec3_norm(-sidewaysDir - forwardDir * 0.25f + NiPoint3(0, 0, -0.25f))), 0.0f, 1.0f);
 			float fixWonkiness2 = 1.0f - (std::clamp)(vec3_dot(handBack, vec3_norm(forwardDir + sidewaysDir)), 0.0f, 1.0f);
 			twistAngle = twistAngle + fixWonkiness1 * fixWonkiness2 * (-PI / 2.0f - twistAngle);*/
 
-		//		_MESSAGE("final angle %2f", rads_to_degrees(twistAngle));
+		//		Log::info("final angle %2f", rads_to_degrees(twistAngle));
 
 		// Smooth out sudden changes in the twist angle over time to reduce elbow shake
 		static std::array<float, 2> prevAngle = {0, 0};
@@ -1588,7 +1589,7 @@ namespace frik {
 		// Twist angle ranges from -PI/2 to +PI/2; map that range to go from the minimum to the maximum instead
 		float twistLimitAngle = twistMinAngle + (twistAngle + PI / 2.0f) / PI * (twistMaxAngle - twistMinAngle);
 
-		//_MESSAGE("%f %f %f %f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), rads_to_degrees(twistAngle), rads_to_degrees(twistLimitAngle));
+		//Log::info("%f %f %f %f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), rads_to_degrees(twistAngle), rads_to_degrees(twistLimitAngle));
 		// The bendDownDir vector points in the direction the player faces, and bends up/down with the final elbow angle
 		NiMatrix43 rot = getRotationAxisAngle(sidewaysDir * negLeft, twistLimitAngle);
 		NiPoint3 bendDownDir = rot * forwardDir;

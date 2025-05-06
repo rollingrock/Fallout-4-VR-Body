@@ -10,6 +10,7 @@
 #include "Menu.h"
 #include "utils.h"
 #include "common/CommonUtils.h"
+#include "common/Logger.h"
 #include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VR.h"
@@ -140,7 +141,7 @@ namespace frik {
 			_ShowNode->m_localTransform.scale = 1;
 		}
 
-		_MESSAGE("Pipboy Meshes replaced! Hide: %s, Show: %s", itemHide.c_str(), itemShow.c_str());
+		Log::info("Pipboy Meshes replaced! Hide: %s, Show: %s", itemHide.c_str(), itemShow.c_str());
 	}
 
 	void Pipboy::operatePipBoy() {
@@ -184,7 +185,7 @@ namespace frik {
 				}
 				disablePipboyHandPose();
 				_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
-				_MESSAGE("Disabling Pipboy with button");
+				Log::info("Disabling Pipboy with button");
 				_stickyoffpip = true;
 			}
 		} else if (!pipOffButtonPressed) {
@@ -216,7 +217,7 @@ namespace frik {
 				turnPipBoyOn();
 				setPipboyHandPose();
 				_isOperatingPipboy = true;
-				_MESSAGE("Enabling Pipboy with button");
+				Log::info("Enabling Pipboy with button");
 				_stickybpip = false;
 			} else {
 				// stickypip is a guard so we don't constantly toggle the pip boy every frame
@@ -240,7 +241,7 @@ namespace frik {
 				}
 				disablePipboyHandPose();
 				_isOperatingPipboy = false;
-				//		_MESSAGE("Disabling PipBoy due to inactivity for %d more than %d ms", timeElapsed, g_config->pipBoyOffDelay);
+				//		Log::info("Disabling PipBoy due to inactivity for %d more than %d ms", timeElapsed, g_config->pipBoyOffDelay);
 			} else if (g_config->pipBoyAllowMovementNotLooking && _pipboyStatus && (axis_state.x != 0 || axis_state.y != 0) && !g_configurationMode->isPipBoyConfigModeActive()) {
 				turnPipBoyOff();
 				_pipboyStatus = false;
@@ -251,7 +252,7 @@ namespace frik {
 				}
 				disablePipboyHandPose();
 				_isOperatingPipboy = false;
-				//		_MESSAGE("Disabling PipBoy due to movement when not looking at pipboy. input: (%f, %f)", axis_state.x, axis_state.y);
+				//		Log::info("Disabling PipBoy due to movement when not looking at pipboy. input: (%f, %f)", axis_state.x, axis_state.y);
 			}
 			return;
 		}

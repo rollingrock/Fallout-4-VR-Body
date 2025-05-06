@@ -2,6 +2,7 @@
 
 #include "../Debug.h"
 #include "../common/CommonUtils.h"
+#include "../common/Logger.h"
 
 using namespace common;
 
@@ -124,7 +125,7 @@ namespace vrui {
 		// use previous position to prevent press when moving hand backwards
 		if (_pressYOffset > PRESS_TRIGGER_DISTANCE) {
 			// widget pushed enough, fire press event
-			_MESSAGE("UI Widget '%s' pressed", _node->m_name.c_str());
+			Log::info("UI Widget '%s' pressed", _node->m_name.c_str());
 			onPressEventFiredPropagate(this, context);
 		}
 	}

@@ -9,6 +9,7 @@
 
 #include "utils.h"
 #include "common/CommonUtils.h"
+#include "common/Logger.h"
 #include "res/resource.h"
 
 using json = nlohmann::json;
@@ -50,7 +51,7 @@ namespace frik {
 		// write to INI for auto-reload not to re-enable it
 		saveFrikIniValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", _debugDumpDataOnceNames.c_str());
 
-		_MESSAGE("---- Debug Dump Data check passed for '%s' ----", name);
+		Log::info("---- Debug Dump Data check passed for '%s' ----", name);
 		return true;
 	}
 
@@ -69,12 +70,13 @@ namespace frik {
 				return;
 			}
 
-			_VMESSAGE("Reloading FRIK.ini file...");
+			Log::verbose("Reloading FRIK.ini file...");
 			lastReloadTime = now;
 			loadFrikINI();
 			loadHideMeshes();
+			Log::setLogLevel(logLevel);
 		} catch (const std::exception& e) {
-			_WARNING("Failed to reload FRIK.ini file: %s", e.what());
+			Log::warn("Failed to reload FRIK.ini file: %s", e.what());
 		}
 	}
 
@@ -92,25 +94,25 @@ namespace frik {
 
 		loadFrikINI();
 
-		updateLoggerLogLevel();
+		Log::setLogLevel(logLevel);
 
 		if (version < FRIK_INI_VERSION) {
-			_MESSAGE("Updating FRIK.ini version %d -> %d", version, FRIK_INI_VERSION);
+			Log::info("Updating FRIK.ini version %d -> %d", version, FRIK_INI_VERSION);
 			updateFrikINIVersion();
 			// reload the config after update
 			loadFrikINI();
 		}
 
-		_MESSAGE("Load hide meshes...");
+		Log::info("Load hide meshes...");
 		loadHideMeshes();
 
-		_MESSAGE("Load pipboy offsets...");
+		Log::info("Load pipboy offsets...");
 		loadPipboyOffsets();
 
-		_MESSAGE("Load weapon embedded offsets...");
+		Log::info("Load weapon embedded offsets...");
 		loadWeaponsOffsetsFromEmbedded();
 
-		_MESSAGE("Load weapon custom offsets...");
+		Log::info("Load weapon custom offsets...");
 		loadWeaponsOffsetsFromFilesystem();
 	}
 
@@ -205,16 +207,6 @@ namespace frik {
 	}
 
 	/**
-	 * Update the global logger log level based on the config setting.
-	 */
-	void Config::updateLoggerLogLevel() const {
-		_MESSAGE("Set log level = %d", logLevel);
-		const auto level = static_cast<IDebugLog::LogLevel>(logLevel);
-		gLog.SetPrintLevel(level);
-		gLog.SetLogLevel(level);
-	}
-
-	/**
 	 * Current FRIK.ini file is older. Need to update it by:
 	 * 1. Overriding the file with the default FRIK.ini resource.
 	 * 2. Saving the current config values read from previous FRIK.ini to the new FRIK.ini file.
@@ -251,10 +243,10 @@ namespace frik {
 				const auto oldVal = oldIni.GetValue(section.pItem, key.pItem);
 				const auto newVal = newIni.GetValue(section.pItem, key.pItem);
 				if (newVal != nullptr && std::strcmp(oldVal, newVal) != 0) {
-					_MESSAGE("Migrating %s.%s = %s", section.pItem, key.pItem, oldIni.GetValue(section.pItem, key.pItem));
+					Log::info("Migrating %s.%s = %s", section.pItem, key.pItem, oldIni.GetValue(section.pItem, key.pItem));
 					newIni.SetValue(section.pItem, key.pItem, oldIni.GetValue(section.pItem, key.pItem));
 				} else {
-					_VMESSAGE("Skipping %s.%s (%s)", section.pItem, key.pItem, newVal == nullptr ? "removed" : "unchanged");
+					Log::verbose("Skipping %s.%s (%s)", section.pItem, key.pItem, newVal == nullptr ? "removed" : "unchanged");
 				}
 			}
 		}
@@ -267,7 +259,7 @@ namespace frik {
 		nameStr = nameStr.replace(nameStr.length() - 4, 4, "_bkp_v" + std::to_string(version) + ".ini");
 		int res = std::rename(FRIK_INI_PATH.c_str(), nameStr.c_str());
 		if (rc != 0) {
-			_WARNING("Failed to backup old FRIK.ini file to '%s'. Error: %d", nameStr, rc);
+			Log::warn("Failed to backup old FRIK.ini file to '%s'. Error: %d", nameStr, rc);
 		}
 
 		// save the new ini file
@@ -276,7 +268,7 @@ namespace frik {
 			throw std::runtime_error("Failed to save post update FRIK.ini file! Error: " + std::to_string(rc));
 		}
 
-		_MESSAGE("FRIK.ini updated successfully");
+		Log::info("FRIK.ini updated successfully");
 	}
 
 	/**
@@ -349,9 +341,9 @@ namespace frik {
 
 		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
 		if (rc < 0) {
-			_ERROR("Config: Failed to save FRIK.ini. Error: %d", rc);
+			Log::error("Config: Failed to save FRIK.ini. Error: %d", rc);
 		} else {
-			_MESSAGE("Config: Saving FRIK.ini successful");
+			Log::info("Config: Saving FRIK.ini successful");
 		}
 	}
 
@@ -359,7 +351,7 @@ namespace frik {
 	 * Save specific key and bool value into FRIK.ini file.
 	 */
 	void Config::saveFrikIniValue(const char* section, const char* key, const bool value) {
-		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value ? "true" : "false");
+		Log::info("Config: Saving \"%s = %s\" to FRIK.ini", key, value ? "true" : "false");
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
 		rc = ini.SetBoolValue(section, key, value);
@@ -370,7 +362,7 @@ namespace frik {
 	 * Save specific key and double value into FRIK.ini file.
 	 */
 	void Config::saveFrikIniValue(const char* section, const char* key, const double value) {
-		_MESSAGE("Config: Saving \"%s = %f\" to FRIK.ini", key, value);
+		Log::info("Config: Saving \"%s = %f\" to FRIK.ini", key, value);
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
 		rc = ini.SetDoubleValue(section, key, value);
@@ -381,7 +373,7 @@ namespace frik {
 	 * Save specific key and string value into FRIK.ini file.
 	 */
 	void Config::saveFrikIniValue(const char* section, const char* key, const char* value) {
-		_MESSAGE("Config: Saving \"%s = %s\" to FRIK.ini", key, value);
+		Log::info("Config: Saving \"%s = %s\" to FRIK.ini", key, value);
 		CSimpleIniA ini;
 		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
 		rc = ini.SetValue(section, key, value);
@@ -462,9 +454,9 @@ namespace frik {
 		}
 
 		const auto path = WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json";
-		_MESSAGE("Removing weapon offsets '%s', file: '%s'", fullName.c_str(), path.c_str());
+		Log::info("Removing weapon offsets '%s', file: '%s'", fullName.c_str(), path.c_str());
 		if (!std::filesystem::remove(WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json")) {
-			_WARNING("Failed to remove weapon offset file: %s", fullName.c_str());
+			Log::warn("Failed to remove weapon offset file: %s", fullName.c_str());
 		}
 	}
 
@@ -483,7 +475,7 @@ namespace frik {
 			data.scale = value["scale"].get<double>();
 
 			if (log) {
-				_MESSAGE("Successfully loaded offset override '%s' (%s)", key.c_str(), offsetsMap.contains(key) ? "Override" : "New");
+				Log::info("Successfully loaded offset override '%s' (%s)", key.c_str(), offsetsMap.contains(key) ? "Override" : "New");
 			}
 			offsetsMap[key] = data;
 		}
@@ -497,7 +489,7 @@ namespace frik {
 		std::ifstream inF;
 		inF.open(file, std::ios::in);
 		if (inF.fail()) {
-			_WARNING("cannot open %s", file.c_str());
+			Log::warn("cannot open %s", file.c_str());
 			inF.close();
 			return;
 		}
@@ -506,7 +498,7 @@ namespace frik {
 		try {
 			inF >> weaponJson;
 		} catch (json::parse_error& ex) {
-			_MESSAGE("cannot open %s: parse error at byte %d", file.c_str(), ex.byte);
+			Log::info("cannot open %s: parse error at byte %d", file.c_str(), ex.byte);
 			inF.close();
 			return;
 		}
@@ -538,7 +530,7 @@ namespace frik {
 			loadOffsetJsonToMap(json, _weaponsEmbeddedOffsets, false);
 		}
 		_weaponsOffsets.insert(_weaponsEmbeddedOffsets.begin(), _weaponsEmbeddedOffsets.end());
-		_MESSAGE("Loaded (%d) embedded weapon offsets", _weaponsOffsets.size());
+		Log::info("Loaded (%d) embedded weapon offsets", _weaponsOffsets.size());
 	}
 
 	/**
@@ -550,14 +542,14 @@ namespace frik {
 				loadOffsetJsonFile(file.path().string(), _weaponsOffsets);
 			}
 		}
-		_MESSAGE("Loaded (%d) total weapon offsets", _weaponsOffsets.size());
+		Log::info("Loaded (%d) total weapon offsets", _weaponsOffsets.size());
 	}
 
 	/**
 	 * Save the given offsets transform to a json file using the given name.
 	 */
 	void Config::saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) {
-		_MESSAGE("Saving offsets '%s' to '%s'", name.c_str(), file.c_str());
+		Log::info("Saving offsets '%s' to '%s'", name.c_str(), file.c_str());
 		json weaponJson;
 		weaponJson[name]["rotation"] = transform.rot.arr;
 		weaponJson[name]["x"] = transform.pos.x;
@@ -568,7 +560,7 @@ namespace frik {
 		std::ofstream outF;
 		outF.open(file, std::ios::out);
 		if (outF.fail()) {
-			_MESSAGE("cannot open '%s' for writing", file.c_str());
+			Log::info("cannot open '%s' for writing", file.c_str());
 			return;
 		}
 		try {
@@ -576,7 +568,7 @@ namespace frik {
 			outF.close();
 		} catch (std::exception& e) {
 			outF.close();
-			_WARNING("Unable to save json '%s': %s", file.c_str(), e.what());
+			Log::warn("Unable to save json '%s': %s", file.c_str(), e.what());
 		}
 	}
 
@@ -598,7 +590,7 @@ namespace frik {
 	 */
 	void Config::migrateConfigFilesIfNeeded() {
 		// migrate pre v72 and v72 config files to v73 location
-		_MESSAGE("Migrate configs if exists in old locations...");
+		Log::info("Migrate configs if exists in old locations...");
 		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK.ini)", FRIK_INI_PATH);
 		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
 		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);

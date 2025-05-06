@@ -2,6 +2,7 @@
 #include <ranges>
 #include "F4VRBody.h"
 #include "common/CommonUtils.h"
+#include "common/Logger.h"
 
 using namespace common;
 
@@ -45,7 +46,7 @@ namespace frik {
 		NiNode* boneNode = getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsNiNode();
 
 		if (!boneNode) {
-			_MESSAGE("RegisterBoneSphere: BONE DOES NOT EXIST!!");
+			Log::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
 			return 0;
 		}
 
@@ -67,7 +68,7 @@ namespace frik {
 		}
 
 		if (!(*g_player)->unkF0) {
-			_MESSAGE("can't register yet as new game");
+			Log::info("can't register yet as new game");
 			return 0;
 		}
 
@@ -83,7 +84,7 @@ namespace frik {
 			boneNode = getChildNode(bone.c_str(), n); // ObjectLODRoot
 
 			if (!boneNode) {
-				_MESSAGE("RegisterBoneSphere: BONE DOES NOT EXIST!!");
+				Log::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
 				return 0;
 			}
 		}
@@ -116,7 +117,7 @@ namespace frik {
 	}
 
 	void BoneSpheresHandler::registerForBoneSphereEvents(VMObject* thisObject) {
-		_MESSAGE("RegisterForBoneSphereEvents");
+		Log::info("RegisterForBoneSphereEvents");
 		if (!thisObject) {
 			return;
 		}
@@ -129,7 +130,7 @@ namespace frik {
 			return;
 		}
 
-		_MESSAGE("UnRegisterForBoneSphereEvents");
+		Log::info("UnRegisterForBoneSphereEvents");
 		_boneSphereEventRegs.Unregister(thisObject->GetHandle(), thisObject->GetObjectType());
 	}
 

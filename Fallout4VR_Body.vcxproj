@@ -169,7 +169,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>f4sevr_1_2_72.lib;f4se_common.lib;common_vc11.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>src\exports.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetName).dll" "%FRIK_MOD_PATH%" /Y
@@ -215,6 +215,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClCompile Include="src\WeaponPositionAdjuster.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\common\Logger.h" />
     <ClInclude Include="src\api\openvr.h" />
     <ClInclude Include="src\api\OpenVRTypes.h" />
     <ClInclude Include="src\api\openvr_capi.h" />
@@ -269,6 +270,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="src\WeaponPositionAdjuster.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".gitignore" />
     <None Include="data\config\FRIK.ini" />
     <None Include="data\config\mesh_hide_face.ini" />
     <None Include="data\config\mesh_hide_skins.ini" />
@@ -276,6 +278,8 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <None Include="data\config\pipboy_holo_offsets.json" />
     <None Include="data\config\pipboy_screen_offsets.json" />
     <None Include="exports.def" />
+    <None Include="LICENSE" />
+    <None Include="README.md" />
     <None Include="src\exports.def" />
   </ItemGroup>
   <ItemGroup>

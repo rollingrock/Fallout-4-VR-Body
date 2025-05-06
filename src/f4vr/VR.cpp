@@ -1,5 +1,9 @@
 #include "VR.h"
+
+#include "../common/Logger.h"
 #include "../common/Matrix.h"
+
+using namespace common;
 
 namespace f4vr {
 	RelocPtr<uint64_t*> vrDataStruct(0x59429c0);
@@ -75,7 +79,7 @@ namespace f4vr {
 	void VRSystem::debugPrint() {
 		const vr::VRCompositorError error = _vrHook->GetVRCompositor()->GetLastPoses(_renderPoses, vr::k_unMaxTrackedDeviceCount, _gamePoses, vr::k_unMaxTrackedDeviceCount);
 		if (error != vr::EVRCompositorError::VRCompositorError_None) {
-			_MESSAGE("Error while retrieving game poses!");
+			Log::info("Error while retrieving game poses!");
 		}
 
 		for (const auto& tracker : _viveTrackers) {
@@ -85,7 +89,7 @@ namespace f4vr {
 			NiTransform renderTran;
 			hmdMatrixToNiTransform(&renderTran, &renderMat);
 
-			_MESSAGE("%d : %s --> render = %f %f %f |||| game = %f %f %f", tracker.second, tracker.first.c_str(),
+			Log::info("%d : %s --> render = %f %f %f |||| game = %f %f %f", tracker.second, tracker.first.c_str(),
 				renderTran.pos.x, renderTran.pos.y, renderTran.pos.z,
 				gameMat.mDeviceToAbsoluteTracking.m[0][3], gameMat.mDeviceToAbsoluteTracking.m[1][3], gameMat.mDeviceToAbsoluteTracking.m[2][3]);
 		}

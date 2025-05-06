@@ -4,8 +4,9 @@
 #include <string>
 #include "Config.h"
 #include "Skeleton.h"
-#include "common/IDebugLog.h"
 #include "f4se/NiTypes.h"
+
+using namespace common;
 
 namespace frik {
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
@@ -331,7 +332,7 @@ namespace frik {
 		if (_handPointingPoseSet[rightHand] == forcePointing) {
 			return;
 		}
-		_VMESSAGE("Set force pointing pose for '%s' hand: %s)", rightHand ? "Right" : "Left", forcePointing ? "Pointing" : "Release");
+		Log::verbose("Set force pointing pose for '%s' hand: %s)", rightHand ? "Right" : "Left", forcePointing ? "Pointing" : "Release");
 		_handPointingPoseSet[rightHand] = forcePointing;
 		const auto* const fingers = rightHand ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
 		for (int x = 0; x < 15; x++) {

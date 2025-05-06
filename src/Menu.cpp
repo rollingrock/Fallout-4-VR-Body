@@ -16,10 +16,10 @@ namespace frik {
 
 		if (!_stricmp(name, "ScopeMenu")) {
 			if (a_event->isOpen) {
-				//	_MESSAGE("scope opened");
+				//	Log::info("scope opened");
 				inScopeMenu = true;
 			} else {
-				//_MESSAGE("scope closed");
+				//Log::info("scope closed");
 				inScopeMenu = false;
 			}
 		}

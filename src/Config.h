@@ -1,6 +1,8 @@
 #pragma once
 
 #include <optional>
+
+#include "common/Logger.h"
 #include "f4vr/VR.h"
 
 namespace frik {
@@ -172,7 +174,6 @@ namespace frik {
 	private:
 		void loadFrikINI();
 		void saveFrikINI() const;
-		void updateLoggerLogLevel() const;
 		void updateFrikINIVersion() const;
 		void loadHideMeshes();
 		void loadHideEquipmentSlots();
@@ -212,6 +213,6 @@ namespace frik {
 		const auto config = new Config();
 		config->load();
 		g_config = config;
-		_VMESSAGE("Config loaded successfully");
+		common::Log::verbose("Config loaded successfully");
 	}
 }

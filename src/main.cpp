@@ -9,12 +9,14 @@
 #include "patches.h"
 #include "SmoothMovementVR.h"
 #include "version.h"
-#include "f4vr/VR.h"
 #include "common/CommonUtils.h"
-#include "common/IDebugLog.h"
+#include "common/Logger.h"
 #include "f4se/PluginAPI.h"  // SKSEInterface, PluginInfo
 #include "f4se_common/f4se_version.h"  // RUNTIME_VERSION
+#include "f4vr/VR.h"
 #include "ui/UIManager.h"
+
+using namespace common;
 
 void onBetterScopesMessage(F4SEMessagingInterface::Message* msg) {
 	if (!msg) {
@@ -37,38 +39,36 @@ void onF4SEMessage(F4SEMessagingInterface::Message* msg) {
 		f4vr::InitVRSystem();
 		SmoothMovementVR::startFunctions();
 		SmoothMovementVR::MenuOpenCloseHandler::Register();
-		_MESSAGE("kMessage_GameLoaded Completed");
+		Log::info("kMessage_GameLoaded Completed");
 	}
 
 	if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
 		constexpr bool gripConfig = false; // !frik::g_config->staticGripping;
 		g_messaging->Dispatch(g_pluginHandle, 15, static_cast<void*>(nullptr), sizeof(bool), "FO4VRBETTERSCOPES");
 		g_messaging->RegisterListener(g_pluginHandle, "FO4VRBETTERSCOPES", onBetterScopesMessage);
-		_MESSAGE("kMessage_PostLoad Completed");
+		Log::info("kMessage_PostLoad Completed");
 	}
 }
 
 extern "C" {
 bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info) {
 	Sleep(5000);
-	IDebugLog::OpenRelative(CSIDL_MYDOCUMENTS, R"(\\My Games\\Fallout4VR\\F4SE\\FRIK.log)");
-	IDebugLog::SetPrintLevel(IDebugLog::kLevel_Message);
-	IDebugLog::SetLogLevel(IDebugLog::kLevel_Message);
+	Log::init("FRIK.log");
 
-	_MESSAGE("FRIK v%s", FRIK_VERSION_VERSTRING);
+	Log::info("FRIK v%s", FRIK_VERSION_VERSTRING);
 
 	info->infoVersion = PluginInfo::kInfoVersion;
 	info->name = "FRIK";
 	info->version = FRIK_VERSION_MAJOR;
 
 	if (f4se->isEditor) {
-		_FATALERROR("[FATAL ERROR] Loaded in editor, marking as incompatible!\n");
+		Log::fatal("[FATAL ERROR] Loaded in editor, marking as incompatible!\n");
 		return false;
 	}
 
 	f4se->runtimeVersion;
 	if (f4se->runtimeVersion < RUNTIME_VR_VERSION_1_2_72) {
-		_FATALERROR("Unsupported runtime version %s!\n", f4se->runtimeVersion);
+		Log::fatal("Unsupported runtime version %s!\n", f4se->runtimeVersion);
 		return false;
 	}
 
@@ -77,7 +77,7 @@ bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info) {
 
 bool F4SEPlugin_Load(const F4SEInterface* f4se) {
 	try {
-		_MESSAGE("FRIK Init - %s", common::getCurrentTimeString().data());
+		Log::info("FRIK Init - %s", common::getCurrentTimeString().data());
 
 		g_pluginHandle = f4se->GetPluginHandle();
 
@@ -97,31 +97,31 @@ bool F4SEPlugin_Load(const F4SEInterface* f4se) {
 			throw std::exception("couldn't create codegen buffer");
 		}
 
-		_MESSAGE("Init config...");
+		Log::info("Init config...");
 		frik::initConfig();
 
-		_MESSAGE("Init UI Manager...");
+		Log::info("Init UI Manager...");
 		vrui::initUIManager();
 
-		_MESSAGE("Register papyrus functions...");
+		Log::info("Register papyrus functions...");
 		g_papyrus = static_cast<F4SEPapyrusInterface*>(f4se->QueryInterface(kInterface_Papyrus));
 		if (!g_papyrus->Register(frik::registerPapyrusFunctions)) {
 			throw std::exception("FAILED TO REGISTER PAPYRUS FUNCTIONS!!");
 		}
 
-		_MESSAGE("Run patches...");
+		Log::info("Run patches...");
 		patches::patchAll();
 
-		_MESSAGE("Init gun reload system...");
+		Log::info("Init gun reload system...");
 		frik::InitGunReloadSystem();
 
-		_MESSAGE("Hook main...");
+		Log::info("Hook main...");
 		hookMain();
 
-		_MESSAGE("FRIK Loaded successfully");
+		Log::info("FRIK Loaded successfully");
 		return true;
 	} catch (const std::exception& e) {
-		_FATALERROR("Fatal error in F4SEPlugin_Load: %s", e.what());
+		Log::fatal("Fatal error in F4SEPlugin_Load: %s", e.what());
 		return false;
 	}
 }

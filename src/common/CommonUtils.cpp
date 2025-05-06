@@ -6,6 +6,7 @@
 #include <fstream>
 #include <chrono>
 
+#include "Logger.h"
 #include "Matrix.h"
 
 namespace common {
@@ -193,7 +194,7 @@ namespace common {
 			return;
 		}
 
-		_MESSAGE("Creating '%s' file from resource id: %d...", filePath.c_str(), resourceId);
+		Log::info("Creating '%s' file from resource id: %d...", filePath.c_str(), resourceId);
 		auto data = getEmbededResourceAsString(resourceId);
 
 		if (fixNewline) {
@@ -212,7 +213,7 @@ namespace common {
 		}
 		outFile.close();
 
-		_VMESSAGE("File '%s' created successfully (size: %d)", filePath.c_str(), data.size());
+		Log::verbose("File '%s' created successfully (size: %d)", filePath.c_str(), data.size());
 	}
 
 	/**
@@ -225,7 +226,7 @@ namespace common {
 			path = path.parent_path();
 		}
 		if (!std::filesystem::exists(path)) {
-			_MESSAGE("Creating directory: %s", path.string().c_str());
+			Log::info("Creating directory: %s", path.string().c_str());
 			std::filesystem::create_directories(path);
 		}
 	}
@@ -250,13 +251,13 @@ namespace common {
 				return;
 			}
 			if (std::filesystem::exists(toPath)) {
-				_MESSAGE("Moving '%s' to '%s' failed, file already exists", fromPath.c_str(), toPath.c_str());
+				Log::info("Moving '%s' to '%s' failed, file already exists", fromPath.c_str(), toPath.c_str());
 				return;
 			}
-			_MESSAGE("Moving '%s' to '%s'", fromPath.c_str(), toPath.c_str());
+			Log::info("Moving '%s' to '%s'", fromPath.c_str(), toPath.c_str());
 			std::filesystem::rename(fromPath, toPath);
 		} catch (const std::exception& e) {
-			_ERROR("Failed to move file to new location: %s", e.what());
+			Log::error("Failed to move file to new location: %s", e.what());
 		}
 	}
 
@@ -330,7 +331,7 @@ namespace common {
 	void windowFocus(const std::string& name) {
 		const HWND hwnd = ::FindWindowEx(nullptr, nullptr, name.c_str(), nullptr);
 		if (!hwnd) {
-			_MESSAGE("Window Not Found");
+			Log::info("Window Not Found");
 			return;
 		}
 		const HWND foreground = GetForegroundWindow();

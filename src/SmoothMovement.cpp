@@ -11,6 +11,9 @@
 #include "f4se/NiExtraData.h"
 
 #include "MenuChecker.h"
+#include "common/Logger.h"
+
+using namespace common;
 
 namespace SmoothMovementVR {
 	RelocAddr<_IsInAir> IsInAir(0x00DC3230);
@@ -191,21 +194,21 @@ namespace SmoothMovementVR {
 								lastAppliedLocalX.store(playerWorldNode->m_localTransform.pos.x);
 								lastAppliedLocalY.store(playerWorldNode->m_localTransform.pos.y);
 							}
-							//_MESSAGE("playerPos: %g %g %g  --newPos:  %g %g %g  --appliedLocal: %g %g %g", curPos.x, curPos.y, curPos.z, newPos.x, newPos.y, newPos.z, playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
+							//Log::info("playerPos: %g %g %g  --newPos:  %g %g %g  --appliedLocal: %g %g %g", curPos.x, curPos.y, curPos.z, newPos.x, newPos.y, newPos.z, playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
-							//	_MESSAGE("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
+							//	Log::info("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
 							playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load()
 								? frik::g_config->PACameraHeight + frik::g_config->cameraHeight + frik::c_dynamicCameraHeight
 								: frik::g_config->cameraHeight + frik::c_dynamicCameraHeight;
 						} else {
-							_MESSAGE("Cannot get PlayerWorldNode...");
+							Log::info("Cannot get PlayerWorldNode...");
 						}
 					} else {
-						_MESSAGE("Cannot get worldNiAV...");
+						Log::info("Cannot get worldNiAV...");
 					}
 				} else {
-					_MESSAGE("Cannot get worldNiNode...");
+					Log::info("Cannot get worldNiNode...");
 				}
 			}
 		}
@@ -287,11 +290,11 @@ namespace SmoothMovementVR {
 		QueryPerformanceFrequency(&m_hpcFrequency);
 		QueryPerformanceCounter(&m_prevTime);
 
-		_MESSAGE("Starting armor thread");
+		Log::info("Starting armor thread");
 
 		std::thread t6(armorCheck);
 		t6.detach();
 
-		_MESSAGE("Armor Thread Started");
+		Log::info("Armor Thread Started");
 	}
 }

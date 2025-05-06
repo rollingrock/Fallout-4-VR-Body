@@ -1,10 +1,14 @@
 #include "patches.h"
 
+#include "common/Logger.h"
+#include "common/Quaternion.h"
 #include "f4se_common/BranchTrampoline.h"
 #include "f4sE_common/Relocation.h"
 #include "F4SE_common/SafeWrite.h"
 
 #include "xbyak/xbyak.h"
+
+using namespace common;
 
 namespace patches {
 	RelocAddr<std::uint64_t> invJumpFrom(0x2567664);
@@ -158,15 +162,15 @@ namespace patches {
 	}
 
 	static void patchBody() {
-		_MESSAGE("Patch Body In");
-		_MESSAGE("addr = %016I64X", RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr());
+		Log::info("Patch Body In");
+		Log::info("addr = %016I64X", RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr());
 
 		// For new game
 		SafeWrite8(RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr(), 0x74);
 
 		// now for existing games to update
 		SafeWrite32(RelocAddr<uintptr_t>(0xf29ac8), 0x9090D231); // This was movzx EDX,R14B.   Want to just zero out EDX with an xor instead
-		_MESSAGE("Patch Body Succeeded");
+		Log::info("Patch Body Succeeded");
 	}
 
 	void patchAll() {
