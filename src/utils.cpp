@@ -134,7 +134,7 @@ namespace frik {
 		set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
 		set->SetDouble(0.0);
 
-		if (g_config->autoFocusWindow && g_config->switchUIControltoPrimary) {
+		if (g_config.autoFocusWindow && g_config.switchUIControltoPrimary) {
 			windowFocus();
 		}
 	}

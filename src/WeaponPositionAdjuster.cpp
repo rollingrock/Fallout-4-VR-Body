@@ -4,10 +4,10 @@
 #include "Config.h"
 #include "Debug.h"
 #include "F4VRBody.h"
-#include "common/Quaternion.h"
 #include "Skeleton.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
+#include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
 
 using namespace common;
@@ -58,7 +58,7 @@ namespace frik {
 			_throwableWeaponOriginalTransform = throwableWeapon->m_localTransform;
 
 			// get saved offset or use hard-coded global default
-			const auto offsetLookup = g_config->getWeaponOffsets(_currentThrowableWeaponName, WeaponOffsetsMode::Throwable, _currentlyInPA);
+			const auto offsetLookup = g_config.getWeaponOffsets(_currentThrowableWeaponName, WeaponOffsetsMode::Throwable, _currentlyInPA);
 			_throwableWeaponOffsetTransform = offsetLookup.has_value()
 				? offsetLookup.value()
 				: WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(_throwableWeaponOriginalTransform, _currentlyInPA);
@@ -140,7 +140,7 @@ namespace frik {
 	 */
 	void WeaponPositionAdjuster::loadStoredOffsets(const std::string& weaponName) {
 		// Load stored offsets for the new weapon
-		const auto weaponOffsetLookup = g_config->getWeaponOffsets(weaponName, WeaponOffsetsMode::Weapon, _currentlyInPA);
+		const auto weaponOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::Weapon, _currentlyInPA);
 		if (weaponOffsetLookup.has_value()) {
 			_weaponOffsetTransform = weaponOffsetLookup.value();
 		} else {
@@ -149,7 +149,7 @@ namespace frik {
 		}
 
 		// Load stored offsets for offhand for the new weapon 
-		const auto offhandOffsetLookup = g_config->getWeaponOffsets(weaponName, WeaponOffsetsMode::OffHand, _currentlyInPA);
+		const auto offhandOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::OffHand, _currentlyInPA);
 		if (offhandOffsetLookup.has_value()) {
 			_offhandOffsetRot = offhandOffsetLookup.value().rot;
 		} else {
@@ -158,10 +158,10 @@ namespace frik {
 		}
 
 		// Load stored offsets for back of hand UI for the new weapon 
-		auto backOfHandOffsetLookup = g_config->getWeaponOffsets(_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _currentlyInPA);
+		auto backOfHandOffsetLookup = g_config.getWeaponOffsets(_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _currentlyInPA);
 		if (!backOfHandOffsetLookup.has_value()) {
 			// Use empty hand offset as a global default that the player can adjust so they won't have to adjust it for every weapon.
-			backOfHandOffsetLookup = g_config->getWeaponOffsets(EMPTY_HAND, WeaponOffsetsMode::BackOfHandUI, _currentlyInPA);
+			backOfHandOffsetLookup = g_config.getWeaponOffsets(EMPTY_HAND, WeaponOffsetsMode::BackOfHandUI, _currentlyInPA);
 		}
 		if (backOfHandOffsetLookup.has_value()) {
 			_backOfHandUIOffsetTransform = backOfHandOffsetLookup.value();
@@ -220,27 +220,27 @@ namespace frik {
 	 * Mode 4: press grip button to snap to the barrel, press grib button again to let go                                | true                   | false              | true                    |
 	 */
 	void WeaponPositionAdjuster::checkIfOffhandIsGripping(const NiNode* weapon) {
-		if (!g_config->enableOffHandGripping) {
+		if (!g_config.enableOffHandGripping) {
 			return;
 		}
 
 		if (_offHandGripping) {
-			if (g_config->onePressGripButton && !f4vr::isButtonPressHeldDownOnController(false, g_config->gripButtonID)) {
+			if (g_config.onePressGripButton && !f4vr::isButtonPressHeldDownOnController(false, g_config.gripButtonID)) {
 				// Mode 3 release grip when not holding the grip button
 				_offHandGripping = false;
 			}
 
-			if (g_config->enableGripButtonToLetGo && f4vr::isButtonPressedOnController(false, g_config->gripButtonID)) {
-				if (g_config->enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
+			if (g_config.enableGripButtonToLetGo && f4vr::isButtonPressedOnController(false, g_config.gripButtonID)) {
+				if (g_config.enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
 					// Mode 2,4 release grip on pressing the grip button again
 					_offHandGripping = false;
 				} else {
 					// Mode 2 but close to barrel, so ignore un-grip as it will grip on next frame
-					_vrHook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.05f, 0.3f);
+					_vrHook->StartHaptics(g_config.leftHandedMode ? 0 : 1, 0.05f, 0.3f);
 				}
 			}
 
-			if (!g_config->enableGripButtonToGrap && !g_config->enableGripButtonToLetGo && !c_isLookingThroughScope && isOffhandMovedFastAway()) {
+			if (!g_config.enableGripButtonToGrap && !g_config.enableGripButtonToLetGo && !c_isLookingThroughScope && isOffhandMovedFastAway()) {
 				// mode 1 release when move fast away from barrel
 				_offHandGripping = false;
 			}
@@ -249,7 +249,7 @@ namespace frik {
 			return;
 		}
 
-		if (!g_config->enableGripButtonToGrap && !g_config->enableGripButtonToLetGo) {
+		if (!g_config.enableGripButtonToGrap && !g_config.enableGripButtonToLetGo) {
 			// mode 1 extra calculation for past 3 frames, annoying but only if mode 1 is in use
 			// ReSharper disable once CppExpressionWithoutSideEffects
 			isOffhandMovedFastAway();
@@ -260,11 +260,11 @@ namespace frik {
 			return;
 		}
 
-		if (!g_config->enableGripButtonToGrap) {
+		if (!g_config.enableGripButtonToGrap) {
 			// Mode 1,2 grab when close to barrel
 			_offHandGripping = true;
 		}
-		if (!g_pipboy->status() && f4vr::isButtonPressedOnController(false, g_config->gripButtonID)) {
+		if (!g_pipboy->status() && f4vr::isButtonPressedOnController(false, g_config.gripButtonID)) {
 			// Mode 3,4 grab when pressing grip button
 			_offHandGripping = true;
 		}
@@ -336,7 +336,7 @@ namespace frik {
 		static auto offhandFingerBonePos = NiPoint3(0, 0, 0);
 		static float avgHandV[3] = {0.0f, 0.0f, 0.0f};
 		static int fc = 0;
-		const auto offHandBone = g_config->leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
+		const auto offHandBone = g_config.leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
 
 		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_skelly->getRoot());
 		const float handFrameMovement = vec3Len(rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos - offhandFingerBonePos);
@@ -354,7 +354,7 @@ namespace frik {
 		bodyPos = _skelly->getCurrentBodyPos();
 		offhandFingerBonePos = rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos;
 
-		return handV > g_config->gripLetGoThreshold;
+		return handV > g_config.gripLetGoThreshold;
 	}
 
 	/**
@@ -362,7 +362,7 @@ namespace frik {
 	 */
 	NiPoint3 WeaponPositionAdjuster::getOffhandPosition() const {
 		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_skelly->getRoot());
-		const auto offHandBone = g_config->leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
+		const auto offHandBone = g_config.leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
 		return rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos;
 	}
 
@@ -386,11 +386,11 @@ namespace frik {
 		const auto offset = vec3Len(reticlePos - offhandPos);
 
 		// is hand near scope
-		if (offset < g_config->scopeAdjustDistance) {
+		if (offset < g_config.scopeAdjustDistance) {
 			// Zoom toggling
 			Log::info("Zoom Toggle pressed; sending message to switch zoom state");
 			g_messaging->Dispatch(g_pluginHandle, 16, nullptr, 0, "FO4VRBETTERSCOPES");
-			_vrHook->StartHaptics(g_config->leftHandedMode ? 0 : 1, 0.1f, 0.3f);
+			_vrHook->StartHaptics(g_config.leftHandedMode ? 0 : 1, 0.1f, 0.3f);
 		}
 	}
 
@@ -406,7 +406,7 @@ namespace frik {
 	}
 
 	void WeaponPositionAdjuster::debugPrintWeaponPositionData(NiNode* weapon) const {
-		if (!g_config->checkDebugDumpDataOnceFor("weapon_pos")) {
+		if (!g_config.checkDebugDumpDataOnceFor("weapon_pos")) {
 			return;
 		}
 

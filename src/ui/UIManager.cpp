@@ -38,7 +38,7 @@ namespace vrui {
 			adapter->setInteractionHandPointing(false, isInteractionClose.value());
 		}
 
-		if (frik::g_config->checkDebugDumpDataOnceFor("ui_tree")) {
+		if (frik::g_config.checkDebugDumpDataOnceFor("ui_tree")) {
 			dumpUITree();
 		}
 	}

@@ -215,6 +215,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClCompile Include="src\WeaponPositionAdjuster.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\common\ConfigBase.h" />
     <ClInclude Include="src\common\Logger.h" />
     <ClInclude Include="src\api\openvr.h" />
     <ClInclude Include="src\api\OpenVRTypes.h" />

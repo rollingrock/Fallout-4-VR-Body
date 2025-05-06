@@ -102,7 +102,7 @@ namespace frik {
 					CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 				}
 				if (_vrhook != nullptr) {
-					g_config->leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
+					g_config.leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
 				}
 			}
 			NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
@@ -112,7 +112,7 @@ namespace frik {
 			NiNode* HUD = Offsets::cloneNode(retNode, &proc);
 			HUD->m_name = BSFixedString("MCCONFIGHUD");
 			// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
-			NiNode* UIATTACH = g_config->leftHandedMode
+			NiNode* UIATTACH = g_config.leftHandedMode
 				? _skelly->getPlayerNodes()->primaryUIAttachNode
 				: f4vr::getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
 			UIATTACH->AttachChild(HUD, true);
@@ -157,29 +157,29 @@ namespace frik {
 				}
 			}
 			_calibrationModeUIActive = true;
-			_armLength_bkup = g_config->armLength;
-			_powerArmor_up_bkup = g_config->powerArmor_up;
-			_playerOffset_up_bkup = g_config->playerOffset_up;
-			_rootOffset_bkup = g_config->rootOffset;
-			_PARootOffset_bkup = g_config->PARootOffset;
-			_fVrScale_bkup = g_config->fVrScale;
-			_playerOffset_forward_bkup = g_config->playerOffset_forward;
-			_powerArmor_forward_bkup = g_config->powerArmor_forward;
-			_cameraHeight_bkup = g_config->cameraHeight;
-			_PACameraHeight_bkup = g_config->PACameraHeight;
-			enableGripButtonToGrap_bkup = g_config->enableGripButtonToGrap;
-			onePressGripButton_bkup = g_config->onePressGripButton;
-			enableGripButtonToLetGo_bkup = g_config->enableGripButtonToLetGo;
+			_armLength_bkup = g_config.armLength;
+			_powerArmor_up_bkup = g_config.powerArmor_up;
+			_playerOffset_up_bkup = g_config.playerOffset_up;
+			_rootOffset_bkup = g_config.rootOffset;
+			_PARootOffset_bkup = g_config.PARootOffset;
+			_fVrScale_bkup = g_config.fVrScale;
+			_playerOffset_forward_bkup = g_config.playerOffset_forward;
+			_powerArmor_forward_bkup = g_config.powerArmor_forward;
+			_cameraHeight_bkup = g_config.cameraHeight;
+			_PACameraHeight_bkup = g_config.PACameraHeight;
+			enableGripButtonToGrap_bkup = g_config.enableGripButtonToGrap;
+			onePressGripButton_bkup = g_config.onePressGripButton;
+			enableGripButtonToLetGo_bkup = g_config.enableGripButtonToLetGo;
 		} else {
 			NiNode* UIElement = nullptr;
 			// Dampen Hands
 			UIElement = f4vr::getNode("MC-Tile07On", _skelly->getPlayerNodes()->primaryUIAttachNode);
-			g_config->dampenHands ? UIElement->m_localTransform.scale = 1 : UIElement->m_localTransform.scale = 0;
+			g_config.dampenHands ? UIElement->m_localTransform.scale = 1 : UIElement->m_localTransform.scale = 0;
 			// Weapon Reposition Mode
 			UIElement = f4vr::getNode("MC-Tile08On", _skelly->getPlayerNodes()->primaryUIAttachNode);
 			UIElement->m_localTransform.scale = g_weaponPosition->inWeaponRepositionMode() ? 1 : 0;
 			// Grip Mode
-			if (!g_config->enableGripButtonToGrap && !g_config->onePressGripButton && !g_config->enableGripButtonToLetGo) {
+			if (!g_config.enableGripButtonToGrap && !g_config.onePressGripButton && !g_config.enableGripButtonToLetGo) {
 				// Standard Sticky Grip on / off
 				for (int i = 0; i < 4; i++) {
 					if (i == 0) {
@@ -190,7 +190,7 @@ namespace frik {
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
-			} else if (!g_config->enableGripButtonToGrap && !g_config->onePressGripButton && g_config->enableGripButtonToLetGo) {
+			} else if (!g_config.enableGripButtonToGrap && !g_config.onePressGripButton && g_config.enableGripButtonToLetGo) {
 				// Sticky Grip with button to release
 				for (int i = 0; i < 4; i++) {
 					if (i == 1) {
@@ -201,7 +201,7 @@ namespace frik {
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
-			} else if (g_config->enableGripButtonToGrap && g_config->onePressGripButton && !g_config->enableGripButtonToLetGo) {
+			} else if (g_config.enableGripButtonToGrap && g_config.onePressGripButton && !g_config.enableGripButtonToLetGo) {
 				// Button held to Grip
 				for (int i = 0; i < 4; i++) {
 					if (i == 2) {
@@ -212,7 +212,7 @@ namespace frik {
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
-			} else if (g_config->enableGripButtonToGrap && !g_config->onePressGripButton && g_config->enableGripButtonToLetGo) {
+			} else if (g_config.enableGripButtonToGrap && !g_config.onePressGripButton && g_config.enableGripButtonToLetGo) {
 				// button press to toggle Grip on or off
 				for (int i = 0; i < 4; i++) {
 					if (i == 3) {
@@ -232,7 +232,7 @@ namespace frik {
 			}
 			auto rt = (BSFlattenedBoneTree*)_skelly->getRoot();
 			NiPoint3 finger;
-			g_config->leftHandedMode
+			g_config.leftHandedMode
 				? finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos
 				: finger = rt->transforms[_skelly->getBoneInMap("LArm_Finger23")].world.pos;
 			for (int i = 1; i <= 9; i++) {
@@ -255,7 +255,7 @@ namespace frik {
 						if (TransMesh->m_localTransform.pos.y > 1.0 && !_MCTouchbuttons[i]) {
 							if (_vrhook != nullptr) {
 								//_PBConfigSticky = true;
-								g_config->leftHandedMode ? _vrhook->StartHaptics(2, 0.05, 0.3) : _vrhook->StartHaptics(1, 0.05, 0.3);
+								g_config.leftHandedMode ? _vrhook->StartHaptics(2, 0.05, 0.3) : _vrhook->StartHaptics(1, 0.05, 0.3);
 								for (int i = 1; i <= 7; i++) {
 									_MCTouchbuttons[i] = false;
 								}
@@ -279,13 +279,13 @@ namespace frik {
 					}
 				}
 			}
-			vr::VRControllerAxis_t doinantHandStick = g_config->leftHandedMode
+			vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
 				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0]
 				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0];
-			uint64_t dominantHand = g_config->leftHandedMode
+			uint64_t dominantHand = g_config.leftHandedMode
 				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
 				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
-			uint64_t offHand = g_config->leftHandedMode
+			uint64_t offHand = g_config.leftHandedMode
 				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
 				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
 			bool CamZButtonPressed = _MCTouchbuttons[1];
@@ -300,7 +300,7 @@ namespace frik {
 			bool isInPA = _skelly->detectInPowerArmor();
 			if (HandsButtonPressed && !_isHandsButtonPressed) {
 				_isHandsButtonPressed = true;
-				g_config->dampenHands = !g_config->dampenHands;
+				g_config.dampenHands = !g_config.dampenHands;
 			} else if (!HandsButtonPressed) {
 				_isHandsButtonPressed = false;
 			}
@@ -313,82 +313,82 @@ namespace frik {
 			}
 			if (GripButtonPressed && !_isGripButtonPressed) {
 				_isGripButtonPressed = true;
-				if (!g_config->enableGripButtonToGrap && !g_config->onePressGripButton && !g_config->enableGripButtonToLetGo) {
-					g_config->enableGripButtonToGrap = false;
-					g_config->onePressGripButton = false;
-					g_config->enableGripButtonToLetGo = true;
-				} else if (!g_config->enableGripButtonToGrap && !g_config->onePressGripButton && g_config->enableGripButtonToLetGo) {
-					g_config->enableGripButtonToGrap = true;
-					g_config->onePressGripButton = true;
-					g_config->enableGripButtonToLetGo = false;
-				} else if (g_config->enableGripButtonToGrap && g_config->onePressGripButton && !g_config->enableGripButtonToLetGo) {
-					g_config->enableGripButtonToGrap = true;
-					g_config->onePressGripButton = false;
-					g_config->enableGripButtonToLetGo = true;
-				} else if (g_config->enableGripButtonToGrap && !g_config->onePressGripButton && g_config->enableGripButtonToLetGo) {
-					g_config->enableGripButtonToGrap = false;
-					g_config->onePressGripButton = false;
-					g_config->enableGripButtonToLetGo = false;
+				if (!g_config.enableGripButtonToGrap && !g_config.onePressGripButton && !g_config.enableGripButtonToLetGo) {
+					g_config.enableGripButtonToGrap = false;
+					g_config.onePressGripButton = false;
+					g_config.enableGripButtonToLetGo = true;
+				} else if (!g_config.enableGripButtonToGrap && !g_config.onePressGripButton && g_config.enableGripButtonToLetGo) {
+					g_config.enableGripButtonToGrap = true;
+					g_config.onePressGripButton = true;
+					g_config.enableGripButtonToLetGo = false;
+				} else if (g_config.enableGripButtonToGrap && g_config.onePressGripButton && !g_config.enableGripButtonToLetGo) {
+					g_config.enableGripButtonToGrap = true;
+					g_config.onePressGripButton = false;
+					g_config.enableGripButtonToLetGo = true;
+				} else if (g_config.enableGripButtonToGrap && !g_config.onePressGripButton && g_config.enableGripButtonToLetGo) {
+					g_config.enableGripButtonToGrap = false;
+					g_config.onePressGripButton = false;
+					g_config.enableGripButtonToLetGo = false;
 				} else {
 					//Not exepected - reset to standard sticky grip
-					g_config->enableGripButtonToGrap = false;
-					g_config->onePressGripButton = false;
-					g_config->enableGripButtonToLetGo = false;
+					g_config.enableGripButtonToGrap = false;
+					g_config.onePressGripButton = false;
+					g_config.enableGripButtonToLetGo = false;
 				}
 			} else if (!GripButtonPressed) {
 				_isGripButtonPressed = false;
 			}
 			if (doinantHandStick.y > 0.10 && CamZButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 4;
-				isInPA ? g_config->PACameraHeight += rAxisOffsetY : g_config->cameraHeight += rAxisOffsetY;
+				isInPA ? g_config.PACameraHeight += rAxisOffsetY : g_config.cameraHeight += rAxisOffsetY;
 			}
 			if (doinantHandStick.y < -0.10 && CamZButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 4;
-				isInPA ? g_config->PACameraHeight += rAxisOffsetY : g_config->cameraHeight += rAxisOffsetY;
+				isInPA ? g_config.PACameraHeight += rAxisOffsetY : g_config.cameraHeight += rAxisOffsetY;
 			}
 			if (doinantHandStick.y > 0.10 && CamYButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 10;
-				isInPA ? g_config->powerArmor_forward += rAxisOffsetY : g_config->playerOffset_forward -= rAxisOffsetY;
+				isInPA ? g_config.powerArmor_forward += rAxisOffsetY : g_config.playerOffset_forward -= rAxisOffsetY;
 			}
 			if (doinantHandStick.y < -0.10 && CamYButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 10;
-				isInPA ? g_config->powerArmor_forward += rAxisOffsetY : g_config->playerOffset_forward -= rAxisOffsetY;
+				isInPA ? g_config.powerArmor_forward += rAxisOffsetY : g_config.playerOffset_forward -= rAxisOffsetY;
 			}
 			if (doinantHandStick.y > 0.10 && ScaleButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 4;
-				g_config->fVrScale -= rAxisOffsetY;
+				g_config.fVrScale -= rAxisOffsetY;
 				Setting* set = GetINISetting("fVrScale:VR");
-				set->SetDouble(g_config->fVrScale);
+				set->SetDouble(g_config.fVrScale);
 			}
 			if (doinantHandStick.y < -0.10 && ScaleButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 4;
-				g_config->fVrScale -= rAxisOffsetY;
+				g_config.fVrScale -= rAxisOffsetY;
 				Setting* set = GetINISetting("fVrScale:VR");
-				set->SetDouble(g_config->fVrScale);
+				set->SetDouble(g_config.fVrScale);
 			}
 			if (doinantHandStick.y > 0.10 && BodyZButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 4;
-				isInPA ? g_config->PARootOffset += rAxisOffsetY : g_config->rootOffset += rAxisOffsetY;
+				isInPA ? g_config.PARootOffset += rAxisOffsetY : g_config.rootOffset += rAxisOffsetY;
 			}
 			if (doinantHandStick.y < -0.10 && BodyZButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 4;
-				isInPA ? g_config->PARootOffset += rAxisOffsetY : g_config->rootOffset += rAxisOffsetY;
+				isInPA ? g_config.PARootOffset += rAxisOffsetY : g_config.rootOffset += rAxisOffsetY;
 			}
 			if (doinantHandStick.y > 0.10 && BodyPoseButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 4;
-				isInPA ? g_config->powerArmor_up += rAxisOffsetY : g_config->playerOffset_up += rAxisOffsetY;
+				isInPA ? g_config.powerArmor_up += rAxisOffsetY : g_config.playerOffset_up += rAxisOffsetY;
 			}
 			if (doinantHandStick.y < -0.10 && BodyPoseButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 4;
-				isInPA ? g_config->powerArmor_up += rAxisOffsetY : g_config->playerOffset_up += rAxisOffsetY;
+				isInPA ? g_config.powerArmor_up += rAxisOffsetY : g_config.playerOffset_up += rAxisOffsetY;
 			}
 			if (doinantHandStick.y > 0.10 && ArmsButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 4;
-				g_config->armLength += rAxisOffsetY;
+				g_config.armLength += rAxisOffsetY;
 			}
 			if (doinantHandStick.y < -0.10 && ArmsButtonPressed) {
 				rAxisOffsetY = doinantHandStick.y / 4;
-				g_config->armLength += rAxisOffsetY;
+				g_config.armLength += rAxisOffsetY;
 			}
 		}
 	}
@@ -399,13 +399,13 @@ namespace frik {
 		mainConfigurationMode();
 
 		if (_calibrateModeActive) {
-			vr::VRControllerAxis_t doinantHandStick = g_config->leftHandedMode
+			vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
 				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0]
 				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0];
-			const uint64_t dominantHand = g_config->leftHandedMode
+			const uint64_t dominantHand = g_config.leftHandedMode
 				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
 				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
-			const uint64_t offHand = g_config->leftHandedMode
+			const uint64_t offHand = g_config.leftHandedMode
 				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
 				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto ExitandSave = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33));
@@ -415,9 +415,9 @@ namespace frik {
 			if (ExitandSave && !_exitAndSavePressed) {
 				_exitAndSavePressed = true;
 				g_configurationMode->configModeExit();
-				g_config->save();
+				g_config.save();
 				if (_vrhook != nullptr) {
-					g_config->leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
+					g_config.leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
 				}
 			} else if (!ExitandSave) {
 				_exitAndSavePressed = false;
@@ -425,19 +425,19 @@ namespace frik {
 			if (ExitnoSave && !_exitWithoutSavePressed) {
 				_exitWithoutSavePressed = true;
 				g_configurationMode->configModeExit();
-				g_config->armLength = _armLength_bkup;
-				g_config->powerArmor_up = _powerArmor_up_bkup;
-				g_config->playerOffset_up = _playerOffset_up_bkup;
-				g_config->rootOffset = _rootOffset_bkup;
-				g_config->PARootOffset = _PARootOffset_bkup;
-				g_config->fVrScale = _fVrScale_bkup;
-				g_config->playerOffset_forward = _playerOffset_forward_bkup;
-				g_config->powerArmor_forward = _powerArmor_forward_bkup;
-				g_config->cameraHeight = _cameraHeight_bkup;
-				g_config->PACameraHeight = _PACameraHeight_bkup;
-				g_config->enableGripButtonToGrap = enableGripButtonToGrap_bkup;
-				g_config->onePressGripButton = onePressGripButton_bkup;
-				g_config->enableGripButtonToLetGo = enableGripButtonToLetGo_bkup;
+				g_config.armLength = _armLength_bkup;
+				g_config.powerArmor_up = _powerArmor_up_bkup;
+				g_config.playerOffset_up = _playerOffset_up_bkup;
+				g_config.rootOffset = _rootOffset_bkup;
+				g_config.PARootOffset = _PARootOffset_bkup;
+				g_config.fVrScale = _fVrScale_bkup;
+				g_config.playerOffset_forward = _playerOffset_forward_bkup;
+				g_config.powerArmor_forward = _powerArmor_forward_bkup;
+				g_config.cameraHeight = _cameraHeight_bkup;
+				g_config.PACameraHeight = _PACameraHeight_bkup;
+				g_config.enableGripButtonToGrap = enableGripButtonToGrap_bkup;
+				g_config.onePressGripButton = onePressGripButton_bkup;
+				g_config.enableGripButtonToLetGo = enableGripButtonToLetGo_bkup;
 			} else if (!ExitnoSave) {
 				_exitWithoutSavePressed = false;
 			}
@@ -454,10 +454,10 @@ namespace frik {
 				_UIHeightButtonPressed = false;
 			}
 		} else {
-			const uint64_t dominantHand = g_config->leftHandedMode
+			const uint64_t dominantHand = g_config.leftHandedMode
 				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
 				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
-			const uint64_t offHand = g_config->leftHandedMode
+			const uint64_t offHand = g_config.leftHandedMode
 				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
 				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto dHTouch = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
@@ -485,13 +485,13 @@ namespace frik {
 	void ConfigurationMode::pipboyConfigurationMode() {
 		if (g_pipboy->status()) {
 			float rAxisOffsetX;
-			vr::VRControllerAxis_t doinantHandStick = g_config->leftHandedMode
+			vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
 				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0]
 				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0];
-			uint64_t dominantHand = g_config->leftHandedMode
+			uint64_t dominantHand = g_config.leftHandedMode
 				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
 				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
-			uint64_t offHand = g_config->leftHandedMode
+			uint64_t offHand = g_config.leftHandedMode
 				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
 				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto PBConfigButtonPressed = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
@@ -513,7 +513,7 @@ namespace frik {
 			}
 			BSFixedString pipName("PipboyBone");
 			NiAVObject* _3rdPipboy = nullptr;
-			if (!g_config->leftHandedPipBoy) {
+			if (!g_config.leftHandedPipBoy) {
 				if (_skelly->getLeftArm().forearm3) {
 					_3rdPipboy = _skelly->getLeftArm().forearm3->GetObjectByName(&pipName);
 				}
@@ -535,7 +535,7 @@ namespace frik {
 
 				auto rt = (BSFlattenedBoneTree*)_skelly->getRoot();
 				NiPoint3 finger;
-				g_config->leftHandedMode
+				g_config.leftHandedMode
 					? finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos
 					: finger = rt->transforms[_skelly->getBoneInMap("LArm_Finger23")].world.pos;
 				for (int i = 1; i <= 11; i++) {
@@ -558,7 +558,7 @@ namespace frik {
 							if (TransMesh->m_localTransform.pos.y > 1.0 && !_PBTouchbuttons[i]) {
 								if (_vrhook != nullptr) {
 									//_PBConfigSticky = true;
-									g_config->leftHandedMode ? _vrhook->StartHaptics(2, 0.05, 0.3) : _vrhook->StartHaptics(1, 0.05, 0.3);
+									g_config.leftHandedMode ? _vrhook->StartHaptics(2, 0.05, 0.3) : _vrhook->StartHaptics(1, 0.05, 0.3);
 									for (int i = 1; i <= 11; i++) {
 										if (i != 1 && i != 3) {
 											_PBTouchbuttons[i] = false;
@@ -580,7 +580,7 @@ namespace frik {
 									}
 									if (i == 10 || i == 11) {
 										if (i == 10) {
-											if (!g_config->pipBoyOpenWhenLookAt) {
+											if (!g_config.pipBoyOpenWhenLookAt) {
 												BSFixedString bname = "PBGlanceMarker";
 												auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 												if (!UIMarker) {
@@ -592,7 +592,7 @@ namespace frik {
 													UI->m_name = BSFixedString("PBGlanceMarker");
 													TouchMesh->AttachChild(UI, true);
 												}
-											} else if (g_config->pipBoyOpenWhenLookAt) {
+											} else if (g_config.pipBoyOpenWhenLookAt) {
 												BSFixedString bname = "PBGlanceMarker";
 												auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 												if (UIMarker) {
@@ -601,7 +601,7 @@ namespace frik {
 											}
 										}
 										if (i == 11) {
-											if (!g_config->dampenPipboyScreen) {
+											if (!g_config.dampenPipboyScreen) {
 												BSFixedString bname = "PBDampenMarker";
 												auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 												if (!UIMarker) {
@@ -613,7 +613,7 @@ namespace frik {
 													UI->m_name = BSFixedString("PBDampenMarker");
 													TouchMesh->AttachChild(UI, true);
 												}
-											} else if (g_config->dampenPipboyScreen) {
+											} else if (g_config.dampenPipboyScreen) {
 												BSFixedString bname = "PBDampenMarker";
 												auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 												if (UIMarker) {
@@ -630,21 +630,21 @@ namespace frik {
 				}
 				if (SaveButtonPressed && !_isSaveButtonPressed) {
 					_isSaveButtonPressed = true;
-					g_config->savePipboyOffset(pbRoot->m_localTransform);
-					g_config->savePipboyScale(_3rdPipboy->m_localTransform.scale);
+					g_config.savePipboyOffset(pbRoot->m_localTransform);
+					g_config.savePipboyScale(_3rdPipboy->m_localTransform.scale);
 				} else if (!SaveButtonPressed) {
 					_isSaveButtonPressed = false;
 				}
 				if (GlanceButtonPressed && !_isGlanceButtonPressed) {
 					_isGlanceButtonPressed = true;
-					g_config->togglePipBoyOpenWhenLookAt();
+					g_config.togglePipBoyOpenWhenLookAt();
 				} else if (!GlanceButtonPressed) {
 					_isGlanceButtonPressed = false;
 				}
 				if (DampenScreenButtonPressed && !_isDampenScreenButtonPressed) {
 					_isDampenScreenButtonPressed = true;
-					g_config->dampenPipboyScreen ? g_config->dampenPipboyScreen = false : g_config->dampenPipboyScreen = true;
-					g_config->toggleDampenPipboyScreen();
+					g_config.dampenPipboyScreen ? g_config.dampenPipboyScreen = false : g_config.dampenPipboyScreen = true;
+					g_config.toggleDampenPipboyScreen();
 				} else if (!DampenScreenButtonPressed) {
 					_isDampenScreenButtonPressed = false;
 				}
@@ -653,7 +653,7 @@ namespace frik {
 				}
 				if (ModelSwapButtonPressed && !_isModelSwapButtonPressed) {
 					_isModelSwapButtonPressed = true;
-					g_config->toggleIsHoloPipboy();
+					g_config.toggleIsHoloPipboy();
 					turnPipBoyOff();
 					g_pipboy->replaceMeshes(true);
 					_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
@@ -707,12 +707,12 @@ namespace frik {
 				if (doinantHandStick.y > 0.10 && ModelScaleButtonPressed && _3rdPipboy) {
 					rAxisOffsetX = doinantHandStick.y / 65;
 					_3rdPipboy->m_localTransform.scale += rAxisOffsetX;
-					g_config->pipBoyScale = _3rdPipboy->m_localTransform.scale;
+					g_config.pipBoyScale = _3rdPipboy->m_localTransform.scale;
 				}
 				if (doinantHandStick.y < -0.10 && ModelScaleButtonPressed && _3rdPipboy) {
 					rAxisOffsetX = doinantHandStick.y / 65;
 					_3rdPipboy->m_localTransform.scale += rAxisOffsetX;
-					g_config->pipBoyScale = _3rdPipboy->m_localTransform.scale;
+					g_config.pipBoyScale = _3rdPipboy->m_localTransform.scale;
 				}
 			}
 		}
@@ -726,7 +726,7 @@ namespace frik {
 			}
 		}
 		if (_vrhook != nullptr) {
-			g_config->leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
+			g_config.leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
 		}
 		const NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
 		f4vr::NiCloneProcess proc;
@@ -735,7 +735,7 @@ namespace frik {
 		NiNode* HUD = Offsets::cloneNode(retNode, &proc);
 		HUD->m_name = BSFixedString("PBCONFIGHUD");
 		// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
-		NiNode* UIATTACH = g_config->leftHandedMode
+		NiNode* UIATTACH = g_config.leftHandedMode
 			? _skelly->getPlayerNodes()->primaryUIAttachNode
 			: f4vr::getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
 		UIATTACH->AttachChild(HUD, true);
@@ -761,13 +761,13 @@ namespace frik {
 			NiNode* UI2 = Offsets::cloneNode(retNode, &proc);
 			UI2->m_name = BSFixedString(meshName[i]);
 			UI->AttachChild(UI2, true);
-			if (i == 10 && g_config->pipBoyOpenWhenLookAt) {
+			if (i == 10 && g_config.pipBoyOpenWhenLookAt) {
 				retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 				NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
 				UI3->m_name = BSFixedString("PBGlanceMarker");
 				UI->AttachChild(UI3, true);
 			}
-			if (i == 11 && g_config->dampenPipboyScreen) {
+			if (i == 11 && g_config.dampenPipboyScreen) {
 				retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 				NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
 				UI3->m_name = BSFixedString("PBDampenMarker");

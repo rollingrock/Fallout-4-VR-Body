@@ -79,33 +79,33 @@ namespace SmoothMovementVR {
 			smoothedY.store(newPosition.y);
 			smoothedZ.store(newPosition.z);
 		} else {
-			if (frik::g_config->disableInteriorSmoothingHorizontal && interiorCell.load()) {
+			if (frik::g_config.disableInteriorSmoothingHorizontal && interiorCell.load()) {
 				smoothedX.store(newPosition.x);
 				smoothedY.store(newPosition.y);
 			} else {
-				if (frik::g_config->dampingMultiplierHorizontal != 0 && frik::g_config->smoothingAmountHorizontal != 0) {
+				if (frik::g_config.dampingMultiplierHorizontal != 0 && frik::g_config.smoothingAmountHorizontal != 0) {
 					const float absValX = max(0.1f, abs(newPosition.x - smoothedX.load()));
 					const float absValY = max(0.1f, abs(newPosition.y - smoothedY.load()));
 					smoothedX.store(
-						smoothedX.load() + m_frameTime.load() * ((newPosition.x - smoothedX.load()) / (frik::g_config->smoothingAmountHorizontal * (frik::g_config->
-							dampingMultiplierHorizontal / absValX) * (notMoving.load() ? frik::g_config->stoppingMultiplierHorizontal : 1.0f))));
+						smoothedX.load() + m_frameTime.load() * ((newPosition.x - smoothedX.load()) / (frik::g_config.smoothingAmountHorizontal * (frik::g_config.
+							dampingMultiplierHorizontal / absValX) * (notMoving.load() ? frik::g_config.stoppingMultiplierHorizontal : 1.0f))));
 					smoothedY.store(
-						smoothedY.load() + m_frameTime.load() * ((newPosition.y - smoothedY.load()) / (frik::g_config->smoothingAmountHorizontal * (frik::g_config->
-							dampingMultiplierHorizontal / absValY) * (notMoving.load() ? frik::g_config->stoppingMultiplierHorizontal : 1.0f))));
+						smoothedY.load() + m_frameTime.load() * ((newPosition.y - smoothedY.load()) / (frik::g_config.smoothingAmountHorizontal * (frik::g_config.
+							dampingMultiplierHorizontal / absValY) * (notMoving.load() ? frik::g_config.stoppingMultiplierHorizontal : 1.0f))));
 				} else {
 					smoothedX.store(newPosition.x);
 					smoothedY.store(newPosition.y);
 				}
 			}
 
-			if (frik::g_config->disableInteriorSmoothing && interiorCell.load()) {
+			if (frik::g_config.disableInteriorSmoothing && interiorCell.load()) {
 				smoothedZ.store(newPosition.z);
 			} else {
 				float absVal = abs(newPosition.z - smoothedZ.load());
 				absVal = max(absVal, 0.1f);
 				smoothedZ.store(
-					smoothedZ.load() + m_frameTime.load() * ((newPosition.z - smoothedZ.load()) / (frik::g_config->smoothingAmount * (frik::g_config->dampingMultiplier / absVal) *
-						(notMoving.load() ? frik::g_config->stoppingMultiplier : 1.0f))));
+					smoothedZ.load() + m_frameTime.load() * ((newPosition.z - smoothedZ.load()) / (frik::g_config.smoothingAmount * (frik::g_config.dampingMultiplier / absVal) *
+						(notMoving.load() ? frik::g_config.stoppingMultiplier : 1.0f))));
 			}
 		}
 
@@ -199,8 +199,8 @@ namespace SmoothMovementVR {
 							//	Log::info("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
 							playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load()
-								? frik::g_config->PACameraHeight + frik::g_config->cameraHeight + frik::c_dynamicCameraHeight
-								: frik::g_config->cameraHeight + frik::c_dynamicCameraHeight;
+								? frik::g_config.PACameraHeight + frik::g_config.cameraHeight + frik::c_dynamicCameraHeight
+								: frik::g_config.cameraHeight + frik::c_dynamicCameraHeight;
 						} else {
 							Log::info("Cannot get PlayerWorldNode...");
 						}

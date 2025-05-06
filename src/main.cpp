@@ -43,7 +43,7 @@ void onF4SEMessage(F4SEMessagingInterface::Message* msg) {
 	}
 
 	if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
-		constexpr bool gripConfig = false; // !frik::g_config->staticGripping;
+		constexpr bool gripConfig = false; // !frik::g_config.staticGripping;
 		g_messaging->Dispatch(g_pluginHandle, 15, static_cast<void*>(nullptr), sizeof(bool), "FO4VRBETTERSCOPES");
 		g_messaging->RegisterListener(g_pluginHandle, "FO4VRBETTERSCOPES", onBetterScopesMessage);
 		Log::info("kMessage_PostLoad Completed");
@@ -98,7 +98,7 @@ bool F4SEPlugin_Load(const F4SEInterface* f4se) {
 		}
 
 		Log::info("Init config...");
-		frik::initConfig();
+		frik::g_config.loadAllConfig();
 
 		Log::info("Init UI Manager...");
 		vrui::initUIManager();

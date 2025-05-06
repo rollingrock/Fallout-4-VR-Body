@@ -33,7 +33,7 @@ namespace frik {
 		Matrix44 rot;
 		NiTransform transform;
 		transform.scale = originalTransform.scale;
-		if (g_config->leftHandedMode) {
+		if (g_config.leftHandedMode) {
 			transform.pos = NiPoint3(5.5f, -2.2f, 1);
 			rot.setEulerAngles(degreesToRads(95), degreesToRads(60), 0);
 		} else {
@@ -51,7 +51,7 @@ namespace frik {
 		NiTransform transform;
 		transform.scale = originalTransform.scale;
 		transform.rot = originalTransform.rot;
-		transform.pos = g_config->leftHandedMode
+		transform.pos = g_config.leftHandedMode
 			? (inPA ? NiPoint3(-2.5f, 7.5f, -1) : NiPoint3(-3, 4, 0))
 			: inPA
 			? NiPoint3(-0.5f, 6, 2)
@@ -65,7 +65,7 @@ namespace frik {
 	NiTransform WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(const NiTransform& originalTransform, const bool inPA) {
 		NiTransform transform;
 		transform.scale = originalTransform.scale;
-		if (g_config->leftHandedMode) {
+		if (g_config.leftHandedMode) {
 			Matrix44 mat;
 			mat.setEulerAngles(degreesToRads(180), 0, degreesToRads(180));
 			transform.rot = mat.make43();
@@ -176,7 +176,7 @@ namespace frik {
 		}
 
 		auto& transform = _adjuster->_weaponOffsetTransform;
-		const float leftHandedMult = g_config->leftHandedMode ? -1.f : 1.f;
+		const float leftHandedMult = g_config.leftHandedMode ? -1.f : 1.f;
 
 		// Update the weapon transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
@@ -226,7 +226,7 @@ namespace frik {
 		}
 
 		auto& transform = _adjuster->_throwableWeaponOffsetTransform;
-		const float leftHandedMult = g_config->leftHandedMode ? -1.f : 1.f;
+		const float leftHandedMult = g_config.leftHandedMode ? -1.f : 1.f;
 
 		// Update the transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
@@ -258,7 +258,7 @@ namespace frik {
 		}
 
 		auto& transform = _adjuster->_backOfHandUIOffsetTransform;
-		const float leftHandedMult = g_config->leftHandedMode ? -1.f : 1.f;
+		const float leftHandedMult = g_config.leftHandedMode ? -1.f : 1.f;
 
 		// Update the transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
@@ -339,20 +339,20 @@ namespace frik {
 		_adjuster->_weaponOffsetTransform = isMeleeWeaponEquipped()
 			? getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
 			: _adjuster->_weaponOriginalTransform;
-		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA, true);
+		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveWeaponConfig() const {
 		showNotification("Saving Weapon Position");
 		doHaptic();
-		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
+		g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetOffhandConfig() const {
 		showNotification("Reset Offhand Position to Default");
 		doHaptic();
 		_adjuster->_offhandOffsetRot = Matrix44::getIdentity43();
-		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA, true);
+		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveOffhandConfig() const {
@@ -362,20 +362,20 @@ namespace frik {
 		transform.scale = 1;
 		transform.pos = NiPoint3(0, 0, 0);
 		transform.rot = _adjuster->_offhandOffsetRot;
-		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA);
+		g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetThrowableConfig() const {
 		showNotification("Reset Throwable Weapon Position to Default");
 		doHaptic();
 		_adjuster->_throwableWeaponOffsetTransform = _adjuster->_throwableWeaponOriginalTransform;
-		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA, true);
+		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveThrowableConfig() const {
 		showNotification("Saving Throwable Weapon Position");
 		doHaptic();
-		g_config->saveWeaponOffsets(_adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
+		g_config.saveWeaponOffsets(_adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetBackOfHandUIConfig() const {
@@ -383,13 +383,13 @@ namespace frik {
 		doHaptic();
 		_adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_currentlyInPA);
 		_adjuster->getBackOfHandUINode()->m_localTransform = _adjuster->_backOfHandUIOffsetTransform;
-		g_config->removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA, true);
+		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveBackOfHandUIConfig() const {
 		showNotification("Saving Back of Hand UI Position");
 		doHaptic();
-		g_config->saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_backOfHandUIOffsetTransform, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA);
+		g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_backOfHandUIOffsetTransform, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetBetterScopesConfig() const {
@@ -484,13 +484,13 @@ namespace frik {
 		// start hidden by default (will be set visible in frame update if it should be)
 		_configUI->setVisibility(false);
 
-		g_uiManager->attachPresetToPrimaryWandLeft(_configUI, g_config->leftHandedMode, {0, -4, 0});
+		g_uiManager->attachPresetToPrimaryWandLeft(_configUI, g_config.leftHandedMode, {0, -4, 0});
 	}
 
 	/**
 	 * Run a simple haptic
 	 */
 	void WeaponPositionConfigMode::doHaptic() const {
-		_adjuster->_vrHook->StartHaptics(g_config->leftHandedMode ? 1 : 2, 0.5, 0.4f);
+		_adjuster->_vrHook->StartHaptics(g_config.leftHandedMode ? 1 : 2, 0.5, 0.4f);
 	}
 }

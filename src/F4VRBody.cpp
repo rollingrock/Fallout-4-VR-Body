@@ -63,7 +63,7 @@ namespace frik {
 		}
 
 		virtual void fireInteractionHeptic() override {
-			_vrhook->StartHaptics(g_config->leftHandedMode ? 2 : 1, 0.2f, 0.3f);
+			_vrhook->StartHaptics(g_config.leftHandedMode ? 2 : 1, 0.2f, 0.3f);
 		}
 
 		virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override {
@@ -179,9 +179,9 @@ namespace frik {
 
 			turnPipBoyOff();
 
-			if (g_config->setScale) {
+			if (g_config.setScale) {
 				Setting* set = GetINISetting("fVrScale:VR");
-				set->SetDouble(g_config->fVrScale);
+				set->SetDouble(g_config.fVrScale);
 			}
 			Log::info("scale set");
 
@@ -213,7 +213,7 @@ namespace frik {
 	}
 
 	void smoothMovement() {
-		if (!g_config->disableSmoothMovement) {
+		if (!g_config.disableSmoothMovement) {
 			SmoothMovementVR::everyFrame();
 		}
 	}
@@ -269,7 +269,7 @@ namespace frik {
 			printPlayerOnce = false;
 		}
 
-		g_config->onUpdateFrame();
+		g_config.onUpdateFrame();
 
 		const auto wasInPowerArmor = inPowerArmorSticky;
 		inPowerArmorSticky = detectInPowerArmor();
@@ -319,7 +319,7 @@ namespace frik {
 		}
 
 		// do stuff now
-		g_config->leftHandedMode = *Offsets::iniLeftHandedMode;
+		g_config.leftHandedMode = *Offsets::iniLeftHandedMode;
 		_skelly->setLeftHandedSticky();
 
 		Log::debug("Start of Frame");
@@ -330,7 +330,7 @@ namespace frik {
 			GameVarsConfigured = true;
 		}
 
-		g_config->leftHandedMode = *Offsets::iniLeftHandedMode;
+		g_config.leftHandedMode = *Offsets::iniLeftHandedMode;
 
 		g_pipboy->replaceMeshes(false);
 
@@ -359,7 +359,7 @@ namespace frik {
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
 		Log::debug("Setup Head");
 		NiNode* headNode = f4vr::getNode("Head", _skelly->getRoot());
-		_skelly->setupHead(headNode, g_config->hideHead);
+		_skelly->setupHead(headNode, g_config.hideHead);
 
 		//// set up the body underneath the headset in a proper scale and orientation
 		Log::debug("Set body under HMD");
@@ -375,7 +375,7 @@ namespace frik {
 		_skelly->setKneePos();
 		Log::debug("Set Walk");
 
-		if (!g_config->armsOnly) {
+		if (!g_config.armsOnly) {
 			_skelly->walk();
 		}
 		//_skelly->setLegs();
@@ -412,7 +412,7 @@ namespace frik {
 		Log::debug("fix the missing screen");
 		fixMissingScreen(_skelly->getPlayerNodes());
 
-		if (g_config->armsOnly) {
+		if (g_config.armsOnly) {
 			_skelly->showOnlyArms();
 		}
 
@@ -464,16 +464,16 @@ namespace frik {
 			// sets 3rd Person Pipboy Scale
 			NiNode* _Pipboy3rd = getChildNode("PipboyBone", (*g_player)->unkF0->rootNode);
 			if (_Pipboy3rd) {
-				_Pipboy3rd->m_localTransform.scale = g_config->pipBoyScale;
+				_Pipboy3rd->m_localTransform.scale = g_config.pipBoyScale;
 			}
 		} else {
 			_skelly->fixArmor();
 		}
 
-		if (g_config->checkDebugDumpDataOnceFor("nodes")) {
+		if (g_config.checkDebugDumpDataOnceFor("nodes")) {
 			printAllNodes(_skelly);
 		}
-		if (g_config->checkDebugDumpDataOnceFor("skelly")) {
+		if (g_config.checkDebugDumpDataOnceFor("skelly")) {
 			printNodes((*g_player)->firstPersonSkeleton->GetAsNiNode());
 		}
 	}
@@ -501,16 +501,16 @@ namespace frik {
 
 	static void openFrikIniFile(StaticFunctionTag* base) {
 		Log::info("Open FRIK.ini file in notepad...");
-		g_config->openInNotepad();
+		g_config.openInNotepad();
 	}
 
 	static UInt32 getFrikIniAutoReloading(StaticFunctionTag* base) {
-		return g_config->getAutoReloadConfigInterval() > 0 ? 1 : 0;
+		return g_config.getAutoReloadConfigInterval() > 0 ? 1 : 0;
 	}
 
 	static UInt32 toggleReloadFrikIniConfig(StaticFunctionTag* base) {
 		Log::info("Papyrus: Toggle reload FRIK.ini config file...");
-		g_config->toggleAutoReloadConfig();
+		g_config.toggleAutoReloadConfig();
 		return getFrikIniAutoReloading(base);
 	}
 
@@ -542,12 +542,12 @@ namespace frik {
 
 	static void moveForward(StaticFunctionTag* base) {
 		Log::info("Papyrus: Move Forward");
-		g_config->playerOffset_forward += 1.0f;
+		g_config.playerOffset_forward += 1.0f;
 	}
 
 	static void moveBackward(StaticFunctionTag* base) {
 		Log::info("Papyrus: Move Backward");
-		g_config->playerOffset_forward -= 1.0f;
+		g_config.playerOffset_forward -= 1.0f;
 	}
 
 	static void setDynamicCameraHeight(StaticFunctionTag* base, const float dynamicCameraHeight) {

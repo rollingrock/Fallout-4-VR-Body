@@ -51,7 +51,7 @@ namespace f4vr {
 	 */
 	static TrackerType getTrackerTypeForCorrectHand(const bool primary) {
 		// TODO: refactor dependency on frik
-		return frik::g_config->leftHandedMode
+		return frik::g_config.leftHandedMode
 			? primary
 			? TrackerType::Left
 			: TrackerType::Right

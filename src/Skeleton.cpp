@@ -157,7 +157,7 @@ namespace frik {
 		mat.rotateVectorVec(back, bodyDir);
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
 		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
-		_root->m_localTransform.pos.y += g_config->selfieOutFrontDistance;
+		_root->m_localTransform.pos.y += g_config.selfieOutFrontDistance;
 		_root->m_localTransform.pos.z = z;
 	}
 
@@ -186,7 +186,7 @@ namespace frik {
 	 * Would be nice to know how long the bone is instead of magic numbers, didn't find a way so far.
 	 */
 	NiPoint3 Skeleton::getOffhandIndexFingerTipWorldPosition() const {
-		const auto offhandIndexFinger = g_config->leftHandedMode ? "RArm_Finger23" : "LArm_Finger23";
+		const auto offhandIndexFinger = g_config.leftHandedMode ? "RArm_Finger23" : "LArm_Finger23";
 		const auto boneTransform = reinterpret_cast<BSFlattenedBoneTree*>(_root)->transforms[getBoneInMap(offhandIndexFinger)];
 		const auto forward = boneTransform.world.rot * NiPoint3(1, 0, 0);
 		return boneTransform.world.pos + forward * (_inPowerArmor ? 3 : 1.8f);
@@ -528,7 +528,7 @@ namespace frik {
 		constexpr float basePitch = 105.3f;
 		constexpr float weight = 0.1f;
 
-		const float curHeight = g_config->playerHeight;
+		const float curHeight = g_config.playerHeight;
 		const float heightCalc = std::abs((curHeight - _playerNodes->UprightHmdNode->m_localTransform.pos.z) / curHeight);
 
 		const float angle = heightCalc * (basePitch + weight * radsToDegrees(getNeckPitch()));
@@ -539,10 +539,10 @@ namespace frik {
 	void Skeleton::setUnderHMD(float groundHeight) {
 		detectInPowerArmor();
 
-		if (g_config->disableSmoothMovement) {
+		if (g_config.disableSmoothMovement) {
 			_playerNodes->playerworldnode->m_localTransform.pos.z = _inPowerArmor
-				? g_config->PACameraHeight + c_dynamicCameraHeight
-				: g_config->cameraHeight + c_dynamicCameraHeight;
+				? g_config.PACameraHeight + c_dynamicCameraHeight
+				: g_config.cameraHeight + c_dynamicCameraHeight;
 			updateDown(_playerNodes->playerworldnode, true);
 		}
 
@@ -579,8 +579,8 @@ namespace frik {
 		_root->m_localTransform.pos = body->m_worldTransform.pos - getPosition();
 		_root->m_localTransform.pos.z = z;
 		//_root->m_localTransform.pos *= 0.0f;
-		//_root->m_localTransform.pos.y = g_config->playerOffset_forward - 6.0f;
-		_root->m_localTransform.scale = g_config->playerHeight / defaultCameraHeight; // set scale based off specified user height
+		//_root->m_localTransform.pos.y = g_config.playerOffset_forward - 6.0f;
+		_root->m_localTransform.scale = g_config.playerHeight / defaultCameraHeight; // set scale based off specified user height
 	}
 
 	void Skeleton::setBodyPosture() {
@@ -598,9 +598,9 @@ namespace frik {
 		com->m_localTransform.pos.x = 0.0;
 		com->m_localTransform.pos.y = 0.0;
 
-		const float z_adjust = (_inPowerArmor ? g_config->powerArmor_up : g_config->playerOffset_up) - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
-		//float z_adjust = g_config->playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
-		const auto neckAdjust = NiPoint3(-_forwardDir.x * g_config->playerOffset_forward / 2, -_forwardDir.y * g_config->playerOffset_forward / 2, z_adjust);
+		const float z_adjust = (_inPowerArmor ? g_config.powerArmor_up : g_config.playerOffset_up) - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
+		//float z_adjust = g_config.playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
+		const auto neckAdjust = NiPoint3(-_forwardDir.x * g_config.playerOffset_forward / 2, -_forwardDir.y * g_config.playerOffset_forward / 2, z_adjust);
 		const NiPoint3 neckPos = camera->m_worldTransform.pos + neckAdjust;
 
 		_torsoLen = vec3Len(neck->m_worldTransform.pos - com->m_worldTransform.pos);
@@ -616,14 +616,14 @@ namespace frik {
 		const NiPoint3 newHipPos = neckPos + hmdToNewHip * (_torsoLen / vec3Len(hmdToNewHip));
 
 		const NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * (newHipPos - com->m_worldTransform.pos);
-		const float offsetFwd = _inPowerArmor ? g_config->powerArmor_forward : g_config->playerOffset_forward;
+		const float offsetFwd = _inPowerArmor ? g_config.powerArmor_forward : g_config.playerOffset_forward;
 		com->m_localTransform.pos.y += newPos.y + offsetFwd;
 		com->m_localTransform.pos.z = _inPowerArmor ? newPos.z / 1.7 : newPos.z / 1.5;
-		//com->m_localTransform.pos.z -= _inPowerArmor ? g_config->powerArmor_up + g_config->PACameraHeight : 0.0f;
+		//com->m_localTransform.pos.z -= _inPowerArmor ? g_config.powerArmor_up + g_config.PACameraHeight : 0.0f;
 		NiNode* body = _root->m_parent->GetAsNiNode();
 		_inPowerArmor
-			? body->m_worldTransform.pos.z = body->m_worldTransform.pos.z - (g_config->PACameraHeight + g_config->PARootOffset)
-			: body->m_worldTransform.pos.z = body->m_worldTransform.pos.z - (g_config->cameraHeight + g_config->rootOffset);
+			? body->m_worldTransform.pos.z = body->m_worldTransform.pos.z - (g_config.PACameraHeight + g_config.PARootOffset)
+			: body->m_worldTransform.pos.z = body->m_worldTransform.pos.z - (g_config.cameraHeight + g_config.rootOffset);
 
 		Matrix44 rot;
 		rot.rotateVectorVec(neckPos - tmpHipPos, hmdToHip);
@@ -1039,12 +1039,12 @@ namespace frik {
 
 	void Skeleton::setBodyLen() {
 		_torsoLen = vec3Len(getNode("Camera", _root)->m_worldTransform.pos - getNode("COM", _root)->m_worldTransform.pos);
-		_torsoLen *= g_config->playerHeight / defaultCameraHeight;
+		_torsoLen *= g_config.playerHeight / defaultCameraHeight;
 
 		_legLen = vec3Len(getNode("LLeg_Thigh", _root)->m_worldTransform.pos - getNode("Pelvis", _root)->m_worldTransform.pos);
 		_legLen += vec3Len(getNode("LLeg_Calf", _root)->m_worldTransform.pos - getNode("LLeg_Thigh", _root)->m_worldTransform.pos);
 		_legLen += vec3Len(getNode("LLeg_Foot", _root)->m_worldTransform.pos - getNode("LLeg_Calf", _root)->m_worldTransform.pos);
-		_legLen *= g_config->playerHeight / defaultCameraHeight;
+		_legLen *= g_config.playerHeight / defaultCameraHeight;
 	}
 
 	void Skeleton::hideWeapon() const {
@@ -1074,7 +1074,7 @@ namespace frik {
 
 		static BSFixedString nodeName("PipboyBone");
 		NiAVObject* pipboyBone;
-		if (g_config->leftHandedPipBoy) {
+		if (g_config.leftHandedPipBoy) {
 			pipboyBone = _rightArm.forearm1->GetObjectByName(&nodeName);
 		} else {
 			pipboyBone = _leftArm.forearm1->GetObjectByName(&nodeName);
@@ -1105,7 +1105,7 @@ namespace frik {
 	}
 
 	void Skeleton::leftHandedModePipboy() const {
-		if (g_config->leftHandedPipBoy) {
+		if (g_config.leftHandedPipBoy) {
 			NiNode* pipbone = getNode("PipboyBone", _rightArm.forearm1->GetAsNiNode());
 
 			if (!pipbone) {
@@ -1199,11 +1199,11 @@ namespace frik {
 			}
 		};
 
-		if (mode == WandMode::Both || (mode == WandMode::PrimaryHandWand && !g_config->leftHandedMode) || (mode == WandMode::OffhandWand && g_config->leftHandedMode)) {
+		if (mode == WandMode::Both || (mode == WandMode::PrimaryHandWand && !g_config.leftHandedMode) || (mode == WandMode::OffhandWand && g_config.leftHandedMode)) {
 			setVisibilityForNode(_playerNodes->primaryWandNode);
 		}
 
-		if (mode == WandMode::Both || (mode == WandMode::PrimaryHandWand && g_config->leftHandedMode) || (mode == WandMode::OffhandWand && !g_config->leftHandedMode)) {
+		if (mode == WandMode::Both || (mode == WandMode::PrimaryHandWand && g_config.leftHandedMode) || (mode == WandMode::OffhandWand && !g_config.leftHandedMode)) {
 			setVisibilityForNode(_playerNodes->SecondaryWandNode);
 		}
 	}
@@ -1217,7 +1217,7 @@ namespace frik {
 	}
 
 	void Skeleton::hideFistHelpers() const {
-		if (!g_config->leftHandedMode) {
+		if (!g_config.leftHandedMode) {
 			NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->primaryWandNode);
 			if (node != nullptr) {
 				node->flags |= 0x1; // first bit sets the cull flag so it will be hidden;
@@ -1288,7 +1288,7 @@ namespace frik {
 		const BSFixedString pipName("PipboyBone");
 		NiAVObject* pipboy = nullptr;
 
-		if (!g_config->leftHandedPipBoy) {
+		if (!g_config.leftHandedPipBoy) {
 			if (_leftArm.forearm3) {
 				pipboy = _leftArm.forearm3->GetObjectByName(&pipName);
 			}
@@ -1301,9 +1301,9 @@ namespace frik {
 		}
 
 		// Changed to allow scaling of third person Pipboy --->
-		if (!g_config->hidePipboy) {
-			if (pipboy->m_localTransform.scale != g_config->pipBoyScale) {
-				pipboy->m_localTransform.scale = g_config->pipBoyScale;
+		if (!g_config.hidePipboy) {
+			if (pipboy->m_localTransform.scale != g_config.pipBoyScale) {
+				pipboy->m_localTransform.scale = g_config.pipBoyScale;
 				toggleVis(pipboy->GetAsNiNode(), false, true);
 			}
 		} else {
@@ -1335,16 +1335,16 @@ namespace frik {
 
 	void Skeleton::showHidePAHud() const {
 		if (const auto hud = getNode("PowerArmorHelmetRoot", _playerNodes->roomnode)) {
-			hud->m_localTransform.scale = g_config->showPAHUD ? 1.0f : 0.0f;
+			hud->m_localTransform.scale = g_config.showPAHUD ? 1.0f : 0.0f;
 		}
 	}
 
 	void Skeleton::setLeftHandedSticky() {
-		_leftHandedSticky = !g_config->leftHandedMode;
+		_leftHandedSticky = !g_config.leftHandedMode;
 	}
 
 	void Skeleton::handleWeaponNodes() {
-		if (_leftHandedSticky == g_config->leftHandedMode) {
+		if (_leftHandedSticky == g_config.leftHandedMode) {
 			return;
 		}
 
@@ -1355,7 +1355,7 @@ namespace frik {
 
 		if (!rightWeapon || !rHand || !leftWeapon || !lHand) {
 			Log::debug("Cannot set up weapon nodes");
-			_leftHandedSticky = g_config->leftHandedMode;
+			_leftHandedSticky = g_config.leftHandedMode;
 			return;
 		}
 
@@ -1364,7 +1364,7 @@ namespace frik {
 		lHand->RemoveChild(rightWeapon);
 		lHand->RemoveChild(leftWeapon);
 
-		if (g_config->leftHandedMode) {
+		if (g_config.leftHandedMode) {
 			rHand->AttachChild(leftWeapon, true);
 			lHand->AttachChild(rightWeapon, true);
 		} else {
@@ -1376,7 +1376,7 @@ namespace frik {
 			rightWeapon->m_localTransform.scale = 0.0;
 		}
 
-		_leftHandedSticky = g_config->leftHandedMode;
+		_leftHandedSticky = g_config.leftHandedMode;
 	}
 
 	// This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
@@ -1402,7 +1402,7 @@ namespace frik {
 		NiNode* leftWeapon = _playerNodes->WeaponLeftNode; // "WeaponLeft" can return incorrect node for left-handed with throwable weapons
 
 		// handle the NON-primary hand (i.e. the hand that is NOT holding the weapon)
-		bool handleOffhand = g_config->leftHandedMode ^ isLeft;
+		bool handleOffhand = g_config.leftHandedMode ^ isLeft;
 
 		NiNode* weaponNode = handleOffhand ? leftWeapon : rightWeapon;
 		NiNode* offsetNode = handleOffhand ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
@@ -1417,7 +1417,7 @@ namespace frik {
 		}
 
 		Matrix44 w;
-		if (!g_config->leftHandedMode) {
+		if (!g_config.leftHandedMode) {
 			w.data[0][0] = -0.122f;
 			w.data[1][0] = 0.987f;
 			w.data[2][0] = 0.100f;
@@ -1445,7 +1445,7 @@ namespace frik {
 			weaponNode->m_localTransform.rot = w.multiply43Right(weaponNode->m_localTransform.rot);
 		}
 
-		weaponNode->m_localTransform.pos = g_config->leftHandedMode
+		weaponNode->m_localTransform.pos = g_config.leftHandedMode
 			? (isLeft ? NiPoint3(3.389f, -2.099f, 3.133f) : NiPoint3(0, -4.8f, 0))
 			: isLeft
 			? NiPoint3(0, 0, 0)
@@ -1467,12 +1467,12 @@ namespace frik {
 			return;
 		}
 
-		float adjustedArmLength = g_config->armLength / 36.74f;
+		float adjustedArmLength = g_config.armLength / 36.74f;
 
 		// Shoulder IK is done in a very simple way
 
 		NiPoint3 shoulderToHand = handPos - arm.upper->m_worldTransform.pos;
-		float armLength = g_config->armLength;
+		float armLength = g_config.armLength;
 		float adjustAmount = (std::clamp)(vec3Len(shoulderToHand) - armLength * 0.5f, 0.0f, armLength * 0.85f) / (armLength * 0.85f);
 		NiPoint3 shoulderOffset = vec3Norm(shoulderToHand) * (adjustAmount * armLength * 0.08f);
 
@@ -1880,7 +1880,7 @@ namespace frik {
 					vr::k_EButton_SteamVR_Touchpad));
 				_closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton[name]);
 
-				if (isWeaponVisible && !g_pipboy->status() && !g_pipboy->isOperatingPipboy() && !(isLeft ^ g_config->leftHandedMode)) {
+				if (isWeaponVisible && !g_pipboy->status() && !g_pipboy->isOperatingPipboy() && !(isLeft ^ g_config.leftHandedMode)) {
 					// CylonSurfer Updated conditions to cater for Virtual Pipboy usage (Ensures Index Finger is extended when weapon is drawn)
 					this->copy1StPerson(name);
 				} else {
@@ -1922,11 +1922,11 @@ namespace frik {
 	}
 
 	void Skeleton::dampenHand(NiNode* node, const bool isLeft) {
-		if (!g_config->dampenHands) {
+		if (!g_config.dampenHands) {
 			return;
 		}
 
-		if (isInScopeMenu() && !g_config->dampenHandsInVanillaScope) {
+		if (isInScopeMenu() && !g_config.dampenHandsInVanillaScope) {
 			return;
 		}
 
@@ -1937,13 +1937,13 @@ namespace frik {
 		Quaternion rq, rt;
 		rq.fromRot(prevFrame.rot);
 		rt.fromRot(node->m_worldTransform.rot);
-		rq.slerp(1 - (isInScopeMenu() ? g_config->dampenHandsRotationInVanillaScope : g_config->dampenHandsRotation), rt);
+		rq.slerp(1 - (isInScopeMenu() ? g_config.dampenHandsRotationInVanillaScope : g_config.dampenHandsRotation), rt);
 		node->m_worldTransform.rot = rq.getRot().make43();
 
 		// Linear interpolation between the position from the previous frame to current frame
 		const NiPoint3 dir = _curPos - _lastPos; // Offset the player movement from this interpolation
 		NiPoint3 deltaPos = node->m_worldTransform.pos - prevFrame.pos - dir; // Add in player velocity
-		deltaPos *= isInScopeMenu() ? g_config->dampenHandsTranslationInVanillaScope : g_config->dampenHandsTranslation;
+		deltaPos *= isInScopeMenu() ? g_config.dampenHandsTranslationInVanillaScope : g_config.dampenHandsTranslation;
 		node->m_worldTransform.pos -= deltaPos;
 
 		// Update the previous frame transform

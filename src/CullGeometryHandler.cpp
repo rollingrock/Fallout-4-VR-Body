@@ -56,8 +56,8 @@ namespace frik {
 			auto geomStr = str_tolower(trim(geomName));
 
 			bool toHide = false;
-			if (g_config->hideHead) {
-				for (auto& faceGeom : g_config->faceGeometry) {
+			if (g_config.hideHead) {
+				for (auto& faceGeom : g_config.faceGeometry()) {
 					if (geomStr.find(faceGeom) != std::string::npos) {
 						toHide = true;
 						break;
@@ -65,8 +65,8 @@ namespace frik {
 				}
 			}
 
-			if (g_config->hideSkin && !toHide) {
-				for (auto& skinGeom : g_config->skinGeometry) {
+			if (g_config.hideSkin && !toHide) {
+				for (auto& skinGeom : g_config.skinGeometry()) {
 					if (geomStr.find(skinGeom) != std::string::npos) {
 						toHide = true;
 						break;
@@ -91,7 +91,7 @@ namespace frik {
 	/// Equipment slots are things like helmet, glasses, etc.
 	/// </summary>
 	void CullGeometryHandler::cullPlayerGeometry() {
-		if (c_selfieMode && g_config->selfieIgnoreHideFlags) {
+		if (c_selfieMode && g_config.selfieIgnoreHideFlags) {
 			restoreGeometry();
 			return;
 		}
@@ -103,20 +103,20 @@ namespace frik {
 
 		// check for selfie mode to handle an edge-case where all hide setting are set to false but the geometries are not restored
 		// preProcessHideGeometryIndexes will restore them (even equipment) so it's a hacky fix
-		if (g_config->hideHead || g_config->hideSkin || c_selfieMode) {
+		if (g_config.hideHead || g_config.hideSkin || c_selfieMode) {
 			preProcessHideGeometryIndexes(rn);
 			for each (int idx in _hideFaceSkinGeometryIndexes) {
 				showHideNode(rn->kGeomArray[idx].spGeometry, true);
 			}
 		}
 
-		if (g_config->hideEquipment) {
-			for (const auto slot : g_config->hideEquipSlotIndexes) {
+		if (g_config.hideEquipment) {
+			for (const auto slot : g_config.hideEquipSlotIndexes()) {
 				setEquipmentSlotByIndexVisibility(slot, true);
 			}
 		}
 
-		if (g_config->checkDebugDumpDataOnceFor("geometry")) {
+		if (g_config.checkDebugDumpDataOnceFor("geometry")) {
 			dumpPlayerGeometry(rn);
 		}
 	}

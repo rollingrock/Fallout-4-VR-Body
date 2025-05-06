@@ -1,3 +1,5 @@
+// ReSharper disable StringLiteralTypo
+
 #include <fstream>
 #include "include/json.hpp"
 #include "include/SimpleIni.h"
@@ -12,23 +14,9 @@
 #include "common/Logger.h"
 #include "res/resource.h"
 
-using json = nlohmann::json;
 using namespace common;
 
 namespace frik {
-	Config* g_config = nullptr;
-
-	constexpr int FRIK_INI_VERSION = 7;
-
-	static const auto BASE_PATH = getRelativePathInDocuments(R"(\My Games\Fallout4VR\FRIK_Config)");
-	static const auto FRIK_INI_PATH = BASE_PATH + R"(\FRIK.ini)";
-	static const auto MESH_HIDE_FACE_INI_PATH = BASE_PATH + R"(\Mesh_Hide\face.ini)";
-	static const auto MESH_HIDE_SKINS_INI_PATH = BASE_PATH + R"(\Mesh_Hide\skins.ini)";
-	static const auto MESH_HIDE_SLOTS_INI_PATH = BASE_PATH + R"(\Mesh_Hide\slots.ini)";
-	static const auto PIPBOY_HOLO_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\HoloPipboyPosition.json)";
-	static const auto PIPBOY_SCREEN_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\PipboyPosition.json)";
-	static const auto WEAPONS_OFFSETS_PATH = BASE_PATH + R"(\Weapons_Offsets)";
-
 	/**
 	 * Open the FRIK.ini file in Notepad for editing.
 	 */
@@ -37,71 +25,16 @@ namespace frik {
 	}
 
 	/**
-	 * Check if debug data dump is requested for the given name.
-	 * If matched, the name will be removed from the list to prevent multiple dumps.
-	 * Also saved into INI to prevent reloading the same dump name on next config reload.
-	 * Support specifying multiple names by any separator as only the matched sub-string is removed.
-	 */
-	bool Config::checkDebugDumpDataOnceFor(const char* name) {
-		const auto idx = _debugDumpDataOnceNames.find(name);
-		if (idx == std::string::npos) {
-			return false;
-		}
-		_debugDumpDataOnceNames = _debugDumpDataOnceNames.erase(idx, strlen(name));
-		// write to INI for auto-reload not to re-enable it
-		saveFrikIniValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", _debugDumpDataOnceNames.c_str());
-
-		Log::info("---- Debug Dump Data check passed for '%s' ----", name);
-		return true;
-	}
-
-	/**
-	 * Runs on every game frame.
-	 * Used to reload the config file if the reload interval has passed.
-	 */
-	void Config::onUpdateFrame() {
-		try {
-			if (_reloadConfigInterval <= 0) {
-				return;
-			}
-
-			const auto now = std::time(nullptr);
-			if (now - lastReloadTime < _reloadConfigInterval) {
-				return;
-			}
-
-			Log::verbose("Reloading FRIK.ini file...");
-			lastReloadTime = now;
-			loadFrikINI();
-			loadHideMeshes();
-			Log::setLogLevel(logLevel);
-		} catch (const std::exception& e) {
-			Log::warn("Failed to reload FRIK.ini file: %s", e.what());
-		}
-	}
-
-	/**
 	 * Load the FRIK.ini config, hide meshes, and weapon offsets.
 	 * Handle creating the FRIK.ini file if it doesn't exist.
 	 * Handle updating the FRIK.ini file if the version is old.
 	 */
-	void Config::load() {
+	void Config::loadAllConfig() {
 		setupFolders();
 		migrateConfigFilesIfNeeded();
 
-		// create FRIK.ini if it doesn't exist
-		createFileFromResourceIfNotExists(FRIK_INI_PATH, IDR_FRIK_INI, true);
-
-		loadFrikINI();
-
-		Log::setLogLevel(logLevel);
-
-		if (version < FRIK_INI_VERSION) {
-			Log::info("Updating FRIK.ini version %d -> %d", version, FRIK_INI_VERSION);
-			updateFrikINIVersion();
-			// reload the config after update
-			loadFrikINI();
-		}
+		Log::info("Load ini config...");
+		loadIniConfig();
 
 		Log::info("Load hide meshes...");
 		loadHideMeshes();
@@ -109,41 +42,24 @@ namespace frik {
 		Log::info("Load pipboy offsets...");
 		loadPipboyOffsets();
 
-		Log::info("Load weapon embedded offsets...");
-		loadWeaponsOffsetsFromEmbedded();
-
-		Log::info("Load weapon custom offsets...");
-		loadWeaponsOffsetsFromFilesystem();
+		Log::info("Load weapon offsets...");
+		loadWeaponsOffsets();
 	}
 
-	void Config::loadFrikINI() {
-		CSimpleIniA ini;
-		const SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
-		if (rc < 0) {
-			throw std::runtime_error("Failed to load FRIK.ini file! Error: " + rc);
-		}
-
-		version = ini.GetLongValue(INI_SECTION_DEBUG, "Version", 0);
-		logLevel = ini.GetLongValue(INI_SECTION_DEBUG, "LogLevel", 3);
-		_reloadConfigInterval = ini.GetLongValue(INI_SECTION_DEBUG, "ReloadConfigInterval", 3);
-		debugFlowFlag1 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag1", 0));
-		debugFlowFlag2 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag2", 0));
-		debugFlowFlag3 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag3", 0));
-		_debugDumpDataOnceNames = ini.GetValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", "");
-
-		playerHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f));
+	void Config::loadIniConfigInternal(const CSimpleIniA& ini) {
+		playerHeight = ini.GetFloatValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f);
 		setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", false);
-		fVrScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fVrScale", 70.0));
-		playerOffset_forward = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", -4.0));
-		playerOffset_up = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", -2.0));
-		powerArmor_forward = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", 0.0));
-		powerArmor_up = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_up", 0.0));
-		pipboyDetectionRange = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "pipboyDetectionRange", 15.0));
-		armLength = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "armLength", 36.74));
-		cameraHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", 0.0));
-		PACameraHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", 0.0));
-		rootOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "RootOffset", 0.0));
-		PARootOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", 0.0));
+		fVrScale = ini.GetFloatValue(INI_SECTION_MAIN, "fVrScale", 70.0);
+		playerOffset_forward = ini.GetFloatValue(INI_SECTION_MAIN, "playerOffset_forward", -4.0);
+		playerOffset_up = ini.GetFloatValue(INI_SECTION_MAIN, "playerOffset_up", -2.0);
+		powerArmor_forward = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_forward", 0.0);
+		powerArmor_up = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_up", 0.0);
+		pipboyDetectionRange = ini.GetFloatValue(INI_SECTION_MAIN, "pipboyDetectionRange", 15.0);
+		armLength = ini.GetFloatValue(INI_SECTION_MAIN, "armLength", 36.74f);
+		cameraHeight = ini.GetFloatValue(INI_SECTION_MAIN, "cameraHeightOffset", 0.0);
+		PACameraHeight = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", 0.0);
+		rootOffset = ini.GetFloatValue(INI_SECTION_MAIN, "RootOffset", 0.0);
+		PARootOffset = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_RootOffset", 0.0);
 		showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
 		hidePipboy = ini.GetBoolValue(INI_SECTION_MAIN, "hidePipboy");
 		leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
@@ -151,10 +67,10 @@ namespace frik {
 		hideHead = ini.GetBoolValue(INI_SECTION_MAIN, "HideHead");
 		hideEquipment = ini.GetBoolValue(INI_SECTION_MAIN, "HideEquipment");
 		hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "HideSkin");
-		pipBoyLookAtGate = ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.7);
+		pipBoyLookAtGate = ini.GetFloatValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.7f);
 		pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 5000));
 		pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 5000));
-		gripLetGoThreshold = ini.GetDoubleValue(INI_SECTION_MAIN, "GripLetGoThreshold", 15.0f);
+		gripLetGoThreshold = ini.GetFloatValue(INI_SECTION_MAIN, "GripLetGoThreshold", 15.0f);
 		pipBoyOpenWhenLookAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", false);
 		pipBoyAllowMovementNotLooking = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true);
 		pipBoyButtonArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonArm", 0));
@@ -173,113 +89,44 @@ namespace frik {
 		dampenHands = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHands", true);
 		dampenHandsInVanillaScope = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHandsInVanillaScope", true);
 		dampenPipboyScreen = ini.GetBoolValue(INI_SECTION_MAIN, "DampenPipboyScreen", true);
-		dampenHandsRotation = ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", 0.7);
-		dampenHandsTranslation = ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", 0.7);
-		dampenHandsRotationInVanillaScope = ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotationInVanillaScope", 0.2);
-		dampenHandsTranslationInVanillaScope = ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslationInVanillaScope", 0.2);
-		dampenPipboyRotation = ini.GetDoubleValue(INI_SECTION_MAIN, "DampenPipboyRotation", 0.7);
-		dampenPipboyTranslation = ini.GetDoubleValue(INI_SECTION_MAIN, "DampenPipboyTranslation", 0.7);
-		directionalDeadzone = ini.GetDoubleValue(INI_SECTION_MAIN, "fDirectionalDeadzone", 0.5);
-		selfieOutFrontDistance = ini.GetDoubleValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0);
+		dampenHandsRotation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenHandsRotation", 0.7f);
+		dampenHandsTranslation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenHandsTranslation", 0.7f);
+		dampenHandsRotationInVanillaScope = ini.GetFloatValue(INI_SECTION_MAIN, "DampenHandsRotationInVanillaScope", 0.2f);
+		dampenHandsTranslationInVanillaScope = ini.GetFloatValue(INI_SECTION_MAIN, "DampenHandsTranslationInVanillaScope", 0.2f);
+		dampenPipboyRotation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenPipboyRotation", 0.7f);
+		dampenPipboyTranslation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenPipboyTranslation", 0.7f);
+		selfieOutFrontDistance = ini.GetFloatValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0);
 		selfieIgnoreHideFlags = ini.GetBoolValue(INI_SECTION_MAIN, "selfieIgnoreHideFlags", false);
 
 		//Pipboy & Main Config Mode Buttons
-		pipBoyScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipboyScale", 1.0));
+		pipBoyScale = ini.GetFloatValue(INI_SECTION_MAIN, "PipboyScale", 1.0);
 		switchUIControltoPrimary = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
 		autoFocusWindow = ini.GetBoolValue(INI_SECTION_MAIN, "AutoFocusWindow", false);
 
 		// weaponPositioning
-		holdDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "HoldDelay", 1000));
-		repositionButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "RepositionButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger)); // 33
-		offHandActivateButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OffHandActivateButtonID", vr::EVRButtonId::k_EButton_A)); // 7
-		scopeAdjustDistance = ini.GetDoubleValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f);
+		scopeAdjustDistance = ini.GetFloatValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f);
 
 		//Smooth Movement
 		disableSmoothMovement = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableSmoothMovement");
-		smoothingAmount = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmount", 15.0));
-		smoothingAmountHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmountHorizontal", 5.0));
-		dampingMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "Damping", 1.0));
-		dampingMultiplierHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "DampingHorizontal", 1.0));
-		stoppingMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplier", 0.6));
-		stoppingMultiplierHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplierHorizontal", 0.6));
+		smoothingAmount = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmount", 15.0);
+		smoothingAmountHorizontal = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmountHorizontal", 5.0);
+		dampingMultiplier = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "Damping", 1.0);
+		dampingMultiplierHorizontal = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "DampingHorizontal", 1.0);
+		stoppingMultiplier = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplier", 0.6f);
+		stoppingMultiplierHorizontal = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplierHorizontal", 0.6f);
 		disableInteriorSmoothing = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothing", true);
 		disableInteriorSmoothingHorizontal = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothingHorizontal", true);
 	}
 
 	/**
-	 * Current FRIK.ini file is older. Need to update it by:
-	 * 1. Overriding the file with the default FRIK.ini resource.
-	 * 2. Saving the current config values read from previous FRIK.ini to the new FRIK.ini file.
-	 * This preserves the user changed values, including new values and comments, and remove old values completly.
-	 * A backup of the previous file is created with the version number for safety.
-	 */
-	void Config::updateFrikINIVersion() const {
-		CSimpleIniA oldIni;
-		SI_Error rc = oldIni.LoadFile(FRIK_INI_PATH.c_str());
-		if (rc < 0) {
-			throw std::runtime_error("Failed to load old FRIK.ini file! Error: " + std::to_string(rc));
-		}
-
-		// override the file with the default FRIK.ini resource.
-		const auto tmpIniPath = std::string(FRIK_INI_PATH) + ".tmp";
-		createFileFromResourceIfNotExists(tmpIniPath, IDR_FRIK_INI, true);
-
-		CSimpleIniA newIni;
-		rc = newIni.LoadFile(tmpIniPath.c_str());
-		if (rc < 0) {
-			throw std::runtime_error("Failed to load new FRIK.ini file! Error: " + std::to_string(rc));
-		}
-
-		// remove temp ini file
-		std::remove(tmpIniPath.c_str());
-
-		// update all values in the new ini with the old ini values but only if they exist in the new
-		std::list<CSimpleIniA::Entry> sectionsList;
-		oldIni.GetAllSections(sectionsList);
-		for (const auto& section : sectionsList) {
-			std::list<CSimpleIniA::Entry> keysList;
-			oldIni.GetAllKeys(section.pItem, keysList);
-			for (const auto& key : keysList) {
-				const auto oldVal = oldIni.GetValue(section.pItem, key.pItem);
-				const auto newVal = newIni.GetValue(section.pItem, key.pItem);
-				if (newVal != nullptr && std::strcmp(oldVal, newVal) != 0) {
-					Log::info("Migrating %s.%s = %s", section.pItem, key.pItem, oldIni.GetValue(section.pItem, key.pItem));
-					newIni.SetValue(section.pItem, key.pItem, oldIni.GetValue(section.pItem, key.pItem));
-				} else {
-					Log::verbose("Skipping %s.%s (%s)", section.pItem, key.pItem, newVal == nullptr ? "removed" : "unchanged");
-				}
-			}
-		}
-
-		// set the version to latest
-		newIni.SetLongValue(INI_SECTION_DEBUG, "Version", FRIK_INI_VERSION);
-
-		// backup the old ini file before overwriting
-		auto nameStr = std::string(FRIK_INI_PATH);
-		nameStr = nameStr.replace(nameStr.length() - 4, 4, "_bkp_v" + std::to_string(version) + ".ini");
-		int res = std::rename(FRIK_INI_PATH.c_str(), nameStr.c_str());
-		if (rc != 0) {
-			Log::warn("Failed to backup old FRIK.ini file to '%s'. Error: %d", nameStr, rc);
-		}
-
-		// save the new ini file
-		rc = newIni.SaveFile(FRIK_INI_PATH.c_str());
-		if (rc < 0) {
-			throw std::runtime_error("Failed to save post update FRIK.ini file! Error: " + std::to_string(rc));
-		}
-
-		Log::info("FRIK.ini updated successfully");
-	}
-
-	/**
-	 * Load hide meshes from config ini files. Creating if don't exists on the disk.
+	 * Load hide meshes from config ini files. Creating if it doesn't exist on the disk.
 	 */
 	void Config::loadHideMeshes() {
 		createFileFromResourceIfNotExists(MESH_HIDE_FACE_INI_PATH, IDR_MESH_HIDE_FACE, true);
-		faceGeometry = loadListFromFile(MESH_HIDE_FACE_INI_PATH);
+		_faceGeometry = loadListFromFile(MESH_HIDE_FACE_INI_PATH);
 
 		createFileFromResourceIfNotExists(MESH_HIDE_SKINS_INI_PATH, IDR_MESH_HIDE_SKINS, true);
-		skinGeometry = loadListFromFile(MESH_HIDE_SKINS_INI_PATH);
+		_skinGeometry = loadListFromFile(MESH_HIDE_SKINS_INI_PATH);
 
 		createFileFromResourceIfNotExists(MESH_HIDE_SLOTS_INI_PATH, IDR_MESH_HIDE_SLOTS, true);
 		loadHideEquipmentSlots();
@@ -303,18 +150,15 @@ namespace frik {
 			{"scalp", 22}
 		};
 
-		hideEquipSlotIndexes.clear();
+		_hideEquipSlotIndexes.clear();
 		for (auto& geometry : slotsGeometry) {
 			if (slotToIndexMap.contains(geometry)) {
-				hideEquipSlotIndexes.push_back(slotToIndexMap[geometry]);
+				_hideEquipSlotIndexes.push_back(slotToIndexMap[geometry]);
 			}
 		}
 	}
 
-	void Config::saveFrikINI() const {
-		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
-
+	void Config::saveIniConfigInternal(CSimpleIniA& ini) const {
 		ini.SetDoubleValue(INI_SECTION_MAIN, "fVrScale", fVrScale);
 		ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", playerOffset_forward);
 		ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", playerOffset_up);
@@ -338,46 +182,6 @@ namespace frik {
 		ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButton", enableGripButtonToGrap);
 		ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", enableGripButtonToLetGo);
 		ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", onePressGripButton);
-
-		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
-		if (rc < 0) {
-			Log::error("Config: Failed to save FRIK.ini. Error: %d", rc);
-		} else {
-			Log::info("Config: Saving FRIK.ini successful");
-		}
-	}
-
-	/**
-	 * Save specific key and bool value into FRIK.ini file.
-	 */
-	void Config::saveFrikIniValue(const char* section, const char* key, const bool value) {
-		Log::info("Config: Saving \"%s = %s\" to FRIK.ini", key, value ? "true" : "false");
-		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
-		rc = ini.SetBoolValue(section, key, value);
-		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
-	}
-
-	/**
-	 * Save specific key and double value into FRIK.ini file.
-	 */
-	void Config::saveFrikIniValue(const char* section, const char* key, const double value) {
-		Log::info("Config: Saving \"%s = %f\" to FRIK.ini", key, value);
-		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
-		rc = ini.SetDoubleValue(section, key, value);
-		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
-	}
-
-	/**
-	 * Save specific key and string value into FRIK.ini file.
-	 */
-	void Config::saveFrikIniValue(const char* section, const char* key, const char* value) {
-		Log::info("Config: Saving \"%s = %s\" to FRIK.ini", key, value);
-		CSimpleIniA ini;
-		SI_Error rc = ini.LoadFile(FRIK_INI_PATH.c_str());
-		rc = ini.SetValue(section, key, value);
-		rc = ini.SaveFile(FRIK_INI_PATH.c_str());
 	}
 
 	/**
@@ -394,30 +198,6 @@ namespace frik {
 		const auto type = isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
 		_pipboyOffsets[type] = transform;
 		saveOffsetsToJsonFile(type, transform, isHoloPipboy ? PIPBOY_HOLO_OFFSETS_PATH : PIPBOY_SCREEN_OFFSETS_PATH);
-	}
-
-	/**
-	 * Get the name for the weapon offset to use depending on the mode.
-	 * Basically a hack to store multiple modes of the same weapon by adding suffix to the name.
-	 */
-	static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool leftHanded) {
-		static const std::string POWER_ARMOR_SUFFIX{"-PowerArmor"};
-		static const std::string OFF_HAND_SUFFIX{"-offHand"};
-		static const std::string THROWABLE_SUFFIX{"-throwable"};
-		static const std::string BACK_OF_HAND_SUFFIX{"-backOfHand"};
-		static const std::string LEFT_HANDED_SUFFIX{"-leftHanded"};
-		switch (mode) {
-		case WeaponOffsetsMode::Weapon:
-			return name + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
-		case WeaponOffsetsMode::OffHand:
-			return name + OFF_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
-		case WeaponOffsetsMode::Throwable:
-			return name + THROWABLE_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
-		case WeaponOffsetsMode::BackOfHandUI:
-			return name + BACK_OF_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
-		default:
-			throw std::invalid_argument("Invalid weapon offset mode");
-		}
 	}
 
 	/**
@@ -461,119 +241,33 @@ namespace frik {
 	}
 
 	/**
-	 * Load the given json object with offset data into an offset map.
-	 */
-	static void loadOffsetJsonToMap(const json& json, std::map<std::string, NiTransform>& offsetsMap, const bool log) {
-		for (auto& [key, value] : json.items()) {
-			NiTransform data;
-			for (int i = 0; i < 12; i++) {
-				data.rot.arr[i] = value["rotation"][i].get<double>();
-			}
-			data.pos.x = value["x"].get<double>();
-			data.pos.y = value["y"].get<double>();
-			data.pos.z = value["z"].get<double>();
-			data.scale = value["scale"].get<double>();
-
-			if (log) {
-				Log::info("Successfully loaded offset override '%s' (%s)", key.c_str(), offsetsMap.contains(key) ? "Override" : "New");
-			}
-			offsetsMap[key] = data;
-		}
-	}
-
-	/**
-	 * Load offset data from given json file path and store it in the given map.
-	 * Use the entry key in the json file but for everything to work properly the name of the json should match the key.
-	 */
-	static void loadOffsetJsonFile(const std::string& file, std::map<std::string, NiTransform>& offsetsMap) {
-		std::ifstream inF;
-		inF.open(file, std::ios::in);
-		if (inF.fail()) {
-			Log::warn("cannot open %s", file.c_str());
-			inF.close();
-			return;
-		}
-
-		json weaponJson;
-		try {
-			inF >> weaponJson;
-		} catch (json::parse_error& ex) {
-			Log::info("cannot open %s: parse error at byte %d", file.c_str(), ex.byte);
-			inF.close();
-			return;
-		}
-		inF.close();
-
-		loadOffsetJsonToMap(weaponJson, offsetsMap, true);
-	}
-
-	/**
 	 * Load the pipboy screen and holo screen offsets from json files.
 	 */
 	void Config::loadPipboyOffsets() {
 		createFileFromResourceIfNotExists(PIPBOY_HOLO_OFFSETS_PATH, IDR_PIPBOY_HOLO_OFFSETS, false);
 		createFileFromResourceIfNotExists(PIPBOY_SCREEN_OFFSETS_PATH, IDR_PIPBOY_SCREEN_OFFSETS, false);
+		_pipboyOffsets.clear();
 		loadOffsetJsonFile(PIPBOY_HOLO_OFFSETS_PATH, _pipboyOffsets);
 		loadOffsetJsonFile(PIPBOY_SCREEN_OFFSETS_PATH, _pipboyOffsets);
 	}
 
 	/**
-	 * Load all embedded weapons offsets.
+	 * Load all the weapons offsets embedded in resource and override custom from filesystem.
 	 */
-	void Config::loadWeaponsOffsetsFromEmbedded() {
-		for (WORD resourceId = 200; resourceId < 400; resourceId++) {
-			auto resourceOpt = getEmbeddedResourceAsStringIfExists(resourceId);
-			if (!resourceOpt.has_value()) {
-				break;
-			}
-			json json = json::parse(resourceOpt.value());
-			loadOffsetJsonToMap(json, _weaponsEmbeddedOffsets, false);
-		}
+	void Config::loadWeaponsOffsets() {
+		_weaponsOffsets.clear();
+		_weaponsEmbeddedOffsets = loadEmbeddedOffsets(200, 400);
 		_weaponsOffsets.insert(_weaponsEmbeddedOffsets.begin(), _weaponsEmbeddedOffsets.end());
-		Log::info("Loaded (%d) embedded weapon offsets", _weaponsOffsets.size());
+
+		const auto weaponCustomOffsets = loadOffsetsFromFilesystem(WEAPONS_OFFSETS_PATH);
+		for (auto& [key, value] : weaponCustomOffsets) {
+			_weaponsOffsets.insert_or_assign(key, value);
+		}
+		Log::info("Loaded weapon offsets	; Total:%d, Embedded:%d, Custom:%d", _weaponsOffsets.size(), _weaponsEmbeddedOffsets.size(), weaponCustomOffsets.size());
 	}
 
 	/**
-	 * Load all the weapons offsets found in json files into the weapon offsets map.
-	 */
-	void Config::loadWeaponsOffsetsFromFilesystem() {
-		for (const auto& file : std::filesystem::directory_iterator(WEAPONS_OFFSETS_PATH)) {
-			if (file.exists() && !file.is_directory()) {
-				loadOffsetJsonFile(file.path().string(), _weaponsOffsets);
-			}
-		}
-		Log::info("Loaded (%d) total weapon offsets", _weaponsOffsets.size());
-	}
-
-	/**
-	 * Save the given offsets transform to a json file using the given name.
-	 */
-	void Config::saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) {
-		Log::info("Saving offsets '%s' to '%s'", name.c_str(), file.c_str());
-		json weaponJson;
-		weaponJson[name]["rotation"] = transform.rot.arr;
-		weaponJson[name]["x"] = transform.pos.x;
-		weaponJson[name]["y"] = transform.pos.y;
-		weaponJson[name]["z"] = transform.pos.z;
-		weaponJson[name]["scale"] = transform.scale;
-
-		std::ofstream outF;
-		outF.open(file, std::ios::out);
-		if (outF.fail()) {
-			Log::info("cannot open '%s' for writing", file.c_str());
-			return;
-		}
-		try {
-			outF << std::setw(4) << weaponJson;
-			outF.close();
-		} catch (std::exception& e) {
-			outF.close();
-			Log::warn("Unable to save json '%s': %s", file.c_str(), e.what());
-		}
-	}
-
-	/**
-	 * Create all the folders needed for config to not handle later creating folders that don't exists.
+	 * Create all the folders needed for config to not handle later creating folders that don't exist.
 	 */
 	void Config::setupFolders() {
 		createDirDeep(FRIK_INI_PATH);
@@ -607,5 +301,29 @@ namespace frik {
 		moveFileSafe(R"(.\Data\FRIK_Config\Pipboy_Offsets\HoloPipboyPosition.json)", PIPBOY_HOLO_OFFSETS_PATH);
 		moveFileSafe(R"(.\Data\FRIK_Config\Pipboy_Offsets\PipboyPosition.json)", PIPBOY_SCREEN_OFFSETS_PATH);
 		moveAllFilesInFolderSafe(R"(.\Data\FRIK_Config\Weapons_Offsets)", WEAPONS_OFFSETS_PATH);
+	}
+
+	/**
+	 * Get the name for the weapon offset to use depending on the mode.
+	 * Basically a hack to store multiple modes of the same weapon by adding suffix to the name.
+	 */
+	std::string Config::getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool leftHanded) {
+		static const std::string POWER_ARMOR_SUFFIX{"-PowerArmor"};
+		static const std::string OFF_HAND_SUFFIX{"-offHand"};
+		static const std::string THROWABLE_SUFFIX{"-throwable"};
+		static const std::string BACK_OF_HAND_SUFFIX{"-backOfHand"};
+		static const std::string LEFT_HANDED_SUFFIX{"-leftHanded"};
+		switch (mode) {
+		case WeaponOffsetsMode::Weapon:
+			return name + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
+		case WeaponOffsetsMode::OffHand:
+			return name + OFF_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
+		case WeaponOffsetsMode::Throwable:
+			return name + THROWABLE_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
+		case WeaponOffsetsMode::BackOfHandUI:
+			return name + BACK_OF_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
+		default:
+			throw std::invalid_argument("Invalid weapon offset mode");
+		}
 	}
 }

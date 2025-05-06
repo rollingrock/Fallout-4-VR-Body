@@ -290,11 +290,11 @@ namespace frik {
 	}
 
 	void setPipboyHandPose() {
-		setForceHandPointingPoseExplicitHand(!g_config->leftHandedPipBoy, true);
+		setForceHandPointingPoseExplicitHand(!g_config.leftHandedPipBoy, true);
 	}
 
 	void disablePipboyHandPose() {
-		setForceHandPointingPoseExplicitHand(!g_config->leftHandedPipBoy, false);
+		setForceHandPointingPoseExplicitHand(!g_config.leftHandedPipBoy, false);
 	}
 
 	void setConfigModeHandPose() {
@@ -322,7 +322,7 @@ namespace frik {
 	 * Right hand is primary hand if left-handed mode is off, left hand otherwise.
 	 */
 	void setForceHandPointingPose(const bool primaryHand, const bool forcePointing) {
-		setForceHandPointingPoseExplicitHand(primaryHand ^ g_config->leftHandedMode, forcePointing);
+		setForceHandPointingPoseExplicitHand(primaryHand ^ g_config.leftHandedMode, forcePointing);
 	}
 
 	/**

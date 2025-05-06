@@ -2,13 +2,25 @@
 
 #include <optional>
 
+#include "common/ConfigBase.h"
 #include "common/Logger.h"
 #include "f4vr/VR.h"
+#include "res/resource.h"
 
 namespace frik {
 	constexpr auto INI_SECTION_MAIN = "Fallout4VRBody";
-	constexpr auto INI_SECTION_DEBUG = "Debug";
 	constexpr auto INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
+
+	static const auto BASE_PATH = common::getRelativePathInDocuments(R"(\My Games\Fallout4VR\FRIK_Config)");
+	static const auto FRIK_INI_PATH = BASE_PATH + R"(\FRIK.ini)";
+	static const auto MESH_HIDE_FACE_INI_PATH = BASE_PATH + R"(\Mesh_Hide\face.ini)";
+	static const auto MESH_HIDE_SKINS_INI_PATH = BASE_PATH + R"(\Mesh_Hide\skins.ini)";
+	static const auto MESH_HIDE_SLOTS_INI_PATH = BASE_PATH + R"(\Mesh_Hide\slots.ini)";
+	static const auto PIPBOY_HOLO_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\HoloPipboyPosition.json)";
+	static const auto PIPBOY_SCREEN_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\PipboyPosition.json)";
+	static const auto WEAPONS_OFFSETS_PATH = BASE_PATH + R"(\Weapons_Offsets)";
+
+	constexpr int FRIK_INI_VERSION = 7;
 
 	/**
 	 * Type of weapon related position offsets.
@@ -29,52 +41,44 @@ namespace frik {
 	 * Most of the configuration variables are loaded from the FRIK.ini file.
 	 * Some values can be changed in-game and persisted into the FRIK.ini file.
 	 */
-	class Config {
+	class Config : public common::ConfigBase {
 	public:
-		void load();
-		void save() const { saveFrikINI(); }
-		void onUpdateFrame();
-		bool checkDebugDumpDataOnceFor(const char* name);
+		explicit Config()
+			: ConfigBase(FRIK_INI_PATH, IDR_FRIK_INI, FRIK_INI_VERSION) {}
+
+		void loadAllConfig();
+		void save() const { saveIniConfig(); }
 
 		void togglePipBoyTorchOnArm() {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
-			saveFrikIniValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
+			saveIniConfigValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		}
 
 		void toggleIsHoloPipboy() {
 			isHoloPipboy = !isHoloPipboy;
-			saveFrikIniValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
+			saveIniConfigValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
 		}
 
 		void toggleDampenPipboyScreen() {
 			dampenPipboyScreen = !dampenPipboyScreen;
-			saveFrikIniValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
+			saveIniConfigValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
 		}
 
 		void togglePipBoyOpenWhenLookAt() {
 			pipBoyOpenWhenLookAt = !pipBoyOpenWhenLookAt;
-			saveFrikIniValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+			saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
 		}
 
-		static void savePipboyScale(const double pipboyScale) {
-			saveFrikIniValue(INI_SECTION_MAIN, "PipboyScale", pipboyScale);
+		void savePipboyScale(const float pipboyScale) const {
+			saveIniConfigValue(INI_SECTION_MAIN, "PipboyScale", pipboyScale);
 		}
 
-		int getAutoReloadConfigInterval() const {
-			return _reloadConfigInterval;
-		}
-
-		void toggleAutoReloadConfig() {
-			_reloadConfigInterval = _reloadConfigInterval == 0 ? 5 : 0;
-			saveFrikIniValue(INI_SECTION_DEBUG, "ReloadConfigInterval", std::to_string(_reloadConfigInterval).c_str());
-		}
-
+		static void openInNotepad();
 		NiTransform getPipboyOffset();
 		void savePipboyOffset(const NiTransform& transform);
 		std::optional<NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA) const;
 		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
 		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool replaceWithEmbedded);
-		static void openInNotepad();
 
 		// from F4 INIs
 		bool leftHandedMode = false;
@@ -93,7 +97,7 @@ namespace frik {
 		bool hideHead = false;
 		bool hideEquipment = false;
 		bool hideSkin = false;
-		float armLength = 36.74;
+		float armLength = 36.74f;
 		float playerOffset_forward = -4.0;
 		float playerOffset_up = -2.0;
 		float powerArmor_forward = 0.0f;
@@ -101,7 +105,7 @@ namespace frik {
 		float rootOffset = 0.0f;
 		float PARootOffset = 0.0f;
 
-		// Weapon
+		// Weapon offhand grip
 		bool enableOffHandGripping = true;
 		bool enableGripButtonToGrap = true;
 		bool enableGripButtonToLetGo = true;
@@ -109,12 +113,9 @@ namespace frik {
 		float scopeAdjustDistance = 15.0f;
 
 		// In-game configuration
-		int repositionButtonID = vr::EVRButtonId::k_EButton_SteamVR_Trigger; //33
-		float directionalDeadzone = 0.5; // Default value of fDirectionalDeadzone, used when turning off Pipboy to restore directional control to the player.
 		bool autoFocusWindow = false;
 		float selfieOutFrontDistance = 120.0f;
 		bool selfieIgnoreHideFlags = false;
-		int offHandActivateButtonID = vr::EVRButtonId::k_EButton_A; // 7
 
 		// Pipboy
 		bool hidePipboy = false;
@@ -132,22 +133,21 @@ namespace frik {
 		int pipBoyButtonOffArm = 0; // 0 for left 1 for right
 		int pipBoyButtonOffID = vr::EVRButtonId::k_EButton_Grip; // grip button is 2
 		int gripButtonID = vr::EVRButtonId::k_EButton_Grip; // 2
-		int holdDelay = 1000; // 1000 ms
 		int pipBoyOffDelay = 5000; // 5000 ms
 		int pipBoyOnDelay = 100; // 100 ms
-		float pipBoyLookAtGate = 0.7;
+		float pipBoyLookAtGate = 0.7f;
 		float pipboyDetectionRange = 15.0f;
 
 		// Dampen hands
 		bool dampenHands = true;
 		bool dampenHandsInVanillaScope = true;
 		bool dampenPipboyScreen = true;
-		float dampenHandsRotation = 0.7;
-		float dampenHandsTranslation = 0.7;
-		float dampenHandsRotationInVanillaScope = 0.3;
-		float dampenHandsTranslationInVanillaScope = 0.3;
-		float dampenPipboyRotation = 0.7;
-		float dampenPipboyTranslation = 0.7;
+		float dampenHandsRotation = 0.7f;
+		float dampenHandsTranslation = 0.7f;
+		float dampenHandsRotationInVanillaScope = 0.3f;
+		float dampenHandsTranslationInVanillaScope = 0.3f;
+		float dampenPipboyRotation = 0.7f;
+		float dampenPipboyTranslation = 0.7f;
 
 		// Smooth Movement
 		bool disableSmoothMovement = false;
@@ -161,58 +161,39 @@ namespace frik {
 		int disableInteriorSmoothingHorizontal = 1;
 
 		// hide meshes
-		std::vector<std::string> faceGeometry;
-		std::vector<std::string> skinGeometry;
-		std::vector<int> hideEquipSlotIndexes;
+		const std::vector<std::string>& faceGeometry() const { return _faceGeometry; }
+		const std::vector<std::string>& skinGeometry() const { return _skinGeometry; }
+		const std::vector<int>& hideEquipSlotIndexes() const { return _hideEquipSlotIndexes; }
 
-		// Can be used to test things at runtime during development
-		// i.e. check "debugFlowFlag==1" somewhere in code and use config reload to change the value at runtime.
-		float debugFlowFlag1 = 0;
-		float debugFlowFlag2 = 0;
-		float debugFlowFlag3 = 0;
+	protected:
+		virtual void reloadConfig() override {
+			loadIniConfig();
+			loadHideMeshes();
+		}
+
+		virtual void loadIniConfigInternal(const CSimpleIniA& ini) override;
+		virtual void saveIniConfigInternal(CSimpleIniA& ini) const override;
 
 	private:
-		void loadFrikINI();
-		void saveFrikINI() const;
-		void updateFrikINIVersion() const;
 		void loadHideMeshes();
 		void loadHideEquipmentSlots();
-		static void saveFrikIniValue(const char* section, const char* key, bool value);
-		static void saveFrikIniValue(const char* section, const char* key, double value);
-		static void saveFrikIniValue(const char* section, const char* key, const char* value);
 		void loadPipboyOffsets();
-		void loadWeaponsOffsetsFromEmbedded();
-		void loadWeaponsOffsetsFromFilesystem();
-		static void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file);
+		void loadWeaponsOffsets();
 		static void setupFolders();
 		static void migrateConfigFilesIfNeeded();
+		static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool leftHanded);
 
-		// Reload config interval in seconds (0 - no reload)
-		int _reloadConfigInterval = 0;
-		time_t lastReloadTime = 0;
-		// The log level to set for the logger
-		int logLevel = 0;
-		// The FRIK.ini version to handle updates/migrations
-		int version = 0;
+		// hide meshes
+		std::vector<std::string> _faceGeometry;
+		std::vector<std::string> _skinGeometry;
+		std::vector<int> _hideEquipSlotIndexes;
 
-		std::map<std::string, NiTransform> _pipboyOffsets;
-		std::map<std::string, NiTransform> _weaponsOffsets;
-		std::map<std::string, NiTransform> _weaponsEmbeddedOffsets;
-
-		std::string _debugDumpDataOnceNames;
+		// offsets
+		std::unordered_map<std::string, NiTransform> _pipboyOffsets;
+		std::unordered_map<std::string, NiTransform> _weaponsOffsets;
+		std::unordered_map<std::string, NiTransform> _weaponsEmbeddedOffsets;
 	};
 
 	// Not a fan of globals but it may be easiest to refactor code right now
-	extern Config* g_config;
-
-	static void initConfig() {
-		if (g_config) {
-			throw std::exception("Config already initialized");
-		}
-
-		const auto config = new Config();
-		config->load();
-		g_config = config;
-		common::Log::verbose("Config loaded successfully");
-	}
+	inline Config g_config;
 }

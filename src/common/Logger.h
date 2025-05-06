@@ -34,6 +34,7 @@ namespace common {
 				return;
 
 			info("Set log level = %d", logLevel);
+			_logLevel = logLevel;
 			const auto level = static_cast<IDebugLog::LogLevel>(logLevel);
 			IDebugLog::SetPrintLevel(level);
 			IDebugLog::SetLogLevel(level);
