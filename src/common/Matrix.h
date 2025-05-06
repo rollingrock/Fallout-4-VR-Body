@@ -4,7 +4,7 @@
 
 #define PI 3.14159265358979323846
 
-namespace frik {
+namespace common {
 	class Matrix44 {
 	public:
 		Matrix44() {

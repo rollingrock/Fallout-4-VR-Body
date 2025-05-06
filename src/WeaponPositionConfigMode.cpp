@@ -3,6 +3,8 @@
 #include "F4VRBody.h"
 #include "Skeleton.h"
 #include "utils.h"
+#include "common/CommonUtils.h"
+#include "f4vr/F4VRUtils.h"
 #include "ui/UIButton.h"
 #include "ui/UIContainer.h"
 #include "ui/UIManager.h"
@@ -10,6 +12,7 @@
 #include "ui/UIToggleGroupContainer.h"
 
 using namespace vrui;
+using namespace common;
 
 namespace frik {
 	/**
@@ -102,11 +105,11 @@ namespace frik {
 		handleReposition(weapon, throwable);
 
 		// reset
-		if (checkAndClearButtonLongPressedOnController(true, vr::EVRButtonId::k_EButton_Grip) && _repositionTarget != RepositionTarget::Throwable) {
+		if (f4vr::checkAndClearButtonLongPressedOnController(true, vr::EVRButtonId::k_EButton_Grip) && _repositionTarget != RepositionTarget::Throwable) {
 			resetConfig();
 		}
 		// save
-		if (checkAndClearButtonLongPressedOnController(true, vr::EVRButtonId::k_EButton_A)) {
+		if (f4vr::checkAndClearButtonLongPressedOnController(true, vr::EVRButtonId::k_EButton_A)) {
 			saveConfig();
 		}
 	}
@@ -165,8 +168,8 @@ namespace frik {
 	 * NOTE: because of minor tweaks on what axis are used for repositioning it doesn't make sense to create common code for it.
 	 */
 	void WeaponPositionConfigMode::handleWeaponReposition(NiNode* weapon) const {
-		const auto [primAxisX, primAxisY] = getControllerState(true).rAxis[0];
-		const auto [secAxisX, secAxisY] = getControllerState(false).rAxis[0];
+		const auto [primAxisX, primAxisY] = f4vr::getControllerState(true).rAxis[0];
+		const auto [secAxisX, secAxisY] = f4vr::getControllerState(false).rAxis[0];
 		if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
 			return;
 		}
@@ -176,7 +179,7 @@ namespace frik {
 
 		// Update the weapon transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
-		if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
+		if (f4vr::isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(-degreesToRads(primAxisY / 5), -degreesToRads(secAxisX / 3), degreesToRads(primAxisX / 5));
@@ -198,7 +201,7 @@ namespace frik {
 	 */
 	void WeaponPositionConfigMode::handleOffhandReposition() const {
 		// Update the offset position by player thumbstick.
-		const auto [axisX, axisY] = getControllerState(true).rAxis[0];
+		const auto [axisX, axisY] = f4vr::getControllerState(true).rAxis[0];
 		if (axisX != 0.f || axisY != 0.f) {
 			Matrix44 rot;
 			rot.setEulerAngles(-degreesToRads(axisY / 5), 0, degreesToRads(axisX / 5));
@@ -215,8 +218,8 @@ namespace frik {
 			return;
 		}
 
-		const auto [primAxisX, primAxisY] = getControllerState(true).rAxis[0];
-		const auto [secAxisX, secAxisY] = getControllerState(false).rAxis[0];
+		const auto [primAxisX, primAxisY] = f4vr::getControllerState(true).rAxis[0];
+		const auto [secAxisX, secAxisY] = f4vr::getControllerState(false).rAxis[0];
 		if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
 			return;
 		}
@@ -226,7 +229,7 @@ namespace frik {
 
 		// Update the transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
-		if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
+		if (f4vr::isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(degreesToRads(secAxisY / 6), degreesToRads(secAxisX / 6), degreesToRads(primAxisX / 6));
@@ -247,8 +250,8 @@ namespace frik {
 	 * NOTE: because of minor tweaks on what axis are used for repositioning it doesn't make sense to create common code for it.
 	 */
 	void WeaponPositionConfigMode::handleBackOfHandUIReposition() const {
-		const auto [primAxisX, primAxisY] = getControllerState(true).rAxis[0];
-		const auto [secAxisX, secAxisY] = getControllerState(false).rAxis[0];
+		const auto [primAxisX, primAxisY] = f4vr::getControllerState(true).rAxis[0];
+		const auto [secAxisX, secAxisY] = f4vr::getControllerState(false).rAxis[0];
 		if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
 			return;
 		}
@@ -258,7 +261,7 @@ namespace frik {
 
 		// Update the transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
-		if (isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
+		if (f4vr::isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(-degreesToRads(secAxisY / 6), -degreesToRads(primAxisX / 6), -degreesToRads(primAxisY / 6));
@@ -279,7 +282,7 @@ namespace frik {
 	 * Handle configuration for BetterScopesVR mod.
 	 */
 	void WeaponPositionConfigMode::handleBetterScopesReposition() {
-		const auto [axisX, axisY] = getControllerState(true).rAxis[0];
+		const auto [axisX, axisY] = f4vr::getControllerState(true).rAxis[0];
 		if (axisX != 0.f || axisY != 0.f) {
 			// Axis_state y is up and down, which corresponds to reticule z axis
 			NiPoint3 msgData(axisX / 10, 0.f, axisY / 10);

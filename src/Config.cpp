@@ -8,9 +8,11 @@
 #include <shlobj_core.h>
 
 #include "utils.h"
+#include "common/CommonUtils.h"
 #include "res/resource.h"
 
 using json = nlohmann::json;
+using namespace common;
 
 namespace frik {
 	Config* g_config = nullptr;

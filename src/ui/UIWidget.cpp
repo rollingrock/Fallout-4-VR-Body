@@ -1,6 +1,9 @@
 #include "UIWidget.h"
 
 #include "../Debug.h"
+#include "../common/CommonUtils.h"
+
+using namespace common;
 
 namespace vrui {
 	std::string UIWidget::toString() const {
@@ -78,12 +81,12 @@ namespace vrui {
 		const auto finger = context->getInteractionBoneWorldPosition();
 		const auto widgetCenter = _node->m_worldTransform.pos;
 
-		const float distance = frik::vec3Len(finger - widgetCenter);
+		const float distance = vec3Len(finger - widgetCenter);
 
 		// calculate the distance only in the y-axis
 		const NiPoint3 forward = _node->m_worldTransform.rot * NiPoint3(0, 1, 0);
 		const NiPoint3 vectorToCurr = widgetCenter - finger;
-		const float yOnlyDistance = frik::vec3Dot(forward, vectorToCurr);
+		const float yOnlyDistance = vec3Dot(forward, vectorToCurr);
 
 		updatePressableCloseToInteraction(context, distance, yOnlyDistance);
 
@@ -102,7 +105,7 @@ namespace vrui {
 
 		// distance in y-axis from original location before press offset
 		const NiPoint3 vectorToOrg = vectorToCurr - _node->m_worldTransform.rot * NiPoint3(0, _pressYOffset, 0);
-		const float pressDistance = -frik::vec3Dot(forward, vectorToOrg);
+		const float pressDistance = -vec3Dot(forward, vectorToOrg);
 
 		if (std::isnan(pressDistance) || pressDistance < 0) {
 			_pressYOffset = 0;

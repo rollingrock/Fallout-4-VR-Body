@@ -8,6 +8,10 @@
 #include "HandPose.h"
 #include "Pipboy.h"
 #include "Skeleton.h"
+#include "common/CommonUtils.h"
+#include "f4vr/F4VRUtils.h"
+
+using namespace common;
 
 namespace frik {
 	constexpr const char* meshName[12] = {
@@ -32,7 +36,7 @@ namespace frik {
 	 */
 	void ConfigurationMode::configModeExit() {
 		_calibrationModeUIActive = false;
-		if (NiNode* c_MBox = _skelly->getNode("messageBoxMenuWider", _skelly->getPlayerNodes()->playerworldnode)) {
+		if (NiNode* c_MBox = f4vr::getNode("messageBoxMenuWider", _skelly->getPlayerNodes()->playerworldnode)) {
 			c_MBox->flags &= ~0x1;
 			c_MBox->m_localTransform.scale = 1.0;
 		}
@@ -87,7 +91,7 @@ namespace frik {
 		if (!_calibrationModeUIActive) {
 			// Create Config UI
 			showMessagebox("FRIK Config Mode");
-			NiNode* c_MBox = _skelly->getNode("messageBoxMenuWider", _skelly->getPlayerNodes()->playerworldnode);
+			NiNode* c_MBox = f4vr::getNode("messageBoxMenuWider", _skelly->getPlayerNodes()->playerworldnode);
 			if (c_MBox) {
 				c_MBox->flags |= 0x1;
 				c_MBox->m_localTransform.scale = 0;
@@ -102,7 +106,7 @@ namespace frik {
 				}
 			}
 			NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
-			NiCloneProcess proc;
+			f4vr::NiCloneProcess proc;
 			proc.unk18 = Offsets::cloneAddr1;
 			proc.unk48 = Offsets::cloneAddr2;
 			NiNode* HUD = Offsets::cloneNode(retNode, &proc);
@@ -110,7 +114,7 @@ namespace frik {
 			// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
 			NiNode* UIATTACH = g_config->leftHandedMode
 				? _skelly->getPlayerNodes()->primaryUIAttachNode
-				: _skelly->getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
+				: f4vr::getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
 			UIATTACH->AttachChild(HUD, true);
 			char* MainHud[10] = {
 				"Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile03.nif",
@@ -127,7 +131,7 @@ namespace frik {
 			};
 			for (int i = 0; i <= 9; i++) {
 				NiNode* retNode = loadNifFromFile(MainHud[i]);
-				NiCloneProcess proc;
+				f4vr::NiCloneProcess proc;
 				proc.unk18 = Offsets::cloneAddr1;
 				proc.unk48 = Offsets::cloneAddr2;
 				NiNode* UI = Offsets::cloneNode(retNode, &proc);
@@ -169,20 +173,20 @@ namespace frik {
 		} else {
 			NiNode* UIElement = nullptr;
 			// Dampen Hands
-			UIElement = _skelly->getNode("MC-Tile07On", _skelly->getPlayerNodes()->primaryUIAttachNode);
+			UIElement = f4vr::getNode("MC-Tile07On", _skelly->getPlayerNodes()->primaryUIAttachNode);
 			g_config->dampenHands ? UIElement->m_localTransform.scale = 1 : UIElement->m_localTransform.scale = 0;
 			// Weapon Reposition Mode
-			UIElement = _skelly->getNode("MC-Tile08On", _skelly->getPlayerNodes()->primaryUIAttachNode);
+			UIElement = f4vr::getNode("MC-Tile08On", _skelly->getPlayerNodes()->primaryUIAttachNode);
 			UIElement->m_localTransform.scale = g_weaponPosition->inWeaponRepositionMode() ? 1 : 0;
 			// Grip Mode
 			if (!g_config->enableGripButtonToGrap && !g_config->onePressGripButton && !g_config->enableGripButtonToLetGo) {
 				// Standard Sticky Grip on / off
 				for (int i = 0; i < 4; i++) {
 					if (i == 0) {
-						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					} else {
-						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
@@ -190,10 +194,10 @@ namespace frik {
 				// Sticky Grip with button to release
 				for (int i = 0; i < 4; i++) {
 					if (i == 1) {
-						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					} else {
-						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
@@ -201,10 +205,10 @@ namespace frik {
 				// Button held to Grip
 				for (int i = 0; i < 4; i++) {
 					if (i == 2) {
-						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					} else {
-						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
@@ -212,17 +216,17 @@ namespace frik {
 				// button press to toggle Grip on or off
 				for (int i = 0; i < 4; i++) {
 					if (i == 3) {
-						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					} else {
-						UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
 			} else {
 				//Not exepected - show no mode lable until button pressed 
 				for (int i = 0; i < 4; i++) {
-					UIElement = _skelly->getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+					UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
 					UIElement->m_localTransform.scale = 0;
 				}
 			}
@@ -262,7 +266,7 @@ namespace frik {
 								}
 								if (i < 7) {
 									NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-									NiCloneProcess proc;
+									f4vr::NiCloneProcess proc;
 									proc.unk18 = Offsets::cloneAddr1;
 									proc.unk48 = Offsets::cloneAddr2;
 									NiNode* UI = Offsets::cloneNode(retNode, &proc);
@@ -276,14 +280,14 @@ namespace frik {
 				}
 			}
 			vr::VRControllerAxis_t doinantHandStick = g_config->leftHandedMode
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0]
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0];
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0]
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0];
 			uint64_t dominantHand = g_config->leftHandedMode
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed;
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
 			uint64_t offHand = g_config->leftHandedMode
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed;
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
 			bool CamZButtonPressed = _MCTouchbuttons[1];
 			bool CamYButtonPressed = _MCTouchbuttons[2];
 			bool ScaleButtonPressed = _MCTouchbuttons[3];
@@ -396,14 +400,14 @@ namespace frik {
 
 		if (_calibrateModeActive) {
 			vr::VRControllerAxis_t doinantHandStick = g_config->leftHandedMode
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0]
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0];
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0]
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0];
 			const uint64_t dominantHand = g_config->leftHandedMode
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed;
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
 			const uint64_t offHand = g_config->leftHandedMode
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed;
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto ExitandSave = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33));
 			const auto ExitnoSave = offHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33));
 			const auto SelfieButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(1));
@@ -451,11 +455,11 @@ namespace frik {
 			}
 		} else {
 			const uint64_t dominantHand = g_config->leftHandedMode
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed;
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
 			const uint64_t offHand = g_config->leftHandedMode
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed;
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto dHTouch = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
 			const auto oHTouch = offHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
 			if (dHTouch && !_calibrateModeActive) {
@@ -482,14 +486,14 @@ namespace frik {
 		if (g_pipboy->status()) {
 			float rAxisOffsetX;
 			vr::VRControllerAxis_t doinantHandStick = g_config->leftHandedMode
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0]
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0];
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0]
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0];
 			uint64_t dominantHand = g_config->leftHandedMode
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed;
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
 			uint64_t offHand = g_config->leftHandedMode
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed;
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto PBConfigButtonPressed = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
 			bool ModelSwapButtonPressed = _PBTouchbuttons[1];
 			bool RotateButtonPressed = _PBTouchbuttons[2];
@@ -567,7 +571,7 @@ namespace frik {
 									}
 									if (i != 1 && i != 3 && i != 10 && i != 11) {
 										NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-										NiCloneProcess proc;
+										f4vr::NiCloneProcess proc;
 										proc.unk18 = Offsets::cloneAddr1;
 										proc.unk48 = Offsets::cloneAddr2;
 										NiNode* UI = Offsets::cloneNode(retNode, &proc);
@@ -581,7 +585,7 @@ namespace frik {
 												auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 												if (!UIMarker) {
 													NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-													NiCloneProcess proc;
+													f4vr::NiCloneProcess proc;
 													proc.unk18 = Offsets::cloneAddr1;
 													proc.unk48 = Offsets::cloneAddr2;
 													NiNode* UI = Offsets::cloneNode(retNode, &proc);
@@ -602,7 +606,7 @@ namespace frik {
 												auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 												if (!UIMarker) {
 													NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-													NiCloneProcess proc;
+													f4vr::NiCloneProcess proc;
 													proc.unk18 = Offsets::cloneAddr1;
 													proc.unk48 = Offsets::cloneAddr2;
 													NiNode* UI = Offsets::cloneNode(retNode, &proc);
@@ -725,7 +729,7 @@ namespace frik {
 			g_config->leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
 		}
 		const NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
-		NiCloneProcess proc;
+		f4vr::NiCloneProcess proc;
 		proc.unk18 = Offsets::cloneAddr1;
 		proc.unk48 = Offsets::cloneAddr2;
 		NiNode* HUD = Offsets::cloneNode(retNode, &proc);
@@ -733,7 +737,7 @@ namespace frik {
 		// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
 		NiNode* UIATTACH = g_config->leftHandedMode
 			? _skelly->getPlayerNodes()->primaryUIAttachNode
-			: _skelly->getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
+			: f4vr::getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
 		UIATTACH->AttachChild(HUD, true);
 		char* MainHud[12] = {
 			"Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif",
@@ -747,7 +751,7 @@ namespace frik {
 		};
 		for (int i = 0; i <= 11; i++) {
 			const NiNode* retNode = loadNifFromFile(MainHud[i]);
-			NiCloneProcess proc;
+			f4vr::NiCloneProcess proc;
 			proc.unk18 = Offsets::cloneAddr1;
 			proc.unk48 = Offsets::cloneAddr2;
 			NiNode* UI = Offsets::cloneNode(retNode, &proc);
@@ -783,6 +787,6 @@ namespace frik {
 		if (!g_weaponPosition->inWeaponRepositionMode()) {
 			return;
 		}
-		setControlsThumbstickEnableState(isAnyPipboyOpen() && !g_pipboy->isOperatingPipboy());
+		f4vr::setControlsThumbstickEnableState(isAnyPipboyOpen() && !g_pipboy->isOperatingPipboy());
 	}
 }

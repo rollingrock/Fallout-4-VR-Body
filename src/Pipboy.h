@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Skeleton.h"
+#include "api/VRHookAPI.h"
 
 namespace frik {
 	/**

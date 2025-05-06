@@ -3,9 +3,12 @@
 
 #include "Debug.h"
 #include "BSFlattenedBoneTree.h"
-#include "matrix.h"
 #include "Skeleton.h"
 #include "utils.h"
+#include "common/CommonUtils.h"
+#include "common/Matrix.h"
+
+using namespace common;
 
 namespace frik {
 	/**

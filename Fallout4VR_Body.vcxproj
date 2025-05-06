@@ -179,25 +179,27 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
   <ItemGroup>
     <ClCompile Include="src\BoneSpheresHandler.cpp" />
     <ClCompile Include="src\BSFlattenedBoneTree.cpp" />
+    <ClCompile Include="src\common\CommonUtils.cpp" />
     <ClCompile Include="src\Config.cpp" />
     <ClCompile Include="src\ConfigurationMode.cpp" />
     <ClCompile Include="src\CullGeometryHandler.cpp" />
     <ClCompile Include="src\Debug.cpp" />
     <ClCompile Include="src\F4VRBody.cpp" />
+    <ClCompile Include="src\f4vr\F4VRUtils.cpp" />
     <ClCompile Include="src\GunReload.cpp" />
     <ClCompile Include="src\HandPose.cpp" />
     <ClCompile Include="src\hook.cpp" />
     <ClCompile Include="src\ui\UIToggleGroupContainer.cpp" />
     <ClCompile Include="src\ui\UIButton.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\matrix.cpp" />
+    <ClCompile Include="src\common\Matrix.cpp" />
     <ClCompile Include="src\Menu.cpp" />
     <ClCompile Include="src\MenuChecker.cpp" />
-    <ClCompile Include="src\MiscStructs.cpp" />
-    <ClCompile Include="src\Offsets.cpp" />
+    <ClCompile Include="src\f4vr\MiscStructs.cpp" />
+    <ClCompile Include="src\f4vr\Offsets.cpp" />
     <ClCompile Include="src\patches.cpp" />
     <ClCompile Include="src\Pipboy.cpp" />
-    <ClCompile Include="src\Quaternion.cpp" />
+    <ClCompile Include="src\common\Quaternion.cpp" />
     <ClCompile Include="src\Skeleton.cpp" />
     <ClCompile Include="src\SmoothMovement.cpp" />
     <ClCompile Include="src\ui\UIToggleButton.cpp" />
@@ -208,7 +210,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClCompile Include="src\ui\UIWidget.cpp" />
     <ClCompile Include="src\ui\UIUtils.cpp" />
     <ClCompile Include="src\utils.cpp" />
-    <ClCompile Include="src\VR.cpp" />
+    <ClCompile Include="src\f4vr\VR.cpp" />
     <ClCompile Include="src\WeaponPositionConfigMode.cpp" />
     <ClCompile Include="src\WeaponPositionAdjuster.cpp" />
   </ItemGroup>
@@ -223,11 +225,15 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="src\api\VRManagerAPI.h" />
     <ClInclude Include="src\BoneSpheresHandler.h" />
     <ClInclude Include="src\BSFlattenedBoneTree.h" />
+    <ClInclude Include="src\BSTSmartPointer.h" />
+    <ClInclude Include="src\common\CommonUtils.h" />
     <ClInclude Include="src\Config.h" />
     <ClInclude Include="src\ConfigurationMode.h" />
     <ClInclude Include="src\CullGeometryHandler.h" />
     <ClInclude Include="src\Debug.h" />
     <ClInclude Include="src\F4VRBody.h" />
+    <ClInclude Include="src\f4vr\F4VRUtils.h" />
+    <ClInclude Include="src\f4vr\PlayerNodes.h" />
     <ClInclude Include="src\GunReload.h" />
     <ClInclude Include="src\HandPose.h" />
     <ClInclude Include="src\hook.h" />
@@ -237,16 +243,16 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="src\ui\UIModAdapter.h" />
     <ClInclude Include="src\ui\UIToggleGroupContainer.h" />
     <ClInclude Include="src\ui\UIButton.h" />
-    <ClInclude Include="src\matrix.h" />
+    <ClInclude Include="src\common\Matrix.h" />
     <ClInclude Include="src\Menu.h" />
     <ClInclude Include="src\MenuChecker.h" />
-    <ClInclude Include="src\MiscStructs.h" />
+    <ClInclude Include="src\f4vr\MiscStructs.h" />
     <ClInclude Include="src\MuzzleFlash.h" />
-    <ClInclude Include="src\NiCloneProcess.h" />
-    <ClInclude Include="src\Offsets.h" />
+    <ClInclude Include="src\f4vr\NiCloneProcess.h" />
+    <ClInclude Include="src\f4vr\Offsets.h" />
     <ClInclude Include="src\patches.h" />
     <ClInclude Include="src\Pipboy.h" />
-    <ClInclude Include="src\Quaternion.h" />
+    <ClInclude Include="src\common\Quaternion.h" />
     <ClInclude Include="src\res\resource.h" />
     <ClInclude Include="src\Skeleton.h" />
     <ClInclude Include="src\SmoothMovementVR.h" />
@@ -258,7 +264,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="src\ui\UIWidget.h" />
     <ClInclude Include="src\ui\UIUtils.h" />
     <ClInclude Include="src\utils.h" />
-    <ClInclude Include="src\VR.h" />
+    <ClInclude Include="src\f4vr\VR.h" />
     <ClInclude Include="src\WeaponPositionConfigMode.h" />
     <ClInclude Include="src\WeaponPositionAdjuster.h" />
   </ItemGroup>
@@ -270,6 +276,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <None Include="data\config\pipboy_holo_offsets.json" />
     <None Include="data\config\pipboy_screen_offsets.json" />
     <None Include="exports.def" />
+    <None Include="src\exports.def" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="src\res\resource.rc" />

@@ -2,14 +2,14 @@
 
 // TODO: refactor to move this dependency to common code
 #include "../Debug.h"
-#include "../Offsets.h"
+#include "../f4vr/Offsets.h"
 
 namespace vrui {
 	/**
 	 * Get struct with useful NiNodes references related to player.
 	 */
-	frik::PlayerNodes* getPlayerNodes() {
-		return reinterpret_cast<frik::PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
+	f4vr::PlayerNodes* getPlayerNodes() {
+		return reinterpret_cast<f4vr::PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
 	}
 
 	/**
@@ -34,7 +34,7 @@ namespace vrui {
 	NiNode* getClonedNiNodeForNifFile(const std::string& path) {
 		auto& normPath = path._Starts_with("Data") ? path : "Data/Meshes/" + path;
 		const NiNode* nifNode = loadNifFromFile(normPath.c_str());
-		NiCloneProcess proc;
+		f4vr::NiCloneProcess proc;
 		proc.unk18 = Offsets::cloneAddr1;
 		proc.unk48 = Offsets::cloneAddr2;
 		const auto uiNode = Offsets::cloneNode(nifNode, &proc);

@@ -3,6 +3,9 @@
 #include "Debug.h"
 #include "F4VRBody.h"
 #include "utils.h"
+#include "common/CommonUtils.h"
+
+using namespace common;
 
 namespace frik {
 	/// <summary>

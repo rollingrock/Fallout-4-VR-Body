@@ -1,10 +1,13 @@
 #include "GunReload.h"
 #include "Config.h"
 #include "F4VRBody.h"
-#include "MiscStructs.h"
-#include "Offsets.h"
-#include "VR.h"
+#include "f4vr/MiscStructs.h"
+#include "f4vr/Offsets.h"
+#include "common/CommonUtils.h"
 #include "f4se/GameExtraData.h"
+#include "f4vr/VR.h"
+
+using namespace common;
 
 namespace frik {
 	GunReload* g_gunReloadSystem = nullptr;
@@ -17,7 +20,7 @@ namespace frik {
 			return;
 		}
 
-		const auto elapsed = since(startCapTime).count();
+		const auto elapsed = nowMillis() - startCapTime;
 		if (elapsed > 300) {
 			if (elapsed > 2000) {
 				g_animDeltaTime = -1.0f;
@@ -45,11 +48,11 @@ namespace frik {
 		//float dist = abs(vec3_len(offhand->m_worldTransform.pos - bolt->m_worldTransform.pos));
 
 		const uint64_t handInput = g_config->leftHandedMode
-			? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed
-			: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed;
+			? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
+			: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
 
 		if (!reloadButtonPressed && handInput & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip)) {
-			const auto refrData = new NEW_REFR_DATA();
+			const auto refrData = new f4vr::NEW_REFR_DATA();
 			refrData->location = magNode->m_worldTransform.pos;
 			refrData->direction = (*g_player)->rot;
 			refrData->interior = (*g_player)->parentCell;
@@ -60,8 +63,8 @@ namespace frik {
 			extraData->m_refCount += 1;
 			Offsets::ExtraDataList_setCount(extraData, 10);
 			refrData->extra = extraData;
-			const auto instance = new BGSObjectInstance(nullptr, nullptr);
-			BGSEquipIndex idx;
+			const auto instance = new f4vr::BGSObjectInstance(nullptr, nullptr);
+			f4vr::BGSEquipIndex idx;
 			Offsets::Actor_GetWeaponEquipIndex(*g_player, &idx, instance);
 			currentAmmo = Offsets::Actor_GetCurrentAmmo(*g_player, idx);
 			const float clipAmountPct = Offsets::Actor_GetAmmoClipPercentage(*g_player, idx);
@@ -105,7 +108,7 @@ namespace frik {
 			if (!magMesh) {
 				magMesh = loadNifFromFile("Data/Meshes/Weapons/10mmPistol/10mmMagLarge.nif");
 			}
-			NiCloneProcess proc;
+			f4vr::NiCloneProcess proc;
 			proc.unk18 = Offsets::cloneAddr1;
 			proc.unk48 = Offsets::cloneAddr2;
 
@@ -117,7 +120,7 @@ namespace frik {
 			currentRefr->unkF0->rootNode->m_spCollisionObject.m_pObject = nullptr;
 			Offsets::bhkUtilFunctions_MoveFirstCollisionObjectToRoot(currentRefr->unkF0->rootNode, newMesh);
 			Offsets::bhkNPCollisionObject_AddToWorld((bhkNPCollisionObject*)currentRefr->unkF0->rootNode->m_spCollisionObject.m_pObject, world);
-			Offsets::bhkWorld_SetMotion(currentRefr->unkF0->rootNode, hknpMotionPropertiesId::Preset::DYNAMIC, true, true, true);
+			Offsets::bhkWorld_SetMotion(currentRefr->unkF0->rootNode, f4vr::hknpMotionPropertiesId::Preset::DYNAMIC, true, true, true);
 			Offsets::TESObjectREFR_InitHavokForCollisionObject(currentRefr);
 			Offsets::bhkUtilFunctions_SetLayer(currentRefr->unkF0->rootNode, 5);
 

@@ -1,7 +1,7 @@
 #include "VR.h"
-#include "matrix.h"
+#include "../common/Matrix.h"
 
-namespace VRHook {
+namespace f4vr {
 	RelocPtr<uint64_t*> vrDataStruct(0x59429c0);
 
 	void hmdMatrixToNiTransform(const NiTransform* transform, const vr::TrackedDevicePose_t* pose) {

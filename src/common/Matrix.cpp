@@ -1,8 +1,8 @@
-#include "matrix.h"
+#include "Matrix.h"
 #include <cmath>
-#include "utils.h"
+#include "CommonUtils.h"
 
-namespace frik {
+namespace common {
 	void Matrix44::getEulerAngles(float* heading, float* roll, float* attitude) const {
 		if (data[2][0] < 1.0) {
 			if (data[2][0] > -1.0) {

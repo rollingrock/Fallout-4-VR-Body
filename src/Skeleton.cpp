@@ -10,14 +10,18 @@
 #include "HandPose.h"
 #include "Menu.h"
 #include "Pipboy.h"
-#include "Quaternion.h"
-#include "VR.h"
+#include "f4vr/VR.h"
+#include "common/CommonUtils.h"
+#include "common/Quaternion.h"
 #include "f4se/GameForms.h"
+#include "f4vr/F4VRUtils.h"
 
 extern PapyrusVRAPI* g_papyrusvr;
 extern OpenVRHookManagerAPI* _vrhook;
 
 using namespace std::chrono;
+using namespace common;
+using namespace f4vr;
 
 namespace frik {
 	float defaultCameraHeight = 120.4828f;
@@ -124,71 +128,6 @@ namespace frik {
 		}
 	}
 
-	void Skeleton::updateDown(NiNode* nde, const bool updateSelf) {
-		if (!nde) {
-			return;
-		}
-
-		NiAVObject::NiUpdateData* ud = nullptr;
-
-		if (updateSelf) {
-			nde->UpdateWorldData(ud);
-		}
-
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i]) {
-				if (const auto niNode = nextNode->GetAsNiNode()) {
-					this->updateDown(niNode, true);
-				} else if (const auto triNode = nextNode->GetAsBSGeometry()) {
-					triNode->UpdateWorldData(ud);
-				}
-			}
-		}
-	}
-
-	void Skeleton::updateDownTo(NiNode* toNode, NiNode* fromNode, const bool updateSelf) {
-		if (!toNode || !fromNode) {
-			return;
-		}
-
-		if (updateSelf) {
-			NiAVObject::NiUpdateData* ud = nullptr;
-			fromNode->UpdateWorldData(ud);
-		}
-
-		if (_stricmp(toNode->m_name.c_str(), fromNode->m_name.c_str()) == 0) {
-			return;
-		}
-
-		for (UInt16 i = 0; i < fromNode->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = fromNode->m_children.m_data[i]) {
-				if (const auto niNode = nextNode->GetAsNiNode()) {
-					this->updateDownTo(toNode, niNode, true);
-				}
-			}
-		}
-	}
-
-	void Skeleton::updateUpTo(NiNode* toNode, NiNode* fromNode, const bool updateSelf) {
-		if (!toNode || !fromNode) {
-			return;
-		}
-
-		NiAVObject::NiUpdateData* ud = nullptr;
-
-		if (_stricmp(toNode->m_name.c_str(), fromNode->m_name.c_str()) == 0) {
-			if (updateSelf) {
-				fromNode->UpdateWorldData(ud);
-			}
-			return;
-		}
-
-		fromNode->UpdateWorldData(ud);
-		if (const auto parent = fromNode->m_parent ? fromNode->m_parent->GetAsNiNode() : nullptr) {
-			updateUpTo(toNode, parent, true);
-		}
-	}
-
 	void Skeleton::setTime() {
 		_prevTime = _timer;
 		QueryPerformanceFrequency(&_freqCounter);
@@ -250,57 +189,6 @@ namespace frik {
 		const auto boneTransform = reinterpret_cast<BSFlattenedBoneTree*>(_root)->transforms[getBoneInMap(offhandIndexFinger)];
 		const auto forward = boneTransform.world.rot * NiPoint3(1, 0, 0);
 		return boneTransform.world.pos + forward * (_inPowerArmor ? 3 : 1.8f);
-	}
-
-	NiNode* Skeleton::getNode(const char* nodeName, NiNode* nde) const {
-		if (!nde || !nde->m_name) {
-			return nullptr;
-		}
-
-		if (_stricmp(nodeName, nde->m_name.c_str()) == 0) {
-			return nde;
-		}
-
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-				if (const auto ret = this->getNode(nodeName, nextNode)) {
-					return ret;
-				}
-			}
-		}
-
-		return nullptr;
-	}
-
-	NiNode* Skeleton::getNode2(const char* nodeName, NiNode* nde) const {
-		if (!nde || !nde->m_name) {
-			return nullptr;
-		}
-
-		if (_stricmp(nodeName, nde->m_name.c_str()) == 0) {
-			return nde;
-		}
-
-		if (!nde->m_children.m_data) {
-			return nullptr;
-		}
-
-		// TODO: explain
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart && nde->m_children.m_emptyRunStart < 5000; ++i) {
-			if (const auto nextNode = static_cast<NiNode*>(nde->m_children.m_data[i])) {
-				if (const auto ret = this->getNode2(nodeName, nextNode)) {
-					return ret;
-				}
-			}
-		}
-
-		return nullptr;
-	}
-
-	void Skeleton::setVisibility(NiAVObject* nde, const bool show) {
-		if (nde) {
-			nde->flags = show ? nde->flags & ~0x1 : nde->flags | 0x1;
-		}
 	}
 
 	void Skeleton::setupHead(NiNode* headNode, bool hideHead) {
@@ -465,7 +353,7 @@ namespace frik {
 
 		_prevSpeed = 0.0;
 
-		_playerNodes = reinterpret_cast<PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
+		_playerNodes = reinterpret_cast<f4vr::PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
 
 		if (!_playerNodes) {
 			_MESSAGE("player nodes not set");
@@ -497,8 +385,8 @@ namespace frik {
 			g_pipboy->onSetNodes();
 		}
 
-		_spine = this->getNode("SPINE2", _root);
-		_chest = this->getNode("Chest", _root);
+		_spine = getNode("SPINE2", _root);
+		_chest = getNode("Chest", _root);
 
 		_MESSAGE("common node = %016I64X", _common);
 		_MESSAGE("righthand node = %016I64X", _rightHand);
@@ -1982,11 +1870,11 @@ namespace frik {
 			if (found != fingerRelations.end()) {
 				isLeft = name[0] == 'L';
 				const uint64_t reg = isLeft
-					? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonTouched
-					: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonTouched;
+					? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonTouched
+					: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonTouched;
 				const float gripProx = isLeft
-					? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[2].x
-					: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[2].x;
+					? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[2].x
+					: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[2].x;
 				const bool thumbUp = reg & vr::ButtonMaskFromId(vr::k_EButton_Grip) && reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger) && !(reg & vr::ButtonMaskFromId(
 					vr::k_EButton_SteamVR_Touchpad));
 				_closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton[name]);

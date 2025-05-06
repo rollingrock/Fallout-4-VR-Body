@@ -70,7 +70,7 @@ namespace Offsets {
 	extern RelocAddr<_loadNif> loadNif;
 	//RelocAddr<_loadNif> loadNif(0x1d0dd80);
 
-	using _cloneNode = NiNode*(*)(const NiNode* node, NiCloneProcess* obj);
+	using _cloneNode = NiNode*(*)(const NiNode* node, f4vr::NiCloneProcess* obj);
 	extern RelocAddr<_cloneNode> cloneNode;
 
 	using _addNode = NiNode* (*)(uint64_t attachNode, const NiAVObject* node);
@@ -122,16 +122,16 @@ namespace Offsets {
 	using _TESObjectREFR_GetWorldSpace = TESWorldSpace* (*)(TESObjectREFR* a_refr);
 	extern RelocAddr<_TESObjectREFR_GetWorldSpace> TESObjectREFR_GetWorldSpace;
 
-	using _TESDataHandler_CreateReferenceAtLocation = void*(*)(DataHandler* dataHandler, void* newRefr, frik::NEW_REFR_DATA* refrData);
+	using _TESDataHandler_CreateReferenceAtLocation = void*(*)(DataHandler* dataHandler, void* newRefr, f4vr::NEW_REFR_DATA* refrData);
 	extern RelocAddr<_TESDataHandler_CreateReferenceAtLocation> TESDataHandler_CreateReferenceAtLocation;
 
-	using _Actor_GetCurrentWeapon = TESObjectWEAP* (*)(Actor* a_actor, TESObjectWEAP* weap, frik::BGSEquipIndex idx);
+	using _Actor_GetCurrentWeapon = TESObjectWEAP* (*)(Actor* a_actor, TESObjectWEAP* weap, f4vr::BGSEquipIndex idx);
 	extern RelocAddr<_Actor_GetCurrentWeapon> Actor_GetCurrentWeapon;
 
-	using _Actor_GetCurrentAmmo = TESAmmo* (*)(Actor* a_actor, frik::BGSEquipIndex idx);
+	using _Actor_GetCurrentAmmo = TESAmmo* (*)(Actor* a_actor, f4vr::BGSEquipIndex idx);
 	extern RelocAddr<_Actor_GetCurrentAmmo> Actor_GetCurrentAmmo;
 
-	using _Actor_GetWeaponEquipIndex = void(*)(Actor* a_actor, frik::BGSEquipIndex* idx, frik::BGSObjectInstance* instance);
+	using _Actor_GetWeaponEquipIndex = void(*)(Actor* a_actor, f4vr::BGSEquipIndex* idx, f4vr::BGSObjectInstance* instance);
 	extern RelocAddr<_Actor_GetWeaponEquipIndex> Actor_GetWeaponEquipIndex;
 
 	using _TESObjectREFR_Set3D = void(*)(TESObjectREFR* a_refr, NiAVObject* a_obj, bool unk);
@@ -167,7 +167,7 @@ namespace Offsets {
 	using _bhkWorld_RemoveObject = void(*)(NiAVObject* root, bool a_bool, bool a_bool2);
 	extern RelocAddr<_bhkWorld_RemoveObject> bhkWorld_RemoveObject;
 
-	using _bhkWorld_SetMotion = void(*)(NiAVObject* root, frik::hknpMotionPropertiesId::Preset preset, bool bool1, bool bool2, bool bool3);
+	using _bhkWorld_SetMotion = void(*)(NiAVObject* root, f4vr::hknpMotionPropertiesId::Preset preset, bool bool1, bool bool2, bool bool3);
 	extern RelocAddr<_bhkWorld_SetMotion> bhkWorld_SetMotion;
 
 	using _bhkNPCollisionObject_AddToWorld = void(*)(bhkNPCollisionObject* a_obj, bhkWorld* a_world);
@@ -176,13 +176,13 @@ namespace Offsets {
 	using _TESObjectCell_GetbhkWorld = bhkWorld*(*)(TESObjectCELL* a_cell);
 	extern RelocAddr<_TESObjectCell_GetbhkWorld> TESObjectCell_GetbhkWorld;
 
-	using _Actor_GetAmmoClipPercentage = float(*)(Actor* a_actor, frik::BGSEquipIndex a_idx);
+	using _Actor_GetAmmoClipPercentage = float(*)(Actor* a_actor, f4vr::BGSEquipIndex a_idx);
 	extern RelocAddr<_Actor_GetAmmoClipPercentage> Actor_GetAmmoClipPercentage;
 
-	using _Actor_GetCurrentAmmoCount = float(*)(Actor* a_actor, frik::BGSEquipIndex a_idx);
+	using _Actor_GetCurrentAmmoCount = float(*)(Actor* a_actor, f4vr::BGSEquipIndex a_idx);
 	extern RelocAddr<_Actor_GetCurrentAmmoCount> Actor_GetCurrentAmmoCount;
 
-	using _Actor_SetCurrentAmmoCount = float(*)(Actor* a_actor, frik::BGSEquipIndex a_idx, int a_count);
+	using _Actor_SetCurrentAmmoCount = float(*)(Actor* a_actor, f4vr::BGSEquipIndex a_idx, int a_count);
 	extern RelocAddr<_Actor_SetCurrentAmmoCount> Actor_SetCurrentAmmoCount;
 
 	using _ExtraDataList_setAmmoCount = void(*)(ExtraDataList* a_list, int a_count);

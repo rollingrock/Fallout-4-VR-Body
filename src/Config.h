@@ -1,7 +1,7 @@
 #pragma once
 
 #include <optional>
-#include "VR.h"
+#include "f4vr/VR.h"
 
 namespace frik {
 	constexpr auto INI_SECTION_MAIN = "Fallout4VRBody";

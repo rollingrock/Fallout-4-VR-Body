@@ -3,7 +3,7 @@
 #include "f4se/NiNodes.h"
 
 #include "UIModAdapter.h"
-#include "../matrix.h"
+#include "../common/Matrix.h"
 
 namespace vrui {
 	struct UISize {
@@ -18,7 +18,7 @@ namespace vrui {
 	public:
 		UIElement() {
 			_transform.pos = NiPoint3(0, 0, 0);
-			_transform.rot = frik::Matrix44::getIdentity43();
+			_transform.rot = common::Matrix44::getIdentity43();
 			_transform.scale = 1;
 		}
 

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "matrix.h"
+#include "Matrix.h"
 #include "f4se/NITypes.h"
 
-namespace frik {
+namespace common {
 	class Quaternion {
 	public:
 		Quaternion() {

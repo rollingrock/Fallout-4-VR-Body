@@ -6,7 +6,6 @@
 #include "ConfigurationMode.h"
 #include "CullGeometryHandler.h"
 #include "Debug.h"
-#include "GunReload.h"
 #include "HandPose.h"
 #include "Menu.h"
 #include "MuzzleFlash.h"
@@ -14,8 +13,8 @@
 #include "Skeleton.h"
 #include "SmoothMovementVR.h"
 #include "utils.h"
-#include "VR.h"
 #include "f4se/PapyrusNativeFunctions.h"
+#include "f4vr/VR.h"
 #include "ui/UIManager.h"
 #include "ui/UIModAdapter.h"
 
@@ -121,7 +120,7 @@ namespace frik {
 		}
 	}
 
-	static void fixMissingScreen(PlayerNodes* pn) {
+	static void fixMissingScreen(f4vr::PlayerNodes* pn) {
 		if (const auto screenNode = pn->ScreenNode) {
 			const BSFixedString screenName("Screen:0");
 			const NiAVObject* newScreen = screenNode->GetObjectByName(&screenName);
@@ -337,7 +336,7 @@ namespace frik {
 
 		_skelly->setTime();
 
-		VRHook::g_vrHook->setVRControllerState();
+		f4vr::g_vrHook->setVRControllerState();
 
 		_DMESSAGE("Hide Wands");
 		_skelly->hideWands();
@@ -352,22 +351,22 @@ namespace frik {
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
 		_DMESSAGE("restore locals of skeleton");
 		_skelly->restoreLocals(_skelly->getRoot()->m_parent->GetAsNiNode());
-		_skelly->updateDown(_skelly->getRoot(), true);
+		f4vr::updateDown(_skelly->getRoot(), true);
 
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
 		_DMESSAGE("Setup Head");
-		NiNode* headNode = _skelly->getNode("Head", _skelly->getRoot());
+		NiNode* headNode = f4vr::getNode("Head", _skelly->getRoot());
 		_skelly->setupHead(headNode, g_config->hideHead);
 
 		//// set up the body underneath the headset in a proper scale and orientation
 		_DMESSAGE("Set body under HMD");
 		_skelly->setUnderHMD(groundHeight);
-		_skelly->updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
+		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		// Now Set up body Posture and hook up the legs
 		_DMESSAGE("Set body posture");
 		_skelly->setBodyPosture();
-		_skelly->updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
+		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		_DMESSAGE("Set Knee Posture");
 		_skelly->setKneePos();
@@ -382,7 +381,7 @@ namespace frik {
 		_skelly->setSingleLeg(true);
 
 		// Do another update before setting arms
-		_skelly->updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
+		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		// do arm IK - Right then Left
 		_DMESSAGE("Set Arms");
@@ -390,7 +389,7 @@ namespace frik {
 		_skelly->setArms(false);
 		_skelly->setArms(true);
 		_skelly->leftHandedModePipboy();
-		_skelly->updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
+		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		// Misc stuff to showahide things and also setup the wrist pipboy
 		_DMESSAGE("Pipboy and Weapons");
@@ -405,7 +404,7 @@ namespace frik {
 		// project body out in front of the camera for debug purposes
 		_DMESSAGE("Selfie Time");
 		_skelly->selfieSkelly();
-		_skelly->updateDown(_skelly->getRoot(), true);
+		f4vr::updateDown(_skelly->getRoot(), true);
 
 		_DMESSAGE("fix the missing screen");
 		fixMissingScreen(_skelly->getPlayerNodes());
@@ -454,7 +453,7 @@ namespace frik {
 		FrameUpdateContext context(_skelly, _vrhook);
 		vrui::g_uiManager->onFrameUpdate(&context);
 
-		_skelly->updateDown(_skelly->getRoot(), true); // Last world update before exit.    Probably not necessary.
+		f4vr::updateDown(_skelly->getRoot(), true); // Last world update before exit.    Probably not necessary.
 
 		debug(_skelly);
 

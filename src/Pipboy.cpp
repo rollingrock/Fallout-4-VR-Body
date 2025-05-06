@@ -8,11 +8,14 @@
 #include "F4VRBody.h"
 #include "HandPose.h"
 #include "Menu.h"
-#include "Quaternion.h"
 #include "utils.h"
-#include "VR.h"
+#include "common/CommonUtils.h"
+#include "common/Quaternion.h"
+#include "f4vr/F4VRUtils.h"
+#include "f4vr/VR.h"
 
 using namespace std::chrono;
+using namespace common;
 
 namespace frik {
 	/**
@@ -154,19 +157,19 @@ namespace frik {
 			? finger = rt->transforms[_skelly->getBoneInMap("LArm_Finger23")].world.pos
 			: finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos;
 		g_config->leftHandedPipBoy
-			? pipboy = _skelly->getNode("PipboyRoot", _skelly->getRightArm().shoulder->GetAsNiNode())
-			: pipboy = _skelly->getNode("PipboyRoot", _skelly->getLeftArm().shoulder->GetAsNiNode());
+			? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder->GetAsNiNode())
+			: pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder->GetAsNiNode());
 		if (pipboy == nullptr) {
 			return;
 		}
 
 		const auto pipOnButtonPressed = (g_config->pipBoyButtonArm
-			? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed
-			: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId(
+			? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
+			: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId(
 			static_cast<vr::EVRButtonId>(g_config->pipBoyButtonID));
 		const auto pipOffButtonPressed = (g_config->pipBoyButtonOffArm
-			? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed
-			: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId(
+			? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
+			: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId(
 			static_cast<vr::EVRButtonId>(g_config->pipBoyButtonOffID));
 
 		// check off button
@@ -224,8 +227,8 @@ namespace frik {
 		if (!isLookingAtPipBoy()) {
 			_startedLookingAtPip = 0;
 			const vr::VRControllerAxis_t axis_state = g_config->pipBoyButtonArm > 0
-				? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0]
-				: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0];
+				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0]
+				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0];
 			const auto timeElapsed = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _lastLookingAtPip;
 			if (_pipboyStatus && timeElapsed > g_config->pipBoyOffDelay && !g_configurationMode->isPipBoyConfigModeActive()) {
 				_pipboyStatus = false;
@@ -284,8 +287,8 @@ namespace frik {
 		//Virtual Power Button Code
 		static BSFixedString pwrButtonTrans("PowerTranslate");
 		g_config->leftHandedPipBoy
-			? pipboy = _skelly->getNode("PowerDetect", _skelly->getRightArm().shoulder->GetAsNiNode())
-			: pipboy = _skelly->getNode("PowerDetect", _skelly->getLeftArm().shoulder->GetAsNiNode());
+			? pipboy = f4vr::getNode("PowerDetect", _skelly->getRightArm().shoulder->GetAsNiNode())
+			: pipboy = f4vr::getNode("PowerDetect", _skelly->getLeftArm().shoulder->GetAsNiNode());
 		g_config->leftHandedPipBoy
 			? pipboyTrans = _skelly->getRightArm().forearm3->GetObjectByName(&pwrButtonTrans)
 			: pipboyTrans = _skelly->getLeftArm().forearm3->GetObjectByName(&pwrButtonTrans);
@@ -327,8 +330,8 @@ namespace frik {
 		//Virtual Light Button Code
 		static BSFixedString lhtButtontrans("LightTranslate");
 		g_config->leftHandedPipBoy
-			? pipboy = _skelly->getNode("LightDetect", _skelly->getRightArm().shoulder->GetAsNiNode())
-			: pipboy = _skelly->getNode("LightDetect", _skelly->getLeftArm().shoulder->GetAsNiNode());
+			? pipboy = f4vr::getNode("LightDetect", _skelly->getRightArm().shoulder->GetAsNiNode())
+			: pipboy = f4vr::getNode("LightDetect", _skelly->getLeftArm().shoulder->GetAsNiNode());
 		g_config->leftHandedPipBoy
 			? pipboyTrans = _skelly->getRightArm().forearm3->GetObjectByName(&lhtButtontrans)
 			: pipboyTrans = _skelly->getLeftArm().forearm3->GetObjectByName(&lhtButtontrans);
@@ -357,8 +360,8 @@ namespace frik {
 		//Virtual Radio Button Code
 		static BSFixedString radioButtontrans("RadioTranslate");
 		g_config->leftHandedPipBoy
-			? pipboy = _skelly->getNode("RadioDetect", _skelly->getRightArm().shoulder->GetAsNiNode())
-			: pipboy = _skelly->getNode("RadioDetect", _skelly->getLeftArm().shoulder->GetAsNiNode());
+			? pipboy = f4vr::getNode("RadioDetect", _skelly->getRightArm().shoulder->GetAsNiNode())
+			: pipboy = f4vr::getNode("RadioDetect", _skelly->getLeftArm().shoulder->GetAsNiNode());
 		g_config->leftHandedPipBoy
 			? pipboyTrans = _skelly->getRightArm().forearm3->GetObjectByName(&radioButtontrans)
 			: pipboyTrans = _skelly->getLeftArm().forearm3->GetObjectByName(&radioButtontrans);
@@ -495,8 +498,8 @@ namespace frik {
 					? finger = rt->transforms[_skelly->getBoneInMap("LArm_Finger23")].world.pos
 					: finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos;
 				g_config->leftHandedPipBoy
-					? pipboy = _skelly->getNode("PipboyRoot", _skelly->getRightArm().shoulder->GetAsNiNode())
-					: pipboy = _skelly->getNode("PipboyRoot", _skelly->getLeftArm().shoulder->GetAsNiNode());
+					? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder->GetAsNiNode())
+					: pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder->GetAsNiNode());
 				float distance;
 				distance = vec3Len(finger - pipboy->m_worldTransform.pos);
 				if (distance < g_config->pipboyDetectionRange && !_isOperatingPipboy && !_pipboyStatus) {
@@ -561,7 +564,7 @@ namespace frik {
 			_pipboyStatus ? pipbone2->m_localTransform.scale = 0 : pipbone->m_localTransform.scale = 0;
 			// Control switching between hand and head based Pipboy light 
 			if (lightOn && !helmetHeadLamp) {
-				NiNode* head = _skelly->getNode("Head", (*g_player)->GetActorRootNode(false)->GetAsNiNode());
+				NiNode* head = f4vr::getNode("Head", (*g_player)->GetActorRootNode(false)->GetAsNiNode());
 				if (!head) {
 					return;
 				}
@@ -569,8 +572,8 @@ namespace frik {
 				const auto hand = rt->transforms[_skelly->getBoneInMap(useRightHand ? "RArm_Hand" : "LArm_Hand")].world.pos;
 				float distance = vec3Len(hand - head->m_worldTransform.pos);
 				if (distance < 15.0) {
-					uint64_t _PipboyHand = VRHook::g_vrHook->getControllerState(useRightHand ? VRHook::VRSystem::TrackerType::Right : VRHook::VRSystem::TrackerType::Left).
-					                                         ulButtonPressed;
+					uint64_t _PipboyHand = f4vr::g_vrHook->getControllerState(useRightHand ? f4vr::TrackerType::Right : f4vr::TrackerType::Left).
+					                                       ulButtonPressed;
 					const auto SwitchLightButton = _PipboyHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(g_config->switchTorchButton));
 					if (_vrhook != nullptr && _SwitchLightHaptics) {
 						_vrhook->StartHaptics(useRightHand ? 2 : 1, 0.1f, 0.1f);
@@ -583,8 +586,8 @@ namespace frik {
 							_vrhook->StartHaptics(useRightHand ? 2 : 1, 0.05f, 0.3f);
 						}
 						NiNode* LGHT_ATTACH = useRightHand
-							? _skelly->getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode())
-							: _skelly->getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
+							? f4vr::getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode())
+							: f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
 						NiNode* lght = g_config->isPipBoyTorchOnArm
 							? get1StChildNode("HeadLightParent", LGHT_ATTACH)
 							: _skelly->getPlayerNodes()->HeadLightParentNode->GetAsNiNode();
@@ -612,8 +615,8 @@ namespace frik {
 			//Attach light to hand 
 			if (g_config->isPipBoyTorchOnArm) {
 				NiNode* LGHT_ATTACH = g_config->leftHandedPipBoy || g_config->isPipBoyTorchRightArmMode
-					? _skelly->getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode())
-					: _skelly->getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
+					? f4vr::getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode())
+					: f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
 				if (LGHT_ATTACH) {
 					if (lightOn && !helmetHeadLamp) {
 						NiNode* lght = _skelly->getPlayerNodes()->HeadLightParentNode->GetAsNiNode();
@@ -678,7 +681,7 @@ namespace frik {
 							bool uiProjected = isProjected.GetBool();
 							if (!uiProjected && g_config->switchUIControltoPrimary) {
 								//prevents player rotation controls so we can switch controls to the right stick (or left if the Pipboy is on the right arm)
-								rotationStickEnabledToggle(false);
+								f4vr::setControlsThumbstickEnableState(false);
 							}
 						}
 						if (root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage")) {
@@ -797,17 +800,17 @@ namespace frik {
 								? _skelly->getRightArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode()
 								: _skelly->getLeftArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode();
 							vr::VRControllerAxis_t doinantHandStick = g_config->leftHandedMode
-								? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0]
-								: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0];
+								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0]
+								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0];
 							vr::VRControllerAxis_t doinantTrigger = g_config->leftHandedMode
-								? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[1]
-								: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[1];
+								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[1]
+								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[1];
 							vr::VRControllerAxis_t secondaryTrigger = g_config->leftHandedMode
-								? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[1]
-								: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[1];
+								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[1]
+								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[1];
 							uint64_t dominantHand = g_config->leftHandedMode
-								? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).ulButtonPressed
-								: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).ulButtonPressed;
+								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
+								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
 							const auto UISelectButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33)); // Right Trigger
 							const auto UIAltSelectButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32)); // Right Touchpad
 							GFxValue GetSWFVar;
@@ -899,11 +902,11 @@ namespace frik {
 						} else if (!g_configurationMode->isPipBoyConfigModeActive() && !g_config->switchUIControltoPrimary) {
 							//still move Pipboy trigger mesh even if controls havent been swapped.
 							vr::VRControllerAxis_t secondaryTrigger = g_config->leftHandedMode
-								? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[1]
-								: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[1];
+								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[1]
+								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[1];
 							vr::VRControllerAxis_t offHandStick = g_config->leftHandedMode
-								? VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Right).rAxis[0]
-								: VRHook::g_vrHook->getControllerState(VRHook::VRSystem::TrackerType::Left).rAxis[0];
+								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0]
+								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0];
 							BSFixedString selectnodename = "SelectRotate";
 							NiNode* trans = g_config->leftHandedPipBoy
 								? _skelly->getRightArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode()
@@ -982,7 +985,7 @@ namespace frik {
 			deltaPos *= g_config->dampenPipboyTranslation; // just use hands dampening value for now
 			pipboyScreen->m_worldTransform.pos -= deltaPos;
 			_pipboyScreenPrevFrame = pipboyScreen->m_worldTransform;
-			_skelly->updateDown(pipboyScreen->GetAsNiNode(), false);
+			f4vr::updateDown(pipboyScreen->GetAsNiNode(), false);
 		}
 	}
 

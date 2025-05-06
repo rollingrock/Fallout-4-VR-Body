@@ -1,7 +1,7 @@
 #pragma once
 
-#include <chrono>
 #include "utils.h"
+#include "common/CommonUtils.h"
 
 namespace frik {
 	enum ReloadState {
@@ -21,7 +21,7 @@ namespace frik {
 
 		void startAnimationCapture() {
 			startAnimCap = !startAnimCap; // hook gets called twice once at the start of reload and once after animation is done
-			startCapTime = std::chrono::high_resolution_clock::now();
+			startCapTime = common::nowMillis();
 		}
 
 		void DoAnimationCapture() const;
@@ -31,7 +31,7 @@ namespace frik {
 		bool SetAmmoMesh();
 
 	private:
-		std::chrono::high_resolution_clock::time_point startCapTime;
+		uint64_t startCapTime;
 		bool startAnimCap;
 		ReloadState state;
 		bool reloadButtonPressed;

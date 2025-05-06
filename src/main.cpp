@@ -9,7 +9,8 @@
 #include "patches.h"
 #include "SmoothMovementVR.h"
 #include "version.h"
-#include "VR.h"
+#include "f4vr/VR.h"
+#include "common/CommonUtils.h"
 #include "common/IDebugLog.h"
 #include "f4se/PluginAPI.h"  // SKSEInterface, PluginInfo
 #include "f4se_common/f4se_version.h"  // RUNTIME_VERSION
@@ -33,7 +34,7 @@ void onF4SEMessage(F4SEMessagingInterface::Message* msg) {
 
 	if (msg->type == F4SEMessagingInterface::kMessage_GameLoaded) {
 		frik::startUp();
-		VRHook::InitVRSystem();
+		f4vr::InitVRSystem();
 		SmoothMovementVR::startFunctions();
 		SmoothMovementVR::MenuOpenCloseHandler::Register();
 		_MESSAGE("kMessage_GameLoaded Completed");
@@ -76,7 +77,7 @@ bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info) {
 
 bool F4SEPlugin_Load(const F4SEInterface* f4se) {
 	try {
-		_MESSAGE("FRIK Init - %s", frik::getCurrentTimeString().data());
+		_MESSAGE("FRIK Init - %s", common::getCurrentTimeString().data());
 
 		g_pluginHandle = f4se->GetPluginHandle();
 

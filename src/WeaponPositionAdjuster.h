@@ -13,7 +13,7 @@ namespace frik {
 			_skelly = skelly;
 			_vrHook = hook;
 
-			auto ident = Matrix44();
+			auto ident = common::Matrix44();
 			ident.data[2][0] = 1.0; // new X = old Z
 			ident.data[0][1] = 1.0; // new Y = old X
 			ident.data[1][2] = 1.0; // new Z = old Y

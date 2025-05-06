@@ -3,27 +3,27 @@
 #include <chrono>
 #include <map>
 #include <string>
-#include "api/PapyrusVRAPI.h"
+#include "../api/PapyrusVRAPI.h"
 #include "f4se/NiNodes.h"
 #include "f4se/NiTypes.h"
 
-namespace VRHook {
+namespace f4vr {
+	enum class TrackerType : std::uint8_t {
+		HMD,
+		Left,
+		Right,
+		Vive
+	};
+
+	struct ControllerButtonLongPressState {
+		// bit flags for each of the buttons. Use ButtonMaskFromId to turn an ID into a mask
+		uint64_t ulButtonPressed;
+		// Track the time press started to know if it's long press
+		uint64_t startTimeMilisec;
+	};
+
 	class VRSystem {
 	public:
-		enum class TrackerType : std::uint8_t {
-			HMD,
-			Left,
-			Right,
-			Vive
-		};
-
-		struct ControllerButtonLongPressState {
-			// bit flags for each of the buttons. Use ButtonMaskFromId to turn an ID into a mask
-			uint64_t ulButtonPressed;
-			// Track the time press started to know if it's long press
-			uint64_t startTimeMilisec;
-		};
-
 		VRSystem()
 			: _leftPacket(0), _rightPacket(0), _vrHook(RequestOpenVRHookManagerObject()), _roomNode(nullptr) {
 			initializeDevices();

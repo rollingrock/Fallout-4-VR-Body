@@ -2,7 +2,7 @@
 #include "BoneSpheresHandler.h"
 #include "ConfigurationMode.h"
 #include "CullGeometryHandler.h"
-#include "Offsets.h"
+#include "f4vr/Offsets.h"
 #include "Pipboy.h"
 #include "WeaponPositionAdjuster.h"
 #include "f4se/NiNodes.h"

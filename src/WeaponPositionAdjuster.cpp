@@ -4,8 +4,12 @@
 #include "Config.h"
 #include "Debug.h"
 #include "F4VRBody.h"
-#include "Quaternion.h"
+#include "common/Quaternion.h"
 #include "Skeleton.h"
+#include "common/CommonUtils.h"
+#include "f4vr/F4VRUtils.h"
+
+using namespace common;
 
 namespace frik {
 	// use as weapon name when no weapon in equipped. specifically for default back of hand UI offset.
@@ -17,7 +21,7 @@ namespace frik {
 	void WeaponPositionAdjuster::toggleWeaponRepositionMode() {
 		_MESSAGE("Toggle Weapon Reposition Config Mode: %s", !inWeaponRepositionMode() ? "ON" : "OFF");
 		_configMode = _configMode ? nullptr : std::make_unique<WeaponPositionConfigMode>(this);
-		setControlsThumbstickEnableState(!inWeaponRepositionMode());
+		f4vr::setControlsThumbstickEnableState(!inWeaponRepositionMode());
 		if (!inWeaponRepositionMode()) {
 			// reload offset to handle player didn't save changes
 			loadStoredOffsets(_currentWeapon);
@@ -106,7 +110,7 @@ namespace frik {
 
 		handleBetterScopes(weapon);
 
-		_skelly->updateDown(weapon, true);
+		f4vr::updateDown(weapon, true);
 
 		debugPrintWeaponPositionData(weapon);
 	}
@@ -220,12 +224,12 @@ namespace frik {
 		}
 
 		if (_offHandGripping) {
-			if (g_config->onePressGripButton && !isButtonPressHeldDownOnController(false, g_config->gripButtonID)) {
+			if (g_config->onePressGripButton && !f4vr::isButtonPressHeldDownOnController(false, g_config->gripButtonID)) {
 				// Mode 3 release grip when not holding the grip button
 				_offHandGripping = false;
 			}
 
-			if (g_config->enableGripButtonToLetGo && isButtonPressedOnController(false, g_config->gripButtonID)) {
+			if (g_config->enableGripButtonToLetGo && f4vr::isButtonPressedOnController(false, g_config->gripButtonID)) {
 				if (g_config->enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
 					// Mode 2,4 release grip on pressing the grip button again
 					_offHandGripping = false;
@@ -259,7 +263,7 @@ namespace frik {
 			// Mode 1,2 grab when close to barrel
 			_offHandGripping = true;
 		}
-		if (!g_pipboy->status() && isButtonPressedOnController(false, g_config->gripButtonID)) {
+		if (!g_pipboy->status() && f4vr::isButtonPressedOnController(false, g_config->gripButtonID)) {
 			// Mode 3,4 grab when pressing grip button
 			_offHandGripping = true;
 		}
@@ -366,7 +370,7 @@ namespace frik {
 	 * Toggle only when player presses offhand X/A button and the hand is close to the weapon scope.
 	 */
 	void WeaponPositionAdjuster::handleBetterScopes(NiNode* weapon) const {
-		if (!isButtonPressedOnController(false, vr::EVRButtonId::k_EButton_A)) {
+		if (!f4vr::isButtonPressedOnController(false, vr::EVRButtonId::k_EButton_A)) {
 			// fast return not to make additional calculations, checking button is cheap
 			return;
 		}

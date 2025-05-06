@@ -1,6 +1,9 @@
 #include "BoneSpheresHandler.h"
 #include <ranges>
 #include "F4VRBody.h"
+#include "common/CommonUtils.h"
+
+using namespace common;
 
 namespace frik {
 	void BoneSpheresHandler::onFrameUpdate() {
@@ -256,7 +259,7 @@ namespace frik {
 
 			if (val->turnOnDebugSpheres && !val->debugSphere) {
 				const NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/1x1Sphere.nif");
-				NiCloneProcess proc;
+				f4vr::NiCloneProcess proc;
 				proc.unk18 = Offsets::cloneAddr1;
 				proc.unk48 = Offsets::cloneAddr2;
 

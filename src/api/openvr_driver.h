@@ -1459,7 +1459,7 @@ enum EVRTrackedCameraFrameType
 };
 
 typedef uint64_t TrackedCameraHandle_t;
-#define INVALID_TRACKED_CAMERA_HANDLE	((vr::TrackedCameraHandle_t)0)
+#define INVALID_TRACKED_CAMERA_HANDLE	((f4vr::TrackedCameraHandle_t)0)
 
 struct CameraVideoStreamFrameHeader_t
 {

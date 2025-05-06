@@ -1,8 +1,10 @@
 #include "Quaternion.h"
 #include <cmath>
-#include "utils.h"
+#include <numbers>
 
-namespace frik {
+#include "CommonUtils.h"
+
+namespace common {
 	float Quaternion::getMag() const {
 		return sqrtf(w * w + x * x + y * y + z * z);
 	}
@@ -161,7 +163,7 @@ namespace frik {
 			if (vec3Len(cross) < 0.00000001) {
 				cross = vec3Norm(vec3Cross(NiPoint3(1, 0, 0), v1));
 			}
-			this->setAngleAxis(PI, cross);
+			this->setAngleAxis(std::numbers::pi_v<float>, cross);
 			this->normalize();
 			return;
 		}
