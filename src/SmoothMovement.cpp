@@ -84,8 +84,8 @@ namespace SmoothMovementVR {
 				smoothedY.store(newPosition.y);
 			} else {
 				if (frik::g_config.dampingMultiplierHorizontal != 0 && frik::g_config.smoothingAmountHorizontal != 0) {
-					const float absValX = max(0.1f, abs(newPosition.x - smoothedX.load()));
-					const float absValY = max(0.1f, abs(newPosition.y - smoothedY.load()));
+					const float absValX = min(50, max(0.1f, abs(newPosition.x - smoothedX.load())));
+					const float absValY = min(50, max(0.1f, abs(newPosition.y - smoothedY.load())));
 					smoothedX.store(
 						smoothedX.load() + m_frameTime.load() * ((newPosition.x - smoothedX.load()) / (frik::g_config.smoothingAmountHorizontal * (frik::g_config.
 							dampingMultiplierHorizontal / absValX) * (notMoving.load() ? frik::g_config.stoppingMultiplierHorizontal : 1.0f))));
@@ -101,8 +101,7 @@ namespace SmoothMovementVR {
 			if (frik::g_config.disableInteriorSmoothing && interiorCell.load()) {
 				smoothedZ.store(newPosition.z);
 			} else {
-				float absVal = abs(newPosition.z - smoothedZ.load());
-				absVal = max(absVal, 0.1f);
+				const float absVal = min(50, max(0.1f, abs(newPosition.z - smoothedZ.load())));
 				smoothedZ.store(
 					smoothedZ.load() + m_frameTime.load() * ((newPosition.z - smoothedZ.load()) / (frik::g_config.smoothingAmount * (frik::g_config.dampingMultiplier / absVal) *
 						(notMoving.load() ? frik::g_config.stoppingMultiplier : 1.0f))));

@@ -643,7 +643,6 @@ namespace frik {
 				}
 				if (DampenScreenButtonPressed && !_isDampenScreenButtonPressed) {
 					_isDampenScreenButtonPressed = true;
-					g_config.dampenPipboyScreen ? g_config.dampenPipboyScreen = false : g_config.dampenPipboyScreen = true;
 					g_config.toggleDampenPipboyScreen();
 				} else if (!DampenScreenButtonPressed) {
 					_isDampenScreenButtonPressed = false;
