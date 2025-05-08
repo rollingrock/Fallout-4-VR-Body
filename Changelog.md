@@ -13,6 +13,7 @@
 - Fixed left-handed weapon adjustment and separate saved files from right-handed.
 - Fixed left-handed main and Pipboy config UI being inverted.
 - Fixed left-handed melee weapon position and rotation.
+- Fixed rare crash in smooth movement (thx FOLON team)
 
 ## v0.72
 
