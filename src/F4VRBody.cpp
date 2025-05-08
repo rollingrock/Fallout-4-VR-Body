@@ -269,8 +269,6 @@ namespace frik {
 			printPlayerOnce = false;
 		}
 
-		g_config.onUpdateFrame();
-
 		const auto wasInPowerArmor = inPowerArmorSticky;
 		inPowerArmorSticky = detectInPowerArmor();
 		if (wasInPowerArmor != inPowerArmorSticky) {
@@ -504,16 +502,6 @@ namespace frik {
 		g_config.openInNotepad();
 	}
 
-	static UInt32 getFrikIniAutoReloading(StaticFunctionTag* base) {
-		return g_config.getAutoReloadConfigInterval() > 0 ? 1 : 0;
-	}
-
-	static UInt32 toggleReloadFrikIniConfig(StaticFunctionTag* base) {
-		Log::info("Papyrus: Toggle reload FRIK.ini config file...");
-		g_config.toggleAutoReloadConfig();
-		return getFrikIniAutoReloading(base);
-	}
-
 	static UInt32 getWeaponRepositionMode(StaticFunctionTag* base) {
 		Log::info("Papyrus: Get Weapon Reposition Mode");
 		return g_weaponPosition->inWeaponRepositionMode() ? 1 : 0;
@@ -604,9 +592,7 @@ namespace frik {
 		vm->RegisterFunction(new NativeFunction0("OpenPipboyConfigurationMode", "FRIK:FRIK", openPipboyConfigurationMode, vm));
 		vm->RegisterFunction(new NativeFunction0("ToggleWeaponRepositionMode", "FRIK:FRIK", toggleWeaponRepositionMode, vm));
 		vm->RegisterFunction(new NativeFunction0("OpenFrikIniFile", "FRIK:FRIK", openFrikIniFile, vm));
-		vm->RegisterFunction(new NativeFunction0("ToggleReloadFrikIniConfig", "FRIK:FRIK", toggleReloadFrikIniConfig, vm));
 		vm->RegisterFunction(new NativeFunction0("GetWeaponRepositionMode", "FRIK:FRIK", getWeaponRepositionMode, vm));
-		vm->RegisterFunction(new NativeFunction0("GetFrikIniAutoReloading", "FRIK:FRIK", getFrikIniAutoReloading, vm));
 
 		/// Register mod public API to be used by other mods via Papyrus scripts
 		vm->RegisterFunction(new NativeFunction0("isLeftHandedMode", "FRIK:FRIK", isLeftHandedMode, vm));

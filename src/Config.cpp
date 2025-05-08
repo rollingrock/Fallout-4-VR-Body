@@ -34,7 +34,7 @@ namespace frik {
 		migrateConfigFilesIfNeeded();
 
 		Log::info("Load ini config...");
-		loadIniConfig();
+		initIniConfig();
 
 		Log::info("Load hide meshes...");
 		loadHideMeshes();

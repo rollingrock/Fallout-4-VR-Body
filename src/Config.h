@@ -47,7 +47,7 @@ namespace frik {
 			: ConfigBase(FRIK_INI_PATH, IDR_FRIK_INI, FRIK_INI_VERSION) {}
 
 		void loadAllConfig();
-		void save() const { saveIniConfig(); }
+		void save() { saveIniConfig(); }
 
 		void togglePipBoyTorchOnArm() {
 			isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
@@ -69,7 +69,7 @@ namespace frik {
 			saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
 		}
 
-		void savePipboyScale(const float pipboyScale) const {
+		void savePipboyScale(const float pipboyScale) {
 			saveIniConfigValue(INI_SECTION_MAIN, "PipboyScale", pipboyScale);
 		}
 
@@ -166,11 +166,6 @@ namespace frik {
 		const std::vector<int>& hideEquipSlotIndexes() const { return _hideEquipSlotIndexes; }
 
 	protected:
-		virtual void reloadConfig() override {
-			loadIniConfig();
-			loadHideMeshes();
-		}
-
 		virtual void loadIniConfigInternal(const CSimpleIniA& ini) override;
 		virtual void saveIniConfigInternal(CSimpleIniA& ini) const override;
 

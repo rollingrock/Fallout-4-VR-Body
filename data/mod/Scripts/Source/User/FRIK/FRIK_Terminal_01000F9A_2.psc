@@ -17,14 +17,6 @@ FRIK:FRIK.OpenPipboyConfigurationMode()
 EndFunction
 ;END FRAGMENT
 
-;BEGIN FRAGMENT Fragment_Terminal_04
-Function Fragment_Terminal_04(ObjectReference akTerminalRef)
-;BEGIN CODE
-FRIK_CONF_RELOAD.SetValue(FRIK:FRIK.ToggleReloadFrikIniConfig())
-;END CODE
-EndFunction
-;END FRAGMENT
-
 ;BEGIN FRAGMENT Fragment_Terminal_05
 Function Fragment_Terminal_05(ObjectReference akTerminalRef)
 ;BEGIN CODE
@@ -49,14 +41,6 @@ FRIK_WRM.SetValue(FRIK:FRIK.ToggleWeaponRepositionMode())
 EndFunction
 ;END FRAGMENT
 
-;BEGIN FRAGMENT Fragment_Terminal_09
-Function Fragment_Terminal_09(ObjectReference akTerminalRef)
-;BEGIN CODE
-FRIK_CONF_RELOAD.SetValue(FRIK:FRIK.ToggleReloadFrikIniConfig())
-;END CODE
-EndFunction
-;END FRAGMENT
-
 ;BEGIN FRAGMENT Fragment_Terminal_11
 Function Fragment_Terminal_11(ObjectReference akTerminalRef)
 ;BEGIN CODE
@@ -77,4 +61,3 @@ EndFunction
 
 GlobalVariable Property FRIK_PBSFX Auto Const Mandatory
 GlobalVariable Property FRIK_WRM Auto Const Mandatory
-GlobalVariable Property FRIK_CONF_RELOAD Auto Const Mandatory

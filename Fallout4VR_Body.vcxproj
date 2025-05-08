@@ -134,6 +134,7 @@
       <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
       <UseFullPaths>false</UseFullPaths>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,8 +145,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetDir)$(TargetName).dll" "%FRIK_MOD_PATH%" /Y
-copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
+      <Command>xcopy /Y "$(TargetDir)$(TargetName).dll" "%FRIK_MOD_PATH%"
+xcopy /Y "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%"
+echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -162,6 +164,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
       <CompileAs>CompileAsCpp</CompileAs>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -172,8 +175,9 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
       <ModuleDefinitionFile>src\exports.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetDir)$(TargetName).dll" "%FRIK_MOD_PATH%" /Y
-copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
+      <Command>xcopy /Y "$(TargetDir)$(TargetName).dll" "%FRIK_MOD_PATH%"
+xcopy /Y "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%"
+echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -239,6 +243,7 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <ClInclude Include="src\GunReload.h" />
     <ClInclude Include="src\HandPose.h" />
     <ClInclude Include="src\hook.h" />
+    <ClInclude Include="src\include\FileWatch.hpp" />
     <ClInclude Include="src\include\json.hpp" />
     <ClInclude Include="src\include\SimpleIni.h" />
     <ClInclude Include="src\version.h" />

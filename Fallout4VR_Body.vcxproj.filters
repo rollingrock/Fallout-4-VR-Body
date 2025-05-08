@@ -293,6 +293,9 @@
     <ClInclude Include="src\common\ConfigBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\include\FileWatch.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">

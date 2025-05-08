@@ -1,8 +1,10 @@
 #pragma once
 
+#include <atomic>
 #include <fstream>
 
 #include "Logger.h"
+#include "../include/FileWatch.hpp"
 #include "../include/json.hpp"
 #include "../include/SimpleIni.h"
 
@@ -26,15 +28,6 @@ namespace common {
 		float debugFlowFlag2 = 0;
 		float debugFlowFlag3 = 0;
 
-		int getAutoReloadConfigInterval() const {
-			return _reloadConfigInterval;
-		}
-
-		void toggleAutoReloadConfig() {
-			_reloadConfigInterval = _reloadConfigInterval == 0 ? 5 : 0;
-			saveIniConfigValue(INI_SECTION_DEBUG, "ReloadConfigInterval", std::to_string(_reloadConfigInterval).c_str());
-		}
-
 		/**
 		 * Check if debug data dump is requested for the given name.
 		 * If matched, the name will be removed from the list to prevent multiple dumps.
@@ -54,36 +47,7 @@ namespace common {
 			return true;
 		}
 
-		/**
-		 * Runs on every game frame.
-		 * Used to reload the config file if the reload interval has passed.
-		 */
-		void onUpdateFrame() {
-			try {
-				if (_reloadConfigInterval <= 0) {
-					return;
-				}
-
-				const auto now = std::time(nullptr);
-				if (now - _lastReloadTime < _reloadConfigInterval) {
-					return;
-				}
-
-				Log::verbose("Reloading INI config file...");
-				_lastReloadTime = now;
-				reloadConfig();
-				Log::setLogLevel(_logLevel);
-			} catch (const std::exception& e) {
-				Log::warn("Failed to reload INI config file: %s", e.what());
-			}
-		}
-
 	protected:
-		/**
-		 * Live reload of config
-		 */
-		virtual void reloadConfig() = 0;
-
 		/**
 		 * Override to load your config values
 		 */
@@ -99,33 +63,40 @@ namespace common {
 		 * If INI file doesn't exist it will be created from the default embedded resource.
 		 * If the found INI version is not the latest it will run update to the latest using embedded resource.
 		 */
-		void loadIniConfig() {
+		void initIniConfig() {
 			// create FRIK.ini if it doesn't exist
 			createFileFromResourceIfNotExists(_iniFilePath, _iniDefaultConfigEmbeddedResourceId, true);
 
-			CSimpleIniA ini;
-			const SI_Error rc = ini.LoadFile(_iniFilePath.c_str());
-			if (rc < 0) {
-				throw std::runtime_error("Failed to load INI config file! Error: " + std::to_string(rc));
-			}
-
-			loadIniConfigValues(ini);
+			loadIniConfigValues();
 
 			if (_iniConfigVersion < _iniConfigLatestVersion) {
 				Log::info("Updating INI config version %d -> %d", _iniConfigVersion, _iniConfigLatestVersion);
 				updateIniConfigToLatestVersion();
+
 				// reload the config after update
-				loadIniConfigValues(ini);
+				loadIniConfigValues();
 			}
+
+			startIniConfigFileWatch();
 		}
 
-		void loadIniConfigValues(const CSimpleIniA& ini) {
+		/**
+		 * Load all the config values from INI config file, override all existing values in the instance.
+		 * This code should be safe to run multiple times as changes are loaded from disk.
+		 */
+		void loadIniConfigValues() {
+			CSimpleIniA ini;
+			const SI_Error rc = ini.LoadFile(_iniFilePath.c_str());
+			if (rc < 0) {
+				Log::warn("Failed to load INI config file! Error:", rc);
+				throw std::runtime_error("Failed to load INI config file! Error: " + std::to_string(rc));
+			}
+
 			_iniConfigVersion = ini.GetLongValue(INI_SECTION_DEBUG, "Version", 0);
 			_logLevel = ini.GetLongValue(INI_SECTION_DEBUG, "LogLevel", 3);
-			_reloadConfigInterval = ini.GetLongValue(INI_SECTION_DEBUG, "ReloadConfigInterval", 3);
-			debugFlowFlag1 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag1", 0));
-			debugFlowFlag2 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag2", 0));
-			debugFlowFlag3 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "DebugFlowFlag3", 0));
+			debugFlowFlag1 = ini.GetFloatValue(INI_SECTION_DEBUG, "DebugFlowFlag1", 0);
+			debugFlowFlag2 = ini.GetFloatValue(INI_SECTION_DEBUG, "DebugFlowFlag2", 0);
+			debugFlowFlag3 = ini.GetFloatValue(INI_SECTION_DEBUG, "DebugFlowFlag3", 0);
 			_debugDumpDataOnceNames = ini.GetValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", "");
 
 			// set log after loading from config
@@ -139,7 +110,7 @@ namespace common {
 		 * Save the config values into the INI config file.
 		 * Load the file first to never lose existing values.
 		 */
-		void saveIniConfig() const {
+		void saveIniConfig() {
 			CSimpleIniA ini;
 			SI_Error rc = ini.LoadFile(_iniFilePath.c_str());
 			if (rc < 0) {
@@ -150,6 +121,7 @@ namespace common {
 			// let inherited class save all its values
 			saveIniConfigInternal(ini);
 
+			_ignoreNextIniFileChange.store(true);
 			rc = ini.SaveFile(_iniFilePath.c_str());
 			if (rc < 0) {
 				Log::error("Config: Failed to save FRIK.ini. Error: %d", rc);
@@ -161,7 +133,7 @@ namespace common {
 		/**
 		 * Save specific key and bool value into FRIK.ini file.
 		 */
-		void saveIniConfigValue(const char* section, const char* key, const bool value) const {
+		void saveIniConfigValue(const char* section, const char* key, const bool value) {
 			Log::info("Config: Saving \"%s = %s\"", key, value ? "true" : "false");
 			CSimpleIniA ini;
 			SI_Error rc = ini.LoadFile(_iniFilePath.c_str());
@@ -170,6 +142,7 @@ namespace common {
 				return;
 			}
 			ini.SetBoolValue(section, key, value);
+			_ignoreNextIniFileChange.store(true);
 			rc = ini.SaveFile(_iniFilePath.c_str());
 			if (rc < 0) {
 				Log::warn("Failed to save INI config value with code: %d", rc);
@@ -179,7 +152,7 @@ namespace common {
 		/**
 		 * Save specific key and double value into FRIK.ini file.
 		 */
-		void saveIniConfigValue(const char* section, const char* key, const float value) const {
+		void saveIniConfigValue(const char* section, const char* key, const float value) {
 			Log::info("Config: Saving \"%s = %f\"", key, value);
 			CSimpleIniA ini;
 			SI_Error rc = ini.LoadFile(_iniFilePath.c_str());
@@ -188,6 +161,7 @@ namespace common {
 				return;
 			}
 			ini.SetDoubleValue(section, key, value);
+			_ignoreNextIniFileChange.store(true);
 			rc = ini.SaveFile(_iniFilePath.c_str());
 			if (rc < 0) {
 				Log::warn("Failed to save INI config value with code: %d", rc);
@@ -197,7 +171,7 @@ namespace common {
 		/**
 		 * Save specific key and string value into FRIK.ini file.
 		 */
-		void saveIniConfigValue(const char* section, const char* key, const char* value) const {
+		void saveIniConfigValue(const char* section, const char* key, const char* value) {
 			Log::info("Config: Saving \"%s = %s\"", key, value);
 			CSimpleIniA ini;
 			SI_Error rc = ini.LoadFile(_iniFilePath.c_str());
@@ -206,6 +180,7 @@ namespace common {
 				return;
 			}
 			ini.SetValue(section, key, value);
+			_ignoreNextIniFileChange.store(true);
 			rc = ini.SaveFile(_iniFilePath.c_str());
 			if (rc < 0) {
 				Log::warn("Failed to save INI config value with code: %d", rc);
@@ -378,10 +353,54 @@ namespace common {
 			Log::info("FRIK.ini updated successfully");
 		}
 
-		// Reload config interval in seconds (0 - no reload)
-		// TODO: change to filesystem watch
-		int _reloadConfigInterval = 0;
-		time_t _lastReloadTime = 0;
+		/**
+		 * Setup filesystem watch on INI config file to reload config when changes are detected.
+		 * Handling duplicate modified events from file-watcher:
+		 * There can be 3-5 events fired for 1 change. Sometimes the last even can be a full second after a change.
+		 * To prevent it we check the file last write time and ignore events that 
+		 */
+		void startIniConfigFileWatch() {
+			// use thread as otherwise there is a deadlock
+			std::thread([this]() {
+				Log::info("Start file watch in INI config '%s'", _iniFilePath.c_str());
+				_iniConfigFileWatch = std::make_unique<filewatch::FileWatch<std::string>>(
+					_iniFilePath, [this](const std::string&, const filewatch::Event changeType) {
+						if (changeType != filewatch::Event::modified) {
+							return;
+						}
+
+						constexpr auto delay = std::chrono::milliseconds(200);
+
+						// ignore duplicate modified events, use atomic to make sure only 1 thread gets through
+						auto prevWriteTime = _lastIniFileWriteTime.load();
+						std::error_code ec;
+						const auto writeTime = fs::last_write_time(_iniFilePath, ec);
+						if (ec || !_lastIniFileWriteTime.compare_exchange_strong(prevWriteTime, writeTime) || writeTime - prevWriteTime < delay) {
+							Log::verbose("Ignore INI config change duplicate (write: %lld) (err:%d)", writeTime.time_since_epoch(), ec.value());
+							return;
+						}
+
+						// ignore file modified if we who modified it
+						bool expected = true;
+						if (_ignoreNextIniFileChange.compare_exchange_strong(expected, false)) {
+							Log::verbose("Ignoring INI config change by ignore flag");
+							return;
+						}
+
+						// wait until delay time is passed since the LAST file write time to prevent file lock issues and rapid modifications
+						auto now = fs::file_time_type::clock::now();
+						auto lastEventTime = _lastIniFileWriteTime.load();
+						while (now - lastEventTime < delay) {
+							std::this_thread::sleep_for(max(std::chrono::milliseconds(0), delay - (now - lastEventTime)));
+							now = fs::file_time_type::clock::now();
+							lastEventTime = _lastIniFileWriteTime.load();
+						}
+
+						Log::info("INI config change detected (%lld), reload...", writeTime.time_since_epoch());
+						loadIniConfigValues();
+					});
+			}).detach();
+		}
 
 	private:
 		// location of ini config on disk
@@ -400,5 +419,14 @@ namespace common {
 		int _logLevel = 0;
 
 		std::string _debugDumpDataOnceNames;
+
+		// filesystem watch for changes to INI config file to have live reload
+		std::unique_ptr<filewatch::FileWatch<std::string>> _iniConfigFileWatch;
+
+		// INI config file last write time to prevent reload the same change because of OS multiple events
+		std::atomic<std::filesystem::file_time_type> _lastIniFileWriteTime;
+
+		// Handle ignoring file watch change event IFF the change was made by us
+		std::atomic<bool> _ignoreNextIniFileChange = false;
 	};
 }
