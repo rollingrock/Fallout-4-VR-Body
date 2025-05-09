@@ -9,9 +9,8 @@ namespace frik {
 		friend class WeaponPositionConfigMode;
 
 	public:
-		WeaponPositionAdjuster(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
+		WeaponPositionAdjuster(Skeleton* skelly) {
 			_skelly = skelly;
-			_vrHook = hook;
 
 			auto ident = common::Matrix44();
 			ident.data[2][0] = 1.0; // new X = old Z
@@ -46,7 +45,6 @@ namespace frik {
 		NiMatrix43 _scopeCameraBaseMatrix;
 
 		Skeleton* _skelly;
-		OpenVRHookManagerAPI* _vrHook;
 
 		// used to know if weapon changed to load saved offsets
 		std::string _currentWeapon;

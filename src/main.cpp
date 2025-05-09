@@ -1,6 +1,7 @@
 #include <chrono>
 #include <ShlObj.h>  // CSIDL_MYDOCUMENTS
 #include <F4SE_common/BranchTrampoline.h>
+
 #include "Config.h"
 #include "F4VRBody.h"
 #include "GunReload.h"
@@ -13,7 +14,6 @@
 #include "common/Logger.h"
 #include "f4se/PluginAPI.h"  // SKSEInterface, PluginInfo
 #include "f4se_common/f4se_version.h"  // RUNTIME_VERSION
-#include "f4vr/VR.h"
 #include "ui/UIManager.h"
 
 using namespace common;
@@ -36,7 +36,6 @@ void onF4SEMessage(F4SEMessagingInterface::Message* msg) {
 
 	if (msg->type == F4SEMessagingInterface::kMessage_GameLoaded) {
 		frik::startUp();
-		f4vr::InitVRSystem();
 		SmoothMovementVR::startFunctions();
 		SmoothMovementVR::MenuOpenCloseHandler::Register();
 		Log::info("kMessage_GameLoaded Completed");

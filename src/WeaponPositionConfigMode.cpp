@@ -1,11 +1,12 @@
 #include "WeaponPositionConfigMode.h"
+
 #include "Config.h"
 #include "F4VRBody.h"
 #include "Skeleton.h"
 #include "utils.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
-#include "f4vr/F4VRUtils.h"
+#include "f4vr/VRControllersManager.h"
 #include "ui/UIButton.h"
 #include "ui/UIContainer.h"
 #include "ui/UIManager.h"
@@ -106,11 +107,13 @@ namespace frik {
 		handleReposition(weapon, throwable);
 
 		// reset
-		if (f4vr::checkAndClearButtonLongPressedOnController(true, vr::EVRButtonId::k_EButton_Grip) && _repositionTarget != RepositionTarget::Throwable) {
+		if (f4vr::VRControllers.isLongPressed(vr::k_EButton_Grip, f4vr::Hand::Primary) && _repositionTarget != RepositionTarget::Throwable) {
+			f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, .6f, .5f);
 			resetConfig();
 		}
 		// save
-		if (f4vr::checkAndClearButtonLongPressedOnController(true, vr::EVRButtonId::k_EButton_A)) {
+		if (f4vr::VRControllers.isLongPressed(vr::EVRButtonId::k_EButton_A, f4vr::Hand::Primary)) {
+			f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, .6f, .5f);
 			saveConfig();
 		}
 	}
@@ -169,8 +172,8 @@ namespace frik {
 	 * NOTE: because of minor tweaks on what axis are used for repositioning it doesn't make sense to create common code for it.
 	 */
 	void WeaponPositionConfigMode::handleWeaponReposition(NiNode* weapon) const {
-		const auto [primAxisX, primAxisY] = f4vr::getControllerState(true).rAxis[0];
-		const auto [secAxisX, secAxisY] = f4vr::getControllerState(false).rAxis[0];
+		const auto [primAxisX, primAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
+		const auto [secAxisX, secAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand);
 		if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
 			return;
 		}
@@ -180,7 +183,7 @@ namespace frik {
 
 		// Update the weapon transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
-		if (f4vr::isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
+		if (f4vr::VRControllers.isPressHeldDown(vr::EVRButtonId::k_EButton_Grip, f4vr::Hand::Offhand)) {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(-degreesToRads(primAxisY / 5), -degreesToRads(secAxisX / 3), degreesToRads(primAxisX / 5));
@@ -202,7 +205,7 @@ namespace frik {
 	 */
 	void WeaponPositionConfigMode::handleOffhandReposition() const {
 		// Update the offset position by player thumbstick.
-		const auto [axisX, axisY] = f4vr::getControllerState(true).rAxis[0];
+		const auto [axisX, axisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
 		if (axisX != 0.f || axisY != 0.f) {
 			Matrix44 rot;
 			rot.setEulerAngles(-degreesToRads(axisY / 5), 0, degreesToRads(axisX / 5));
@@ -219,8 +222,8 @@ namespace frik {
 			return;
 		}
 
-		const auto [primAxisX, primAxisY] = f4vr::getControllerState(true).rAxis[0];
-		const auto [secAxisX, secAxisY] = f4vr::getControllerState(false).rAxis[0];
+		const auto [primAxisX, primAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
+		const auto [secAxisX, secAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand);
 		if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
 			return;
 		}
@@ -230,7 +233,7 @@ namespace frik {
 
 		// Update the transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
-		if (f4vr::isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
+		if (f4vr::VRControllers.isPressHeldDown(vr::EVRButtonId::k_EButton_Grip, f4vr::Hand::Offhand)) {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(degreesToRads(secAxisY / 6), degreesToRads(secAxisX / 6), degreesToRads(primAxisX / 6));
@@ -251,8 +254,8 @@ namespace frik {
 	 * NOTE: because of minor tweaks on what axis are used for repositioning it doesn't make sense to create common code for it.
 	 */
 	void WeaponPositionConfigMode::handleBackOfHandUIReposition() const {
-		const auto [primAxisX, primAxisY] = f4vr::getControllerState(true).rAxis[0];
-		const auto [secAxisX, secAxisY] = f4vr::getControllerState(false).rAxis[0];
+		const auto [primAxisX, primAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
+		const auto [secAxisX, secAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand);
 		if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
 			return;
 		}
@@ -262,7 +265,7 @@ namespace frik {
 
 		// Update the transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
-		if (f4vr::isButtonPressHeldDownOnController(false, vr::EVRButtonId::k_EButton_Grip)) {
+		if (f4vr::VRControllers.isPressHeldDown(vr::EVRButtonId::k_EButton_Grip, f4vr::Hand::Offhand)) {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(-degreesToRads(secAxisY / 6), -degreesToRads(primAxisX / 6), -degreesToRads(primAxisY / 6));
@@ -283,7 +286,7 @@ namespace frik {
 	 * Handle configuration for BetterScopesVR mod.
 	 */
 	void WeaponPositionConfigMode::handleBetterScopesReposition() {
-		const auto [axisX, axisY] = f4vr::getControllerState(true).rAxis[0];
+		const auto [axisX, axisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
 		if (axisX != 0.f || axisY != 0.f) {
 			// Axis_state y is up and down, which corresponds to reticule z axis
 			NiPoint3 msgData(axisX / 10, 0.f, axisY / 10);
@@ -335,7 +338,6 @@ namespace frik {
 
 	void WeaponPositionConfigMode::resetWeaponConfig() const {
 		showNotification("Reset Weapon Position to Default");
-		doHaptic();
 		_adjuster->_weaponOffsetTransform = isMeleeWeaponEquipped()
 			? getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
 			: _adjuster->_weaponOriginalTransform;
@@ -344,20 +346,17 @@ namespace frik {
 
 	void WeaponPositionConfigMode::saveWeaponConfig() const {
 		showNotification("Saving Weapon Position");
-		doHaptic();
 		g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetOffhandConfig() const {
 		showNotification("Reset Offhand Position to Default");
-		doHaptic();
 		_adjuster->_offhandOffsetRot = Matrix44::getIdentity43();
 		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveOffhandConfig() const {
 		showNotification("Saving Offhand Position");
-		doHaptic();
 		NiTransform transform;
 		transform.scale = 1;
 		transform.pos = NiPoint3(0, 0, 0);
@@ -367,20 +366,17 @@ namespace frik {
 
 	void WeaponPositionConfigMode::resetThrowableConfig() const {
 		showNotification("Reset Throwable Weapon Position to Default");
-		doHaptic();
 		_adjuster->_throwableWeaponOffsetTransform = _adjuster->_throwableWeaponOriginalTransform;
 		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveThrowableConfig() const {
 		showNotification("Saving Throwable Weapon Position");
-		doHaptic();
 		g_config.saveWeaponOffsets(_adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetBackOfHandUIConfig() const {
 		showNotification("Reset Back of Hand UI Position to Default");
-		doHaptic();
 		_adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_currentlyInPA);
 		_adjuster->getBackOfHandUINode()->m_localTransform = _adjuster->_backOfHandUIOffsetTransform;
 		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA, true);
@@ -388,20 +384,17 @@ namespace frik {
 
 	void WeaponPositionConfigMode::saveBackOfHandUIConfig() const {
 		showNotification("Saving Back of Hand UI Position");
-		doHaptic();
 		g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_backOfHandUIOffsetTransform, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA);
 	}
 
-	void WeaponPositionConfigMode::resetBetterScopesConfig() const {
+	void WeaponPositionConfigMode::resetBetterScopesConfig() {
 		showNotification("Reset BetterScopesVR Scope Offset to Default");
-		doHaptic();
 		NiPoint3 msgData(0.f, 0.f, 0.f);
 		g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
 	}
 
-	void WeaponPositionConfigMode::saveBetterScopesConfig() const {
+	void WeaponPositionConfigMode::saveBetterScopesConfig() {
 		showNotification("Saving BetterScopesVR Scopes Offset");
-		doHaptic();
 		NiPoint3 msgData(0.f, 1, 0.f);
 		g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
 	}
@@ -485,12 +478,5 @@ namespace frik {
 		_configUI->setVisibility(false);
 
 		g_uiManager->attachPresetToPrimaryWandLeft(_configUI, g_config.leftHandedMode, {0, -4, 0});
-	}
-
-	/**
-	 * Run a simple haptic
-	 */
-	void WeaponPositionConfigMode::doHaptic() const {
-		_adjuster->_vrHook->StartHaptics(g_config.leftHandedMode ? 1 : 2, 0.5, 0.4f);
 	}
 }

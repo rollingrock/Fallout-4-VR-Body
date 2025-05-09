@@ -1,7 +1,6 @@
 #pragma once
 
 #include "utils.h"
-#include "api/VRHookAPI.h"
 #include "ui/UIButton.h"
 #include "ui/UIContainer.h"
 #include "ui/UIToggleButton.h"
@@ -58,10 +57,9 @@ namespace frik {
 		void saveThrowableConfig() const;
 		void resetBackOfHandUIConfig() const;
 		void saveBackOfHandUIConfig() const;
-		void resetBetterScopesConfig() const;
-		void saveBetterScopesConfig() const;
+		static void resetBetterScopesConfig();
+		static void saveBetterScopesConfig();
 		void createConfigUI();
-		void doHaptic() const;
 
 		// access the weapon/offhand transform to change
 		WeaponPositionAdjuster* _adjuster;

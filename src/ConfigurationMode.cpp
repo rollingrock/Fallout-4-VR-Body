@@ -10,6 +10,7 @@
 #include "Skeleton.h"
 #include "common/CommonUtils.h"
 #include "f4vr/F4VRUtils.h"
+#include "f4vr/VRControllersManager.h"
 
 using namespace common;
 
@@ -101,9 +102,7 @@ namespace frik {
 				if ((*g_ui)->IsMenuRegistered(menuName)) {
 					CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 				}
-				if (_vrhook != nullptr) {
-					g_config.leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
-				}
+				f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
 			}
 			NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
 			f4vr::NiCloneProcess proc;
@@ -253,41 +252,39 @@ namespace frik {
 							TransMesh->m_localTransform.pos.y = fz;
 						}
 						if (TransMesh->m_localTransform.pos.y > 1.0 && !_MCTouchbuttons[i]) {
-							if (_vrhook != nullptr) {
-								//_PBConfigSticky = true;
-								g_config.leftHandedMode ? _vrhook->StartHaptics(2, 0.05, 0.3) : _vrhook->StartHaptics(1, 0.05, 0.3);
-								for (int i = 1; i <= 7; i++) {
-									_MCTouchbuttons[i] = false;
-								}
-								BSFixedString bname = "MCCONFIGMarker";
-								auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
-								if (UIMarker) {
-									UIMarker->m_parent->RemoveChild(UIMarker);
-								}
-								if (i < 7) {
-									NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-									f4vr::NiCloneProcess proc;
-									proc.unk18 = Offsets::cloneAddr1;
-									proc.unk48 = Offsets::cloneAddr2;
-									NiNode* UI = Offsets::cloneNode(retNode, &proc);
-									UI->m_name = BSFixedString("MCCONFIGMarker");
-									TouchMesh->AttachChild(UI, true);
-								}
-								_MCTouchbuttons[i] = true;
+							//_PBConfigSticky = true;
+							f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
+							for (int i = 1; i <= 7; i++) {
+								_MCTouchbuttons[i] = false;
 							}
+							BSFixedString bname = "MCCONFIGMarker";
+							auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+							if (UIMarker) {
+								UIMarker->m_parent->RemoveChild(UIMarker);
+							}
+							if (i < 7) {
+								NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+								f4vr::NiCloneProcess proc;
+								proc.unk18 = Offsets::cloneAddr1;
+								proc.unk48 = Offsets::cloneAddr2;
+								NiNode* UI = Offsets::cloneNode(retNode, &proc);
+								UI->m_name = BSFixedString("MCCONFIGMarker");
+								TouchMesh->AttachChild(UI, true);
+							}
+							_MCTouchbuttons[i] = true;
 						}
 					}
 				}
 			}
 			vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0]
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0];
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
 			uint64_t dominantHand = g_config.leftHandedMode
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
 			uint64_t offHand = g_config.leftHandedMode
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed;
 			bool CamZButtonPressed = _MCTouchbuttons[1];
 			bool CamYButtonPressed = _MCTouchbuttons[2];
 			bool ScaleButtonPressed = _MCTouchbuttons[3];
@@ -400,14 +397,14 @@ namespace frik {
 
 		if (_calibrateModeActive) {
 			vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0]
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0];
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
 			const uint64_t dominantHand = g_config.leftHandedMode
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
 			const uint64_t offHand = g_config.leftHandedMode
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto ExitandSave = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33));
 			const auto ExitnoSave = offHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33));
 			const auto SelfieButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(1));
@@ -416,9 +413,7 @@ namespace frik {
 				_exitAndSavePressed = true;
 				g_configurationMode->configModeExit();
 				g_config.save();
-				if (_vrhook != nullptr) {
-					g_config.leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
-				}
+				f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
 			} else if (!ExitandSave) {
 				_exitAndSavePressed = false;
 			}
@@ -455,11 +450,11 @@ namespace frik {
 			}
 		} else {
 			const uint64_t dominantHand = g_config.leftHandedMode
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
 			const uint64_t offHand = g_config.leftHandedMode
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto dHTouch = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
 			const auto oHTouch = offHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
 			if (dHTouch && !_calibrateModeActive) {
@@ -486,14 +481,14 @@ namespace frik {
 		if (g_pipboy->status()) {
 			float rAxisOffsetX;
 			vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0]
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0];
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
 			uint64_t dominantHand = g_config.leftHandedMode
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
 			uint64_t offHand = g_config.leftHandedMode
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed;
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto PBConfigButtonPressed = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
 			bool ModelSwapButtonPressed = _PBTouchbuttons[1];
 			bool RotateButtonPressed = _PBTouchbuttons[2];
@@ -556,74 +551,72 @@ namespace frik {
 								TransMesh->m_localTransform.pos.y = fz;
 							}
 							if (TransMesh->m_localTransform.pos.y > 1.0 && !_PBTouchbuttons[i]) {
-								if (_vrhook != nullptr) {
-									//_PBConfigSticky = true;
-									g_config.leftHandedMode ? _vrhook->StartHaptics(2, 0.05, 0.3) : _vrhook->StartHaptics(1, 0.05, 0.3);
-									for (int i = 1; i <= 11; i++) {
-										if (i != 1 && i != 3) {
-											_PBTouchbuttons[i] = false;
-										}
+								//_PBConfigSticky = true;
+								f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
+								for (int i = 1; i <= 11; i++) {
+									if (i != 1 && i != 3) {
+										_PBTouchbuttons[i] = false;
 									}
-									BSFixedString bname = "PBCONFIGMarker";
-									auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
-									if (UIMarker) {
-										UIMarker->m_parent->RemoveChild(UIMarker);
-									}
-									if (i != 1 && i != 3 && i != 10 && i != 11) {
-										NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-										f4vr::NiCloneProcess proc;
-										proc.unk18 = Offsets::cloneAddr1;
-										proc.unk48 = Offsets::cloneAddr2;
-										NiNode* UI = Offsets::cloneNode(retNode, &proc);
-										UI->m_name = BSFixedString("PBCONFIGMarker");
-										TouchMesh->AttachChild(UI, true);
-									}
-									if (i == 10 || i == 11) {
-										if (i == 10) {
-											if (!g_config.pipBoyOpenWhenLookAt) {
-												BSFixedString bname = "PBGlanceMarker";
-												auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
-												if (!UIMarker) {
-													NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-													f4vr::NiCloneProcess proc;
-													proc.unk18 = Offsets::cloneAddr1;
-													proc.unk48 = Offsets::cloneAddr2;
-													NiNode* UI = Offsets::cloneNode(retNode, &proc);
-													UI->m_name = BSFixedString("PBGlanceMarker");
-													TouchMesh->AttachChild(UI, true);
-												}
-											} else if (g_config.pipBoyOpenWhenLookAt) {
-												BSFixedString bname = "PBGlanceMarker";
-												auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
-												if (UIMarker) {
-													UIMarker->m_parent->RemoveChild(UIMarker);
-												}
-											}
-										}
-										if (i == 11) {
-											if (!g_config.dampenPipboyScreen) {
-												BSFixedString bname = "PBDampenMarker";
-												auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
-												if (!UIMarker) {
-													NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-													f4vr::NiCloneProcess proc;
-													proc.unk18 = Offsets::cloneAddr1;
-													proc.unk48 = Offsets::cloneAddr2;
-													NiNode* UI = Offsets::cloneNode(retNode, &proc);
-													UI->m_name = BSFixedString("PBDampenMarker");
-													TouchMesh->AttachChild(UI, true);
-												}
-											} else if (g_config.dampenPipboyScreen) {
-												BSFixedString bname = "PBDampenMarker";
-												auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
-												if (UIMarker) {
-													UIMarker->m_parent->RemoveChild(UIMarker);
-												}
-											}
-										}
-									}
-									_PBTouchbuttons[i] = true;
 								}
+								BSFixedString bname = "PBCONFIGMarker";
+								auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+								if (UIMarker) {
+									UIMarker->m_parent->RemoveChild(UIMarker);
+								}
+								if (i != 1 && i != 3 && i != 10 && i != 11) {
+									NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+									f4vr::NiCloneProcess proc;
+									proc.unk18 = Offsets::cloneAddr1;
+									proc.unk48 = Offsets::cloneAddr2;
+									NiNode* UI = Offsets::cloneNode(retNode, &proc);
+									UI->m_name = BSFixedString("PBCONFIGMarker");
+									TouchMesh->AttachChild(UI, true);
+								}
+								if (i == 10 || i == 11) {
+									if (i == 10) {
+										if (!g_config.pipBoyOpenWhenLookAt) {
+											BSFixedString bname = "PBGlanceMarker";
+											auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+											if (!UIMarker) {
+												NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+												f4vr::NiCloneProcess proc;
+												proc.unk18 = Offsets::cloneAddr1;
+												proc.unk48 = Offsets::cloneAddr2;
+												NiNode* UI = Offsets::cloneNode(retNode, &proc);
+												UI->m_name = BSFixedString("PBGlanceMarker");
+												TouchMesh->AttachChild(UI, true);
+											}
+										} else if (g_config.pipBoyOpenWhenLookAt) {
+											BSFixedString bname = "PBGlanceMarker";
+											auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+											if (UIMarker) {
+												UIMarker->m_parent->RemoveChild(UIMarker);
+											}
+										}
+									}
+									if (i == 11) {
+										if (!g_config.dampenPipboyScreen) {
+											BSFixedString bname = "PBDampenMarker";
+											auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+											if (!UIMarker) {
+												NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+												f4vr::NiCloneProcess proc;
+												proc.unk18 = Offsets::cloneAddr1;
+												proc.unk48 = Offsets::cloneAddr2;
+												NiNode* UI = Offsets::cloneNode(retNode, &proc);
+												UI->m_name = BSFixedString("PBDampenMarker");
+												TouchMesh->AttachChild(UI, true);
+											}
+										} else if (g_config.dampenPipboyScreen) {
+											BSFixedString bname = "PBDampenMarker";
+											auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+											if (UIMarker) {
+												UIMarker->m_parent->RemoveChild(UIMarker);
+											}
+										}
+									}
+								}
+								_PBTouchbuttons[i] = true;
 							}
 						}
 					}
@@ -724,9 +717,7 @@ namespace frik {
 				CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
 			}
 		}
-		if (_vrhook != nullptr) {
-			g_config.leftHandedMode ? _vrhook->StartHaptics(1, 0.55, 0.5) : _vrhook->StartHaptics(2, 0.55, 0.5);
-		}
+		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
 		const NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
 		f4vr::NiCloneProcess proc;
 		proc.unk18 = Offsets::cloneAddr1;

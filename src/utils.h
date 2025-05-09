@@ -1,9 +1,8 @@
 #pragma once
 
-#include "f4vr/Offsets.h"
 #include "f4se/GameReferences.h"
 #include "f4se/GameSettings.h"
-#include "f4vr/VR.h"
+#include "f4vr/Offsets.h"
 
 #include <chrono>
 

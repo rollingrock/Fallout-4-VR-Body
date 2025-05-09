@@ -3,9 +3,7 @@
 #include <f4se/BSGeometry.h>
 #include <f4se/GameSettings.h>
 
-#include "VR.h"
 #include "../Config.h"
-#include "../common/CommonUtils.h"
 #include "f4se/PapyrusEvents.h"
 
 namespace f4vr {
@@ -43,98 +41,6 @@ namespace f4vr {
 
 	void setINIFloat(const BSFixedString name, float value) {
 		CallGlobalFunctionNoWait2<BSFixedString, float>("Utility", "SetINIFloat", BSFixedString(name.c_str()), value);
-	}
-
-	/**
-	 * Get the correct right/left-handed  config and whatever primary or secondary is requested.
-	 * Example: right is primary for right-handed  mode, but left is primary for left-handed  mode.
-	 */
-	static TrackerType getTrackerTypeForCorrectHand(const bool primary) {
-		// TODO: refactor dependency on frik
-		return frik::g_config.leftHandedMode
-			? primary
-			? TrackerType::Left
-			: TrackerType::Right
-			: primary
-			? TrackerType::Right
-			: TrackerType::Left;
-	}
-
-	/**
-	 * Get the input controller state object for the primary controller depending on left handmode.
-	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	 */
-	vr::VRControllerState_t getControllerState(const bool primary) {
-		const auto tracker = getTrackerTypeForCorrectHand(primary);
-		return g_vrHook->getControllerState(tracker);
-	}
-
-	/**
-	 * Check if the given button is pressed AFTER NOT being pressed on the primary/secondary input controller.
-	 * This will return true for ONE frame only when the button is first pressed.
-	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	 */
-	bool isButtonPressedOnController(const bool primary, int buttonId) {
-		const auto tracker = getTrackerTypeForCorrectHand(primary);
-		const auto prevInput = g_vrHook->getControllerPreviousState(tracker).ulButtonPressed;
-		const auto input = g_vrHook->getControllerState(tracker).ulButtonPressed;
-		const auto button = vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(buttonId));
-		return !(prevInput & button) && input & button;
-	}
-
-	/**
-	 * Check if the given button is pressed and is HELD down on the primary/secondary input controller.
-	 * This will return true for EVERY frame while the button is pressed.
-	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	 */
-	bool isButtonPressHeldDownOnController(const bool primary, int buttonId) {
-		const auto tracker = getTrackerTypeForCorrectHand(primary);
-		const auto prevInput = g_vrHook->getControllerPreviousState(tracker).ulButtonPressed;
-		const auto input = g_vrHook->getControllerState(tracker).ulButtonPressed;
-		const auto button = vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(buttonId));
-		return prevInput & button && input & button;
-	}
-
-	/**
-	 * Check if the given button was released AFTER being pressed on the primary/secondary input controller.
-	 * This will return true for ONE frame only when the button is first released.
-	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	 */
-	bool isButtonReleasedOnController(const bool primary, int buttonId) {
-		const auto tracker = getTrackerTypeForCorrectHand(primary);
-		const auto prevInput = g_vrHook->getControllerPreviousState(tracker).ulButtonPressed;
-		const auto input = g_vrHook->getControllerState(tracker).ulButtonPressed;
-		const auto button = vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(buttonId));
-		return prevInput & button && !(input & button);
-	}
-
-	/**
-	 * Check if the given button is long pressed on the primary/secondary input controller.
-	 * This will return true for EVERY frame when the button is pressed for longer then longPressDuration.
-	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	 */
-	bool isButtonLongPressedOnController(const bool primary, int buttonId, const int longPressDuration) {
-		const auto tracker = getTrackerTypeForCorrectHand(primary);
-		const auto longPress = g_vrHook->getControllerLongButtonPressedState(tracker);
-		if (longPress.startTimeMilisec == 0 || common::nowMillis() - longPress.startTimeMilisec < longPressDuration) {
-			return false;
-		}
-		const auto button = vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(buttonId));
-		return longPress.ulButtonPressed & button;
-	}
-
-	/**
-	 * Check if the given button is long pressed on the primary/secondary input controller and clear the state if it is.
-	 * This will return true for ONE frame when the button is pressed for longer then longPressDuration. But if the
-	 * player continues to hold the button it will return true again after longPressDuration passed again.
-	 * Regular primary is right hand, but if left hand mode is on then primary is left hand.
-	 */
-	bool checkAndClearButtonLongPressedOnController(const bool primary, const int buttonId, const int longPressDuration) {
-		const auto isButtonLongPressed = isButtonLongPressedOnController(primary, buttonId, longPressDuration);
-		if (isButtonLongPressed) {
-			g_vrHook->clearControllerLongButtonPressedState(getTrackerTypeForCorrectHand(primary));
-		}
-		return isButtonLongPressed;
 	}
 
 	/**

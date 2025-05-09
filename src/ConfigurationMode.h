@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Skeleton.h"
-#include "api/VRHookAPI.h"
 
 namespace frik {
 	/**
@@ -14,9 +13,8 @@ namespace frik {
 	 */
 	class ConfigurationMode {
 	public:
-		ConfigurationMode(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
+		explicit ConfigurationMode(Skeleton* skelly) {
 			_skelly = skelly;
-			_vrhook = hook;
 		}
 
 		bool isCalibrateModeActive() const {
@@ -43,7 +41,6 @@ namespace frik {
 		static void checkWeaponRepositionPipboyConflict();
 
 		Skeleton* _skelly;
-		OpenVRHookManagerAPI* _vrhook;
 
 		// height calibration
 		time_t _calibratePlayerHeightTime = 0;

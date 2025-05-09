@@ -1,24 +1,22 @@
 #include "Skeleton.h"
+
 #include <array>
 #include <chrono>
-#include <cstring>
 #include <ctime>
 #include <f4se/GameRTTI.h>
+
 #include "BSFlattenedBoneTree.h"
 #include "Config.h"
 #include "F4VRBody.h"
 #include "HandPose.h"
 #include "Menu.h"
 #include "Pipboy.h"
-#include "f4vr/VR.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Quaternion.h"
 #include "f4se/GameForms.h"
 #include "f4vr/F4VRUtils.h"
-
-extern PapyrusVRAPI* g_papyrusvr;
-extern OpenVRHookManagerAPI* _vrhook;
+#include "f4vr/VRControllersManager.h"
 
 using namespace std::chrono;
 using namespace common;
@@ -354,7 +352,7 @@ namespace frik {
 
 		_prevSpeed = 0.0;
 
-		_playerNodes = reinterpret_cast<f4vr::PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
+		_playerNodes = reinterpret_cast<PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
 
 		if (!_playerNodes) {
 			Log::info("player nodes not set");
@@ -1871,11 +1869,11 @@ namespace frik {
 			if (found != fingerRelations.end()) {
 				isLeft = name[0] == 'L';
 				const uint64_t reg = isLeft
-					? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonTouched
-					: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonTouched;
+					? VRControllers.getControllerState_DEPRECATED(TrackerType::Left).ulButtonTouched
+					: VRControllers.getControllerState_DEPRECATED(TrackerType::Right).ulButtonTouched;
 				const float gripProx = isLeft
-					? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[2].x
-					: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[2].x;
+					? VRControllers.getControllerState_DEPRECATED(TrackerType::Left).rAxis[2].x
+					: VRControllers.getControllerState_DEPRECATED(TrackerType::Right).rAxis[2].x;
 				const bool thumbUp = reg & vr::ButtonMaskFromId(vr::k_EButton_Grip) && reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger) && !(reg & vr::ButtonMaskFromId(
 					vr::k_EButton_SteamVR_Touchpad));
 				_closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton[name]);

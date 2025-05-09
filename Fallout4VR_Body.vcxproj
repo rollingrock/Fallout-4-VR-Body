@@ -139,7 +139,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>f4sevr_1_2_72.lib;f4se_common.lib;common_vc11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>f4sevr_1_2_72.lib;f4se_common.lib;common_vc11.lib;openvr_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>src\exports.def</ModuleDefinitionFile>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -171,7 +171,7 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>f4sevr_1_2_72.lib;f4se_common.lib;common_vc11.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>f4sevr_1_2_72.lib;f4se_common.lib;common_vc11.lib;openvr_api.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>src\exports.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
@@ -214,7 +214,6 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClCompile Include="src\ui\UIWidget.cpp" />
     <ClCompile Include="src\ui\UIUtils.cpp" />
     <ClCompile Include="src\utils.cpp" />
-    <ClCompile Include="src\f4vr\VR.cpp" />
     <ClCompile Include="src\WeaponPositionConfigMode.cpp" />
     <ClCompile Include="src\WeaponPositionAdjuster.cpp" />
   </ItemGroup>
@@ -225,9 +224,7 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClInclude Include="src\api\OpenVRTypes.h" />
     <ClInclude Include="src\api\openvr_capi.h" />
     <ClInclude Include="src\api\openvr_driver.h" />
-    <ClInclude Include="src\api\PapyrusVRAPI.h" />
     <ClInclude Include="src\api\PapyrusVRTypes.h" />
-    <ClInclude Include="src\api\VRHookAPI.h" />
     <ClInclude Include="src\api\VRManagerAPI.h" />
     <ClInclude Include="src\BoneSpheresHandler.h" />
     <ClInclude Include="src\BSFlattenedBoneTree.h" />
@@ -240,6 +237,7 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClInclude Include="src\F4VRBody.h" />
     <ClInclude Include="src\f4vr\F4VRUtils.h" />
     <ClInclude Include="src\f4vr\PlayerNodes.h" />
+    <ClInclude Include="src\f4vr\VRControllersManager.h" />
     <ClInclude Include="src\GunReload.h" />
     <ClInclude Include="src\HandPose.h" />
     <ClInclude Include="src\hook.h" />
@@ -271,12 +269,10 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClInclude Include="src\ui\UIWidget.h" />
     <ClInclude Include="src\ui\UIUtils.h" />
     <ClInclude Include="src\utils.h" />
-    <ClInclude Include="src\f4vr\VR.h" />
     <ClInclude Include="src\WeaponPositionConfigMode.h" />
     <ClInclude Include="src\WeaponPositionAdjuster.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include=".gitignore" />
     <None Include="data\config\FRIK.ini" />
     <None Include="data\config\mesh_hide_face.ini" />
     <None Include="data\config\mesh_hide_skins.ini" />
@@ -284,8 +280,6 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <None Include="data\config\pipboy_holo_offsets.json" />
     <None Include="data\config\pipboy_screen_offsets.json" />
     <None Include="exports.def" />
-    <None Include="LICENSE" />
-    <None Include="README.md" />
     <None Include="src\exports.def" />
   </ItemGroup>
   <ItemGroup>

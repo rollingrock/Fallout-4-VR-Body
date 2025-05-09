@@ -1,7 +1,8 @@
 #include "Pipboy.h"
+
 #include <chrono>
-#include <cstring>
 #include <thread>
+
 #include "BSFlattenedBoneTree.h"
 #include "Config.h"
 #include "ConfigurationMode.h"
@@ -13,7 +14,7 @@
 #include "common/Logger.h"
 #include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
-#include "f4vr/VR.h"
+#include "f4vr/VRControllersManager.h"
 
 using namespace std::chrono;
 using namespace common;
@@ -165,12 +166,12 @@ namespace frik {
 		}
 
 		const auto pipOnButtonPressed = (g_config.pipBoyButtonArm
-			? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
-			: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId(
+			? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
+			: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId(
 			static_cast<vr::EVRButtonId>(g_config.pipBoyButtonID));
 		const auto pipOffButtonPressed = (g_config.pipBoyButtonOffArm
-			? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed
-			: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId(
+			? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
+			: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId(
 			static_cast<vr::EVRButtonId>(g_config.pipBoyButtonOffID));
 
 		// check off button
@@ -228,8 +229,8 @@ namespace frik {
 		if (!isLookingAtPipBoy()) {
 			_startedLookingAtPip = 0;
 			const vr::VRControllerAxis_t axis_state = g_config.pipBoyButtonArm > 0
-				? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0]
-				: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0];
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0]
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0];
 			const auto timeElapsed = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _lastLookingAtPip;
 			if (_pipboyStatus && timeElapsed > g_config.pipBoyOffDelay && !g_configurationMode->isPipBoyConfigModeActive()) {
 				_pipboyStatus = false;
@@ -312,9 +313,7 @@ namespace frik {
 				}
 				if (pipboyTrans->m_localTransform.pos.z < -0.10 && !_stickypip) {
 					_stickypip = true;
-					if (_vrhook != nullptr) {
-						g_config.leftHandedPipBoy ? _vrhook->StartHaptics(1, 0.05f, 0.3f) : _vrhook->StartHaptics(2, 0.05f, 0.3f);
-					}
+					f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary);
 					if (_pipboyStatus) {
 						_pipboyStatus = false;
 						turnPipBoyOff();
@@ -350,9 +349,7 @@ namespace frik {
 			}
 			if (pipboyTrans->m_localTransform.pos.z < -0.14 && !stickyPBlight) {
 				stickyPBlight = true;
-				if (_vrhook != nullptr) {
-					g_config.leftHandedPipBoy ? _vrhook->StartHaptics(1, 0.05f, 0.3f) : _vrhook->StartHaptics(2, 0.05f, 0.3f);
-				}
+				f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary);
 				if (!_pipboyStatus) {
 					Offsets::togglePipboyLight(*g_player);
 				}
@@ -380,9 +377,7 @@ namespace frik {
 			}
 			if (pipboyTrans->m_localTransform.pos.y < -0.12 && !stickyPBRadio) {
 				stickyPBRadio = true;
-				if (_vrhook != nullptr) {
-					g_config.leftHandedPipBoy ? _vrhook->StartHaptics(1, 0.05f, 0.3f) : _vrhook->StartHaptics(2, 0.05f, 0.3f);
-				}
+				f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary);
 				if (!_pipboyStatus) {
 					if (Offsets::isPlayerRadioEnabled()) {
 						turnPlayerRadioOn(false);
@@ -573,19 +568,15 @@ namespace frik {
 				const auto hand = rt->transforms[_skelly->getBoneInMap(useRightHand ? "RArm_Hand" : "LArm_Hand")].world.pos;
 				float distance = vec3Len(hand - head->m_worldTransform.pos);
 				if (distance < 15.0) {
-					uint64_t _PipboyHand = f4vr::g_vrHook->getControllerState(useRightHand ? f4vr::TrackerType::Right : f4vr::TrackerType::Left).
-					                                       ulButtonPressed;
+					uint64_t _PipboyHand = f4vr::VRControllers.getControllerState_DEPRECATED(useRightHand ? f4vr::TrackerType::Right : f4vr::TrackerType::Left).
+					                                           ulButtonPressed;
 					const auto SwitchLightButton = _PipboyHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(g_config.switchTorchButton));
-					if (_vrhook != nullptr && _SwitchLightHaptics) {
-						_vrhook->StartHaptics(useRightHand ? 2 : 1, 0.1f, 0.1f);
-					}
+					f4vr::VRControllers.triggerHaptic(useRightHand ? vr::TrackedControllerRole_RightHand : vr::TrackedControllerRole_LeftHand, 0.1f, 0.1f);
 					// Control switching between hand and head based Pipboy light
 					if (SwitchLightButton && !_SwithLightButtonSticky) {
 						_SwithLightButtonSticky = true;
 						_SwitchLightHaptics = false;
-						if (_vrhook != nullptr) {
-							_vrhook->StartHaptics(useRightHand ? 2 : 1, 0.05f, 0.3f);
-						}
+						f4vr::VRControllers.triggerHaptic(useRightHand ? vr::TrackedControllerRole_RightHand : vr::TrackedControllerRole_LeftHand, 0.1f);
 						NiNode* LGHT_ATTACH = useRightHand
 							? f4vr::getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode())
 							: f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
@@ -762,33 +753,31 @@ namespace frik {
 										}
 									}
 									if (trans->m_localTransform.pos.z > transDistance[i] && !_PBControlsSticky[i]) {
-										if (_vrhook != nullptr) {
-											_PBControlsSticky[i] = true;
-											g_config.leftHandedMode ? _vrhook->StartHaptics(1, 0.05, 0.3) : _vrhook->StartHaptics(2, 0.05, 0.3);
-											if (i == 0) {
-												root->Invoke("root.Menu_mc.gotoPrevPage", nullptr, nullptr, 0); // Previous Page											
-											}
-											if (i == 1) {
-												root->Invoke("root.Menu_mc.gotoNextPage", nullptr, nullptr, 0); // Next Page				
-											}
-											if (i == 2) {
-												root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0); // Previous Sub Page
-											}
-											if (i == 3) {
-												root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0); // Next Sub Page
-											}
-											if (i == 4) {
-												std::thread t1(simulateExtendedButtonPress, VK_UP); // Scroll up list
-												t1.detach();
-											}
-											if (i == 5) {
-												std::thread t1(simulateExtendedButtonPress, VK_DOWN); // Scroll down list
-												t1.detach();
-											}
-											if (i == 6) {
-												std::thread t1(simulateExtendedButtonPress, VK_RETURN); // Select Current Item
-												t1.detach();
-											}
+										_PBControlsSticky[i] = true;
+										f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary);
+										if (i == 0) {
+											root->Invoke("root.Menu_mc.gotoPrevPage", nullptr, nullptr, 0); // Previous Page											
+										}
+										if (i == 1) {
+											root->Invoke("root.Menu_mc.gotoNextPage", nullptr, nullptr, 0); // Next Page				
+										}
+										if (i == 2) {
+											root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0); // Previous Sub Page
+										}
+										if (i == 3) {
+											root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0); // Next Sub Page
+										}
+										if (i == 4) {
+											std::thread t1(simulateExtendedButtonPress, VK_UP); // Scroll up list
+											t1.detach();
+										}
+										if (i == 5) {
+											std::thread t1(simulateExtendedButtonPress, VK_DOWN); // Scroll down list
+											t1.detach();
+										}
+										if (i == 6) {
+											std::thread t1(simulateExtendedButtonPress, VK_RETURN); // Select Current Item
+											t1.detach();
 										}
 									}
 								}
@@ -801,17 +790,17 @@ namespace frik {
 								? _skelly->getRightArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode()
 								: _skelly->getLeftArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode();
 							vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
-								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0]
-								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0];
+								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
+								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
 							vr::VRControllerAxis_t doinantTrigger = g_config.leftHandedMode
-								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[1]
-								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[1];
+								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[1]
+								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[1];
 							vr::VRControllerAxis_t secondaryTrigger = g_config.leftHandedMode
-								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[1]
-								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[1];
+								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[1]
+								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[1];
 							uint64_t dominantHand = g_config.leftHandedMode
-								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).ulButtonPressed
-								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).ulButtonPressed;
+								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
+								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
 							const auto UISelectButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33)); // Right Trigger
 							const auto UIAltSelectButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32)); // Right Touchpad
 							GFxValue GetSWFVar;
@@ -903,11 +892,11 @@ namespace frik {
 						} else if (!g_configurationMode->isPipBoyConfigModeActive() && !g_config.switchUIControltoPrimary) {
 							//still move Pipboy trigger mesh even if controls havent been swapped.
 							vr::VRControllerAxis_t secondaryTrigger = g_config.leftHandedMode
-								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[1]
-								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[1];
+								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[1]
+								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[1];
 							vr::VRControllerAxis_t offHandStick = g_config.leftHandedMode
-								? f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Right).rAxis[0]
-								: f4vr::g_vrHook->getControllerState(f4vr::TrackerType::Left).rAxis[0];
+								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0]
+								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0];
 							BSFixedString selectnodename = "SelectRotate";
 							NiNode* trans = g_config.leftHandedPipBoy
 								? _skelly->getRightArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode()

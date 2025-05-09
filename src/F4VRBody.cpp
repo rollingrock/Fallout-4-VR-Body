@@ -1,6 +1,7 @@
 #include "F4VRBody.h"
-#include <algorithm>
+
 #include <f4se/GameRTTI.h>
+
 #include "BSFlattenedBoneTree.h"
 #include "Config.h"
 #include "ConfigurationMode.h"
@@ -15,7 +16,7 @@
 #include "utils.h"
 #include "common/Logger.h"
 #include "f4se/PapyrusNativeFunctions.h"
-#include "f4vr/VR.h"
+#include "f4vr/VRControllersManager.h"
 #include "ui/UIManager.h"
 #include "ui/UIModAdapter.h"
 
@@ -30,8 +31,6 @@ F4SEMessagingInterface* g_messaging = nullptr;
 
 UInt32 KeywordPowerArmor = 0x4D8A1;
 UInt32 KeywordPowerArmorFrame = 0x15503F;
-
-OpenVRHookManagerAPI* _vrhook;
 
 namespace frik {
 	Pipboy* g_pipboy = nullptr;
@@ -55,15 +54,15 @@ namespace frik {
 	 */
 	class FrameUpdateContext : public vrui::UIModAdapter {
 	public:
-		FrameUpdateContext(Skeleton* skelly, OpenVRHookManagerAPI* vrhook)
-			: _skelly(skelly), _vrhook(vrhook) {}
+		explicit FrameUpdateContext(Skeleton* skelly)
+			: _skelly(skelly) {}
 
 		virtual NiPoint3 getInteractionBoneWorldPosition() override {
 			return _skelly->getOffhandIndexFingerTipWorldPosition();
 		}
 
 		virtual void fireInteractionHeptic() override {
-			_vrhook->StartHaptics(g_config.leftHandedMode ? 2 : 1, 0.2f, 0.3f);
+			f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
 		}
 
 		virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override {
@@ -72,7 +71,6 @@ namespace frik {
 
 	private:
 		Skeleton* _skelly;
-		OpenVRHookManagerAPI* _vrhook;
 	};
 
 	static void fixSkeleton() {
@@ -169,13 +167,11 @@ namespace frik {
 			//replaceMeshes(_skelly->getPlayerNodes());
 			//_skelly->setDirection();
 
-			_vrhook = RequestOpenVRHookManagerObject();
-
 			// init global handlers
-			g_pipboy = new Pipboy(_skelly, _vrhook);
-			g_configurationMode = new ConfigurationMode(_skelly, _vrhook);
+			g_pipboy = new Pipboy(_skelly);
+			g_configurationMode = new ConfigurationMode(_skelly);
 			g_cullGeometry = new CullGeometryHandler();
-			g_weaponPosition = new WeaponPositionAdjuster(_skelly, _vrhook);
+			g_weaponPosition = new WeaponPositionAdjuster(_skelly);
 
 			turnPipBoyOff();
 
@@ -254,6 +250,8 @@ namespace frik {
 	}
 
 	void update() {
+		f4vr::VRControllers.update(g_config.leftHandedMode);
+
 		static bool inPowerArmorSticky = false;
 
 		if (!isLoaded) {
@@ -336,8 +334,6 @@ namespace frik {
 		c_jumping = SmoothMovementVR::checkIfJumpingOrInAir();
 
 		_skelly->setTime();
-
-		f4vr::g_vrHook->setVRControllerState();
 
 		Log::debug("Hide Wands");
 		_skelly->hideWands();
@@ -451,7 +447,7 @@ namespace frik {
 		g_pipboy->onUpdate();
 		g_configurationMode->onUpdate();
 
-		FrameUpdateContext context(_skelly, _vrhook);
+		FrameUpdateContext context(_skelly);
 		vrui::g_uiManager->onFrameUpdate(&context);
 
 		f4vr::updateDown(_skelly->getRoot(), true); // Last world update before exit.    Probably not necessary.

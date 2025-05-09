@@ -9,6 +9,7 @@
 #include "common/Logger.h"
 #include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
+#include "f4vr/VRControllersManager.h"
 
 using namespace common;
 
@@ -225,18 +226,18 @@ namespace frik {
 		}
 
 		if (_offHandGripping) {
-			if (g_config.onePressGripButton && !f4vr::isButtonPressHeldDownOnController(false, g_config.gripButtonID)) {
+			if (g_config.onePressGripButton && !f4vr::VRControllers.isPressHeldDown(g_config.gripButtonID, f4vr::Hand::Offhand)) {
 				// Mode 3 release grip when not holding the grip button
 				_offHandGripping = false;
 			}
 
-			if (g_config.enableGripButtonToLetGo && f4vr::isButtonPressedOnController(false, g_config.gripButtonID)) {
+			if (g_config.enableGripButtonToLetGo && f4vr::VRControllers.isPressed(g_config.gripButtonID, f4vr::Hand::Offhand)) {
 				if (g_config.enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
 					// Mode 2,4 release grip on pressing the grip button again
 					_offHandGripping = false;
 				} else {
 					// Mode 2 but close to barrel, so ignore un-grip as it will grip on next frame
-					_vrHook->StartHaptics(g_config.leftHandedMode ? 0 : 1, 0.05f, 0.3f);
+					f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
 				}
 			}
 
@@ -264,7 +265,7 @@ namespace frik {
 			// Mode 1,2 grab when close to barrel
 			_offHandGripping = true;
 		}
-		if (!g_pipboy->status() && f4vr::isButtonPressedOnController(false, g_config.gripButtonID)) {
+		if (!g_pipboy->status() && f4vr::VRControllers.isPressed(g_config.gripButtonID, f4vr::Hand::Offhand)) {
 			// Mode 3,4 grab when pressing grip button
 			_offHandGripping = true;
 		}
@@ -371,7 +372,7 @@ namespace frik {
 	 * Toggle only when player presses offhand X/A button and the hand is close to the weapon scope.
 	 */
 	void WeaponPositionAdjuster::handleBetterScopes(NiNode* weapon) const {
-		if (!f4vr::isButtonPressedOnController(false, vr::EVRButtonId::k_EButton_A)) {
+		if (!f4vr::VRControllers.isPressed(vr::EVRButtonId::k_EButton_A, f4vr::Hand::Offhand)) {
 			// fast return not to make additional calculations, checking button is cheap
 			return;
 		}
@@ -390,7 +391,7 @@ namespace frik {
 			// Zoom toggling
 			Log::info("Zoom Toggle pressed; sending message to switch zoom state");
 			g_messaging->Dispatch(g_pluginHandle, 16, nullptr, 0, "FO4VRBETTERSCOPES");
-			_vrHook->StartHaptics(g_config.leftHandedMode ? 0 : 1, 0.1f, 0.3f);
+			f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
 		}
 	}
 

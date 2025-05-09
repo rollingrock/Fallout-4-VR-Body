@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Skeleton.h"
-#include "api/VRHookAPI.h"
 
 namespace frik {
 	/**
@@ -12,9 +11,8 @@ namespace frik {
 	 */
 	class Pipboy {
 	public:
-		Pipboy(Skeleton* skelly, OpenVRHookManagerAPI* hook) {
+		explicit Pipboy(Skeleton* skelly) {
 			_skelly = skelly;
-			_vrhook = hook;
 		}
 
 		bool status() const {
@@ -45,7 +43,6 @@ namespace frik {
 		void secondaryTriggerSleep(int time);
 
 		Skeleton* _skelly;
-		OpenVRHookManagerAPI* _vrhook;
 
 		bool meshesReplaced = false;
 		bool _stickypip = false;
