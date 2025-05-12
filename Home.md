@@ -31,8 +31,7 @@ Enable FRIK.ini auto reloading to have changed loaded live into the running game
 CAUTION: FRIK.ini auto reload will override in-game configuration changes.  
 
 ### Configuration Files
-All configuration files are found in "...Data\FRIK_Config"  
-For MO2 it would be "[modelist]\overwrite\FRIK_Config"  
+'Documents\My Games\Fallout4VR\FRIK_Config'
 
 ## Links
 - [README](https://github.com/rollingrock/Fallout-4-VR-Body/blob/main/README.md)
