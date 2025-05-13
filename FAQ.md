@@ -1,6 +1,9 @@
 ## What changed in the last release?
 Check the [Changelog](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Changelog).
 
+## Any Known Issues?
+[Yes, a few](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Known-Issues).
+
 ## How Do I configure?
 See [In‐Game-Configuration-Guide](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/In%E2%80%90Game-Configuration-Guide-(v69)).
 

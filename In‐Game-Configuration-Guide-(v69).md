@@ -1,12 +1,25 @@
 ![image](https://github.com/user-attachments/assets/6dd0bc3e-acfd-43bd-b0d8-87d999bf0737)  
 Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 
-### New Config Mode
+## Main Configuration Mode
 - **Activation**: Press and hold both sticks down  
 - **Exit & Save**: Press right trigger  
 - **Exit & Restore**: Press left trigger
 
-### Pipboy Config Mode
+### Independent Posture Configuration
+- Configure **vertical camera**, **body**, and **posture offsets**  
+
+### Weapon Adjustment Mode Toggle
+- When enabled via config UI:  
+  - **Right stick is disabled** to prevent unintended player rotation
+
+### Weapon Grip Modes
+- Mode 1: Hand automatically snap to the barrel when in range, move hand quickly to let go.
+- Mode 2: Hand automatically snap to the barrel when in range, press grip button to let go.
+- Mode 3: Holding grip button to snap to the barrel, release to let go.
+- Mode 4: Press grip button to snap to the barrel, press again to let go.
+
+## Pipboy Configuration Mode
 - **Activation**: Press and hold right stick with the Pipboy open  
 - **To Cancel Changes**: Exit Pipboy without using the UI  
 - **To Save Changes**: Use the UI save button
@@ -42,10 +55,6 @@ Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 - Raise secondary controller to **top of your head**  
 - When you feel **continuous rumble**, press **grip** to switch mode
 
-### Weapon Repositioning Mode Toggle
-- When enabled via config UI:  
-  - **Right stick is disabled** to prevent unintended player rotation
-
 ### Auto Hand Posture for Pipboy Usage
 - Hand automatically **points** when in range of the Pipboy and screen is being looked at  
 - Hand returns to normal when **out of range**
@@ -53,7 +62,3 @@ Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 ### Better Crouching Posture
 - Improvements both **in** and **out** of Power Armor  
 - *See what you think?*
-
-### Independent Posture Configuration
-- Configure **vertical camera**, **body**, and **posture offsets**  
-- Accessible via the **main config mode**
