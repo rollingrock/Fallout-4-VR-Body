@@ -12,6 +12,10 @@ The head hiding is all in FRIK.ini config.
 Set `HideHead` and `HideEquipment` to false if you want full head to be rendered but it may obscure/clip your vision.  
 If you just want to see the head in selfie set `selfieIgnoreHideFlags` to true.
 
+## I can't scroll up/down through Pipboy menus
+The game window on your desktop needs to be in focus for primary controller Pipboy navigation to work.  
+If you still have issues, you can disable the feature in FRIK.ini by setting `PipboyUIPrimaryController` to false.
+
 ## How do I Operate the Flashlight
 Long press on secondary hand trigger activates the flashlight.  
 To move the flashlight from hand to head: move the Pipboy hand to the head, should feel haptic, press grip.  

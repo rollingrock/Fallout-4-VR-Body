@@ -1,4 +1,5 @@
 ### Quick Links
+- [Installation](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Installation)
 - [Changelog](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Changelog)
 - [Frequently Asked Questions (FAQ)](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/FAQ)
 - [In‐Game Configuration Guide](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/In%E2%80%90Game-Configuration-Guide-(v69))
