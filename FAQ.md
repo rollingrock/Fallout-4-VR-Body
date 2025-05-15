@@ -48,13 +48,15 @@ Watch this guide: [YouTube - MO2 F4SE Setup](https://www.youtube.com/watch?v=-rF
 
 ## My game crashes!!
 
-- The most common cause of crashes is follower mods like **Amazing Follower Tweaks**. I still don’t know exactly what causes this. Once I do, I’ll work on compatibility.
+- Using OpenComposite instead SteamVR?
+  - OpenComposite is not supported due to dependency on VR Tools. FRIK v74 will remove it.
+- The most common cause of crashes is follower mods like **Amazing Follower Tweaks**. 
+  - I still don’t know exactly what causes this. Once I do, I’ll work on compatibility.
 - Anything that messes directly with the **skeleton** can cause a crash.
 - Sometimes loading into a save can crash. Often this can be fixed by:
   - Completely exiting the game
   - Reloading from the **main menu**
 
-This is still **alpha** software, so not all crash vectors are fixed, but progress is ongoing.  
 If you find a **reproducible crash**, please post mod and crash logs!
 
 ## Armor / Power Armor obstructs my view!
