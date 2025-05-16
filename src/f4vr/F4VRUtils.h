@@ -5,9 +5,12 @@
 #include "F4VROffsets.h"
 
 namespace f4vr {
+	static const UInt32 KeywordPowerArmor = 0x4D8A1;
+	static const UInt32 KeywordPowerArmorFrame = 0x15503F;
+
 	// UI
-	void showMessagebox(const std::string& asText);
-	void showNotification(const std::string& asText);
+	void showMessagebox(const std::string& text);
+	void showNotification(const std::string& text);
 
 	// Controls
 	void setControlsThumbstickEnableState(bool toEnable);
@@ -17,6 +20,7 @@ namespace f4vr {
 	std::string getEquippedWeaponName();
 	bool hasKeyword(const TESObjectARMO* armor, UInt32 keywordFormId);
 	inline bool isJumpingOrInAir() { return IsInAir(*g_player); }
+	bool isInPowerArmor();
 
 	// settings
 	bool getLeftHandedMode();

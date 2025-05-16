@@ -9,31 +9,13 @@ using namespace common;
 
 namespace frik {
 	/// <summary>
-	/// Hide/Show player specific equipment slot found by index.
-	/// </summary>
-	static void setEquipmentSlotByIndexVisibility(const int slotId, const bool toHide) {
-		const auto& slot = (*g_player)->equipData->slots[slotId];
-
-		if (slot.item == nullptr || slot.node == nullptr) {
-			return;
-		}
-
-		const auto formType = slot.item->GetFormType();
-		if (formType != kFormType_ARMO) {
-			return;
-		}
-
-		f4vr::showHideNode(slot.node, toHide);
-	}
-
-	/// <summary>
 	/// Pre-calculate the indexes of the face and skin geometries to hide.
 	/// This is performance optimization to avoid iterating over all the geometries every frame by only doing it once per second.
-	/// It reduces the "cullPlayerGeometry" time from ~0.05ms to ~0.0002ms (for 89 frames, if framerate is 90).
+	/// It reduces the "cullPlayerGeometry" time from ~0.05ms to ~0.0002ms (for 89 frames, if frame-rate is 90).
 	/// May not sounds as much but total of this mod update frame is 0.25ms making it 20% of the time!
 	/// And god dammit the game is slow enough not to waste more time.
 	/// <p>
-	/// The geometry array can change when equipment is changed, weapon is drawned, etc. To handle it we check if the last
+	/// The geometry array can change when equipment is changed, weapon is drawn, etc. To handle it we check if the last
 	/// hidden geometry didn't change. If it did, we re-calculate the indexes to hide.
 	/// </summary>
 	void CullGeometryHandler::preProcessHideGeometryIndexes(BSFadeNode* rn) {
@@ -50,7 +32,7 @@ namespace frik {
 		_lastPreProcessTime = now;
 
 		_hideFaceSkinGeometryIndexes.clear();
-		for (auto i = 0; i < rn->kGeomArray.count; i++) {
+		for (UInt32 i = 0; i < rn->kGeomArray.count; i++) {
 			auto& geometry = rn->kGeomArray[i].spGeometry;
 			const auto geomName = std::string(geometry->m_name.c_str());
 			auto geomStr = str_tolower(trim(geomName));
@@ -79,7 +61,7 @@ namespace frik {
 
 			if (toHide) {
 				_hideFaceSkinGeometryIndexes.push_back(i);
-				_lastHiddenGeometryIdx = i;
+				_lastHiddenGeometryIdx = static_cast<int>(i);
 				_lastHiddenGeometryName = geomName;
 			}
 		}
@@ -126,9 +108,8 @@ namespace frik {
 	/// </summary>
 	void CullGeometryHandler::restoreGeometry() {
 		//Face and Skin
-		const auto rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
-		if (rn) {
-			for (auto i = 0; i < rn->kGeomArray.count; ++i) {
+		if (const auto rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode)) {
+			for (UINT32 i = 0; i < rn->kGeomArray.count; ++i) {
 				f4vr::showHideNode(rn->kGeomArray[i].spGeometry, false);
 			}
 		}
@@ -143,5 +124,23 @@ namespace frik {
 		setEquipmentSlotByIndexVisibility(19, false);
 		setEquipmentSlotByIndexVisibility(20, false);
 		setEquipmentSlotByIndexVisibility(22, false);
+	}
+
+	/// <summary>
+	/// Hide/Show player specific equipment slot found by index.
+	/// </summary>
+	void CullGeometryHandler::setEquipmentSlotByIndexVisibility(const int slotId, const bool toHide) {
+		const auto& slot = (*g_player)->equipData->slots[slotId];
+
+		if (slot.item == nullptr || slot.node == nullptr) {
+			return;
+		}
+
+		const auto formType = slot.item->GetFormType();
+		if (formType != kFormType_ARMO) {
+			return;
+		}
+
+		f4vr::showHideNode(slot.node, toHide);
 	}
 }

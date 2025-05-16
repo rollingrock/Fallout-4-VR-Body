@@ -1,9 +1,6 @@
 #pragma once
 
 #include "f4se/GameReferences.h"
-#include "f4se/GameSettings.h"
-
-#include <chrono>
 
 namespace frik {
 	void configureGameVars();

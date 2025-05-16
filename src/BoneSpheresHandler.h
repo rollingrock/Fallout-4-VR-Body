@@ -63,7 +63,7 @@ namespace frik {
 		void detectBoneSphere();
 		void handleDebugBoneSpheres();
 
-		RegistrationSetHolder<NullParameters> _boneSphereEventRegs;
+		RegistrationSetHolder<> _boneSphereEventRegs;
 
 		std::map<UInt32, BoneSphere*> _boneSphereRegisteredObjects;
 		UInt32 _nextBoneSphereHandle = 1;

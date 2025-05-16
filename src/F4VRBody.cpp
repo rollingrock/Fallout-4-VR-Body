@@ -27,9 +27,6 @@ PluginHandle g_pluginHandle = kPluginHandle_Invalid;
 F4SEPapyrusInterface* g_papyrus = nullptr;
 F4SEMessagingInterface* g_messaging = nullptr;
 
-UInt32 KeywordPowerArmor = 0x4D8A1;
-UInt32 KeywordPowerArmorFrame = 0x15503F;
-
 namespace frik {
 	Pipboy* g_pipboy = nullptr;
 	ConfigurationMode* g_configurationMode = nullptr;
@@ -70,54 +67,6 @@ namespace frik {
 	private:
 		Skeleton* _skelly;
 	};
-
-	static void fixSkeleton() {
-		NiNode* pn = (*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode();
-
-		static BSFixedString lHand("LArm_Hand");
-		static BSFixedString lArm("LArm_ForeArm1");
-		static BSFixedString lfarm("LArm_ForeArm2");
-		static BSFixedString rHand("RArm_Hand");
-		static BSFixedString rArm("RArm_ForeArm1");
-		static BSFixedString rfarm("RArm_ForeArm2");
-		static BSFixedString pipboyName("PipboyBone");
-
-		NiNode* hand = pn->GetObjectByName(&lHand)->GetAsNiNode();
-		NiNode* arm = pn->GetObjectByName(&lArm)->GetAsNiNode();
-		NiNode* forearm = pn->GetObjectByName(&lfarm)->GetAsNiNode();
-		auto pipboy = static_cast<NiNode*>(pn->m_children.m_data[0]->GetObjectByName(&pipboyName));
-
-		Skeleton sk;
-		const bool inPA = sk.detectInPowerArmor();
-
-		if (!inPA) {
-			if (arm->m_children.m_data[0] == hand) {
-				arm->RemoveChildAt(0);
-				if (pipboy) {
-					pipboy->m_parent->RemoveChild(pipboy);
-				} else {
-					pipboy = static_cast<NiNode*>(pn->GetObjectByName(&pipboyName));
-				}
-				forearm->m_parent->RemoveChild(forearm);
-				arm->AttachChild(forearm, true);
-				forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(hand, true);
-				if (pipboy) {
-					forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(pipboy, true);
-				}
-			}
-
-			hand = pn->GetObjectByName(&rHand)->GetAsNiNode();
-			arm = pn->GetObjectByName(&rArm)->GetAsNiNode();
-			forearm = pn->GetObjectByName(&rfarm)->GetAsNiNode();
-
-			if (arm->m_children.m_data[0] == hand) {
-				arm->RemoveChildAt(0);
-				forearm->m_parent->RemoveChild(forearm);
-				arm->AttachChild(forearm, true);
-				forearm->m_children.m_data[0]->GetAsNiNode()->AttachChild(hand, true);
-			}
-		}
-	}
 
 	static void fixMissingScreen(f4vr::PlayerNodes* pn) {
 		if (const auto screenNode = pn->ScreenNode) {
@@ -212,25 +161,6 @@ namespace frik {
 		}
 	}
 
-	static bool detectInPowerArmor() {
-		// Thanks Shizof and SmoothMovementVR for below code
-		if ((*g_player)->equipData) {
-			if ((*g_player)->equipData->slots[0x03].item != nullptr) {
-				if (const auto equippedForm = (*g_player)->equipData->slots[0x03].item) {
-					if (equippedForm->formType == TESObjectARMO::kTypeID) {
-						if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
-							if (f4vr::hasKeyword(armor, KeywordPowerArmor) || f4vr::hasKeyword(armor, KeywordPowerArmorFrame)) {
-								return true;
-							}
-							return false;
-						}
-					}
-				}
-			}
-		}
-		return false;
-	}
-
 	/**
 	 * Fixes the position of the muzzle flash to be at the projectile node.
 	 * A workaround for two-handed weapon handling.
@@ -268,7 +198,7 @@ namespace frik {
 		}
 
 		const auto wasInPowerArmor = inPowerArmorSticky;
-		inPowerArmorSticky = detectInPowerArmor();
+		inPowerArmorSticky = f4vr::isInPowerArmor();
 		if (wasInPowerArmor != inPowerArmorSticky) {
 			Log::info("Power Armor State Changed, reset skelly");
 			resetSkellyAndDependencies();
@@ -353,11 +283,11 @@ namespace frik {
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
 		Log::debug("Setup Head");
 		NiNode* headNode = f4vr::getNode("Head", _skelly->getRoot());
-		_skelly->setupHead(headNode, g_config.hideHead);
+		frik::Skeleton::setupHead(headNode, g_config.hideHead);
 
 		//// set up the body underneath the headset in a proper scale and orientation
 		Log::debug("Set body under HMD");
-		_skelly->setUnderHMD(groundHeight);
+		_skelly->setUnderHMD();
 		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
 		// Now Set up body Posture and hook up the legs
@@ -388,7 +318,7 @@ namespace frik {
 		_skelly->leftHandedModePipboy();
 		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
 
-		// Misc stuff to showahide things and also setup the wrist pipboy
+		// Misc stuff to show/hide things and also set up the wrist pipboy
 		Log::debug("Pipboy and Weapons");
 		_skelly->hideWeapon();
 		_skelly->positionPipboy();
@@ -445,7 +375,7 @@ namespace frik {
 
 		debug(_skelly);
 
-		if (!detectInPowerArmor()) {
+		if (!f4vr::isInPowerArmor()) {
 			// sets 3rd Person Pipboy Scale
 			NiNode* _Pipboy3rd = f4vr::getChildNode("PipboyBone", (*g_player)->unkF0->rootNode);
 			if (_Pipboy3rd) {

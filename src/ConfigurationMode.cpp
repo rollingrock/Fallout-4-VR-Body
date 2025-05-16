@@ -80,15 +80,15 @@ namespace frik {
 		setConfigModeHandPose();
 
 		float rAxisOffsetY;
-		char* meshName[10] = {
+		const char* meshName[10] = {
 			"MC-MainTitleTrans", "MC-Tile01Trans", "MC-Tile02Trans", "MC-Tile03Trans", "MC-Tile04Trans", "MC-Tile05Trans", "MC-Tile06Trans", "MC-Tile07Trans",
 			"MC-Tile08Trans", "MC-Tile09Trans"
 		};
-		char* meshName2[10] = {
+		const char* meshName2[10] = {
 			"MC-MainTitle", "MC-Tile01", "MC-Tile02", "MC-Tile03", "MC-Tile04", "MC-Tile05", "MC-Tile06", "MC-Tile07", "MC-Tile08", "MC-Tile09"
 		};
-		char* meshName3[10] = {"", "", "", "", "", "", "", "MC-Tile07On", "MC-Tile08On", "MC-Tile09On"};
-		char* meshName4[4] = {"MC-ModeA", "MC-ModeB", "MC-ModeC", "MC-ModeD"};
+		const char* meshName3[10] = {"", "", "", "", "", "", "", "MC-Tile07On", "MC-Tile08On", "MC-Tile09On"};
+		const char* meshName4[4] = {"MC-ModeA", "MC-ModeB", "MC-ModeC", "MC-ModeD"};
 		if (!_calibrationModeUIActive) {
 			// Create Config UI
 			f4vr::showMessagebox("FRIK Config Mode");
@@ -104,7 +104,7 @@ namespace frik {
 				}
 				f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
 			}
-			NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
+			NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
 			f4vr::NiCloneProcess proc;
 			proc.unk18 = f4vr::cloneAddr1;
 			proc.unk48 = f4vr::cloneAddr2;
@@ -115,40 +115,40 @@ namespace frik {
 				? _skelly->getPlayerNodes()->primaryUIAttachNode
 				: f4vr::getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
 			UIATTACH->AttachChild(HUD, true);
-			char* MainHud[10] = {
+			const char* MainHud[10] = {
 				"Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile03.nif",
 				"Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif", "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile07.nif",
 				"Data/Meshes/FRIK/UI-Tile08.nif", "Data/Meshes/FRIK/UI-Tile09.nif"
 			};
-			char* MainHud2[10] = {
+			const char* MainHud2[10] = {
 				"Data/Meshes/FRIK/MC-MainTitle.nif", "Data/Meshes/FRIK/MC-Tile01.nif", "Data/Meshes/FRIK/MC-Tile02.nif", "Data/Meshes/FRIK/MC-Tile03.nif",
 				"Data/Meshes/FRIK/MC-Tile04.nif", "Data/Meshes/FRIK/MC-Tile05.nif", "Data/Meshes/FRIK/MC-Tile06.nif", "Data/Meshes/FRIK/MC-Tile07.nif",
 				"Data/Meshes/FRIK/MC-Tile08.nif", "Data/Meshes/FRIK/MC-Tile09.nif"
 			};
-			char* MainHud3[4] = {
+			const char* MainHud3[4] = {
 				"Data/Meshes/FRIK/MC-Tile09a.nif", "Data/Meshes/FRIK/MC-Tile09b.nif", "Data/Meshes/FRIK/MC-Tile09c.nif", "Data/Meshes/FRIK/MC-Tile09d.nif"
 			};
 			for (int i = 0; i <= 9; i++) {
-				NiNode* retNode = loadNifFromFile(MainHud[i]);
+				NiNode* retNode = vrui::loadNifFromFile(MainHud[i]);
 				f4vr::NiCloneProcess proc;
 				proc.unk18 = f4vr::cloneAddr1;
 				proc.unk48 = f4vr::cloneAddr2;
 				NiNode* UI = f4vr::cloneNode(retNode, &proc);
 				UI->m_name = BSFixedString(meshName2[i]);
 				HUD->AttachChild(UI, true);
-				retNode = loadNifFromFile(MainHud2[i]);
+				retNode = vrui::loadNifFromFile(MainHud2[i]);
 				NiNode* UI2 = f4vr::cloneNode(retNode, &proc);
 				UI2->m_name = BSFixedString(meshName[i]);
 				UI->AttachChild(UI2, true);
 				if (i == 7 || i == 8) {
-					retNode = loadNifFromFile("Data/Meshes/FRIK/UI-StickyMarker.nif");
+					retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-StickyMarker.nif");
 					NiNode* UI3 = f4vr::cloneNode(retNode, &proc);
 					UI3->m_name = BSFixedString(meshName3[i]);
 					UI2->AttachChild(UI3, true);
 				}
 				if (i == 9) {
 					for (int x = 0; x < 4; x++) {
-						retNode = loadNifFromFile(MainHud3[x]);
+						retNode = vrui::loadNifFromFile(MainHud3[x]);
 						NiNode* UI3 = f4vr::cloneNode(retNode, &proc);
 						UI3->m_name = BSFixedString(meshName4[x]);
 						UI2->AttachChild(UI3, true);
@@ -263,7 +263,7 @@ namespace frik {
 								UIMarker->m_parent->RemoveChild(UIMarker);
 							}
 							if (i < 7) {
-								NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+								NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 								f4vr::NiCloneProcess proc;
 								proc.unk18 = f4vr::cloneAddr1;
 								proc.unk48 = f4vr::cloneAddr2;
@@ -294,7 +294,7 @@ namespace frik {
 			bool HandsButtonPressed = _MCTouchbuttons[7];
 			bool WeaponButtonPressed = _MCTouchbuttons[8];
 			bool GripButtonPressed = _MCTouchbuttons[9];
-			bool isInPA = _skelly->detectInPowerArmor();
+			bool isInPA = f4vr::isInPowerArmor();
 			if (HandsButtonPressed && !_isHandsButtonPressed) {
 				_isHandsButtonPressed = true;
 				g_config.dampenHands = !g_config.dampenHands;
@@ -564,7 +564,7 @@ namespace frik {
 									UIMarker->m_parent->RemoveChild(UIMarker);
 								}
 								if (i != 1 && i != 3 && i != 10 && i != 11) {
-									NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+									NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 									f4vr::NiCloneProcess proc;
 									proc.unk18 = f4vr::cloneAddr1;
 									proc.unk48 = f4vr::cloneAddr2;
@@ -578,7 +578,7 @@ namespace frik {
 											BSFixedString bname = "PBGlanceMarker";
 											auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 											if (!UIMarker) {
-												NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+												NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 												f4vr::NiCloneProcess proc;
 												proc.unk18 = f4vr::cloneAddr1;
 												proc.unk48 = f4vr::cloneAddr2;
@@ -599,7 +599,7 @@ namespace frik {
 											BSFixedString bname = "PBDampenMarker";
 											auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 											if (!UIMarker) {
-												NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+												NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 												f4vr::NiCloneProcess proc;
 												proc.unk18 = f4vr::cloneAddr1;
 												proc.unk48 = f4vr::cloneAddr2;
@@ -718,7 +718,7 @@ namespace frik {
 			}
 		}
 		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
-		const NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
+		const NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
 		f4vr::NiCloneProcess proc;
 		proc.unk18 = f4vr::cloneAddr1;
 		proc.unk48 = f4vr::cloneAddr2;
@@ -729,36 +729,36 @@ namespace frik {
 			? _skelly->getPlayerNodes()->primaryUIAttachNode
 			: f4vr::getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
 		UIATTACH->AttachChild(HUD, true);
-		char* MainHud[12] = {
+		const char* MainHud[12] = {
 			"Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif",
 			"Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif",
 			"Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile09.nif", "Data/Meshes/FRIK/UI-Tile10.nif", "Data/Meshes/FRIK/UI-Tile11.nif"
 		};
-		char* MainHud2[12] = {
+		const char* MainHud2[12] = {
 			"Data/Meshes/FRIK/PB-MainTitle.nif", "Data/Meshes/FRIK/PB-Tile07.nif", "Data/Meshes/FRIK/PB-Tile03.nif", "Data/Meshes/FRIK/PB-Tile08.nif",
 			"Data/Meshes/FRIK/PB-Tile02.nif", "Data/Meshes/FRIK/PB-Tile01.nif", "Data/Meshes/FRIK/PB-Tile04.nif", "Data/Meshes/FRIK/PB-Tile05.nif",
 			"Data/Meshes/FRIK/PB-Tile06.nif", "Data/Meshes/FRIK/PB-Tile09.nif", "Data/Meshes/FRIK/PB-Tile10.nif", "Data/Meshes/FRIK/PB-Tile11.nif"
 		};
 		for (int i = 0; i <= 11; i++) {
-			const NiNode* retNode = loadNifFromFile(MainHud[i]);
+			const NiNode* retNode = vrui::loadNifFromFile(MainHud[i]);
 			f4vr::NiCloneProcess proc;
 			proc.unk18 = f4vr::cloneAddr1;
 			proc.unk48 = f4vr::cloneAddr2;
 			NiNode* UI = f4vr::cloneNode(retNode, &proc);
 			UI->m_name = BSFixedString(meshName2[i]);
 			HUD->AttachChild(UI, true);
-			retNode = loadNifFromFile(MainHud2[i]);
+			retNode = vrui::loadNifFromFile(MainHud2[i]);
 			NiNode* UI2 = f4vr::cloneNode(retNode, &proc);
 			UI2->m_name = BSFixedString(meshName[i]);
 			UI->AttachChild(UI2, true);
 			if (i == 10 && g_config.pipBoyOpenWhenLookAt) {
-				retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+				retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 				NiNode* UI3 = f4vr::cloneNode(retNode, &proc);
 				UI3->m_name = BSFixedString("PBGlanceMarker");
 				UI->AttachChild(UI3, true);
 			}
 			if (i == 11 && g_config.dampenPipboyScreen) {
-				retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
+				retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 				NiNode* UI3 = f4vr::cloneNode(retNode, &proc);
 				UI3->m_name = BSFixedString("PBDampenMarker");
 				UI->AttachChild(UI3, true);

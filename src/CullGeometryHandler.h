@@ -12,10 +12,11 @@ namespace frik {
 	private:
 		static void restoreGeometry();
 		void preProcessHideGeometryIndexes(BSFadeNode* rn);
+		static void setEquipmentSlotByIndexVisibility(int slotId, bool toHide);
 
 		time_t _lastPreProcessTime = 0;
 		int _lastHiddenGeometryIdx = -1;
 		std::string _lastHiddenGeometryName;
-		std::vector<int> _hideFaceSkinGeometryIndexes;
+		std::vector<UInt32> _hideFaceSkinGeometryIndexes;
 	};
 }

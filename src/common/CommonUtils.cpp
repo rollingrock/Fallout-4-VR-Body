@@ -11,14 +11,14 @@
 
 namespace common {
 	std::string str_tolower(std::string s) {
-		std::transform(s.begin(), s.end(), s.begin(),
+		std::ranges::transform(s, s.begin(),
 			[](const unsigned char c) { return std::tolower(c); }
 		);
 		return s;
 	}
 
 	std::string ltrim(std::string s) {
-		s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](const unsigned char ch) {
+		s.erase(s.begin(), std::ranges::find_if(s, [](const unsigned char ch) {
 			return !std::isspace(ch);
 		}));
 		return s;

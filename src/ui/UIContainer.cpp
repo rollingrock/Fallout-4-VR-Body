@@ -1,4 +1,7 @@
 #include "UIContainer.h"
+
+#include <format>
+
 #include "UIManager.h"
 
 namespace vrui {

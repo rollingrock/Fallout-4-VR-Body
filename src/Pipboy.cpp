@@ -71,7 +71,7 @@ namespace frik {
 		dampenPipboyScreen();
 
 		//Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
-		if (!_skelly->detectInPowerArmor()) {
+		if (!f4vr::isInPowerArmor()) {
 			NiNode* _HideNode = nullptr;
 			g_config.isHoloPipboy
 				? _HideNode = f4vr::getChildNode("Screen", (*g_player)->unkF0->rootNode)
@@ -92,7 +92,7 @@ namespace frik {
 		const auto pn = _skelly->getPlayerNodes();
 		const NiNode* ui = pn->primaryUIAttachNode;
 		NiNode* wand = f4vr::get1StChildNode("world_primaryWand.nif", ui);
-		NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
+		NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
 		if (retNode) {
 			// ui->RemoveChild(wand);
 			// ui->AttachChild(retNode, true);
@@ -106,7 +106,7 @@ namespace frik {
 			return;
 		}
 		wand = f4vr::get1StChildNode("PipboyRoot_NIF_ONLY", pipParent);
-		g_config.isHoloPipboy ? retNode = loadNifFromFile("Data/Meshes/FRIK/HoloPipboyVR.nif") : retNode = loadNifFromFile("Data/Meshes/FRIK/PipboyVR.nif");
+		g_config.isHoloPipboy ? retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/HoloPipboyVR.nif") : retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/PipboyVR.nif");
 		if (retNode && wand) {
 			const BSFixedString screenName("Screen:0");
 			const NiAVObject* newScreen = retNode->GetObjectByName(&screenName)->m_parent;
@@ -437,7 +437,7 @@ namespace frik {
 
 	void Pipboy::pipboyManagement() {
 		//Manages all aspects of Virtual Pipboy usage outside of turning the device / radio / torch on or off. Additionally swaps left hand controls to the right hand.  
-		bool isInPA = _skelly->detectInPowerArmor();
+		bool isInPA = f4vr::isInPowerArmor();
 		if (!isInPA) {
 			static BSFixedString orbNames[7] = {
 				"TabChangeUpOrb", "TabChangeDownOrb", "PageChangeUpOrb", "PageChangeDownOrb", "ScrollItemsUpOrb", "ScrollItemsDownOrb", "SelectItemsOrb"

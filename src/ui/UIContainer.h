@@ -1,7 +1,8 @@
 #pragma once
 
+#include <memory>
+
 #include "UIElement.h"
-#include "UIWidget.h"
 
 namespace vrui {
 	/**

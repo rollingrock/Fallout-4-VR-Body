@@ -1,5 +1,8 @@
 #include "UIElement.h"
 
+#include <format>
+#include <stdexcept>
+
 namespace vrui {
 	std::string UIElement::toString() const {
 		return std::format("UIElement: {}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f})",

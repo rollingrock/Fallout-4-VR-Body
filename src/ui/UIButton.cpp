@@ -1,5 +1,7 @@
 #include "UIButton.h"
 
+#include <format>
+
 namespace vrui {
 	std::string UIButton::toString() const {
 		return std::format("UIButton({}): {}{}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f})",

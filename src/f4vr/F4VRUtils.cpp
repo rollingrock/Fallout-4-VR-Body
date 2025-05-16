@@ -1,6 +1,7 @@
 #include "F4VRUtils.h"
 
 #include <f4se/BSGeometry.h>
+#include <f4se/GameRTTI.h>
 #include <f4se/GameSettings.h>
 
 #include "../Config.h"
@@ -8,12 +9,14 @@
 #include "f4se/PapyrusEvents.h"
 
 namespace f4vr {
-	void showMessagebox(const std::string& asText) {
-		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Messagebox", BSFixedString(asText.c_str()));
+	void showMessagebox(const std::string& text) {
+		auto str = BSFixedString(text.c_str());
+		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Messagebox", str);
 	}
 
-	void showNotification(const std::string& asText) {
-		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Notification", BSFixedString(asText.c_str()));
+	void showNotification(const std::string& text) {
+		auto str = BSFixedString(text.c_str());
+		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Notification", str);
 	}
 
 	/**
@@ -42,7 +45,7 @@ namespace f4vr {
 	 * @return true if the equipped weapon is a melee weapon type.
 	 */
 	bool isMeleeWeaponEquipped() {
-		if (!f4vr::CombatUtilities_IsActorUsingMelee(*g_player)) {
+		if (!CombatUtilities_IsActorUsingMelee(*g_player)) {
 			return false;
 		}
 		const auto* inventory = (*g_player)->inventoryList;
@@ -80,6 +83,22 @@ namespace f4vr {
 		return false;
 	}
 
+	// Thanks Shizof and SmoothMovementVR for below code
+	bool isInPowerArmor() {
+		if ((*g_player)->equipData) {
+			if ((*g_player)->equipData->slots[0x03].item != nullptr) {
+				if (const auto equippedForm = (*g_player)->equipData->slots[0x03].item) {
+					if (equippedForm->formType == TESObjectARMO::kTypeID) {
+						if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
+							return hasKeyword(armor, KeywordPowerArmor) || hasKeyword(armor, KeywordPowerArmorFrame);
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+
 	bool getLeftHandedMode() {
 		return GetINISetting("bLeftHandedMode:VR")->data.u8;
 	}
@@ -94,11 +113,13 @@ namespace f4vr {
 	}
 
 	void setINIBool(const BSFixedString name, bool value) {
-		CallGlobalFunctionNoWait2<BSFixedString, bool>("Utility", "SetINIBool", BSFixedString(name.c_str()), value);
+		auto str = BSFixedString(name.c_str());
+		CallGlobalFunctionNoWait2<BSFixedString, bool>("Utility", "SetINIBool", str, value);
 	}
 
 	void setINIFloat(const BSFixedString name, float value) {
-		CallGlobalFunctionNoWait2<BSFixedString, float>("Utility", "SetINIFloat", BSFixedString(name.c_str()), value);
+		auto str = BSFixedString(name.c_str());
+		CallGlobalFunctionNoWait2<BSFixedString, float>("Utility", "SetINIFloat", str, value);
 	}
 
 	/**
@@ -143,7 +164,7 @@ namespace f4vr {
 
 		// TODO: use better code
 		for (UInt16 i = 0; i < fromNode->m_children.m_emptyRunStart && fromNode->m_children.m_emptyRunStart < 5000; ++i) {
-			if (const auto nextNode = static_cast<NiNode*>(fromNode->m_children.m_data[i])) {
+			if (const auto nextNode = dynamic_cast<NiNode*>(fromNode->m_children.m_data[i])) {
 				if (const auto ret = getNode2(name, nextNode)) {
 					return ret;
 				}

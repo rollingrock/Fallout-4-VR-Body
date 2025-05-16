@@ -1,4 +1,7 @@
 #include "UIToggleGroupContainer.h"
+
+#include <format>
+
 #include "UIManager.h"
 
 namespace vrui {

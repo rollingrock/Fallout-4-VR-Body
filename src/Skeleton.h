@@ -157,13 +157,11 @@ namespace frik {
 		NiPoint3 getOffhandIndexFingerTipWorldPosition() const;
 
 		// reposition stuff
-		static void rotateWorld(NiNode* nde);
-		void updatePos(NiNode* nde, NiPoint3 offset);
 		void selfieSkelly();
 		static void setupHead(NiNode* headNode, bool hideHead);
 		void saveStatesTree(NiNode* node);
 		void restoreLocals(NiNode* node);
-		void setUnderHMD(float groundHeight);
+		void setUnderHMD();
 		void setBodyPosture();
 		void setLegs();
 		void setSingleLeg(bool isLeft) const;
@@ -195,7 +193,6 @@ namespace frik {
 		ArmNodes getArm(bool isLeft) const;
 		static void set1StPersonArm(NiNode* weapon, NiNode* offsetNode);
 		void setBodyLen();
-		bool detectInPowerArmor();
 		void setKneePos();
 		void showOnlyArms();
 		void handleWeaponNodes();

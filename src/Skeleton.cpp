@@ -26,8 +26,6 @@ namespace frik {
 	float defaultCameraHeight = 120.4828f;
 	float PACameraHeightDiff = 20.7835f;
 
-	UInt32 KeywordPowerArmor = 0x4D8A1;
-	UInt32 KeywordPowerArmorFrame = 0x15503F;
 	bool tempsticky = false;
 	std::map<std::string, int> boneTreeMap;
 	std::vector<std::string> boneTreeVec;
@@ -71,7 +69,7 @@ namespace frik {
 		}
 	}
 
-	// Native function that takes the 1st person skeleton weapon node and calculates the skeleton from upperarm down based off the offsetNode
+	// Native function that takes the 1st person skeleton weapon node and calculates the skeleton from upper-arm down based off the offsetNode
 	void update1StPersonArm(const PlayerCharacter* pc, NiNode** weapon, NiNode** offsetNode) {
 		using func_t = decltype(&update1StPersonArm);
 		RelocAddr<func_t> func(0xef6280);
@@ -81,50 +79,6 @@ namespace frik {
 
 	int Skeleton::getBoneInMap(const std::string& boneName) {
 		return boneTreeMap[boneName];
-	}
-
-	void Skeleton::rotateWorld(NiNode* nde) {
-		Matrix44 mat;
-		mat.data[0][0] = -1.0;
-		mat.data[0][1] = 0.0;
-		mat.data[0][2] = 0.0;
-		mat.data[0][3] = 0.0;
-		mat.data[1][0] = 0.0;
-		mat.data[1][1] = -1.0;
-		mat.data[1][2] = 0.0;
-		mat.data[1][3] = 0.0;
-		mat.data[2][0] = 0.0;
-		mat.data[2][1] = 0.0;
-		mat.data[2][2] = 1.0;
-		mat.data[2][3] = 0.0;
-		mat.data[3][0] = 0.0;
-		mat.data[3][1] = 0.0;
-		mat.data[3][2] = 0.0;
-		mat.data[3][3] = 0.0;
-
-		const auto local = (Matrix44*)&nde->m_worldTransform.rot;
-		const Matrix44 result;
-		Matrix44::matrixMultiply(local, &result, &mat);
-
-		for (int i = 0; i < 3; ++i) {
-			for (int j = 0; j < 3; ++j) {
-				nde->m_worldTransform.rot.data[i][j] = result.data[i][j];
-			}
-		}
-
-		nde->m_worldTransform.pos.x = result.data[3][0];
-		nde->m_worldTransform.pos.y = result.data[3][1];
-		nde->m_worldTransform.pos.z = result.data[3][2];
-	}
-
-	void Skeleton::updatePos(NiNode* nde, const NiPoint3 offset) {
-		nde->m_worldTransform.pos += offset;
-
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-				this->updatePos(nextNode, offset);
-			}
-		}
 	}
 
 	void Skeleton::setTime() {
@@ -229,7 +183,7 @@ namespace frik {
 	}
 
 	void Skeleton::initLocalDefaults() {
-		detectInPowerArmor();
+		_inPowerArmor = isInPowerArmor();
 
 		_boneLocalDefault.clear();
 		if (_inPowerArmor) {
@@ -534,8 +488,8 @@ namespace frik {
 		return degreesToRads(angle);
 	}
 
-	void Skeleton::setUnderHMD(float groundHeight) {
-		detectInPowerArmor();
+	void Skeleton::setUnderHMD() {
+		_inPowerArmor = isInPowerArmor();
 
 		if (g_config.disableSmoothMovement) {
 			_playerNodes->playerworldnode->m_localTransform.pos.z = _inPowerArmor
@@ -1154,27 +1108,6 @@ namespace frik {
 			}
 		}
 
-		return false;
-	}
-
-	bool Skeleton::detectInPowerArmor() {
-		// Thanks Shizof and SmoothMovementVR for below code
-		if ((*g_player)->equipData) {
-			if ((*g_player)->equipData->slots[0x03].item != nullptr) {
-				if (const auto equippedForm = (*g_player)->equipData->slots[0x03].item) {
-					if (equippedForm->formType == TESObjectARMO::kTypeID) {
-						if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
-							if (hasKeyword(armor, KeywordPowerArmor) || hasKeyword(armor, KeywordPowerArmorFrame)) {
-								_inPowerArmor = true;
-								return true;
-							}
-							_inPowerArmor = false;
-							return false;
-						}
-					}
-				}
-			}
-		}
 		return false;
 	}
 

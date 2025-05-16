@@ -18,11 +18,10 @@ namespace frik {
 			return;
 		}
 		SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Holster);
-		_boneSphereEventRegs.ForEach(
-			[&evt](const EventRegistration<NullParameters>& reg) {
-				SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt);
-			}
-		);
+		auto functor = [&evt](const EventRegistration<NullParameters>& reg) {
+			SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt);
+		};
+		_boneSphereEventRegs.ForEach(functor);
 	}
 
 	void BoneSpheresHandler::drawWeapon() {
@@ -31,11 +30,10 @@ namespace frik {
 			return;
 		}
 		SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Draw);
-		_boneSphereEventRegs.ForEach(
-			[&evt](const EventRegistration<NullParameters>& reg) {
-				SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt);
-			}
-		);
+		auto functor = [&evt](const EventRegistration<NullParameters>& reg) {
+			SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt);
+		};
+		_boneSphereEventRegs.ForEach(functor);
 	}
 
 	UInt32 BoneSpheresHandler::registerBoneSphere(const float radius, const BSFixedString bone) {
@@ -187,11 +185,10 @@ namespace frik {
 					_curDevice = device;
 
 					if (!_boneSphereEventRegs.m_data.empty()) {
-						_boneSphereEventRegs.ForEach(
-							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
-							}
-						);
+						auto functor = [&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
+							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
+						};
+						_boneSphereEventRegs.ForEach(functor);
 					}
 				}
 			} else if (dist >= static_cast<double>(element.second->radius) + 0.1) {
@@ -200,15 +197,14 @@ namespace frik {
 
 					SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Exit);
 					UInt32 handle = element.first;
-					UInt32 device = 1;
 					_curDevice = 0;
 
-					if (_boneSphereEventRegs.m_data.size() > 0) {
-						_boneSphereEventRegs.ForEach(
-							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
-							}
-						);
+					if (!_boneSphereEventRegs.m_data.empty()) {
+						UInt32 device = 1;
+						auto functor = [&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
+							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
+						};
+						_boneSphereEventRegs.ForEach(functor);
 					}
 				}
 			}
@@ -224,12 +220,11 @@ namespace frik {
 					UInt32 device = 2;
 					_curDevice = device;
 
-					if (_boneSphereEventRegs.m_data.size() > 0) {
-						_boneSphereEventRegs.ForEach(
-							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
-							}
-						);
+					if (!_boneSphereEventRegs.m_data.empty()) {
+						auto functor = [&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
+							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
+						};
+						_boneSphereEventRegs.ForEach(functor);
 					}
 				}
 			} else if (dist >= static_cast<double>(element.second->radius) + 0.1) {
@@ -238,15 +233,14 @@ namespace frik {
 
 					SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Exit);
 					UInt32 handle = element.first;
-					UInt32 device = 2;
 					_curDevice = 0;
 
 					if (!_boneSphereEventRegs.m_data.empty()) {
-						_boneSphereEventRegs.ForEach(
-							[&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-								SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
-							}
-						);
+						UInt32 device = 2;
+						auto functor = [&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
+							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
+						};
+						_boneSphereEventRegs.ForEach(functor);
 					}
 				}
 			}
@@ -259,12 +253,7 @@ namespace frik {
 			NiNode* sphere = val->debugSphere;
 
 			if (val->turnOnDebugSpheres && !val->debugSphere) {
-				const NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/1x1Sphere.nif");
-				f4vr::NiCloneProcess proc;
-				proc.unk18 = f4vr::cloneAddr1;
-				proc.unk48 = f4vr::cloneAddr2;
-
-				sphere = f4vr::cloneNode(retNode, &proc);
+				sphere = vrui::getClonedNiNodeForNifFile("Data/Meshes/FRIK/1x1Sphere.nif");
 				if (sphere) {
 					sphere->m_name = BSFixedString("Sphere01");
 

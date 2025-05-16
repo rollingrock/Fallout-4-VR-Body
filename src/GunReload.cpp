@@ -107,7 +107,7 @@ namespace frik {
 			}
 
 			if (!magMesh) {
-				magMesh = loadNifFromFile("Data/Meshes/Weapons/10mmPistol/10mmMagLarge.nif");
+				magMesh = vrui::loadNifFromFile("Data/Meshes/Weapons/10mmPistol/10mmMagLarge.nif");
 			}
 			f4vr::NiCloneProcess proc;
 			proc.unk18 = f4vr::cloneAddr1;

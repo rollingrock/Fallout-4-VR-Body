@@ -15,9 +15,6 @@
 using namespace common;
 
 namespace SmoothMovementVR {
-	UInt32 KeywordPowerArmor = 0x4D8A1;
-	UInt32 KeywordPowerArmorFrame = 0x15503F;
-
 	std::atomic inPowerArmorFrame = false;
 	std::atomic interiorCell = false;
 
@@ -238,12 +235,13 @@ namespace SmoothMovementVR {
 						}
 					}
 				}
+				// TODO: refactor code to use isInPowerArmor() common code
 				if ((*g_player)->equipData) {
 					if ((*g_player)->equipData->slots[0x03].item == nullptr) {} else {
 						if (TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item) {
 							if (equippedForm->formType == TESObjectARMO::kTypeID) {
 								if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
-									if (f4vr::hasKeyword(armor, KeywordPowerArmor) || f4vr::hasKeyword(armor, KeywordPowerArmorFrame)) {
+									if (f4vr::hasKeyword(armor, f4vr::KeywordPowerArmor) || f4vr::hasKeyword(armor, f4vr::KeywordPowerArmorFrame)) {
 										if (!inPowerArmorFrame.load()) {
 											inPowerArmorFrame.store(true);
 										}

@@ -24,17 +24,17 @@ namespace f4vr {
 			uintptr_t unk;
 		};
 
-		int GetBoneIndex(std::string a_name) {
+		int GetBoneIndex(const std::string& a_name) {
 			auto name = new BSFixedString(a_name.c_str());
 			return f4vr::BSFlattenedBoneTree_GetBoneIndex(this, name);
 		}
 
-		NiNode* GetBoneNode(std::string a_name) {
+		NiNode* GetBoneNode(const std::string& a_name) {
 			auto name = new BSFixedString(a_name.c_str());
 			return f4vr::BSFlattenedBoneTree_GetBoneNode(this, name);
 		}
 
-		NiNode* GetBoneNode(int a_pos) {
+		NiNode* GetBoneNode(const int a_pos) {
 			return f4vr::BSFlattenedBoneTree_GetBoneNodeFromPos(this, a_pos);
 		}
 

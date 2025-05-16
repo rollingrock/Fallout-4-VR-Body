@@ -1,5 +1,7 @@
 #include "UIDebugWidget.h"
 
+#include <format>
+
 #include "../common/CommonUtils.h"
 
 using namespace common;
