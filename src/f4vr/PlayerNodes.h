@@ -1,7 +1,5 @@
 #pragma once
 
-#include <f4se/NiNodes.h>
-
 namespace f4vr {
 	// part of PlayerCharacter object but making useful struct below since not mapped in F4SE
 	struct PlayerNodes {

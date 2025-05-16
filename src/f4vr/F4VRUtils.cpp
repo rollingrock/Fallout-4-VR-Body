@@ -4,14 +4,17 @@
 #include <f4se/GameSettings.h>
 
 #include "../Config.h"
+#include "../common/Matrix.h"
 #include "f4se/PapyrusEvents.h"
 
 namespace f4vr {
-	// TODO: move those to the VR handler that will handle all controls logic like press
-	static bool _controlsThumbstickEnableState = true;
-	static float _controlsThumbstickOriginalDeadzone = 0.25f;
-	static float _controlsThumbstickOriginalDeadzoneMax = 0.94f;
-	static float _controlsDirectionalOriginalDeadzone = 0.5f;
+	void showMessagebox(const std::string& asText) {
+		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Messagebox", BSFixedString(asText.c_str()));
+	}
+
+	void showNotification(const std::string& asText) {
+		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Notification", BSFixedString(asText.c_str()));
+	}
 
 	/**
 	 * If to enable/disable the use of both controllers analog thumbstick.
@@ -33,6 +36,61 @@ namespace f4vr {
 			setINIFloat("fLThumbDeadzoneMax:Controls", 1.0);
 			setINIFloat("fDirectionalDeadzone:Controls", 1.0);
 		}
+	}
+
+	/**
+	 * @return true if the equipped weapon is a melee weapon type.
+	 */
+	bool isMeleeWeaponEquipped() {
+		if (!f4vr::CombatUtilities_IsActorUsingMelee(*g_player)) {
+			return false;
+		}
+		const auto* inventory = (*g_player)->inventoryList;
+		if (!inventory) {
+			return false;
+		}
+		for (UInt32 i = 0; i < inventory->items.count; i++) {
+			BGSInventoryItem item;
+			inventory->items.GetNthItem(i, item);
+			if (item.form && item.form->formType == kFormType_WEAP && item.stack->flags & 0x3) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Get the game name of the equipped weapon.
+	 */
+	std::string getEquippedWeaponName() {
+		const auto* equipData = (*g_player)->middleProcess->unk08->equipData;
+		return equipData ? equipData->item->GetFullName() : "";
+	}
+
+	bool hasKeyword(const TESObjectARMO* armor, const UInt32 keywordFormId) {
+		if (armor) {
+			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++) {
+				if (armor->keywordForm.keywords[i]) {
+					if (armor->keywordForm.keywords[i]->formID == keywordFormId) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	bool getLeftHandedMode() {
+		return GetINISetting("bLeftHandedMode:VR")->data.u8;
+	}
+
+	Setting* getINISettingNative(const char* name) {
+		Setting* setting = SettingCollectionList_GetPtr(*g_iniSettings, name);
+		if (!setting) {
+			setting = SettingCollectionList_GetPtr(*g_iniPrefSettings, name);
+		}
+
+		return setting;
 	}
 
 	void setINIBool(const BSFixedString name, bool value) {
@@ -95,12 +153,73 @@ namespace f4vr {
 		return nullptr;
 	}
 
+	NiNode* getChildNode(const char* nodeName, NiNode* nde) {
+		if (!nde->m_name) {
+			return nullptr;
+		}
+
+		if (!_stricmp(nodeName, nde->m_name.c_str())) {
+			return nde;
+		}
+
+		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+				if (const auto ret = getChildNode(nodeName, nextNode)) {
+					return ret;
+				}
+			}
+		}
+
+		return nullptr;
+	}
+
+	NiNode* get1StChildNode(const char* nodeName, const NiNode* nde) {
+		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+				if (!_stricmp(nodeName, nextNode->m_name.c_str())) {
+					return nextNode;
+				}
+			}
+		}
+		return nullptr;
+	}
+
+	/**
+	 * Return true if the node is visible, false if it is hidden or null.
+	 */
+	bool isNodeVisible(const NiNode* node) {
+		return node && !(node->flags & 0x1);
+	}
+
+	/**
+	 * Update the node flags to show/hide it.
+	 */
+	void showHideNode(NiAVObject* node, const bool toHide) {
+		if (toHide) {
+			node->flags |= 0x1; // hide
+		} else {
+			node->flags &= 0xfffffffffffffffe; // show
+		}
+	}
+
 	/**
 	 * Change flags to show or hide a node
 	 */
 	void setVisibility(NiAVObject* nde, const bool show) {
 		if (nde) {
 			nde->flags = show ? nde->flags & ~0x1 : nde->flags | 0x1;
+		}
+	}
+
+	void toggleVis(NiNode* nde, const bool hide, const bool updateSelf) {
+		if (updateSelf) {
+			nde->flags = hide ? nde->flags | 0x1 : nde->flags & ~0x1;
+		}
+
+		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+				toggleVis(nextNode, hide, true);
+			}
 		}
 	}
 
@@ -166,6 +285,41 @@ namespace f4vr {
 		fromNode->UpdateWorldData(ud);
 		if (const auto parent = fromNode->m_parent ? fromNode->m_parent->GetAsNiNode() : nullptr) {
 			updateUpTo(toNode, parent, true);
+		}
+	}
+
+	void updateTransforms(NiNode* node) {
+		if (!node->m_parent) {
+			return;
+		}
+
+		const auto& parentTransform = node->m_parent->m_worldTransform;
+		const auto& localTransform = node->m_localTransform;
+
+		// Calculate world position
+		const NiPoint3 pos = parentTransform.rot * (localTransform.pos * parentTransform.scale);
+		node->m_worldTransform.pos = parentTransform.pos + pos;
+
+		// Calculate world rotation
+		common::Matrix44 loc;
+		loc.makeTransformMatrix(localTransform.rot, NiPoint3(0, 0, 0));
+		node->m_worldTransform.rot = loc.multiply43Left(parentTransform.rot);
+
+		// Calculate world scale
+		node->m_worldTransform.scale = parentTransform.scale * localTransform.scale;
+	}
+
+	void updateTransformsDown(NiNode* nde, const bool updateSelf) {
+		if (updateSelf) {
+			updateTransforms(nde);
+		}
+
+		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+				updateTransformsDown(nextNode, true);
+			} else if (const auto triNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsBSTriShape() : nullptr) {
+				updateTransforms(reinterpret_cast<NiNode*>(triNode));
+			}
 		}
 	}
 }

@@ -24,9 +24,6 @@
     <ClCompile Include="src\BoneSpheresHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\BSFlattenedBoneTree.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\common\CommonUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -70,12 +67,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\MenuChecker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\f4vr\MiscStructs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\f4vr\Offsets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\patches.cpp">
@@ -146,10 +137,10 @@
     <ClInclude Include="src\BoneSpheresHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\BSFlattenedBoneTree.h">
+    <ClInclude Include="src\f4vr\BSFlattenedBoneTree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\BSTSmartPointer.h">
+    <ClInclude Include="src\common\BSTSmartPointer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\common\CommonUtils.h">
@@ -215,13 +206,7 @@
     <ClInclude Include="src\f4vr\MiscStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\MuzzleFlash.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\f4vr\NiCloneProcess.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\f4vr\Offsets.h">
+    <ClInclude Include="src\f4vr\F4VROffsets.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\patches.h">

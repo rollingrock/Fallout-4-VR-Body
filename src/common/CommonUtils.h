@@ -22,6 +22,7 @@ namespace common {
 	NiPoint3 rotateXY(NiPoint3 vec, float angle);
 	NiPoint3 pitchVec(NiPoint3 vec, float angle);
 	NiMatrix43 getRotationAxisAngle(NiPoint3 axis, float theta);
+	bool isCameraLookingAtObject(const NiTransform& cameraTrans, const NiTransform& objectTrans, float detectThresh);
 
 	// Resource related functions
 	std::optional<std::string> getEmbeddedResourceAsStringIfExists(WORD resourceId);

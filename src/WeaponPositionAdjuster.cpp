@@ -1,6 +1,5 @@
 #include "WeaponPositionAdjuster.h"
 
-#include "BSFlattenedBoneTree.h"
 #include "Config.h"
 #include "Debug.h"
 #include "F4VRBody.h"
@@ -8,6 +7,7 @@
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
+#include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 
@@ -78,7 +78,7 @@ namespace frik {
 	void WeaponPositionAdjuster::handlePrimaryWeapon() {
 		const auto weapon = _skelly->getWeaponNode();
 		const auto backOfHand = getBackOfHandUINode();
-		if (!isNodeVisible(weapon) || g_configurationMode->isCalibrateModeActive()) {
+		if (!f4vr::isNodeVisible(weapon) || g_configurationMode->isCalibrateModeActive()) {
 			if (_configMode) {
 				_configMode->onFrameUpdate(nullptr);
 			}
@@ -98,7 +98,7 @@ namespace frik {
 		// override the weapon transform to the saved offset
 		weapon->m_localTransform = _weaponOffsetTransform;
 		// update world transform for later calculations
-		updateTransforms(weapon);
+		f4vr::updateTransforms(weapon);
 
 		if (_configMode) {
 			_configMode->onFrameUpdate(weapon);
@@ -121,7 +121,7 @@ namespace frik {
 	 * If equipped weapon changed set offsets to stored if exists.
 	 */
 	void WeaponPositionAdjuster::checkEquippedWeaponChanged(const bool emptyHand) {
-		const auto& weaponName = emptyHand ? EMPTY_HAND : getEquippedWeaponName();
+		const auto& weaponName = emptyHand ? EMPTY_HAND : f4vr::getEquippedWeaponName();
 		if (weaponName == _currentWeapon && _skelly->inPowerArmor() == _currentlyInPA) {
 			// no weapon change
 			return;
@@ -146,7 +146,7 @@ namespace frik {
 			_weaponOffsetTransform = weaponOffsetLookup.value();
 		} else {
 			// No stored offset, use original weapon transform
-			_weaponOffsetTransform = isMeleeWeaponEquipped() ? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_weaponOriginalTransform) : _weaponOriginalTransform;
+			_weaponOffsetTransform = f4vr::isMeleeWeaponEquipped() ? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_weaponOriginalTransform) : _weaponOriginalTransform;
 		}
 
 		// Load stored offsets for offhand for the new weapon 
@@ -201,7 +201,7 @@ namespace frik {
 
 		// need to update default transform for later world rotation use
 		scopeCamera->m_localTransform.rot = _scopeCameraBaseMatrix;
-		updateTransforms(scopeCamera);
+		f4vr::updateTransforms(scopeCamera);
 
 		// get the "forward" vector of the weapon (direction of the bullets)
 		const auto weaponForwardVec = NiPoint3(weapon->m_worldTransform.rot.data[1][0], weapon->m_worldTransform.rot.data[1][1], weapon->m_worldTransform.rot.data[1][2]);
@@ -301,7 +301,7 @@ namespace frik {
 		// Set base camera matrix first (remaps axes from weapon to scope system)
 		const auto scopeCamera = _skelly->getPlayerNodes()->primaryWeaponScopeCamera;
 		scopeCamera->m_localTransform.rot = _scopeCameraBaseMatrix;
-		updateTransforms(scopeCamera);
+		f4vr::updateTransforms(scopeCamera);
 
 		// Transform the offhand offset adjusted vector from weapon space to world space so we can adjust it into scope space
 		const auto adjustedVecWorld = weapon->m_worldTransform.rot * (adjustedWeaponVec * weapon->m_worldTransform.scale);
@@ -339,7 +339,7 @@ namespace frik {
 		static int fc = 0;
 		const auto offHandBone = g_config.leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
 
-		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_skelly->getRoot());
+		const auto rt = reinterpret_cast<f4vr::BSFlattenedBoneTree*>(_skelly->getRoot());
 		const float handFrameMovement = vec3Len(rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos - offhandFingerBonePos);
 
 		const float bodyFrameMovement = vec3Len(_skelly->getCurrentBodyPos() - bodyPos);
@@ -362,7 +362,7 @@ namespace frik {
 	 * Get the world coordinates of the offhand.
 	 */
 	NiPoint3 WeaponPositionAdjuster::getOffhandPosition() const {
-		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_skelly->getRoot());
+		const auto rt = reinterpret_cast<f4vr::BSFlattenedBoneTree*>(_skelly->getRoot());
 		const auto offHandBone = g_config.leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
 		return rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos;
 	}

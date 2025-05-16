@@ -5,7 +5,6 @@
 #include <ctime>
 #include <f4se/GameRTTI.h>
 
-#include "BSFlattenedBoneTree.h"
 #include "Config.h"
 #include "F4VRBody.h"
 #include "HandPose.h"
@@ -15,6 +14,7 @@
 #include "common/Logger.h"
 #include "common/Matrix.h"
 #include "f4se/GameForms.h"
+#include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 

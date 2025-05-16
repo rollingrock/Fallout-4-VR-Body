@@ -1,27 +1,51 @@
 #pragma once
 
 #include <f4se/GameTypes.h>
-#include <f4se/NiNodes.h>
 
-#include "../api/openvr.h"
+#include "F4VROffsets.h"
 
 namespace f4vr {
+	// UI
+	void showMessagebox(const std::string& asText);
+	void showNotification(const std::string& asText);
+
+	// Controls
 	void setControlsThumbstickEnableState(bool toEnable);
 
-	vr::VRControllerState_t getControllerState(bool primary);
-	bool isButtonPressedOnController(bool primary, int buttonId);
-	bool isButtonPressHeldDownOnController(bool primary, int buttonId);
-	bool isButtonReleasedOnController(bool primary, int buttonId);
-	bool isButtonLongPressedOnController(bool primary, int buttonId, int longPressDuration = 1500);
-	bool checkAndClearButtonLongPressedOnController(bool primary, int buttonId, int longPressDuration = 1500);
+	// Weapons/Armor/Player
+	bool isMeleeWeaponEquipped();
+	std::string getEquippedWeaponName();
+	bool hasKeyword(const TESObjectARMO* armor, UInt32 keywordFormId);
+	inline bool isJumpingOrInAir() { return IsInAir(*g_player); }
 
+	// settings
+	bool getLeftHandedMode();
+	Setting* getINISettingNative(const char* name);
 	void setINIBool(BSFixedString name, bool value);
 	void setINIFloat(BSFixedString name, float value);
 
+	// nodes
 	NiNode* getNode(const char* name, NiNode* fromNode);
 	NiNode* getNode2(const char* name, NiNode* fromNode);
+	NiNode* getChildNode(const char* nodeName, NiNode* nde);
+	NiNode* get1StChildNode(const char* nodeName, const NiNode* nde);
+
+	// visibility
+	bool isNodeVisible(const NiNode* node);
+	void showHideNode(NiAVObject* node, bool toHide);
 	void setVisibility(NiAVObject* nde, bool show = true);
+	void toggleVis(NiNode* nde, bool hide, bool updateSelf);
+
+	// updates
 	void updateDown(NiNode* nde, bool updateSelf);
 	void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 	void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
+	void updateTransforms(NiNode* node);
+	void updateTransformsDown(NiNode* nde, bool updateSelf);
+
+	// persistent data
+	inline static bool _controlsThumbstickEnableState = true;
+	inline static float _controlsThumbstickOriginalDeadzone = 0.25f;
+	inline static float _controlsThumbstickOriginalDeadzoneMax = 0.94f;
+	inline static float _controlsDirectionalOriginalDeadzone = 0.5f;
 }

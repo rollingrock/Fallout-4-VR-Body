@@ -2,7 +2,6 @@
 
 #include "f4se/GameObjects.h"
 #include "f4se/GameReferences.h"
-#include "f4sE_common/Relocation.h"
 
 namespace f4vr {
 	constexpr UInt32 PipboyAA = 0x0001ED3D;
@@ -10,7 +9,10 @@ namespace f4vr {
 	constexpr UInt32 MiningHelmet = 0x0022DD1F;
 	constexpr UInt32 PALightKW = 0x000B34A6;
 
-	extern RelocAddr<uintptr_t> NEW_REFR_DATA_VTABLE;
+	inline RelocAddr<uintptr_t> NEW_REFR_DATA_VTABLE(0x2c8d080);
+
+	using _BGSObjectInstance_CTOR = void* (*)(void* instance, TESForm* a_form, TBO_InstanceData* a_instanceData);
+	inline RelocAddr<_BGSObjectInstance_CTOR> BGSObjectInstance_CTOR(0x2dd930);
 
 	// adapted from Commonlib
 	class __declspec(novtable) NEW_REFR_DATA {
@@ -50,9 +52,6 @@ namespace f4vr {
 	};
 
 	static_assert(sizeof(BGSEquipIndex) == 0x4);
-
-	using _BGSObjectInstance_CTOR = void*(*)(void* instance, TESForm* a_form, TBO_InstanceData* a_instanceData);
-	extern RelocAddr<_BGSObjectInstance_CTOR> BGSObjectInstance_CTOR;
 
 	class BGSObjectInstance {
 	public:
@@ -119,5 +118,33 @@ namespace f4vr {
 		slot_Shield = 1 << 29,
 		slot_Pipboy = 1 << 30,
 		slot_FX = 1 << 31
+	};
+
+	struct NiCloneProcess {
+		UInt64 unk00 = 0;
+		UInt64 unk08 = 0; // Start of clone list 1?
+		UInt64 unk10 = 0;
+		UInt64* unk18; // initd to RelocAddr(0x36ff560)
+		UInt64 unk20 = 0;
+		UInt64 unk28 = 0;
+		UInt64 unk30 = 0;
+		UInt64 unk38 = 0; // Start of clone list 2?
+		UInt64 unk40 = 0;
+		UInt64* unk48; // initd to RelocAddr(0x36ff564)
+		UInt64 unk50 = 0;
+		UInt64 unk58 = 0;
+		UInt8 copyType = 1; // 60 - CopyType - default 1
+		UInt8 m_eAffectedNodeRelationBehavior = 0; // 61 - CloneRelationBehavior - default 0
+		UInt8 m_eDynamicEffectRelationBehavior = 0; // 62 - CloneRelationBehavior - default 0
+		char m_cAppendChar = '$'; // 64 - default '$'
+		NiPoint3 scale = {1.0f, 1.0f, 1.0f}; // 0x68 - default {1, 1, 1}
+	};
+
+	class MuzzleFlash {
+	public:
+		uint64_t unk00;
+		uint64_t unk08;
+		NiNode* fireNode;
+		NiNode* projectileNode;
 	};
 }

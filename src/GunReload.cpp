@@ -4,8 +4,8 @@
 #include "F4VRBody.h"
 #include "common/CommonUtils.h"
 #include "f4se/GameExtraData.h"
+#include "f4vr/F4VROffsets.h"
 #include "f4vr/MiscStructs.h"
-#include "f4vr/Offsets.h"
 #include "f4vr/VRControllersManager.h"
 
 using namespace common;
@@ -25,19 +25,19 @@ namespace frik {
 		if (elapsed > 300) {
 			if (elapsed > 2000) {
 				g_animDeltaTime = -1.0f;
-				Offsets::TESObjectREFR_UpdateAnimation(*g_player, 0.08f);
+				f4vr::TESObjectREFR_UpdateAnimation(*g_player, 0.08f);
 			}
 			g_animDeltaTime = 0.0f;
 		}
 
-		NiNode* weap = getChildNode("Weapon", (*g_player)->firstPersonSkeleton);
+		NiNode* weap = f4vr::getChildNode("Weapon", (*g_player)->firstPersonSkeleton);
 		//printNodes(weap, elapsed);
 	}
 
 	bool GunReload::StartReloading() {
 		//NiNode* offhand = c_leftHandedMode ? getChildNode("LArm_Finger21", (*g_player)->unkF0->rootNode) : getChildNode("RArm_Finger21", (*g_player)->unkF0->rootNode);
 		//NiNode* bolt = getChildNode("WeaponBolt", (*g_player)->firstPersonSkeleton);
-		NiNode* magNode = getChildNode("WeaponMagazine", (*g_player)->firstPersonSkeleton);
+		NiNode* magNode = f4vr::getChildNode("WeaponMagazine", (*g_player)->firstPersonSkeleton);
 		if (!magNode) {
 			return false;
 		}
@@ -57,40 +57,40 @@ namespace frik {
 			refrData->location = magNode->m_worldTransform.pos;
 			refrData->direction = (*g_player)->rot;
 			refrData->interior = (*g_player)->parentCell;
-			refrData->world = Offsets::TESObjectREFR_GetWorldSpace(*g_player);
+			refrData->world = f4vr::TESObjectREFR_GetWorldSpace(*g_player);
 
-			const auto extraData = static_cast<ExtraDataList*>(Offsets::MemoryManager_Allocate(g_mainHeap, 0x28, 0, false));
-			Offsets::ExtraDataList_ExtraDataList(extraData);
+			const auto extraData = static_cast<ExtraDataList*>(f4vr::MemoryManager_Allocate(g_mainHeap, 0x28, 0, false));
+			f4vr::ExtraDataList_ExtraDataList(extraData);
 			extraData->m_refCount += 1;
-			Offsets::ExtraDataList_setCount(extraData, 10);
+			f4vr::ExtraDataList_setCount(extraData, 10);
 			refrData->extra = extraData;
 			const auto instance = new f4vr::BGSObjectInstance(nullptr, nullptr);
 			f4vr::BGSEquipIndex idx;
-			Offsets::Actor_GetWeaponEquipIndex(*g_player, &idx, instance);
-			currentAmmo = Offsets::Actor_GetCurrentAmmo(*g_player, idx);
-			const float clipAmountPct = Offsets::Actor_GetAmmoClipPercentage(*g_player, idx);
+			f4vr::Actor_GetWeaponEquipIndex(*g_player, &idx, instance);
+			currentAmmo = f4vr::Actor_GetCurrentAmmo(*g_player, idx);
+			const float clipAmountPct = f4vr::Actor_GetAmmoClipPercentage(*g_player, idx);
 
 			if (clipAmountPct == 1.0f) {
 				return false;
 			}
 
-			const int clipAmount = Offsets::Actor_GetCurrentAmmoCount(*g_player, idx);
-			Offsets::ExtraDataList_setAmmoCount(extraData, clipAmount);
+			const int clipAmount = f4vr::Actor_GetCurrentAmmoCount(*g_player, idx);
+			f4vr::ExtraDataList_setAmmoCount(extraData, clipAmount);
 
 			refrData->object = currentAmmo;
 			void* ammoDrop = new std::size_t;
 
-			void* newHandle = Offsets::TESDataHandler_CreateReferenceAtLocation(*g_dataHandler, ammoDrop, refrData);
+			void* newHandle = f4vr::TESDataHandler_CreateReferenceAtLocation(*g_dataHandler, ammoDrop, refrData);
 
 			std::uintptr_t newRefr = 0x0;
-			Offsets::BSPointerHandleManagerInterface_GetSmartPointer(newHandle, &newRefr);
+			f4vr::BSPointerHandleManagerInterface_GetSmartPointer(newHandle, &newRefr);
 
 			currentRefr = (TESObjectREFR*)newRefr;
 
 			if (!currentRefr) {
 				return false;
 			}
-			Offsets::ExtraDataList_setAmmoCount(currentRefr->extraDataList, clipAmount);
+			f4vr::ExtraDataList_setAmmoCount(currentRefr->extraDataList, clipAmount);
 			magNode->flags |= 0x1;
 			reloadButtonPressed = true;
 			return true;
@@ -110,20 +110,20 @@ namespace frik {
 				magMesh = loadNifFromFile("Data/Meshes/Weapons/10mmPistol/10mmMagLarge.nif");
 			}
 			f4vr::NiCloneProcess proc;
-			proc.unk18 = Offsets::cloneAddr1;
-			proc.unk48 = Offsets::cloneAddr2;
+			proc.unk18 = f4vr::cloneAddr1;
+			proc.unk48 = f4vr::cloneAddr2;
 
-			NiNode* newMesh = Offsets::cloneNode(magMesh, &proc);
-			bhkWorld* world = Offsets::TESObjectCell_GetbhkWorld(currentRefr->parentCell);
+			NiNode* newMesh = f4vr::cloneNode(magMesh, &proc);
+			bhkWorld* world = f4vr::TESObjectCell_GetbhkWorld(currentRefr->parentCell);
 
 			currentRefr->unkF0->rootNode->AttachChild(newMesh, true);
-			Offsets::bhkWorld_RemoveObject(currentRefr->unkF0->rootNode, true, false);
+			f4vr::bhkWorld_RemoveObject(currentRefr->unkF0->rootNode, true, false);
 			currentRefr->unkF0->rootNode->m_spCollisionObject.m_pObject = nullptr;
-			Offsets::bhkUtilFunctions_MoveFirstCollisionObjectToRoot(currentRefr->unkF0->rootNode, newMesh);
-			Offsets::bhkNPCollisionObject_AddToWorld((bhkNPCollisionObject*)currentRefr->unkF0->rootNode->m_spCollisionObject.m_pObject, world);
-			Offsets::bhkWorld_SetMotion(currentRefr->unkF0->rootNode, f4vr::hknpMotionPropertiesId::Preset::DYNAMIC, true, true, true);
-			Offsets::TESObjectREFR_InitHavokForCollisionObject(currentRefr);
-			Offsets::bhkUtilFunctions_SetLayer(currentRefr->unkF0->rootNode, 5);
+			f4vr::bhkUtilFunctions_MoveFirstCollisionObjectToRoot(currentRefr->unkF0->rootNode, newMesh);
+			f4vr::bhkNPCollisionObject_AddToWorld((bhkNPCollisionObject*)currentRefr->unkF0->rootNode->m_spCollisionObject.m_pObject, world);
+			f4vr::bhkWorld_SetMotion(currentRefr->unkF0->rootNode, f4vr::hknpMotionPropertiesId::Preset::DYNAMIC, true, true, true);
+			f4vr::TESObjectREFR_InitHavokForCollisionObject(currentRefr);
+			f4vr::bhkUtilFunctions_SetLayer(currentRefr->unkF0->rootNode, 5);
 
 			//Log::info("%016I64X", currentRefr);
 			return true;

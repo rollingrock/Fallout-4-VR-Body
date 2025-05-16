@@ -2,11 +2,11 @@
 #include "BoneSpheresHandler.h"
 #include "ConfigurationMode.h"
 #include "CullGeometryHandler.h"
-#include "f4vr/Offsets.h"
 #include "Pipboy.h"
 #include "WeaponPositionAdjuster.h"
 #include "f4se/NiNodes.h"
 #include "f4se/PapyrusEvents.h"
+#include "f4vr/F4VROffsets.h"
 
 extern PluginHandle g_pluginHandle;
 extern F4SEPapyrusInterface* g_papyrus;
@@ -39,7 +39,7 @@ namespace frik {
 		flags[0] = 0x0;
 		flags[1] = 0xed | 0x2d;
 		uint64_t mem = 0;
-		int ret = Offsets::loadNif((uint64_t)path, (uint64_t)&mem, (uint64_t)&flags);
+		int ret = f4vr::loadNif((uint64_t)path, (uint64_t)&mem, (uint64_t)&flags);
 
 		return (NiNode*)mem;
 	}

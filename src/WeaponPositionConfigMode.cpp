@@ -337,26 +337,26 @@ namespace frik {
 	}
 
 	void WeaponPositionConfigMode::resetWeaponConfig() const {
-		showNotification("Reset Weapon Position to Default");
-		_adjuster->_weaponOffsetTransform = isMeleeWeaponEquipped()
+		f4vr::showNotification("Reset Weapon Position to Default");
+		_adjuster->_weaponOffsetTransform = f4vr::isMeleeWeaponEquipped()
 			? getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
 			: _adjuster->_weaponOriginalTransform;
 		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveWeaponConfig() const {
-		showNotification("Saving Weapon Position");
+		f4vr::showNotification("Saving Weapon Position");
 		g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetOffhandConfig() const {
-		showNotification("Reset Offhand Position to Default");
+		f4vr::showNotification("Reset Offhand Position to Default");
 		_adjuster->_offhandOffsetRot = Matrix44::getIdentity43();
 		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveOffhandConfig() const {
-		showNotification("Saving Offhand Position");
+		f4vr::showNotification("Saving Offhand Position");
 		NiTransform transform;
 		transform.scale = 1;
 		transform.pos = NiPoint3(0, 0, 0);
@@ -365,36 +365,36 @@ namespace frik {
 	}
 
 	void WeaponPositionConfigMode::resetThrowableConfig() const {
-		showNotification("Reset Throwable Weapon Position to Default");
+		f4vr::showNotification("Reset Throwable Weapon Position to Default");
 		_adjuster->_throwableWeaponOffsetTransform = _adjuster->_throwableWeaponOriginalTransform;
 		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveThrowableConfig() const {
-		showNotification("Saving Throwable Weapon Position");
+		f4vr::showNotification("Saving Throwable Weapon Position");
 		g_config.saveWeaponOffsets(_adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetBackOfHandUIConfig() const {
-		showNotification("Reset Back of Hand UI Position to Default");
+		f4vr::showNotification("Reset Back of Hand UI Position to Default");
 		_adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_currentlyInPA);
 		_adjuster->getBackOfHandUINode()->m_localTransform = _adjuster->_backOfHandUIOffsetTransform;
 		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA, true);
 	}
 
 	void WeaponPositionConfigMode::saveBackOfHandUIConfig() const {
-		showNotification("Saving Back of Hand UI Position");
+		f4vr::showNotification("Saving Back of Hand UI Position");
 		g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_backOfHandUIOffsetTransform, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA);
 	}
 
 	void WeaponPositionConfigMode::resetBetterScopesConfig() {
-		showNotification("Reset BetterScopesVR Scope Offset to Default");
+		f4vr::showNotification("Reset BetterScopesVR Scope Offset to Default");
 		NiPoint3 msgData(0.f, 0.f, 0.f);
 		g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
 	}
 
 	void WeaponPositionConfigMode::saveBetterScopesConfig() {
-		showNotification("Saving BetterScopesVR Scopes Offset");
+		f4vr::showNotification("Saving BetterScopesVR Scopes Offset");
 		NiPoint3 msgData(0.f, 1, 0.f);
 		g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
 	}

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <map>
+
+#include "api/openvr.h"
 #include "f4se/GameCamera.h"
 #include "f4se/GameReferences.h"
 #include "f4se/NiNodes.h"

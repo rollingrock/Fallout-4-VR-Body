@@ -43,7 +43,7 @@ namespace frik {
 			return 0;
 		}
 
-		NiNode* boneNode = getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsNiNode();
+		NiNode* boneNode = f4vr::getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsNiNode();
 
 		if (!boneNode) {
 			Log::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
@@ -72,7 +72,7 @@ namespace frik {
 			return 0;
 		}
 
-		auto boneNode = getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode);
+		auto boneNode = f4vr::getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode);
 
 		if (!boneNode) {
 			auto n = (*g_player)->unkF0->rootNode->GetAsNiNode();
@@ -81,7 +81,7 @@ namespace frik {
 				n = n->m_parent->GetAsNiNode();
 			}
 
-			boneNode = getChildNode(bone.c_str(), n); // ObjectLODRoot
+			boneNode = f4vr::getChildNode(bone.c_str(), n); // ObjectLODRoot
 
 			if (!boneNode) {
 				Log::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
@@ -156,15 +156,15 @@ namespace frik {
 
 		// prefer to use fingers but these aren't always rendered.    so default to hand if nothing else
 
-		const NiAVObject* rFinger = getChildNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-		const NiAVObject* lFinger = getChildNode("LArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		const NiAVObject* rFinger = f4vr::getChildNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		const NiAVObject* lFinger = f4vr::getChildNode("LArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 		if (rFinger == nullptr) {
-			rFinger = getChildNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+			rFinger = f4vr::getChildNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		}
 
 		if (lFinger == nullptr) {
-			lFinger = getChildNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+			lFinger = f4vr::getChildNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		}
 
 		if (lFinger == nullptr || rFinger == nullptr) {
@@ -261,10 +261,10 @@ namespace frik {
 			if (val->turnOnDebugSpheres && !val->debugSphere) {
 				const NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/1x1Sphere.nif");
 				f4vr::NiCloneProcess proc;
-				proc.unk18 = Offsets::cloneAddr1;
-				proc.unk48 = Offsets::cloneAddr2;
+				proc.unk18 = f4vr::cloneAddr1;
+				proc.unk48 = f4vr::cloneAddr2;
 
-				sphere = Offsets::cloneNode(retNode, &proc);
+				sphere = f4vr::cloneNode(retNode, &proc);
 				if (sphere) {
 					sphere->m_name = BSFixedString("Sphere01");
 

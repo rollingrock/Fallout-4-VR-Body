@@ -136,6 +136,34 @@ namespace common {
 	}
 
 	/**
+	 * Check if the camera is looking at the object and the object is facing the camera
+	 */
+	bool isCameraLookingAtObject(const NiTransform& cameraTrans, const NiTransform& objectTrans, const float detectThresh) {
+		// Get the position of the camera and the object
+		const auto cameraPos = cameraTrans.pos;
+		const auto objectPos = objectTrans.pos;
+
+		// Calculate the direction vector from the camera to the object
+		const auto direction = vec3Norm(NiPoint3(objectPos.x - cameraPos.x, objectPos.y - cameraPos.y, objectPos.z - cameraPos.z));
+
+		// Get the forward vector of the camera (assuming it's the y-axis)
+		const auto cameraForward = vec3Norm(cameraTrans.rot * NiPoint3(0, 1, 0));
+
+		// Get the forward vector of the object (assuming it's the y-axis)
+		const auto objectForward = vec3Norm(objectTrans.rot * NiPoint3(0, 1, 0));
+
+		// Check if the camera is looking at the object
+		const float cameraDot = vec3Dot(cameraForward, direction);
+		const bool isCameraLooking = cameraDot > detectThresh; // Adjust the threshold as needed
+
+		// Check if the object is facing the camera
+		const float objectDot = vec3Dot(objectForward, direction);
+		const bool isObjectFacing = objectDot > detectThresh; // Adjust the threshold as needed
+
+		return isCameraLooking && isObjectFacing;
+	}
+
+	/**
 	 * Find dll embedded resource by id and return its data as string if exists.
 	 * Return null if the resource is not found.
 	 */

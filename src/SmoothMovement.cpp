@@ -4,22 +4,17 @@
 #include <deque>
 #include <thread>
 #include <f4se/GameRTTI.h>
+
 #include "Config.h"
 #include "F4VRBody.h"
-#include "SmoothMovementVR.h"
-#include "utils.h"
-#include "f4se/NiExtraData.h"
-
 #include "MenuChecker.h"
+#include "SmoothMovementVR.h"
 #include "common/Logger.h"
+#include "f4se/NiExtraData.h"
 
 using namespace common;
 
 namespace SmoothMovementVR {
-	RelocAddr<_IsInAir> IsInAir(0x00DC3230);
-
-	//////////////////////////////////////////////////
-
 	UInt32 KeywordPowerArmor = 0x4D8A1;
 	UInt32 KeywordPowerArmorFrame = 0x15503F;
 
@@ -44,24 +39,20 @@ namespace SmoothMovementVR {
 	float powerArmorHeight = 0.0f;
 	float papyrusDefaultHeight = 0.0f;
 
-	bool checkIfJumpingOrInAir() {
-		return IsInAir(*g_player);
-	}
-
-	float distanceNoSqrt(const NiPoint3 po1, const NiPoint3 po2) {
+	auto distanceNoSqrt(const NiPoint3 po1, const NiPoint3 po2) -> float {
 		const float x = po1.x - po2.x;
 		const float y = po1.y - po2.y;
 		const float z = po1.z - po2.z;
 		return x * x + y * y + z * z;
 	}
 
-	float distanceNoSqrt2d(const float x1, const float y1, const float x2, const float y2) {
+	static float distanceNoSqrt2d(const float x1, const float y1, const float x2, const float y2) {
 		const float x = x1 - x2;
 		const float y = y1 - y2;
 		return x * x + y * y;
 	}
 
-	NiPoint3 smoothedValue(const NiPoint3 newPosition) {
+	auto smoothedValue(const NiPoint3 newPosition) -> NiPoint3 {
 		LARGE_INTEGER newTime;
 		QueryPerformanceCounter(&newTime);
 		m_frameTime.store(static_cast<float>(newTime.QuadPart - m_prevTime.QuadPart) / m_hpcFrequency.QuadPart);
@@ -70,7 +61,7 @@ namespace SmoothMovementVR {
 		}
 		m_prevTime = newTime;
 
-		if (IsInAir(*g_player)) {
+		if (f4vr::IsInAir(*g_player)) {
 			smoothedX.store(newPosition.x);
 			smoothedY.store(newPosition.y);
 			smoothedZ.store(newPosition.z);
@@ -213,22 +204,9 @@ namespace SmoothMovementVR {
 		}
 	}
 
-	bool hasKeyword(const TESObjectARMO* armor, const UInt32 keywordFormId) {
-		if (armor) {
-			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++) {
-				if (armor->keywordForm.keywords[i]) {
-					if (armor->keywordForm.keywords[i]->formID == keywordFormId) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
-
 	bool firstRun = true;
 
-	void armorCheck() {
+	static void armorCheck() {
 		while (true) {
 			if (!*g_player || !(*g_player)->unkF0) {
 				Sleep(5000);
@@ -265,7 +243,7 @@ namespace SmoothMovementVR {
 						if (TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item) {
 							if (equippedForm->formType == TESObjectARMO::kTypeID) {
 								if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
-									if (hasKeyword(armor, KeywordPowerArmor) || hasKeyword(armor, KeywordPowerArmorFrame)) {
+									if (f4vr::hasKeyword(armor, KeywordPowerArmor) || f4vr::hasKeyword(armor, KeywordPowerArmorFrame)) {
 										if (!inPowerArmorFrame.load()) {
 											inPowerArmorFrame.store(true);
 										}

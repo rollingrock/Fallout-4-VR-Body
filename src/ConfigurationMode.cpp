@@ -2,13 +2,13 @@
 
 #include <f4se/GameMenus.h>
 
-#include "BSFlattenedBoneTree.h"
 #include "Config.h"
 #include "F4VRBody.h"
 #include "HandPose.h"
 #include "Pipboy.h"
 #include "Skeleton.h"
 #include "common/CommonUtils.h"
+#include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 
@@ -91,7 +91,7 @@ namespace frik {
 		char* meshName4[4] = {"MC-ModeA", "MC-ModeB", "MC-ModeC", "MC-ModeD"};
 		if (!_calibrationModeUIActive) {
 			// Create Config UI
-			showMessagebox("FRIK Config Mode");
+			f4vr::showMessagebox("FRIK Config Mode");
 			NiNode* c_MBox = f4vr::getNode("messageBoxMenuWider", _skelly->getPlayerNodes()->playerworldnode);
 			if (c_MBox) {
 				c_MBox->flags |= 0x1;
@@ -106,9 +106,9 @@ namespace frik {
 			}
 			NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
 			f4vr::NiCloneProcess proc;
-			proc.unk18 = Offsets::cloneAddr1;
-			proc.unk48 = Offsets::cloneAddr2;
-			NiNode* HUD = Offsets::cloneNode(retNode, &proc);
+			proc.unk18 = f4vr::cloneAddr1;
+			proc.unk48 = f4vr::cloneAddr2;
+			NiNode* HUD = f4vr::cloneNode(retNode, &proc);
 			HUD->m_name = BSFixedString("MCCONFIGHUD");
 			// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
 			NiNode* UIATTACH = g_config.leftHandedMode
@@ -131,25 +131,25 @@ namespace frik {
 			for (int i = 0; i <= 9; i++) {
 				NiNode* retNode = loadNifFromFile(MainHud[i]);
 				f4vr::NiCloneProcess proc;
-				proc.unk18 = Offsets::cloneAddr1;
-				proc.unk48 = Offsets::cloneAddr2;
-				NiNode* UI = Offsets::cloneNode(retNode, &proc);
+				proc.unk18 = f4vr::cloneAddr1;
+				proc.unk48 = f4vr::cloneAddr2;
+				NiNode* UI = f4vr::cloneNode(retNode, &proc);
 				UI->m_name = BSFixedString(meshName2[i]);
 				HUD->AttachChild(UI, true);
 				retNode = loadNifFromFile(MainHud2[i]);
-				NiNode* UI2 = Offsets::cloneNode(retNode, &proc);
+				NiNode* UI2 = f4vr::cloneNode(retNode, &proc);
 				UI2->m_name = BSFixedString(meshName[i]);
 				UI->AttachChild(UI2, true);
 				if (i == 7 || i == 8) {
 					retNode = loadNifFromFile("Data/Meshes/FRIK/UI-StickyMarker.nif");
-					NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
+					NiNode* UI3 = f4vr::cloneNode(retNode, &proc);
 					UI3->m_name = BSFixedString(meshName3[i]);
 					UI2->AttachChild(UI3, true);
 				}
 				if (i == 9) {
 					for (int x = 0; x < 4; x++) {
 						retNode = loadNifFromFile(MainHud3[x]);
-						NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
+						NiNode* UI3 = f4vr::cloneNode(retNode, &proc);
 						UI3->m_name = BSFixedString(meshName4[x]);
 						UI2->AttachChild(UI3, true);
 					}
@@ -229,7 +229,7 @@ namespace frik {
 					UIElement->m_localTransform.scale = 0;
 				}
 			}
-			auto rt = (BSFlattenedBoneTree*)_skelly->getRoot();
+			auto rt = (f4vr::BSFlattenedBoneTree*)_skelly->getRoot();
 			NiPoint3 finger;
 			g_config.leftHandedMode
 				? finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos
@@ -265,9 +265,9 @@ namespace frik {
 							if (i < 7) {
 								NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 								f4vr::NiCloneProcess proc;
-								proc.unk18 = Offsets::cloneAddr1;
-								proc.unk48 = Offsets::cloneAddr2;
-								NiNode* UI = Offsets::cloneNode(retNode, &proc);
+								proc.unk18 = f4vr::cloneAddr1;
+								proc.unk48 = f4vr::cloneAddr2;
+								NiNode* UI = f4vr::cloneNode(retNode, &proc);
 								UI->m_name = BSFixedString("MCCONFIGMarker");
 								TouchMesh->AttachChild(UI, true);
 							}
@@ -528,7 +528,7 @@ namespace frik {
 			if (_isPBConfigModeActive) {
 				setConfigModeHandPose();
 
-				auto rt = (BSFlattenedBoneTree*)_skelly->getRoot();
+				auto rt = (f4vr::BSFlattenedBoneTree*)_skelly->getRoot();
 				NiPoint3 finger;
 				g_config.leftHandedMode
 					? finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos
@@ -566,9 +566,9 @@ namespace frik {
 								if (i != 1 && i != 3 && i != 10 && i != 11) {
 									NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 									f4vr::NiCloneProcess proc;
-									proc.unk18 = Offsets::cloneAddr1;
-									proc.unk48 = Offsets::cloneAddr2;
-									NiNode* UI = Offsets::cloneNode(retNode, &proc);
+									proc.unk18 = f4vr::cloneAddr1;
+									proc.unk48 = f4vr::cloneAddr2;
+									NiNode* UI = f4vr::cloneNode(retNode, &proc);
 									UI->m_name = BSFixedString("PBCONFIGMarker");
 									TouchMesh->AttachChild(UI, true);
 								}
@@ -580,9 +580,9 @@ namespace frik {
 											if (!UIMarker) {
 												NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 												f4vr::NiCloneProcess proc;
-												proc.unk18 = Offsets::cloneAddr1;
-												proc.unk48 = Offsets::cloneAddr2;
-												NiNode* UI = Offsets::cloneNode(retNode, &proc);
+												proc.unk18 = f4vr::cloneAddr1;
+												proc.unk48 = f4vr::cloneAddr2;
+												NiNode* UI = f4vr::cloneNode(retNode, &proc);
 												UI->m_name = BSFixedString("PBGlanceMarker");
 												TouchMesh->AttachChild(UI, true);
 											}
@@ -601,9 +601,9 @@ namespace frik {
 											if (!UIMarker) {
 												NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 												f4vr::NiCloneProcess proc;
-												proc.unk18 = Offsets::cloneAddr1;
-												proc.unk48 = Offsets::cloneAddr2;
-												NiNode* UI = Offsets::cloneNode(retNode, &proc);
+												proc.unk18 = f4vr::cloneAddr1;
+												proc.unk48 = f4vr::cloneAddr2;
+												NiNode* UI = f4vr::cloneNode(retNode, &proc);
 												UI->m_name = BSFixedString("PBDampenMarker");
 												TouchMesh->AttachChild(UI, true);
 											}
@@ -720,9 +720,9 @@ namespace frik {
 		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
 		const NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigHUD.nif");
 		f4vr::NiCloneProcess proc;
-		proc.unk18 = Offsets::cloneAddr1;
-		proc.unk48 = Offsets::cloneAddr2;
-		NiNode* HUD = Offsets::cloneNode(retNode, &proc);
+		proc.unk18 = f4vr::cloneAddr1;
+		proc.unk48 = f4vr::cloneAddr2;
+		NiNode* HUD = f4vr::cloneNode(retNode, &proc);
 		HUD->m_name = BSFixedString("PBCONFIGHUD");
 		// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
 		NiNode* UIATTACH = g_config.leftHandedMode
@@ -742,24 +742,24 @@ namespace frik {
 		for (int i = 0; i <= 11; i++) {
 			const NiNode* retNode = loadNifFromFile(MainHud[i]);
 			f4vr::NiCloneProcess proc;
-			proc.unk18 = Offsets::cloneAddr1;
-			proc.unk48 = Offsets::cloneAddr2;
-			NiNode* UI = Offsets::cloneNode(retNode, &proc);
+			proc.unk18 = f4vr::cloneAddr1;
+			proc.unk48 = f4vr::cloneAddr2;
+			NiNode* UI = f4vr::cloneNode(retNode, &proc);
 			UI->m_name = BSFixedString(meshName2[i]);
 			HUD->AttachChild(UI, true);
 			retNode = loadNifFromFile(MainHud2[i]);
-			NiNode* UI2 = Offsets::cloneNode(retNode, &proc);
+			NiNode* UI2 = f4vr::cloneNode(retNode, &proc);
 			UI2->m_name = BSFixedString(meshName[i]);
 			UI->AttachChild(UI2, true);
 			if (i == 10 && g_config.pipBoyOpenWhenLookAt) {
 				retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-				NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
+				NiNode* UI3 = f4vr::cloneNode(retNode, &proc);
 				UI3->m_name = BSFixedString("PBGlanceMarker");
 				UI->AttachChild(UI3, true);
 			}
 			if (i == 11 && g_config.dampenPipboyScreen) {
 				retNode = loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
-				NiNode* UI3 = Offsets::cloneNode(retNode, &proc);
+				NiNode* UI3 = f4vr::cloneNode(retNode, &proc);
 				UI3->m_name = BSFixedString("PBDampenMarker");
 				UI->AttachChild(UI3, true);
 			}

@@ -3,7 +3,6 @@
 #include <chrono>
 #include <thread>
 
-#include "BSFlattenedBoneTree.h"
 #include "Config.h"
 #include "ConfigurationMode.h"
 #include "F4VRBody.h"
@@ -13,6 +12,7 @@
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
+#include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 
@@ -73,7 +73,9 @@ namespace frik {
 		//Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
 		if (!_skelly->detectInPowerArmor()) {
 			NiNode* _HideNode = nullptr;
-			g_config.isHoloPipboy ? _HideNode = getChildNode("Screen", (*g_player)->unkF0->rootNode) : _HideNode = getChildNode("HoloEmitter", (*g_player)->unkF0->rootNode);
+			g_config.isHoloPipboy
+				? _HideNode = f4vr::getChildNode("Screen", (*g_player)->unkF0->rootNode)
+				: _HideNode = f4vr::getChildNode("HoloEmitter", (*g_player)->unkF0->rootNode);
 			if (_HideNode) {
 				if (_HideNode->m_localTransform.scale != 0) {
 					_HideNode->flags |= 0x1;
@@ -89,7 +91,7 @@ namespace frik {
 	void Pipboy::replaceMeshes(const std::string& itemHide, const std::string& itemShow) {
 		const auto pn = _skelly->getPlayerNodes();
 		const NiNode* ui = pn->primaryUIAttachNode;
-		NiNode* wand = get1StChildNode("world_primaryWand.nif", ui);
+		NiNode* wand = f4vr::get1StChildNode("world_primaryWand.nif", ui);
 		NiNode* retNode = loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
 		if (retNode) {
 			// ui->RemoveChild(wand);
@@ -97,13 +99,13 @@ namespace frik {
 		}
 
 		wand = pn->SecondaryWandNode;
-		NiNode* pipParent = get1StChildNode("PipboyParent", wand);
+		NiNode* pipParent = f4vr::get1StChildNode("PipboyParent", wand);
 
 		if (!pipParent) {
 			meshesReplaced = false;
 			return;
 		}
-		wand = get1StChildNode("PipboyRoot_NIF_ONLY", pipParent);
+		wand = f4vr::get1StChildNode("PipboyRoot_NIF_ONLY", pipParent);
 		g_config.isHoloPipboy ? retNode = loadNifFromFile("Data/Meshes/FRIK/HoloPipboyVR.nif") : retNode = loadNifFromFile("Data/Meshes/FRIK/PipboyVR.nif");
 		if (retNode && wand) {
 			const BSFixedString screenName("Screen:0");
@@ -119,7 +121,7 @@ namespace frik {
 
 			pn->ScreenNode->RemoveChildAt(0);
 			// using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
-			NiNode* rn = Offsets::addNode((uint64_t)&pn->ScreenNode, newScreen);
+			NiNode* rn = f4vr::addNode((uint64_t)&pn->ScreenNode, newScreen);
 			pn->PipboyRoot_nif_only_node = retNode;
 		}
 
@@ -131,12 +133,12 @@ namespace frik {
 		}
 
 		pn->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0; //prevents the VRPipboy screen from being displayed on first load whilst PB is off.
-		NiNode* _HideNode = getChildNode(itemHide.c_str(), (*g_player)->unkF0->rootNode);
+		NiNode* _HideNode = f4vr::getChildNode(itemHide.c_str(), (*g_player)->unkF0->rootNode);
 		if (_HideNode) {
 			_HideNode->flags |= 0x1;
 			_HideNode->m_localTransform.scale = 0;
 		}
-		NiNode* _ShowNode = getChildNode(itemShow.c_str(), (*g_player)->unkF0->rootNode);
+		NiNode* _ShowNode = f4vr::getChildNode(itemShow.c_str(), (*g_player)->unkF0->rootNode);
 		if (_ShowNode) {
 			_ShowNode->flags &= 0xfffffffffffffffe;
 			_ShowNode->m_localTransform.scale = 1;
@@ -150,7 +152,7 @@ namespace frik {
 			return;
 		}
 
-		const auto rt = (BSFlattenedBoneTree*)_skelly->getRoot();
+		const auto rt = (f4vr::BSFlattenedBoneTree*)_skelly->getRoot();
 
 		NiPoint3 finger;
 		const NiAVObject* pipboy = nullptr;
@@ -351,7 +353,7 @@ namespace frik {
 				stickyPBlight = true;
 				f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary);
 				if (!_pipboyStatus) {
-					Offsets::togglePipboyLight(*g_player);
+					f4vr::togglePipboyLight(*g_player);
 				}
 			}
 		}
@@ -379,7 +381,7 @@ namespace frik {
 				stickyPBRadio = true;
 				f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary);
 				if (!_pipboyStatus) {
-					if (Offsets::isPlayerRadioEnabled()) {
+					if (f4vr::isPlayerRadioEnabled()) {
 						turnPlayerRadioOn(false);
 					} else {
 						turnPlayerRadioOn(true);
@@ -440,12 +442,12 @@ namespace frik {
 			static BSFixedString orbNames[7] = {
 				"TabChangeUpOrb", "TabChangeDownOrb", "PageChangeUpOrb", "PageChangeDownOrb", "ScrollItemsUpOrb", "ScrollItemsDownOrb", "SelectItemsOrb"
 			};
-			auto rt = (BSFlattenedBoneTree*)_skelly->getRoot();
+			auto rt = (f4vr::BSFlattenedBoneTree*)_skelly->getRoot();
 			bool helmetHeadLamp = _skelly->armorHasHeadLamp();
-			bool lightOn = Offsets::isPipboyLightOn(*g_player);
-			bool radioOn = Offsets::isPlayerRadioEnabled();
+			bool lightOn = f4vr::isPipboyLightOn(*g_player);
+			bool radioOn = f4vr::isPlayerRadioEnabled();
 			Matrix44 rot;
-			float radFreq = Offsets::getPlayerRadioFreq() - 23;
+			float radFreq = f4vr::getPlayerRadioFreq() - 23;
 			static BSFixedString pwrButtonOn("PowerButton_mesh:2");
 			static BSFixedString pwrButtonOff("PowerButton_mesh:off");
 			static BSFixedString lhtButtonOn("LightButton_mesh:2");
@@ -486,7 +488,7 @@ namespace frik {
 				return;
 			}
 			if (isLookingAtPipBoy()) {
-				auto rt = (BSFlattenedBoneTree*)_skelly->getRoot();
+				auto rt = (f4vr::BSFlattenedBoneTree*)_skelly->getRoot();
 				NiPoint3 finger;
 				NiAVObject* pipboy = nullptr;
 				NiAVObject* pipboyTrans = nullptr;
@@ -581,7 +583,7 @@ namespace frik {
 							? f4vr::getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode())
 							: f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
 						NiNode* lght = g_config.isPipBoyTorchOnArm
-							? get1StChildNode("HeadLightParent", LGHT_ATTACH)
+							? f4vr::get1StChildNode("HeadLightParent", LGHT_ATTACH)
 							: _skelly->getPlayerNodes()->HeadLightParentNode->GetAsNiNode();
 						if (lght) {
 							BSFixedString parentnode = g_config.isPipBoyTorchOnArm ? lght->m_parent->m_name : _skelly->getPlayerNodes()->HeadLightParentNode->m_parent->m_name;
@@ -624,7 +626,7 @@ namespace frik {
 					}
 					//Restore HeadLight to correct node when light is powered off (to avoid any crashes)
 					else if (!lightOn || helmetHeadLamp) {
-						if (auto lght = get1StChildNode("HeadLightParent", LGHT_ATTACH)) {
+						if (auto lght = f4vr::get1StChildNode("HeadLightParent", LGHT_ATTACH)) {
 							BSFixedString parentnode = lght->m_parent->m_name;
 							if (parentnode != "HMDNode") {
 								Matrix44 LightRot;

@@ -182,7 +182,6 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\BoneSpheresHandler.cpp" />
-    <ClCompile Include="src\BSFlattenedBoneTree.cpp" />
     <ClCompile Include="src\common\CommonUtils.cpp" />
     <ClCompile Include="src\Config.cpp" />
     <ClCompile Include="src\ConfigurationMode.cpp" />
@@ -198,8 +197,6 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Menu.cpp" />
     <ClCompile Include="src\MenuChecker.cpp" />
-    <ClCompile Include="src\f4vr\MiscStructs.cpp" />
-    <ClCompile Include="src\f4vr\Offsets.cpp" />
     <ClCompile Include="src\patches.cpp" />
     <ClCompile Include="src\Pipboy.cpp" />
     <ClCompile Include="src\Skeleton.cpp" />
@@ -225,8 +222,8 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClInclude Include="src\api\PapyrusVRTypes.h" />
     <ClInclude Include="src\api\VRManagerAPI.h" />
     <ClInclude Include="src\BoneSpheresHandler.h" />
-    <ClInclude Include="src\BSFlattenedBoneTree.h" />
-    <ClInclude Include="src\BSTSmartPointer.h" />
+    <ClInclude Include="src\f4vr\BSFlattenedBoneTree.h" />
+    <ClInclude Include="src\common\BSTSmartPointer.h" />
     <ClInclude Include="src\common\CommonUtils.h" />
     <ClInclude Include="src\Config.h" />
     <ClInclude Include="src\ConfigurationMode.h" />
@@ -250,9 +247,7 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClInclude Include="src\Menu.h" />
     <ClInclude Include="src\MenuChecker.h" />
     <ClInclude Include="src\f4vr\MiscStructs.h" />
-    <ClInclude Include="src\MuzzleFlash.h" />
-    <ClInclude Include="src\f4vr\NiCloneProcess.h" />
-    <ClInclude Include="src\f4vr\Offsets.h" />
+    <ClInclude Include="src\f4vr\F4VROffsets.h" />
     <ClInclude Include="src\patches.h" />
     <ClInclude Include="src\Pipboy.h" />
     <ClInclude Include="src\res\resource.h" />

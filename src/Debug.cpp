@@ -1,12 +1,12 @@
 #include <sstream>
 
 #include "Debug.h"
-#include "BSFlattenedBoneTree.h"
 #include "Skeleton.h"
 #include "utils.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
+#include "f4vr/BSFlattenedBoneTree.h"
 
 using namespace common;
 
@@ -230,7 +230,7 @@ namespace frik {
 		//	map->Dump();
 		//}
 
-		auto rt = (BSFlattenedBoneTree*)skelly->getRoot();
+		auto rt = (f4vr::BSFlattenedBoneTree*)skelly->getRoot();
 
 		//for (auto i = 0; i < rt->numTransforms; i++) {
 

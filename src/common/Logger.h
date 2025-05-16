@@ -201,6 +201,6 @@ namespace common {
 		/**
 		 * Holds the last time of a log message per key.
 		 */
-		static std::unordered_map<std::string, std::chrono::steady_clock::time_point> _sampleMessagesTtl;
+		inline static std::unordered_map<std::string, std::chrono::steady_clock::time_point> _sampleMessagesTtl;
 	};
 }

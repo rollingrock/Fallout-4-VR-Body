@@ -2,7 +2,7 @@
 
 // TODO: refactor to move this dependency to common code
 #include "../Debug.h"
-#include "../f4vr/Offsets.h"
+#include "../f4vr/F4VROffsets.h"
 
 namespace vrui {
 	/**
@@ -35,9 +35,9 @@ namespace vrui {
 		auto& normPath = path._Starts_with("Data") ? path : "Data/Meshes/" + path;
 		const NiNode* nifNode = loadNifFromFile(normPath.c_str());
 		f4vr::NiCloneProcess proc;
-		proc.unk18 = Offsets::cloneAddr1;
-		proc.unk48 = Offsets::cloneAddr2;
-		const auto uiNode = Offsets::cloneNode(nifNode, &proc);
+		proc.unk18 = f4vr::cloneAddr1;
+		proc.unk48 = f4vr::cloneAddr2;
+		const auto uiNode = f4vr::cloneNode(nifNode, &proc);
 		uiNode->m_name = BSFixedString(path.c_str());
 		return uiNode;
 	}
@@ -48,7 +48,7 @@ namespace vrui {
 	NiNode* loadNifFromFile(const char* path) {
 		uint64_t flags[2] = {0x0, 0xed};
 		uint64_t mem = 0;
-		int ret = Offsets::loadNif((uint64_t)path, (uint64_t)&mem, (uint64_t)&flags);
+		int ret = f4vr::loadNif((uint64_t)path, (uint64_t)&mem, (uint64_t)&flags);
 		return reinterpret_cast<NiNode*>(mem);
 	}
 

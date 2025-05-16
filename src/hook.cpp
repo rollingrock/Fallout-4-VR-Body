@@ -1,8 +1,10 @@
-#include "hook.h"
+// ReSharper disable CppClangTidyBugproneReservedIdentifier
+// ReSharper disable CppClangTidyClangDiagnosticReservedIdentifier
 
 #include <F4SE_common/BranchTrampoline.h>
 #include <F4SE_common/SafeWrite.h>
 
+#include "hook.h"
 #include "F4VRBody.h"
 #include "GunReload.h"
 #include "f4se/GameCamera.h"
@@ -129,7 +131,7 @@ void hookIt(const uint64_t rcx) {
 	//hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.   
 
 	// so all of this below is an attempt to bypass the functionality in game around my hook at resets the root parent node's world pos which screws up armor
-	// we still need to call the fucntion i hooked below to get some things ready for the renderer however starting with the named "Root" node instead of it's parent preseves locations
+	// we still need to call the function i hooked below to get some things ready for the renderer however starting with the named "Root" node instead of it's parent preseves locations
 	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 		if ((*g_player)->unkF0->rootNode->m_children.m_emptyRunStart > 0) {
 			if ((*g_player)->unkF0->rootNode->m_children.m_data[0]) {

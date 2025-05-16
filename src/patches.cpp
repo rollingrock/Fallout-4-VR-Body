@@ -1,7 +1,6 @@
 #include "patches.h"
 
 #include "common/Logger.h"
-#include "common/Quaternion.h"
 #include "f4se_common/BranchTrampoline.h"
 #include "f4sE_common/Relocation.h"
 #include "F4SE_common/SafeWrite.h"

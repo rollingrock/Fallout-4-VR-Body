@@ -2,14 +2,12 @@
 
 #include <f4se/GameRTTI.h>
 
-#include "BSFlattenedBoneTree.h"
 #include "Config.h"
 #include "ConfigurationMode.h"
 #include "CullGeometryHandler.h"
 #include "Debug.h"
 #include "HandPose.h"
 #include "Menu.h"
-#include "MuzzleFlash.h"
 #include "Pipboy.h"
 #include "Skeleton.h"
 #include "SmoothMovementVR.h"
@@ -130,7 +128,7 @@ namespace frik {
 				pn->ScreenNode->RemoveChildAt(0);
 
 				newScreen = pn->PipboyRoot_nif_only_node->GetObjectByName(&screenName)->m_parent;
-				NiNode* rn = Offsets::addNode((uint64_t)&pn->ScreenNode, newScreen);
+				NiNode* rn = f4vr::addNode((uint64_t)&pn->ScreenNode, newScreen);
 			}
 		}
 	}
@@ -214,30 +212,14 @@ namespace frik {
 		}
 	}
 
-	bool HasKeywordPA(const TESObjectARMO* armor, const UInt32 keywordFormId) {
-		if (armor) {
-			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++) {
-				if (armor->keywordForm.keywords[i]) {
-					if (armor->keywordForm.keywords[i]->formID == keywordFormId) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
-
 	static bool detectInPowerArmor() {
-		// Thanks Shizof and SmoothtMovementVR for below code
+		// Thanks Shizof and SmoothMovementVR for below code
 		if ((*g_player)->equipData) {
 			if ((*g_player)->equipData->slots[0x03].item != nullptr) {
-				TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item;
-				if (equippedForm) {
+				if (const auto equippedForm = (*g_player)->equipData->slots[0x03].item) {
 					if (equippedForm->formType == TESObjectARMO::kTypeID) {
-						const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO);
-
-						if (armor) {
-							if (HasKeywordPA(armor, KeywordPowerArmor) || HasKeywordPA(armor, KeywordPowerArmorFrame)) {
+						if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
+							if (f4vr::hasKeyword(armor, KeywordPowerArmor) || f4vr::hasKeyword(armor, KeywordPowerArmorFrame)) {
 								return true;
 							}
 							return false;
@@ -247,6 +229,24 @@ namespace frik {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Fixes the position of the muzzle flash to be at the projectile node.
+	 * A workaround for two-handed weapon handling.
+	 */
+	static void fixMuzzleFlashPosition() {
+		if (!(*g_player)->middleProcess->unk08->equipData || !(*g_player)->middleProcess->unk08->equipData->equippedData) {
+			return;
+		}
+		const auto obj = (*g_player)->middleProcess->unk08->equipData->equippedData;
+		const auto vfunc = (uint64_t*)obj;
+		if ((*vfunc & 0xFFFF) == (f4vr::EquippedWeaponData_vfunc & 0xFFFF)) {
+			const auto muzzle = reinterpret_cast<f4vr::MuzzleFlash*>((*g_player)->middleProcess->unk08->equipData->equippedData->unk28);
+			if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
+				muzzle->fireNode->m_localTransform = muzzle->projectileNode->m_worldTransform;
+			}
+		}
 	}
 
 	void update() {
@@ -315,7 +315,7 @@ namespace frik {
 		}
 
 		// do stuff now
-		g_config.leftHandedMode = *Offsets::iniLeftHandedMode;
+		g_config.leftHandedMode = *f4vr::iniLeftHandedMode;
 		_skelly->setLeftHandedSticky();
 
 		Log::debug("Start of Frame");
@@ -326,12 +326,12 @@ namespace frik {
 			GameVarsConfigured = true;
 		}
 
-		g_config.leftHandedMode = *Offsets::iniLeftHandedMode;
+		g_config.leftHandedMode = *f4vr::iniLeftHandedMode;
 
 		g_pipboy->replaceMeshes(false);
 
 		// check if jumping or in air;
-		c_jumping = SmoothMovementVR::checkIfJumpingOrInAir();
+		c_jumping = f4vr::isJumpingOrInAir();
 
 		_skelly->setTime();
 
@@ -343,7 +343,7 @@ namespace frik {
 		const NiPoint3 position = (*g_player)->pos;
 		constexpr float groundHeight = 0.0f;
 
-		uint64_t ret = Offsets::TESObjectCell_GetLandHeight((*g_player)->parentCell, &position, &groundHeight);
+		uint64_t ret = f4vr::TESObjectCell_GetLandHeight((*g_player)->parentCell, &position, &groundHeight);
 
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
 		Log::debug("restore locals of skeleton");
@@ -424,21 +424,12 @@ namespace frik {
 
 		//g_gunReloadSystem->Update();
 
-		Offsets::BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
-		BSFlattenedBoneTree_UpdateBoneArray((*g_player)->unkF0->rootNode->m_children.m_data[0]);
+		f4vr::BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
+		f4vr::BSFlattenedBoneTree_UpdateBoneArray((*g_player)->unkF0->rootNode->m_children.m_data[0]);
 		// just in case any transforms missed because they are not in the tree do a full flat bone array update
-		Offsets::BSFadeNode_UpdateGeomArray((*g_player)->unkF0->rootNode, 1);
+		f4vr::BSFadeNode_UpdateGeomArray((*g_player)->unkF0->rootNode, 1);
 
-		if ((*g_player)->middleProcess->unk08->equipData && (*g_player)->middleProcess->unk08->equipData->equippedData) {
-			const auto obj = (*g_player)->middleProcess->unk08->equipData->equippedData;
-			const auto vfunc = (uint64_t*)obj;
-			if ((*vfunc & 0xFFFF) == (Offsets::EquippedWeaponData_vfunc & 0xFFFF)) {
-				const auto muzzle = reinterpret_cast<MuzzleFlash*>((*g_player)->middleProcess->unk08->equipData->equippedData->unk28);
-				if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
-					muzzle->fireNode->m_localTransform = muzzle->projectileNode->m_worldTransform;
-				}
-			}
-		}
+		fixMuzzleFlashPosition();
 
 		if (isInScopeMenu()) {
 			_skelly->hideHands();
@@ -456,7 +447,7 @@ namespace frik {
 
 		if (!detectInPowerArmor()) {
 			// sets 3rd Person Pipboy Scale
-			NiNode* _Pipboy3rd = getChildNode("PipboyBone", (*g_player)->unkF0->rootNode);
+			NiNode* _Pipboy3rd = f4vr::getChildNode("PipboyBone", (*g_player)->unkF0->rootNode);
 			if (_Pipboy3rd) {
 				_Pipboy3rd->m_localTransform.scale = g_config.pipBoyScale;
 			}
@@ -511,7 +502,7 @@ namespace frik {
 
 	static bool isLeftHandedMode(StaticFunctionTag* base) {
 		Log::info("Papyrus: Is Left Handed Mode");
-		return *Offsets::iniLeftHandedMode;
+		return *f4vr::iniLeftHandedMode;
 	}
 
 	static void setSelfieMode(StaticFunctionTag* base, const bool isSelfieMode) {
