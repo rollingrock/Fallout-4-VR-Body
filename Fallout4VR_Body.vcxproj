@@ -196,14 +196,12 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClCompile Include="src\ui\UIToggleGroupContainer.cpp" />
     <ClCompile Include="src\ui\UIButton.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\common\Matrix.cpp" />
     <ClCompile Include="src\Menu.cpp" />
     <ClCompile Include="src\MenuChecker.cpp" />
     <ClCompile Include="src\f4vr\MiscStructs.cpp" />
     <ClCompile Include="src\f4vr\Offsets.cpp" />
     <ClCompile Include="src\patches.cpp" />
     <ClCompile Include="src\Pipboy.cpp" />
-    <ClCompile Include="src\common\Quaternion.cpp" />
     <ClCompile Include="src\Skeleton.cpp" />
     <ClCompile Include="src\SmoothMovement.cpp" />
     <ClCompile Include="src\ui\UIToggleButton.cpp" />
@@ -257,7 +255,6 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClInclude Include="src\f4vr\Offsets.h" />
     <ClInclude Include="src\patches.h" />
     <ClInclude Include="src\Pipboy.h" />
-    <ClInclude Include="src\common\Quaternion.h" />
     <ClInclude Include="src\res\resource.h" />
     <ClInclude Include="src\Skeleton.h" />
     <ClInclude Include="src\SmoothMovementVR.h" />

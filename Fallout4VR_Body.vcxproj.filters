@@ -66,9 +66,6 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\common\Matrix.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Menu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -85,9 +82,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Pipboy.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\common\Quaternion.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Skeleton.cpp">
@@ -120,9 +114,6 @@
     <ClCompile Include="src\utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\f4vr\VR.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\WeaponPositionConfigMode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -146,13 +137,7 @@
     <ClInclude Include="src\api\openvr_driver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\api\PapyrusVRAPI.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\api\PapyrusVRTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\api\VRHookAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\api\VRManagerAPI.h">
@@ -245,9 +230,6 @@
     <ClInclude Include="src\Pipboy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\common\Quaternion.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\res\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -281,9 +263,6 @@
     <ClInclude Include="src\utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\f4vr\VR.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\WeaponPositionConfigMode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -294,6 +273,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\include\FileWatch.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\f4vr\VRControllersManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -319,9 +301,6 @@
     <None Include="data\config\FRIK.ini">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include=".gitignore" />
-    <None Include="LICENSE" />
-    <None Include="README.md" />
     <None Include="src\exports.def">
       <Filter>Source Files</Filter>
     </None>

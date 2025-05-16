@@ -7,7 +7,7 @@
 #include "Skeleton.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
-#include "common/Quaternion.h"
+#include "common/Matrix.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 
