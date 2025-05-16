@@ -11,3 +11,6 @@ If you're using fully vanilla VATS please use one-handed aiming.
 
 ### Pipboy on the Right Hand is Broken
 It needs A LOT of work.
+
+### Muzzle flashes incorrect position for two-handed energy weapons
+See [Issue #82](https://github.com/rollingrock/Fallout-4-VR-Body/issues/82).
