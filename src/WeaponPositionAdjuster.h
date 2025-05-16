@@ -38,7 +38,7 @@ namespace frik {
 		bool isOffhandMovedFastAway() const;
 		NiPoint3 getOffhandPosition() const;
 		void handleBetterScopes(NiNode* weapon) const;
-		NiNode* getBackOfHandUINode() const;
+		static NiNode* getBackOfHandUINode();
 		void debugPrintWeaponPositionData(NiNode* weapon) const;
 
 		// Define a basis remapping matrix to correct coordinate system for scope camera

@@ -5,8 +5,8 @@
 #include "F4VROffsets.h"
 
 namespace f4vr {
-	static const UInt32 KeywordPowerArmor = 0x4D8A1;
-	static const UInt32 KeywordPowerArmorFrame = 0x15503F;
+	static constexpr UInt32 KEYWORD_POWER_ARMOR = 0x4D8A1;
+	static constexpr UInt32 KEYWORD_POWER_ARMOR_FRAME = 0x15503F;
 
 	// UI
 	void showMessagebox(const std::string& text);
@@ -41,6 +41,7 @@ namespace f4vr {
 	void toggleVis(NiNode* nde, bool hide, bool updateSelf);
 
 	// updates
+	void updateDownFromRoot();
 	void updateDown(NiNode* nde, bool updateSelf);
 	void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 	void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);

@@ -89,7 +89,7 @@ namespace frik {
 		}
 		_configUI->setVisibility(true);
 
-		const auto throwable = _adjuster->_skelly->getThrowableWeaponNode();
+		const auto throwable = f4vr::getThrowableWeaponNode();
 		if (throwable) {
 			_repositionTarget = RepositionTarget::Throwable;
 			_throwableUIButton->setToggleState(true);

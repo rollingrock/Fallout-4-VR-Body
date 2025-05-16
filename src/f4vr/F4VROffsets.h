@@ -247,4 +247,8 @@ namespace f4vr {
 
 	using _BSFlattenedBoneTree_UpdateBoneArray = void* (*)(NiAVObject* node);
 	inline RelocAddr<_BSFlattenedBoneTree_UpdateBoneArray> BSFlattenedBoneTree_UpdateBoneArray(0x1c214b0);
+
+	// Native function that takes the 1st person skeleton weapon node and calculates the skeleton from upper-arm down based off the offsetNode
+	using _Update1StPersonArm = void* (*)(const PlayerCharacter* pc, NiNode** weapon, NiNode** offsetNode);
+	inline RelocAddr<_Update1StPersonArm> Update1StPersonArm(0xef6280);
 }

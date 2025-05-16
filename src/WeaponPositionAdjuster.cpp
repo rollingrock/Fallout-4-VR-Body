@@ -46,7 +46,7 @@ namespace frik {
 	 * So all the handling needs to happen here with finding the offsets, defaults, and names.
 	 */
 	void WeaponPositionAdjuster::handleThrowableWeapon() {
-		const auto throwableWeapon = _skelly->getThrowableWeaponNode();
+		const auto throwableWeapon = f4vr::getThrowableWeaponNode();
 		if (!throwableWeapon) {
 			// no throwable, clear name and noop
 			_currentThrowableWeaponName = "";
@@ -76,7 +76,7 @@ namespace frik {
 	 * with regard to weapon custom offsets and/or weapon gripping by offhand (non-primary hand).
 	 */
 	void WeaponPositionAdjuster::handlePrimaryWeapon() {
-		const auto weapon = _skelly->getWeaponNode();
+		const auto weapon = f4vr::getWeaponNode();
 		const auto backOfHand = getBackOfHandUINode();
 		if (!f4vr::isNodeVisible(weapon) || g_configurationMode->isCalibrateModeActive()) {
 			if (_configMode) {
@@ -122,13 +122,14 @@ namespace frik {
 	 */
 	void WeaponPositionAdjuster::checkEquippedWeaponChanged(const bool emptyHand) {
 		const auto& weaponName = emptyHand ? EMPTY_HAND : f4vr::getEquippedWeaponName();
-		if (weaponName == _currentWeapon && _skelly->inPowerArmor() == _currentlyInPA) {
+		const bool inPA = f4vr::isInPowerArmor();
+		if (weaponName == _currentWeapon && inPA == _currentlyInPA) {
 			// no weapon change
 			return;
 		}
 
 		_currentWeapon = weaponName;
-		_currentlyInPA = _skelly->inPowerArmor();
+		_currentlyInPA = inPA;
 
 		// reset state
 		_offHandGripping = false;
@@ -183,7 +184,7 @@ namespace frik {
 	 * Rotation is calculated by using weapon forward vector and the diff between it and straight in scope camera orientation.
 	 */
 	void WeaponPositionAdjuster::handleScopeCameraAdjustmentByWeaponOffset(const NiNode* weapon) const {
-		const auto scopeCamera = _skelly->getPlayerNodes()->primaryWeaponScopeCamera;
+		const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
 
 		// Apply the position offset is weird because of different coordinate system
 		const auto weaponPosDiff = _weaponOffsetTransform.pos - _weaponOriginalTransform.pos;
@@ -299,7 +300,7 @@ namespace frik {
 
 		// Handle Scope:
 		// Set base camera matrix first (remaps axes from weapon to scope system)
-		const auto scopeCamera = _skelly->getPlayerNodes()->primaryWeaponScopeCamera;
+		const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
 		scopeCamera->m_localTransform.rot = _scopeCameraBaseMatrix;
 		f4vr::updateTransforms(scopeCamera);
 
@@ -339,9 +340,7 @@ namespace frik {
 		static int fc = 0;
 		const auto offHandBone = g_config.leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
 
-		const auto rt = reinterpret_cast<f4vr::BSFlattenedBoneTree*>(_skelly->getRoot());
-		const float handFrameMovement = vec3Len(rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos - offhandFingerBonePos);
-
+		const float handFrameMovement = vec3Len(_skelly->getBoneWorldTransform(offHandBone).pos - offhandFingerBonePos);
 		const float bodyFrameMovement = vec3Len(_skelly->getCurrentBodyPos() - bodyPos);
 		avgHandV[fc] = abs(handFrameMovement - bodyFrameMovement);
 		fc = (fc + 1) % 3;
@@ -353,7 +352,7 @@ namespace frik {
 		const float handV = sum / 3;
 
 		bodyPos = _skelly->getCurrentBodyPos();
-		offhandFingerBonePos = rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos;
+		offhandFingerBonePos = _skelly->getBoneWorldTransform(offHandBone).pos;
 
 		return handV > g_config.gripLetGoThreshold;
 	}
@@ -362,9 +361,8 @@ namespace frik {
 	 * Get the world coordinates of the offhand.
 	 */
 	NiPoint3 WeaponPositionAdjuster::getOffhandPosition() const {
-		const auto rt = reinterpret_cast<f4vr::BSFlattenedBoneTree*>(_skelly->getRoot());
 		const auto offHandBone = g_config.leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
-		return rt->transforms[_skelly->getBoneInMap(offHandBone)].world.pos;
+		return _skelly->getBoneWorldTransform(offHandBone).pos;
 	}
 
 	/**
@@ -402,8 +400,8 @@ namespace frik {
 	 * Because we put the UI on the back of the hand we don't need to offset by the weapon size. And with it, it looks like we don't need per
 	 * weapon adjustment.
 	 */
-	NiNode* WeaponPositionAdjuster::getBackOfHandUINode() const {
-		return _skelly->getPrimaryWandNode();
+	NiNode* WeaponPositionAdjuster::getBackOfHandUINode() {
+		return f4vr::getPrimaryWandNode();
 	}
 
 	void WeaponPositionAdjuster::debugPrintWeaponPositionData(NiNode* weapon) const {
@@ -415,7 +413,7 @@ namespace frik {
 		printTransform("Weapon Original: ", _weaponOriginalTransform);
 		printTransform("Weapon Offset  : ", _weaponOffsetTransform);
 		printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);
-		printTransform("Scope Offset   : ", _skelly->getPlayerNodes()->primaryWeaponScopeCamera->m_localTransform);
+		printTransform("Scope Offset   : ", f4vr::getPlayerNodes()->primaryWeaponScopeCamera->m_localTransform);
 		printNodes(weapon);
 		printNodesTransform(weapon);
 	}

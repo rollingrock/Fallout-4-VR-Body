@@ -37,14 +37,14 @@ namespace frik {
 	 */
 	void ConfigurationMode::configModeExit() {
 		_calibrationModeUIActive = false;
-		if (NiNode* c_MBox = f4vr::getNode("messageBoxMenuWider", _skelly->getPlayerNodes()->playerworldnode)) {
+		if (NiNode* c_MBox = f4vr::getNode("messageBoxMenuWider", f4vr::getPlayerNodes()->playerworldnode)) {
 			c_MBox->flags &= ~0x1;
 			c_MBox->m_localTransform.scale = 1.0;
 		}
 		if (_calibrateModeActive) {
 			std::fill(std::begin(_MCTouchbuttons), std::end(_MCTouchbuttons), false);
 			static BSFixedString hudname("MCCONFIGHUD");
-			if (NiAVObject* MCConfigUI = _skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&hudname)) {
+			if (NiAVObject* MCConfigUI = f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&hudname)) {
 				MCConfigUI->flags |= 0x1;
 				MCConfigUI->m_localTransform.scale = 0;
 				MCConfigUI->m_parent->RemoveChild(MCConfigUI);
@@ -61,7 +61,7 @@ namespace frik {
 				_PBTouchbuttons[i] = false;
 			}
 			static BSFixedString hudname("PBCONFIGHUD");
-			NiAVObject* PBConfigUI = _skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&hudname);
+			NiAVObject* PBConfigUI = f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&hudname);
 			if (PBConfigUI) {
 				PBConfigUI->flags |= 0x1;
 				PBConfigUI->m_localTransform.scale = 0;
@@ -92,7 +92,7 @@ namespace frik {
 		if (!_calibrationModeUIActive) {
 			// Create Config UI
 			f4vr::showMessagebox("FRIK Config Mode");
-			NiNode* c_MBox = f4vr::getNode("messageBoxMenuWider", _skelly->getPlayerNodes()->playerworldnode);
+			NiNode* c_MBox = f4vr::getNode("messageBoxMenuWider", f4vr::getPlayerNodes()->playerworldnode);
 			if (c_MBox) {
 				c_MBox->flags |= 0x1;
 				c_MBox->m_localTransform.scale = 0;
@@ -112,8 +112,8 @@ namespace frik {
 			HUD->m_name = BSFixedString("MCCONFIGHUD");
 			// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
 			NiNode* UIATTACH = g_config.leftHandedMode
-				? _skelly->getPlayerNodes()->primaryUIAttachNode
-				: f4vr::getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
+				? f4vr::getPlayerNodes()->primaryUIAttachNode
+				: f4vr::getNode("world_primaryWand.nif", f4vr::getPlayerNodes()->primaryUIAttachNode);
 			UIATTACH->AttachChild(HUD, true);
 			const char* MainHud[10] = {
 				"Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile03.nif",
@@ -172,20 +172,20 @@ namespace frik {
 		} else {
 			NiNode* UIElement = nullptr;
 			// Dampen Hands
-			UIElement = f4vr::getNode("MC-Tile07On", _skelly->getPlayerNodes()->primaryUIAttachNode);
+			UIElement = f4vr::getNode("MC-Tile07On", f4vr::getPlayerNodes()->primaryUIAttachNode);
 			g_config.dampenHands ? UIElement->m_localTransform.scale = 1 : UIElement->m_localTransform.scale = 0;
 			// Weapon Reposition Mode
-			UIElement = f4vr::getNode("MC-Tile08On", _skelly->getPlayerNodes()->primaryUIAttachNode);
+			UIElement = f4vr::getNode("MC-Tile08On", f4vr::getPlayerNodes()->primaryUIAttachNode);
 			UIElement->m_localTransform.scale = g_weaponPosition->inWeaponRepositionMode() ? 1 : 0;
 			// Grip Mode
 			if (!g_config.enableGripButtonToGrap && !g_config.onePressGripButton && !g_config.enableGripButtonToLetGo) {
 				// Standard Sticky Grip on / off
 				for (int i = 0; i < 4; i++) {
 					if (i == 0) {
-						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], f4vr::getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					} else {
-						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], f4vr::getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
@@ -193,10 +193,10 @@ namespace frik {
 				// Sticky Grip with button to release
 				for (int i = 0; i < 4; i++) {
 					if (i == 1) {
-						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], f4vr::getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					} else {
-						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], f4vr::getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
@@ -204,10 +204,10 @@ namespace frik {
 				// Button held to Grip
 				for (int i = 0; i < 4; i++) {
 					if (i == 2) {
-						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], f4vr::getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					} else {
-						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], f4vr::getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
@@ -215,30 +215,29 @@ namespace frik {
 				// button press to toggle Grip on or off
 				for (int i = 0; i < 4; i++) {
 					if (i == 3) {
-						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], f4vr::getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 1;
 					} else {
-						UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+						UIElement = f4vr::getNode(meshName4[i], f4vr::getPlayerNodes()->primaryUIAttachNode);
 						UIElement->m_localTransform.scale = 0;
 					}
 				}
 			} else {
 				//Not exepected - show no mode lable until button pressed 
 				for (int i = 0; i < 4; i++) {
-					UIElement = f4vr::getNode(meshName4[i], _skelly->getPlayerNodes()->primaryUIAttachNode);
+					UIElement = f4vr::getNode(meshName4[i], f4vr::getPlayerNodes()->primaryUIAttachNode);
 					UIElement->m_localTransform.scale = 0;
 				}
 			}
-			auto rt = (f4vr::BSFlattenedBoneTree*)_skelly->getRoot();
 			NiPoint3 finger;
 			g_config.leftHandedMode
-				? finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos
-				: finger = rt->transforms[_skelly->getBoneInMap("LArm_Finger23")].world.pos;
+				? finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos
+				: finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos;
 			for (int i = 1; i <= 9; i++) {
 				BSFixedString TouchName = meshName2[i];
 				BSFixedString TransName = meshName[i];
-				auto TouchMesh = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName));
-				auto TransMesh = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName));
+				auto TouchMesh = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName));
+				auto TransMesh = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName));
 				if (TouchMesh && TransMesh) {
 					float distance = vec3Len(finger - TouchMesh->m_worldTransform.pos);
 					if (distance > 2.0) {
@@ -258,7 +257,7 @@ namespace frik {
 								_MCTouchbuttons[i] = false;
 							}
 							BSFixedString bname = "MCCONFIGMarker";
-							auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+							auto UIMarker = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 							if (UIMarker) {
 								UIMarker->m_parent->RemoveChild(UIMarker);
 							}
@@ -502,7 +501,7 @@ namespace frik {
 			bool GlanceButtonPressed = _PBTouchbuttons[10];
 			bool DampenScreenButtonPressed = _PBTouchbuttons[11];
 			static BSFixedString wandPipName("PipboyRoot");
-			NiAVObject* pbRoot = _skelly->getPlayerNodes()->SecondaryWandNode->GetObjectByName(&wandPipName);
+			NiAVObject* pbRoot = f4vr::getPlayerNodes()->SecondaryWandNode->GetObjectByName(&wandPipName);
 			if (!pbRoot) {
 				return;
 			}
@@ -528,16 +527,15 @@ namespace frik {
 			if (_isPBConfigModeActive) {
 				setConfigModeHandPose();
 
-				auto rt = (f4vr::BSFlattenedBoneTree*)_skelly->getRoot();
 				NiPoint3 finger;
 				g_config.leftHandedMode
-					? finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos
-					: finger = rt->transforms[_skelly->getBoneInMap("LArm_Finger23")].world.pos;
+					? finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos
+					: finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos;
 				for (int i = 1; i <= 11; i++) {
 					BSFixedString TouchName = meshName2[i];
 					BSFixedString TransName = meshName[i];
-					auto TouchMesh = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName));
-					auto TransMesh = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName));
+					auto TouchMesh = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName));
+					auto TransMesh = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName));
 					if (TouchMesh && TransMesh) {
 						float distance = vec3Len(finger - TouchMesh->m_worldTransform.pos);
 						if (distance > 2.0) {
@@ -559,7 +557,7 @@ namespace frik {
 									}
 								}
 								BSFixedString bname = "PBCONFIGMarker";
-								auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+								auto UIMarker = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 								if (UIMarker) {
 									UIMarker->m_parent->RemoveChild(UIMarker);
 								}
@@ -576,7 +574,7 @@ namespace frik {
 									if (i == 10) {
 										if (!g_config.pipBoyOpenWhenLookAt) {
 											BSFixedString bname = "PBGlanceMarker";
-											auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+											auto UIMarker = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 											if (!UIMarker) {
 												NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 												f4vr::NiCloneProcess proc;
@@ -588,7 +586,7 @@ namespace frik {
 											}
 										} else if (g_config.pipBoyOpenWhenLookAt) {
 											BSFixedString bname = "PBGlanceMarker";
-											auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+											auto UIMarker = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 											if (UIMarker) {
 												UIMarker->m_parent->RemoveChild(UIMarker);
 											}
@@ -597,7 +595,7 @@ namespace frik {
 									if (i == 11) {
 										if (!g_config.dampenPipboyScreen) {
 											BSFixedString bname = "PBDampenMarker";
-											auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+											auto UIMarker = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 											if (!UIMarker) {
 												NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 												f4vr::NiCloneProcess proc;
@@ -609,7 +607,7 @@ namespace frik {
 											}
 										} else if (g_config.dampenPipboyScreen) {
 											BSFixedString bname = "PBDampenMarker";
-											auto UIMarker = static_cast<NiNode*>(_skelly->getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
+											auto UIMarker = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 											if (UIMarker) {
 												UIMarker->m_parent->RemoveChild(UIMarker);
 											}
@@ -648,7 +646,7 @@ namespace frik {
 					g_config.toggleIsHoloPipboy();
 					turnPipBoyOff();
 					g_pipboy->replaceMeshes(true);
-					_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+					f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
 					turnPipBoyOn();
 				} else if (!ModelSwapButtonPressed) {
 					_isModelSwapButtonPressed = false;
@@ -726,8 +724,8 @@ namespace frik {
 		HUD->m_name = BSFixedString("PBCONFIGHUD");
 		// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
 		NiNode* UIATTACH = g_config.leftHandedMode
-			? _skelly->getPlayerNodes()->primaryUIAttachNode
-			: f4vr::getNode("world_primaryWand.nif", _skelly->getPlayerNodes()->primaryUIAttachNode);
+			? f4vr::getPlayerNodes()->primaryUIAttachNode
+			: f4vr::getNode("world_primaryWand.nif", f4vr::getPlayerNodes()->primaryUIAttachNode);
 		UIATTACH->AttachChild(HUD, true);
 		const char* MainHud[12] = {
 			"Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif",

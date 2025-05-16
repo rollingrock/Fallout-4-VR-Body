@@ -241,7 +241,7 @@ namespace SmoothMovementVR {
 						if (TESForm* equippedForm = (*g_player)->equipData->slots[0x03].item) {
 							if (equippedForm->formType == TESObjectARMO::kTypeID) {
 								if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
-									if (f4vr::hasKeyword(armor, f4vr::KeywordPowerArmor) || f4vr::hasKeyword(armor, f4vr::KeywordPowerArmorFrame)) {
+									if (f4vr::hasKeyword(armor, f4vr::KEYWORD_POWER_ARMOR) || f4vr::hasKeyword(armor, f4vr::KEYWORD_POWER_ARMOR_FRAME)) {
 										if (!inPowerArmorFrame.load()) {
 											inPowerArmorFrame.store(true);
 										}

@@ -3,6 +3,7 @@
 #include <array>
 #include <chrono>
 #include <ctime>
+#include <f4se/GameCamera.h>
 #include <f4se/GameRTTI.h>
 
 #include "Config.h"
@@ -23,64 +24,6 @@ using namespace common;
 using namespace f4vr;
 
 namespace frik {
-	float defaultCameraHeight = 120.4828f;
-	float PACameraHeightDiff = 20.7835f;
-
-	bool tempsticky = false;
-	std::map<std::string, int> boneTreeMap;
-	std::vector<std::string> boneTreeVec;
-	NiPoint3 _lasthmdtoNewHip;
-
-	void addFingerRelations(std::map<std::string, std::pair<std::string, std::string>>* map, std::string hand, std::string finger1, std::string finger2, std::string finger3) {
-		map->insert({finger1, {hand, finger2}});
-		map->insert({finger2, {finger1, finger3}});
-		map->insert({finger3, {finger2, std::string()}});
-	}
-
-	std::map<std::string, std::pair<std::string, std::string>> makeFingerRelations() {
-		std::map<std::string, std::pair<std::string, std::string>> map;
-		//left hand
-		addFingerRelations(&map, "LArm_Hand", "LArm_Finger11", "LArm_Finger12", "LArm_Finger13");
-		addFingerRelations(&map, "LArm_Hand", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23");
-		addFingerRelations(&map, "LArm_Hand", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33");
-		addFingerRelations(&map, "LArm_Hand", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43");
-		addFingerRelations(&map, "LArm_Hand", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53");
-		//right hand
-		addFingerRelations(&map, "RArm_Hand", "RArm_Finger11", "RArm_Finger12", "RArm_Finger13");
-		addFingerRelations(&map, "RArm_Hand", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23");
-		addFingerRelations(&map, "RArm_Hand", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33");
-		addFingerRelations(&map, "RArm_Hand", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43");
-		addFingerRelations(&map, "RArm_Hand", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53");
-		return map;
-	}
-
-	std::map<std::string, std::pair<std::string, std::string>> fingerRelations = makeFingerRelations();
-
-	void initBoneTreeMap(NiNode* root) {
-		const auto rt = static_cast<BSFlattenedBoneTree*>(root);
-
-		boneTreeMap.clear();
-		boneTreeVec.clear();
-
-		for (auto i = 0; i < rt->numTransforms; i++) {
-			Log::info("BoneTree Init -> Push %s into position %d", rt->transforms[i].name.c_str(), i);
-			boneTreeMap.insert({rt->transforms[i].name.c_str(), i});
-			boneTreeVec.emplace_back(rt->transforms[i].name.c_str());
-		}
-	}
-
-	// Native function that takes the 1st person skeleton weapon node and calculates the skeleton from upper-arm down based off the offsetNode
-	void update1StPersonArm(const PlayerCharacter* pc, NiNode** weapon, NiNode** offsetNode) {
-		using func_t = decltype(&update1StPersonArm);
-		RelocAddr<func_t> func(0xef6280);
-
-		return func(pc, weapon, offsetNode);
-	}
-
-	int Skeleton::getBoneInMap(const std::string& boneName) {
-		return boneTreeMap[boneName];
-	}
-
 	void Skeleton::setTime() {
 		_prevTime = _timer;
 		QueryPerformanceFrequency(&_freqCounter);
@@ -113,38 +56,20 @@ namespace frik {
 		_root->m_localTransform.pos.z = z;
 	}
 
-	NiNode* Skeleton::getWeaponNode() const {
-		return getNode("Weapon", (*g_player)->firstPersonSkeleton);
-	}
-
-	NiNode* Skeleton::getPrimaryWandNode() const {
-		return getNode("world_primaryWand.nif", _playerNodes->primaryUIAttachNode);
-	}
-
-	/**
-	 * The throwable weapon is attached to the melee node but only exists if the player is actively throwing the weapon.
-	 * @return found throwable node or nullptr if not
-	 */
-	NiNode* Skeleton::getThrowableWeaponNode() const {
-		const auto meleeNode = _playerNodes->primaryMeleeWeaponOffsetNode;
-		return meleeNode->m_children.m_emptyRunStart > 0
-			? meleeNode->m_children.m_data[0]->GetAsNiNode()
-			: nullptr;
-	}
-
 	/**
 	 * Get the world position of the offhand index fingertip .
 	 * Make small adjustment as the finger bone position is the center of the finger.
 	 * Would be nice to know how long the bone is instead of magic numbers, didn't find a way so far.
 	 */
-	NiPoint3 Skeleton::getOffhandIndexFingerTipWorldPosition() const {
+	NiPoint3 Skeleton::getOffhandIndexFingerTipWorldPosition() {
 		const auto offhandIndexFinger = g_config.leftHandedMode ? "RArm_Finger23" : "LArm_Finger23";
-		const auto boneTransform = reinterpret_cast<BSFlattenedBoneTree*>(_root)->transforms[getBoneInMap(offhandIndexFinger)];
-		const auto forward = boneTransform.world.rot * NiPoint3(1, 0, 0);
-		return boneTransform.world.pos + forward * (_inPowerArmor ? 3 : 1.8f);
+		const auto boneTransform = getBoneWorldTransform(offhandIndexFinger);
+		const auto forward = boneTransform.rot * NiPoint3(1, 0, 0);
+		return boneTransform.pos + forward * (_inPowerArmor ? 3 : 1.8f);
 	}
 
-	void Skeleton::setupHead(NiNode* headNode, bool hideHead) {
+	void Skeleton::setupHead() {
+		const auto headNode = getHeadNode();
 		if (!headNode) {
 			return;
 		}
@@ -180,6 +105,22 @@ namespace frik {
 			it->second = node->m_localTransform;
 		}
 		Log::info("inserted %s", name.c_str());
+	}
+
+	NiTransform Skeleton::getBoneWorldTransform(const std::string& boneName) {
+		return getFlattenedBoneTree()->transforms[_boneTreeMap[boneName]].world;
+	}
+
+	void Skeleton::initBoneTreeMap() {
+		_boneTreeMap.clear();
+		_boneTreeVec.clear();
+
+		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
+		for (auto i = 0; i < rt->numTransforms; i++) {
+			Log::verbose("BoneTree Init -> Push %s into position %d", rt->transforms[i].name.c_str(), i);
+			_boneTreeMap.insert({rt->transforms[i].name.c_str(), i});
+			_boneTreeVec.emplace_back(rt->transforms[i].name.c_str());
+		}
 	}
 
 	void Skeleton::initLocalDefaults() {
@@ -279,6 +220,10 @@ namespace frik {
 		insertSaveState("Head", node);
 	}
 
+	void Skeleton::restoreLocals() {
+		restoreLocals(_root->m_parent->GetAsNiNode());
+	}
+
 	void Skeleton::restoreLocals(NiNode* node) {
 		if (!node || !node->m_name) {
 			Log::info("cannot restore locals");
@@ -306,7 +251,7 @@ namespace frik {
 
 		_prevSpeed = 0.0;
 
-		_playerNodes = reinterpret_cast<PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
+		_playerNodes = getPlayerNodes();
 
 		if (!_playerNodes) {
 			Log::info("player nodes not set");
@@ -332,8 +277,6 @@ namespace frik {
 		_rightHandPrevFrame = _rightHand->m_worldTransform;
 		_leftHandPrevFrame = _leftHand->m_worldTransform;
 
-		NiNode* screenNode = _playerNodes->ScreenNode;
-
 		if (g_pipboy) {
 			g_pipboy->onSetNodes();
 		}
@@ -342,8 +285,8 @@ namespace frik {
 		_chest = getNode("Chest", _root);
 
 		Log::info("common node = %016I64X", _common);
-		Log::info("righthand node = %016I64X", _rightHand);
-		Log::info("lefthand node = %016I64X", _leftHand);
+		Log::info("rightHand node = %016I64X", _rightHand);
+		Log::info("leftHand node = %016I64X", _leftHand);
 
 		// Setup Arms
 		const std::vector<std::pair<BSFixedString, NiAVObject**>> armNodes = {
@@ -406,7 +349,7 @@ namespace frik {
 		saveStatesTree(_root->m_parent->GetAsNiNode());
 		Log::info("finished saving tree");
 
-		initBoneTreeMap(_root);
+		initBoneTreeMap();
 		return true;
 	}
 
@@ -420,9 +363,8 @@ namespace frik {
 	// below takes the two vectors from hmd to each hand and sums them to determine a center axis in which to see how much the hmd has rotated
 	// A secondary angle is also calculated which is 90 degrees on the z axis up to handle when the hands are approaching the z plane of the hmd
 	// this helps keep the body stable through a wide range of hand poses
-	// this still struggles with hands close to the face and with one hand low and one hand high.    Will need to take progs advice to add weights
-	// to these positions which i'll do at a later date.
-
+	// this still struggles with hands close to the face and with one hand low and one hand high.
+	// Will need to take prog advice to add weights to these positions which I'll do at a later date.
 	float Skeleton::getNeckYaw() const {
 		if (!_playerNodes) {
 			Log::info("player nodes not set in neck yaw");
@@ -532,7 +474,7 @@ namespace frik {
 		_root->m_localTransform.pos.z = z;
 		//_root->m_localTransform.pos *= 0.0f;
 		//_root->m_localTransform.pos.y = g_config.playerOffset_forward - 6.0f;
-		_root->m_localTransform.scale = g_config.playerHeight / defaultCameraHeight; // set scale based off specified user height
+		_root->m_localTransform.scale = g_config.playerHeight / DEFAULT_CAMERA_HEIGHT; // set scale based off specified user height
 	}
 
 	void Skeleton::setBodyPosture() {
@@ -682,7 +624,7 @@ namespace frik {
 					_delayFrame = 2;
 
 					if (_footStepping == 1) {
-						_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
+						_rightFootTarget = rFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5f);
 						_rightFootStart = rFoot->m_worldTransform.pos;
 						_leftFootTarget = lFoot->m_worldTransform.pos;
 						_leftFootStart = lFoot->m_worldTransform.pos;
@@ -691,7 +633,7 @@ namespace frik {
 					} else {
 						_rightFootTarget = rFoot->m_worldTransform.pos;
 						_rightFootStart = rFoot->m_worldTransform.pos;
-						_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5);
+						_leftFootTarget = lFoot->m_worldTransform.pos + _stepDir * (curSpeed * stepTime * 1.5f);
 						_leftFootStart = lFoot->m_worldTransform.pos;
 						_leftFootPos = _leftFootStart;
 						_rightFootPos = _rightFootStart;
@@ -831,7 +773,7 @@ namespace frik {
 		}
 	}
 
-	void Skeleton::setLegs() {
+	void Skeleton::setLegs() const {
 		Matrix44 rotatedM;
 
 		NiNode* lHip = getNode("LLeg_Thigh", _root);
@@ -963,26 +905,26 @@ namespace frik {
 		transform.world.rot = rot.multiply43Left(parentTransform.world.rot);
 	}
 
-	void Skeleton::fixPAArmor() const {
+	void Skeleton::fixPAArmor() {
 		static bool oneTime = false;
 
 		if (_inPowerArmor) {
 			if (!oneTime) {
 				oneTime = true;
-				rotateLeg(boneTreeMap["LLeg_Calf_Armor1"], 90.0f);
-				rotateLeg(boneTreeMap["LLeg_Calf_Armor2"], 90.0f);
-				rotateLeg(boneTreeMap["LLeg_Thigh_Armor"], 90.0f);
-				rotateLeg(boneTreeMap["LLeg_Thigh_Armor1"], 90.0f);
-				rotateLeg(boneTreeMap["LLeg_Thigh_Armor2"], 90.0f);
-				rotateLeg(boneTreeMap["RLeg_Calf_Armor1"], 90.0f);
-				rotateLeg(boneTreeMap["RLeg_Calf_Armor2"], 90.0f);
-				rotateLeg(boneTreeMap["RLeg_Thigh_Armor"], 90.0f);
-				rotateLeg(boneTreeMap["RLeg_Thigh_Armor1"], 90.0f);
-				rotateLeg(boneTreeMap["RLeg_Thigh_Armor2"], 90.0f);
-				rotateLeg(boneTreeMap["LArm_UpperArm_Armor"], 90.0f);
-				rotateLeg(boneTreeMap["RArm_UpperArm_Armor"], 90.0f);
-				rotateLeg(boneTreeMap["LArm_ForeArm_Armor"], 90.0f);
-				rotateLeg(boneTreeMap["RArm_ForeArm_Armor"], 90.0f);
+				rotateLeg(_boneTreeMap["LLeg_Calf_Armor1"], 90.0f);
+				rotateLeg(_boneTreeMap["LLeg_Calf_Armor2"], 90.0f);
+				rotateLeg(_boneTreeMap["LLeg_Thigh_Armor"], 90.0f);
+				rotateLeg(_boneTreeMap["LLeg_Thigh_Armor1"], 90.0f);
+				rotateLeg(_boneTreeMap["LLeg_Thigh_Armor2"], 90.0f);
+				rotateLeg(_boneTreeMap["RLeg_Calf_Armor1"], 90.0f);
+				rotateLeg(_boneTreeMap["RLeg_Calf_Armor2"], 90.0f);
+				rotateLeg(_boneTreeMap["RLeg_Thigh_Armor"], 90.0f);
+				rotateLeg(_boneTreeMap["RLeg_Thigh_Armor1"], 90.0f);
+				rotateLeg(_boneTreeMap["RLeg_Thigh_Armor2"], 90.0f);
+				rotateLeg(_boneTreeMap["LArm_UpperArm_Armor"], 90.0f);
+				rotateLeg(_boneTreeMap["RArm_UpperArm_Armor"], 90.0f);
+				rotateLeg(_boneTreeMap["LArm_ForeArm_Armor"], 90.0f);
+				rotateLeg(_boneTreeMap["RArm_ForeArm_Armor"], 90.0f);
 			}
 		} else {
 			oneTime = false;
@@ -991,12 +933,12 @@ namespace frik {
 
 	void Skeleton::setBodyLen() {
 		_torsoLen = vec3Len(getNode("Camera", _root)->m_worldTransform.pos - getNode("COM", _root)->m_worldTransform.pos);
-		_torsoLen *= g_config.playerHeight / defaultCameraHeight;
+		_torsoLen *= g_config.playerHeight / DEFAULT_CAMERA_HEIGHT;
 
 		_legLen = vec3Len(getNode("LLeg_Thigh", _root)->m_worldTransform.pos - getNode("Pelvis", _root)->m_worldTransform.pos);
 		_legLen += vec3Len(getNode("LLeg_Calf", _root)->m_worldTransform.pos - getNode("LLeg_Thigh", _root)->m_worldTransform.pos);
 		_legLen += vec3Len(getNode("LLeg_Foot", _root)->m_worldTransform.pos - getNode("LLeg_Calf", _root)->m_worldTransform.pos);
-		_legLen *= g_config.playerHeight / defaultCameraHeight;
+		_legLen *= g_config.playerHeight / DEFAULT_CAMERA_HEIGHT;
 	}
 
 	void Skeleton::hideWeapon() const {
@@ -1094,21 +1036,6 @@ namespace frik {
 
 	ArmNodes Skeleton::getArm(const bool isLeft) const {
 		return isLeft ? _leftArm : _rightArm;
-	}
-
-	// Thanks Shizof and SmoothMovementVR for below code
-	bool hasKeyword(const TESObjectARMO* armor, const UInt32 keywordFormId) {
-		if (!armor) {
-			return false;
-		}
-
-		for (UInt32 i = 0; i < armor->keywordForm.numKeywords; ++i) {
-			if (armor->keywordForm.keywords[i] && armor->keywordForm.keywords[i]->formID == keywordFormId) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	void Skeleton::setWandsVisibility(bool show, const WandMode mode) const {
@@ -1257,13 +1184,6 @@ namespace frik {
 		return false;
 	}
 
-	void Skeleton::set1StPersonArm(NiNode* weapon, NiNode* offsetNode) {
-		NiNode** wp = &weapon;
-		NiNode** op = &offsetNode;
-
-		update1StPersonArm(*g_player, wp, op);
-	}
-
 	void Skeleton::showHidePAHud() const {
 		if (const auto hud = getNode("PowerArmorHelmetRoot", _playerNodes->roomnode)) {
 			hud->m_localTransform.scale = g_config.showPAHUD ? 1.0f : 0.0f;
@@ -1385,7 +1305,7 @@ namespace frik {
 		dampenHand(offsetNode, isLeft);
 
 		weaponNode->IncRef();
-		set1StPersonArm(weaponNode, offsetNode);
+		Update1StPersonArm(*g_player, &weaponNode, &offsetNode);
 
 		NiPoint3 handPos = isLeft ? _leftHand->m_worldTransform.pos : _rightHand->m_worldTransform.pos;
 		NiMatrix43 handRot = isLeft ? _leftHand->m_worldTransform.rot : _rightHand->m_worldTransform.rot;
@@ -1548,7 +1468,7 @@ namespace frik {
 		// In cases where this is impossible (hand too close to shoulder), then set forearmLen = upperLen so there is always a solution
 		float wristAngle = acosf((forearmLen * forearmLen + hsLen * hsLen - upperLen * upperLen) / (2 * forearmLen * hsLen));
 		if (isnan(wristAngle) || isinf(wristAngle)) {
-			forearmLen = upperLen = (originalUpperLen + originalForearmLen) / 2.0 * adjustedArmLength;
+			forearmLen = upperLen = (originalUpperLen + originalForearmLen) / 2.0f * adjustedArmLength;
 			wristAngle = acosf((forearmLen * forearmLen + hsLen * hsLen - upperLen * upperLen) / (2 * forearmLen * hsLen));
 		}
 
@@ -1584,7 +1504,7 @@ namespace frik {
 		NiPoint3 upperSide = arm.upper->m_worldTransform.rot * NiPoint3(0, 1, 0);
 		NiPoint3 uloc = arm.shoulder->m_worldTransform.rot.Transpose() * upperSide;
 		uloc.x = 0;
-		float upperAngle = acosf(vec3Dot(vec3Norm(uLocalTwist), vec3Norm(uloc))) * (uLocalTwist.z > 0 ? 1 : -1);
+		float upperAngle = acosf(vec3Dot(vec3Norm(uLocalTwist), vec3Norm(uloc))) * (uLocalTwist.z > 0 ? 1.f : -1.f);
 
 		Matrix44 twist;
 		twist.setEulerAngles(-upperAngle, 0, 0);
@@ -1608,11 +1528,11 @@ namespace frik {
 		rotatedM.makeTransformMatrix(arm.forearm1->m_localTransform.rot, arm.forearm1->m_localTransform.pos);
 		Fwr = rotatedM.multiply43Left(Uwr);
 
-		NiMatrix43 Fwr2, Fwr3;
+		NiMatrix43 Fwr3;
 
 		if (!_inPowerArmor && arm.forearm2 != nullptr && arm.forearm3 != nullptr) {
 			rotatedM.makeTransformMatrix(arm.forearm2->m_localTransform.rot, arm.forearm2->m_localTransform.pos);
-			Fwr2 = rotatedM.multiply43Left(Fwr);
+			auto Fwr2 = rotatedM.multiply43Left(Fwr);
 			rotatedM.makeTransformMatrix(arm.forearm3->m_localTransform.rot, arm.forearm3->m_localTransform.pos);
 			Fwr3 = rotatedM.multiply43Left(Fwr2);
 
@@ -1627,16 +1547,6 @@ namespace frik {
 			float fcos = vec3Dot(vec3Norm(wLocalDir), vec3Norm(floc));
 			float fsin = vec3Det(vec3Norm(wLocalDir), vec3Norm(floc), NiPoint3(-1, 0, 0));
 			float forearmAngle = -1 * negLeft * atan2f(fsin, fcos);
-
-			// old way of doing this
-			//NiPoint3 cross = vec3_cross(vec3_norm(floc), vec3_norm(wLocalDir));
-
-			//float forearmAngle = acosf(fcos) - degrees_to_rads(90.0f);
-
-			//if (cross.x < 0) {
-			//	float d = forearmAngle >= 0 ? degrees_to_rads(180.0f) : -1 * degrees_to_rads(180.0f);
-			//	forearmAngle = d - forearmAngle;
-			//}
 
 			twist.setEulerAngles(negLeft * forearmAngle / 2, 0, 0);
 			arm.forearm2->m_localTransform.rot = twist.multiply43Left(arm.forearm2->m_localTransform.rot);
@@ -1671,7 +1581,7 @@ namespace frik {
 		arm.hand->m_localTransform.pos *= forearmRatio;
 	}
 
-	void Skeleton::showOnlyArms() {
+	void Skeleton::showOnlyArms() const {
 		const NiPoint3 rwp = _rightArm.shoulder->m_worldTransform.pos;
 		const NiPoint3 lwp = _leftArm.shoulder->m_worldTransform.pos;
 		_root->m_localTransform.scale = 0.00001f;
@@ -1683,17 +1593,17 @@ namespace frik {
 		_rightArm.shoulder->m_localTransform.scale = 100000;
 		_leftArm.shoulder->m_localTransform.scale = 100000;
 
-		updateTransforms(static_cast<NiNode*>(_rightArm.shoulder));
-		updateTransforms(static_cast<NiNode*>(_leftArm.shoulder));
+		updateTransforms(reinterpret_cast<NiNode*>(_rightArm.shoulder));
+		updateTransforms(reinterpret_cast<NiNode*>(_leftArm.shoulder));
 
 		_rightArm.shoulder->m_worldTransform.pos = rwp;
 		_leftArm.shoulder->m_worldTransform.pos = lwp;
 
-		updateDown(static_cast<NiNode*>(_rightArm.shoulder), false);
-		updateDown(static_cast<NiNode*>(_leftArm.shoulder), false);
+		updateDown(reinterpret_cast<NiNode*>(_rightArm.shoulder), false);
+		updateDown(reinterpret_cast<NiNode*>(_leftArm.shoulder), false);
 	}
 
-	void Skeleton::hideHands() {
+	void Skeleton::hideHands() const {
 		const NiPoint3 rwp = _rightArm.shoulder->m_worldTransform.pos;
 		_root->m_localTransform.scale = 0.00001f;
 		updateTransforms(_root);
@@ -1735,7 +1645,7 @@ namespace frik {
 			if (_handBonesButton[bone] == vr::k_EButton_Grip) {
 				Quaternion qo;
 				qo.fromRot(handClosed[bone].rot);
-				qo.slerp(1.0 - gripProx, qt);
+				qo.slerp(1.0f - gripProx, qt);
 				qt = qo;
 			}
 		}
@@ -1746,11 +1656,10 @@ namespace frik {
 		_handBones[bone].rot = qc.getRot().make43();
 	}
 
+	// TODO: this may be the place to fix left-handed fingers on weapon
 	void Skeleton::copy1StPerson(const std::string& bone) {
-		const auto fpTree = static_cast<BSFlattenedBoneTree*>((*g_player)->firstPersonSkeleton->m_children.m_data[0]->GetAsNiNode());
-
+		const auto fpTree = getFirstPersonBoneTree();
 		const int pos = fpTree->GetBoneIndex(bone);
-
 		if (pos >= 0) {
 			if (fpTree->transforms[pos].refNode) {
 				_handBones[bone] = fpTree->transforms[pos].refNode->m_localTransform;
@@ -1760,7 +1669,7 @@ namespace frik {
 		}
 	}
 
-	void Skeleton::fixBoneTree() const {
+	void Skeleton::fixBoneTree() {
 		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
 
 		if (rt->numTransforms > 145) {
@@ -1769,14 +1678,14 @@ namespace frik {
 
 		for (auto pos = 0; pos < rt->numTransforms; ++pos) {
 			const auto& name = rt->transforms[pos].name;
-			auto found = fingerRelations.find(name.c_str());
-			if (found != fingerRelations.end()) {
+			auto found = _fingerRelations.find(name.c_str());
+			if (found != _fingerRelations.end()) {
 				const auto& relation = found->second;
-				const int parentPos = boneTreeMap[relation.first];
+				const int parentPos = _boneTreeMap[relation.first];
 				rt->transforms[pos].parPos = parentPos;
-				rt->transforms[pos].childPos = relation.second.empty() ? -1 : boneTreeMap[relation.second];
+				rt->transforms[pos].childPos = relation.second.empty() ? -1 : _boneTreeMap[relation.second];
 
-				NiNode* meshNode = getNode(boneTreeVec[pos].c_str(), _root);
+				NiNode* meshNode = getNode(_boneTreeVec[pos].c_str(), _root);
 				rt->transforms[pos].refNode = nullptr;
 				if (meshNode && meshNode->m_parent) {
 					meshNode->m_parent->RemoveChild(meshNode);
@@ -1786,21 +1695,13 @@ namespace frik {
 	}
 
 	void Skeleton::setHandPose() {
-		const auto rt = (BSFlattenedBoneTree*)_root;
-		bool isLeft = false;
-
-		//	fixBoneTree();
-
-		//if (rt->numTransforms > 145) {
-		//	return;
-		//}
 		const bool isWeaponVisible = isNodeVisible(getWeaponNode());
-
+		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
 		for (auto pos = 0; pos < rt->numTransforms; pos++) {
-			std::string name = boneTreeVec[pos];
-			auto found = fingerRelations.find(name.c_str());
-			if (found != fingerRelations.end()) {
-				isLeft = name[0] == 'L';
+			std::string name = _boneTreeVec[pos];
+			auto found = _fingerRelations.find(name);
+			if (found != _fingerRelations.end()) {
+				const bool isLeft = name[0] == 'L';
 				const uint64_t reg = isLeft
 					? VRControllers.getControllerState_DEPRECATED(TrackerType::Left).ulButtonTouched
 					: VRControllers.getControllerState_DEPRECATED(TrackerType::Right).ulButtonTouched;
@@ -1849,7 +1750,7 @@ namespace frik {
 		const NiNode* body = _root->m_parent->GetAsNiNode();
 
 		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
-		_root->m_localTransform.pos.y -= 50.0;
+		_root->m_localTransform.pos.y -= 50.0f;
 	}
 
 	void Skeleton::dampenHand(NiNode* node, const bool isLeft) {
@@ -1885,5 +1786,32 @@ namespace frik {
 		}
 
 		updateDown(node, false);
+	}
+
+	std::map<std::string, std::pair<std::string, std::string>> Skeleton::makeFingerRelations() {
+		std::map<std::string, std::pair<std::string, std::string>> map;
+
+		auto addFingerRelations = [&](const std::string& hand, const std::string& finger1, const std::string& finger2,
+		                              const std::string& finger3) {
+			map.insert({finger1, {hand, finger2}});
+			map.insert({finger2, {finger1, finger3}});
+			map.insert({finger3, {finger2, std::string()}});
+		};
+
+		//left hand
+		addFingerRelations("LArm_Hand", "LArm_Finger11", "LArm_Finger12", "LArm_Finger13");
+		addFingerRelations("LArm_Hand", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23");
+		addFingerRelations("LArm_Hand", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33");
+		addFingerRelations("LArm_Hand", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43");
+		addFingerRelations("LArm_Hand", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53");
+
+		//right hand
+		addFingerRelations("RArm_Hand", "RArm_Finger11", "RArm_Finger12", "RArm_Finger13");
+		addFingerRelations("RArm_Hand", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23");
+		addFingerRelations("RArm_Hand", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33");
+		addFingerRelations("RArm_Hand", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43");
+		addFingerRelations("RArm_Hand", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53");
+
+		return map;
 	}
 }

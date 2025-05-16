@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <thread>
+#include <f4se/GameCamera.h>
 
 #include "Config.h"
 #include "ConfigurationMode.h"
@@ -28,7 +29,7 @@ namespace frik {
 		_isOperatingPipboy = true;
 		_stickybpip = false;
 		// err... without this line the pipboy screen is not visible...
-		_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+		f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
 		turnPipBoyOn();
 	}
 
@@ -41,7 +42,7 @@ namespace frik {
 		if (!_skelly) {
 			return;
 		}
-		if (NiNode* screenNode = _skelly->getPlayerNodes()->ScreenNode) {
+		if (NiNode* screenNode = f4vr::getPlayerNodes()->ScreenNode) {
 			if (const NiAVObject* screen = screenNode->GetObjectByName(&BSFixedString("Screen:0"))) {
 				_pipboyScreenPrevFrame = screen->m_worldTransform;
 			}
@@ -89,7 +90,7 @@ namespace frik {
 	 * Handle replacing of Pipboy meshes on the arm with either screen or holo emitter.
 	 */
 	void Pipboy::replaceMeshes(const std::string& itemHide, const std::string& itemShow) {
-		const auto pn = _skelly->getPlayerNodes();
+		const auto pn = f4vr::getPlayerNodes();
 		const NiNode* ui = pn->primaryUIAttachNode;
 		NiNode* wand = f4vr::get1StChildNode("world_primaryWand.nif", ui);
 		NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
@@ -152,14 +153,12 @@ namespace frik {
 			return;
 		}
 
-		const auto rt = (f4vr::BSFlattenedBoneTree*)_skelly->getRoot();
-
 		NiPoint3 finger;
-		const NiAVObject* pipboy = nullptr;
-		NiAVObject* pipboyTrans = nullptr;
+		const NiAVObject* pipboy;
+		NiAVObject* pipboyTrans;
 		g_config.leftHandedPipBoy
-			? finger = rt->transforms[_skelly->getBoneInMap("LArm_Finger23")].world.pos
-			: finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos;
+			? finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos
+			: finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos;
 		g_config.leftHandedPipBoy
 			? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder->GetAsNiNode())
 			: pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder->GetAsNiNode());
@@ -187,7 +186,7 @@ namespace frik {
 					_weaponStateDetected = false;
 				}
 				disablePipboyHandPose();
-				_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
+				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				Log::info("Disabling Pipboy with button");
 				_stickyoffpip = true;
 			}
@@ -210,7 +209,7 @@ namespace frik {
 			if (_controlSleepStickyT && _stickybpip && isLookingAtPipBoy()) {
 				// if bool is still set to true on control release we know it was a short press.
 				_pipboyStatus = true;
-				_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
 				if (!_weaponStateDetected) {
 					_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 					if (_isWeaponinHand) {
@@ -237,7 +236,7 @@ namespace frik {
 			if (_pipboyStatus && timeElapsed > g_config.pipBoyOffDelay && !g_configurationMode->isPipBoyConfigModeActive()) {
 				_pipboyStatus = false;
 				turnPipBoyOff();
-				_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
+				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
 					g_boneSpheres->drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					_weaponStateDetected = false;
@@ -248,7 +247,7 @@ namespace frik {
 			} else if (g_config.pipBoyAllowMovementNotLooking && _pipboyStatus && (axis_state.x != 0 || axis_state.y != 0) && !g_configurationMode->isPipBoyConfigModeActive()) {
 				turnPipBoyOff();
 				_pipboyStatus = false;
-				_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
+				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
 					g_boneSpheres->drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					_weaponStateDetected = false;
@@ -268,7 +267,7 @@ namespace frik {
 				const auto timeElapsed = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _startedLookingAtPip;
 				if (timeElapsed > g_config.pipBoyOnDelay) {
 					_pipboyStatus = true;
-					_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+					f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
 					if (!_weaponStateDetected) {
 						_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 						if (_isWeaponinHand) {
@@ -320,10 +319,10 @@ namespace frik {
 						_pipboyStatus = false;
 						turnPipBoyOff();
 						g_configurationMode->exitPBConfig();
-						_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
+						f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 					} else {
 						_pipboyStatus = true;
-						_skelly->getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
+						f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
 						turnPipBoyOn();
 					}
 				}
@@ -442,7 +441,6 @@ namespace frik {
 			static BSFixedString orbNames[7] = {
 				"TabChangeUpOrb", "TabChangeDownOrb", "PageChangeUpOrb", "PageChangeDownOrb", "ScrollItemsUpOrb", "ScrollItemsDownOrb", "SelectItemsOrb"
 			};
-			auto rt = (f4vr::BSFlattenedBoneTree*)_skelly->getRoot();
 			bool helmetHeadLamp = _skelly->armorHasHeadLamp();
 			bool lightOn = f4vr::isPipboyLightOn(*g_player);
 			bool radioOn = f4vr::isPlayerRadioEnabled();
@@ -488,13 +486,11 @@ namespace frik {
 				return;
 			}
 			if (isLookingAtPipBoy()) {
-				auto rt = (f4vr::BSFlattenedBoneTree*)_skelly->getRoot();
 				NiPoint3 finger;
 				NiAVObject* pipboy = nullptr;
-				NiAVObject* pipboyTrans = nullptr;
 				g_config.leftHandedPipBoy
-					? finger = rt->transforms[_skelly->getBoneInMap("LArm_Finger23")].world.pos
-					: finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos;
+					? finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos
+					: finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos;
 				g_config.leftHandedPipBoy
 					? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder->GetAsNiNode())
 					: pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder->GetAsNiNode());
@@ -567,7 +563,7 @@ namespace frik {
 					return;
 				}
 				const bool useRightHand = g_config.leftHandedPipBoy || g_config.isPipBoyTorchRightArmMode;
-				const auto hand = rt->transforms[_skelly->getBoneInMap(useRightHand ? "RArm_Hand" : "LArm_Hand")].world.pos;
+				const auto hand = _skelly->getBoneWorldTransform(useRightHand ? "RArm_Hand" : "LArm_Hand").pos;
 				float distance = vec3Len(hand - head->m_worldTransform.pos);
 				if (distance < 15.0) {
 					uint64_t _PipboyHand = f4vr::VRControllers.getControllerState_DEPRECATED(useRightHand ? f4vr::TrackerType::Right : f4vr::TrackerType::Left).
@@ -584,17 +580,17 @@ namespace frik {
 							: f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
 						NiNode* lght = g_config.isPipBoyTorchOnArm
 							? f4vr::get1StChildNode("HeadLightParent", LGHT_ATTACH)
-							: _skelly->getPlayerNodes()->HeadLightParentNode->GetAsNiNode();
+							: f4vr::getPlayerNodes()->HeadLightParentNode->GetAsNiNode();
 						if (lght) {
-							BSFixedString parentnode = g_config.isPipBoyTorchOnArm ? lght->m_parent->m_name : _skelly->getPlayerNodes()->HeadLightParentNode->m_parent->m_name;
+							BSFixedString parentnode = g_config.isPipBoyTorchOnArm ? lght->m_parent->m_name : f4vr::getPlayerNodes()->HeadLightParentNode->m_parent->m_name;
 							Matrix44 lightRot;
 							int rotz = g_config.isPipBoyTorchOnArm ? -90 : 90;
 							lightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(rotz));
 							lght->m_localTransform.rot = lightRot.multiply43Right(lght->m_localTransform.rot);
 							int posY = g_config.isPipBoyTorchOnArm ? 0 : 4;
 							lght->m_localTransform.pos.y = posY;
-							g_config.isPipBoyTorchOnArm ? lght->m_parent->RemoveChild(lght) : _skelly->getPlayerNodes()->HeadLightParentNode->m_parent->RemoveChild(lght);
-							g_config.isPipBoyTorchOnArm ? _skelly->getPlayerNodes()->HmdNode->AttachChild(lght, true) : LGHT_ATTACH->AttachChild(lght, true);
+							g_config.isPipBoyTorchOnArm ? lght->m_parent->RemoveChild(lght) : f4vr::getPlayerNodes()->HeadLightParentNode->m_parent->RemoveChild(lght);
+							g_config.isPipBoyTorchOnArm ? f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true) : LGHT_ATTACH->AttachChild(lght, true);
 							g_config.togglePipBoyTorchOnArm();
 						}
 					}
@@ -613,10 +609,10 @@ namespace frik {
 					: f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder->GetAsNiNode());
 				if (LGHT_ATTACH) {
 					if (lightOn && !helmetHeadLamp) {
-						NiNode* lght = _skelly->getPlayerNodes()->HeadLightParentNode->GetAsNiNode();
-						BSFixedString parentnode = _skelly->getPlayerNodes()->HeadLightParentNode->m_parent->m_name;
+						NiNode* lght = f4vr::getPlayerNodes()->HeadLightParentNode->GetAsNiNode();
+						BSFixedString parentnode = f4vr::getPlayerNodes()->HeadLightParentNode->m_parent->m_name;
 						if (parentnode == "HMDNode") {
-							_skelly->getPlayerNodes()->HeadLightParentNode->m_parent->RemoveChild(lght);
+							f4vr::getPlayerNodes()->HeadLightParentNode->m_parent->RemoveChild(lght);
 							Matrix44 LightRot;
 							LightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(90));
 							lght->m_localTransform.rot = LightRot.multiply43Right(lght->m_localTransform.rot);
@@ -634,7 +630,7 @@ namespace frik {
 								lght->m_localTransform.rot = LightRot.multiply43Right(lght->m_localTransform.rot);
 								lght->m_localTransform.pos.y = 0;
 								lght->m_parent->RemoveChild(lght);
-								_skelly->getPlayerNodes()->HmdNode->AttachChild(lght, true);
+								f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true);
 							}
 						}
 					}
@@ -698,8 +694,8 @@ namespace frik {
 						NiAVObject* pipboyTrans = nullptr;
 						// Virtual Controls Code Starts here: 
 						g_config.leftHandedPipBoy
-							? finger = rt->transforms[_skelly->getBoneInMap("LArm_Finger23")].world.pos
-							: finger = rt->transforms[_skelly->getBoneInMap("RArm_Finger23")].world.pos;
+							? finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos
+							: finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos;
 						for (int i = 0; i < 7; i++) {
 							NiAVObject* bone = g_config.leftHandedPipBoy
 								? _skelly->getRightArm().forearm3->GetObjectByName(&boneNames[i])
@@ -959,10 +955,10 @@ namespace frik {
 			return;
 		}
 		if (!_pipboyStatus) {
-			_pipboyScreenPrevFrame = _skelly->getPlayerNodes()->ScreenNode->m_worldTransform;
+			_pipboyScreenPrevFrame = f4vr::getPlayerNodes()->ScreenNode->m_worldTransform;
 			return;
 		}
-		NiNode* pipboyScreen = _skelly->getPlayerNodes()->ScreenNode;
+		NiNode* pipboyScreen = f4vr::getPlayerNodes()->ScreenNode;
 
 		if (pipboyScreen && _pipboyStatus) {
 			Quaternion rq, rt;
@@ -983,7 +979,7 @@ namespace frik {
 
 	bool Pipboy::isLookingAtPipBoy() const {
 		const BSFixedString wandPipName("PipboyRoot_NIF_ONLY");
-		NiAVObject* pipboy = _skelly->getPlayerNodes()->SecondaryWandNode->GetObjectByName(&wandPipName);
+		NiAVObject* pipboy = f4vr::getPlayerNodes()->SecondaryWandNode->GetObjectByName(&wandPipName);
 
 		if (pipboy == nullptr) {
 			return false;

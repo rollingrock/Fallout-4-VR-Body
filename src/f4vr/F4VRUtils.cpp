@@ -4,6 +4,7 @@
 #include <f4se/GameRTTI.h>
 #include <f4se/GameSettings.h>
 
+#include "PlayerNodes.h"
 #include "../Config.h"
 #include "../common/Matrix.h"
 #include "f4se/PapyrusEvents.h"
@@ -90,7 +91,7 @@ namespace f4vr {
 				if (const auto equippedForm = (*g_player)->equipData->slots[0x03].item) {
 					if (equippedForm->formType == TESObjectARMO::kTypeID) {
 						if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
-							return hasKeyword(armor, KeywordPowerArmor) || hasKeyword(armor, KeywordPowerArmorFrame);
+							return hasKeyword(armor, KEYWORD_POWER_ARMOR) || hasKeyword(armor, KEYWORD_POWER_ARMOR_FRAME);
 						}
 					}
 				}
@@ -242,6 +243,11 @@ namespace f4vr {
 				toggleVis(nextNode, hide, true);
 			}
 		}
+	}
+
+	// TODO: this feels an overkill on how much it is called
+	void updateDownFromRoot() {
+		updateDown(getRootNode(), true);
 	}
 
 	void updateDown(NiNode* nde, const bool updateSelf) {

@@ -25,8 +25,8 @@ namespace frik {
 	}
 
 	void positionDiff(const Skeleton* skelly) {
-		const NiPoint3 firstpos = skelly->getPlayerNodes()->HmdNode->m_worldTransform.pos;
-		const NiPoint3 skellypos = skelly->getRoot()->m_worldTransform.pos;
+		const NiPoint3 firstpos = f4vr::getPlayerNodes()->HmdNode->m_worldTransform.pos;
+		const NiPoint3 skellypos = f4vr::getRootNode()->m_worldTransform.pos;
 
 		Log::info("difference = %f %f %f", firstpos.x - skellypos.x, firstpos.y - skellypos.y, firstpos.z - skellypos.z);
 	}
@@ -36,7 +36,7 @@ namespace frik {
 		Log::info("--- Player Root Node ---");
 		printNodes(node);
 		Log::info("--- Global UI node ---");
-		printNodes(skelly->getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent);
+		printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent);
 	}
 
 	void printNodes(const NiNode* nde) {
@@ -160,7 +160,7 @@ namespace frik {
 
 		//Offsets::ForceGamePause(*g_menuControls);
 
-		auto rn = static_cast<BSFadeNode*>(skelly->getRoot()->m_parent);
+		auto rn = static_cast<BSFadeNode*>(f4vr::getRootNode()->m_parent);
 		//Log::info("newrun");
 
 		//for (int i = 0; i < 44; i++) {
@@ -229,8 +229,6 @@ namespace frik {
 		//	tHashSet<ObjectModMiscPair, BGSMod::Attachment::Mod*> *map = g_modAttachmentMap.GetPtr();
 		//	map->Dump();
 		//}
-
-		auto rt = (f4vr::BSFlattenedBoneTree*)skelly->getRoot();
 
 		//for (auto i = 0; i < rt->numTransforms; i++) {
 

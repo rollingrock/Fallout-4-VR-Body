@@ -1,7 +1,5 @@
 #include "F4VRBody.h"
 
-#include <f4se/GameRTTI.h>
-
 #include "Config.h"
 #include "ConfigurationMode.h"
 #include "CullGeometryHandler.h"
@@ -98,20 +96,20 @@ namespace frik {
 
 		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 			Log::info("set root");
-			const auto node = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
-			if (!node) {
+			const auto rootNode = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
+			if (!rootNode) {
 				Log::info("root node not found");
 				return false;
 			}
 
 			initHandPoses(inPowerArmor);
 
-			_skelly = new Skeleton(node);
-			Log::info("skeleton = %016I64X", _skelly->getRoot());
+			_skelly = new Skeleton(rootNode);
+			Log::info("skeleton = %016I64X", rootNode);
 			if (!_skelly->setNodes()) {
 				return false;
 			}
-			//replaceMeshes(_skelly->getPlayerNodes());
+			//replaceMeshes(f4vr::getPlayerNodes());
 			//_skelly->setDirection();
 
 			// init global handlers
@@ -227,23 +225,6 @@ namespace frik {
 			return;
 		}
 
-		if (_skelly->getRoot() != static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode())) {
-			const auto node = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
-			if (!node) {
-				return;
-			}
-
-			_skelly->updateRoot(node);
-			_skelly->setNodes();
-			_skelly->setDirection();
-			g_pipboy->swapPipboy();
-			_skelly->setBodyLen();
-			// TODO: check if this is needed as the same call is done 10 lines below
-			g_pipboy->replaceMeshes(false);
-			Log::info("initialized for real");
-			return;
-		}
-
 		// do stuff now
 		g_config.leftHandedMode = *f4vr::iniLeftHandedMode;
 		_skelly->setLeftHandedSticky();
@@ -268,32 +249,24 @@ namespace frik {
 		Log::debug("Hide Wands");
 		_skelly->hideWands();
 
-		//	fixSkeleton();
-
-		const NiPoint3 position = (*g_player)->pos;
-		constexpr float groundHeight = 0.0f;
-
-		uint64_t ret = f4vr::TESObjectCell_GetLandHeight((*g_player)->parentCell, &position, &groundHeight);
-
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
 		Log::debug("restore locals of skeleton");
-		_skelly->restoreLocals(_skelly->getRoot()->m_parent->GetAsNiNode());
-		f4vr::updateDown(_skelly->getRoot(), true);
+		_skelly->restoreLocals();
+		f4vr::updateDownFromRoot();
 
 		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
 		Log::debug("Setup Head");
-		NiNode* headNode = f4vr::getNode("Head", _skelly->getRoot());
-		frik::Skeleton::setupHead(headNode, g_config.hideHead);
+		Skeleton::setupHead();
 
 		//// set up the body underneath the headset in a proper scale and orientation
 		Log::debug("Set body under HMD");
 		_skelly->setUnderHMD();
-		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
+		f4vr::updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
 		// Now Set up body Posture and hook up the legs
 		Log::debug("Set body posture");
 		_skelly->setBodyPosture();
-		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
+		f4vr::updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
 		Log::debug("Set Knee Posture");
 		_skelly->setKneePos();
@@ -308,7 +281,7 @@ namespace frik {
 		_skelly->setSingleLeg(true);
 
 		// Do another update before setting arms
-		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
+		f4vr::updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
 		// do arm IK - Right then Left
 		Log::debug("Set Arms");
@@ -316,7 +289,7 @@ namespace frik {
 		_skelly->setArms(false);
 		_skelly->setArms(true);
 		_skelly->leftHandedModePipboy();
-		f4vr::updateDown(_skelly->getRoot(), true); // Do world update now so that IK calculations have proper world reference
+		f4vr::updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
 		// Misc stuff to show/hide things and also set up the wrist pipboy
 		Log::debug("Pipboy and Weapons");
@@ -331,10 +304,10 @@ namespace frik {
 		// project body out in front of the camera for debug purposes
 		Log::debug("Selfie Time");
 		_skelly->selfieSkelly();
-		f4vr::updateDown(_skelly->getRoot(), true);
+		f4vr::updateDownFromRoot();
 
 		Log::debug("fix the missing screen");
-		fixMissingScreen(_skelly->getPlayerNodes());
+		fixMissingScreen(f4vr::getPlayerNodes());
 
 		if (g_config.armsOnly) {
 			_skelly->showOnlyArms();
@@ -371,7 +344,7 @@ namespace frik {
 		FrameUpdateContext context(_skelly);
 		vrui::g_uiManager->onFrameUpdate(&context);
 
-		f4vr::updateDown(_skelly->getRoot(), true); // Last world update before exit.    Probably not necessary.
+		f4vr::updateDownFromRoot(); // Last world update before exit.    Probably not necessary.
 
 		debug(_skelly);
 

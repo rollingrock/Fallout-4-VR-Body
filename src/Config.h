@@ -22,6 +22,8 @@ namespace frik {
 
 	constexpr int FRIK_INI_VERSION = 7;
 
+	constexpr float DEFAULT_CAMERA_HEIGHT = 120.4828f;
+
 	/**
 	 * Type of weapon related position offsets.
 	 */
