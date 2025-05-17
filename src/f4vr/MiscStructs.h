@@ -120,6 +120,24 @@ namespace f4vr {
 		slot_FX = 1 << 31
 	};
 
+	enum class WeaponType : std::uint8_t {
+		HandToHandMelee,
+		OneHandSword,
+		OneHandDagger,
+		OneHandAxe,
+		OneHandMace,
+		TwoHandSword,
+		TwoHandAxe,
+		Bow,
+		Staff,
+		Gun,
+		Grenade,
+		Mine,
+		Spell,
+		Shield,
+		Torch
+	};
+
 	struct NiCloneProcess {
 		UInt64 unk00 = 0;
 		UInt64 unk08 = 0; // Start of clone list 1?

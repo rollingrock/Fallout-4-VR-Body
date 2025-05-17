@@ -41,4 +41,11 @@ namespace common {
 	std::string getCurrentTimeString();
 	std::vector<std::string> loadListFromFile(const std::string& filePath);
 	void windowFocus(const std::string& name);
+
+	// Comparator
+	struct CaseInsensitiveComparator {
+		bool operator()(const std::string& a, const std::string& b) const noexcept {
+			return _stricmp(a.c_str(), b.c_str()) < 0;
+		}
+	};
 }

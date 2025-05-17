@@ -3,7 +3,6 @@
 #include <numbers>
 #include <string>
 #include "Config.h"
-#include "Skeleton.h"
 #include "f4se/NiTypes.h"
 
 using namespace common;

@@ -2,6 +2,8 @@
 #include <filesystem>
 #include <shlobj_core.h>
 #include <f4se/GameMenus.h>
+#include <f4se/GameRTTI.h>
+
 #include "Config.h"
 #include "common/CommonUtils.h"
 #include "f4se/PapyrusEvents.h"
@@ -109,6 +111,18 @@ namespace frik {
 	// Function to check if the camera is looking at the object and the object is facing the camera
 	bool isCameraLookingAtObject(const NiAVObject* cameraNode, const NiAVObject* objectNode, const float detectThresh) {
 		return common::isCameraLookingAtObject(cameraNode->m_worldTransform, objectNode->m_worldTransform, detectThresh);
+	}
+
+	/**
+	 * detect if the player has an armor item which uses the headlamp equipped as not to overwrite it
+	 */
+	bool isArmorHasHeadLamp() {
+		if (const auto equippedItem = (*g_player)->equipData->slots[0].item) {
+			if (const auto torchEnabledArmor = DYNAMIC_CAST(equippedItem, TESForm, TESObjectARMO)) {
+				return f4vr::hasKeyword(torchEnabledArmor, 0xB34A6);
+			}
+		}
+		return false;
 	}
 
 	/**

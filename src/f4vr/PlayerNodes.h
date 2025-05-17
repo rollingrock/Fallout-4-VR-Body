@@ -1,4 +1,6 @@
 #pragma once
+#include <f4se/GameCamera.h>
+
 #include "BSFlattenedBoneTree.h"
 
 namespace f4vr {
@@ -86,5 +88,9 @@ namespace f4vr {
 		return meleeNode->m_children.m_emptyRunStart > 0
 			? meleeNode->m_children.m_data[0]->GetAsNiNode()
 			: nullptr;
+	}
+
+	inline NiPoint3 getCameraPosition() {
+		return (*g_playerCamera)->cameraNode->m_worldTransform.pos;
 	}
 }

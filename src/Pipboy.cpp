@@ -441,7 +441,7 @@ namespace frik {
 			static BSFixedString orbNames[7] = {
 				"TabChangeUpOrb", "TabChangeDownOrb", "PageChangeUpOrb", "PageChangeDownOrb", "ScrollItemsUpOrb", "ScrollItemsDownOrb", "SelectItemsOrb"
 			};
-			bool helmetHeadLamp = _skelly->armorHasHeadLamp();
+			bool helmetHeadLamp = isArmorHasHeadLamp();
 			bool lightOn = f4vr::isPipboyLightOn(*g_player);
 			bool radioOn = f4vr::isPlayerRadioEnabled();
 			Matrix44 rot;

@@ -4,7 +4,6 @@
 #include <chrono>
 #include <ctime>
 #include <f4se/GameCamera.h>
-#include <f4se/GameRTTI.h>
 
 #include "Config.h"
 #include "F4VRBody.h"
@@ -14,7 +13,6 @@
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
-#include "f4se/GameForms.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
@@ -30,12 +28,90 @@ namespace frik {
 		QueryPerformanceCounter(&_timer);
 
 		_frameTime = static_cast<float>(_timer.QuadPart - _prevTime.QuadPart) / _freqCounter.QuadPart;
-
-		//also save last position at this time for anyone doing speed calcs
-		_lastPos = _curPos;
 	}
 
-	void Skeleton::selfieSkelly() {
+	/**
+	 * Runs on every game frame to calculate and update the skeleton transform.
+	 */
+	void Skeleton::onFrameUpdate() {
+		// save last position at this time for anyone doing speed calculations
+		_lastPosition = _curentPosition;
+		_curentPosition = getCameraPosition();
+
+		Log::debug("Hide Wands");
+		setWandsVisibility(false, WandMode::Both);
+
+		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
+		Log::debug("restore locals of skeleton");
+		restoreLocals();
+		updateDownFromRoot();
+
+		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
+		Log::debug("Setup Head");
+		setupHead();
+
+		//// set up the body underneath the headset in a proper scale and orientation
+		Log::debug("Set body under HMD");
+		setUnderHMD();
+		updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+
+		// Now Set up body Posture and hook up the legs
+		Log::debug("Set body posture");
+		setBodyPosture();
+		updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+
+		Log::debug("Set Knee Posture");
+		setKneePos();
+		Log::debug("Set Walk");
+
+		if (!g_config.armsOnly) {
+			walk();
+		}
+		//setLegs();
+		Log::debug("Set Legs");
+		setSingleLeg(false);
+		setSingleLeg(true);
+
+		// Do another update before setting arms
+		updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+
+		// do arm IK - Right then Left
+		Log::debug("Set Arms");
+		handleWeaponNodes();
+		setArms(false);
+		setArms(true);
+		leftHandedModePipboy();
+		updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+
+		// Misc stuff to show/hide things and also set up the wrist pipboy
+		Log::debug("Pipboy and Weapons");
+		hideWeapon();
+		positionPipboy();
+		hidePipboy();
+		hideFistHelpers();
+		showHidePAHud();
+
+		// TODO: move the object from global to skeleton local
+		g_cullGeometry->cullPlayerGeometry();
+
+		// project body out in front of the camera for debug purposes
+		Log::debug("Selfie Time");
+		selfieSkelly();
+		updateDownFromRoot();
+
+		if (g_config.armsOnly) {
+			showOnlyArms();
+		}
+
+		Log::debug("Operate Skelly hands");
+		setHandPose();
+
+		if (isInScopeMenu()) {
+			hideHands();
+		}
+	}
+
+	void Skeleton::selfieSkelly() const {
 		// Projects the 3rd person body out in front of the player by offset amount
 		if (!c_selfieMode || !_root) {
 			return;
@@ -51,7 +127,7 @@ namespace frik {
 		mat.makeIdentity();
 		mat.rotateVectorVec(back, bodyDir);
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
-		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
+		_root->m_localTransform.pos = body->m_worldTransform.pos - _curentPosition;
 		_root->m_localTransform.pos.y += g_config.selfieOutFrontDistance;
 		_root->m_localTransform.pos.z = z;
 	}
@@ -258,8 +334,6 @@ namespace frik {
 			return false;
 		}
 
-		_curPos = (*g_playerCamera)->cameraNode->m_worldTransform.pos;
-
 		setCommonNode();
 
 		if (!_common) {
@@ -351,13 +425,6 @@ namespace frik {
 
 		initBoneTreeMap();
 		return true;
-	}
-
-	NiPoint3 Skeleton::getPosition() {
-		//	_curPos = _playerNodes->UprightHmdNode->m_worldTransform.pos;
-		_curPos = (*g_playerCamera)->cameraNode->m_worldTransform.pos;
-
-		return _curPos;
 	}
 
 	// below takes the two vectors from hmd to each hand and sums them to determine a center axis in which to see how much the hmd has rotated
@@ -461,8 +528,8 @@ namespace frik {
 
 		NiNode* body = _root->m_parent->GetAsNiNode();
 		body->m_localTransform.pos *= 0.0f;
-		body->m_worldTransform.pos.x = this->getPosition().x;
-		body->m_worldTransform.pos.y = this->getPosition().y;
+		body->m_worldTransform.pos.x = _curentPosition.x;
+		body->m_worldTransform.pos.y = _curentPosition.y;
 		body->m_worldTransform.pos.z += _playerNodes->playerworldnode->m_localTransform.pos.z;
 
 		const NiPoint3 back = vec3Norm(NiPoint3(_forwardDir.x, _forwardDir.y, 0));
@@ -470,7 +537,7 @@ namespace frik {
 
 		mat.rotateVectorVec(back, bodyDir);
 		_root->m_localTransform.rot = mat.multiply43Left(body->m_worldTransform.rot.Transpose());
-		_root->m_localTransform.pos = body->m_worldTransform.pos - getPosition();
+		_root->m_localTransform.pos = body->m_worldTransform.pos - _curentPosition;
 		_root->m_localTransform.pos.z = z;
 		//_root->m_localTransform.pos *= 0.0f;
 		//_root->m_localTransform.pos.y = g_config.playerOffset_forward - 6.0f;
@@ -588,8 +655,8 @@ namespace frik {
 		rFoot->m_worldTransform.pos -= leftToRight;
 
 		// want to calculate direction vector first.     Will only concern with x-y vector to start.
-		NiPoint3 lastPos = _lastPos;
-		NiPoint3 curPos = _curPos;
+		NiPoint3 lastPos = _lastPosition;
+		NiPoint3 curPos = _curentPosition;
 		curPos.z = 0;
 		lastPos.z = 0;
 
@@ -773,41 +840,6 @@ namespace frik {
 		}
 	}
 
-	void Skeleton::setLegs() const {
-		Matrix44 rotatedM;
-
-		NiNode* lHip = getNode("LLeg_Thigh", _root);
-		NiNode* rHip = getNode("RLeg_Thigh", _root);
-		NiNode* lKnee = getNode("LLeg_Calf", lHip);
-		NiNode* rKnee = getNode("RLeg_Calf", rHip);
-		const NiNode* lFoot = getNode("LLeg_Foot", lHip);
-		const NiNode* rFoot = getNode("RLeg_Foot", rHip);
-
-		NiPoint3 pos = _leftKneePos - lHip->m_worldTransform.pos;
-		NiPoint3 uLocalDir = lHip->m_worldTransform.rot.Transpose() * vec3Norm(pos) / lHip->m_worldTransform.scale;
-		rotatedM.rotateVectorVec(uLocalDir, lKnee->m_localTransform.pos);
-		lHip->m_localTransform.rot = rotatedM.multiply43Left(lHip->m_localTransform.rot);
-
-		pos = _rightKneePos - rHip->m_worldTransform.pos;
-		uLocalDir = rHip->m_worldTransform.rot.Transpose() * vec3Norm(pos) / rHip->m_worldTransform.scale;
-		rotatedM.rotateVectorVec(uLocalDir, rKnee->m_localTransform.pos);
-		rHip->m_localTransform.rot = rotatedM.multiply43Left(rHip->m_localTransform.rot);
-
-		updateDown(lHip, true);
-		updateDown(rHip, true);
-
-		// now calves
-		pos = _leftFootPos - lKnee->m_worldTransform.pos;
-		uLocalDir = lKnee->m_worldTransform.rot.Transpose() * vec3Norm(pos) / lKnee->m_worldTransform.scale;
-		rotatedM.rotateVectorVec(uLocalDir, lFoot->m_localTransform.pos);
-		lKnee->m_localTransform.rot = rotatedM.multiply43Left(lKnee->m_localTransform.rot);
-
-		pos = _rightFootPos - rKnee->m_worldTransform.pos;
-		uLocalDir = rKnee->m_worldTransform.rot.Transpose() * vec3Norm(pos) / rKnee->m_worldTransform.scale;
-		rotatedM.rotateVectorVec(uLocalDir, rFoot->m_localTransform.pos);
-		rKnee->m_localTransform.rot = rotatedM.multiply43Left(rKnee->m_localTransform.rot);
-	}
-
 	// adapted solver from VRIK.  Thanks prog!
 	void Skeleton::setSingleLeg(const bool isLeft) const {
 		Matrix44 rotMat;
@@ -905,32 +937,6 @@ namespace frik {
 		transform.world.rot = rot.multiply43Left(parentTransform.world.rot);
 	}
 
-	void Skeleton::fixPAArmor() {
-		static bool oneTime = false;
-
-		if (_inPowerArmor) {
-			if (!oneTime) {
-				oneTime = true;
-				rotateLeg(_boneTreeMap["LLeg_Calf_Armor1"], 90.0f);
-				rotateLeg(_boneTreeMap["LLeg_Calf_Armor2"], 90.0f);
-				rotateLeg(_boneTreeMap["LLeg_Thigh_Armor"], 90.0f);
-				rotateLeg(_boneTreeMap["LLeg_Thigh_Armor1"], 90.0f);
-				rotateLeg(_boneTreeMap["LLeg_Thigh_Armor2"], 90.0f);
-				rotateLeg(_boneTreeMap["RLeg_Calf_Armor1"], 90.0f);
-				rotateLeg(_boneTreeMap["RLeg_Calf_Armor2"], 90.0f);
-				rotateLeg(_boneTreeMap["RLeg_Thigh_Armor"], 90.0f);
-				rotateLeg(_boneTreeMap["RLeg_Thigh_Armor1"], 90.0f);
-				rotateLeg(_boneTreeMap["RLeg_Thigh_Armor2"], 90.0f);
-				rotateLeg(_boneTreeMap["LArm_UpperArm_Armor"], 90.0f);
-				rotateLeg(_boneTreeMap["RArm_UpperArm_Armor"], 90.0f);
-				rotateLeg(_boneTreeMap["LArm_ForeArm_Armor"], 90.0f);
-				rotateLeg(_boneTreeMap["RArm_ForeArm_Armor"], 90.0f);
-			}
-		} else {
-			oneTime = false;
-		}
-	}
-
 	void Skeleton::setBodyLen() {
 		_torsoLen = vec3Len(getNode("Camera", _root)->m_worldTransform.pos - getNode("COM", _root)->m_worldTransform.pos);
 		_torsoLen *= g_config.playerHeight / DEFAULT_CAMERA_HEIGHT;
@@ -1021,23 +1027,6 @@ namespace frik {
 		}
 	}
 
-	void Skeleton::makeArmsT(const bool isLeft) const {
-		const ArmNodes arm = isLeft ? _leftArm : _rightArm;
-		Matrix44 mat;
-		mat.makeIdentity();
-
-		arm.forearm1->m_localTransform.rot = mat.make43();
-		arm.forearm2->m_localTransform.rot = mat.make43();
-		arm.forearm3->m_localTransform.rot = mat.make43();
-		arm.hand->m_localTransform.rot = mat.make43();
-		arm.upper->m_localTransform.rot = mat.make43();
-		//		arm.shoulder->m_localTransform.rot = mat.make43();
-	}
-
-	ArmNodes Skeleton::getArm(const bool isLeft) const {
-		return isLeft ? _leftArm : _rightArm;
-	}
-
 	void Skeleton::setWandsVisibility(bool show, const WandMode mode) const {
 		auto setVisibilityForNode = [this, show](const NiNode* node) {
 			for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
@@ -1064,14 +1053,6 @@ namespace frik {
 		if (mode == WandMode::Both || (mode == WandMode::PrimaryHandWand && g_config.leftHandedMode) || (mode == WandMode::OffhandWand && !g_config.leftHandedMode)) {
 			setVisibilityForNode(_playerNodes->SecondaryWandNode);
 		}
-	}
-
-	void Skeleton::showWands(const WandMode mode) const {
-		setWandsVisibility(true, mode);
-	}
-
-	void Skeleton::hideWands(const WandMode mode) const {
-		setWandsVisibility(false, mode);
 	}
 
 	void Skeleton::hideFistHelpers() const {
@@ -1170,18 +1151,6 @@ namespace frik {
 				toggleVis(pipboy->GetAsNiNode(), true, true);
 			}
 		}
-	}
-
-	/**
-	 * detect if the player has an armor item which uses the headlamp equipped as not to overwrite it
-	 */
-	bool Skeleton::armorHasHeadLamp() {
-		if (const auto equippedItem = (*g_player)->equipData->slots[0].item) {
-			if (const auto torchEnabledArmor = DYNAMIC_CAST(equippedItem, TESForm, TESObjectARMO)) {
-				return hasKeyword(torchEnabledArmor, 0xB34A6);
-			}
-		}
-		return false;
 	}
 
 	void Skeleton::showHidePAHud() const {
@@ -1669,31 +1638,6 @@ namespace frik {
 		}
 	}
 
-	void Skeleton::fixBoneTree() {
-		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
-
-		if (rt->numTransforms > 145) {
-			return;
-		}
-
-		for (auto pos = 0; pos < rt->numTransforms; ++pos) {
-			const auto& name = rt->transforms[pos].name;
-			auto found = _fingerRelations.find(name.c_str());
-			if (found != _fingerRelations.end()) {
-				const auto& relation = found->second;
-				const int parentPos = _boneTreeMap[relation.first];
-				rt->transforms[pos].parPos = parentPos;
-				rt->transforms[pos].childPos = relation.second.empty() ? -1 : _boneTreeMap[relation.second];
-
-				NiNode* meshNode = getNode(_boneTreeVec[pos].c_str(), _root);
-				rt->transforms[pos].refNode = nullptr;
-				if (meshNode && meshNode->m_parent) {
-					meshNode->m_parent->RemoveChild(meshNode);
-				}
-			}
-		}
-	}
-
 	void Skeleton::setHandPose() {
 		const bool isWeaponVisible = isNodeVisible(getWeaponNode());
 		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
@@ -1746,13 +1690,6 @@ namespace frik {
 		}
 	}
 
-	void Skeleton::moveBack() {
-		const NiNode* body = _root->m_parent->GetAsNiNode();
-
-		_root->m_localTransform.pos = body->m_worldTransform.pos - this->getPosition();
-		_root->m_localTransform.pos.y -= 50.0f;
-	}
-
 	void Skeleton::dampenHand(NiNode* node, const bool isLeft) {
 		if (!g_config.dampenHands) {
 			return;
@@ -1773,7 +1710,7 @@ namespace frik {
 		node->m_worldTransform.rot = rq.getRot().make43();
 
 		// Linear interpolation between the position from the previous frame to current frame
-		const NiPoint3 dir = _curPos - _lastPos; // Offset the player movement from this interpolation
+		const NiPoint3 dir = _curentPosition - _lastPosition; // Offset the player movement from this interpolation
 		NiPoint3 deltaPos = node->m_worldTransform.pos - prevFrame.pos - dir; // Add in player velocity
 		deltaPos *= isInScopeMenu() ? g_config.dampenHandsTranslationInVanillaScope : g_config.dampenHandsTranslation;
 		node->m_worldTransform.pos -= deltaPos;

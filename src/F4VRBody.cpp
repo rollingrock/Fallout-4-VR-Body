@@ -208,10 +208,6 @@ namespace frik {
 			if (!InitSkelly(inPowerArmorSticky)) {
 				return;
 			}
-
-			//StackPtr<BSAnimationManager*> manager;
-			//AIProcess_getAnimationManager((uint64_t)(*g_player)->middleProcess, manager);
-			//BSAnimationManager_setActiveGraph(manager.p, 0);
 			firstTime = false;
 			return;
 		}
@@ -246,75 +242,10 @@ namespace frik {
 
 		_skelly->setTime();
 
-		Log::debug("Hide Wands");
-		_skelly->hideWands();
-
-		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
-		Log::debug("restore locals of skeleton");
-		_skelly->restoreLocals();
-		f4vr::updateDownFromRoot();
-
-		// moves head up and back out of the player view.   doing this instead of hiding with a small scale setting since it preserves neck shape
-		Log::debug("Setup Head");
-		Skeleton::setupHead();
-
-		//// set up the body underneath the headset in a proper scale and orientation
-		Log::debug("Set body under HMD");
-		_skelly->setUnderHMD();
-		f4vr::updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
-
-		// Now Set up body Posture and hook up the legs
-		Log::debug("Set body posture");
-		_skelly->setBodyPosture();
-		f4vr::updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
-
-		Log::debug("Set Knee Posture");
-		_skelly->setKneePos();
-		Log::debug("Set Walk");
-
-		if (!g_config.armsOnly) {
-			_skelly->walk();
-		}
-		//_skelly->setLegs();
-		Log::debug("Set Legs");
-		_skelly->setSingleLeg(false);
-		_skelly->setSingleLeg(true);
-
-		// Do another update before setting arms
-		f4vr::updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
-
-		// do arm IK - Right then Left
-		Log::debug("Set Arms");
-		_skelly->handleWeaponNodes();
-		_skelly->setArms(false);
-		_skelly->setArms(true);
-		_skelly->leftHandedModePipboy();
-		f4vr::updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
-
-		// Misc stuff to show/hide things and also set up the wrist pipboy
-		Log::debug("Pipboy and Weapons");
-		_skelly->hideWeapon();
-		_skelly->positionPipboy();
-		_skelly->hidePipboy();
-		_skelly->hideFistHelpers();
-		_skelly->showHidePAHud();
-
-		g_cullGeometry->cullPlayerGeometry();
-
-		// project body out in front of the camera for debug purposes
-		Log::debug("Selfie Time");
-		_skelly->selfieSkelly();
-		f4vr::updateDownFromRoot();
+		_skelly->onFrameUpdate();
 
 		Log::debug("fix the missing screen");
 		fixMissingScreen(f4vr::getPlayerNodes());
-
-		if (g_config.armsOnly) {
-			_skelly->showOnlyArms();
-		}
-
-		Log::debug("Operate Skelly hands");
-		_skelly->setHandPose();
 
 		Log::debug("Operate Pipboy");
 		g_pipboy->operatePipBoy();
@@ -325,18 +256,12 @@ namespace frik {
 		Log::debug("Weapon position");
 		g_weaponPosition->onFrameUpdate();
 
-		//g_gunReloadSystem->Update();
-
 		f4vr::BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
 		f4vr::BSFlattenedBoneTree_UpdateBoneArray((*g_player)->unkF0->rootNode->m_children.m_data[0]);
 		// just in case any transforms missed because they are not in the tree do a full flat bone array update
 		f4vr::BSFadeNode_UpdateGeomArray((*g_player)->unkF0->rootNode, 1);
 
 		fixMuzzleFlashPosition();
-
-		if (isInScopeMenu()) {
-			_skelly->hideHands();
-		}
 
 		g_pipboy->onUpdate();
 		g_configurationMode->onUpdate();
@@ -348,6 +273,7 @@ namespace frik {
 
 		debug(_skelly);
 
+		// TODO: move this inside skelly on frame update
 		if (!f4vr::isInPowerArmor()) {
 			// sets 3rd Person Pipboy Scale
 			NiNode* _Pipboy3rd = f4vr::getChildNode("PipboyBone", (*g_player)->unkF0->rootNode);

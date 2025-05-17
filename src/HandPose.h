@@ -1,10 +1,11 @@
 #pragma once
+
 #include "Skeleton.h"
 #include "f4se/NiTypes.h"
 
 namespace frik {
-	extern std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
-	extern std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
+	extern std::map<std::string, NiTransform, common::CaseInsensitiveComparator> handClosed;
+	extern std::map<std::string, NiTransform, common::CaseInsensitiveComparator> handOpen;
 
 	extern std::map<std::string, float> handPapyrusPose;
 	extern std::map<std::string, bool> handPapyrusHasControl;
