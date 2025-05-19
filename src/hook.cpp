@@ -86,7 +86,7 @@ RelocAddr<_AIProcess_Set3DUpdateFlags> AIProcess_Set3DUpdateFlags(0xec8ce0);
 
 // Gun Reload Init
 uint64_t gunReloadInit(const uint64_t rcx, const uint64_t rdx, const uint64_t r8) {
-	frik::g_gunReloadSystem->startAnimationCapture();
+	// frik::g_gunReloadSystem->startAnimationCapture();
 	return Actor_GetCurrentWeapon(rcx, rdx, r8);
 }
 

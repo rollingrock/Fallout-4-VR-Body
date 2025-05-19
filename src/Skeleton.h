@@ -2,21 +2,15 @@
 
 #include <map>
 
+#include "CullGeometryHandler.h"
 #include "api/openvr.h"
 #include "common/CommonUtils.h"
 #include "f4se/GameReferences.h"
 #include "f4se/NiNodes.h"
-#include "f4vr/F4VRUtils.h"
 #include "f4vr/PlayerNodes.h"
 #include "include/SimpleIni.h"
 
 namespace frik {
-	enum class WandMode : std::uint8_t {
-		Both = 0,
-		PrimaryHandWand,
-		OffhandWand,
-	};
-
 	struct ArmNodes {
 		NiAVObject* shoulder;
 		NiAVObject* upper;
@@ -27,52 +21,13 @@ namespace frik {
 		NiAVObject* hand;
 	};
 
-	struct HandMeshBoneTransforms {
-		NiTransform* LArm_ForeArm1_skin;
-		NiTransform* LArm_ForeArm2_skin;
-		NiTransform* LArm_ForeArm3_skin;
-		NiTransform* LArm_Hand;
-		NiTransform* RArm_ForeArm2_skin;
-		NiTransform* RArm_ForeArm3_skin;
-		NiTransform* RArm_Hand;
-		NiTransform* LArm_Finger11;
-		NiTransform* LArm_Finger12;
-		NiTransform* LArm_Finger13;
-		NiTransform* LArm_Finger21;
-		NiTransform* LArm_Finger22;
-		NiTransform* LArm_Finger23;
-		NiTransform* LArm_Finger31;
-		NiTransform* LArm_Finger32;
-		NiTransform* LArm_Finger33;
-		NiTransform* LArm_Finger41;
-		NiTransform* LArm_Finger42;
-		NiTransform* LArm_Finger43;
-		NiTransform* LArm_Finger51;
-		NiTransform* LArm_Finger52;
-		NiTransform* LArm_Finger53;
-		NiTransform* RArm_Finger11;
-		NiTransform* RArm_Finger12;
-		NiTransform* RArm_Finger13;
-		NiTransform* RArm_Finger21;
-		NiTransform* RArm_Finger22;
-		NiTransform* RArm_Finger23;
-		NiTransform* RArm_Finger31;
-		NiTransform* RArm_Finger32;
-		NiTransform* RArm_Finger33;
-		NiTransform* RArm_Finger41;
-		NiTransform* RArm_Finger42;
-		NiTransform* RArm_Finger43;
-		NiTransform* RArm_Finger51;
-		NiTransform* RArm_Finger52;
-		NiTransform* RArm_Finger53;
-	};
-
 	class Skeleton {
 	public:
-		Skeleton(BSFadeNode* node)
-			: _root(node) {
+		Skeleton(BSFadeNode* rootNode, const bool inPowerArmor)
+			: _root(rootNode), _inPowerArmor(inPowerArmor) {
 			_curentPosition = NiPoint3(0, 0, 0);
 			_walkingState = 0;
+			initializeNodes();
 		}
 
 		ArmNodes getLeftArm() const {
@@ -83,36 +38,24 @@ namespace frik {
 			return _rightArm;
 		}
 
-		void setCommonNode() {
-			_common = f4vr::getNode("COM", _root);
-		}
-
-		NiPoint3 getCurrentBodyPos() const {
-			return _curentPosition;
-		}
-
 		NiTransform getBoneWorldTransform(const std::string& boneName);
 
 		NiPoint3 getOffhandIndexFingerTipWorldPosition();
 
 		// reposition stuff
 		void onFrameUpdate();
-		void fixArmor() const;
-
-		// utility
-		bool setNodes();
-		void setBodyLen();
-		void setLeftHandedSticky();
-		void initLocalDefaults();
-
-		void setTime();
 
 	private:
+		// initialization
+		void initializeNodes();
+		void initLocalDefaults();
 		void initBoneTreeMap();
 		void restoreLocals(NiNode* node);
 		static std::map<std::string, std::pair<std::string, std::string>> makeFingerRelations();
+		void setBodyLen();
 
 		// on frame update - skeleton update
+		void setTime();
 		void restoreLocals();
 		static void setupHead();
 		void setUnderHMD();
@@ -120,8 +63,9 @@ namespace frik {
 		void setKneePos();
 		void walk();
 		void setSingleLeg(bool isLeft) const;
-		void handleWeaponNodes();
+		void handleLeftHandedWeaponNodesSwitch();
 		void setArms(bool isLeft);
+		void dampenHand(NiNode* node, bool isLeft);
 		void leftHandedModePipboy() const;
 		void hideWeapon() const;
 		void positionPipboy() const;
@@ -132,25 +76,24 @@ namespace frik {
 		void showOnlyArms() const;
 		void setHandPose();
 		void hideHands() const;
+		void fixArmor() const;
 
 		// Utils
-		void setWandsVisibility(bool show = true, WandMode mode = WandMode::Both) const;
 		void calculateHandPose(const std::string& bone, float gripProx, bool thumbUp, bool isLeft);
-		void rotateLeg(uint32_t pos, float angle) const;
 		void copy1StPerson(const std::string& bone);
 		void insertSaveState(const std::string& name, NiNode* node);
-		void dampenHand(NiNode* node, bool isLeft);
 
 		// Utils - Body Positioning
 		float getNeckYaw() const;
 		float getNeckPitch() const;
 		float getBodyPitch() const;
+		void rotateLeg(uint32_t pos, float angle) const;
 
 		// ???
 		void saveStatesTree(NiNode* node);
 
 		BSFadeNode* _root;
-		NiNode* _common;
+		bool _inPowerArmor;
 
 		// Camera positions
 		NiPoint3 _curentPosition;
@@ -171,9 +114,8 @@ namespace frik {
 		std::map<std::string, NiTransform, common::CaseInsensitiveComparator> _savedStates;
 		std::map<std::string, NiPoint3, common::CaseInsensitiveComparator> _boneLocalDefault;
 
-		bool _leftHandedSticky;
-
-		bool _inPowerArmor;
+		// handle switch of hands for left-handed mode
+		bool _lastLeftHandedModeSwitch = false;
 
 		LARGE_INTEGER _freqCounter;
 		LARGE_INTEGER _timer;
@@ -209,5 +151,8 @@ namespace frik {
 		std::map<std::string, int> _boneTreeMap;
 		std::vector<std::string> _boneTreeVec;
 		inline static const std::map<std::string, std::pair<std::string, std::string>> _fingerRelations = makeFingerRelations();
+
+		// cull (hide) parts of the skeleton (head, equipment)
+		CullGeometryHandler _cullGeometry;
 	};
 }

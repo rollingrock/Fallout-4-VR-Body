@@ -7,7 +7,6 @@
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
-#include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 
@@ -340,8 +339,9 @@ namespace frik {
 		static int fc = 0;
 		const auto offHandBone = g_config.leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
 
+		const auto currentPos = f4vr::getCameraPosition();
 		const float handFrameMovement = vec3Len(_skelly->getBoneWorldTransform(offHandBone).pos - offhandFingerBonePos);
-		const float bodyFrameMovement = vec3Len(_skelly->getCurrentBodyPos() - bodyPos);
+		const float bodyFrameMovement = vec3Len(currentPos - bodyPos);
 		avgHandV[fc] = abs(handFrameMovement - bodyFrameMovement);
 		fc = (fc + 1) % 3;
 
@@ -351,7 +351,7 @@ namespace frik {
 		}
 		const float handV = sum / 3;
 
-		bodyPos = _skelly->getCurrentBodyPos();
+		bodyPos = currentPos;
 		offhandFingerBonePos = _skelly->getBoneWorldTransform(offHandBone).pos;
 
 		return handV > g_config.gripLetGoThreshold;

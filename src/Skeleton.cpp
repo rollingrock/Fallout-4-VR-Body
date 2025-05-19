@@ -2,7 +2,6 @@
 
 #include <array>
 #include <chrono>
-#include <ctime>
 #include <f4se/GameCamera.h>
 
 #include "Config.h"
@@ -17,32 +16,26 @@
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 
-using namespace std::chrono;
 using namespace common;
 using namespace f4vr;
 
 namespace frik {
-	void Skeleton::setTime() {
-		_prevTime = _timer;
-		QueryPerformanceFrequency(&_freqCounter);
-		QueryPerformanceCounter(&_timer);
-
-		_frameTime = static_cast<float>(_timer.QuadPart - _prevTime.QuadPart) / _freqCounter.QuadPart;
-	}
-
 	/**
 	 * Runs on every game frame to calculate and update the skeleton transform.
 	 */
 	void Skeleton::onFrameUpdate() {
+		setTime();
+
 		// save last position at this time for anyone doing speed calculations
 		_lastPosition = _curentPosition;
 		_curentPosition = getCameraPosition();
 
-		Log::debug("Hide Wands");
-		setWandsVisibility(false, WandMode::Both);
+		Log::debug("Hide Wands...");
+		setWandsVisibility(false, true);
+		setWandsVisibility(false, false);
 
 		// first restore locals to a default state to wipe out any local transform changes the game might have made since last update
-		Log::debug("restore locals of skeleton");
+		Log::debug("Restore locals of skeleton");
 		restoreLocals();
 		updateDownFromRoot();
 
@@ -76,23 +69,23 @@ namespace frik {
 		updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
 		// do arm IK - Right then Left
-		Log::debug("Set Arms");
-		handleWeaponNodes();
+		Log::debug("Set Arms...");
+		handleLeftHandedWeaponNodesSwitch();
 		setArms(false);
 		setArms(true);
 		leftHandedModePipboy();
 		updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
 		// Misc stuff to show/hide things and also set up the wrist pipboy
-		Log::debug("Pipboy and Weapons");
+		Log::debug("Pipboy and Weapons...");
 		hideWeapon();
 		positionPipboy();
 		hidePipboy();
 		hideFistHelpers();
 		showHidePAHud();
 
-		// TODO: move the object from global to skeleton local
-		g_cullGeometry->cullPlayerGeometry();
+		Log::debug("Cull geometry...");
+		_cullGeometry.cullPlayerGeometry();
 
 		// project body out in front of the camera for debug purposes
 		Log::debug("Selfie Time");
@@ -109,6 +102,18 @@ namespace frik {
 		if (isInScopeMenu()) {
 			hideHands();
 		}
+
+		// TODO: moved from end of F4VRBody, check works well
+		if (isInPowerArmor()) {
+			fixArmor();
+		}
+	}
+
+	void Skeleton::setTime() {
+		_prevTime = _timer;
+		QueryPerformanceFrequency(&_freqCounter);
+		QueryPerformanceCounter(&_timer);
+		_frameTime = static_cast<float>(_timer.QuadPart - _prevTime.QuadPart) / _freqCounter.QuadPart;
 	}
 
 	void Skeleton::selfieSkelly() const {
@@ -200,8 +205,6 @@ namespace frik {
 	}
 
 	void Skeleton::initLocalDefaults() {
-		_inPowerArmor = isInPowerArmor();
-
 		_boneLocalDefault.clear();
 		if (_inPowerArmor) {
 			_boneLocalDefault.insert({"Root", NiPoint3(-0.000000f, -0.000000f, 0.000000f)});
@@ -319,48 +322,21 @@ namespace frik {
 		}
 	}
 
-	bool Skeleton::setNodes() {
+	void Skeleton::initializeNodes() {
 		QueryPerformanceFrequency(&_freqCounter);
 		QueryPerformanceCounter(&_timer);
-
-		std::srand(static_cast<unsigned int>(time(nullptr)));
 
 		_prevSpeed = 0.0;
 
 		_playerNodes = getPlayerNodes();
 
-		if (!_playerNodes) {
-			Log::info("player nodes not set");
-			return false;
-		}
-
-		setCommonNode();
-
-		if (!_common) {
-			Log::info("Common Node Not Set");
-			return false;
-		}
-
 		_rightHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		_leftHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-
-		if (!_rightHand || !_leftHand) {
-			return false;
-		}
-
 		_rightHandPrevFrame = _rightHand->m_worldTransform;
 		_leftHandPrevFrame = _leftHand->m_worldTransform;
 
-		if (g_pipboy) {
-			g_pipboy->onSetNodes();
-		}
-
 		_spine = getNode("SPINE2", _root);
 		_chest = getNode("Chest", _root);
-
-		Log::info("common node = %016I64X", _common);
-		Log::info("rightHand node = %016I64X", _rightHand);
-		Log::info("leftHand node = %016I64X", _leftHand);
 
 		// Setup Arms
 		const std::vector<std::pair<BSFixedString, NiAVObject**>> armNodes = {
@@ -379,11 +355,11 @@ namespace frik {
 			{"LArm_ForeArm3", &_leftArm.forearm3},
 			{"LArm_Hand", &_leftArm.hand}
 		};
-
+		const auto commonNode = getCommonNode();
 		for (const auto& [name, node] : armNodes) {
-			*node = _common->GetObjectByName(&name);
+			*node = commonNode->GetObjectByName(&name);
 		}
-		Log::info("finished set arm nodes");
+		Log::info("Finished setting Arm Nodes (Right: %016I64X, Left: %016I64X)", _rightHand, _leftHand);
 
 		_handBones = handOpen;
 
@@ -424,7 +400,10 @@ namespace frik {
 		Log::info("finished saving tree");
 
 		initBoneTreeMap();
-		return true;
+
+		setBodyLen();
+
+		initHandPoses(_inPowerArmor);
 	}
 
 	// below takes the two vectors from hmd to each hand and sums them to determine a center axis in which to see how much the hmd has rotated
@@ -498,8 +477,6 @@ namespace frik {
 	}
 
 	void Skeleton::setUnderHMD() {
-		_inPowerArmor = isInPowerArmor();
-
 		if (g_config.disableSmoothMovement) {
 			_playerNodes->playerworldnode->m_localTransform.pos.z = _inPowerArmor
 				? g_config.PACameraHeight + c_dynamicCameraHeight
@@ -680,7 +657,7 @@ namespace frik {
 		static float spineAngle = 0.0;
 
 		// setup current walking state based on velocity and previous state
-		if (!c_jumping) {
+		if (!isJumpingOrInAir()) {
 			switch (_walkingState) {
 			case 0: {
 				if (curSpeed >= 35.0) {
@@ -1027,34 +1004,6 @@ namespace frik {
 		}
 	}
 
-	void Skeleton::setWandsVisibility(bool show, const WandMode mode) const {
-		auto setVisibilityForNode = [this, show](const NiNode* node) {
-			for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
-				if (const auto child = node->m_children.m_data[i]) {
-					if (const auto triShape = child->GetAsBSTriShape()) {
-						setVisibility(triShape, show);
-						break;
-					}
-					if (!_stricmp(child->m_name.c_str(), "")) {
-						setVisibility(child, show);
-						if (const auto grandChild = child->GetAsNiNode()->m_children.m_data[0]) {
-							setVisibility(grandChild, show);
-						}
-						break;
-					}
-				}
-			}
-		};
-
-		if (mode == WandMode::Both || (mode == WandMode::PrimaryHandWand && !g_config.leftHandedMode) || (mode == WandMode::OffhandWand && g_config.leftHandedMode)) {
-			setVisibilityForNode(_playerNodes->primaryWandNode);
-		}
-
-		if (mode == WandMode::Both || (mode == WandMode::PrimaryHandWand && g_config.leftHandedMode) || (mode == WandMode::OffhandWand && !g_config.leftHandedMode)) {
-			setVisibilityForNode(_playerNodes->SecondaryWandNode);
-		}
-	}
-
 	void Skeleton::hideFistHelpers() const {
 		if (!g_config.leftHandedMode) {
 			NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->primaryWandNode);
@@ -1159,14 +1108,15 @@ namespace frik {
 		}
 	}
 
-	void Skeleton::setLeftHandedSticky() {
-		_leftHandedSticky = !g_config.leftHandedMode;
-	}
-
-	void Skeleton::handleWeaponNodes() {
-		if (_leftHandedSticky == g_config.leftHandedMode) {
+	/**
+	 * Switch right and left weapon nodes if left-handed mode is enabled to correctly the hands.
+	 * Remember the setting to set back if settings change while game is running.
+	 */
+	void Skeleton::handleLeftHandedWeaponNodesSwitch() {
+		if (_lastLeftHandedModeSwitch == g_config.leftHandedMode) {
 			return;
 		}
+		_lastLeftHandedModeSwitch = g_config.leftHandedMode;
 
 		NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
@@ -1174,8 +1124,8 @@ namespace frik {
 		NiNode* lHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 		if (!rightWeapon || !rHand || !leftWeapon || !lHand) {
-			Log::debug("Cannot set up weapon nodes");
-			_leftHandedSticky = g_config.leftHandedMode;
+			Log::sample("HLHWNS", "Cannot set up weapon nodes for left-handed mode switch");
+			_lastLeftHandedModeSwitch = g_config.leftHandedMode;
 			return;
 		}
 
@@ -1195,16 +1145,10 @@ namespace frik {
 		if (g_pipboy->isOperatingPipboy()) {
 			rightWeapon->m_localTransform.scale = 0.0;
 		}
-
-		_leftHandedSticky = g_config.leftHandedMode;
 	}
 
 	// This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
 	void Skeleton::setArms(bool isLeft) {
-		ArmNodes arm;
-
-		arm = isLeft ? _leftArm : _rightArm;
-
 		// This first part is to handle the game calculating the first person hand based off two offset nodes
 		// PrimaryWeaponOffset and PrimaryMeleeOffset
 		// Unfortunately neither of these two nodes are that close to each other so when you equip a melee or ranged weapon
@@ -1278,6 +1222,8 @@ namespace frik {
 
 		NiPoint3 handPos = isLeft ? _leftHand->m_worldTransform.pos : _rightHand->m_worldTransform.pos;
 		NiMatrix43 handRot = isLeft ? _leftHand->m_worldTransform.rot : _rightHand->m_worldTransform.rot;
+
+		const auto arm = isLeft ? _leftArm : _rightArm;
 
 		// Detect if the 1st person hand position is invalid. This can happen when a controller loses tracking.
 		// If it is, do not handle IK and let Fallout use its normal animations for that arm instead.

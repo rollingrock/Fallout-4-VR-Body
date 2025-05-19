@@ -389,7 +389,7 @@ namespace frik {
 		}
 	}
 
-	void ConfigurationMode::onUpdate() {
+	void ConfigurationMode::onFrameUpdate() {
 		checkWeaponRepositionPipboyConflict();
 		pipboyConfigurationMode();
 		mainConfigurationMode();

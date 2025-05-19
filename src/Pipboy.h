@@ -29,11 +29,11 @@ namespace frik {
 		void turnOn();
 		void swapPipboy();
 		void replaceMeshes(bool force);
-		void onUpdate();
+		void onFrameUpdate();
 		void onSetNodes();
-		void operatePipBoy();
 
 	private:
+		void operatePipBoy();
 		void replaceMeshes(const std::string& itemHide, const std::string& itemShow);
 		void pipboyManagement();
 		void dampenPipboyScreen();
@@ -41,6 +41,7 @@ namespace frik {
 		void rightStickXSleep(int time);
 		void rightStickYSleep(int time);
 		void secondaryTriggerSleep(int time);
+		static void fixMissingScreen();
 
 		Skeleton* _skelly;
 

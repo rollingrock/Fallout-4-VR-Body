@@ -16,6 +16,7 @@ namespace f4vr {
 	void setControlsThumbstickEnableState(bool toEnable);
 
 	// Weapons/Armor/Player
+	void setWandsVisibility(const bool show, const bool leftWand);
 	bool isMeleeWeaponEquipped();
 	std::string getEquippedWeaponName();
 	bool hasKeyword(const TESObjectARMO* armor, UInt32 keywordFormId);

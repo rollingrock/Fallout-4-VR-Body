@@ -43,6 +43,28 @@ namespace f4vr {
 	}
 
 	/**
+	 * Set the visibility of controller wand.
+	 */
+	void setWandsVisibility(const bool show, const bool leftWand) {
+		const auto node = leftWand ? getPlayerNodes()->primaryWandNode : getPlayerNodes()->SecondaryWandNode;
+		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
+			if (const auto child = node->m_children.m_data[i]) {
+				if (const auto triShape = child->GetAsBSTriShape()) {
+					setVisibility(triShape, show);
+					break;
+				}
+				if (!_stricmp(child->m_name.c_str(), "")) {
+					setVisibility(child, show);
+					if (const auto grandChild = child->GetAsNiNode()->m_children.m_data[0]) {
+						setVisibility(grandChild, show);
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	/**
 	 * @return true if the equipped weapon is a melee weapon type.
 	 */
 	bool isMeleeWeaponEquipped() {

@@ -1,7 +1,9 @@
 #pragma once
+
 #include <f4se/GameCamera.h>
 
 #include "BSFlattenedBoneTree.h"
+#include "F4VRUtils.h"
 
 namespace f4vr {
 	// part of PlayerCharacter object but making useful struct below since not mapped in F4SE
@@ -65,6 +67,10 @@ namespace f4vr {
 
 	inline BSFlattenedBoneTree* getFirstPersonBoneTree() {
 		return reinterpret_cast<BSFlattenedBoneTree*>((*g_player)->firstPersonSkeleton->m_children.m_data[0]->GetAsNiNode());
+	}
+
+	inline NiNode* getCommonNode() {
+		return getNode("COM", getRootNode());
 	}
 
 	inline NiNode* getHeadNode() {

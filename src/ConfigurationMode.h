@@ -29,7 +29,7 @@ namespace frik {
 			return _isPBConfigModeActive;
 		}
 
-		void onUpdate();
+		void onFrameUpdate();
 		void exitPBConfig();
 		void openPipboyConfigurationMode();
 

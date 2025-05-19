@@ -2,16 +2,17 @@
 
 #include "Config.h"
 #include "ConfigurationMode.h"
-#include "CullGeometryHandler.h"
 #include "Debug.h"
 #include "HandPose.h"
 #include "Menu.h"
+#include "MenuChecker.h"
 #include "Pipboy.h"
 #include "Skeleton.h"
 #include "SmoothMovementVR.h"
 #include "utils.h"
 #include "common/Logger.h"
 #include "f4se/PapyrusNativeFunctions.h"
+#include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 #include "ui/UIManager.h"
 #include "ui/UIModAdapter.h"
@@ -28,7 +29,6 @@ F4SEMessagingInterface* g_messaging = nullptr;
 namespace frik {
 	Pipboy* g_pipboy = nullptr;
 	ConfigurationMode* g_configurationMode = nullptr;
-	CullGeometryHandler* g_cullGeometry = nullptr;
 	BoneSpheresHandler* g_boneSpheres = nullptr;
 	WeaponPositionAdjuster* g_weaponPosition = nullptr;
 
@@ -37,7 +37,6 @@ namespace frik {
 	bool isLoaded = false;
 
 	bool c_isLookingThroughScope = false;
-	bool c_jumping = false;
 	float c_dynamicCameraHeight = 0.0;
 	bool c_selfieMode = false;
 	bool GameVarsConfigured = false;
@@ -66,71 +65,52 @@ namespace frik {
 		Skeleton* _skelly;
 	};
 
-	static void fixMissingScreen(f4vr::PlayerNodes* pn) {
-		if (const auto screenNode = pn->ScreenNode) {
-			const BSFixedString screenName("Screen:0");
-			const NiAVObject* newScreen = screenNode->GetObjectByName(&screenName);
-
-			if (!newScreen) {
-				pn->ScreenNode->RemoveChildAt(0);
-
-				newScreen = pn->PipboyRoot_nif_only_node->GetObjectByName(&screenName)->m_parent;
-				NiNode* rn = f4vr::addNode((uint64_t)&pn->ScreenNode, newScreen);
-			}
+	static bool areAllNodesReady() {
+		if (!(*g_player)->unkF0) {
+			Log::sample("LoadData", "Loaded Data not set yet!");
+			return false;
 		}
+		if (!(*g_player)->unkF0->rootNode || !f4vr::getRootNode()) {
+			Log::info("Root nodes not set yet!");
+			return false;
+		}
+		if (!f4vr::getCommonNode() || !f4vr::getPlayerNodes()) {
+			Log::info("Common or Player nodes not set yet!");
+			return false;
+		}
+		if (!f4vr::getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode())) {
+			Log::info("Arm node not set yet!");
+			return false;
+		}
+		return true;
 	}
 
 	static bool InitSkelly(const bool inPowerArmor) {
-		if (!(*g_player)->unkF0) {
-			Log::debug("loaded Data Not Set Yet");
+		if (!areAllNodesReady()) {
 			return false;
 		}
 
-		Log::info("Init Skelly - %s (Data: %016I64X)", inPowerArmor ? "PowerArmor" : "Regular", (*g_player)->unkF0);
-		if (!(*g_player)->unkF0->rootNode) {
-			Log::info("root node not set yet!");
-			return false;
-		}
+		Log::info("Init Skeleton for %s", inPowerArmor ? "PowerArmor" : "Regular");
+		Log::info("Nodes: Data=%016I64X, Root=%016I64X, Skeleton=%016I64X, Common=%016I64X,",
+			(*g_player)->unkF0, (*g_player)->unkF0->rootNode, f4vr::getRootNode(), f4vr::getCommonNode());
 
-		Log::info("root node   = %016I64X", (*g_player)->unkF0->rootNode);
+		_skelly = new Skeleton(f4vr::getRootNode(), inPowerArmor);
 
-		if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-			Log::info("set root");
-			const auto rootNode = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
-			if (!rootNode) {
-				Log::info("root node not found");
-				return false;
-			}
+		// init global handlers
+		g_pipboy = new Pipboy(_skelly);
+		g_configurationMode = new ConfigurationMode(_skelly);
+		g_weaponPosition = new WeaponPositionAdjuster(_skelly);
 
-			initHandPoses(inPowerArmor);
+		turnPipBoyOff();
 
-			_skelly = new Skeleton(rootNode);
-			Log::info("skeleton = %016I64X", rootNode);
-			if (!_skelly->setNodes()) {
-				return false;
-			}
-			//replaceMeshes(f4vr::getPlayerNodes());
-			//_skelly->setDirection();
-
-			// init global handlers
-			g_pipboy = new Pipboy(_skelly);
-			g_configurationMode = new ConfigurationMode(_skelly);
-			g_cullGeometry = new CullGeometryHandler();
-			g_weaponPosition = new WeaponPositionAdjuster(_skelly);
-
-			turnPipBoyOff();
-
-			if (g_config.setScale) {
-				Setting* set = GetINISetting("fVrScale:VR");
-				set->SetDouble(g_config.fVrScale);
-			}
+		if (g_config.setScale) {
 			Log::info("scale set");
-
-			_skelly->setBodyLen();
-			Log::info("initialized");
-			return true;
+			Setting* set = GetINISetting("fVrScale:VR");
+			set->SetDouble(g_config.fVrScale);
 		}
-		return false;
+
+		Log::info("initialized");
+		return true;
 	}
 
 	/**
@@ -145,9 +125,6 @@ namespace frik {
 
 		delete g_configurationMode;
 		g_configurationMode = nullptr;
-
-		delete g_cullGeometry;
-		g_cullGeometry = nullptr;
 
 		delete g_weaponPosition;
 		g_weaponPosition = nullptr;
@@ -221,11 +198,10 @@ namespace frik {
 			return;
 		}
 
-		// do stuff now
-		g_config.leftHandedMode = *f4vr::iniLeftHandedMode;
-		_skelly->setLeftHandedSticky();
+		Log::debug("Update Start of Frame...");
 
-		Log::debug("Start of Frame");
+		// TODO: this sucks, refactor left-handed mode
+		g_config.leftHandedMode = *f4vr::iniLeftHandedMode;
 
 		if (!GameVarsConfigured) {
 			// TODO: move to common single time init code
@@ -233,27 +209,18 @@ namespace frik {
 			GameVarsConfigured = true;
 		}
 
-		g_config.leftHandedMode = *f4vr::iniLeftHandedMode;
-
 		g_pipboy->replaceMeshes(false);
 
-		// check if jumping or in air;
-		c_jumping = f4vr::isJumpingOrInAir();
-
-		_skelly->setTime();
-
+		Log::debug("Update Skeleton...");
 		_skelly->onFrameUpdate();
 
-		Log::debug("fix the missing screen");
-		fixMissingScreen(f4vr::getPlayerNodes());
-
-		Log::debug("Operate Pipboy");
-		g_pipboy->operatePipBoy();
-
-		Log::debug("bone sphere stuff");
+		Log::debug("Update Bone Sphere...");
 		g_boneSpheres->onFrameUpdate();
 
-		Log::debug("Weapon position");
+		Log::debug("Update Pipboy...");
+		g_pipboy->onFrameUpdate();
+
+		Log::debug("Update Weapon Position...");
 		g_weaponPosition->onFrameUpdate();
 
 		f4vr::BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
@@ -263,8 +230,7 @@ namespace frik {
 
 		fixMuzzleFlashPosition();
 
-		g_pipboy->onUpdate();
-		g_configurationMode->onUpdate();
+		g_configurationMode->onFrameUpdate();
 
 		FrameUpdateContext context(_skelly);
 		vrui::g_uiManager->onFrameUpdate(&context);
@@ -272,17 +238,6 @@ namespace frik {
 		f4vr::updateDownFromRoot(); // Last world update before exit.    Probably not necessary.
 
 		debug(_skelly);
-
-		// TODO: move this inside skelly on frame update
-		if (!f4vr::isInPowerArmor()) {
-			// sets 3rd Person Pipboy Scale
-			NiNode* _Pipboy3rd = f4vr::getChildNode("PipboyBone", (*g_player)->unkF0->rootNode);
-			if (_Pipboy3rd) {
-				_Pipboy3rd->m_localTransform.scale = g_config.pipBoyScale;
-			}
-		} else {
-			_skelly->fixArmor();
-		}
 
 		if (g_config.checkDebugDumpDataOnceFor("nodes")) {
 			printAllNodes(_skelly);
@@ -292,11 +247,16 @@ namespace frik {
 		}
 	}
 
-	void startUp() {
+	void initOnGameLoaded() {
 		Log::info("Starting up F4Body");
 		isLoaded = true;
 		g_boneSpheres = new BoneSpheresHandler();
 		scopeMenuEvent.Register();
+
+		std::srand(static_cast<unsigned int>(time(nullptr)));
+
+		SmoothMovementVR::startFunctions();
+		SmoothMovementVR::MenuOpenCloseHandler::Register();
 	}
 
 	// Papyrus Native Funcs
@@ -420,8 +380,7 @@ namespace frik {
 
 		// Bone Sphere interaction related APIs
 		vm->RegisterFunction(new NativeFunction2("RegisterBoneSphere", "FRIK:FRIK", registerBoneSphere, vm));
-		vm->RegisterFunction(
-			new NativeFunction3("RegisterBoneSphereOffset", "FRIK:FRIK", registerBoneSphereOffset, vm));
+		vm->RegisterFunction(new NativeFunction3("RegisterBoneSphereOffset", "FRIK:FRIK", registerBoneSphereOffset, vm));
 		vm->RegisterFunction(new NativeFunction1("DestroyBoneSphere", "FRIK:FRIK", destroyBoneSphere, vm));
 		vm->RegisterFunction(new NativeFunction1("RegisterForBoneSphereEvents", "FRIK:FRIK", registerForBoneSphereEvents, vm));
 		vm->RegisterFunction(new NativeFunction1("UnRegisterForBoneSphereEvents", "FRIK:FRIK", unRegisterForBoneSphereEvents, vm));
@@ -429,8 +388,7 @@ namespace frik {
 		vm->RegisterFunction(new NativeFunction2("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", toggleDebugBoneSpheresAtBone, vm));
 
 		// Finger pose related APIs
-		vm->RegisterFunction(
-			new NativeFunction6("setFingerPositionScalar", "FRIK:FRIK", setFingerPositionScalar, vm));
+		vm->RegisterFunction(new NativeFunction6("setFingerPositionScalar", "FRIK:FRIK", setFingerPositionScalar, vm));
 		vm->RegisterFunction(new NativeFunction1("restoreFingerPoseControl", "FRIK:FRIK", restoreFingerPoseControl, vm));
 
 		return true;

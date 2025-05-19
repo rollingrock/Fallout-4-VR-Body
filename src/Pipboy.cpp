@@ -13,7 +13,6 @@
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
-#include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 
@@ -67,21 +66,47 @@ namespace frik {
 	 * Executed every frame to update the Pipboy location and handle interaction with pipboy config UX.
 	 * TODO: refactor into separate functions for each functionality
 	 */
-	void Pipboy::onUpdate() {
+	void Pipboy::onFrameUpdate() {
+		operatePipBoy();
+
 		pipboyManagement();
+
 		dampenPipboyScreen();
 
+		if (f4vr::isInPowerArmor()) {
+			return;
+		}
+
 		//Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
-		if (!f4vr::isInPowerArmor()) {
-			NiNode* _HideNode = nullptr;
-			g_config.isHoloPipboy
-				? _HideNode = f4vr::getChildNode("Screen", (*g_player)->unkF0->rootNode)
-				: _HideNode = f4vr::getChildNode("HoloEmitter", (*g_player)->unkF0->rootNode);
-			if (_HideNode) {
-				if (_HideNode->m_localTransform.scale != 0) {
-					_HideNode->flags |= 0x1;
-					_HideNode->m_localTransform.scale = 0;
-				}
+		NiNode* hideNode;
+		g_config.isHoloPipboy
+			? hideNode = f4vr::getChildNode("Screen", (*g_player)->unkF0->rootNode)
+			: hideNode = f4vr::getChildNode("HoloEmitter", (*g_player)->unkF0->rootNode);
+		if (hideNode) {
+			if (hideNode->m_localTransform.scale != 0) {
+				hideNode->flags |= 0x1;
+				hideNode->m_localTransform.scale = 0;
+			}
+		}
+
+		// TODO: moved from end of F4VRBody, check works well
+		// sets 3rd Person Pipboy Scale
+		if (const auto pipboy3Rd = f4vr::getChildNode("PipboyBone", (*g_player)->unkF0->rootNode)) {
+			pipboy3Rd->m_localTransform.scale = g_config.pipBoyScale;
+		}
+	}
+
+	void Pipboy::fixMissingScreen() {
+		const auto pn = f4vr::getPlayerNodes();
+		if (const auto screenNode = pn->ScreenNode) {
+			const BSFixedString screenName("Screen:0");
+			const NiAVObject* newScreen = screenNode->GetObjectByName(&screenName);
+
+			if (!newScreen) {
+				pn->ScreenNode->RemoveChildAt(0);
+
+				newScreen = pn->PipboyRoot_nif_only_node->GetObjectByName(&screenName)->m_parent;
+				NiNode* rn = f4vr::addNode((uint64_t)&pn->ScreenNode, newScreen);
 			}
 		}
 	}
