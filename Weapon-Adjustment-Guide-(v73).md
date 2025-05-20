@@ -60,6 +60,7 @@ But in case it's not true the player can adjust the back-of-hand UI globally and
 Unequip a weapon to adjust back-of-hand UI global offsets. It will create `EmptyHand-backOfHand` offset json file.
 
 ## Better Scopes VR
+![image](https://github.com/user-attachments/assets/285d8b51-0d38-414b-a695-da399acfe97d)
 
 The config mode supports scope reticle repositioning if you have BetterScopesVR mod installed.  
 Scopes may need to be calibrated so the reticles are true to the impact.
