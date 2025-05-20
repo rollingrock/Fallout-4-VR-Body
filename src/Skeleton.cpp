@@ -5,10 +5,9 @@
 #include <f4se/GameCamera.h>
 
 #include "Config.h"
-#include "F4VRBody.h"
+#include "FRIK.h"
 #include "HandPose.h"
 #include "Menu.h"
-#include "Pipboy.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
@@ -118,7 +117,7 @@ namespace frik {
 
 	void Skeleton::selfieSkelly() const {
 		// Projects the 3rd person body out in front of the player by offset amount
-		if (!c_selfieMode || !_root) {
+		if (!g_frik.getSelfieMode() || !_root) {
 			return;
 		}
 
@@ -173,19 +172,29 @@ namespace frik {
 		NiNode* fn = getNode(name.c_str(), node);
 
 		if (!fn) {
-			Log::info("cannot find node %s", name.c_str());
+			Log::warn("Insert saved state - cannot find node '%s'", name.c_str());
 			return;
 		}
 
+		const auto defaultBones = _inPowerArmor ? _defaultBonesTransformInPA : _defaultBonesTransform;
+
 		const auto it = _savedStates.find(fn->m_name.c_str());
 		if (it == _savedStates.end()) {
-			fn->m_localTransform.pos = _boneLocalDefault[fn->m_name.c_str()];
+			const auto localDefault = defaultBones.at(fn->m_name.c_str());
+			fn->m_localTransform.pos = localDefault.pos;
+			fn->m_localTransform.rot = localDefault.rot;
 			_savedStates.emplace(fn->m_name.c_str(), fn->m_localTransform);
+			Log::verbose("Inserted saved state for node '%s'; Pos:(%.4f, %.4f, %.4f) Rot:[[%.5f, %.5f, %.5f], [%.5f, %.5f, %.5f], [%.5f, %.5f, %.5f]]",
+				name.c_str(), fn->m_localTransform.pos.x, fn->m_localTransform.pos.y, fn->m_localTransform.pos.z,
+				fn->m_localTransform.rot.data[0][0], fn->m_localTransform.rot.data[1][0], fn->m_localTransform.rot.data[2][0],
+				fn->m_localTransform.rot.data[0][1], fn->m_localTransform.rot.data[1][1], fn->m_localTransform.rot.data[2][1],
+				fn->m_localTransform.rot.data[0][2], fn->m_localTransform.rot.data[1][2], fn->m_localTransform.rot.data[2][2]);
 		} else {
-			node->m_localTransform.pos = _boneLocalDefault[name];
+			node->m_localTransform.pos = defaultBones.at(name).pos;
+			node->m_localTransform.rot = defaultBones.at(name).rot;
 			it->second = node->m_localTransform;
+			Log::warn("Insert saved state - no saved state for node '%s'", name.c_str());
 		}
-		Log::info("inserted %s", name.c_str());
 	}
 
 	NiTransform Skeleton::getBoneWorldTransform(const std::string& boneName) {
@@ -204,68 +213,7 @@ namespace frik {
 		}
 	}
 
-	void Skeleton::initLocalDefaults() {
-		_boneLocalDefault.clear();
-		if (_inPowerArmor) {
-			_boneLocalDefault.insert({"Root", NiPoint3(-0.000000f, -0.000000f, 0.000000f)});
-			_boneLocalDefault["COM"] = NiPoint3(-0.000031f, -3.749783f, 89.419518f);
-			_boneLocalDefault["Pelvis"] = NiPoint3(0.000000f, 0.000000f, 0.000000f);
-			_boneLocalDefault["LLeg_Thigh"] = NiPoint3(4.548744f, -1.329979f, 6.908315f);
-			_boneLocalDefault["LLeg_Calf"] = NiPoint3(34.297993f, 0.000030f, 0.000008f);
-			_boneLocalDefault["LLeg_Foot"] = NiPoint3(52.541229f, -0.000018f, -0.000018f);
-			_boneLocalDefault["RLeg_Thigh"] = NiPoint3(4.547630f, -1.324275f, -6.897992f);
-			_boneLocalDefault["RLeg_Calf"] = NiPoint3(34.297920f, 0.000020f, 0.000029f);
-			_boneLocalDefault["RLeg_Foot"] = NiPoint3(52.540794f, 0.000001f, -0.000002f);
-			_boneLocalDefault["SPINE1"] = NiPoint3(5.750534f, -0.002948f, -0.000008f);
-			_boneLocalDefault["SPINE2"] = NiPoint3(5.625465f, 0.000000f, 0.000000f);
-			_boneLocalDefault["Chest"] = NiPoint3(5.536583f, -0.000000f, 0.000000f);
-			_boneLocalDefault["LArm_Collarbone"] = NiPoint3(22.192039f, 0.348167f, 1.004177f);
-			_boneLocalDefault["LArm_UpperArm"] = NiPoint3(14.598365f, 0.000075f, 0.000146f);
-			_boneLocalDefault["LArm_ForeArm1"] = NiPoint3(19.536854f, 0.419780f, 0.045785f);
-			_boneLocalDefault["LArm_ForeArm2"] = NiPoint3(0.000168f, 0.000150f, 0.000153f);
-			_boneLocalDefault["LArm_ForeArm3"] = NiPoint3(10.000494f, 0.000162f, -0.000004f);
-			_boneLocalDefault["LArm_Hand"] = NiPoint3(26.964424f, 0.000185f, 0.000400f);
-			_boneLocalDefault["RArm_Collarbone"] = NiPoint3(22.191887f, 0.348147f, -1.003999f);
-			_boneLocalDefault["RArm_UpperArm"] = NiPoint3(14.598806f, 0.000044f, 0.000044f);
-			_boneLocalDefault["RArm_ForeArm1"] = NiPoint3(19.536560f, 0.419853f, -0.046183f);
-			_boneLocalDefault["RArm_ForeArm2"] = NiPoint3(-0.000053f, -0.000068f, -0.000137f);
-			_boneLocalDefault["RArm_ForeArm3"] = NiPoint3(10.000502f, -0.000104f, 0.000120f);
-			_boneLocalDefault["RArm_Hand"] = NiPoint3(26.964560f, 0.000064f, 0.001247f);
-			_boneLocalDefault["Neck"] = NiPoint3(24.293526f, -2.841563f, 0.000019f);
-			_boneLocalDefault["Head"] = NiPoint3(8.224354f, 0.0, 0.0);
-		} else {
-			_boneLocalDefault.insert({"Root", NiPoint3(-0.000000f, -0.000000f, 0.000000f)});
-			_boneLocalDefault["COM"] = NiPoint3(2.0, 1.5, 68.911301f);
-			_boneLocalDefault["Pelvis"] = NiPoint3(0.000000f, 0.000000f, 0.000000f);
-			_boneLocalDefault["LLeg_Thigh"] = NiPoint3(0.000008f, 0.000431f, 6.615070f);
-			_boneLocalDefault["LLeg_Calf"] = NiPoint3(31.595196f, 0.000021f, -0.000031f);
-			_boneLocalDefault["LLeg_Foot"] = NiPoint3(31.942888f, -0.000018f, -0.000018f);
-			_boneLocalDefault["RLeg_Thigh"] = NiPoint3(0.000008f, 0.000431f, -6.615068f);
-			_boneLocalDefault["RLeg_Calf"] = NiPoint3(31.595139f, 0.000020f, 0.000029f);
-			_boneLocalDefault["RLeg_Foot"] = NiPoint3(31.942570f, 0.000001f, -0.000002f);
-			_boneLocalDefault["SPINE1"] = NiPoint3(3.791992f, -0.002948f, -0.000008f);
-			_boneLocalDefault["SPINE2"] = NiPoint3(8.704666f, 0.000000f, 0.000000f);
-			_boneLocalDefault["Chest"] = NiPoint3(9.956283f, -0.000000f, 0.000000f);
-			_boneLocalDefault["LArm_Collarbone"] = NiPoint3(19.153227f, -0.510421f, 1.695077f);
-			_boneLocalDefault["LArm_UpperArm"] = NiPoint3(12.536572f, 0.000003f, 0.000000f);
-			_boneLocalDefault["LArm_ForeArm1"] = NiPoint3(17.968307f, 0.000019f, 0.000007f);
-			_boneLocalDefault["LArm_ForeArm2"] = NiPoint3(6.151599f, -0.000022f, -0.000045f);
-			_boneLocalDefault["LArm_ForeArm3"] = NiPoint3(6.151586f, -0.000068f, 0.000016f);
-			_boneLocalDefault["LArm_Hand"] = NiPoint3(6.151584f, 0.000033f, -0.000065f);
-			_boneLocalDefault["RArm_Collarbone"] = NiPoint3(19.153219f, -0.510418f, -1.695124f);
-			_boneLocalDefault["RArm_UpperArm"] = NiPoint3(12.534259f, 0.000007f, -0.000013f);
-			_boneLocalDefault["RArm_ForeArm1"] = NiPoint3(17.970503f, 0.000103f, -0.000056f);
-			_boneLocalDefault["RArm_ForeArm2"] = NiPoint3(6.152768f, 0.000040f, -0.000039f);
-			_boneLocalDefault["RArm_ForeArm3"] = NiPoint3(6.152856f, -0.000009f, -0.000091f);
-			_boneLocalDefault["RArm_Hand"] = NiPoint3(6.152939f, 0.000044f, -0.000029f);
-			_boneLocalDefault["Neck"] = NiPoint3(22.084f, -3.767f, 0.0);
-			_boneLocalDefault["Head"] = NiPoint3(8.224354f, 0.0, 0.0);
-		}
-	}
-
 	void Skeleton::saveStatesTree(NiNode* node) {
-		initLocalDefaults();
-
 		if (!node) {
 			Log::info("Cannot save states Tree");
 			return;
@@ -359,7 +307,7 @@ namespace frik {
 		for (const auto& [name, node] : armNodes) {
 			*node = commonNode->GetObjectByName(&name);
 		}
-		Log::info("Finished setting Arm Nodes (Right: %016I64X, Left: %016I64X)", _rightHand, _leftHand);
+		Log::info("Finished setting Arm Nodes (Right: %p, Left: %p)", _rightHand, _leftHand);
 
 		_handBones = handOpen;
 
@@ -479,8 +427,8 @@ namespace frik {
 	void Skeleton::setUnderHMD() {
 		if (g_config.disableSmoothMovement) {
 			_playerNodes->playerworldnode->m_localTransform.pos.z = _inPowerArmor
-				? g_config.PACameraHeight + c_dynamicCameraHeight
-				: g_config.cameraHeight + c_dynamicCameraHeight;
+				? g_config.PACameraHeight + g_frik.getDynamicCameraHeight()
+				: g_config.cameraHeight + g_frik.getDynamicCameraHeight();
 			updateDown(_playerNodes->playerworldnode, true);
 		}
 
@@ -556,12 +504,10 @@ namespace frik {
 		const NiPoint3 newPos = com->m_localTransform.pos + _root->m_worldTransform.rot.Transpose() * (newHipPos - com->m_worldTransform.pos);
 		const float offsetFwd = _inPowerArmor ? g_config.powerArmor_forward : g_config.playerOffset_forward;
 		com->m_localTransform.pos.y += newPos.y + offsetFwd;
-		com->m_localTransform.pos.z = _inPowerArmor ? newPos.z / 1.7 : newPos.z / 1.5;
+		com->m_localTransform.pos.z = _inPowerArmor ? newPos.z / 1.7f : newPos.z / 1.5f;
 		//com->m_localTransform.pos.z -= _inPowerArmor ? g_config.powerArmor_up + g_config.PACameraHeight : 0.0f;
 		NiNode* body = _root->m_parent->GetAsNiNode();
-		_inPowerArmor
-			? body->m_worldTransform.pos.z = body->m_worldTransform.pos.z - (g_config.PACameraHeight + g_config.PARootOffset)
-			: body->m_worldTransform.pos.z = body->m_worldTransform.pos.z - (g_config.cameraHeight + g_config.rootOffset);
+		body->m_worldTransform.pos.z -= _inPowerArmor ? g_config.PACameraHeight + g_config.PARootOffset : g_config.cameraHeight + g_config.rootOffset;
 
 		Matrix44 rot;
 		rot.rotateVectorVec(neckPos - tmpHipPos, hmdToHip);
@@ -1124,7 +1070,7 @@ namespace frik {
 		NiNode* lHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 		if (!rightWeapon || !rHand || !leftWeapon || !lHand) {
-			Log::sample("HLHWNS", "Cannot set up weapon nodes for left-handed mode switch");
+			Log::sample("Cannot set up weapon nodes for left-handed mode switch");
 			_lastLeftHandedModeSwitch = g_config.leftHandedMode;
 			return;
 		}
@@ -1142,7 +1088,7 @@ namespace frik {
 			lHand->AttachChild(leftWeapon, true);
 		}
 
-		if (g_pipboy->isOperatingPipboy()) {
+		if (g_frik.isOperatingPipboy()) {
 			rightWeapon->m_localTransform.scale = 0.0;
 		}
 	}
@@ -1602,7 +1548,7 @@ namespace frik {
 					vr::k_EButton_SteamVR_Touchpad));
 				_closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton[name]);
 
-				if (isWeaponVisible && !g_pipboy->status() && !g_pipboy->isOperatingPipboy() && !(isLeft ^ g_config.leftHandedMode)) {
+				if (isWeaponVisible && !g_frik.isPipboyOn() && !g_frik.isOperatingPipboy() && !(isLeft ^ g_config.leftHandedMode)) {
 					// CylonSurfer Updated conditions to cater for Virtual Pipboy usage (Ensures Index Finger is extended when weapon is drawn)
 					this->copy1StPerson(name);
 				} else {
@@ -1669,6 +1615,79 @@ namespace frik {
 		}
 
 		updateDown(node, false);
+	}
+
+	/**
+	 * Default bones position and rotation to be used when for saving bone state on skeleton initialization.
+	 * Required because loading a game does NOT reset the skeleton bones resulting in incorrect positions/rotations.
+	 * Entering/Existing power-armor fixes the skeleton but loading the game over and over makes it worse.
+	 * By forcing the hardcoded default values the issue is prevented as we always start with the same initial values.
+	 * The values were collected by reading them from the skeleton bones on first load of a saved game before any manipulations.
+	 */
+	std::unordered_map<std::string, NiTransform> Skeleton::getBonesDefaultTransform() {
+		return std::unordered_map<std::string, NiTransform>{
+			{"Root", getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"COM", getTransform(0.0f, 0.0f, 68.91130f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f)},
+			{"Pelvis", getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"LLeg_Thigh", getTransform(0.0f, 0.00040f, 6.61510f, -0.99112f, -0.00017f, -0.13297f, -0.03860f, 0.95730f, 0.28650f, 0.12725f, 0.28909f, -0.94881f, 1.0f)},
+			{"LLeg_Calf", getTransform(31.59520f, 0.0f, 0.0f, 0.99210f, 0.12266f, -0.02618f, -0.12266f, 0.99245f, 0.00159f, 0.02617f, 0.00164f, 0.99966f, 1.0f)},
+			{"LLeg_Foot", getTransform(31.94290f, 0.0f, 0.0f, 0.45330f, -0.88555f, -0.10159f, 0.88798f, 0.45855f, -0.03499f, 0.07757f, -0.07435f, 0.99421f, 1.0f)},
+			{"RLeg_Thigh", getTransform(0.0f, 0.00040f, -6.61510f, -0.99307f, 0.00520f, 0.11741f, -0.02903f, 0.95721f, -0.28795f, -0.11389f, -0.28936f, -0.95042f, 1.0f)},
+			{"RLeg_Calf", getTransform(31.59510f, 0.0f, 0.0f, 0.99108f, 0.13329f, 0.00011f, -0.13329f, 0.99108f, 0.00139f, 0.00007f, -0.00140f, 1.0f, 1.0f)},
+			{"RLeg_Foot", getTransform(31.94260f, 0.0f, 0.0f, 0.44741f, -0.88731f, 0.11181f, 0.89061f, 0.45344f, 0.03463f, -0.08143f, 0.08409f, 0.99313f, 1.0f)},
+			{"SPINE1", getTransform(3.792f, -0.00290f, 0.0f, 0.99246f, -0.12254f, 0.0f, 0.12254f, 0.99246f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"SPINE2", getTransform(8.70470f, 0.0f, 0.0f, 0.98463f, 0.17464f, 0.0f, -0.17464f, 0.98463f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"Chest", getTransform(9.95630f, 0.0f, 0.0f, 0.99983f, -0.01837f, 0.0f, 0.01837f, 0.99983f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"LArm_Collarbone", getTransform(19.15320f, -0.51040f, 1.69510f, -0.40489f, -0.00599f, -0.91434f, -0.26408f, 0.95813f, 0.11066f, 0.87540f, 0.28627f, -0.38952f, 1.0f)},
+			{"LArm_UpperArm", getTransform(12.53660f, 0.0f, 0.0f, 0.91617f, -0.25279f, -0.31102f, 0.25328f, 0.96658f, -0.03954f, 0.31062f, -0.04255f, 0.94958f, 1.0f)},
+			{"LArm_ForeArm1", getTransform(17.96830f, 0.0f, 0.0f, 0.85511f, -0.51462f, -0.06284f, 0.51548f, 0.85690f, -0.00289f, 0.05534f, -0.02992f, 0.99802f, 1.0f)},
+			{"LArm_ForeArm2", getTransform(6.15160f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, -0.00536f, 0.0f, 0.00536f, 0.99999f, 1.0f)},
+			{"LArm_ForeArm3", getTransform(6.15160f, -0.00010f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, -0.00536f, 0.0f, 0.00536f, 0.99999f, 1.0f)},
+			{"LArm_Hand", getTransform(6.15160f, 0.0f, -0.00010f, 0.98845f, 0.14557f, -0.04214f, 0.04136f, 0.00839f, 0.99911f, 0.14579f, -0.98931f, 0.00227f, 1.0f)},
+			{
+				"RArm_Collarbone",
+				getTransform(19.15320f, -0.51040f, -1.69510f, -0.40497f, -0.00602f, 0.91431f, -0.26413f, 0.95811f, -0.11069f, -0.87535f, -0.28632f, -0.38960f, 1.0f)
+			},
+			{"RArm_UpperArm", getTransform(12.53430f, 0.0f, 0.0f, 0.91620f, -0.25314f, 0.31064f, 0.25365f, 0.96649f, 0.03947f, -0.31022f, 0.04263f, 0.94971f, 1.0f)},
+			{"RArm_ForeArm1", getTransform(17.97050f, 0.00010f, -0.00010f, 0.85532f, -0.51419f, 0.06360f, 0.51507f, 0.85714f, 0.00288f, -0.05599f, 0.03030f, 0.99797f, 1.0f)},
+			{"RArm_ForeArm2", getTransform(6.15280f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, 0.00536f, 0.0f, -0.00536f, 0.99999f, 1.0f)},
+			{"RArm_ForeArm3", getTransform(6.15290f, 0.0f, -0.00010f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, 0.00536f, 0.0f, -0.00536f, 0.99999f, 1.0f)},
+			{"RArm_Hand", getTransform(6.15290f, 0.0f, 0.0f, 0.98845f, 0.14557f, 0.04214f, 0.04136f, 0.00839f, -0.99911f, -0.14579f, 0.98931f, 0.00227f, 1.0f)},
+			{"Neck", getTransform(22.084f, -3.767f, 0.0f, 0.91268f, -0.40867f, -0.00003f, 0.40867f, 0.91268f, 0.0f, 0.00002f, -0.00001f, 1.0f, 1.0f)},
+			{"Head", getTransform(8.22440f, 0.0f, 0.0f, 0.94872f, 0.31613f, 0.00002f, -0.31613f, 0.94872f, -0.00001f, -0.00003f, 0.0f, 1.0f, 1.0f)},
+		};
+	}
+
+	// See "getBonesDefaultTransform" above
+	std::unordered_map<std::string, NiTransform> Skeleton::getBonesDefaultTransformInPA() {
+		return std::unordered_map<std::string, NiTransform>{
+			{"Root", getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"COM", getTransform(0.0f, -3.74980f, 89.41950f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f)},
+			{"Pelvis", getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"LLeg_Thigh", getTransform(4.54870f, -1.33f, 6.90830f, -0.98736f, 0.14491f, 0.06416f, 0.06766f, 0.01940f, 0.99752f, 0.14331f, 0.98925f, -0.02896f, 1.0f)},
+			{"LLeg_Calf", getTransform(34.298f, 0.0f, 0.0f, 0.99681f, -0.00145f, 0.07983f, 0.00170f, 0.99999f, -0.00305f, -0.07982f, 0.00318f, 0.99680f, 1.0f)},
+			{"LLeg_Foot", getTransform(52.54120f, 0.0f, 0.0f, 0.63109f, -0.76168f, -0.14685f, -0.07775f, 0.12624f, -0.98895f, 0.77180f, 0.63554f, 0.02045f, 1.0f)},
+			{"RLeg_Thigh", getTransform(4.54760f, -1.32430f, -6.898f, -0.98732f, 0.14533f, -0.06381f, 0.06732f, 0.01938f, -0.99754f, -0.14374f, -0.98919f, -0.02892f, 1.0f)},
+			{"RLeg_Calf", getTransform(34.29790f, 0.0f, 0.0f, 0.99684f, -0.00096f, -0.07937f, 0.00120f, 0.99999f, 0.00307f, 0.07937f, -0.00316f, 0.99684f, 1.0f)},
+			{"RLeg_Foot", getTransform(52.54080f, 0.0f, 0.0f, 0.63118f, -0.76162f, 0.14677f, -0.07771f, 0.12618f, 0.98896f, -0.77173f, -0.63562f, 0.02046f, 1.0f)},
+			{"SPINE1", getTransform(5.75050f, -0.00290f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"SPINE2", getTransform(5.62550f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"Chest", getTransform(5.53660f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"LArm_Collarbone", getTransform(22.192f, 0.34820f, 1.00420f, -0.34818f, -0.05435f, -0.93585f, -0.26919f, 0.96207f, 0.04428f, 0.89794f, 0.26734f, -0.34961f, 1.0f)},
+			{"LArm_UpperArm", getTransform(14.59840f, 0.00010f, 0.00010f, 0.77214f, -0.19393f, -0.60514f, 0.08574f, 0.97538f, -0.20318f, 0.62964f, 0.10499f, 0.76976f, 1.0f)},
+			{"LArm_ForeArm1", getTransform(19.53690f, 0.41980f, 0.04580f, 0.92233f, -0.38166f, -0.06030f, 0.38176f, 0.92420f, -0.01042f, 0.05971f, -0.01341f, 0.99813f, 1.0f)},
+			{"LArm_ForeArm2", getTransform(0.00020f, 0.00020f, 0.00020f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"LArm_ForeArm3", getTransform(10.000494f, 0.000162f, -0.000004f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"LArm_Hand", getTransform(26.96440f, 0.00020f, 0.00040f, 0.98604f, 0.16503f, 0.02218f, 0.00691f, -0.17364f, 0.98479f, 0.16638f, -0.97088f, -0.17236f, 1.0f)},
+			{"RArm_Collarbone", getTransform(22.19190f, 0.34810f, -1.004f, -0.34818f, -0.06482f, 0.93518f, -0.26918f, 0.96251f, -0.03351f, -0.89795f, -0.26340f, -0.35257f, 1.0f)},
+			{"RArm_UpperArm", getTransform(14.59880f, 0.0f, 0.0f, 0.77213f, -0.19339f, 0.60533f, 0.09277f, 0.97667f, 0.19369f, -0.62866f, -0.09340f, 0.77205f, 1.0f)},
+			{"RArm_ForeArm1", getTransform(19.53660f, 0.41990f, -0.04620f, 0.92233f, -0.38166f, 0.06029f, 0.38171f, 0.92422f, 0.01129f, -0.06003f, 0.01260f, 0.99812f, 1.0f)},
+			{"RArm_ForeArm2", getTransform(-0.00010f, -0.00010f, -0.00010f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"RArm_ForeArm3", getTransform(10.00050f, -0.00010f, 0.00010f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f)},
+			{"RArm_Hand", getTransform(26.96460f, 0.00010f, 0.00120f, 0.98604f, 0.16503f, -0.02218f, 0.00691f, -0.17364f, -0.98479f, -0.16638f, 0.97088f, -0.17236f, 1.0f)},
+			{"Neck", getTransform(24.29350f, -2.84160f, 0.0f, 0.92612f, -0.37723f, -0.00002f, 0.37723f, 0.92612f, 0.00001f, 0.00002f, -0.00002f, 1.0f, 1.0f)},
+			{"Head", getTransform(8.22440f, 0.0f, 0.0f, 0.94891f, 0.31555f, 0.00002f, -0.31555f, 0.94891f, 0.0f, -0.00002f, -0.00001f, 1.0f, 1.0f)},
+		};
 	}
 
 	std::map<std::string, std::pair<std::string, std::string>> Skeleton::makeFingerRelations() {

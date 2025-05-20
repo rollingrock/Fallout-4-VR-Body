@@ -161,8 +161,7 @@ namespace patches {
 	}
 
 	static void patchBody() {
-		Log::info("Patch Body In");
-		Log::info("addr = %016I64X", RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr());
+		Log::info("Patch Body In (address: %p)", RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr());
 
 		// For new game
 		SafeWrite8(RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr(), 0x74);

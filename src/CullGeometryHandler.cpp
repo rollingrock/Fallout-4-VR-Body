@@ -1,7 +1,7 @@
 #include "CullGeometryHandler.h"
 #include "Config.h"
 #include "Debug.h"
-#include "F4VRBody.h"
+#include "FRIK.h"
 #include "utils.h"
 #include "common/CommonUtils.h"
 
@@ -73,19 +73,19 @@ namespace frik {
 	/// Equipment slots are things like helmet, glasses, etc.
 	/// </summary>
 	void CullGeometryHandler::cullPlayerGeometry() {
-		if (c_selfieMode && g_config.selfieIgnoreHideFlags) {
+		if (g_frik.getSelfieMode() && g_config.selfieIgnoreHideFlags) {
 			restoreGeometry();
 			return;
 		}
 
-		const auto rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
+		const auto rn = reinterpret_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
 		if (!rn) {
 			return;
 		}
 
 		// check for selfie mode to handle an edge-case where all hide setting are set to false but the geometries are not restored
 		// preProcessHideGeometryIndexes will restore them (even equipment) so it's a hacky fix
-		if (g_config.hideHead || g_config.hideSkin || c_selfieMode) {
+		if (g_config.hideHead || g_config.hideSkin || g_frik.getSelfieMode()) {
 			preProcessHideGeometryIndexes(rn);
 			for each (int idx in _hideFaceSkinGeometryIndexes) {
 				f4vr::showHideNode(rn->kGeomArray[idx].spGeometry, true);
@@ -108,7 +108,7 @@ namespace frik {
 	/// </summary>
 	void CullGeometryHandler::restoreGeometry() {
 		//Face and Skin
-		if (const auto rn = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode)) {
+		if (const auto rn = reinterpret_cast<BSFadeNode*>((*g_player)->unkF0->rootNode)) {
 			for (UINT32 i = 0; i < rn->kGeomArray.count; ++i) {
 				f4vr::showHideNode(rn->kGeomArray[i].spGeometry, false);
 			}

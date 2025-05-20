@@ -6,7 +6,7 @@
 #include <f4se/GameRTTI.h>
 
 #include "Config.h"
-#include "F4VRBody.h"
+#include "FRIK.h"
 #include "MenuChecker.h"
 #include "SmoothMovementVR.h"
 #include "common/Logger.h"
@@ -185,9 +185,11 @@ namespace SmoothMovementVR {
 
 							//	Log::info("playerWorldNode: %g %g %g", playerWorldNode->m_localTransform.pos.x, playerWorldNode->m_localTransform.pos.y, playerWorldNode->m_localTransform.pos.z);
 
-							playerWorldNode->m_localTransform.pos.z += inPowerArmorFrame.load()
-								? frik::g_config.PACameraHeight + frik::g_config.cameraHeight + frik::c_dynamicCameraHeight
-								: frik::g_config.cameraHeight + frik::c_dynamicCameraHeight;
+							// TODO: this is probably where moving in/out of power armor results in delay of camera height change as the thread to detect in PA is every 5 seconds!!!!
+							const float cameraHeightOffset = inPowerArmorFrame.load()
+								? frik::g_config.PACameraHeight + frik::g_config.cameraHeight + frik::g_frik.getDynamicCameraHeight()
+								: frik::g_config.cameraHeight + frik::g_frik.getDynamicCameraHeight();
+							playerWorldNode->m_localTransform.pos.z += cameraHeightOffset;
 						} else {
 							Log::info("Cannot get PlayerWorldNode...");
 						}

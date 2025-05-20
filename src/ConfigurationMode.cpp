@@ -3,7 +3,7 @@
 #include <f4se/GameMenus.h>
 
 #include "Config.h"
-#include "F4VRBody.h"
+#include "FRIK.h"
 #include "HandPose.h"
 #include "Pipboy.h"
 #include "Skeleton.h"
@@ -28,7 +28,7 @@ namespace frik {
 	 * Open Pipboy configuration mode which also requires Pipboy to be open.
 	 */
 	void ConfigurationMode::openPipboyConfigurationMode() {
-		g_pipboy->turnOn();
+		g_frik.turnOnPipboy();
 		enterPipboyConfigMode();
 	}
 
@@ -176,7 +176,7 @@ namespace frik {
 			g_config.dampenHands ? UIElement->m_localTransform.scale = 1 : UIElement->m_localTransform.scale = 0;
 			// Weapon Reposition Mode
 			UIElement = f4vr::getNode("MC-Tile08On", f4vr::getPlayerNodes()->primaryUIAttachNode);
-			UIElement->m_localTransform.scale = g_weaponPosition->inWeaponRepositionMode() ? 1 : 0;
+			UIElement->m_localTransform.scale = g_frik.inWeaponRepositionMode() ? 1 : 0;
 			// Grip Mode
 			if (!g_config.enableGripButtonToGrap && !g_config.onePressGripButton && !g_config.enableGripButtonToLetGo) {
 				// Standard Sticky Grip on / off
@@ -302,7 +302,7 @@ namespace frik {
 			}
 			if (WeaponButtonPressed && !_isWeaponButtonPressed) {
 				_isWeaponButtonPressed = true;
-				g_weaponPosition->toggleWeaponRepositionMode();
+				g_frik.toggleWeaponRepositionMode();
 				// TODO: close main config on toggling this on
 			} else if (!WeaponButtonPressed) {
 				_isWeaponButtonPressed = false;
@@ -410,7 +410,7 @@ namespace frik {
 			const auto HeightButton = offHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(1));
 			if (ExitandSave && !_exitAndSavePressed) {
 				_exitAndSavePressed = true;
-				g_configurationMode->configModeExit();
+				configModeExit();
 				g_config.save();
 				f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
 			} else if (!ExitandSave) {
@@ -418,7 +418,7 @@ namespace frik {
 			}
 			if (ExitnoSave && !_exitWithoutSavePressed) {
 				_exitWithoutSavePressed = true;
-				g_configurationMode->configModeExit();
+				configModeExit();
 				g_config.armLength = _armLength_bkup;
 				g_config.powerArmor_up = _powerArmor_up_bkup;
 				g_config.playerOffset_up = _playerOffset_up_bkup;
@@ -437,7 +437,7 @@ namespace frik {
 			}
 			if (SelfieButton && !_selfieButtonPressed) {
 				_selfieButtonPressed = true;
-				c_selfieMode = !c_selfieMode;
+				g_frik.setSelfieMode(!g_frik.getSelfieMode());
 			} else if (!SelfieButton) {
 				_selfieButtonPressed = false;
 			}
@@ -477,8 +477,7 @@ namespace frik {
 	 * The Pipboy Configuration Mode function.
 	 */
 	void ConfigurationMode::pipboyConfigurationMode() {
-		if (g_pipboy->status()) {
-			float rAxisOffsetX;
+		if (g_frik.isPipboyOn()) {
 			vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
@@ -525,6 +524,7 @@ namespace frik {
 				_PBConfigModeEnterCounter = 0;
 			}
 			if (_isPBConfigModeActive) {
+				float rAxisOffsetX;
 				setConfigModeHandPose();
 
 				NiPoint3 finger;
@@ -645,7 +645,7 @@ namespace frik {
 					_isModelSwapButtonPressed = true;
 					g_config.toggleIsHoloPipboy();
 					turnPipBoyOff();
-					g_pipboy->replaceMeshes(true);
+					g_frik.replacePipboyMeshes(true);
 					f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
 					turnPipBoyOn();
 				} else if (!ModelSwapButtonPressed) {
@@ -767,14 +767,14 @@ namespace frik {
 	}
 
 	/**
-	 * Check if currently in weapon reposition mode to enable or disable the rotation stick depending if pipboy is open.
+	 * Check if currently in weapon reposition mode to enable or disable the rotation stick depending on if pipboy is open.
 	 * Needed to operate vanilla in-fron or projected pipboy when also doing weapon repositioning.
 	 * On-wrist pipboy needs the rotation stick disabled to override its own UI.
 	 */
 	void ConfigurationMode::checkWeaponRepositionPipboyConflict() {
-		if (!g_weaponPosition->inWeaponRepositionMode()) {
+		if (!g_frik.inWeaponRepositionMode()) {
 			return;
 		}
-		f4vr::setControlsThumbstickEnableState(isAnyPipboyOpen() && !g_pipboy->isOperatingPipboy());
+		f4vr::setControlsThumbstickEnableState(isAnyPipboyOpen() && !g_frik.isOperatingPipboy());
 	}
 }

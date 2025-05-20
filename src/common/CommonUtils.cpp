@@ -39,6 +39,23 @@ namespace common {
 		return sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
 	}
 
+	NiTransform getTransform(const float x, const float y, const float z, const float r1, const float r2, const float r3, const float r4, const float r5, const float r6,
+	                         const float r7, const float r8, const float r9, const float scale) {
+		NiTransform transform;
+		transform.pos = NiPoint3(x, y, z);
+		transform.rot.data[0][0] = r1;
+		transform.rot.data[1][0] = r2;
+		transform.rot.data[2][0] = r3;
+		transform.rot.data[0][1] = r4;
+		transform.rot.data[1][1] = r5;
+		transform.rot.data[2][1] = r6;
+		transform.rot.data[0][2] = r7;
+		transform.rot.data[1][2] = r8;
+		transform.rot.data[2][2] = r9;
+		transform.scale = scale;
+		return transform;
+	}
+
 	NiPoint3 vec3Norm(NiPoint3 v1) {
 		const float mag = vec3Len(v1);
 

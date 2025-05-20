@@ -2,7 +2,7 @@
 
 #include "Config.h"
 #include "Debug.h"
-#include "F4VRBody.h"
+#include "FRIK.h"
 #include "Skeleton.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
@@ -77,7 +77,7 @@ namespace frik {
 	void WeaponPositionAdjuster::handlePrimaryWeapon() {
 		const auto weapon = f4vr::getWeaponNode();
 		const auto backOfHand = getBackOfHandUINode();
-		if (!f4vr::isNodeVisible(weapon) || g_configurationMode->isCalibrateModeActive()) {
+		if (!f4vr::isNodeVisible(weapon) || g_frik.isMainConfigurationModeActive()) {
 			if (_configMode) {
 				_configMode->onFrameUpdate(nullptr);
 			}
@@ -241,7 +241,7 @@ namespace frik {
 				}
 			}
 
-			if (!g_config.enableGripButtonToGrap && !g_config.enableGripButtonToLetGo && !c_isLookingThroughScope && isOffhandMovedFastAway()) {
+			if (!g_config.enableGripButtonToGrap && !g_config.enableGripButtonToLetGo && !g_frik.isLookingThroughScope() && isOffhandMovedFastAway()) {
 				// mode 1 release when move fast away from barrel
 				_offHandGripping = false;
 			}
@@ -265,7 +265,7 @@ namespace frik {
 			// Mode 1,2 grab when close to barrel
 			_offHandGripping = true;
 		}
-		if (!g_pipboy->status() && f4vr::VRControllers.isPressed(g_config.gripButtonID, f4vr::Hand::Offhand)) {
+		if (!g_frik.isPipboyOn() && f4vr::VRControllers.isPressed(g_config.gripButtonID, f4vr::Hand::Offhand)) {
 			// Mode 3,4 grab when pressing grip button
 			_offHandGripping = true;
 		}
@@ -388,7 +388,7 @@ namespace frik {
 		if (offset < g_config.scopeAdjustDistance) {
 			// Zoom toggling
 			Log::info("Zoom Toggle pressed; sending message to switch zoom state");
-			g_messaging->Dispatch(g_pluginHandle, 16, nullptr, 0, "FO4VRBETTERSCOPES");
+			g_frik.dispatchMessageToBetterScopesVR(16, nullptr, 0);
 			f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
 		}
 	}

@@ -129,23 +129,8 @@ namespace frik {
 	 * @return true if BetterScopesVR mod is loaded in the game, false otherwise.
 	 */
 	bool isBetterScopesVRModLoaded() {
-		return isModLoaded("FO4VRBETTERSCOPES");
-	}
-
-	/**
-	 * @return true if a mod by specific name is loaded in the game, false otherwise.
-	 */
-	bool isModLoaded(const char* modName) {
-		const DataHandler* dataHandler = *g_dataHandler;
-		if (!dataHandler) {
-			return false;
-		}
-		for (auto i = 0; i < dataHandler->modList.loadedModCount; ++i) {
-			const auto modInfo = dataHandler->modList.loadedMods[i];
-			if (_stricmp(modInfo->name, modName) == 0) {
-				return true;
-			}
-		}
-		return false;
+		DataHandler* dataHandler = *g_dataHandler;
+		const auto mod = dataHandler ? dataHandler->LookupModByName("3dscopes-replacer.esp") : nullptr;
+		return mod != nullptr;
 	}
 }

@@ -78,18 +78,10 @@ namespace frik {
 
 	void printNodes(NiNode* nde, const long long curTime) {
 		Log::info("%d %s : children = %d %d: local %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f", curTime, nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
-			nde->m_localTransform.rot.arr[0],
-			nde->m_localTransform.rot.arr[1],
-			nde->m_localTransform.rot.arr[2],
-			nde->m_localTransform.rot.arr[3],
-			nde->m_localTransform.rot.arr[4],
-			nde->m_localTransform.rot.arr[5],
-			nde->m_localTransform.rot.arr[6],
-			nde->m_localTransform.rot.arr[7],
-			nde->m_localTransform.rot.arr[8],
-			nde->m_localTransform.rot.arr[9],
-			nde->m_localTransform.rot.arr[10],
-			nde->m_localTransform.rot.arr[11],
+			nde->m_localTransform.rot.arr[0], nde->m_localTransform.rot.arr[1], nde->m_localTransform.rot.arr[2],
+			nde->m_localTransform.rot.arr[3], nde->m_localTransform.rot.arr[4], nde->m_localTransform.rot.arr[5],
+			nde->m_localTransform.rot.arr[6], nde->m_localTransform.rot.arr[7], nde->m_localTransform.rot.arr[8],
+			nde->m_localTransform.rot.arr[9], nde->m_localTransform.rot.arr[10], nde->m_localTransform.rot.arr[11],
 			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z);
 
 		if (nde->GetAsNiNode()) {
@@ -116,7 +108,7 @@ namespace frik {
 			node->m_localTransform.rot.data[0][1], node->m_localTransform.rot.data[1][1], node->m_localTransform.rot.data[2][1],
 			node->m_localTransform.rot.data[0][2], node->m_localTransform.rot.data[1][2], node->m_localTransform.rot.data[2][2]);
 		if (!node->GetAsNiNode()) {
-			return; // no childerns for non NiNodes
+			return; // no children for non NiNodes
 		}
 
 		padding += "..";
@@ -128,21 +120,21 @@ namespace frik {
 		}
 	}
 
-	void printTransform(const std::string& name, const NiTransform& transform) {
-		Log::info("Transform '%s', Pos: (%2.4f, %2.4f, %2.4f), Rot: [[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.3f, %2.3f, %2.3f]]",
-			name.c_str(),
-			transform.pos.x,
-			transform.pos.y,
-			transform.pos.z,
-			transform.rot.data[0][0],
-			transform.rot.data[1][0],
-			transform.rot.data[2][0],
-			transform.rot.data[0][1],
-			transform.rot.data[1][1],
-			transform.rot.data[2][1],
-			transform.rot.data[0][2],
-			transform.rot.data[1][2],
-			transform.rot.data[2][2]);
+	void printTransform(const std::string& name, const NiTransform& transform, bool sample) {
+		const auto frm = "Transform '" + name + "' Pos: (%2.4f, %2.4f, %2.4f), Rot: [[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.3f, %2.3f, %2.3f]]";
+		if (sample) {
+			Log::sample(frm.c_str(),
+				transform.pos.x, transform.pos.y, transform.pos.z,
+				transform.rot.data[0][0], transform.rot.data[1][0], transform.rot.data[2][0],
+				transform.rot.data[0][1], transform.rot.data[1][1], transform.rot.data[2][1],
+				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2]);
+		} else {
+			Log::info(frm.c_str(),
+				transform.pos.x, transform.pos.y, transform.pos.z,
+				transform.rot.data[0][0], transform.rot.data[1][0], transform.rot.data[2][0],
+				transform.rot.data[0][1], transform.rot.data[1][1], transform.rot.data[2][1],
+				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2]);
+		}
 	}
 
 	/**

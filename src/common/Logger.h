@@ -110,23 +110,23 @@ namespace common {
 
 		/**
 		 * Same as calling info() but only one message log per "time" in milliseconds, other logs are dropped.
-		 * Use static key to identify the log messages that should be sampled.
+		 * Use the message format as a key to identify the log messages that should be sampled.
 		 */
-		static void sample(const std::string& key, const int time, const char* fmt, ...) {
+		static void sample(const int time, const char* fmt, ...) {
 			va_list args;
 			va_start(args, fmt);
-			sampleImpl(key, time, fmt, args);
+			sampleImpl(time, fmt, args);
 			va_end(args);
 		}
 
 		/**
 		 * Same as calling info() but only one message log per second, other logs are dropped.
-		 * Use static key to identify the log messages that should be sampled.
+		 * Use the message format as a key to identify the log messages that should be sampled.
 		 */
-		static void sample(const std::string& key, const char* fmt, ...) {
+		static void sample(const char* fmt, ...) {
 			va_list args;
 			va_start(args, fmt);
-			sampleImpl(key, 1000, fmt, args);
+			sampleImpl(1000, fmt, args);
 			va_end(args);
 		}
 
@@ -149,7 +149,8 @@ namespace common {
 		/**
 		 * Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
 		 */
-		static void sampleImpl(const std::string& key, const int time, const char* fmt, const va_list args) {
+		static void sampleImpl(const int time, const char* fmt, const va_list args) {
+			const auto key = fmt;
 			const auto now = std::chrono::steady_clock::now();
 			if (_sampleMessagesTtl.contains(key) && now - _sampleMessagesTtl[key] <= std::chrono::milliseconds(time)) {
 				return;

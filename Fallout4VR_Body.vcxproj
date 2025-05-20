@@ -187,11 +187,12 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClCompile Include="src\ConfigurationMode.cpp" />
     <ClCompile Include="src\CullGeometryHandler.cpp" />
     <ClCompile Include="src\Debug.cpp" />
-    <ClCompile Include="src\F4VRBody.cpp" />
+    <ClCompile Include="src\FRIK.cpp" />
     <ClCompile Include="src\f4vr\F4VRUtils.cpp" />
     <ClCompile Include="src\GunReload.cpp" />
     <ClCompile Include="src\HandPose.cpp" />
     <ClCompile Include="src\hook.cpp" />
+    <ClCompile Include="src\PapyrusApi.h" />
     <ClCompile Include="src\ui\UIToggleGroupContainer.cpp" />
     <ClCompile Include="src\ui\UIButton.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -229,7 +230,7 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClInclude Include="src\ConfigurationMode.h" />
     <ClInclude Include="src\CullGeometryHandler.h" />
     <ClInclude Include="src\Debug.h" />
-    <ClInclude Include="src\F4VRBody.h" />
+    <ClInclude Include="src\FRIK.h" />
     <ClInclude Include="src\f4vr\F4VRUtils.h" />
     <ClInclude Include="src\f4vr\PlayerNodes.h" />
     <ClInclude Include="src\f4vr\VRControllersManager.h" />

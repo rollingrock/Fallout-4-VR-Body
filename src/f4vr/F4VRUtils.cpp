@@ -11,11 +11,13 @@
 
 namespace f4vr {
 	void showMessagebox(const std::string& text) {
+		common::Log::info("Show messagebox: '%s'", text.c_str());
 		auto str = BSFixedString(text.c_str());
 		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Messagebox", str);
 	}
 
 	void showNotification(const std::string& text) {
+		common::Log::info("Show notification: '%s'", text.c_str());
 		auto str = BSFixedString(text.c_str());
 		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Notification", str);
 	}

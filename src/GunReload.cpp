@@ -1,7 +1,7 @@
 #include "GunReload.h"
 
 #include "Config.h"
-#include "F4VRBody.h"
+#include "FRIK.h"
 #include "common/CommonUtils.h"
 #include "f4se/GameExtraData.h"
 #include "f4vr/F4VROffsets.h"
@@ -125,7 +125,7 @@ namespace frik {
 			f4vr::TESObjectREFR_InitHavokForCollisionObject(currentRefr);
 			f4vr::bhkUtilFunctions_SetLayer(currentRefr->unkF0->rootNode, 5);
 
-			//Log::info("%016I64X", currentRefr);
+			//Log::info("%p", currentRefr);
 			return true;
 		}
 		return false;

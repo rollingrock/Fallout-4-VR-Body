@@ -50,8 +50,8 @@ namespace f4vr {
 	void updateTransformsDown(NiNode* nde, bool updateSelf);
 
 	// persistent data
-	inline static bool _controlsThumbstickEnableState = true;
-	inline static float _controlsThumbstickOriginalDeadzone = 0.25f;
-	inline static float _controlsThumbstickOriginalDeadzoneMax = 0.94f;
-	inline static float _controlsDirectionalOriginalDeadzone = 0.5f;
+	inline bool _controlsThumbstickEnableState = true;
+	inline float _controlsThumbstickOriginalDeadzone = 0.25f;
+	inline float _controlsThumbstickOriginalDeadzoneMax = 0.94f;
+	inline float _controlsDirectionalOriginalDeadzone = 0.5f;
 }

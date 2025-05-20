@@ -12,6 +12,7 @@ namespace common {
 	std::string trim(const std::string& s);
 
 	// 3D space related functions
+	NiTransform getTransform(float x, float y, float z, float r1, float r2, float r3, float r4, float r5, float r6, float r7, float r8, float r9, float scale);
 	float vec3Len(const NiPoint3& v1);
 	NiPoint3 vec3Norm(NiPoint3 v1);
 	float vec3Dot(const NiPoint3& v1, const NiPoint3& v2);

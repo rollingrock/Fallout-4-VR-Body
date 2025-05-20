@@ -1,7 +1,7 @@
 #include "WeaponPositionConfigMode.h"
 
 #include "Config.h"
-#include "F4VRBody.h"
+#include "FRIK.h"
 #include "Skeleton.h"
 #include "utils.h"
 #include "common/CommonUtils.h"
@@ -82,7 +82,7 @@ namespace frik {
 	 * Handle configuration UI interaction.
 	 */
 	void WeaponPositionConfigMode::onFrameUpdate(NiNode* weapon) {
-		if (g_configurationMode->isCalibrateModeActive() || g_configurationMode->isPipBoyConfigModeActive()) {
+		if (g_frik.isMainConfigurationModeActive() || g_frik.isPipboyConfigurationModeActive()) {
 			// don't show this config UI if main config UI is shown
 			_configUI->setVisibility(false);
 			return;
@@ -290,7 +290,7 @@ namespace frik {
 		if (axisX != 0.f || axisY != 0.f) {
 			// Axis_state y is up and down, which corresponds to reticule z axis
 			NiPoint3 msgData(axisX / 10, 0.f, axisY / 10);
-			g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+			g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(NiPoint3*));
 		}
 	}
 
@@ -390,13 +390,13 @@ namespace frik {
 	void WeaponPositionConfigMode::resetBetterScopesConfig() {
 		f4vr::showNotification("Reset BetterScopesVR Scope Offset to Default");
 		NiPoint3 msgData(0.f, 0.f, 0.f);
-		g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+		g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(NiPoint3*));
 	}
 
 	void WeaponPositionConfigMode::saveBetterScopesConfig() {
 		f4vr::showNotification("Saving BetterScopesVR Scopes Offset");
 		NiPoint3 msgData(0.f, 1, 0.f);
-		g_messaging->Dispatch(g_pluginHandle, 17, &msgData, sizeof(NiPoint3*), "FO4VRBETTERSCOPES");
+		g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(NiPoint3*));
 	}
 
 	/**

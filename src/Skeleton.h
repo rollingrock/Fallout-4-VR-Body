@@ -48,10 +48,8 @@ namespace frik {
 	private:
 		// initialization
 		void initializeNodes();
-		void initLocalDefaults();
 		void initBoneTreeMap();
 		void restoreLocals(NiNode* node);
-		static std::map<std::string, std::pair<std::string, std::string>> makeFingerRelations();
 		void setBodyLen();
 
 		// on frame update - skeleton update
@@ -112,7 +110,10 @@ namespace frik {
 		ArmNodes _rightArm;
 		ArmNodes _leftArm;
 		std::map<std::string, NiTransform, common::CaseInsensitiveComparator> _savedStates;
-		std::map<std::string, NiPoint3, common::CaseInsensitiveComparator> _boneLocalDefault;
+		static std::unordered_map<std::string, NiTransform> getBonesDefaultTransform();
+		static std::unordered_map<std::string, NiTransform> getBonesDefaultTransformInPA();
+		inline static const std::unordered_map<std::string, NiTransform> _defaultBonesTransform = getBonesDefaultTransform();
+		inline static const std::unordered_map<std::string, NiTransform> _defaultBonesTransformInPA = getBonesDefaultTransformInPA();
 
 		// handle switch of hands for left-handed mode
 		bool _lastLeftHandedModeSwitch = false;
@@ -150,6 +151,7 @@ namespace frik {
 		// bones
 		std::map<std::string, int> _boneTreeMap;
 		std::vector<std::string> _boneTreeVec;
+		static std::map<std::string, std::pair<std::string, std::string>> makeFingerRelations();
 		inline static const std::map<std::string, std::pair<std::string, std::string>> _fingerRelations = makeFingerRelations();
 
 		// cull (hide) parts of the skeleton (head, equipment)

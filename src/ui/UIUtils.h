@@ -13,5 +13,4 @@ namespace vrui {
 	NiNode* getClonedNiNodeForNifFile(const std::string& path);
 	NiNode* loadNifFromFile(const char* path);
 	NiNode* findNode(const char* nodeName, NiNode* node);
-	bool isBetterScopesVRModLoaded();
 }

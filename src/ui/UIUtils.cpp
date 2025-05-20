@@ -76,13 +76,6 @@ namespace vrui {
 		return nullptr;
 	}
 
-	/**
-	 * @return true if BetterScopesVR mod is loaded in the game, false otherwise.
-	 */
-	bool isBetterScopesVRModLoaded() {
-		return frik::isModLoaded("FO4VRBETTERSCOPES");
-	}
-
 	static void getNodeWidthHeight(NiNode* node) {
 		const auto shape = node->GetAsBSTriShape();
 		auto bla = shape->geometryData->vertexData->vertexBlock[0];

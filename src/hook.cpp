@@ -5,7 +5,7 @@
 #include <F4SE_common/SafeWrite.h>
 
 #include "hook.h"
-#include "F4VRBody.h"
+#include "FRIK.h"
 #include "GunReload.h"
 #include "f4se/GameCamera.h"
 #include "f4se/GameReferences.h"
@@ -127,7 +127,7 @@ RelocAddr<uint64_t> wandMesh(0x2d686d8);
 
 void hookIt(const uint64_t rcx) {
 	const uint64_t parm = rcx;
-	frik::update();
+	frik::g_frik.onFrameUpdate();
 	//hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.   
 
 	// so all of this below is an attempt to bypass the functionality in game around my hook at resets the root parent node's world pos which screws up armor
@@ -150,7 +150,7 @@ void hookIt(const uint64_t rcx) {
 }
 
 void hook2(const uint64_t rcx, const uint64_t rdx, const uint64_t r8, const uint64_t r9) {
-	frik::update();
+	frik::g_frik.onFrameUpdate();
 
 	hookedMainDrawCandidateFunc(rcx, rdx, r8, r9);
 
@@ -164,7 +164,7 @@ void hook2(const uint64_t rcx, const uint64_t rdx, const uint64_t r8, const uint
 }
 
 void hook5(const uint64_t rcx) {
-	frik::update();
+	frik::g_frik.onFrameUpdate();
 
 	someRandomFunc(rcx);
 
@@ -179,17 +179,17 @@ void hook5(const uint64_t rcx) {
 
 void hook3(const double param1, const double param2, const double param3) {
 	hookedPosPlayerFunc(param1, param2, param3);
-	frik::update();
+	frik::g_frik.onFrameUpdate();
 }
 
 void hook4() {
-	frik::update();
+	frik::g_frik.onFrameUpdate();
 	hookMultiBoundCullingFunc();
 }
 
 void hookSmoothMovement(const uint64_t rcx) {
 	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-		frik::smoothMovement();
+		frik::g_frik.smoothMovement();
 	}
 	smoothMovementHook(rcx);
 }

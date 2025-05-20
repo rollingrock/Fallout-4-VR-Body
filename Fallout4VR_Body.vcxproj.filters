@@ -39,7 +39,7 @@
     <ClCompile Include="src\Debug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\F4VRBody.cpp">
+    <ClCompile Include="src\FRIK.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\f4vr\F4VRUtils.cpp">
@@ -111,6 +111,9 @@
     <ClCompile Include="src\WeaponPositionAdjuster.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\PapyrusApi.h">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common\Logger.h">
@@ -158,7 +161,7 @@
     <ClInclude Include="src\Debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\F4VRBody.h">
+    <ClInclude Include="src\FRIK.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\f4vr\F4VRUtils.h">

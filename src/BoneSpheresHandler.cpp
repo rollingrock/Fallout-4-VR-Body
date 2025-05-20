@@ -1,6 +1,6 @@
 #include "BoneSpheresHandler.h"
 #include <ranges>
-#include "F4VRBody.h"
+#include "FRIK.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 

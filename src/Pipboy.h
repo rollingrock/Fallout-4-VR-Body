@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Skeleton.h"
+#include "utils.h"
 
 namespace frik {
 	/**
@@ -13,6 +14,8 @@ namespace frik {
 	public:
 		explicit Pipboy(Skeleton* skelly) {
 			_skelly = skelly;
+			// TODO: do we need this?
+			turnPipBoyOff();
 		}
 
 		bool status() const {

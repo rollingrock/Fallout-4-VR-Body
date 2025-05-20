@@ -360,6 +360,9 @@ namespace common {
 		 * To prevent it we check the file last write time and ignore events that 
 		 */
 		void startIniConfigFileWatch() {
+			if (_iniConfigFileWatch) {
+				return;
+			}
 			// use thread as otherwise there is a deadlock
 			std::thread([this]() {
 				Log::info("Start file watch in INI config '%s'", _iniFilePath.c_str());
