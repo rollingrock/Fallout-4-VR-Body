@@ -1,3 +1,10 @@
+## v0.74 (in-development)
+- Remove dependency on "[Fallout4 VR Tools](https://www.nexusmods.com/fallout4/mods/45167)" mod allowing the use of [OpenComposite](https://gitlab.com/znixian/OpenOVR).
+- Changed log file to `FRIK.log` and support rolling last 6 logs (FRIK.log, FRIK_1.log, ..., FRIK_6.log).
+- FRIK.ini file-watch to detect and live reload config without need for setting reload interval and having override issues.
+- Fixed laser weapons and minigun muzzle flash shown in incorrect location especially when using two-handed.
+- Fixed rare body invalid position after loading a save not from main menu.
+
 ## v0.73
 
 - Rewrite Weapon Position Adjustment UX with new friendly UI.
