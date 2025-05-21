@@ -47,7 +47,6 @@ namespace frik {
 		void initSkeleton();
 		void releaseSkeleton();
 		static bool isGameReadyForFrameUpdate();
-		static void fixMuzzleFlashPosition();
 		static void onF4VRSEMessage(F4SEMessagingInterface::Message* msg);
 		static void onBetterScopesMessage(F4SEMessagingInterface::Message* msg);
 

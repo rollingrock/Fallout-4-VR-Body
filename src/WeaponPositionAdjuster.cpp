@@ -113,6 +113,8 @@ namespace frik {
 
 		f4vr::updateDown(weapon, true);
 
+		fixMuzzleFlashPosition();
+
 		debugPrintWeaponPositionData(weapon);
 	}
 
@@ -390,6 +392,27 @@ namespace frik {
 			Log::info("Zoom Toggle pressed; sending message to switch zoom state");
 			g_frik.dispatchMessageToBetterScopesVR(16, nullptr, 0);
 			f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
+		}
+	}
+
+	/**
+	 * Fixes the position of the muzzle flash to be at the projectile node.
+	 * Required for two-handed weapon, otherwise the flash is where the weapon was before two-handed moved it.
+	 */
+	void WeaponPositionAdjuster::fixMuzzleFlashPosition() {
+		const auto muzzle = getMuzzleFlashNodes();
+		if (!muzzle) {
+			return;
+		}
+
+		// shockingly the projectile world location is exactly what we need to set of the muzzle flash node
+		muzzle->fireNode->m_localTransform = muzzle->projectileNode->m_worldTransform;
+
+		// small optimization to only run world update if the fireNode is visible
+		// note, setting fireNode local transform must happen ALWAYS or some artifact is visible in old location for some weapons
+		if (f4vr::isNodeVisible(muzzle->fireNode)) {
+			// critical to move all muzzle flash effects to the projectile node
+			f4vr::updateDown(muzzle->fireNode, true);
 		}
 	}
 

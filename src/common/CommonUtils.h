@@ -23,6 +23,8 @@ namespace common {
 	NiPoint3 rotateXY(NiPoint3 vec, float angle);
 	NiPoint3 pitchVec(NiPoint3 vec, float angle);
 	NiMatrix43 getRotationAxisAngle(NiPoint3 axis, float theta);
+	NiTransform getDeltaTransform(const NiTransform& from, const NiTransform& to);
+	NiTransform getTargetTransform(const NiTransform& baseFrom, const NiTransform& baseTo, const NiTransform& targetFrom);
 	bool isCameraLookingAtObject(const NiTransform& cameraTrans, const NiTransform& objectTrans, float detectThresh);
 
 	// Resource related functions

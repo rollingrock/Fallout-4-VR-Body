@@ -38,6 +38,7 @@ namespace frik {
 		bool isOffhandMovedFastAway() const;
 		NiPoint3 getOffhandPosition() const;
 		void handleBetterScopes(NiNode* weapon) const;
+		static void fixMuzzleFlashPosition();
 		static NiNode* getBackOfHandUINode();
 		void debugPrintWeaponPositionData(NiNode* weapon) const;
 

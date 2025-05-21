@@ -31,48 +31,44 @@ namespace frik {
 		Log::info("difference = %f %f %f", firstpos.x - skellypos.x, firstpos.y - skellypos.y, firstpos.z - skellypos.z);
 	}
 
-	void printAllNodes(const Skeleton* skelly) {
-		const auto* node = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
+	void printAllNodes() {
+		auto* node = reinterpret_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
 		Log::info("--- Player Root Node ---");
 		printNodes(node);
 		Log::info("--- Global UI node ---");
 		printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent);
 	}
 
-	void printNodes(const NiNode* nde) {
-		// print root node info first
-		Log::info("%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f),  World(%5.2f, %5.2f, %5.2f)", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
-			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z,
-			nde->m_worldTransform.pos.x, nde->m_worldTransform.pos.y, nde->m_worldTransform.pos.z);
+	void printNodes(NiNode* nde) {
+		printChildren(nde, "");
+		printNodeAncestors(nde, "");
+	}
 
-		const std::string padding = "";
-		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			//	auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
-			const auto nextNode = nde->m_children.m_data[i];
-			if (nextNode) {
-				printChildren(static_cast<NiNode*>(nextNode), padding);
+	void printNode(const NiNode* node, const std::string& padding) {
+		Log::info("%s%s : children(%d), hidden(%d), Local:(%2.3f, %2.3f, %2.3f), World:(%5.2f, %5.2f, %5.2f)", padding.c_str(), node->m_name.c_str(),
+			node->m_children.m_emptyRunStart, node->flags & 0x1,
+			node->m_localTransform.pos.x, node->m_localTransform.pos.y, node->m_localTransform.pos.z,
+			node->m_worldTransform.pos.x, node->m_worldTransform.pos.y, node->m_worldTransform.pos.z);
+	}
+
+	void printChildren(NiNode* child, std::string padding) {
+		printNode(child, padding);
+
+		padding += "..";
+		if (child->GetAsNiNode()) {
+			for (UInt16 i = 0; i < child->m_children.m_emptyRunStart; ++i) {
+				if (const auto nextNode = child->m_children.m_data[i]) {
+					printChildren(reinterpret_cast<NiNode*>(nextNode), padding);
+				}
 			}
 		}
 	}
 
-	void printChildren(NiNode* child, std::string padding) {
-		padding += "..";
-		Log::info("%s%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f), World(%5.2f, %5.2f, %5.2f)", padding.c_str(), child->m_name.c_str(),
-			child->m_children.m_emptyRunStart, child->flags & 0x1,
-			child->m_localTransform.pos.x, child->m_localTransform.pos.y, child->m_localTransform.pos.z,
-			child->m_worldTransform.pos.x, child->m_worldTransform.pos.y, child->m_worldTransform.pos.z);
-
-		//Log::info("%s%s : children = %d : worldbound %f %f %f %f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart,
-		//	child->m_worldBound.m_kCenter.x, child->m_worldBound.m_kCenter.y, child->m_worldBound.m_kCenter.z, child->m_worldBound.m_fRadius);
-
-		if (child->GetAsNiNode()) {
-			for (auto i = 0; i < child->m_children.m_emptyRunStart; ++i) {
-				//auto nextNode = child->m_children.m_data[i] ? child->m_children.m_data[i]->GetAsNiNode() : nullptr;
-				const auto nextNode = child->m_children.m_data[i];
-				if (nextNode) {
-					printChildren(static_cast<NiNode*>(nextNode), padding);
-				}
-			}
+	void printNodeAncestors(NiNode* node, std::string padding) {
+		while (node) {
+			printNode(node, padding);
+			padding += "..";
+			node = node->m_parent;
 		}
 	}
 
@@ -85,9 +81,8 @@ namespace frik {
 			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z);
 
 		if (nde->GetAsNiNode()) {
-			for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-				const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
-				if (nextNode) {
+			for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+				if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
 					printNodes(nextNode, curTime);
 				}
 			}
@@ -112,10 +107,9 @@ namespace frik {
 		}
 
 		padding += "..";
-		for (auto i = 0; i < node->m_children.m_emptyRunStart; ++i) {
-			const auto nextNode = node->m_children.m_data[i];
-			if (nextNode) {
-				printNodesTransform(static_cast<NiNode*>(nextNode), padding);
+		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = node->m_children.m_data[i]) {
+				printNodesTransform(reinterpret_cast<NiNode*>(nextNode), padding);
 			}
 		}
 	}

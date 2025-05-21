@@ -1,6 +1,7 @@
 #pragma once
 
 #include "f4se/GameReferences.h"
+#include "f4vr/MiscStructs.h"
 
 namespace frik {
 	void configureGameVars();
@@ -16,5 +17,6 @@ namespace frik {
 	bool isArmorHasHeadLamp();
 
 	bool isBetterScopesVRModLoaded();
-	bool isModLoaded(const char* modName);
+
+	f4vr::MuzzleFlash* getMuzzleFlashNodes();
 }

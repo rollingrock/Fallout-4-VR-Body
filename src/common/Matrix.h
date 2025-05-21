@@ -17,6 +17,19 @@ namespace common {
 			}
 		}
 
+		explicit Matrix44(const NiMatrix43& other) {
+			for (auto& i : data) {
+				for (float& j : i) {
+					j = 0.0;
+				}
+			}
+			for (auto i = 0; i < 3; i++) {
+				for (auto j = 0; j < 3; j++) {
+					data[i][j] = other.data[i][j];
+				}
+			}
+		}
+
 		void makeIdentity() {
 			data[0][0] = 1.0;
 			data[0][1] = 0.0;

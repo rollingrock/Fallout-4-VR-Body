@@ -69,6 +69,12 @@ namespace f4vr {
 		return reinterpret_cast<BSFlattenedBoneTree*>((*g_player)->firstPersonSkeleton->m_children.m_data[0]->GetAsNiNode());
 	}
 
+	inline EquippedWeaponData* getEquippedWeaponData() {
+		return (*g_player)->middleProcess->unk08 && (*g_player)->middleProcess->unk08->equipData
+			? (*g_player)->middleProcess->unk08->equipData->equippedData
+			: nullptr;
+	}
+
 	inline NiNode* getCommonNode() {
 		return getNode("COM", getRootNode());
 	}
