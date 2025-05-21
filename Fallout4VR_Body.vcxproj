@@ -22,8 +22,9 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{a1228503-390f-4a85-b728-729a8cfdc3a1}</ProjectGuid>
-    <RootNamespace>Fallout4VRBody</RootNamespace>
+    <RootNamespace>FRIK</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>FRIK</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -81,12 +82,16 @@
     <LibraryPath>libs\debug;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <IncludePath>$(SolutionDir)..\f4sevr\src\f4sevr;$(SolutionDir)..\f4sevr\src;include;$(IncludePath)</IncludePath>
     <TargetName>FRIK</TargetName>
+    <OutDir>$(SolutionDir)out\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)out\inter\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>libs\release;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <IncludePath>$(SolutionDir)..\f4sevr\src\f4sevr;$(SolutionDir)..\f4sevr\src;include;$(IncludePath)</IncludePath>
     <TargetName>FRIK</TargetName>
+    <OutDir>$(SolutionDir)out\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)out\inter\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -129,18 +134,20 @@
       <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
       <UseFullPaths>false</UseFullPaths>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>f4sevr_1_2_72.lib;f4se_common.lib;common_vc11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
+      <AdditionalDependencies>f4sevr_1_2_72.lib;f4se_common.lib;common_vc11.lib;openvr_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>src\exports.def</ModuleDefinitionFile>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetDir)$(TargetName).dll" "%FRIK_MOD_PATH%" /Y
-copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
+      <Command>xcopy /Y "$(TargetDir)$(TargetName).dll" "%FRIK_MOD_PATH%"
+xcopy /Y "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%"
+echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -157,105 +164,106 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
       <CompileAs>CompileAsCpp</CompileAs>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>f4sevr_1_2_72.lib;f4se_common.lib;common_vc11.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
+      <AdditionalDependencies>f4sevr_1_2_72.lib;f4se_common.lib;common_vc11.lib;openvr_api.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>src\exports.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetDir)$(TargetName).dll" "%FRIK_MOD_PATH%" /Y
-copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
+      <Command>xcopy /Y "$(TargetDir)$(TargetName).dll" "%FRIK_MOD_PATH%"
+xcopy /Y "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%"
+echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BoneSpheresHandler.cpp" />
-    <ClCompile Include="BSFlattenedBoneTree.cpp" />
-    <ClCompile Include="Config.cpp" />
-    <ClCompile Include="ConfigurationMode.cpp" />
-    <ClCompile Include="CullGeometryHandler.cpp" />
-    <ClCompile Include="Debug.cpp" />
-    <ClCompile Include="F4VRBody.cpp" />
-    <ClCompile Include="GunReload.cpp" />
-    <ClCompile Include="HandPose.cpp" />
-    <ClCompile Include="hook.cpp" />
-    <ClCompile Include="ui\UIToggleGroupContainer.cpp" />
-    <ClCompile Include="ui\UIButton.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="matrix.cpp" />
-    <ClCompile Include="Menu.cpp" />
-    <ClCompile Include="MenuChecker.cpp" />
-    <ClCompile Include="MiscStructs.cpp" />
-    <ClCompile Include="Offsets.cpp" />
-    <ClCompile Include="patches.cpp" />
-    <ClCompile Include="Pipboy.cpp" />
-    <ClCompile Include="Quaternion.cpp" />
-    <ClCompile Include="Skeleton.cpp" />
-    <ClCompile Include="SmoothMovement.cpp" />
-    <ClCompile Include="ui\UIToggleButton.cpp" />
-    <ClCompile Include="ui\UIDebugWidget.cpp" />
-    <ClCompile Include="ui\UIContainer.cpp" />
-    <ClCompile Include="ui\UIElement.cpp" />
-    <ClCompile Include="ui\UIManager.cpp" />
-    <ClCompile Include="ui\UIWidget.cpp" />
-    <ClCompile Include="ui\UIUtils.cpp" />
-    <ClCompile Include="utils.cpp" />
-    <ClCompile Include="VR.cpp" />
-    <ClCompile Include="WeaponPositionConfigMode.cpp" />
-    <ClCompile Include="WeaponPositionAdjuster.cpp" />
+    <ClCompile Include="src\BoneSpheresHandler.cpp" />
+    <ClCompile Include="src\common\CommonUtils.cpp" />
+    <ClCompile Include="src\Config.cpp" />
+    <ClCompile Include="src\ConfigurationMode.cpp" />
+    <ClCompile Include="src\CullGeometryHandler.cpp" />
+    <ClCompile Include="src\Debug.cpp" />
+    <ClCompile Include="src\FRIK.cpp" />
+    <ClCompile Include="src\f4vr\F4VRUtils.cpp" />
+    <ClCompile Include="src\GunReload.cpp" />
+    <ClCompile Include="src\HandPose.cpp" />
+    <ClCompile Include="src\hook.cpp" />
+    <ClCompile Include="src\PapyrusApi.h" />
+    <ClCompile Include="src\ui\UIToggleGroupContainer.cpp" />
+    <ClCompile Include="src\ui\UIButton.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Menu.cpp" />
+    <ClCompile Include="src\MenuChecker.cpp" />
+    <ClCompile Include="src\patches.cpp" />
+    <ClCompile Include="src\Pipboy.cpp" />
+    <ClCompile Include="src\Skeleton.cpp" />
+    <ClCompile Include="src\SmoothMovement.cpp" />
+    <ClCompile Include="src\ui\UIToggleButton.cpp" />
+    <ClCompile Include="src\ui\UIDebugWidget.cpp" />
+    <ClCompile Include="src\ui\UIContainer.cpp" />
+    <ClCompile Include="src\ui\UIElement.cpp" />
+    <ClCompile Include="src\ui\UIManager.cpp" />
+    <ClCompile Include="src\ui\UIWidget.cpp" />
+    <ClCompile Include="src\ui\UIUtils.cpp" />
+    <ClCompile Include="src\utils.cpp" />
+    <ClCompile Include="src\WeaponPositionConfigMode.cpp" />
+    <ClCompile Include="src\WeaponPositionAdjuster.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="api\openvr.h" />
-    <ClInclude Include="api\OpenVRTypes.h" />
-    <ClInclude Include="api\openvr_capi.h" />
-    <ClInclude Include="api\openvr_driver.h" />
-    <ClInclude Include="api\PapyrusVRAPI.h" />
-    <ClInclude Include="api\PapyrusVRTypes.h" />
-    <ClInclude Include="api\VRHookAPI.h" />
-    <ClInclude Include="api\VRManagerAPI.h" />
-    <ClInclude Include="BoneSpheresHandler.h" />
-    <ClInclude Include="BSFlattenedBoneTree.h" />
-    <ClInclude Include="Config.h" />
-    <ClInclude Include="ConfigurationMode.h" />
-    <ClInclude Include="CullGeometryHandler.h" />
-    <ClInclude Include="Debug.h" />
-    <ClInclude Include="F4VRBody.h" />
-    <ClInclude Include="GunReload.h" />
-    <ClInclude Include="HandPose.h" />
-    <ClInclude Include="hook.h" />
-    <ClInclude Include="include\json.hpp" />
-    <ClInclude Include="include\SimpleIni.h" />
-    <ClInclude Include="include\version.h" />
-    <ClInclude Include="ui\UIModAdapter.h" />
-    <ClInclude Include="ui\UIToggleGroupContainer.h" />
-    <ClInclude Include="ui\UIButton.h" />
-    <ClInclude Include="matrix.h" />
-    <ClInclude Include="Menu.h" />
-    <ClInclude Include="MenuChecker.h" />
-    <ClInclude Include="MiscStructs.h" />
-    <ClInclude Include="MuzzleFlash.h" />
-    <ClInclude Include="NiCloneProcess.h" />
-    <ClInclude Include="Offsets.h" />
-    <ClInclude Include="patches.h" />
-    <ClInclude Include="Pipboy.h" />
-    <ClInclude Include="Quaternion.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="Skeleton.h" />
-    <ClInclude Include="SmoothMovementVR.h" />
-    <ClInclude Include="ui\UIToggleButton.h" />
-    <ClInclude Include="ui\UIDebugWidget.h" />
-    <ClInclude Include="ui\UIContainer.h" />
-    <ClInclude Include="ui\UIElement.h" />
-    <ClInclude Include="ui\UIManager.h" />
-    <ClInclude Include="ui\UIWidget.h" />
-    <ClInclude Include="ui\UIUtils.h" />
-    <ClInclude Include="utils.h" />
-    <ClInclude Include="VR.h" />
-    <ClInclude Include="WeaponPositionConfigMode.h" />
-    <ClInclude Include="WeaponPositionAdjuster.h" />
+    <ClInclude Include="src\common\ConfigBase.h" />
+    <ClInclude Include="src\common\Logger.h" />
+    <ClInclude Include="src\api\openvr.h" />
+    <ClInclude Include="src\api\OpenVRTypes.h" />
+    <ClInclude Include="src\api\openvr_capi.h" />
+    <ClInclude Include="src\api\openvr_driver.h" />
+    <ClInclude Include="src\api\PapyrusVRTypes.h" />
+    <ClInclude Include="src\api\VRManagerAPI.h" />
+    <ClInclude Include="src\BoneSpheresHandler.h" />
+    <ClInclude Include="src\f4vr\BSFlattenedBoneTree.h" />
+    <ClInclude Include="src\common\BSTSmartPointer.h" />
+    <ClInclude Include="src\common\CommonUtils.h" />
+    <ClInclude Include="src\Config.h" />
+    <ClInclude Include="src\ConfigurationMode.h" />
+    <ClInclude Include="src\CullGeometryHandler.h" />
+    <ClInclude Include="src\Debug.h" />
+    <ClInclude Include="src\FRIK.h" />
+    <ClInclude Include="src\f4vr\F4VRUtils.h" />
+    <ClInclude Include="src\f4vr\PlayerNodes.h" />
+    <ClInclude Include="src\f4vr\VRControllersManager.h" />
+    <ClInclude Include="src\GunReload.h" />
+    <ClInclude Include="src\HandPose.h" />
+    <ClInclude Include="src\hook.h" />
+    <ClInclude Include="src\include\FileWatch.hpp" />
+    <ClInclude Include="src\include\json.hpp" />
+    <ClInclude Include="src\include\SimpleIni.h" />
+    <ClInclude Include="src\version.h" />
+    <ClInclude Include="src\ui\UIModAdapter.h" />
+    <ClInclude Include="src\ui\UIToggleGroupContainer.h" />
+    <ClInclude Include="src\ui\UIButton.h" />
+    <ClInclude Include="src\common\Matrix.h" />
+    <ClInclude Include="src\Menu.h" />
+    <ClInclude Include="src\MenuChecker.h" />
+    <ClInclude Include="src\f4vr\MiscStructs.h" />
+    <ClInclude Include="src\f4vr\F4VROffsets.h" />
+    <ClInclude Include="src\patches.h" />
+    <ClInclude Include="src\Pipboy.h" />
+    <ClInclude Include="src\res\resource.h" />
+    <ClInclude Include="src\Skeleton.h" />
+    <ClInclude Include="src\SmoothMovementVR.h" />
+    <ClInclude Include="src\ui\UIToggleButton.h" />
+    <ClInclude Include="src\ui\UIDebugWidget.h" />
+    <ClInclude Include="src\ui\UIContainer.h" />
+    <ClInclude Include="src\ui\UIElement.h" />
+    <ClInclude Include="src\ui\UIManager.h" />
+    <ClInclude Include="src\ui\UIWidget.h" />
+    <ClInclude Include="src\ui\UIUtils.h" />
+    <ClInclude Include="src\utils.h" />
+    <ClInclude Include="src\WeaponPositionConfigMode.h" />
+    <ClInclude Include="src\WeaponPositionAdjuster.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="data\config\FRIK.ini" />
@@ -265,9 +273,10 @@ copy "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%" /Y</Command>
     <None Include="data\config\pipboy_holo_offsets.json" />
     <None Include="data\config\pipboy_screen_offsets.json" />
     <None Include="exports.def" />
+    <None Include="src\exports.def" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="resource.rc" />
+    <ResourceCompile Include="src\res\resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

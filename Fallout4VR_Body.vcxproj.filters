@@ -21,253 +21,250 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="src\BoneSpheresHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="hook.cpp">
+    <ClCompile Include="src\common\CommonUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="F4VRBody.cpp">
+    <ClCompile Include="src\Config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Skeleton.cpp">
+    <ClCompile Include="src\ConfigurationMode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="utils.cpp">
+    <ClCompile Include="src\CullGeometryHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="matrix.cpp">
+    <ClCompile Include="src\Debug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Quaternion.cpp">
+    <ClCompile Include="src\FRIK.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MenuChecker.cpp">
+    <ClCompile Include="src\f4vr\F4VRUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SmoothMovement.cpp">
+    <ClCompile Include="src\GunReload.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HandPose.cpp">
+    <ClCompile Include="src\HandPose.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="patches.cpp">
+    <ClCompile Include="src\hook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BSFlattenedBoneTree.cpp">
+    <ClCompile Include="src\ui\UIToggleGroupContainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Menu.cpp">
+    <ClCompile Include="src\ui\UIButton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GunReload.cpp">
+    <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Offsets.cpp">
+    <ClCompile Include="src\Menu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MiscStructs.cpp">
+    <ClCompile Include="src\MenuChecker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Pipboy.cpp">
+    <ClCompile Include="src\patches.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Config.cpp">
+    <ClCompile Include="src\Pipboy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConfigurationMode.cpp">
+    <ClCompile Include="src\Skeleton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Debug.cpp">
+    <ClCompile Include="src\SmoothMovement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CullGeometryHandler.cpp">
+    <ClCompile Include="src\ui\UIToggleButton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BoneSpheresHandler.cpp">
+    <ClCompile Include="src\ui\UIDebugWidget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WeaponPositionConfigMode.cpp">
+    <ClCompile Include="src\ui\UIContainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WeaponPositionAdjuster.cpp">
+    <ClCompile Include="src\ui\UIElement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ui\UIContainer.cpp">
-      <Filter>UI</Filter>
+    <ClCompile Include="src\ui\UIManager.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ui\UIDebugWidget.cpp">
-      <Filter>UI</Filter>
+    <ClCompile Include="src\ui\UIWidget.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ui\UIElement.cpp">
-      <Filter>UI</Filter>
+    <ClCompile Include="src\ui\UIUtils.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ui\UIManager.cpp">
-      <Filter>UI</Filter>
+    <ClCompile Include="src\utils.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ui\UIUtils.cpp">
-      <Filter>UI</Filter>
+    <ClCompile Include="src\WeaponPositionConfigMode.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ui\UIWidget.cpp">
-      <Filter>UI</Filter>
+    <ClCompile Include="src\WeaponPositionAdjuster.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ui\UIToggleButton.cpp">
-      <Filter>UI</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\UIButton.cpp">
-      <Filter>UI</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\UIToggleGroupContainer.cpp">
-      <Filter>UI</Filter>
-    </ClCompile>
-    <ClCompile Include="VR.cpp">
+    <ClCompile Include="src\PapyrusApi.h">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="hook.h">
+    <ClInclude Include="src\common\Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="F4VRBody.h">
+    <ClInclude Include="src\api\openvr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Skeleton.h">
+    <ClInclude Include="src\api\OpenVRTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="utils.h">
+    <ClInclude Include="src\api\openvr_capi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="matrix.h">
+    <ClInclude Include="src\api\openvr_driver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Quaternion.h">
+    <ClInclude Include="src\api\PapyrusVRTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NiCloneProcess.h">
+    <ClInclude Include="src\api\VRManagerAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SmoothMovementVR.h">
+    <ClInclude Include="src\BoneSpheresHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MenuChecker.h">
+    <ClInclude Include="src\f4vr\BSFlattenedBoneTree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BSFlattenedBoneTree.h">
+    <ClInclude Include="src\common\BSTSmartPointer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HandPose.h">
+    <ClInclude Include="src\common\CommonUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="patches.h">
+    <ClInclude Include="src\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MuzzleFlash.h">
+    <ClInclude Include="src\ConfigurationMode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Menu.h">
+    <ClInclude Include="src\CullGeometryHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="VR.h">
+    <ClInclude Include="src\Debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GunReload.h">
+    <ClInclude Include="src\FRIK.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Offsets.h">
+    <ClInclude Include="src\f4vr\F4VRUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MiscStructs.h">
+    <ClInclude Include="src\f4vr\PlayerNodes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Pipboy.h">
+    <ClInclude Include="src\GunReload.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Config.h">
+    <ClInclude Include="src\HandPose.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ConfigurationMode.h">
+    <ClInclude Include="src\hook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Debug.h">
+    <ClInclude Include="src\include\json.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="api\VRManagerAPI.h">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="api\VRHookAPI.h">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="api\openvr.h">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="api\openvr_capi.h">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="api\openvr_driver.h">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="api\OpenVRTypes.h">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="api\PapyrusVRAPI.h">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="api\PapyrusVRTypes.h">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\json.hpp">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\version.h">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\SimpleIni.h">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CullGeometryHandler.h">
+    <ClInclude Include="src\include\SimpleIni.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BoneSpheresHandler.h">
+    <ClInclude Include="src\version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WeaponPositionConfigMode.h">
+    <ClInclude Include="src\ui\UIModAdapter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WeaponPositionAdjuster.h">
+    <ClInclude Include="src\ui\UIToggleGroupContainer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ui\UIContainer.h">
-      <Filter>UI</Filter>
+    <ClInclude Include="src\ui\UIButton.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ui\UIDebugWidget.h">
-      <Filter>UI</Filter>
+    <ClInclude Include="src\common\Matrix.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ui\UIElement.h">
-      <Filter>UI</Filter>
+    <ClInclude Include="src\Menu.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ui\UIManager.h">
-      <Filter>UI</Filter>
+    <ClInclude Include="src\MenuChecker.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ui\UIUtils.h">
-      <Filter>UI</Filter>
+    <ClInclude Include="src\f4vr\MiscStructs.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ui\UIWidget.h">
-      <Filter>UI</Filter>
+    <ClInclude Include="src\f4vr\F4VROffsets.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ui\UIToggleButton.h">
-      <Filter>UI</Filter>
+    <ClInclude Include="src\patches.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ui\UIModAdapter.h">
-      <Filter>UI</Filter>
+    <ClInclude Include="src\Pipboy.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ui\UIButton.h">
-      <Filter>UI</Filter>
+    <ClInclude Include="src\res\resource.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ui\UIToggleGroupContainer.h">
-      <Filter>UI</Filter>
+    <ClInclude Include="src\Skeleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SmoothMovementVR.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UIToggleButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UIDebugWidget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UIContainer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UIElement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UIManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UIWidget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UIUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\WeaponPositionConfigMode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\WeaponPositionAdjuster.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common\ConfigBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\include\FileWatch.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\f4vr\VRControllersManager.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -292,9 +289,12 @@
     <None Include="data\config\FRIK.ini">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="src\exports.def">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="resource.rc">
+    <ResourceCompile Include="src\res\resource.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
