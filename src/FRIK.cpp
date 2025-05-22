@@ -176,12 +176,7 @@ namespace frik {
 
 		f4vr::updateDownFromRoot(); // Last world update before exit.    Probably not necessary.
 
-		if (g_config.checkDebugDumpDataOnceFor("nodes")) {
-			printAllNodes();
-		}
-		if (g_config.checkDebugDumpDataOnceFor("skelly")) {
-			printNodes((*g_player)->firstPersonSkeleton->GetAsNiNode());
-		}
+		checkDebugDump();
 	}
 
 	void FRIK::initSkeleton() {
@@ -222,7 +217,7 @@ namespace frik {
 			Log::info("Common or Player nodes not set yet!");
 			return false;
 		}
-		if (!f4vr::getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode())) {
+		if (!f4vr::getNode("RArm_Hand", f4vr::getFirstPersonSkeleton())) {
 			Log::info("Arm node not set yet!");
 			return false;
 		}
@@ -273,5 +268,18 @@ namespace frik {
 		}
 	}
 
-	//Listener for F4SE Messages
+	void FRIK::checkDebugDump() {
+		if (g_config.checkDebugDumpDataOnceFor("all_nodes")) {
+			printAllNodes();
+		}
+		if (g_config.checkDebugDumpDataOnceFor("world")) {
+			printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent->m_parent);
+		}
+		if (g_config.checkDebugDumpDataOnceFor("fp_skelly")) {
+			printNodes(f4vr::getFirstPersonSkeleton());
+		}
+		if (g_config.checkDebugDumpDataOnceFor("skelly")) {
+			printNodes(f4vr::getRootNode()->m_parent);
+		}
+	}
 }

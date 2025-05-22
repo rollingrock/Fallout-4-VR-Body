@@ -49,6 +49,7 @@ namespace frik {
 		static bool isGameReadyForFrameUpdate();
 		static void onF4VRSEMessage(F4SEMessagingInterface::Message* msg);
 		static void onBetterScopesMessage(F4SEMessagingInterface::Message* msg);
+		static void checkDebugDump();
 
 		// TODO: bad global state variable that should be refactored
 		bool _inPowerArmor = false;

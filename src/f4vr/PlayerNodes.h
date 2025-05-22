@@ -65,6 +65,10 @@ namespace f4vr {
 		return reinterpret_cast<BSFlattenedBoneTree*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
 	}
 
+	inline NiNode* getFirstPersonSkeleton() {
+		return (*g_player)->firstPersonSkeleton->GetAsNiNode();
+	}
+
 	inline BSFlattenedBoneTree* getFirstPersonBoneTree() {
 		return reinterpret_cast<BSFlattenedBoneTree*>((*g_player)->firstPersonSkeleton->m_children.m_data[0]->GetAsNiNode());
 	}
@@ -77,10 +81,6 @@ namespace f4vr {
 
 	inline NiNode* getCommonNode() {
 		return getNode("COM", getRootNode());
-	}
-
-	inline NiNode* getHeadNode() {
-		return getNode("Head", getRootNode());
 	}
 
 	inline NiNode* getWeaponNode() {

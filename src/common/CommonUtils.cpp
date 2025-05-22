@@ -10,6 +10,13 @@
 #include "Matrix.h"
 
 namespace common {
+	/**
+	 * Safe equal check as floats are not exact.
+	 */
+	bool fEqual(const float left, const float right, const float epsilon) {
+		return std::fabs(left - right) < epsilon;
+	}
+
 	std::string str_tolower(std::string s) {
 		std::ranges::transform(s, s.begin(),
 			[](const unsigned char c) { return std::tolower(c); }

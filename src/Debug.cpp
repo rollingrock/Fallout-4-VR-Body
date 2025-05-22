@@ -6,9 +6,43 @@
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
-#include "f4vr/BSFlattenedBoneTree.h"
 
 using namespace common;
+
+namespace {
+	void printNode(const NiNode* node, const std::string& padding) {
+		const auto scale = std::fabs(node->m_localTransform.scale - node->m_worldTransform.scale) < 0.001f
+			? std::format("{:.2f}", node->m_localTransform.scale)
+			: std::format("{:.2f}/{:.2f}", node->m_localTransform.scale, node->m_worldTransform.scale);
+		Log::infoRaw("%s%s : children(%d), hidden(%d), Local:(%.2f, %.2f, %.2f), World:(%.2f, %.2f, %.2f), Scale:(%s)",
+			padding.c_str(), node->m_name.c_str(),
+			node->m_children.m_emptyRunStart, node->flags & 0x1,
+			node->m_localTransform.pos.x, node->m_localTransform.pos.y, node->m_localTransform.pos.z,
+			node->m_worldTransform.pos.x, node->m_worldTransform.pos.y, node->m_worldTransform.pos.z,
+			scale.c_str());
+	}
+
+	void printNodeChildren(NiNode* child, std::string padding) {
+		printNode(child, padding);
+
+		padding += "..";
+		if (child->GetAsNiNode()) {
+			for (UInt16 i = 0; i < child->m_children.m_emptyRunStart; ++i) {
+				if (const auto nextNode = child->m_children.m_data[i]) {
+					printNodeChildren(reinterpret_cast<NiNode*>(nextNode), padding);
+				}
+			}
+		}
+	}
+
+	void printNodeAncestors(const NiNode* node, std::string padding) {
+		while (node) {
+			printNode(node, padding);
+			padding += "..";
+			node = node->m_parent;
+		}
+	}
+}
 
 namespace frik {
 	void printMatrix(const Matrix44* mat) {
@@ -32,43 +66,19 @@ namespace frik {
 	}
 
 	void printAllNodes() {
-		auto* node = reinterpret_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
-		Log::info("--- Player Root Node ---");
-		printNodes(node);
-		Log::info("--- Global UI node ---");
-		printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent);
-	}
-
-	void printNodes(NiNode* nde) {
-		printChildren(nde, "");
-		printNodeAncestors(nde, "");
-	}
-
-	void printNode(const NiNode* node, const std::string& padding) {
-		Log::info("%s%s : children(%d), hidden(%d), Local:(%2.3f, %2.3f, %2.3f), World:(%5.2f, %5.2f, %5.2f)", padding.c_str(), node->m_name.c_str(),
-			node->m_children.m_emptyRunStart, node->flags & 0x1,
-			node->m_localTransform.pos.x, node->m_localTransform.pos.y, node->m_localTransform.pos.z,
-			node->m_worldTransform.pos.x, node->m_worldTransform.pos.y, node->m_worldTransform.pos.z);
-	}
-
-	void printChildren(NiNode* child, std::string padding) {
-		printNode(child, padding);
-
-		padding += "..";
-		if (child->GetAsNiNode()) {
-			for (UInt16 i = 0; i < child->m_children.m_emptyRunStart; ++i) {
-				if (const auto nextNode = child->m_children.m_data[i]) {
-					printChildren(reinterpret_cast<NiNode*>(nextNode), padding);
-				}
-			}
-		}
-	}
-
-	void printNodeAncestors(NiNode* node, std::string padding) {
-		while (node) {
-			printNode(node, padding);
-			padding += "..";
+		auto* node = (*g_player)->unkF0->rootNode->GetAsNiNode();
+		while (node->m_parent) {
 			node = node->m_parent;
+		}
+		printNodes(node, false);
+	}
+
+	void printNodes(NiNode* node, const bool printAncestors) {
+		Log::info("Children of '%s':", node->m_name.c_str());
+		printNodeChildren(node, "");
+		if (printAncestors) {
+			Log::info("Ancestors of '%s':", node->m_name.c_str());
+			printNodeAncestors(node, "");
 		}
 	}
 

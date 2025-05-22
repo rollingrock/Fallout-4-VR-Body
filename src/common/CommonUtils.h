@@ -5,6 +5,8 @@
 #include <f4se/NiTypes.h>
 
 namespace common {
+	bool fEqual(const float left, const float right, const float epsilon = 0.00001f);
+
 	// string related functions
 	std::string str_tolower(std::string s);
 	std::string ltrim(std::string s);
