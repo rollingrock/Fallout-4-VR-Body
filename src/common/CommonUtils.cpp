@@ -17,6 +17,10 @@ namespace common {
 		return std::fabs(left - right) < epsilon;
 	}
 
+	bool fNotEqual(const float left, const float right, const float epsilon) {
+		return std::fabs(left - right) > epsilon;
+	}
+
 	std::string str_tolower(std::string s) {
 		std::ranges::transform(s, s.begin(),
 			[](const unsigned char c) { return std::tolower(c); }
@@ -104,6 +108,19 @@ namespace common {
 	// https://stackoverflow.com/questions/14066933/direct-way-of-computing-clockwise-angle-between-2-vectors/16544330#16544330
 	float vec3Det(const NiPoint3 v1, const NiPoint3 v2, const NiPoint3 n) {
 		return v1.x * v2.y * n.z + v2.x * n.y * v1.z + n.x * v1.y * v2.z - v1.z * v2.y * n.x - v2.z * n.y * v1.x - n.z * v1.y * v2.x;
+	}
+
+	float distanceNoSqrt(const NiPoint3 po1, const NiPoint3 po2) {
+		const float x = po1.x - po2.x;
+		const float y = po1.y - po2.y;
+		const float z = po1.z - po2.z;
+		return x * x + y * y + z * z;
+	}
+
+	float distanceNoSqrt2d(const float x1, const float y1, const float x2, const float y2) {
+		const float x = x1 - x2;
+		const float y = y1 - y2;
+		return x * x + y * y;
 	}
 
 	float degreesToRads(const float deg) {

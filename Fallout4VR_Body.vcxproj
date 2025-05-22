@@ -201,7 +201,7 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClCompile Include="src\patches.cpp" />
     <ClCompile Include="src\Pipboy.cpp" />
     <ClCompile Include="src\Skeleton.cpp" />
-    <ClCompile Include="src\SmoothMovement.cpp" />
+    <ClCompile Include="src\SmoothMovementVR.cpp" />
     <ClCompile Include="src\ui\UIToggleButton.cpp" />
     <ClCompile Include="src\ui\UIDebugWidget.cpp" />
     <ClCompile Include="src\ui\UIContainer.cpp" />

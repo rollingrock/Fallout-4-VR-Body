@@ -3,6 +3,7 @@
 #include "BoneSpheresHandler.h"
 #include "ConfigurationMode.h"
 #include "Pipboy.h"
+#include "SmoothMovementVR.h"
 #include "WeaponPositionAdjuster.h"
 #include "f4se/PapyrusEvents.h"
 
@@ -39,7 +40,7 @@ namespace frik {
 
 		void initialize(const F4SEInterface* f4se);
 		void onFrameUpdate();
-		static void smoothMovement();
+		void smoothMovement() { _smoothMovement.onFrameUpdate(); }
 
 	private:
 		void initOnGameLoaded() const;
@@ -63,6 +64,8 @@ namespace frik {
 		ConfigurationMode* _configurationMode = nullptr;
 		BoneSpheresHandler* g_boneSpheres = new BoneSpheresHandler();
 		WeaponPositionAdjuster* _weaponPosition = nullptr;
+
+		SmoothMovementVR _smoothMovement;
 
 		PluginHandle _pluginHandle = kPluginHandle_Invalid;
 		F4SEMessagingInterface* _messaging = nullptr;

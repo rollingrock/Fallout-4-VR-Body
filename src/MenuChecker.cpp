@@ -2,7 +2,7 @@
 
 // From Shizof mod with permission. Thanks Shizof!!
 
-namespace SmoothMovementVR {
+namespace frik {
 	std::vector<std::string> gameStoppingMenusNoDialogue{
 		"BarterMenu",
 		"Book Menu",

@@ -78,7 +78,7 @@
     <ClCompile Include="src\Skeleton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SmoothMovement.cpp">
+    <ClCompile Include="src\SmoothMovementVR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ui\UIToggleButton.cpp">

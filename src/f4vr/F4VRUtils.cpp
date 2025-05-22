@@ -124,6 +124,14 @@ namespace f4vr {
 		return false;
 	}
 
+	/**
+	 * Is the player is current in an "internal cell" as inside a building, cave, etc.
+	 */
+	bool isInInternalCell() {
+		const auto cell = (*g_player)->parentCell;
+		return cell && (cell->flags & TESObjectCELL::kFlag_IsInterior) == TESObjectCELL::kFlag_IsInterior;
+	}
+
 	bool getLeftHandedMode() {
 		return GetINISetting("bLeftHandedMode:VR")->data.u8;
 	}

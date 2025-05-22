@@ -22,6 +22,7 @@ namespace f4vr {
 	bool hasKeyword(const TESObjectARMO* armor, UInt32 keywordFormId);
 	inline bool isJumpingOrInAir() { return IsInAir(*g_player); }
 	bool isInPowerArmor();
+	bool isInInternalCell();
 
 	// settings
 	bool getLeftHandedMode();

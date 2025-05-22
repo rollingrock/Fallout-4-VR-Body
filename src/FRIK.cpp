@@ -95,9 +95,8 @@ namespace frik {
 
 		ScopeMenuEventHandler::Register();
 
-		// TODO: make smooth movement a class and an instance of FRIK
-		SmoothMovementVR::startFunctions();
-		SmoothMovementVR::MenuOpenCloseHandler::Register();
+		// TODO: move this?
+		MenuOpenCloseHandler::Register();
 
 		if (isBetterScopesVRModLoaded()) {
 			Log::info("BetterScopesVR mod detected, registering for messages...");
@@ -242,12 +241,6 @@ namespace frik {
 
 		_inPowerArmor = false;
 		_dynamicCameraHeight = false;
-	}
-
-	void FRIK::smoothMovement() {
-		if (!g_config.disableSmoothMovement) {
-			SmoothMovementVR::everyFrame();
-		}
 	}
 
 	/**

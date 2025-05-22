@@ -6,7 +6,7 @@
 
 // From Shizof mod with permission. Thanks Shizof!!
 
-namespace SmoothMovementVR {
+namespace frik {
 	extern std::vector<std::string> gameStoppingMenus;
 
 	extern std::vector<std::string> gameStoppingMenusNoDialogue;
