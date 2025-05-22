@@ -3,6 +3,8 @@
 - Changed log file to `FRIK.log` and support rolling last 6 logs (FRIK.log, FRIK_1.log, ..., FRIK_6.log).
 - FRIK.ini file-watch to detect and live reload config without need for setting reload interval and having override issues.
 - Fixed laser weapons and minigun muzzle flash shown in incorrect location especially when using two-handed.
+- Fixed entering/existing power armor delay in camera height adjustment causing jarred movement.
+- Fixes jarred movement on jump landing and areas where there is a small gap in the ground like the exist platform of vault 111.
 - Fixed rare body invalid position after loading a save not from main menu.
 
 ## v0.73
