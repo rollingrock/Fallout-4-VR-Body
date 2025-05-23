@@ -282,7 +282,7 @@ namespace f4vr {
 		updateDown(getRootNode(), true);
 	}
 
-	void updateDown(NiNode* nde, const bool updateSelf) {
+	void updateDown(NiNode* nde, const bool updateSelf, const char* ignoreNode) {
 		if (!nde) {
 			return;
 		}
@@ -295,6 +295,9 @@ namespace f4vr {
 
 		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
 			if (const auto nextNode = nde->m_children.m_data[i]) {
+				if (ignoreNode && _stricmp(nextNode->m_name.c_str(), ignoreNode) == 0) {
+					continue; // skip this node
+				}
 				if (const auto niNode = nextNode->GetAsNiNode()) {
 					updateDown(niNode, true);
 				} else if (const auto triNode = nextNode->GetAsBSGeometry()) {

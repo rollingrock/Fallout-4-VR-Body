@@ -30,7 +30,7 @@ namespace common {
 			}
 		}
 
-		void makeIdentity() {
+		Matrix44& makeIdentity() {
 			data[0][0] = 1.0;
 			data[0][1] = 0.0;
 			data[0][2] = 0.0;
@@ -47,6 +47,7 @@ namespace common {
 			data[3][1] = 0.0;
 			data[3][2] = 0.0;
 			data[3][3] = 0.0;
+			return *this;
 		}
 
 		void setPosition(const float x, const float y, const float z) {

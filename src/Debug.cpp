@@ -124,20 +124,31 @@ namespace frik {
 		}
 	}
 
-	void printTransform(const std::string& name, const NiTransform& transform, bool sample) {
-		const auto frm = "Transform '" + name + "' Pos: (%2.4f, %2.4f, %2.4f), Rot: [[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.3f, %2.3f, %2.3f]]";
+	void printTransform(const std::string& name, const NiTransform& transform, const bool sample) {
+		const auto frm = "Transform '" + name + "' Pos:(%.2f, %.2f, %.2f), Rot:[[%.2f, %.2f, %.2f][%.2f, %.2f, %.2f][%.2f, %.2f, %.2f]], Scale:(%.2f)";
 		if (sample) {
 			Log::sample(frm.c_str(),
 				transform.pos.x, transform.pos.y, transform.pos.z,
 				transform.rot.data[0][0], transform.rot.data[1][0], transform.rot.data[2][0],
 				transform.rot.data[0][1], transform.rot.data[1][1], transform.rot.data[2][1],
-				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2]);
+				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2],
+				transform.scale);
 		} else {
 			Log::info(frm.c_str(),
 				transform.pos.x, transform.pos.y, transform.pos.z,
 				transform.rot.data[0][0], transform.rot.data[1][0], transform.rot.data[2][0],
 				transform.rot.data[0][1], transform.rot.data[1][1], transform.rot.data[2][1],
-				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2]);
+				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2],
+				transform.scale);
+		}
+	}
+
+	void printPosition(const std::string& name, const NiPoint3& pos, const bool sample) {
+		const auto frm = "Transform '" + name + "' Pos: (%.2f, %.2f, %.2f)";
+		if (sample) {
+			Log::sample(frm.c_str(), pos.x, pos.y, pos.z);
+		} else {
+			Log::info(frm.c_str(), pos.x, pos.y, pos.z);
 		}
 	}
 

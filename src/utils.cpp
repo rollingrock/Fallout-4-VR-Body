@@ -147,7 +147,7 @@ namespace frik {
 					return muzzle;
 				}
 			}
-			return nullptr;
 		}
+		return nullptr;
 	}
 }

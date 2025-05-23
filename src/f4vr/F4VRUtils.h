@@ -44,7 +44,7 @@ namespace f4vr {
 
 	// updates
 	void updateDownFromRoot();
-	void updateDown(NiNode* nde, bool updateSelf);
+	void updateDown(NiNode* nde, bool updateSelf, const char* ignoreNode = nullptr);
 	void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 	void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 	void updateTransforms(NiNode* node);

@@ -12,6 +12,7 @@ namespace frik {
 	void printNodes(NiNode* nde, long long curTime);
 	void printNodesTransform(NiNode* node, std::string padding = "");
 	void printTransform(const std::string& name, const NiTransform& transform, bool sample = false);
+	void printPosition(const std::string& name, const NiPoint3& pos, bool sample);
 	void dumpPlayerGeometry(BSFadeNode* rn);
 	void debug(const Skeleton* skelly);
 }
