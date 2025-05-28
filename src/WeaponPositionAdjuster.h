@@ -39,6 +39,7 @@ namespace frik {
 		void checkEquippedWeaponChanged(bool emptyHand);
 		void handleScopeCameraAdjustmentByWeaponOffset(const NiNode* weapon) const;
 		void checkIfOffhandIsGripping(const NiNode* weapon);
+		void setOffhandGripping(bool isGripping);
 		void handleWeaponGrippingRotationAdjustment(NiNode* weapon) const;
 		void handleWeaponScopeCameraGrippingRotationAdjustment(const NiNode* weapon, common::Quaternion rotAdjust, NiPoint3 adjustedWeaponVec) const;
 		bool isOffhandCloseToBarrel(const NiNode* weapon) const;

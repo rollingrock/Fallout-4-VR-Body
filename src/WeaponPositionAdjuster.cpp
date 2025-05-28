@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "Debug.h"
 #include "FRIK.h"
+#include "HandPose.h"
 #include "Menu.h"
 #include "Skeleton.h"
 #include "common/CommonUtils.h"
@@ -232,13 +233,13 @@ namespace frik {
 		if (_offHandGripping) {
 			if (g_config.onePressGripButton && !f4vr::VRControllers.isPressHeldDown(g_config.gripButtonID, f4vr::Hand::Offhand)) {
 				// Mode 3 release grip when not holding the grip button
-				_offHandGripping = false;
+				setOffhandGripping(false);
 			}
 
 			if (g_config.enableGripButtonToLetGo && f4vr::VRControllers.isPressed(g_config.gripButtonID, f4vr::Hand::Offhand)) {
 				if (g_config.enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
 					// Mode 2,4 release grip on pressing the grip button again
-					_offHandGripping = false;
+					setOffhandGripping(false);
 				} else {
 					// Mode 2 but close to barrel, so ignore un-grip as it will grip on next frame
 					f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
@@ -247,7 +248,7 @@ namespace frik {
 
 			if (!g_config.enableGripButtonToGrap && !g_config.enableGripButtonToLetGo && !g_frik.isLookingThroughScope() && isOffhandMovedFastAway()) {
 				// mode 1 release when move fast away from barrel
-				_offHandGripping = false;
+				setOffhandGripping(false);
 			}
 
 			// already gripping, no need for checks to grip
@@ -267,12 +268,20 @@ namespace frik {
 
 		if (!g_config.enableGripButtonToGrap) {
 			// Mode 1,2 grab when close to barrel
-			_offHandGripping = true;
+			setOffhandGripping(true);
 		}
 		if (!g_frik.isPipboyOn() && f4vr::VRControllers.isPressed(g_config.gripButtonID, f4vr::Hand::Offhand)) {
 			// Mode 3,4 grab when pressing grip button
-			_offHandGripping = true;
+			setOffhandGripping(true);
 		}
+	}
+
+	/**
+	 * Set gripping flag and offhand hand pose for gripping.
+	 */
+	void WeaponPositionAdjuster::setOffhandGripping(const bool isGripping) {
+		_offHandGripping = isGripping;
+		setOffhandGripHandPoseOverride(isGripping);
 	}
 
 	/**
