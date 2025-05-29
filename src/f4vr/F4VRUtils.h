@@ -39,9 +39,8 @@ namespace f4vr {
 
 	// visibility
 	bool isNodeVisible(const NiNode* node);
-	void showHideNode(NiAVObject* node, bool toHide);
-	void setVisibility(NiAVObject* nde, bool show = true);
-	void toggleVis(NiNode* nde, bool hide, bool updateSelf);
+	void setNodeVisibility(NiAVObject* node, bool show = true);
+	void toggleVis(NiNode* node, bool hide, bool updateSelf);
 
 	// updates
 	void updateDownFromRoot();

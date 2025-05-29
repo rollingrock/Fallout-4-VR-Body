@@ -78,6 +78,11 @@ namespace frik {
 			return;
 		}
 
+		if (_isOperatingPipboy) {
+			// hide the weapon when operating the Pipboy, though it can still fire...
+			f4vr::setNodeVisibility(f4vr::getWeaponNode(), false);
+		}
+
 		//Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
 		NiNode* hideNode;
 		g_config.isHoloPipboy

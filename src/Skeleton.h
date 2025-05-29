@@ -65,7 +65,7 @@ namespace frik {
 		void setArms(bool isLeft);
 		void dampenHand(NiNode* node, bool isLeft);
 		void leftHandedModePipboy() const;
-		void hideWeapon() const;
+		void hide3rdPersonWeapon() const;
 		void positionPipboy() const;
 		void hidePipboy() const;
 		void hideFistHelpers() const;
