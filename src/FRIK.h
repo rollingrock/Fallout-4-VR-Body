@@ -50,6 +50,8 @@ namespace frik {
 		void initOnGameSessionLoaded();
 		void initSkeleton();
 		void releaseSkeleton();
+		void checkPauseMenuOpen();
+		static void updateWorldFinal();
 		static void configureGameVars();
 		static bool isGameReadyForFrameUpdate();
 		static void onF4VRSEMessage(F4SEMessagingInterface::Message* msg);

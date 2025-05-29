@@ -5,7 +5,6 @@
 
 #include "../common/Logger.h"
 #include "f4se/GameMenus.h"
-#include "f4se/GameReferences.h"
 
 // Adopted from Shizof mod with permission, Thanks Shizof!!
 
@@ -27,6 +26,10 @@ namespace f4vr {
 
 		bool isInScopeMenu() {
 			return _gameMenuState["ScopeMenu"] == true;
+		}
+
+		bool isPauseMenuOpen() {
+			return _gameMenuState["PauseMenu"] == true;
 		}
 
 		bool isGameStopped() {

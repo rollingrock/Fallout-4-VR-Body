@@ -38,7 +38,7 @@ namespace frik {
 
 	static bool isLeftHandedMode(StaticFunctionTag* base) {
 		Log::info("Papyrus: Is Left Handed Mode");
-		return *f4vr::iniLeftHandedMode;
+		return f4vr::isLeftHandedMode();
 	}
 
 	static void setSelfieMode(StaticFunctionTag* base, const bool isSelfieMode) {
