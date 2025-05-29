@@ -29,7 +29,7 @@ namespace frik {
 	 * Would be nice to know how long the bone is instead of magic numbers, didn't find a way so far.
 	 */
 	NiPoint3 Skeleton::getOffhandIndexFingerTipWorldPosition() {
-		const auto offhandIndexFinger = g_config.leftHandedMode ? "RArm_Finger23" : "LArm_Finger23";
+		const auto offhandIndexFinger = isLeftHandedMode() ? "RArm_Finger23" : "LArm_Finger23";
 		const auto boneTransform = getBoneWorldTransform(offhandIndexFinger);
 		const auto forward = boneTransform.rot * NiPoint3(1, 0, 0);
 		return boneTransform.pos + forward * (_inPowerArmor ? 3 : 1.8f);
@@ -846,7 +846,7 @@ namespace frik {
 	}
 
 	void Skeleton::hideFistHelpers() const {
-		if (!g_config.leftHandedMode) {
+		if (!isLeftHandedMode()) {
 			NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->primaryWandNode);
 			if (node != nullptr) {
 				node->flags |= 0x1; // first bit sets the cull flag so it will be hidden;
@@ -952,10 +952,10 @@ namespace frik {
 	 * Remember the setting to set back if settings change while game is running.
 	 */
 	void Skeleton::handleLeftHandedWeaponNodesSwitch() {
-		if (_lastLeftHandedModeSwitch == g_config.leftHandedMode) {
+		if (_lastLeftHandedModeSwitch == isLeftHandedMode()) {
 			return;
 		}
-		_lastLeftHandedModeSwitch = g_config.leftHandedMode;
+		_lastLeftHandedModeSwitch = isLeftHandedMode();
 
 		NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
@@ -964,7 +964,7 @@ namespace frik {
 
 		if (!rightWeapon || !rHand || !leftWeapon || !lHand) {
 			Log::sample("Cannot set up weapon nodes for left-handed mode switch");
-			_lastLeftHandedModeSwitch = g_config.leftHandedMode;
+			_lastLeftHandedModeSwitch = isLeftHandedMode();
 			return;
 		}
 
@@ -973,7 +973,7 @@ namespace frik {
 		lHand->RemoveChild(rightWeapon);
 		lHand->RemoveChild(leftWeapon);
 
-		if (g_config.leftHandedMode) {
+		if (isLeftHandedMode()) {
 			rHand->AttachChild(leftWeapon, true);
 			lHand->AttachChild(rightWeapon, true);
 		} else {
@@ -1005,7 +1005,7 @@ namespace frik {
 		NiNode* leftWeapon = _playerNodes->WeaponLeftNode; // "WeaponLeft" can return incorrect node for left-handed with throwable weapons
 
 		// handle the NON-primary hand (i.e. the hand that is NOT holding the weapon)
-		bool handleOffhand = g_config.leftHandedMode ^ isLeft;
+		bool handleOffhand = isLeftHandedMode() ^ isLeft;
 
 		NiNode* weaponNode = handleOffhand ? leftWeapon : rightWeapon;
 		NiNode* offsetNode = handleOffhand ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
@@ -1020,7 +1020,7 @@ namespace frik {
 		}
 
 		Matrix44 w;
-		if (!g_config.leftHandedMode) {
+		if (!isLeftHandedMode()) {
 			w.data[0][0] = -0.122f;
 			w.data[1][0] = 0.987f;
 			w.data[2][0] = 0.100f;
@@ -1048,7 +1048,7 @@ namespace frik {
 			weaponNode->m_localTransform.rot = w.multiply43Right(weaponNode->m_localTransform.rot);
 		}
 
-		weaponNode->m_localTransform.pos = g_config.leftHandedMode
+		weaponNode->m_localTransform.pos = isLeftHandedMode()
 			? (isLeft ? NiPoint3(3.389f, -2.099f, 3.133f) : NiPoint3(0, -4.8f, 0))
 			: isLeft
 			? NiPoint3(0, 0, 0)
@@ -1441,7 +1441,7 @@ namespace frik {
 					vr::k_EButton_SteamVR_Touchpad));
 				_closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton.at(name));
 
-				if (isWeaponVisible && !g_frik.isPipboyOn() && !g_frik.isOperatingPipboy() && !(isLeft ^ g_config.leftHandedMode)) {
+				if (isWeaponVisible && !g_frik.isPipboyOn() && !g_frik.isOperatingPipboy() && !(isLeft ^ isLeftHandedMode())) {
 					// CylonSurfer Updated conditions to cater for Virtual Pipboy usage (Ensures Index Finger is extended when weapon is drawn)
 					this->copy1StPerson(name);
 				} else {

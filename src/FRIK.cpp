@@ -98,6 +98,8 @@ namespace frik {
 			_messaging->Dispatch(_pluginHandle, 15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
 			_messaging->RegisterListener(_pluginHandle, BETTER_SCOPES_VR_MOD_NAME, onBetterScopesMessage);
 		}
+
+		configureGameVars();
 	}
 
 	/**
@@ -137,20 +139,11 @@ namespace frik {
 			initSkeleton();
 		}
 
-		// TODO: this sucks, refactor left-handed mode
-		g_config.leftHandedMode = *f4vr::iniLeftHandedMode;
-
-		if (!_gameVarsConfigured) {
-			// TODO: move to common single time init code
-			configureGameVars();
-			_gameVarsConfigured = true;
-		}
-
 		Log::debug("Update Skeleton...");
 		_skelly->onFrameUpdate();
 
 		Log::debug("Update Bone Sphere...");
-		g_boneSpheres->onFrameUpdate();
+		_boneSpheres.onFrameUpdate();
 
 		Log::debug("Update Pipboy...");
 		_pipboy->onFrameUpdate();
@@ -238,6 +231,12 @@ namespace frik {
 		_dynamicCameraHeight = false;
 	}
 
+	void FRIK::configureGameVars() {
+		f4vr::setIniSettingFloat("fPipboyMaxScale:VRPipboy", 3.0000);
+		f4vr::setIniSettingFloat("fPipboyMinScale:VRPipboy", 0.0100f);
+		f4vr::setIniSettingFloat("fVrPowerArmorScaleMultiplier:VR", 1.0000);
+	}
+
 	/**
 	 * Send a message to the BetterScopesVR mod.
 	 */
@@ -268,6 +267,9 @@ namespace frik {
 		}
 		if (g_config.checkDebugDumpDataOnceFor("skelly")) {
 			printNodes(f4vr::getRootNode()->m_parent);
+		}
+		if (g_config.checkDebugDumpDataOnceFor("menus")) {
+			_gameMenusHandler.debugDumpAllMenus();
 		}
 	}
 }

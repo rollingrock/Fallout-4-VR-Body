@@ -4,7 +4,6 @@
 #include "f4vr/MiscStructs.h"
 
 namespace frik {
-	void configureGameVars();
 	void windowFocus();
 	void turnPlayerRadioOn(bool isActive);
 	void simulateExtendedButtonPress(WORD vkey);

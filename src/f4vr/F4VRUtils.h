@@ -25,10 +25,11 @@ namespace f4vr {
 	bool isInInternalCell();
 
 	// settings
-	bool getLeftHandedMode();
-	Setting* getINISettingNative(const char* name);
-	void setINIBool(BSFixedString name, bool value);
-	void setINIFloat(BSFixedString name, float value);
+	inline bool isLeftHandedMode() { return *iniLeftHandedMode; }
+	float getIniSettingFloat(const char* name);
+	void setIniSettingBool(BSFixedString name, bool value);
+	void setIniSettingFloat(BSFixedString name, float value);
+	Setting* getIniSettingNative(const char* name);
 
 	// nodes
 	NiNode* getNode(const char* name, NiNode* fromNode);

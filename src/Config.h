@@ -82,9 +82,6 @@ namespace frik {
 		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
 		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool replaceWithEmbedded);
 
-		// from F4 INIs
-		bool leftHandedMode = false;
-
 		// persistent in FRIK.ini
 		float playerHeight = 0.0;
 		float cameraHeight = 0.0;

@@ -31,16 +31,21 @@ namespace f4vr {
 		}
 		_controlsThumbstickEnableState = toEnable;
 		if (toEnable) {
-			setINIFloat("fLThumbDeadzone:Controls", _controlsThumbstickOriginalDeadzone);
-			setINIFloat("fLThumbDeadzoneMax:Controls", _controlsThumbstickOriginalDeadzoneMax);
-			setINIFloat("fDirectionalDeadzone:Controls", _controlsDirectionalOriginalDeadzone);
+			setIniSettingFloat("fLThumbDeadzone:Controls", _controlsThumbstickOriginalDeadzone);
+			setIniSettingFloat("fLThumbDeadzoneMax:Controls", _controlsThumbstickOriginalDeadzoneMax);
+			setIniSettingFloat("fDirectionalDeadzone:Controls", _controlsDirectionalOriginalDeadzone);
 		} else {
-			_controlsThumbstickOriginalDeadzone = GetINISetting("fLThumbDeadzone:Controls")->data.f32;
-			_controlsThumbstickOriginalDeadzoneMax = GetINISetting("fLThumbDeadzoneMax:Controls")->data.f32;
-			_controlsDirectionalOriginalDeadzone = GetINISetting("fDirectionalDeadzone:Controls")->data.f32;
-			setINIFloat("fLThumbDeadzone:Controls", 1.0);
-			setINIFloat("fLThumbDeadzoneMax:Controls", 1.0);
-			setINIFloat("fDirectionalDeadzone:Controls", 1.0);
+			const auto controlsThumbstickOriginalDeadzone = getIniSettingFloat("fLThumbDeadzone:Controls");
+			if (controlsThumbstickOriginalDeadzone < 1) {
+				_controlsThumbstickOriginalDeadzone = controlsThumbstickOriginalDeadzone;
+				_controlsThumbstickOriginalDeadzoneMax = getIniSettingFloat("fLThumbDeadzoneMax:Controls");
+				_controlsDirectionalOriginalDeadzone = getIniSettingFloat("fDirectionalDeadzone:Controls");
+			} else {
+				common::Log::warn("Controls thumbstick deadzone is already set to 1.0, not changing it.");
+			}
+			setIniSettingFloat("fLThumbDeadzone:Controls", 1.0);
+			setIniSettingFloat("fLThumbDeadzoneMax:Controls", 1.0);
+			setIniSettingFloat("fDirectionalDeadzone:Controls", 1.0);
 		}
 	}
 
@@ -132,27 +137,28 @@ namespace f4vr {
 		return cell && (cell->flags & TESObjectCELL::kFlag_IsInterior) == TESObjectCELL::kFlag_IsInterior;
 	}
 
-	bool getLeftHandedMode() {
-		return GetINISetting("bLeftHandedMode:VR")->data.u8;
+	float getIniSettingFloat(const char* name) {
+		const auto setting = getIniSettingNative(name);
+		return setting ? setting->data.f32 : 0;
 	}
 
-	Setting* getINISettingNative(const char* name) {
+	void setIniSettingBool(const BSFixedString name, bool value) {
+		auto str = BSFixedString(name.c_str());
+		CallGlobalFunctionNoWait2<BSFixedString, bool>("Utility", "SetINIBool", str, value);
+	}
+
+	void setIniSettingFloat(const BSFixedString name, float value) {
+		auto str = BSFixedString(name.c_str());
+		CallGlobalFunctionNoWait2<BSFixedString, float>("Utility", "SetINIFloat", str, value);
+	}
+
+	Setting* getIniSettingNative(const char* name) {
 		Setting* setting = SettingCollectionList_GetPtr(*g_iniSettings, name);
 		if (!setting) {
 			setting = SettingCollectionList_GetPtr(*g_iniPrefSettings, name);
 		}
 
 		return setting;
-	}
-
-	void setINIBool(const BSFixedString name, bool value) {
-		auto str = BSFixedString(name.c_str());
-		CallGlobalFunctionNoWait2<BSFixedString, bool>("Utility", "SetINIBool", str, value);
-	}
-
-	void setINIFloat(const BSFixedString name, float value) {
-		auto str = BSFixedString(name.c_str());
-		CallGlobalFunctionNoWait2<BSFixedString, float>("Utility", "SetINIFloat", str, value);
 	}
 
 	/**

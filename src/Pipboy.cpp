@@ -208,7 +208,7 @@ namespace frik {
 				turnPipBoyOff();
 				g_frik.closePipboyConfigurationModeActive();
 				if (_isWeaponinHand) {
-					g_frik.boneSpheres()->drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_frik.boneSpheres().drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					_weaponStateDetected = false;
 				}
 				disablePipboyHandPose();
@@ -239,7 +239,7 @@ namespace frik {
 				if (!_weaponStateDetected) {
 					_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 					if (_isWeaponinHand) {
-						g_frik.boneSpheres()->holsterWeapon(); // holster weapon so we can use primary trigger as an input.
+						g_frik.boneSpheres().holsterWeapon(); // holster weapon so we can use primary trigger as an input.
 					}
 				}
 				turnPipBoyOn();
@@ -264,7 +264,7 @@ namespace frik {
 				turnPipBoyOff();
 				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
-					g_frik.boneSpheres()->drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_frik.boneSpheres().drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					_weaponStateDetected = false;
 				}
 				disablePipboyHandPose();
@@ -275,7 +275,7 @@ namespace frik {
 				_pipboyStatus = false;
 				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
-					g_frik.boneSpheres()->drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_frik.boneSpheres().drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
 					_weaponStateDetected = false;
 				}
 				disablePipboyHandPose();
@@ -297,7 +297,7 @@ namespace frik {
 					if (!_weaponStateDetected) {
 						_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 						if (_isWeaponinHand) {
-							g_frik.boneSpheres()->holsterWeapon(); // holster weapon so we can use primary trigger as an input.
+							g_frik.boneSpheres().holsterWeapon(); // holster weapon so we can use primary trigger as an input.
 						}
 					}
 					turnPipBoyOn();
@@ -528,7 +528,7 @@ namespace frik {
 					_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 					if (_isWeaponinHand) {
 						_weaponStateDetected = true;
-						g_frik.boneSpheres()->holsterWeapon();
+						g_frik.boneSpheres().holsterWeapon();
 					}
 					setPipboyHandPose();
 				}
@@ -538,7 +538,7 @@ namespace frik {
 					disablePipboyHandPose();
 					if (_isWeaponinHand) {
 						_weaponStateDetected = false;
-						g_frik.boneSpheres()->drawWeapon();
+						g_frik.boneSpheres().drawWeapon();
 					}
 				}
 			} else if (!isLookingAtPipBoy() && _isOperatingPipboy && !_pipboyStatus) {
@@ -557,7 +557,7 @@ namespace frik {
 				}
 				if (_isWeaponinHand) {
 					_weaponStateDetected = false;
-					g_frik.boneSpheres()->drawWeapon();
+					g_frik.boneSpheres().drawWeapon();
 				}
 				_isOperatingPipboy = false;
 			}
@@ -813,16 +813,16 @@ namespace frik {
 							NiNode* trans = g_config.leftHandedPipBoy
 								? _skelly->getRightArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode()
 								: _skelly->getLeftArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode();
-							vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
+							vr::VRControllerAxis_t doinantHandStick = f4vr::isLeftHandedMode()
 								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
 								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
-							vr::VRControllerAxis_t doinantTrigger = g_config.leftHandedMode
+							vr::VRControllerAxis_t doinantTrigger = f4vr::isLeftHandedMode()
 								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[1]
 								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[1];
-							vr::VRControllerAxis_t secondaryTrigger = g_config.leftHandedMode
+							vr::VRControllerAxis_t secondaryTrigger = f4vr::isLeftHandedMode()
 								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[1]
 								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[1];
-							uint64_t dominantHand = g_config.leftHandedMode
+							uint64_t dominantHand = f4vr::isLeftHandedMode()
 								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
 								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
 							const auto UISelectButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33)); // Right Trigger
@@ -915,10 +915,10 @@ namespace frik {
 							}
 						} else if (!g_frik.isPipboyConfigurationModeActive() && !g_config.switchUIControltoPrimary) {
 							//still move Pipboy trigger mesh even if controls havent been swapped.
-							vr::VRControllerAxis_t secondaryTrigger = g_config.leftHandedMode
+							vr::VRControllerAxis_t secondaryTrigger = f4vr::isLeftHandedMode()
 								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[1]
 								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[1];
-							vr::VRControllerAxis_t offHandStick = g_config.leftHandedMode
+							vr::VRControllerAxis_t offHandStick = f4vr::isLeftHandedMode()
 								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0]
 								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0];
 							BSFixedString selectnodename = "SelectRotate";
