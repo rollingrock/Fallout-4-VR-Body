@@ -8,7 +8,6 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "HandPose.h"
-#include "Menu.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
@@ -213,7 +212,7 @@ namespace frik {
 		Log::debug("Operate hands...");
 		setHandPose();
 
-		if (isInScopeMenu()) {
+		if (g_frik.isInScopeMenu()) {
 			hideHands();
 		}
 
@@ -1502,7 +1501,8 @@ namespace frik {
 			return;
 		}
 
-		if (isInScopeMenu() && !g_config.dampenHandsInVanillaScope) {
+		const bool isInScopeMenu = g_frik.isInScopeMenu();
+		if (isInScopeMenu && !g_config.dampenHandsInVanillaScope) {
 			return;
 		}
 
@@ -1513,13 +1513,13 @@ namespace frik {
 		Quaternion rq, rt;
 		rq.fromRot(prevFrame.rot);
 		rt.fromRot(node->m_worldTransform.rot);
-		rq.slerp(1 - (isInScopeMenu() ? g_config.dampenHandsRotationInVanillaScope : g_config.dampenHandsRotation), rt);
+		rq.slerp(1 - (isInScopeMenu ? g_config.dampenHandsRotationInVanillaScope : g_config.dampenHandsRotation), rt);
 		node->m_worldTransform.rot = rq.getRot().make43();
 
 		// Linear interpolation between the position from the previous frame to current frame
 		const NiPoint3 dir = _curentPosition - _lastPosition; // Offset the player movement from this interpolation
 		NiPoint3 deltaPos = node->m_worldTransform.pos - prevFrame.pos - dir; // Add in player velocity
-		deltaPos *= isInScopeMenu() ? g_config.dampenHandsTranslationInVanillaScope : g_config.dampenHandsTranslation;
+		deltaPos *= isInScopeMenu ? g_config.dampenHandsTranslationInVanillaScope : g_config.dampenHandsTranslation;
 		node->m_worldTransform.pos -= deltaPos;
 
 		// Update the previous frame transform

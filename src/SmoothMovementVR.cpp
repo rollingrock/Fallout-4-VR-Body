@@ -2,7 +2,6 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "MenuChecker.h"
 #include "f4se/NiExtraData.h"
 
 using namespace common;

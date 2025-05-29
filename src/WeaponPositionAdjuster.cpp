@@ -4,7 +4,6 @@
 #include "Debug.h"
 #include "FRIK.h"
 #include "HandPose.h"
-#include "Menu.h"
 #include "Skeleton.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
@@ -318,7 +317,7 @@ namespace frik {
 		weapon->m_localTransform.rot = rotAdjust.getRot().multiply43Left(_weaponOffsetTransform.rot);
 
 		// -- Handle Scope:
-		if (isInScopeMenu()) {
+		if (g_frik.isInScopeMenu()) {
 			handleWeaponScopeCameraGrippingRotationAdjustment(weapon, rotAdjust, adjustedWeaponVec);
 
 			// no need to move weapon/hands if we don't see them, and it's hard to calculate scope after more weapon adjustments

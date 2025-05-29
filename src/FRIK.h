@@ -6,6 +6,7 @@
 #include "SmoothMovementVR.h"
 #include "WeaponPositionAdjuster.h"
 #include "f4se/PapyrusEvents.h"
+#include "f4vr/GameMenusHandler.h"
 
 namespace frik {
 	constexpr auto BETTER_SCOPES_VR_MOD_NAME = "FO4VRBETTERSCOPES";
@@ -14,6 +15,8 @@ namespace frik {
 	public:
 		// TODO: rethink bone spheres access
 		BoneSpheresHandler* boneSpheres() const { return g_boneSpheres; }
+
+		bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
 
 		bool getSelfieMode() const { return _selfieMode; }
 		void setSelfieMode(const bool selfieMode) { _selfieMode = selfieMode; }
@@ -43,7 +46,7 @@ namespace frik {
 		void smoothMovement() { _smoothMovement.onFrameUpdate(); }
 
 	private:
-		void initOnGameLoaded() const;
+		void initOnGameLoaded();
 		void initOnGameSessionLoaded();
 		void initSkeleton();
 		void releaseSkeleton();
@@ -52,7 +55,6 @@ namespace frik {
 		static void onBetterScopesMessage(F4SEMessagingInterface::Message* msg);
 		static void checkDebugDump();
 
-		// TODO: bad global state variable that should be refactored
 		bool _inPowerArmor = false;
 		bool _isLookingThroughScope = false;
 		float _dynamicCameraHeight = 0;
@@ -65,7 +67,11 @@ namespace frik {
 		BoneSpheresHandler* g_boneSpheres = new BoneSpheresHandler();
 		WeaponPositionAdjuster* _weaponPosition = nullptr;
 
+		// handler for smooth movement logic
 		SmoothMovementVR _smoothMovement;
+
+		// handler for game menus checking
+		f4vr::GameMenusHandler _gameMenusHandler;
 
 		PluginHandle _pluginHandle = kPluginHandle_Invalid;
 		F4SEMessagingInterface* _messaging = nullptr;

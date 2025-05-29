@@ -196,8 +196,6 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClCompile Include="src\ui\UIToggleGroupContainer.cpp" />
     <ClCompile Include="src\ui\UIButton.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Menu.cpp" />
-    <ClCompile Include="src\MenuChecker.cpp" />
     <ClCompile Include="src\patches.cpp" />
     <ClCompile Include="src\Pipboy.cpp" />
     <ClCompile Include="src\Skeleton.cpp" />
@@ -245,8 +243,7 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClInclude Include="src\ui\UIToggleGroupContainer.h" />
     <ClInclude Include="src\ui\UIButton.h" />
     <ClInclude Include="src\common\Matrix.h" />
-    <ClInclude Include="src\Menu.h" />
-    <ClInclude Include="src\MenuChecker.h" />
+    <ClInclude Include="src\f4vr\GameMenusHandler.h" />
     <ClInclude Include="src\f4vr\MiscStructs.h" />
     <ClInclude Include="src\f4vr\F4VROffsets.h" />
     <ClInclude Include="src\patches.h" />
