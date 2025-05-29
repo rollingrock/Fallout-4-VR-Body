@@ -4,8 +4,6 @@
 #include "ConfigurationMode.h"
 #include "Debug.h"
 #include "HandPose.h"
-#include "Menu.h"
-#include "MenuChecker.h"
 #include "PapyrusApi.h"
 #include "Pipboy.h"
 #include "Skeleton.h"
@@ -84,7 +82,7 @@ namespace frik {
 	/**
 	 * On game fully loaded initialize things that should be initialized only once.
 	 */
-	void FRIK::initOnGameLoaded() const {
+	void FRIK::initOnGameLoaded() {
 		Log::info("Initialize FRIK...");
 		std::srand(static_cast<unsigned int>(time(nullptr)));
 
@@ -93,10 +91,7 @@ namespace frik {
 
 		vrui::initUIManager();
 
-		ScopeMenuEventHandler::Register();
-
-		// TODO: move this?
-		MenuOpenCloseHandler::Register();
+		_gameMenusHandler.init();
 
 		if (isBetterScopesVRModLoaded()) {
 			Log::info("BetterScopesVR mod detected, registering for messages...");
