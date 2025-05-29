@@ -272,7 +272,7 @@ namespace frik {
 	 * Right hand is primary hand if left-handed mode is off, left hand otherwise.
 	 */
 	void setForceHandPointingPose(const bool primaryHand, const bool forcePointing) {
-		setForceHandPointingPoseExplicitHand(primaryHand ^ g_config.leftHandedMode, forcePointing);
+		setForceHandPointingPoseExplicitHand(primaryHand ^ f4vr::isLeftHandedMode(), forcePointing);
 	}
 
 	/**
@@ -306,7 +306,7 @@ namespace frik {
 		}
 		Log::verbose("Set offhand grip pose override: %s)", override ? "Set" : "Release");
 		_offHandGripPose = override;
-		const auto* const fingers = g_config.leftHandedMode ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
+		const auto* const fingers = f4vr::isLeftHandedMode() ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
 		for (auto i = 0; i < FINGERS_COUNT; i++) {
 			const std::string finger = fingers[i];
 			handPapyrusHasControl[finger.c_str()] = override;

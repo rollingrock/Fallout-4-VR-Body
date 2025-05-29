@@ -17,12 +17,6 @@ namespace frik {
 		CallGlobalFunctionNoWait1<bool>("Game", "TurnPlayerRadioOn", isActive);
 	}
 
-	void configureGameVars() {
-		f4vr::setINIFloat("fPipboyMaxScale:VRPipboy", 3.0000);
-		f4vr::setINIFloat("fPipboyMinScale:VRPipboy", 0.0100f);
-		f4vr::setINIFloat("fVrPowerArmorScaleMultiplier:VR", 1.0000);
-	}
-
 	void windowFocus() {
 		common::windowFocus("Fallout4VR");
 	}

@@ -343,7 +343,7 @@ namespace frik {
 		const auto adjustedWeaponVecWorld = _weaponOriginalWorldTransform.rot * (adjustedWeaponVec * _weaponOriginalWorldTransform.scale);
 
 		// Rotate the primary hand so it will stay on the weapon stock
-		const auto primaryHand = (g_config.leftHandedMode ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand)->GetAsNiNode();
+		const auto primaryHand = (f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand)->GetAsNiNode();
 		const auto handLocalVec = primaryHand->m_worldTransform.rot.Transpose() * adjustedWeaponVecWorld / primaryHand->m_worldTransform.scale;
 		rotAdjust.vec2Vec(handLocalVec, NiPoint3(1, 0, 0));
 
@@ -405,7 +405,7 @@ namespace frik {
 		static auto offhandFingerBonePos = NiPoint3(0, 0, 0);
 		static float avgHandV[3] = {0.0f, 0.0f, 0.0f};
 		static int fc = 0;
-		const auto offHandBone = g_config.leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
+		const auto offHandBone = f4vr::isLeftHandedMode() ? "RArm_Finger31" : "LArm_Finger31";
 
 		const auto currentPos = f4vr::getCameraPosition();
 		const float handFrameMovement = vec3Len(_skelly->getBoneWorldTransform(offHandBone).pos - offhandFingerBonePos);
@@ -429,7 +429,7 @@ namespace frik {
 	 * Get the world coordinates of the primary hand holding the weapon.
 	 */
 	NiPoint3 WeaponPositionAdjuster::getPrimaryHandPosition() const {
-		const auto primaryHandNode = g_config.leftHandedMode ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
+		const auto primaryHandNode = f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
 		return primaryHandNode->m_worldTransform.pos;
 	}
 
@@ -437,7 +437,7 @@ namespace frik {
 	 * Get the world coordinates of the offhand.
 	 */
 	NiPoint3 WeaponPositionAdjuster::getOffhandPosition() const {
-		const auto offHandBone = g_config.leftHandedMode ? "RArm_Finger31" : "LArm_Finger31";
+		const auto offHandBone = f4vr::isLeftHandedMode() ? "RArm_Finger31" : "LArm_Finger31";
 		return _skelly->getBoneWorldTransform(offHandBone).pos;
 	}
 

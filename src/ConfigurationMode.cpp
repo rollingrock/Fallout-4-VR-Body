@@ -111,7 +111,7 @@ namespace frik {
 			NiNode* HUD = f4vr::cloneNode(retNode, &proc);
 			HUD->m_name = BSFixedString("MCCONFIGHUD");
 			// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
-			NiNode* UIATTACH = g_config.leftHandedMode
+			NiNode* UIATTACH = f4vr::isLeftHandedMode()
 				? f4vr::getPlayerNodes()->primaryUIAttachNode
 				: f4vr::getNode("world_primaryWand.nif", f4vr::getPlayerNodes()->primaryUIAttachNode);
 			UIATTACH->AttachChild(HUD, true);
@@ -230,7 +230,7 @@ namespace frik {
 				}
 			}
 			NiPoint3 finger;
-			g_config.leftHandedMode
+			f4vr::isLeftHandedMode()
 				? finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos
 				: finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos;
 			for (int i = 1; i <= 9; i++) {
@@ -275,13 +275,13 @@ namespace frik {
 					}
 				}
 			}
-			vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
+			vr::VRControllerAxis_t doinantHandStick = f4vr::isLeftHandedMode()
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
-			uint64_t dominantHand = g_config.leftHandedMode
+			uint64_t dominantHand = f4vr::isLeftHandedMode()
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
-			uint64_t offHand = g_config.leftHandedMode
+			uint64_t offHand = f4vr::isLeftHandedMode()
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed;
 			bool CamZButtonPressed = _MCTouchbuttons[1];
@@ -395,13 +395,13 @@ namespace frik {
 		mainConfigurationMode();
 
 		if (_calibrateModeActive) {
-			vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
+			vr::VRControllerAxis_t doinantHandStick = f4vr::isLeftHandedMode()
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
-			const uint64_t dominantHand = g_config.leftHandedMode
+			const uint64_t dominantHand = f4vr::isLeftHandedMode()
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
-			const uint64_t offHand = g_config.leftHandedMode
+			const uint64_t offHand = f4vr::isLeftHandedMode()
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto ExitandSave = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33));
@@ -448,10 +448,10 @@ namespace frik {
 				_UIHeightButtonPressed = false;
 			}
 		} else {
-			const uint64_t dominantHand = g_config.leftHandedMode
+			const uint64_t dominantHand = f4vr::isLeftHandedMode()
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
-			const uint64_t offHand = g_config.leftHandedMode
+			const uint64_t offHand = f4vr::isLeftHandedMode()
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto dHTouch = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
@@ -478,13 +478,13 @@ namespace frik {
 	 */
 	void ConfigurationMode::pipboyConfigurationMode() {
 		if (g_frik.isPipboyOn()) {
-			vr::VRControllerAxis_t doinantHandStick = g_config.leftHandedMode
+			vr::VRControllerAxis_t doinantHandStick = f4vr::isLeftHandedMode()
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
-			uint64_t dominantHand = g_config.leftHandedMode
+			uint64_t dominantHand = f4vr::isLeftHandedMode()
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
-			uint64_t offHand = g_config.leftHandedMode
+			uint64_t offHand = f4vr::isLeftHandedMode()
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed;
 			const auto PBConfigButtonPressed = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
@@ -528,7 +528,7 @@ namespace frik {
 				setConfigModeHandPose();
 
 				NiPoint3 finger;
-				g_config.leftHandedMode
+				f4vr::isLeftHandedMode()
 					? finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos
 					: finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos;
 				for (int i = 1; i <= 11; i++) {
@@ -723,7 +723,7 @@ namespace frik {
 		NiNode* HUD = f4vr::cloneNode(retNode, &proc);
 		HUD->m_name = BSFixedString("PBCONFIGHUD");
 		// TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
-		NiNode* UIATTACH = g_config.leftHandedMode
+		NiNode* UIATTACH = f4vr::isLeftHandedMode()
 			? f4vr::getPlayerNodes()->primaryUIAttachNode
 			: f4vr::getNode("world_primaryWand.nif", f4vr::getPlayerNodes()->primaryUIAttachNode);
 		UIATTACH->AttachChild(HUD, true);

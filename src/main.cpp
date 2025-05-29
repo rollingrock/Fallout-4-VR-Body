@@ -14,9 +14,7 @@ using namespace common;
 
 extern "C" {
 bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info) {
-	Sleep(5000);
 	Log::init("FRIK.log");
-
 	Log::info("FRIK v%s", FRIK_VERSION_VERSTRING);
 
 	info->infoVersion = PluginInfo::kInfoVersion;

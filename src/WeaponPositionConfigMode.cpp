@@ -34,7 +34,7 @@ namespace frik {
 		Matrix44 rot;
 		NiTransform transform;
 		transform.scale = originalTransform.scale;
-		if (g_config.leftHandedMode) {
+		if (f4vr::isLeftHandedMode()) {
 			transform.pos = NiPoint3(5.5f, -2.2f, 1);
 			rot.setEulerAngles(degreesToRads(95), degreesToRads(60), 0);
 		} else {
@@ -52,7 +52,7 @@ namespace frik {
 		NiTransform transform;
 		transform.scale = originalTransform.scale;
 		transform.rot = originalTransform.rot;
-		transform.pos = g_config.leftHandedMode
+		transform.pos = f4vr::isLeftHandedMode()
 			? (inPA ? NiPoint3(-2.5f, 7.5f, -1) : NiPoint3(-3, 4, 0))
 			: inPA
 			? NiPoint3(-0.5f, 6, 2)
@@ -66,7 +66,7 @@ namespace frik {
 	NiTransform WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(const NiTransform& originalTransform, const bool inPA) {
 		NiTransform transform;
 		transform.scale = originalTransform.scale;
-		if (g_config.leftHandedMode) {
+		if (f4vr::isLeftHandedMode()) {
 			Matrix44 mat;
 			mat.setEulerAngles(degreesToRads(180), 0, degreesToRads(180));
 			transform.rot = mat.make43();
@@ -179,7 +179,7 @@ namespace frik {
 		}
 
 		auto& transform = _adjuster->_weaponOffsetTransform;
-		const float leftHandedMult = g_config.leftHandedMode ? -1.f : 1.f;
+		const float leftHandedMult = f4vr::isLeftHandedMode() ? -1.f : 1.f;
 
 		// Update the weapon transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
@@ -229,7 +229,7 @@ namespace frik {
 		}
 
 		auto& transform = _adjuster->_throwableWeaponOffsetTransform;
-		const float leftHandedMult = g_config.leftHandedMode ? -1.f : 1.f;
+		const float leftHandedMult = f4vr::isLeftHandedMode() ? -1.f : 1.f;
 
 		// Update the transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
@@ -261,7 +261,7 @@ namespace frik {
 		}
 
 		auto& transform = _adjuster->_backOfHandUIOffsetTransform;
-		const float leftHandedMult = g_config.leftHandedMode ? -1.f : 1.f;
+		const float leftHandedMult = f4vr::isLeftHandedMode() ? -1.f : 1.f;
 
 		// Update the transform by player thumbstick and buttons input.
 		// Depending on buttons pressed can horizontal/vertical position or rotation.
@@ -477,6 +477,6 @@ namespace frik {
 		// start hidden by default (will be set visible in frame update if it should be)
 		_configUI->setVisibility(false);
 
-		g_uiManager->attachPresetToPrimaryWandLeft(_configUI, g_config.leftHandedMode, {0, -4, 0});
+		g_uiManager->attachPresetToPrimaryWandLeft(_configUI, f4vr::isLeftHandedMode(), {0, -4, 0});
 	}
 }

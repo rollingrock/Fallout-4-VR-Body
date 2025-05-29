@@ -68,31 +68,31 @@ namespace frik {
 
 	// Sphere bone detection func
 	static UInt32 registerBoneSphere(StaticFunctionTag* base, const float radius, const BSFixedString bone) {
-		return g_frik.boneSpheres()->registerBoneSphere(radius, bone);
+		return g_frik.boneSpheres().registerBoneSphere(radius, bone);
 	}
 
 	static UInt32 registerBoneSphereOffset(StaticFunctionTag* base, const float radius, const BSFixedString bone, VMArray<float> pos) {
-		return g_frik.boneSpheres()->registerBoneSphereOffset(radius, bone, pos);
+		return g_frik.boneSpheres().registerBoneSphereOffset(radius, bone, pos);
 	}
 
 	static void destroyBoneSphere(StaticFunctionTag* base, const UInt32 handle) {
-		g_frik.boneSpheres()->destroyBoneSphere(handle);
+		g_frik.boneSpheres().destroyBoneSphere(handle);
 	}
 
 	static void registerForBoneSphereEvents(StaticFunctionTag* base, VMObject* thisObject) {
-		g_frik.boneSpheres()->registerForBoneSphereEvents(thisObject);
+		g_frik.boneSpheres().registerForBoneSphereEvents(thisObject);
 	}
 
 	static void unRegisterForBoneSphereEvents(StaticFunctionTag* base, VMObject* thisObject) {
-		g_frik.boneSpheres()->unRegisterForBoneSphereEvents(thisObject);
+		g_frik.boneSpheres().unRegisterForBoneSphereEvents(thisObject);
 	}
 
 	static void toggleDebugBoneSpheres(StaticFunctionTag* base, const bool turnOn) {
-		g_frik.boneSpheres()->toggleDebugBoneSpheres(turnOn);
+		g_frik.boneSpheres().toggleDebugBoneSpheres(turnOn);
 	}
 
 	static void toggleDebugBoneSpheresAtBone(StaticFunctionTag* base, const UInt32 handle, const bool turnOn) {
-		g_frik.boneSpheres()->toggleDebugBoneSpheresAtBone(handle, turnOn);
+		g_frik.boneSpheres().toggleDebugBoneSpheresAtBone(handle, turnOn);
 	}
 
 	// Finger pose related APIs

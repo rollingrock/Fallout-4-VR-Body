@@ -14,7 +14,7 @@ namespace frik {
 	class FRIK {
 	public:
 		// TODO: rethink bone spheres access
-		BoneSpheresHandler* boneSpheres() const { return g_boneSpheres; }
+		BoneSpheresHandler& boneSpheres() { return _boneSpheres; }
 
 		bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
 
@@ -50,22 +50,24 @@ namespace frik {
 		void initOnGameSessionLoaded();
 		void initSkeleton();
 		void releaseSkeleton();
+		static void configureGameVars();
 		static bool isGameReadyForFrameUpdate();
 		static void onF4VRSEMessage(F4SEMessagingInterface::Message* msg);
 		static void onBetterScopesMessage(F4SEMessagingInterface::Message* msg);
-		static void checkDebugDump();
+		void checkDebugDump();
 
 		bool _inPowerArmor = false;
 		bool _isLookingThroughScope = false;
 		float _dynamicCameraHeight = 0;
 		bool _selfieMode = false;
-		bool _gameVarsConfigured = false;
 
 		Skeleton* _skelly = nullptr;
 		Pipboy* _pipboy = nullptr;
 		ConfigurationMode* _configurationMode = nullptr;
-		BoneSpheresHandler* g_boneSpheres = new BoneSpheresHandler();
 		WeaponPositionAdjuster* _weaponPosition = nullptr;
+
+		// handler for the interaction spheres around the skeleton
+		BoneSpheresHandler _boneSpheres;
 
 		// handler for smooth movement logic
 		SmoothMovementVR _smoothMovement;

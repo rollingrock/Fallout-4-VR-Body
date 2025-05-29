@@ -1,17 +1,17 @@
 // ReSharper disable StringLiteralTypo
 
-#include <fstream>
-#include "include/json.hpp"
-#include "include/SimpleIni.h"
-
 #include "Config.h"
 
 #include <filesystem>
+#include <fstream>
 #include <shlobj_core.h>
 
-#include "utils.h"
+#include "include/json.hpp"
+#include "include/SimpleIni.h"
+
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
+#include "f4vr/F4VRUtils.h"
 #include "res/resource.h"
 
 using namespace common;
@@ -206,7 +206,7 @@ namespace frik {
 	 */
 	/// <returns></returns>
 	std::optional<NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const {
-		const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, leftHandedMode));
+		const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode()));
 		if (it != _weaponsOffsets.end()) {
 			return it->second;
 		}
@@ -218,7 +218,7 @@ namespace frik {
 	 * Save the weapon offset to config and filesystem.
 	 */
 	void Config::saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA) {
-		const auto fullName = getWeaponNameWithMode(name, mode, inPA, leftHandedMode);
+		const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
 		_weaponsOffsets[fullName] = transform;
 		saveOffsetsToJsonFile(fullName, transform, WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json");
 	}
@@ -227,7 +227,7 @@ namespace frik {
 	 * Remove the weapon offset from the config and filesystem.
 	 */
 	void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool replaceWithEmbedded) {
-		const auto fullName = getWeaponNameWithMode(name, mode, inPA, leftHandedMode);
+		const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
 		_weaponsOffsets.erase(fullName);
 		if (replaceWithEmbedded && _weaponsEmbeddedOffsets.contains(fullName)) {
 			_weaponsOffsets[fullName] = _weaponsEmbeddedOffsets[fullName];
