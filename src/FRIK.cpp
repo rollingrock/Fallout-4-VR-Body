@@ -146,11 +146,11 @@ namespace frik {
 			Log::debug("Update Bone Sphere...");
 			_boneSpheres.onFrameUpdate();
 
-			Log::debug("Update Pipboy...");
-			_pipboy->onFrameUpdate();
-
 			Log::debug("Update Weapon Position...");
 			_weaponPosition->onFrameUpdate();
+
+			Log::debug("Update Pipboy...");
+			_pipboy->onFrameUpdate();
 
 			_configurationMode->onFrameUpdate();
 

@@ -57,7 +57,7 @@ namespace frik {
 			}
 
 			// in case it was hidden before and shouldn't be anymore
-			f4vr::showHideNode(geometry, false);
+			f4vr::setNodeVisibility(geometry, true);
 
 			if (toHide) {
 				_hideFaceSkinGeometryIndexes.push_back(i);
@@ -88,7 +88,7 @@ namespace frik {
 		if (g_config.hideHead || g_config.hideSkin || g_frik.getSelfieMode()) {
 			preProcessHideGeometryIndexes(rn);
 			for each (int idx in _hideFaceSkinGeometryIndexes) {
-				f4vr::showHideNode(rn->kGeomArray[idx].spGeometry, true);
+				f4vr::setNodeVisibility(rn->kGeomArray[idx].spGeometry, false);
 			}
 		}
 
@@ -110,7 +110,7 @@ namespace frik {
 		//Face and Skin
 		if (const auto rn = reinterpret_cast<BSFadeNode*>((*g_player)->unkF0->rootNode)) {
 			for (UINT32 i = 0; i < rn->kGeomArray.count; ++i) {
-				f4vr::showHideNode(rn->kGeomArray[i].spGeometry, false);
+				f4vr::setNodeVisibility(rn->kGeomArray[i].spGeometry, true);
 			}
 		}
 
@@ -141,6 +141,6 @@ namespace frik {
 			return;
 		}
 
-		f4vr::showHideNode(slot.node, toHide);
+		f4vr::setNodeVisibility(slot.node, !toHide);
 	}
 }

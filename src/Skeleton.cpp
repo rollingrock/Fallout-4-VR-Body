@@ -191,7 +191,7 @@ namespace frik {
 
 		// Misc stuff to show/hide things and also set up the wrist pipboy
 		Log::debug("Pipboy and Weapons...");
-		hideWeapon();
+		hide3rdPersonWeapon();
 		positionPipboy();
 		hidePipboy();
 		hideFistHelpers();
@@ -765,20 +765,13 @@ namespace frik {
 		transform.world.rot = rot.multiply43Left(parentTransform.world.rot);
 	}
 
-	void Skeleton::hideWeapon() const {
+	/**
+	 * Hide the 3rd-person weapon that comes with the skeleton as we are using the 1st-person weapon model.
+	 */
+	void Skeleton::hide3rdPersonWeapon() const {
 		static BSFixedString nodeName("Weapon");
-
 		if (NiAVObject* weapon = _rightArm.hand->GetObjectByName(&nodeName)) {
-			weapon->flags |= 0x1;
-			weapon->m_localTransform.scale = 0.0;
-			if (const NiNode* weaponNode = weapon->GetAsNiNode()) {
-				for (UInt16 i = 0; i < weaponNode->m_children.m_emptyRunStart; ++i) {
-					if (NiNode* nextNode = weaponNode->m_children.m_data[i]->GetAsNiNode()) {
-						nextNode->flags |= 0x1;
-						nextNode->m_localTransform.scale = 0.0;
-					}
-				}
-			}
+			setNodeVisibility(weapon, false);
 		}
 	}
 
@@ -955,9 +948,11 @@ namespace frik {
 		if (_lastLeftHandedModeSwitch == isLeftHandedMode()) {
 			return;
 		}
-		_lastLeftHandedModeSwitch = isLeftHandedMode();
 
-		NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		_lastLeftHandedModeSwitch = isLeftHandedMode();
+		Log::warn("Left-handed mode weapon nodes switch (LeftHanded:%d)", _lastLeftHandedModeSwitch);
+
+		NiNode* rightWeapon = getWeaponNode();
 		NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
 		NiNode* rHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 		NiNode* lHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
@@ -980,10 +975,6 @@ namespace frik {
 			rHand->AttachChild(rightWeapon, true);
 			lHand->AttachChild(leftWeapon, true);
 		}
-
-		if (g_frik.isOperatingPipboy()) {
-			rightWeapon->m_localTransform.scale = 0.0;
-		}
 	}
 
 	// This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
@@ -1000,7 +991,7 @@ namespace frik {
 			return;
 		}
 
-		NiNode* rightWeapon = getNode("Weapon", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		NiNode* rightWeapon = getWeaponNode();
 		//NiNode* rightWeapon = _playerNodes->primaryWandNode;
 		NiNode* leftWeapon = _playerNodes->WeaponLeftNode; // "WeaponLeft" can return incorrect node for left-handed with throwable weapons
 

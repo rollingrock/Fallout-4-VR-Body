@@ -57,13 +57,13 @@ namespace f4vr {
 		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
 			if (const auto child = node->m_children.m_data[i]) {
 				if (const auto triShape = child->GetAsBSTriShape()) {
-					setVisibility(triShape, show);
+					setNodeVisibility(triShape, show);
 					break;
 				}
 				if (!_stricmp(child->m_name.c_str(), "")) {
-					setVisibility(child, show);
+					setNodeVisibility(child, show);
 					if (const auto grandChild = child->GetAsNiNode()->m_children.m_data[0]) {
-						setVisibility(grandChild, show);
+						setNodeVisibility(grandChild, show);
 					}
 					break;
 				}
@@ -252,32 +252,21 @@ namespace f4vr {
 	}
 
 	/**
-	 * Update the node flags to show/hide it.
-	 */
-	void showHideNode(NiAVObject* node, const bool toHide) {
-		if (toHide) {
-			node->flags |= 0x1; // hide
-		} else {
-			node->flags &= 0xfffffffffffffffe; // show
-		}
-	}
-
-	/**
 	 * Change flags to show or hide a node
 	 */
-	void setVisibility(NiAVObject* nde, const bool show) {
-		if (nde) {
-			nde->flags = show ? nde->flags & ~0x1 : nde->flags | 0x1;
+	void setNodeVisibility(NiAVObject* node, const bool show) {
+		if (node) {
+			node->flags = show ? node->flags & ~0x1 : node->flags | 0x1;
 		}
 	}
 
-	void toggleVis(NiNode* nde, const bool hide, const bool updateSelf) {
+	void toggleVis(NiNode* node, const bool hide, const bool updateSelf) {
 		if (updateSelf) {
-			nde->flags = hide ? nde->flags | 0x1 : nde->flags & ~0x1;
+			node->flags = hide ? node->flags | 0x1 : node->flags & ~0x1;
 		}
 
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = node->m_children.m_data[i] ? node->m_children.m_data[i]->GetAsNiNode() : nullptr) {
 				toggleVis(nextNode, hide, true);
 			}
 		}
