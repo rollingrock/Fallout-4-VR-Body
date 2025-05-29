@@ -56,7 +56,7 @@ namespace f4vr {
 		return reinterpret_cast<PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
 	}
 
-	inline NiAVObject* getWorldRootNode() {
+	inline NiNode* getWorldRootNode() {
 		return (*g_player) ? (*g_player)->unkF0->rootNode : nullptr;
 	}
 

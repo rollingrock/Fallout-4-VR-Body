@@ -93,13 +93,13 @@ namespace frik {
 
 		_gameMenusHandler.init();
 
+		configureGameVars();
+
 		if (isBetterScopesVRModLoaded()) {
 			Log::info("BetterScopesVR mod detected, registering for messages...");
 			_messaging->Dispatch(_pluginHandle, 15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
 			_messaging->RegisterListener(_pluginHandle, BETTER_SCOPES_VR_MOD_NAME, onBetterScopesMessage);
 		}
-
-		configureGameVars();
 	}
 
 	/**
@@ -120,50 +120,51 @@ namespace frik {
 	 * This is where all the magic happens by updating game state and nodes.
 	 */
 	void FRIK::onFrameUpdate() {
-		if (!g_player || !(*g_player)->unkF0) {
-			// game not loaded or existing
-			return;
-		}
-
-		f4vr::VRControllers.update(*f4vr::iniLeftHandedMode);
-
-		if (_skelly && _inPowerArmor != f4vr::isInPowerArmor()) {
-			Log::info("Power Armor State Changed, reset skelly...");
-			releaseSkeleton();
-		}
-
-		if (!_skelly) {
-			if (!isGameReadyForFrameUpdate()) {
+		try {
+			if (!g_player || !(*g_player)->unkF0) {
+				// game not loaded or existing
 				return;
 			}
-			initSkeleton();
+
+			f4vr::VRControllers.update();
+
+			if (_skelly && _inPowerArmor != f4vr::isInPowerArmor()) {
+				Log::info("Power Armor State Changed, reset skelly...");
+				releaseSkeleton();
+			}
+
+			if (!_skelly) {
+				if (!isGameReadyForFrameUpdate()) {
+					return;
+				}
+				initSkeleton();
+			}
+
+			Log::debug("Update Skeleton...");
+			_skelly->onFrameUpdate();
+
+			Log::debug("Update Bone Sphere...");
+			_boneSpheres.onFrameUpdate();
+
+			Log::debug("Update Pipboy...");
+			_pipboy->onFrameUpdate();
+
+			Log::debug("Update Weapon Position...");
+			_weaponPosition->onFrameUpdate();
+
+			_configurationMode->onFrameUpdate();
+
+			FrameUpdateContext context(_skelly);
+			vrui::g_uiManager->onFrameUpdate(&context);
+
+			checkPauseMenuOpen();
+
+			updateWorldFinal();
+
+			checkDebugDump();
+		} catch (const std::exception& e) {
+			Log::error("Error in FRIK::onFrameUpdate: %s", e.what());
 		}
-
-		Log::debug("Update Skeleton...");
-		_skelly->onFrameUpdate();
-
-		Log::debug("Update Bone Sphere...");
-		_boneSpheres.onFrameUpdate();
-
-		Log::debug("Update Pipboy...");
-		_pipboy->onFrameUpdate();
-
-		Log::debug("Update Weapon Position...");
-		_weaponPosition->onFrameUpdate();
-
-		f4vr::BSFadeNode_MergeWorldBounds((*g_player)->unkF0->rootNode->GetAsNiNode());
-		f4vr::BSFlattenedBoneTree_UpdateBoneArray((*g_player)->unkF0->rootNode->m_children.m_data[0]);
-		// just in case any transforms missed because they are not in the tree do a full flat bone array update
-		f4vr::BSFadeNode_UpdateGeomArray((*g_player)->unkF0->rootNode, 1);
-
-		_configurationMode->onFrameUpdate();
-
-		FrameUpdateContext context(_skelly);
-		vrui::g_uiManager->onFrameUpdate(&context);
-
-		f4vr::updateDownFromRoot(); // Last world update before exit.    Probably not necessary.
-
-		checkDebugDump();
 	}
 
 	void FRIK::initSkeleton() {
@@ -179,13 +180,6 @@ namespace frik {
 		_pipboy = new Pipboy(_skelly);
 		_configurationMode = new ConfigurationMode(_skelly);
 		_weaponPosition = new WeaponPositionAdjuster(_skelly);
-
-		if (g_config.setScale) {
-			// TODO: do we need to do it here every time?
-			Log::info("scale set");
-			Setting* set = GetINISetting("fVrScale:VR");
-			set->SetDouble(g_config.fVrScale);
-		}
 	}
 
 	/**
@@ -231,7 +225,33 @@ namespace frik {
 		_dynamicCameraHeight = false;
 	}
 
+	/**
+	 * If the pause menu is open, we should not allow any input from the controllers.
+	 * In case the pause menu if opened while doing something else like weapon repositioning, or pipboy interaction.
+	 */
+	void FRIK::checkPauseMenuOpen() {
+		if (_gameMenusHandler.isPauseMenuOpen()) {
+			f4vr::setControlsThumbstickEnableState(true);
+		}
+	}
+
+	/**
+	 * Calling three engine-level functions to update the scene graph state for the player's root node and its children,
+	 * specifically related to geometry bounds, skeletal bone transforms, and flattened tree data.
+	 * Without it some cull geometry, Pipboy interaction, and hand fingers position may not work.
+	 */
+	void FRIK::updateWorldFinal() {
+		const auto worldRootNode = f4vr::getWorldRootNode();
+		f4vr::BSFadeNode_MergeWorldBounds(worldRootNode);
+		f4vr::BSFlattenedBoneTree_UpdateBoneArray(f4vr::getRootNode());
+		// just in case any transforms missed because they are not in the tree do a full flat bone array update
+		f4vr::BSFadeNode_UpdateGeomArray(worldRootNode, 1);
+	}
+
 	void FRIK::configureGameVars() {
+		Log::info("Setting VRScale from:(%.3f) to:(%.3f)", f4vr::getIniSettingFloat("fVrScale:VR"), g_config.fVrScale);
+		f4vr::setIniSettingFloat("fVrScale:VR", g_config.fVrScale);
+
 		f4vr::setIniSettingFloat("fPipboyMaxScale:VRPipboy", 3.0000);
 		f4vr::setIniSettingFloat("fPipboyMinScale:VRPipboy", 0.0100f);
 		f4vr::setIniSettingFloat("fVrPowerArmorScaleMultiplier:VR", 1.0000);

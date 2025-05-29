@@ -27,12 +27,12 @@ namespace f4vr {
 		/**
 		 * Update controller states; must be called each frame
 		 */
-		void update(const bool leftHanded) {
+		void update() {
 			if (!vr::VRSystem()) {
 				return;
 			}
 
-			_leftHanded = leftHanded;
+			_leftHanded = isLeftHandedMode();
 
 			_left.index = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_LeftHand);
 			_right.index = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_RightHand);
