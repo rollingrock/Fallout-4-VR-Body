@@ -78,11 +78,6 @@ namespace frik {
 			return;
 		}
 
-		if (_isOperatingPipboy) {
-			// hide the weapon when operating the Pipboy, though it can still fire...
-			f4vr::setNodeVisibility(f4vr::getWeaponNode(), false);
-		}
-
 		//Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
 		NiNode* hideNode;
 		g_config.isHoloPipboy
@@ -213,7 +208,7 @@ namespace frik {
 				turnPipBoyOff();
 				g_frik.closePipboyConfigurationModeActive();
 				if (_isWeaponinHand) {
-					g_frik.boneSpheres().drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_frik.enableDisablePlayerControls(true);
 					_weaponStateDetected = false;
 				}
 				disablePipboyHandPose();
@@ -244,7 +239,7 @@ namespace frik {
 				if (!_weaponStateDetected) {
 					_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 					if (_isWeaponinHand) {
-						g_frik.boneSpheres().holsterWeapon(); // holster weapon so we can use primary trigger as an input.
+						g_frik.enableDisablePlayerControls(false);
 					}
 				}
 				turnPipBoyOn();
@@ -269,7 +264,7 @@ namespace frik {
 				turnPipBoyOff();
 				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
-					g_frik.boneSpheres().drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_frik.enableDisablePlayerControls(true);
 					_weaponStateDetected = false;
 				}
 				disablePipboyHandPose();
@@ -280,7 +275,7 @@ namespace frik {
 				_pipboyStatus = false;
 				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
-					g_frik.boneSpheres().drawWeapon(); // draw weapon as we no longer need primary trigger as an input.
+					g_frik.enableDisablePlayerControls(true);
 					_weaponStateDetected = false;
 				}
 				disablePipboyHandPose();
@@ -302,7 +297,7 @@ namespace frik {
 					if (!_weaponStateDetected) {
 						_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 						if (_isWeaponinHand) {
-							g_frik.boneSpheres().holsterWeapon(); // holster weapon so we can use primary trigger as an input.
+							g_frik.enableDisablePlayerControls(false);
 						}
 					}
 					turnPipBoyOn();
@@ -533,7 +528,7 @@ namespace frik {
 					_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
 					if (_isWeaponinHand) {
 						_weaponStateDetected = true;
-						g_frik.boneSpheres().holsterWeapon();
+						g_frik.enableDisablePlayerControls(false);
 					}
 					setPipboyHandPose();
 				}
@@ -543,7 +538,7 @@ namespace frik {
 					disablePipboyHandPose();
 					if (_isWeaponinHand) {
 						_weaponStateDetected = false;
-						g_frik.boneSpheres().drawWeapon();
+						g_frik.enableDisablePlayerControls(true);
 					}
 				}
 			} else if (!isLookingAtPipBoy() && _isOperatingPipboy && !_pipboyStatus) {
@@ -562,7 +557,7 @@ namespace frik {
 				}
 				if (_isWeaponinHand) {
 					_weaponStateDetected = false;
-					g_frik.boneSpheres().drawWeapon();
+					g_frik.enableDisablePlayerControls(true);
 				}
 				_isOperatingPipboy = false;
 			}

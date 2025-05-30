@@ -54,8 +54,9 @@ namespace frik {
 		_messaging = static_cast<F4SEMessagingInterface*>(f4se->QueryInterface(kInterface_Messaging));
 		_messaging->RegisterListener(_pluginHandle, "F4SE", onF4VRSEMessage);
 
-		Log::info("Register papyrus functions...");
+		Log::info("Register papyrus native functions...");
 		initPapyrusApis(f4se);
+		_papyrusGateway.init(f4se);
 	}
 
 	/**

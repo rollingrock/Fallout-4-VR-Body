@@ -2,6 +2,7 @@
 
 #include "BoneSpheresHandler.h"
 #include "ConfigurationMode.h"
+#include "PapyrusGateway.h"
 #include "Pipboy.h"
 #include "SmoothMovementVR.h"
 #include "WeaponPositionAdjuster.h"
@@ -38,6 +39,8 @@ namespace frik {
 
 		bool inWeaponRepositionMode() const { return _weaponPosition && _weaponPosition->inWeaponRepositionMode(); }
 		void toggleWeaponRepositionMode() const { if (_weaponPosition) { _weaponPosition->toggleWeaponRepositionMode(); } }
+
+		void enableDisablePlayerControls(const bool enable, const bool combat = true) const { _papyrusGateway.enableDisablePlayerControls(enable, combat, combat); }
 
 		void dispatchMessageToBetterScopesVR(UInt32 messageType, void* data, UInt32 dataLen) const;
 
@@ -76,6 +79,9 @@ namespace frik {
 
 		// handler for game menus checking
 		f4vr::GameMenusHandler _gameMenusHandler;
+
+		// gateway to run papyrus functions
+		PapyrusGateway _papyrusGateway;
 
 		PluginHandle _pluginHandle = kPluginHandle_Invalid;
 		F4SEMessagingInterface* _messaging = nullptr;

@@ -228,6 +228,7 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClInclude Include="src\ConfigurationMode.h" />
     <ClInclude Include="src\CullGeometryHandler.h" />
     <ClInclude Include="src\Debug.h" />
+    <ClInclude Include="src\f4vr\F4VRPapyrusGateway.h" />
     <ClInclude Include="src\FRIK.h" />
     <ClInclude Include="src\f4vr\F4VRUtils.h" />
     <ClInclude Include="src\f4vr\PlayerNodes.h" />

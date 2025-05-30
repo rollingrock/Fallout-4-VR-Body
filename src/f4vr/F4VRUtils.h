@@ -1,6 +1,7 @@
 #pragma once
 
 #include <f4se/GameTypes.h>
+#include <f4se/PluginAPI.h>
 
 #include "F4VROffsets.h"
 
@@ -49,6 +50,9 @@ namespace f4vr {
 	void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
 	void updateTransforms(NiNode* node);
 	void updateTransformsDown(NiNode* nde, bool updateSelf);
+
+	typedef bool (*RegisterFunctions)(VirtualMachine* vm);
+	void registerPapyrusNativeFunctions(const F4SEInterface* f4se, const RegisterFunctions callback);
 
 	// persistent data
 	inline bool _controlsThumbstickEnableState = true;
