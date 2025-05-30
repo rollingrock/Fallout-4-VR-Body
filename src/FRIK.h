@@ -6,6 +6,7 @@
 #include "SmoothMovementVR.h"
 #include "WeaponPositionAdjuster.h"
 #include "f4se/PapyrusEvents.h"
+#include "f4vr/F4VRPapyrusGateway.h"
 #include "f4vr/GameMenusHandler.h"
 
 namespace frik {
@@ -38,6 +39,8 @@ namespace frik {
 
 		bool inWeaponRepositionMode() const { return _weaponPosition && _weaponPosition->inWeaponRepositionMode(); }
 		void toggleWeaponRepositionMode() const { if (_weaponPosition) { _weaponPosition->toggleWeaponRepositionMode(); } }
+
+		void enableDisablePlayerControls(const bool enable, const bool combat = true) const { _papyrusGateway.enableDisablePlayerControls(enable, combat, combat); }
 
 		void dispatchMessageToBetterScopesVR(UInt32 messageType, void* data, UInt32 dataLen) const;
 
@@ -76,6 +79,8 @@ namespace frik {
 
 		// handler for game menus checking
 		f4vr::GameMenusHandler _gameMenusHandler;
+
+		f4vr::F4VRPapyrusGateway _papyrusGateway;
 
 		PluginHandle _pluginHandle = kPluginHandle_Invalid;
 		F4SEMessagingInterface* _messaging = nullptr;
