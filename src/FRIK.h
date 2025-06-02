@@ -2,8 +2,8 @@
 
 #include "BoneSpheresHandler.h"
 #include "ConfigurationMode.h"
-#include "PapyrusGateway.h"
 #include "Pipboy.h"
+#include "PlayerControlsHandler.h"
 #include "SmoothMovementVR.h"
 #include "WeaponPositionAdjuster.h"
 #include "f4se/PapyrusEvents.h"
@@ -14,9 +14,6 @@ namespace frik {
 
 	class FRIK {
 	public:
-		// TODO: rethink bone spheres access
-		BoneSpheresHandler& boneSpheres() { return _boneSpheres; }
-
 		bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
 
 		bool getSelfieMode() const { return _selfieMode; }
@@ -40,20 +37,17 @@ namespace frik {
 		bool inWeaponRepositionMode() const { return _weaponPosition && _weaponPosition->inWeaponRepositionMode(); }
 		void toggleWeaponRepositionMode() const { if (_weaponPosition) { _weaponPosition->toggleWeaponRepositionMode(); } }
 
-		void enableDisablePlayerControls(const bool enable, const bool combat = true) const { _papyrusGateway.enableDisablePlayerControls(enable, combat, combat); }
-
 		void dispatchMessageToBetterScopesVR(UInt32 messageType, void* data, UInt32 dataLen) const;
 
 		void initialize(const F4SEInterface* f4se);
 		void onFrameUpdate();
-		void smoothMovement() { _smoothMovement.onFrameUpdate(); }
+		void smoothMovement();
 
 	private:
 		void initOnGameLoaded();
 		void initOnGameSessionLoaded();
 		void initSkeleton();
 		void releaseSkeleton();
-		void checkPauseMenuOpen();
 		static void updateWorldFinal();
 		static void configureGameVars();
 		static bool isGameReadyForFrameUpdate();
@@ -80,8 +74,8 @@ namespace frik {
 		// handler for game menus checking
 		f4vr::GameMenusHandler _gameMenusHandler;
 
-		// gateway to run papyrus functions
-		PapyrusGateway _papyrusGateway;
+		// handler to enable/disable player movement and other controls
+		PlayerControlsHandler _playerControlsHandler;
 
 		PluginHandle _pluginHandle = kPluginHandle_Invalid;
 		F4SEMessagingInterface* _messaging = nullptr;

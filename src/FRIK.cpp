@@ -5,6 +5,7 @@
 #include "Debug.h"
 #include "HandPose.h"
 #include "PapyrusApi.h"
+#include "PapyrusGateway.h"
 #include "Pipboy.h"
 #include "Skeleton.h"
 #include "SmoothMovementVR.h"
@@ -56,7 +57,8 @@ namespace frik {
 
 		Log::info("Register papyrus native functions...");
 		initPapyrusApis(f4se);
-		_papyrusGateway.init(f4se);
+		PapyrusGateway::init(f4se);
+		_boneSpheres.init(f4se);
 	}
 
 	/**
@@ -158,13 +160,21 @@ namespace frik {
 			FrameUpdateContext context(_skelly);
 			vrui::g_uiManager->onFrameUpdate(&context);
 
-			checkPauseMenuOpen();
+			_playerControlsHandler.onFrameUpdate(_pipboy, _weaponPosition, &_gameMenusHandler);
 
 			updateWorldFinal();
 
 			checkDebugDump();
 		} catch (const std::exception& e) {
 			Log::error("Error in FRIK::onFrameUpdate: %s", e.what());
+		}
+	}
+
+	void FRIK::smoothMovement() {
+		try {
+			_smoothMovement.onFrameUpdate();
+		} catch (const std::exception& e) {
+			Log::error("Error in FRIK::smoothMovement: %s", e.what());
 		}
 	}
 
@@ -224,16 +234,6 @@ namespace frik {
 
 		_inPowerArmor = false;
 		_dynamicCameraHeight = false;
-	}
-
-	/**
-	 * If the pause menu is open, we should not allow any input from the controllers.
-	 * In case the pause menu if opened while doing something else like weapon repositioning, or pipboy interaction.
-	 */
-	void FRIK::checkPauseMenuOpen() {
-		if (_gameMenusHandler.isPauseMenuOpen()) {
-			f4vr::setControlsThumbstickEnableState(true);
-		}
 	}
 
 	/**

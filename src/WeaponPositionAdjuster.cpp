@@ -23,7 +23,6 @@ namespace frik {
 	void WeaponPositionAdjuster::toggleWeaponRepositionMode() {
 		Log::info("Toggle Weapon Reposition Config Mode: %s", !inWeaponRepositionMode() ? "ON" : "OFF");
 		_configMode = _configMode ? nullptr : std::make_unique<WeaponPositionConfigMode>(this);
-		f4vr::setControlsThumbstickEnableState(!inWeaponRepositionMode());
 		if (!inWeaponRepositionMode()) {
 			// reload offset to handle player didn't save changes
 			loadStoredOffsets(_currentWeapon);

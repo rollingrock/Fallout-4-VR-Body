@@ -257,7 +257,13 @@
     <ClInclude Include="src\f4vr\GameMenusHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\f4vr\F4VRPapyrusGateway.h">
+    <ClInclude Include="src\f4vr\PapyrusGatewayBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PapyrusGateway.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\PlayerControlsHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -5,6 +5,7 @@
 #include <f4se/GameRTTI.h>
 
 #include "Config.h"
+#include "FRIK.h"
 #include "common/CommonUtils.h"
 #include "f4se/PapyrusEvents.h"
 #include "f4vr/F4VRUtils.h"
@@ -90,8 +91,6 @@ namespace frik {
 
 		set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
 		set->SetDouble(5.0);
-
-		f4vr::setControlsThumbstickEnableState(true);
 	}
 
 	/**

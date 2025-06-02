@@ -208,7 +208,6 @@ namespace frik {
 				turnPipBoyOff();
 				g_frik.closePipboyConfigurationModeActive();
 				if (_isWeaponinHand) {
-					g_frik.enableDisablePlayerControls(true);
 					_weaponStateDetected = false;
 				}
 				disablePipboyHandPose();
@@ -236,12 +235,6 @@ namespace frik {
 				// if bool is still set to true on control release we know it was a short press.
 				_pipboyStatus = true;
 				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
-				if (!_weaponStateDetected) {
-					_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
-					if (_isWeaponinHand) {
-						g_frik.enableDisablePlayerControls(false);
-					}
-				}
 				turnPipBoyOn();
 				setPipboyHandPose();
 				_isOperatingPipboy = true;
@@ -264,7 +257,6 @@ namespace frik {
 				turnPipBoyOff();
 				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
-					g_frik.enableDisablePlayerControls(true);
 					_weaponStateDetected = false;
 				}
 				disablePipboyHandPose();
@@ -275,7 +267,6 @@ namespace frik {
 				_pipboyStatus = false;
 				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
 				if (_isWeaponinHand) {
-					g_frik.enableDisablePlayerControls(true);
 					_weaponStateDetected = false;
 				}
 				disablePipboyHandPose();
@@ -294,12 +285,6 @@ namespace frik {
 				if (timeElapsed > g_config.pipBoyOnDelay) {
 					_pipboyStatus = true;
 					f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
-					if (!_weaponStateDetected) {
-						_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
-						if (_isWeaponinHand) {
-							g_frik.enableDisablePlayerControls(false);
-						}
-					}
 					turnPipBoyOn();
 					setPipboyHandPose();
 					_isOperatingPipboy = true;
@@ -526,10 +511,6 @@ namespace frik {
 					// Hides Weapon and poses hand for pointing
 					_isOperatingPipboy = true;
 					_isWeaponinHand = (*g_player)->actorState.IsWeaponDrawn();
-					if (_isWeaponinHand) {
-						_weaponStateDetected = true;
-						g_frik.enableDisablePlayerControls(false);
-					}
 					setPipboyHandPose();
 				}
 				if (distance > g_config.pipboyDetectionRange && _isOperatingPipboy && !_pipboyStatus) {
@@ -538,7 +519,6 @@ namespace frik {
 					disablePipboyHandPose();
 					if (_isWeaponinHand) {
 						_weaponStateDetected = false;
-						g_frik.enableDisablePlayerControls(true);
 					}
 				}
 			} else if (!isLookingAtPipBoy() && _isOperatingPipboy && !_pipboyStatus) {
@@ -557,7 +537,6 @@ namespace frik {
 				}
 				if (_isWeaponinHand) {
 					_weaponStateDetected = false;
-					g_frik.enableDisablePlayerControls(true);
 				}
 				_isOperatingPipboy = false;
 			}
@@ -690,16 +669,7 @@ namespace frik {
 				if (menu != nullptr) {
 					GFxMovieRoot* root = menu->movie->movieRoot;
 					if (root != nullptr) {
-						GFxValue isProjected;
 						GFxValue PBCurrentPage;
-						if (root->GetVariable(&isProjected, "root.Menu_mc.projectedBorder_mc.visible")) {
-							//check if Pipboy is projected and disable right stick rotation if it isn't
-							bool uiProjected = isProjected.GetBool();
-							if (!uiProjected && g_config.switchUIControltoPrimary) {
-								//prevents player rotation controls so we can switch controls to the right stick (or left if the Pipboy is on the right arm)
-								f4vr::setControlsThumbstickEnableState(false);
-							}
-						}
 						if (root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage")) {
 							// Get Current Pipboy Tab and store it.
 							if (PBCurrentPage.GetType() != GFxValue::kType_Undefined) {

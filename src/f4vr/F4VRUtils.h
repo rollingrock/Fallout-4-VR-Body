@@ -41,6 +41,7 @@ namespace f4vr {
 	// visibility
 	bool isNodeVisible(const NiNode* node);
 	void setNodeVisibility(NiAVObject* node, bool show = true);
+	void setNodeVisibilityDeep(NiAVObject* node, const bool show, const bool updateSelf);
 	void toggleVis(NiNode* node, bool hide, bool updateSelf);
 
 	// updates
@@ -53,10 +54,4 @@ namespace f4vr {
 
 	typedef bool (*RegisterFunctions)(VirtualMachine* vm);
 	void registerPapyrusNativeFunctions(const F4SEInterface* f4se, const RegisterFunctions callback);
-
-	// persistent data
-	inline bool _controlsThumbstickEnableState = true;
-	inline float _controlsThumbstickOriginalDeadzone = 0.25f;
-	inline float _controlsThumbstickOriginalDeadzoneMax = 0.94f;
-	inline float _controlsDirectionalOriginalDeadzone = 0.5f;
 }

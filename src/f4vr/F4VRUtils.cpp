@@ -23,33 +23,6 @@ namespace f4vr {
 	}
 
 	/**
-	 * If to enable/disable the use of both controllers analog thumbstick.
-	 */
-	void setControlsThumbstickEnableState(const bool toEnable) {
-		if (_controlsThumbstickEnableState == toEnable) {
-			return; // no change
-		}
-		_controlsThumbstickEnableState = toEnable;
-		if (toEnable) {
-			setIniSettingFloat("fLThumbDeadzone:Controls", _controlsThumbstickOriginalDeadzone);
-			setIniSettingFloat("fLThumbDeadzoneMax:Controls", _controlsThumbstickOriginalDeadzoneMax);
-			setIniSettingFloat("fDirectionalDeadzone:Controls", _controlsDirectionalOriginalDeadzone);
-		} else {
-			const auto controlsThumbstickOriginalDeadzone = getIniSettingFloat("fLThumbDeadzone:Controls");
-			if (controlsThumbstickOriginalDeadzone < 1) {
-				_controlsThumbstickOriginalDeadzone = controlsThumbstickOriginalDeadzone;
-				_controlsThumbstickOriginalDeadzoneMax = getIniSettingFloat("fLThumbDeadzoneMax:Controls");
-				_controlsDirectionalOriginalDeadzone = getIniSettingFloat("fDirectionalDeadzone:Controls");
-			} else {
-				common::Log::warn("Controls thumbstick deadzone is already set to 1.0, not changing it.");
-			}
-			setIniSettingFloat("fLThumbDeadzone:Controls", 1.0);
-			setIniSettingFloat("fLThumbDeadzoneMax:Controls", 1.0);
-			setIniSettingFloat("fDirectionalDeadzone:Controls", 1.0);
-		}
-	}
-
-	/**
 	 * Set the visibility of controller wand.
 	 */
 	void setWandsVisibility(const bool show, const bool leftWand) {
@@ -260,6 +233,18 @@ namespace f4vr {
 		}
 	}
 
+	void setNodeVisibilityDeep(NiAVObject* node, const bool show, const bool updateSelf) {
+		if (node && updateSelf) {
+			node->flags = show ? node->flags & ~0x1 : node->flags | 0x1;
+		}
+		if (const auto niNode = node->GetAsNiNode()) {
+			for (UInt16 i = 0; i < niNode->m_children.m_emptyRunStart; ++i) {
+				setNodeVisibilityDeep(niNode->m_children.m_data[i], show, true);
+			}
+		}
+	}
+
+	// TODO: check removing this in favor of setNodeVisibilityDeep
 	void toggleVis(NiNode* node, const bool hide, const bool updateSelf) {
 		if (updateSelf) {
 			node->flags = hide ? node->flags | 0x1 : node->flags & ~0x1;

@@ -390,7 +390,6 @@ namespace frik {
 	}
 
 	void ConfigurationMode::onFrameUpdate() {
-		checkWeaponRepositionPipboyConflict();
 		pipboyConfigurationMode();
 		mainConfigurationMode();
 
@@ -764,17 +763,5 @@ namespace frik {
 		}
 		_isPBConfigModeActive = true;
 		_PBConfigModeEnterCounter = 0;
-	}
-
-	/**
-	 * Check if currently in weapon reposition mode to enable or disable the rotation stick depending on if pipboy is open.
-	 * Needed to operate vanilla in-fron or projected pipboy when also doing weapon repositioning.
-	 * On-wrist pipboy needs the rotation stick disabled to override its own UI.
-	 */
-	void ConfigurationMode::checkWeaponRepositionPipboyConflict() {
-		if (!g_frik.inWeaponRepositionMode()) {
-			return;
-		}
-		f4vr::setControlsThumbstickEnableState(isAnyPipboyOpen() && !g_frik.isOperatingPipboy());
 	}
 }

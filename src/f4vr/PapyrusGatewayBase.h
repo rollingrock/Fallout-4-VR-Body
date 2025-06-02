@@ -17,13 +17,9 @@ namespace f4vr {
 	 */
 	class PapyrusGatewayBase {
 	public:
-		explicit PapyrusGatewayBase(std::string registerScriptClassName)
-			: _registerScriptClassName(std::move(registerScriptClassName)) {}
-
-		virtual ~PapyrusGatewayBase() { _instance = nullptr; }
-
-		void init(const F4SEInterface* f4se) {
-			if (_instance) {
+		explicit PapyrusGatewayBase(const F4SEInterface* f4se, std::string registerScriptClassName)
+			: _registerScriptClassName(std::move(registerScriptClassName)) {
+			if (_instance && _instance != this) {
 				throw std::exception("Papyrus Gateway is already initialized, only single instance can be used!");
 			}
 			_instance = this;
@@ -43,6 +39,8 @@ namespace f4vr {
 			//
 			// common::Log::warn("same handle? %lld", thisObject->GetHandle());
 		}
+
+		virtual ~PapyrusGatewayBase() { _instance = nullptr; }
 
 	protected:
 		/**
@@ -89,7 +87,7 @@ namespace f4vr {
 			VMValue packedArgs;
 			arguments.PackArray(&packedArgs, vm);
 
-			common::Log::info("Calling papyrus function '%s' on script '%s'", functionName, _scriptName.c_str());
+			common::Log::verbose("Calling papyrus function '%s' on script '%s'", functionName, _scriptName.c_str());
 			const BSFixedString bsFunctionName = functionName;
 			CallFunctionNoWait_Internal(vm, 0, ident, &bsFunctionName, &packedArgs);
 		}
@@ -158,7 +156,6 @@ namespace f4vr {
 			return arguments;
 		}
 
-	private:
 		std::string _registerScriptClassName;
 
 		// the handle to the script object to call its papyrus functions

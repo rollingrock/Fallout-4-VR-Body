@@ -1,39 +1,68 @@
 #include "BoneSpheresHandler.h"
+
 #include <ranges>
+
 #include "FRIK.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
+#include "f4se/PapyrusNativeFunctions.h"
 
 using namespace common;
 
 namespace frik {
+	void BoneSpheresHandler::init(const F4SEInterface* f4se) {
+		if (_instance) {
+			throw std::exception("Bone Spheres Handler is already initialized, only single instance can be used!");
+		}
+		_instance = this;
+		f4vr::registerPapyrusNativeFunctions(f4se, registerPapyrusFunctionsCallback);
+	}
+
+	/**
+	 * Register code for Papyrus scripts.
+	 */
+	bool BoneSpheresHandler::registerPapyrusFunctionsCallback(VirtualMachine* vm) {
+		vm->RegisterFunction(new NativeFunction2("RegisterBoneSphere", "FRIK:FRIK", registerBoneSphereFunc, vm));
+		vm->RegisterFunction(new NativeFunction3("RegisterBoneSphereOffset", "FRIK:FRIK", registerBoneSphereOffsetFunc, vm));
+		vm->RegisterFunction(new NativeFunction1("DestroyBoneSphere", "FRIK:FRIK", destroyBoneSphereFunc, vm));
+		vm->RegisterFunction(new NativeFunction1("RegisterForBoneSphereEvents", "FRIK:FRIK", registerForBoneSphereEventsFunc, vm));
+		vm->RegisterFunction(new NativeFunction1("UnRegisterForBoneSphereEvents", "FRIK:FRIK", unRegisterForBoneSphereEventsFunc, vm));
+		vm->RegisterFunction(new NativeFunction1("toggleDebugBoneSpheres", "FRIK:FRIK", toggleDebugBoneSpheresFunc, vm));
+		vm->RegisterFunction(new NativeFunction2("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", toggleDebugBoneSpheresAtBoneFunc, vm));
+		return true;
+	}
+
+	UInt32 BoneSpheresHandler::registerBoneSphereFunc(StaticFunctionTag* base, const float radius, const BSFixedString bone) {
+		return _instance->registerBoneSphere(radius, bone);
+	}
+
+	UInt32 BoneSpheresHandler::registerBoneSphereOffsetFunc(StaticFunctionTag* base, const float radius, const BSFixedString bone, VMArray<float> pos) {
+		return _instance->registerBoneSphereOffset(radius, bone, pos);
+	}
+
+	void BoneSpheresHandler::destroyBoneSphereFunc(StaticFunctionTag* base, const UInt32 handle) {
+		_instance->destroyBoneSphere(handle);
+	}
+
+	void BoneSpheresHandler::registerForBoneSphereEventsFunc(StaticFunctionTag* base, VMObject* scriptObj) {
+		_instance->registerForBoneSphereEvents(scriptObj);
+	}
+
+	void BoneSpheresHandler::unRegisterForBoneSphereEventsFunc(StaticFunctionTag* base, VMObject* scriptObj) {
+		_instance->unRegisterForBoneSphereEvents(scriptObj);
+	}
+
+	void BoneSpheresHandler::toggleDebugBoneSpheresFunc(StaticFunctionTag* base, const bool turnOn) {
+		_instance->toggleDebugBoneSpheres(turnOn);
+	}
+
+	void BoneSpheresHandler::toggleDebugBoneSpheresAtBoneFunc(StaticFunctionTag* base, const UInt32 handle, const bool turnOn) {
+		_instance->toggleDebugBoneSpheresAtBone(handle, turnOn);
+	}
+
 	void BoneSpheresHandler::onFrameUpdate() {
 		detectBoneSphere();
 		handleDebugBoneSpheres();
-	}
-
-	void BoneSpheresHandler::holsterWeapon() {
-		// Sends Papyrus Event to holster weapon when inside Pipboy usage zone
-		if (_boneSphereEventRegs.m_data.empty()) {
-			return;
-		}
-		SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Holster);
-		auto functor = [&evt](const EventRegistration<NullParameters>& reg) {
-			SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt);
-		};
-		_boneSphereEventRegs.ForEach(functor);
-	}
-
-	void BoneSpheresHandler::drawWeapon() {
-		// Sends Papyrus to draw weapon when outside Pipboy usage zone
-		if (_boneSphereEventRegs.m_data.empty()) {
-			return;
-		}
-		SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Draw);
-		auto functor = [&evt](const EventRegistration<NullParameters>& reg) {
-			SendPapyrusEvent1<SInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt);
-		};
-		_boneSphereEventRegs.ForEach(functor);
 	}
 
 	UInt32 BoneSpheresHandler::registerBoneSphere(const float radius, const BSFixedString bone) {
@@ -114,22 +143,24 @@ namespace frik {
 		}
 	}
 
-	void BoneSpheresHandler::registerForBoneSphereEvents(VMObject* thisObject) {
-		Log::info("RegisterForBoneSphereEvents");
-		if (!thisObject) {
+	void BoneSpheresHandler::registerForBoneSphereEvents(VMObject* scriptObj) {
+		if (!scriptObj) {
+			Log::warn("Failed to register for BoneSphereEvents, no scriptObj");
 			return;
 		}
 
-		_boneSphereEventRegs.Register(thisObject->GetHandle(), thisObject->GetObjectType());
+		Log::info("Register for BoneSphereEvents by Script:'%s'", scriptObj->GetObjectType().c_str());
+		_boneSphereEventRegs.Register(scriptObj->GetHandle(), scriptObj->GetObjectType());
 	}
 
-	void BoneSpheresHandler::unRegisterForBoneSphereEvents(VMObject* thisObject) {
-		if (!thisObject) {
+	void BoneSpheresHandler::unRegisterForBoneSphereEvents(VMObject* scriptObj) {
+		if (!scriptObj) {
+			Log::warn("Failed to unregister from BoneSphereEvents, no scriptObj");
 			return;
 		}
 
-		Log::info("UnRegisterForBoneSphereEvents");
-		_boneSphereEventRegs.Unregister(thisObject->GetHandle(), thisObject->GetObjectType());
+		Log::info("Register from BoneSphereEvents by Script:'%s'", scriptObj->GetObjectType().c_str());
+		_boneSphereEventRegs.Unregister(scriptObj->GetHandle(), scriptObj->GetObjectType());
 	}
 
 	void BoneSpheresHandler::toggleDebugBoneSpheres(const bool turnOn) const {

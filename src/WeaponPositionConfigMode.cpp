@@ -279,7 +279,7 @@ namespace frik {
 		}
 
 		// update the weapon with the offset change
-		_adjuster->getBackOfHandUINode()->m_localTransform = transform;
+		WeaponPositionAdjuster::getBackOfHandUINode()->m_localTransform = transform;
 	}
 
 	/**
@@ -378,7 +378,7 @@ namespace frik {
 	void WeaponPositionConfigMode::resetBackOfHandUIConfig() const {
 		f4vr::showNotification("Reset Back of Hand UI Position to Default");
 		_adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_currentlyInPA);
-		_adjuster->getBackOfHandUINode()->m_localTransform = _adjuster->_backOfHandUIOffsetTransform;
+		WeaponPositionAdjuster::getBackOfHandUINode()->m_localTransform = _adjuster->_backOfHandUIOffsetTransform;
 		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA, true);
 	}
 
