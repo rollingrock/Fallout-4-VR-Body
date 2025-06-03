@@ -1,15 +1,26 @@
 #include "CommonUtils.h"
 
+#include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <numbers>
 #include <shlobj_core.h>
-#include <fstream>
-#include <chrono>
 
 #include "Logger.h"
 #include "Matrix.h"
 
 namespace common {
+	/**
+	 * Safe equal check as floats are not exact.
+	 */
+	bool fEqual(const float left, const float right, const float epsilon) {
+		return std::fabs(left - right) < epsilon;
+	}
+
+	bool fNotEqual(const float left, const float right, const float epsilon) {
+		return std::fabs(left - right) > epsilon;
+	}
+
 	std::string str_tolower(std::string s) {
 		std::ranges::transform(s, s.begin(),
 			[](const unsigned char c) { return std::tolower(c); }
@@ -99,6 +110,19 @@ namespace common {
 		return v1.x * v2.y * n.z + v2.x * n.y * v1.z + n.x * v1.y * v2.z - v1.z * v2.y * n.x - v2.z * n.y * v1.x - n.z * v1.y * v2.x;
 	}
 
+	float distanceNoSqrt(const NiPoint3 po1, const NiPoint3 po2) {
+		const float x = po1.x - po2.x;
+		const float y = po1.y - po2.y;
+		const float z = po1.z - po2.z;
+		return x * x + y * y + z * z;
+	}
+
+	float distanceNoSqrt2d(const float x1, const float y1, const float x2, const float y2) {
+		const float x = x1 - x2;
+		const float y = y1 - y2;
+		return x * x + y * y;
+	}
+
 	float degreesToRads(const float deg) {
 		return deg * std::numbers::pi_v<float> / 180;
 	}
@@ -150,6 +174,31 @@ namespace common {
 		result.data[2][1] = tmp1 + tmp2;
 		result.data[1][2] = tmp1 - tmp2;
 		return result.Transpose();
+	}
+
+	/**
+	 * Compute the delta transform between two transforms.
+	 * i.e. the transform that takes from "from" transform to the "to" transform.
+	 */
+	NiTransform getDeltaTransform(const NiTransform& from, const NiTransform& to) {
+		NiTransform delta;
+		delta.scale = to.scale / from.scale;
+		delta.rot = Matrix44(to.rot).multiply43Right(from.rot.Transpose());
+		delta.pos = to.pos - delta.rot * from.pos * delta.scale;
+		return delta;
+	}
+
+	/**
+	 * Compute the target transform starting with base using the delta transform from "from" to "to".
+	 * i.e. made the same change as from->to on base to get target.
+	 */
+	NiTransform getTargetTransform(const NiTransform& baseFrom, const NiTransform& baseTo, const NiTransform& targetFrom) {
+		const auto delta = getDeltaTransform(baseFrom, baseTo);
+		NiTransform target;
+		target.scale = delta.scale * targetFrom.scale;
+		target.rot = Matrix44(delta.rot).multiply43Right(targetFrom.rot);
+		target.pos = delta.rot * (targetFrom.pos * delta.scale) + delta.pos;
+		return target;
 	}
 
 	/**

@@ -6,9 +6,43 @@
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
-#include "f4vr/BSFlattenedBoneTree.h"
 
 using namespace common;
+
+namespace {
+	void printNode(const NiNode* node, const std::string& padding) {
+		const auto scale = std::fabs(node->m_localTransform.scale - node->m_worldTransform.scale) < 0.001f
+			? std::format("{:.2f}", node->m_localTransform.scale)
+			: std::format("{:.2f}/{:.2f}", node->m_localTransform.scale, node->m_worldTransform.scale);
+		Log::infoRaw("%s%s : children(%d), hidden(%d), Local:(%.2f, %.2f, %.2f), World:(%.2f, %.2f, %.2f), Scale:(%s)",
+			padding.c_str(), node->m_name.c_str(),
+			node->m_children.m_emptyRunStart, node->flags & 0x1,
+			node->m_localTransform.pos.x, node->m_localTransform.pos.y, node->m_localTransform.pos.z,
+			node->m_worldTransform.pos.x, node->m_worldTransform.pos.y, node->m_worldTransform.pos.z,
+			scale.c_str());
+	}
+
+	void printNodeChildren(NiNode* child, std::string padding) {
+		printNode(child, padding);
+
+		padding += "..";
+		if (child->GetAsNiNode()) {
+			for (UInt16 i = 0; i < child->m_children.m_emptyRunStart; ++i) {
+				if (const auto nextNode = child->m_children.m_data[i]) {
+					printNodeChildren(reinterpret_cast<NiNode*>(nextNode), padding);
+				}
+			}
+		}
+	}
+
+	void printNodeAncestors(const NiNode* node, std::string padding) {
+		while (node) {
+			printNode(node, padding);
+			padding += "..";
+			node = node->m_parent;
+		}
+	}
+}
 
 namespace frik {
 	void printMatrix(const Matrix44* mat) {
@@ -31,48 +65,20 @@ namespace frik {
 		Log::info("difference = %f %f %f", firstpos.x - skellypos.x, firstpos.y - skellypos.y, firstpos.z - skellypos.z);
 	}
 
-	void printAllNodes(const Skeleton* skelly) {
-		const auto* node = static_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
-		Log::info("--- Player Root Node ---");
-		printNodes(node);
-		Log::info("--- Global UI node ---");
-		printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent);
-	}
-
-	void printNodes(const NiNode* nde) {
-		// print root node info first
-		Log::info("%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f),  World(%5.2f, %5.2f, %5.2f)", nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
-			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z,
-			nde->m_worldTransform.pos.x, nde->m_worldTransform.pos.y, nde->m_worldTransform.pos.z);
-
-		const std::string padding = "";
-		for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			//	auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
-			const auto nextNode = nde->m_children.m_data[i];
-			if (nextNode) {
-				printChildren(static_cast<NiNode*>(nextNode), padding);
-			}
+	void printAllNodes() {
+		auto* node = (*g_player)->unkF0->rootNode->GetAsNiNode();
+		while (node->m_parent) {
+			node = node->m_parent;
 		}
+		printNodes(node, false);
 	}
 
-	void printChildren(NiNode* child, std::string padding) {
-		padding += "..";
-		Log::info("%s%s : children = %d hidden: %d: Local(%2.3f, %2.3f, %2.3f), World(%5.2f, %5.2f, %5.2f)", padding.c_str(), child->m_name.c_str(),
-			child->m_children.m_emptyRunStart, child->flags & 0x1,
-			child->m_localTransform.pos.x, child->m_localTransform.pos.y, child->m_localTransform.pos.z,
-			child->m_worldTransform.pos.x, child->m_worldTransform.pos.y, child->m_worldTransform.pos.z);
-
-		//Log::info("%s%s : children = %d : worldbound %f %f %f %f", padding.c_str(), child->m_name.c_str(), child->m_children.m_emptyRunStart,
-		//	child->m_worldBound.m_kCenter.x, child->m_worldBound.m_kCenter.y, child->m_worldBound.m_kCenter.z, child->m_worldBound.m_fRadius);
-
-		if (child->GetAsNiNode()) {
-			for (auto i = 0; i < child->m_children.m_emptyRunStart; ++i) {
-				//auto nextNode = child->m_children.m_data[i] ? child->m_children.m_data[i]->GetAsNiNode() : nullptr;
-				const auto nextNode = child->m_children.m_data[i];
-				if (nextNode) {
-					printChildren(static_cast<NiNode*>(nextNode), padding);
-				}
-			}
+	void printNodes(NiNode* node, const bool printAncestors) {
+		Log::info("Children of '%s':", node->m_name.c_str());
+		printNodeChildren(node, "");
+		if (printAncestors) {
+			Log::info("Ancestors of '%s':", node->m_name.c_str());
+			printNodeAncestors(node, "");
 		}
 	}
 
@@ -85,9 +91,8 @@ namespace frik {
 			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z);
 
 		if (nde->GetAsNiNode()) {
-			for (auto i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-				const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr;
-				if (nextNode) {
+			for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
+				if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
 					printNodes(nextNode, curTime);
 				}
 			}
@@ -112,28 +117,38 @@ namespace frik {
 		}
 
 		padding += "..";
-		for (auto i = 0; i < node->m_children.m_emptyRunStart; ++i) {
-			const auto nextNode = node->m_children.m_data[i];
-			if (nextNode) {
-				printNodesTransform(static_cast<NiNode*>(nextNode), padding);
+		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = node->m_children.m_data[i]) {
+				printNodesTransform(reinterpret_cast<NiNode*>(nextNode), padding);
 			}
 		}
 	}
 
-	void printTransform(const std::string& name, const NiTransform& transform, bool sample) {
-		const auto frm = "Transform '" + name + "' Pos: (%2.4f, %2.4f, %2.4f), Rot: [[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.3f, %2.3f, %2.3f]]";
+	void printTransform(const std::string& name, const NiTransform& transform, const bool sample) {
+		const auto frm = "Transform '" + name + "' Pos:(%.2f, %.2f, %.2f), Rot:[[%.2f, %.2f, %.2f][%.2f, %.2f, %.2f][%.2f, %.2f, %.2f]], Scale:(%.2f)";
 		if (sample) {
 			Log::sample(frm.c_str(),
 				transform.pos.x, transform.pos.y, transform.pos.z,
 				transform.rot.data[0][0], transform.rot.data[1][0], transform.rot.data[2][0],
 				transform.rot.data[0][1], transform.rot.data[1][1], transform.rot.data[2][1],
-				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2]);
+				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2],
+				transform.scale);
 		} else {
 			Log::info(frm.c_str(),
 				transform.pos.x, transform.pos.y, transform.pos.z,
 				transform.rot.data[0][0], transform.rot.data[1][0], transform.rot.data[2][0],
 				transform.rot.data[0][1], transform.rot.data[1][1], transform.rot.data[2][1],
-				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2]);
+				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2],
+				transform.scale);
+		}
+	}
+
+	void printPosition(const std::string& name, const NiPoint3& pos, const bool sample) {
+		const auto frm = "Transform '" + name + "' Pos: (%.2f, %.2f, %.2f)";
+		if (sample) {
+			Log::sample(frm.c_str(), pos.x, pos.y, pos.z);
+		} else {
+			Log::info(frm.c_str(), pos.x, pos.y, pos.z);
 		}
 	}
 

@@ -79,6 +79,14 @@ namespace common {
 			va_end(args);
 		}
 
+		// don't add the extra prefix stuff. Useful for multiline debug dump logs
+		static void infoRaw(const char* fmt, ...) {
+			va_list args;
+			va_start(args, fmt);
+			IDebugLog::Log(IDebugLog::kLevel_Message, fmt, args);
+			va_end(args);
+		}
+
 		static void warn(const char* fmt, ...) {
 			va_list args;
 			va_start(args, fmt);

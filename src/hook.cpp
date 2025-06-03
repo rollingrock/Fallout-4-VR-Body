@@ -188,9 +188,7 @@ void hook4() {
 }
 
 void hookSmoothMovement(const uint64_t rcx) {
-	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-		frik::g_frik.smoothMovement();
-	}
+	frik::g_frik.smoothMovement();
 	smoothMovementHook(rcx);
 }
 

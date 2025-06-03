@@ -4,8 +4,6 @@
 #include "ConfigurationMode.h"
 #include "Debug.h"
 #include "HandPose.h"
-#include "Menu.h"
-#include "MenuChecker.h"
 #include "PapyrusApi.h"
 #include "Pipboy.h"
 #include "Skeleton.h"
@@ -84,7 +82,7 @@ namespace frik {
 	/**
 	 * On game fully loaded initialize things that should be initialized only once.
 	 */
-	void FRIK::initOnGameLoaded() const {
+	void FRIK::initOnGameLoaded() {
 		Log::info("Initialize FRIK...");
 		std::srand(static_cast<unsigned int>(time(nullptr)));
 
@@ -93,16 +91,11 @@ namespace frik {
 
 		vrui::initUIManager();
 
-		ScopeMenuEventHandler::Register();
-
-		// TODO: make smooth movement a class and an instance of FRIK
-		SmoothMovementVR::startFunctions();
-		SmoothMovementVR::MenuOpenCloseHandler::Register();
+		_gameMenusHandler.init();
 
 		if (isBetterScopesVRModLoaded()) {
 			Log::info("BetterScopesVR mod detected, registering for messages...");
-			bool gripConfig = false; // !F4VRBody::g_config->staticGripping;
-			_messaging->Dispatch(_pluginHandle, 15, (void*)gripConfig, sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
+			_messaging->Dispatch(_pluginHandle, 15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
 			_messaging->RegisterListener(_pluginHandle, BETTER_SCOPES_VR_MOD_NAME, onBetterScopesMessage);
 		}
 	}
@@ -170,8 +163,6 @@ namespace frik {
 		// just in case any transforms missed because they are not in the tree do a full flat bone array update
 		f4vr::BSFadeNode_UpdateGeomArray((*g_player)->unkF0->rootNode, 1);
 
-		fixMuzzleFlashPosition();
-
 		_configurationMode->onFrameUpdate();
 
 		FrameUpdateContext context(_skelly);
@@ -179,12 +170,7 @@ namespace frik {
 
 		f4vr::updateDownFromRoot(); // Last world update before exit.    Probably not necessary.
 
-		if (g_config.checkDebugDumpDataOnceFor("nodes")) {
-			printAllNodes(_skelly);
-		}
-		if (g_config.checkDebugDumpDataOnceFor("skelly")) {
-			printNodes((*g_player)->firstPersonSkeleton->GetAsNiNode());
-		}
+		checkDebugDump();
 	}
 
 	void FRIK::initSkeleton() {
@@ -225,7 +211,7 @@ namespace frik {
 			Log::info("Common or Player nodes not set yet!");
 			return false;
 		}
-		if (!f4vr::getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode())) {
+		if (!f4vr::getNode("RArm_Hand", f4vr::getFirstPersonSkeleton())) {
 			Log::info("Arm node not set yet!");
 			return false;
 		}
@@ -252,35 +238,11 @@ namespace frik {
 		_dynamicCameraHeight = false;
 	}
 
-	void FRIK::smoothMovement() {
-		if (!g_config.disableSmoothMovement) {
-			SmoothMovementVR::everyFrame();
-		}
-	}
-
 	/**
 	 * Send a message to the BetterScopesVR mod.
 	 */
 	void FRIK::dispatchMessageToBetterScopesVR(const UInt32 messageType, void* data, const UInt32 dataLen) const {
 		_messaging->Dispatch(_pluginHandle, messageType, data, dataLen, BETTER_SCOPES_VR_MOD_NAME);
-	}
-
-	/**
-	 * Fixes the position of the muzzle flash to be at the projectile node.
-	 * A workaround for two-handed weapon handling.
-	 */
-	void FRIK::fixMuzzleFlashPosition() {
-		if (!(*g_player)->middleProcess->unk08->equipData || !(*g_player)->middleProcess->unk08->equipData->equippedData) {
-			return;
-		}
-		const auto obj = (*g_player)->middleProcess->unk08->equipData->equippedData;
-		const auto vfunc = (uint64_t*)obj;
-		if ((*vfunc & 0xFFFF) == (f4vr::EquippedWeaponData_vfunc & 0xFFFF)) {
-			const auto muzzle = reinterpret_cast<f4vr::MuzzleFlash*>((*g_player)->middleProcess->unk08->equipData->equippedData->unk28);
-			if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
-				muzzle->fireNode->m_localTransform = muzzle->projectileNode->m_worldTransform;
-			}
-		}
 	}
 
 	void FRIK::onBetterScopesMessage(F4SEMessagingInterface::Message* msg) {
@@ -294,5 +256,18 @@ namespace frik {
 		}
 	}
 
-	//Listener for F4SE Messages
+	void FRIK::checkDebugDump() {
+		if (g_config.checkDebugDumpDataOnceFor("all_nodes")) {
+			printAllNodes();
+		}
+		if (g_config.checkDebugDumpDataOnceFor("world")) {
+			printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent->m_parent);
+		}
+		if (g_config.checkDebugDumpDataOnceFor("fp_skelly")) {
+			printNodes(f4vr::getFirstPersonSkeleton());
+		}
+		if (g_config.checkDebugDumpDataOnceFor("skelly")) {
+			printNodes(f4vr::getRootNode()->m_parent);
+		}
+	}
 }

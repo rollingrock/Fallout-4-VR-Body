@@ -8,6 +8,7 @@
 #include "common/CommonUtils.h"
 #include "f4se/PapyrusEvents.h"
 #include "f4vr/F4VRUtils.h"
+#include "f4vr/PlayerNodes.h"
 
 using namespace common;
 
@@ -132,5 +133,21 @@ namespace frik {
 		DataHandler* dataHandler = *g_dataHandler;
 		const auto mod = dataHandler ? dataHandler->LookupModByName("3dscopes-replacer.esp") : nullptr;
 		return mod != nullptr;
+	}
+
+	/**
+	 * @return muzzle flash class only if it's fully loaded with fire and projectile nodes.
+	 */
+	f4vr::MuzzleFlash* getMuzzleFlashNodes() {
+		if (const auto equipWeaponData = f4vr::getEquippedWeaponData()) {
+			const auto vfunc = reinterpret_cast<uint64_t*>(equipWeaponData);
+			if ((*vfunc & 0xFFFF) == (f4vr::EquippedWeaponData_vfunc & 0xFFFF)) {
+				const auto muzzle = reinterpret_cast<f4vr::MuzzleFlash*>(equipWeaponData->unk28);
+				if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
+					return muzzle;
+				}
+			}
+		}
+		return nullptr;
 	}
 }

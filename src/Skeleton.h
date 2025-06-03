@@ -42,21 +42,21 @@ namespace frik {
 
 		NiPoint3 getOffhandIndexFingerTipWorldPosition();
 
-		// reposition stuff
 		void onFrameUpdate();
 
 	private:
 		// initialization
 		void initializeNodes();
+		void initArmsNodes();
+		void initSkeletonNodesDefaults();
 		void initBoneTreeMap();
-		void restoreLocals(NiNode* node);
 		void setBodyLen();
 
 		// on frame update - skeleton update
 		void setTime();
-		void restoreLocals();
-		static void setupHead();
-		void setUnderHMD();
+		void restoreNodesToDefault();
+		void setupHead() const;
+		void setBodyUnderHMD();
 		void setBodyPosture();
 		void setKneePos();
 		void walk();
@@ -79,7 +79,6 @@ namespace frik {
 		// Utils
 		void calculateHandPose(const std::string& bone, float gripProx, bool thumbUp, bool isLeft);
 		void copy1StPerson(const std::string& bone);
-		void insertSaveState(const std::string& name, NiNode* node);
 
 		// Utils - Body Positioning
 		float getNeckYaw() const;
@@ -87,42 +86,48 @@ namespace frik {
 		float getBodyPitch() const;
 		void rotateLeg(uint32_t pos, float angle) const;
 
-		// ???
-		void saveStatesTree(NiNode* node);
-
+		// root node and is in power armor define the Skeleton instance
 		BSFadeNode* _root;
 		bool _inPowerArmor;
+
+		// ???
+		LARGE_INTEGER _freqCounter;
+		LARGE_INTEGER _timer;
+		LARGE_INTEGER _prevTime;
+		double _frameTime;
+
+		// handle switch of hands for left-handed mode
+		bool _lastLeftHandedModeSwitch = false;
 
 		// Camera positions
 		NiPoint3 _curentPosition;
 		NiPoint3 _lastPosition;
 
+		// ???
 		NiPoint3 _forwardDir;
 		NiPoint3 _sidewaysRDir;
 		NiPoint3 _upDir;
+
+		// skeleton nodes
 		f4vr::PlayerNodes* _playerNodes;
 		NiNode* _rightHand;
 		NiNode* _leftHand;
+		NiNode* _head;
 		NiNode* _spine;
 		NiNode* _chest;
 		float _torsoLen;
 		float _legLen;
 		ArmNodes _rightArm;
 		ArmNodes _leftArm;
-		std::map<std::string, NiTransform, common::CaseInsensitiveComparator> _savedStates;
-		static std::unordered_map<std::string, NiTransform> getBonesDefaultTransform();
-		static std::unordered_map<std::string, NiTransform> getBonesDefaultTransformInPA();
-		inline static const std::unordered_map<std::string, NiTransform> _defaultBonesTransform = getBonesDefaultTransform();
-		inline static const std::unordered_map<std::string, NiTransform> _defaultBonesTransformInPA = getBonesDefaultTransformInPA();
 
-		// handle switch of hands for left-handed mode
-		bool _lastLeftHandedModeSwitch = false;
+		// Default transform are used to reset the skeleton before each frame update to start from scratch
+		std::vector<std::pair<NiAVObject*, const NiTransform>> _skeletonNodesToDefaultTransforms;
+		static std::unordered_map<std::string, NiTransform> getSkeletonNodesDefaultTransforms();
+		static std::unordered_map<std::string, NiTransform> getSkeletonNodesDefaultTransformsInPA();
+		inline static const std::unordered_map<std::string, NiTransform> _skeletonNodesDefaultTransform = getSkeletonNodesDefaultTransforms();
+		inline static const std::unordered_map<std::string, NiTransform> _skeletonNodesDefaultTransformInPA = getSkeletonNodesDefaultTransformsInPA();
 
-		LARGE_INTEGER _freqCounter;
-		LARGE_INTEGER _timer;
-		LARGE_INTEGER _prevTime;
-		double _frameTime;
-
+		// legs walking stuff
 		int _walkingState;
 		double _currentStepTime;
 		NiPoint3 _leftFootPos;
@@ -143,7 +148,8 @@ namespace frik {
 
 		std::map<std::string, NiTransform, common::CaseInsensitiveComparator> _handBones;
 		std::map<std::string, bool, common::CaseInsensitiveComparator> _closedHand;
-		std::map<std::string, vr::EVRButtonId, common::CaseInsensitiveComparator> _handBonesButton;
+		static std::unordered_map<std::string, vr::EVRButtonId> getHandBonesButtonMap();
+		inline static const std::unordered_map<std::string, vr::EVRButtonId> _handBonesButton = getHandBonesButtonMap();
 
 		NiTransform _rightHandPrevFrame;
 		NiTransform _leftHandPrevFrame;

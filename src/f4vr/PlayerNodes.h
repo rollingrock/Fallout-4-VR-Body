@@ -56,6 +56,10 @@ namespace f4vr {
 		return reinterpret_cast<PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
 	}
 
+	inline NiAVObject* getWorldRootNode() {
+		return (*g_player) ? (*g_player)->unkF0->rootNode : nullptr;
+	}
+
 	inline BSFadeNode* getRootNode() {
 		return reinterpret_cast<BSFadeNode*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
 	}
@@ -65,16 +69,22 @@ namespace f4vr {
 		return reinterpret_cast<BSFlattenedBoneTree*>((*g_player)->unkF0->rootNode->m_children.m_data[0]->GetAsNiNode());
 	}
 
+	inline NiNode* getFirstPersonSkeleton() {
+		return (*g_player)->firstPersonSkeleton->GetAsNiNode();
+	}
+
 	inline BSFlattenedBoneTree* getFirstPersonBoneTree() {
 		return reinterpret_cast<BSFlattenedBoneTree*>((*g_player)->firstPersonSkeleton->m_children.m_data[0]->GetAsNiNode());
 	}
 
-	inline NiNode* getCommonNode() {
-		return getNode("COM", getRootNode());
+	inline EquippedWeaponData* getEquippedWeaponData() {
+		return (*g_player)->middleProcess->unk08 && (*g_player)->middleProcess->unk08->equipData
+			? (*g_player)->middleProcess->unk08->equipData->equippedData
+			: nullptr;
 	}
 
-	inline NiNode* getHeadNode() {
-		return getNode("Head", getRootNode());
+	inline NiNode* getCommonNode() {
+		return getNode("COM", getRootNode());
 	}
 
 	inline NiNode* getWeaponNode() {

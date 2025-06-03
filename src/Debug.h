@@ -7,12 +7,12 @@
 namespace frik {
 	void printMatrix(const common::Matrix44* mat);
 	void positionDiff(const Skeleton* skelly);
-	void printAllNodes(const Skeleton* skelly);
-	void printNodes(const NiNode* nde);
-	void printChildren(NiNode* child, std::string padding);
+	void printAllNodes();
+	void printNodes(NiNode* node, bool printAncestors = true);
 	void printNodes(NiNode* nde, long long curTime);
 	void printNodesTransform(NiNode* node, std::string padding = "");
 	void printTransform(const std::string& name, const NiTransform& transform, bool sample = false);
+	void printPosition(const std::string& name, const NiPoint3& pos, bool sample);
 	void dumpPlayerGeometry(BSFadeNode* rn);
 	void debug(const Skeleton* skelly);
 }

@@ -7,12 +7,29 @@
 
 using namespace common;
 
+// TODO: this code is terrible, primary it doesn't handle multiple code paths set hand pose, release will release all of them
 namespace frik {
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
 	std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
 
 	std::map<std::string, float> handPapyrusPose;
 	std::map<std::string, bool> handPapyrusHasControl;
+
+	constexpr int FINGERS_COUNT = 15;
+
+	static const std::string LEFT_HAND_FINGERS[] = {
+		"LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41",
+		"LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53"
+	};
+	static const std::string RIGHT_HAND_FINGERS[] = {
+		"RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41",
+		"RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53"
+	};
+	static constexpr float HAND_FINGERS_POINTING_POSE[] = {0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	static bool _handPointingPoseSet[2] = {false, false};
+
+	static bool _offHandGripPose = false;
+	static constexpr float OFFHAND_FINGERS_GRIP_POSE[] = {1.0f, 1.0f, 0.9f, 0.6f, 0.6f, 0.6f, 0.5f, 0.6f, 0.55f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
 
 	static void copyDataIntoHand(std::vector<std::vector<float>> data, std::map<std::string, NiTransform, CaseInsensitiveComparator>& hand) {
 		std::ranges::copy(data[0], hand["LArm_Finger11"].rot.arr);
@@ -187,22 +204,12 @@ namespace frik {
 	}
 
 	void setFingerPositionScalar(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky) {
+		const auto* const fingersArray = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
+		for (auto i = 0; i < fingersArray->size(); i++) {
+			handPapyrusHasControl[fingersArray[i]] = true;
+		}
+
 		if (isLeft) {
-			handPapyrusHasControl["LArm_Finger11"] = true;
-			handPapyrusHasControl["LArm_Finger12"] = true;
-			handPapyrusHasControl["LArm_Finger13"] = true;
-			handPapyrusHasControl["LArm_Finger21"] = true;
-			handPapyrusHasControl["LArm_Finger22"] = true;
-			handPapyrusHasControl["LArm_Finger23"] = true;
-			handPapyrusHasControl["LArm_Finger31"] = true;
-			handPapyrusHasControl["LArm_Finger32"] = true;
-			handPapyrusHasControl["LArm_Finger33"] = true;
-			handPapyrusHasControl["LArm_Finger41"] = true;
-			handPapyrusHasControl["LArm_Finger42"] = true;
-			handPapyrusHasControl["LArm_Finger43"] = true;
-			handPapyrusHasControl["LArm_Finger51"] = true;
-			handPapyrusHasControl["LArm_Finger52"] = true;
-			handPapyrusHasControl["LArm_Finger53"] = true;
 			handPapyrusPose["LArm_Finger11"] = thumb;
 			handPapyrusPose["LArm_Finger12"] = thumb;
 			handPapyrusPose["LArm_Finger13"] = thumb;
@@ -219,21 +226,6 @@ namespace frik {
 			handPapyrusPose["LArm_Finger52"] = pinky;
 			handPapyrusPose["LArm_Finger53"] = pinky;
 		} else {
-			handPapyrusHasControl["RArm_Finger11"] = true;
-			handPapyrusHasControl["RArm_Finger12"] = true;
-			handPapyrusHasControl["RArm_Finger13"] = true;
-			handPapyrusHasControl["RArm_Finger21"] = true;
-			handPapyrusHasControl["RArm_Finger22"] = true;
-			handPapyrusHasControl["RArm_Finger23"] = true;
-			handPapyrusHasControl["RArm_Finger31"] = true;
-			handPapyrusHasControl["RArm_Finger32"] = true;
-			handPapyrusHasControl["RArm_Finger33"] = true;
-			handPapyrusHasControl["RArm_Finger41"] = true;
-			handPapyrusHasControl["RArm_Finger42"] = true;
-			handPapyrusHasControl["RArm_Finger43"] = true;
-			handPapyrusHasControl["RArm_Finger51"] = true;
-			handPapyrusHasControl["RArm_Finger52"] = true;
-			handPapyrusHasControl["RArm_Finger53"] = true;
 			handPapyrusPose["RArm_Finger11"] = thumb;
 			handPapyrusPose["RArm_Finger12"] = thumb;
 			handPapyrusPose["RArm_Finger13"] = thumb;
@@ -253,38 +245,9 @@ namespace frik {
 	}
 
 	void restoreFingerPoseControl(const bool isLeft) {
-		if (isLeft) {
-			handPapyrusHasControl["LArm_Finger11"] = false;
-			handPapyrusHasControl["LArm_Finger12"] = false;
-			handPapyrusHasControl["LArm_Finger13"] = false;
-			handPapyrusHasControl["LArm_Finger21"] = false;
-			handPapyrusHasControl["LArm_Finger22"] = false;
-			handPapyrusHasControl["LArm_Finger23"] = false;
-			handPapyrusHasControl["LArm_Finger31"] = false;
-			handPapyrusHasControl["LArm_Finger32"] = false;
-			handPapyrusHasControl["LArm_Finger33"] = false;
-			handPapyrusHasControl["LArm_Finger41"] = false;
-			handPapyrusHasControl["LArm_Finger42"] = false;
-			handPapyrusHasControl["LArm_Finger43"] = false;
-			handPapyrusHasControl["LArm_Finger51"] = false;
-			handPapyrusHasControl["LArm_Finger52"] = false;
-			handPapyrusHasControl["LArm_Finger53"] = false;
-		} else {
-			handPapyrusHasControl["RArm_Finger11"] = false;
-			handPapyrusHasControl["RArm_Finger12"] = false;
-			handPapyrusHasControl["RArm_Finger13"] = false;
-			handPapyrusHasControl["RArm_Finger21"] = false;
-			handPapyrusHasControl["RArm_Finger22"] = false;
-			handPapyrusHasControl["RArm_Finger23"] = false;
-			handPapyrusHasControl["RArm_Finger31"] = false;
-			handPapyrusHasControl["RArm_Finger32"] = false;
-			handPapyrusHasControl["RArm_Finger33"] = false;
-			handPapyrusHasControl["RArm_Finger41"] = false;
-			handPapyrusHasControl["RArm_Finger42"] = false;
-			handPapyrusHasControl["RArm_Finger43"] = false;
-			handPapyrusHasControl["RArm_Finger51"] = false;
-			handPapyrusHasControl["RArm_Finger52"] = false;
-			handPapyrusHasControl["RArm_Finger53"] = false;
+		const auto* const fingersArray = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
+		for (auto i = 0; i < fingersArray->size(); i++) {
+			handPapyrusHasControl[fingersArray[i]] = false;
 		}
 	}
 
@@ -304,18 +267,6 @@ namespace frik {
 		setForceHandPointingPose(false, false);
 	}
 
-	static const std::string LEFT_HAND_FINGERS[15] = {
-		"LArm_Finger11", "LArm_Finger12", "LArm_Finger13", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33", "LArm_Finger41",
-		"LArm_Finger42", "LArm_Finger43", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53"
-	};
-	static const std::string RIGHT_HAND_FINGERS[15] = {
-		"RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41",
-		"RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53"
-	};
-	static constexpr float HAND_FINGERS_POINTING_POSE[15] = {0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
-	static bool _handPointingPoseSet[2] = {false, false};
-
 	/**
 	 * Set/Release hand to/from pointing pose for primary hand.
 	 * Right hand is primary hand if left-handed mode is off, left hand otherwise.
@@ -327,17 +278,39 @@ namespace frik {
 	/**
 	 * Set/Release hand to/from pointing pose for explicitly right or left hand.
 	 */
-	void setForceHandPointingPoseExplicitHand(const bool rightHand, const bool forcePointing) {
-		if (_handPointingPoseSet[rightHand] == forcePointing) {
+	void setForceHandPointingPoseExplicitHand(const bool rightHand, const bool override) {
+		if (_handPointingPoseSet[rightHand] == override) {
 			return;
 		}
-		Log::verbose("Set force pointing pose for '%s' hand: %s)", rightHand ? "Right" : "Left", forcePointing ? "Pointing" : "Release");
-		_handPointingPoseSet[rightHand] = forcePointing;
+		Log::verbose("Set force pointing pose for '%s' hand: %s)", rightHand ? "Right" : "Left", override ? "Pointing" : "Release");
+		_handPointingPoseSet[rightHand] = override;
 		const auto* const fingers = rightHand ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
-		for (int x = 0; x < 15; x++) {
-			const std::string f = fingers[x];
-			handPapyrusHasControl[f.c_str()] = forcePointing;
-			handPapyrusPose[f.c_str()] = HAND_FINGERS_POINTING_POSE[x];
+		for (auto i = 0; i < FINGERS_COUNT; i++) {
+			const std::string finger = fingers[i];
+			handPapyrusHasControl[finger.c_str()] = override;
+			handPapyrusPose[finger.c_str()] = HAND_FINGERS_POINTING_POSE[i];
+		}
+	}
+
+	void setOffhandGripHandPose() {
+		setOffhandGripHandPoseOverride(true);
+	}
+
+	void releaseOffhandGripHandPose() {
+		setOffhandGripHandPoseOverride(false);
+	}
+
+	void setOffhandGripHandPoseOverride(const bool override) {
+		if (_offHandGripPose == override) {
+			return;
+		}
+		Log::verbose("Set offhand grip pose override: %s)", override ? "Set" : "Release");
+		_offHandGripPose = override;
+		const auto* const fingers = g_config.leftHandedMode ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
+		for (auto i = 0; i < FINGERS_COUNT; i++) {
+			const std::string finger = fingers[i];
+			handPapyrusHasControl[finger.c_str()] = override;
+			handPapyrusPose[finger.c_str()] = OFFHAND_FINGERS_GRIP_POSE[i];
 		}
 	}
 }

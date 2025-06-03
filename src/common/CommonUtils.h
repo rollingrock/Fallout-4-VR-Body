@@ -5,6 +5,9 @@
 #include <f4se/NiTypes.h>
 
 namespace common {
+	bool fEqual(float left, float right, float epsilon = 0.00001f);
+	bool fNotEqual(float left, float right, float epsilon = 0.00001f);
+
 	// string related functions
 	std::string str_tolower(std::string s);
 	std::string ltrim(std::string s);
@@ -18,11 +21,15 @@ namespace common {
 	float vec3Dot(const NiPoint3& v1, const NiPoint3& v2);
 	NiPoint3 vec3Cross(const NiPoint3& v1, const NiPoint3& v2);
 	float vec3Det(NiPoint3 v1, NiPoint3 v2, NiPoint3 n);
+	float distanceNoSqrt(NiPoint3 po1, NiPoint3 po2);
+	float distanceNoSqrt2d(float x1, float y1, float x2, float y2);
 	float degreesToRads(float deg);
 	float radsToDegrees(float rad);
 	NiPoint3 rotateXY(NiPoint3 vec, float angle);
 	NiPoint3 pitchVec(NiPoint3 vec, float angle);
 	NiMatrix43 getRotationAxisAngle(NiPoint3 axis, float theta);
+	NiTransform getDeltaTransform(const NiTransform& from, const NiTransform& to);
+	NiTransform getTargetTransform(const NiTransform& baseFrom, const NiTransform& baseTo, const NiTransform& targetFrom);
 	bool isCameraLookingAtObject(const NiTransform& cameraTrans, const NiTransform& objectTrans, float detectThresh);
 
 	// Resource related functions

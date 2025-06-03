@@ -9,7 +9,7 @@ namespace frik {
 		friend class WeaponPositionConfigMode;
 
 	public:
-		WeaponPositionAdjuster(Skeleton* skelly) {
+		explicit WeaponPositionAdjuster(Skeleton* skelly) {
 			_skelly = skelly;
 
 			auto ident = common::Matrix44();
@@ -18,6 +18,12 @@ namespace frik {
 			ident.data[1][2] = 1.0; // new Z = old Y
 			ident.data[3][3] = 1.0;
 			_scopeCameraBaseMatrix = ident.make43();
+
+			// the angle was calculated by looking at the weapon in hand, seems to work for all weapons
+			common::Matrix44 manualAdjust;
+			manualAdjust.makeIdentity();
+			manualAdjust.setEulerAngles(0, common::degreesToRads(-6), common::degreesToRads(7));
+			_twoHandedPrimaryHandManualAdjustment = manualAdjust.make43();
 		}
 
 		bool inWeaponRepositionMode() const { return _configMode != nullptr; }
@@ -33,16 +39,23 @@ namespace frik {
 		void checkEquippedWeaponChanged(bool emptyHand);
 		void handleScopeCameraAdjustmentByWeaponOffset(const NiNode* weapon) const;
 		void checkIfOffhandIsGripping(const NiNode* weapon);
+		void setOffhandGripping(bool isGripping);
 		void handleWeaponGrippingRotationAdjustment(NiNode* weapon) const;
+		void handleWeaponScopeCameraGrippingRotationAdjustment(const NiNode* weapon, common::Quaternion rotAdjust, NiPoint3 adjustedWeaponVec) const;
 		bool isOffhandCloseToBarrel(const NiNode* weapon) const;
 		bool isOffhandMovedFastAway() const;
+		NiPoint3 getPrimaryHandPosition() const;
 		NiPoint3 getOffhandPosition() const;
 		void handleBetterScopes(NiNode* weapon) const;
+		static void fixMuzzleFlashPosition();
 		static NiNode* getBackOfHandUINode();
 		void debugPrintWeaponPositionData(NiNode* weapon) const;
 
 		// Define a basis remapping matrix to correct coordinate system for scope camera
 		NiMatrix43 _scopeCameraBaseMatrix;
+
+		// For unknown reason my primary hand calculation is off by specific angle
+		NiMatrix43 _twoHandedPrimaryHandManualAdjustment;
 
 		Skeleton* _skelly;
 
@@ -55,6 +68,7 @@ namespace frik {
 
 		// weapon original transform before changing it
 		NiTransform _weaponOriginalTransform = NiTransform();
+		NiTransform _weaponOriginalWorldTransform = NiTransform();
 
 		// custom weapon transform to update
 		NiTransform _weaponOffsetTransform = NiTransform();

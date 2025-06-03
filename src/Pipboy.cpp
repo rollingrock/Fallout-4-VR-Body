@@ -8,7 +8,6 @@
 #include "ConfigurationMode.h"
 #include "FRIK.h"
 #include "HandPose.h"
-#include "Menu.h"
 #include "utils.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
