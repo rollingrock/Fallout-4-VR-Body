@@ -187,6 +187,8 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <ClCompile Include="src\ConfigurationMode.cpp" />
     <ClCompile Include="src\CullGeometryHandler.cpp" />
     <ClCompile Include="src\Debug.cpp" />
+    <ClCompile Include="src\f4vr\ScaleformUtils.cpp" />
+    <ClCompile Include="src\f4vr\ScaleformUtils.h" />
     <ClCompile Include="src\FRIK.cpp" />
     <ClCompile Include="src\f4vr\F4VRUtils.cpp" />
     <ClCompile Include="src\GunReload.cpp" />

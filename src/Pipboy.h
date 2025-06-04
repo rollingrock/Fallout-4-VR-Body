@@ -43,8 +43,7 @@ namespace frik {
 		static void gotoNextPage(GFxMovieRoot* root);
 		static void gotoPrevTab(GFxMovieRoot* root);
 		static void gotoNextTab(GFxMovieRoot* root);
-		static void moveSlectionUp(GFxMovieRoot* root);
-		static void moveSelectionDown(GFxMovieRoot* root);
+		static void moveListSelectionUpDown(GFxMovieRoot* root, bool moveUp);
 		static void pressOnSelectedItem(GFxMovieRoot* root);
 		static bool isMessageHolderVisible(const GFxMovieRoot* root);
 		static bool isQuestTabVisibleOnDataPage(const GFxMovieRoot* root);

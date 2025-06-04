@@ -17,7 +17,7 @@ namespace f4vr {
 	void setControlsThumbstickEnableState(bool toEnable);
 
 	// Weapons/Armor/Player
-	void setWandsVisibility(const bool show, const bool leftWand);
+	void setWandsVisibility(bool show, bool leftWand);
 	bool isMeleeWeaponEquipped();
 	std::string getEquippedWeaponName();
 	bool hasKeyword(const TESObjectARMO* armor, UInt32 keywordFormId);
@@ -41,7 +41,7 @@ namespace f4vr {
 	// visibility
 	bool isNodeVisible(const NiNode* node);
 	void setNodeVisibility(NiAVObject* node, bool show = true);
-	void setNodeVisibilityDeep(NiAVObject* node, const bool show, const bool updateSelf);
+	void setNodeVisibilityDeep(NiAVObject* node, bool show, bool updateSelf);
 	void toggleVis(NiNode* node, bool hide, bool updateSelf);
 
 	// updates
@@ -53,5 +53,5 @@ namespace f4vr {
 	void updateTransformsDown(NiNode* nde, bool updateSelf);
 
 	typedef bool (*RegisterFunctions)(VirtualMachine* vm);
-	void registerPapyrusNativeFunctions(const F4SEInterface* f4se, const RegisterFunctions callback);
+	void registerPapyrusNativeFunctions(const F4SEInterface* f4se, RegisterFunctions callback);
 }

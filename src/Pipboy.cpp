@@ -14,6 +14,7 @@
 #include "common/Logger.h"
 #include "common/Matrix.h"
 #include "f4vr/F4VRUtils.h"
+#include "f4vr/scaleformUtils.h"
 #include "f4vr/VRControllersManager.h"
 
 using namespace std::chrono;
@@ -173,6 +174,9 @@ namespace frik {
 		Log::info("Pipboy Meshes replaced! Hide: %s, Show: %s", itemHide.c_str(), itemShow.c_str());
 	}
 
+	/**
+	 * See documentation: https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Development-%E2%80%90-Pipboy-Controls
+	 */
 	void Pipboy::operatePipBoy() {
 		if ((*g_player)->firstPersonSkeleton == nullptr) {
 			return;
@@ -400,50 +404,6 @@ namespace frik {
 		}
 	}
 
-	/* ==============================================PIPBOY CONTROLS================================================================================
-	//
-	// UNIVERSAL CONTROLS
-	//
-	// root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0); // changes sub tabs
-	// root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0); // changes sub tabs
-	// root->Invoke("root.Menu_mc.gotoNextPage", nullptr, nullptr, 0); // changes main tabs
-	// root->Invoke("root.Menu_mc.gotoPrevPage", nullptr, nullptr, 0); // changes main tabs
-	//
-	// INV + RADIO TABS CONTROLS
-	//
-	// root->Invoke("root.Menu_mc.CurrentPage.List_mc.moveSelectionUp", nullptr, nullptr, 0);  // scrolls up page list
-	// root->Invoke("root.Menu_mc.CurrentPage.List_mc.moveSelectionDown", nullptr, nullptr, 0); // scrolls down page list
-	//
-	// DATA TAB CONTROLS
-	//
-	// root->Invoke("root.Menu_mc.CurrentPage.StatsTab_mc.CategoryList_mc.moveSelectionUp", nullptr, nullptr, 0) // Scrolls stats page list
-	// root->Invoke("root.Menu_mc.CurrentPage.StatsTab_mc.CategoryList_mc.moveSelectionDown", nullptr, nullptr, 0) // Scrolls stats page list
-	// root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc.moveSelectionUp", nullptr, nullptr, 0) // Scrolls Quest page List
-	// root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc.moveSelectionDown", nullptr, nullptr, 0) // Scrolls Quest page List
-	// root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc.moveSelectionUp", nullptr, nullptr, 0) // Scrolls Workshop page list
-	// root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc.moveSelectionDown", nullptr, nullptr, 0) // Scrolls Workshop page list
-	//
-	// STATS TAB CONTROLS
-	//
-	// root->Invoke("root.Menu_mc.CurrentPage.PerksTab_mc.List_mc.moveSelectionUp", nullptr, nullptr, 0) // Scrolls perks page list
-	// root->Invoke("root.Menu_mc.CurrentPage.PerksTab_mc.List_mc.moveSelectionDown", nullptr, nullptr, 0) // Scrolls perks page list
-	// root->Invoke("root.Menu_mc.CurrentPage.SPECIALTab_mc.List_mc.moveSelectionUp", nullptr, nullptr, 0) // Scrolls SPECIAL page list
-	// root->Invoke("root.Menu_mc.CurrentPage.SPECIALTab_mc.List_mc.moveSelectionDown", nullptr, nullptr, 0) // Scrolls SPECIAL page list
-	//
-	// MAP TAB CONTROLS
-	//
-	// GFxValue akArgs[2];       // Move Map
-	// akArgs[0]   <- X Value
-	// akArgs[1]   <- Y Value
-	// root->Invoke("root.Menu_mc.CurrentPage.WorldMapHolder_mc.PanMap", nullptr, akArgs, 2)
-	//
-	// INFORMATION
-	//
-	// 	if (root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage")) {   // Returns Current Page Number (0 = STAT, 1 = INV, 2 = DATA, 3 = MAP, 4 = RADIO)
-	//	   X = PBCurrentPage.GetUInt();
-	//  }
-	// ===============================================================================================================================================*/
-
 	void Pipboy::gotoPrevPage(GFxMovieRoot* root) {
 		root->Invoke("root.Menu_mc.gotoPrevPage", nullptr, nullptr, 0);
 	}
@@ -462,76 +422,78 @@ namespace frik {
 		root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0);
 	}
 
-	void Pipboy::moveSlectionUp(GFxMovieRoot* root) {
+	/**
+	 * Execute moving selection on the currently active list up or down.
+	 * Whatever the list found to exist it will be moved, mostly we can "try" to move any of the lists and only the one that exists will be moved.
+	 * On DATA page all 3 tabs can exist at the same time, so we need to check which one is visible to prevent working on a hidden one.
+	 * First thing is to detect is a message box is visible (context menu options) as message box and main lists are active at the
+	 * same time. So, if the message box is visible we will only operate on the message box list and not the main list.
+	 */
+	void Pipboy::moveListSelectionUpDown(GFxMovieRoot* root, const bool moveUp) {
 		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
 
-		root->Invoke("root.Menu_mc.CurrentPage.List_mc.moveSelectionUp", nullptr, nullptr, 0);
-		root->Invoke("root.Menu_mc.CurrentPage.SPECIALTab_mc.List_mc.moveSelectionUp", nullptr, nullptr, 0);
-		root->Invoke("root.Menu_mc.CurrentPage.PerksTab_mc.List_mc.moveSelectionUp", nullptr, nullptr, 0);
+		const auto listOp = moveUp ? f4vr::ScaleformListOp::MoveUp : f4vr::ScaleformListOp::MoveDown;
 
-		// quest, workshop, and stats tabs exist at the same time, need to check which one is visible
+		if (isMessageHolderVisible(root)) {
+			f4vr::doOperationOnMessageHolderList(root, "root.Menu_mc.CurrentPage.MessageHolder_mc", listOp);
+			f4vr::doOperationOnMessageHolderList(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc", listOp);
+			// prevent affecting the main list if message box is visible
+			return;
+		}
+
+		// Inventory, Radio, Special, and Perks tabs
+		f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.List_mc", listOp);
+		f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.SPECIALTab_mc.List_mc", listOp);
+		f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.PerksTab_mc.List_mc", listOp);
+
+		// Quest, Workshop, and Stats tabs exist at the same time, need to check which one is visible
 		if (isQuestTabVisibleOnDataPage(root)) {
-			if (isQuestTabObjectiveListEnabledOnDataPage(root)) {
-				root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.moveSelectionUp", nullptr, nullptr, 0);
-			} else {
-				root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc.moveSelectionUp", nullptr, nullptr, 0);
-			}
+			// Quests tab has 2 lists for the main quests and quest objectives
+			f4vr::doOperationOnList(root, isQuestTabObjectiveListEnabledOnDataPage(root)
+				? "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc"
+				: "root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc", listOp);
 		} else if (isWorkshopsTabVisibleOnDataPage(root)) {
-			root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc.moveSelectionUp", nullptr, nullptr, 0);
+			f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc", listOp);
 		} else {
-			root->Invoke("root.Menu_mc.CurrentPage.StatsTab_mc.CategoryList_mc.moveSelectionUp", nullptr, nullptr, 0);
+			f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.StatsTab_mc.CategoryList_mc", listOp);
 		}
 	}
 
-	void Pipboy::moveSelectionDown(GFxMovieRoot* root) {
-		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
-
-		root->Invoke("root.Menu_mc.CurrentPage.List_mc.moveSelectionDown", nullptr, nullptr, 0);
-		root->Invoke("root.Menu_mc.CurrentPage.SPECIALTab_mc.List_mc.moveSelectionDown", nullptr, nullptr, 0);
-		root->Invoke("root.Menu_mc.CurrentPage.PerksTab_mc.List_mc.moveSelectionDown", nullptr, nullptr, 0);
-
-		root->Invoke("root.Menu_mc.CurrentPage.ComponentList_mc.moveSelectionDown", nullptr, nullptr, 0);
-
-		// quest, workshop, and stats tabs exist at the same time, need to check which one is visible
-		if (isQuestTabVisibleOnDataPage(root)) {
-			if (isQuestTabObjectiveListEnabledOnDataPage(root)) {
-				root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.moveSelectionDown", nullptr, nullptr, 0);
-			} else {
-				root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc.moveSelectionDown", nullptr, nullptr, 0);
-			}
-		} else if (isWorkshopsTabVisibleOnDataPage(root)) {
-			root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc.moveSelectionDown", nullptr, nullptr, 0);
-		} else {
-			root->Invoke("root.Menu_mc.CurrentPage.StatsTab_mc.CategoryList_mc.moveSelectionDown", nullptr, nullptr, 0);
-		}
-	}
-
+	/**
+	 * See "moveListSelectionUpDown" for more details.
+	 */
 	void Pipboy::pressOnSelectedItem(GFxMovieRoot* root) {
 		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
 
-		GFxValue event;
-		GFxValue args[3];
-		args[0].SetString("BSScrollingList::itemPress");
-		args[1].SetBool(true);
-		args[2].SetBool(true);
-		root->CreateObject(&event, "flash.events.Event", args, 3);
+		if (isMessageHolderVisible(root)) {
+			f4vr::doOperationOnMessageHolderList(root, "root.Menu_mc.CurrentPage.MessageHolder_mc", f4vr::ScaleformListOp::Select);
+			f4vr::doOperationOnMessageHolderList(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc", f4vr::ScaleformListOp::Select);
+			// prevent affecting the main list if message box is visible
+			return;
+		}
 
-		// quest, workshop, and stats tabs exist at the same time, need to check which one is visible
+		// Quest, Workshop, and Stats tabs exist at the same time, need to check which one is visible
 		if (isQuestTabVisibleOnDataPage(root)) {
-			root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc.dispatchEvent", nullptr, &event, 1);
+			f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc", f4vr::ScaleformListOp::Select);
 		} else if (isWorkshopsTabVisibleOnDataPage(root)) {
 			GFxValue workshopArgs[2];
 			workshopArgs[0].SetString("XButton");
 			workshopArgs[1].SetBool(false);
 			root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.ProcessUserEvent", nullptr, workshopArgs, 2);
 		} else {
-			root->Invoke("root.Menu_mc.CurrentPage.List_mc.dispatchEvent", nullptr, &event, 1);
+			// The rest of the main lists that can be pressed
+			f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.List_mc", f4vr::ScaleformListOp::Select);
 		}
 	}
 
+	/**
+	 * Is context menu message box popup is visible or not. Only one can be visible at a time.
+	 */
 	bool Pipboy::isMessageHolderVisible(const GFxMovieRoot* root) {
 		GFxValue var;
-		return root->GetVariable(&var, "root.Menu_mc.CurrentPage.MessageHolder_mc.visible") && var.IsBool() && var.GetBool();
+		if (root->GetVariable(&var, "root.Menu_mc.CurrentPage.MessageHolder_mc.visible") && var.IsBool() && var.GetBool())
+			return true;
+		return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc.visible") && var.IsBool() && var.GetBool();
 	}
 
 	bool Pipboy::isQuestTabVisibleOnDataPage(const GFxMovieRoot* root) {
@@ -860,10 +822,10 @@ namespace frik {
 											gotoNextTab(root);
 										}
 										if (i == 4) {
-											moveSlectionUp(root);
+											moveListSelectionUpDown(root, true);
 										}
 										if (i == 5) {
-											moveSelectionDown(root);
+											moveListSelectionUpDown(root, false);
 										}
 										if (i == 6) {
 											pressOnSelectedItem(root);
@@ -937,7 +899,7 @@ namespace frik {
 								if (doinantHandStick.y > 0.85) {
 									if (!_controlSleepStickyY) {
 										_controlSleepStickyY = true;
-										moveSlectionUp(root);
+										moveListSelectionUpDown(root, true);
 										std::thread t2(&Pipboy::rightStickYSleep, this, 155);
 										t2.detach();
 									}
@@ -945,7 +907,7 @@ namespace frik {
 								if (doinantHandStick.y < -0.85) {
 									if (!_controlSleepStickyY) {
 										_controlSleepStickyY = true;
-										moveSelectionDown(root);
+										moveListSelectionUpDown(root, false);
 										std::thread t2(&Pipboy::rightStickYSleep, this, 155);
 										t2.detach();
 									}
