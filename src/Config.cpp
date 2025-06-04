@@ -100,8 +100,7 @@ namespace frik {
 
 		//Pipboy & Main Config Mode Buttons
 		pipBoyScale = ini.GetFloatValue(INI_SECTION_MAIN, "PipboyScale", 1.0);
-		switchUIControltoPrimary = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
-		autoFocusWindow = ini.GetBoolValue(INI_SECTION_MAIN, "AutoFocusWindow", false);
+		enablePrimaryControllerPipboyUse = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
 
 		// weaponPositioning
 		scopeAdjustDistance = ini.GetFloatValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f);

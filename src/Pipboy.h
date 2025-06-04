@@ -1,5 +1,7 @@
 #pragma once
 
+#include <f4se/ScaleformMovie.h>
+
 #include "Skeleton.h"
 #include "utils.h"
 
@@ -37,10 +39,22 @@ namespace frik {
 
 	private:
 		void operatePipBoy();
+		static void gotoPrevPage(GFxMovieRoot* root);
+		static void gotoNextPage(GFxMovieRoot* root);
+		static void gotoPrevTab(GFxMovieRoot* root);
+		static void gotoNextTab(GFxMovieRoot* root);
+		static void moveSlectionUp(GFxMovieRoot* root);
+		static void moveSelectionDown(GFxMovieRoot* root);
+		static void pressOnSelectedItem(GFxMovieRoot* root);
+		static bool isMessageHolderVisible(const GFxMovieRoot* root);
+		static bool isQuestTabVisibleOnDataPage(const GFxMovieRoot* root);
+		static bool isQuestTabObjectiveListEnabledOnDataPage(const GFxMovieRoot* root);
+		static bool isWorkshopsTabVisibleOnDataPage(const GFxMovieRoot* root);
+		void storeLastPipboyPage(const GFxMovieRoot* root);
 		void replaceMeshes(const std::string& itemHide, const std::string& itemShow);
 		void pipboyManagement();
 		void dampenPipboyScreen();
-		bool isLookingAtPipBoy() const;
+		static bool isLookingAtPipBoy();
 		void rightStickXSleep(int time);
 		void rightStickYSleep(int time);
 		void secondaryTriggerSleep(int time);

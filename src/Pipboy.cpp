@@ -1,5 +1,6 @@
 #include "Pipboy.h"
 
+#include <algorithm>
 #include <chrono>
 #include <thread>
 #include <f4se/GameCamera.h>
@@ -160,15 +161,13 @@ namespace frik {
 		}
 
 		pn->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0; //prevents the VRPipboy screen from being displayed on first load whilst PB is off.
-		NiNode* _HideNode = f4vr::getChildNode(itemHide.c_str(), (*g_player)->unkF0->rootNode);
-		if (_HideNode) {
-			_HideNode->flags |= 0x1;
-			_HideNode->m_localTransform.scale = 0;
+		if (const auto hideNode = f4vr::getChildNode(itemHide.c_str(), (*g_player)->unkF0->rootNode)) {
+			hideNode->flags |= 0x1;
+			hideNode->m_localTransform.scale = 0;
 		}
-		NiNode* _ShowNode = f4vr::getChildNode(itemShow.c_str(), (*g_player)->unkF0->rootNode);
-		if (_ShowNode) {
-			_ShowNode->flags &= 0xfffffffffffffffe;
-			_ShowNode->m_localTransform.scale = 1;
+		if (const auto showNode = f4vr::getChildNode(itemShow.c_str(), (*g_player)->unkF0->rootNode)) {
+			showNode->flags &= 0xfffffffffffffffe;
+			showNode->m_localTransform.scale = 1;
 		}
 
 		Log::info("Pipboy Meshes replaced! Hide: %s, Show: %s", itemHide.c_str(), itemShow.c_str());
@@ -216,7 +215,7 @@ namespace frik {
 				_stickyoffpip = true;
 			}
 		} else if (!pipOffButtonPressed) {
-			// _stickyoffpip is a guard so we don't constantly toggle the pip boy off every frame
+			// guard so we don't constantly toggle the pip boy off every frame
 			_stickyoffpip = false;
 		}
 
@@ -241,7 +240,7 @@ namespace frik {
 				Log::info("Enabling Pipboy with button");
 				_stickybpip = false;
 			} else {
-				// stickypip is a guard so we don't constantly toggle the pip boy every frame
+				// guard so we don't constantly toggle the pip boy every frame
 				_stickybpip = false;
 			}
 		}
@@ -421,8 +420,8 @@ namespace frik {
 	// root->Invoke("root.Menu_mc.CurrentPage.StatsTab_mc.CategoryList_mc.moveSelectionDown", nullptr, nullptr, 0) // Scrolls stats page list
 	// root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc.moveSelectionUp", nullptr, nullptr, 0) // Scrolls Quest page List
 	// root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc.moveSelectionDown", nullptr, nullptr, 0) // Scrolls Quest page List
-	// root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc.moveSelectionUp", nullptr, nullptr, 0) // Scolls Workshop page list
-	// root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc.moveSelectionDown", nullptr, nullptr, 0) // Scolls Workshop page list
+	// root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc.moveSelectionUp", nullptr, nullptr, 0) // Scrolls Workshop page list
+	// root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc.moveSelectionDown", nullptr, nullptr, 0) // Scrolls Workshop page list
 	//
 	// STATS TAB CONTROLS
 	//
@@ -445,8 +444,123 @@ namespace frik {
 	//  }
 	// ===============================================================================================================================================*/
 
+	void Pipboy::gotoPrevPage(GFxMovieRoot* root) {
+		root->Invoke("root.Menu_mc.gotoPrevPage", nullptr, nullptr, 0);
+	}
+
+	void Pipboy::gotoNextPage(GFxMovieRoot* root) {
+		root->Invoke("root.Menu_mc.gotoNextPage", nullptr, nullptr, 0);
+	}
+
+	void Pipboy::gotoPrevTab(GFxMovieRoot* root) {
+		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
+		root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0);
+	}
+
+	void Pipboy::gotoNextTab(GFxMovieRoot* root) {
+		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
+		root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0);
+	}
+
+	void Pipboy::moveSlectionUp(GFxMovieRoot* root) {
+		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
+
+		root->Invoke("root.Menu_mc.CurrentPage.List_mc.moveSelectionUp", nullptr, nullptr, 0);
+		root->Invoke("root.Menu_mc.CurrentPage.SPECIALTab_mc.List_mc.moveSelectionUp", nullptr, nullptr, 0);
+		root->Invoke("root.Menu_mc.CurrentPage.PerksTab_mc.List_mc.moveSelectionUp", nullptr, nullptr, 0);
+
+		// quest, workshop, and stats tabs exist at the same time, need to check which one is visible
+		if (isQuestTabVisibleOnDataPage(root)) {
+			if (isQuestTabObjectiveListEnabledOnDataPage(root)) {
+				root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.moveSelectionUp", nullptr, nullptr, 0);
+			} else {
+				root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc.moveSelectionUp", nullptr, nullptr, 0);
+			}
+		} else if (isWorkshopsTabVisibleOnDataPage(root)) {
+			root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc.moveSelectionUp", nullptr, nullptr, 0);
+		} else {
+			root->Invoke("root.Menu_mc.CurrentPage.StatsTab_mc.CategoryList_mc.moveSelectionUp", nullptr, nullptr, 0);
+		}
+	}
+
+	void Pipboy::moveSelectionDown(GFxMovieRoot* root) {
+		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
+
+		root->Invoke("root.Menu_mc.CurrentPage.List_mc.moveSelectionDown", nullptr, nullptr, 0);
+		root->Invoke("root.Menu_mc.CurrentPage.SPECIALTab_mc.List_mc.moveSelectionDown", nullptr, nullptr, 0);
+		root->Invoke("root.Menu_mc.CurrentPage.PerksTab_mc.List_mc.moveSelectionDown", nullptr, nullptr, 0);
+
+		root->Invoke("root.Menu_mc.CurrentPage.ComponentList_mc.moveSelectionDown", nullptr, nullptr, 0);
+
+		// quest, workshop, and stats tabs exist at the same time, need to check which one is visible
+		if (isQuestTabVisibleOnDataPage(root)) {
+			if (isQuestTabObjectiveListEnabledOnDataPage(root)) {
+				root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.moveSelectionDown", nullptr, nullptr, 0);
+			} else {
+				root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc.moveSelectionDown", nullptr, nullptr, 0);
+			}
+		} else if (isWorkshopsTabVisibleOnDataPage(root)) {
+			root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc.moveSelectionDown", nullptr, nullptr, 0);
+		} else {
+			root->Invoke("root.Menu_mc.CurrentPage.StatsTab_mc.CategoryList_mc.moveSelectionDown", nullptr, nullptr, 0);
+		}
+	}
+
+	void Pipboy::pressOnSelectedItem(GFxMovieRoot* root) {
+		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
+
+		GFxValue event;
+		GFxValue args[3];
+		args[0].SetString("BSScrollingList::itemPress");
+		args[1].SetBool(true);
+		args[2].SetBool(true);
+		root->CreateObject(&event, "flash.events.Event", args, 3);
+
+		// quest, workshop, and stats tabs exist at the same time, need to check which one is visible
+		if (isQuestTabVisibleOnDataPage(root)) {
+			root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc.dispatchEvent", nullptr, &event, 1);
+		} else if (isWorkshopsTabVisibleOnDataPage(root)) {
+			GFxValue workshopArgs[2];
+			workshopArgs[0].SetString("XButton");
+			workshopArgs[1].SetBool(false);
+			root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.ProcessUserEvent", nullptr, workshopArgs, 2);
+		} else {
+			root->Invoke("root.Menu_mc.CurrentPage.List_mc.dispatchEvent", nullptr, &event, 1);
+		}
+	}
+
+	bool Pipboy::isMessageHolderVisible(const GFxMovieRoot* root) {
+		GFxValue var;
+		return root->GetVariable(&var, "root.Menu_mc.CurrentPage.MessageHolder_mc.visible") && var.IsBool() && var.GetBool();
+	}
+
+	bool Pipboy::isQuestTabVisibleOnDataPage(const GFxMovieRoot* root) {
+		GFxValue var;
+		return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.visible") && var.IsBool() && var.GetBool();
+	}
+
+	bool Pipboy::isQuestTabObjectiveListEnabledOnDataPage(const GFxMovieRoot* root) {
+		GFxValue var;
+		return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.selectedIndex") && var.GetType() == GFxValue::kType_Int && var.GetInt() > -1;
+	}
+
+	bool Pipboy::isWorkshopsTabVisibleOnDataPage(const GFxMovieRoot* root) {
+		GFxValue var;
+		return root->GetVariable(&var, "root.Menu_mc.CurrentPage.WorkshopsTab_mc.visible") && var.IsBool() && var.GetBool();
+	}
+
+	/**
+	 * Get Current Pipboy Tab and store it.
+	 */
+	void Pipboy::storeLastPipboyPage(const GFxMovieRoot* root) {
+		GFxValue PBCurrentPage;
+		if (root && root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage") && PBCurrentPage.GetType() != GFxValue::kType_Undefined) {
+			_lastPipboyPage = PBCurrentPage.GetUInt();
+		}
+	}
+
 	void Pipboy::pipboyManagement() {
-		//Manages all aspects of Virtual Pipboy usage outside of turning the device / radio / torch on or off. Additionally swaps left hand controls to the right hand.  
+		//Manages all aspects of Virtual Pipboy usage outside of turning the device / radio / torch on or off. Additionally, swaps left hand controls to the right hand.  
 		bool isInPA = f4vr::isInPowerArmor();
 		if (!isInPA) {
 			static BSFixedString orbNames[7] = {
@@ -530,9 +644,7 @@ namespace frik {
 						? _skelly->getRightArm().forearm3->GetObjectByName(&orbNames[i])
 						: _skelly->getLeftArm().forearm3->GetObjectByName(&orbNames[i]);
 					if (orb != nullptr) {
-						if (orb->m_localTransform.scale > 0) {
-							orb->m_localTransform.scale = 0;
-						}
+						orb->m_localTransform.scale = std::min<float>(orb->m_localTransform.scale, 0);
 					}
 				}
 				if (_isWeaponinHand) {
@@ -549,7 +661,7 @@ namespace frik {
 				rot.getEulerAngles(&rotx, &roty, &rotz);
 				if (rotx < 0.57) {
 					Matrix44 kRot;
-					kRot.setEulerAngles(-0.05, degreesToRads(0), degreesToRads(0));
+					kRot.setEulerAngles(-0.05f, degreesToRads(0), degreesToRads(0));
 					pipbone8->m_localTransform.rot = kRot.multiply43Right(pipbone8->m_localTransform.rot);
 				}
 			} else {
@@ -571,9 +683,8 @@ namespace frik {
 				const auto hand = _skelly->getBoneWorldTransform(useRightHand ? "RArm_Hand" : "LArm_Hand").pos;
 				float distance = vec3Len(hand - head->m_worldTransform.pos);
 				if (distance < 15.0) {
-					uint64_t _PipboyHand = f4vr::VRControllers.getControllerState_DEPRECATED(useRightHand ? f4vr::TrackerType::Right : f4vr::TrackerType::Left).
-					                                           ulButtonPressed;
-					const auto SwitchLightButton = _PipboyHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(g_config.switchTorchButton));
+					uint64_t pipboyHand = f4vr::VRControllers.getControllerState_DEPRECATED(useRightHand ? f4vr::TrackerType::Right : f4vr::TrackerType::Left).ulButtonPressed;
+					const auto SwitchLightButton = pipboyHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(g_config.switchTorchButton));
 					f4vr::VRControllers.triggerHaptic(useRightHand ? vr::TrackedControllerRole_RightHand : vr::TrackedControllerRole_LeftHand, 0.1f, 0.1f);
 					// Control switching between hand and head based Pipboy light
 					if (SwitchLightButton && !_SwithLightButtonSticky) {
@@ -589,11 +700,10 @@ namespace frik {
 						if (lght) {
 							BSFixedString parentnode = g_config.isPipBoyTorchOnArm ? lght->m_parent->m_name : f4vr::getPlayerNodes()->HeadLightParentNode->m_parent->m_name;
 							Matrix44 lightRot;
-							int rotz = g_config.isPipBoyTorchOnArm ? -90 : 90;
+							float rotz = g_config.isPipBoyTorchOnArm ? -90 : 90;
 							lightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(rotz));
 							lght->m_localTransform.rot = lightRot.multiply43Right(lght->m_localTransform.rot);
-							int posY = g_config.isPipBoyTorchOnArm ? 0 : 4;
-							lght->m_localTransform.pos.y = posY;
+							lght->m_localTransform.pos.y = g_config.isPipBoyTorchOnArm ? 0 : 4;
 							g_config.isPipBoyTorchOnArm ? lght->m_parent->RemoveChild(lght) : f4vr::getPlayerNodes()->HeadLightParentNode->m_parent->RemoveChild(lght);
 							g_config.isPipBoyTorchOnArm ? f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true) : LGHT_ATTACH->AttachChild(lght, true);
 							g_config.togglePipBoyTorchOnArm();
@@ -669,25 +779,17 @@ namespace frik {
 				if (menu != nullptr) {
 					GFxMovieRoot* root = menu->movie->movieRoot;
 					if (root != nullptr) {
-						GFxValue PBCurrentPage;
-						if (root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage")) {
-							// Get Current Pipboy Tab and store it.
-							if (PBCurrentPage.GetType() != GFxValue::kType_Undefined) {
-								_lastPipboyPage = PBCurrentPage.GetUInt();
-							}
-						}
+						storeLastPipboyPage(root);
 						static BSFixedString boneNames[7] = {
 							"TabChangeUp", "TabChangeDown", "PageChangeUp", "PageChangeDown", "ScrollItemsUp", "ScrollItemsDown", "SelectButton02"
 						};
 						static BSFixedString transNames[7] = {
 							"TabChangeUpTrans", "TabChangeDownTrans", "PageChangeUpTrans", "PageChangeDownTrans", "ScrollItemsUpTrans", "ScrollItemsDownTrans", "SelectButtonTrans"
 						};
-						float boneDistance[7] = {2.0, 2.0, 2.0, 2.0, 1.5, 1.5, 2.0};
-						float transDistance[7] = {0.6, 0.6, 0.6, 0.6, 0.1, 0.1, 0.4};
-						float maxDistance[7] = {1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 0.6};
+						float boneDistance[7] = {2.0f, 2.0f, 2.0f, 2.0f, 1.5f, 1.5f, 2.0f};
+						float transDistance[7] = {0.6f, 0.6f, 0.6f, 0.6f, 0.1f, 0.1f, 0.4f};
+						float maxDistance[7] = {1.2f, 1.2f, 1.2f, 1.2f, 1.2f, 1.2f, 0.6f};
 						NiPoint3 finger;
-						NiAVObject* pipboy = nullptr;
-						NiAVObject* pipboyTrans = nullptr;
 						// Virtual Controls Code Starts here: 
 						g_config.leftHandedPipBoy
 							? finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos
@@ -708,9 +810,7 @@ namespace frik {
 										? _skelly->getRightArm().forearm3->GetObjectByName(&orbNames[i])
 										: _skelly->getLeftArm().forearm3->GetObjectByName(&orbNames[i]); //Hide helper Orbs when not near a control surface
 									if (orb != nullptr) {
-										if (orb->m_localTransform.scale > 0) {
-											orb->m_localTransform.scale = 0;
-										}
+										orb->m_localTransform.scale = std::min<float>(orb->m_localTransform.scale, 0);
 									}
 								} else if (distance <= boneDistance[i]) {
 									float fz = boneDistance[i] - distance;
@@ -718,9 +818,7 @@ namespace frik {
 										? _skelly->getRightArm().forearm3->GetObjectByName(&orbNames[i])
 										: _skelly->getLeftArm().forearm3->GetObjectByName(&orbNames[i]); //Show helper Orbs when not near a control surface
 									if (orb != nullptr) {
-										if (orb->m_localTransform.scale < 1) {
-											orb->m_localTransform.scale = 1;
-										}
+										orb->m_localTransform.scale = std::max<float>(orb->m_localTransform.scale, 1);
 									}
 									if (fz > 0.0 && fz < maxDistance[i]) {
 										trans->m_localTransform.pos.z = fz;
@@ -750,35 +848,39 @@ namespace frik {
 										_PBControlsSticky[i] = true;
 										f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary);
 										if (i == 0) {
-											root->Invoke("root.Menu_mc.gotoPrevPage", nullptr, nullptr, 0); // Previous Page											
+											gotoPrevPage(root);
 										}
 										if (i == 1) {
-											root->Invoke("root.Menu_mc.gotoNextPage", nullptr, nullptr, 0); // Next Page				
+											gotoNextPage(root);
 										}
 										if (i == 2) {
-											root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0); // Previous Sub Page
+											gotoPrevTab(root);
 										}
 										if (i == 3) {
-											root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0); // Next Sub Page
+											gotoNextTab(root);
 										}
 										if (i == 4) {
-											std::thread t1(simulateExtendedButtonPress, VK_UP); // Scroll up list
-											t1.detach();
+											moveSlectionUp(root);
 										}
 										if (i == 5) {
-											std::thread t1(simulateExtendedButtonPress, VK_DOWN); // Scroll down list
-											t1.detach();
+											moveSelectionDown(root);
 										}
 										if (i == 6) {
-											std::thread t1(simulateExtendedButtonPress, VK_RETURN); // Select Current Item
-											t1.detach();
+											pressOnSelectedItem(root);
 										}
 									}
 								}
 							}
 						}
 						// Mirror Left Stick Controls on Right Stick.
-						if (!g_frik.isPipboyConfigurationModeActive() && g_config.switchUIControltoPrimary) {
+						if (!g_frik.isPipboyConfigurationModeActive() && g_config.enablePrimaryControllerPipboyUse) {
+							if (f4vr::VRControllers.isPressed(vr::k_EButton_A, f4vr::Hand::Primary) || f4vr::VRControllers.isPressed(vr::k_EButton_Grip, f4vr::Hand::Primary)) {
+								gotoPrevPage(root);
+							}
+							if (f4vr::VRControllers.isPressed(vr::k_EButton_ApplicationMenu, f4vr::Hand::Primary)) {
+								gotoNextPage(root);
+							}
+
 							BSFixedString selectnodename = "SelectRotate";
 							NiNode* trans = g_config.leftHandedPipBoy
 								? _skelly->getRightArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode()
@@ -797,7 +899,6 @@ namespace frik {
 								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
 							const auto UISelectButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33)); // Right Trigger
 							const auto UIAltSelectButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32)); // Right Touchpad
-							GFxValue GetSWFVar;
 							bool isPBMessageBoxVisible = false;
 							// Move Pipboy trigger mesh with controller trigger position.
 							if (trans != nullptr) {
@@ -809,9 +910,7 @@ namespace frik {
 									trans->m_localTransform.pos.z = 0.00;
 								}
 							}
-							if (root->GetVariable(&GetSWFVar, "root.Menu_mc.CurrentPage.MessageHolder_mc.visible")) {
-								isPBMessageBoxVisible = GetSWFVar.GetBool();
-							}
+							isPBMessageBoxVisible = isMessageHolderVisible(root);
 							if (_lastPipboyPage != 3 || isPBMessageBoxVisible) {
 								static BSFixedString KnobNode = "ScrollItemsKnobRot";
 								NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
@@ -819,11 +918,11 @@ namespace frik {
 									: _skelly->getLeftArm().forearm3->GetObjectByName(&KnobNode);
 								Matrix44 rot;
 								if (doinantHandStick.y > 0.85) {
-									rot.setEulerAngles(degreesToRads(0), degreesToRads(0.4), degreesToRads(0));
+									rot.setEulerAngles(degreesToRads(0), degreesToRads(0.4f), degreesToRads(0));
 									ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
 								}
 								if (doinantHandStick.y < -0.85) {
-									rot.setEulerAngles(degreesToRads(0), degreesToRads(-0.4), degreesToRads(0));
+									rot.setEulerAngles(degreesToRads(0), degreesToRads(-0.4f), degreesToRads(0));
 									ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
 								}
 							}
@@ -838,8 +937,7 @@ namespace frik {
 								if (doinantHandStick.y > 0.85) {
 									if (!_controlSleepStickyY) {
 										_controlSleepStickyY = true;
-										std::thread t1(simulateExtendedButtonPress, VK_UP); // Scroll up list
-										t1.detach();
+										moveSlectionUp(root);
 										std::thread t2(&Pipboy::rightStickYSleep, this, 155);
 										t2.detach();
 									}
@@ -847,8 +945,7 @@ namespace frik {
 								if (doinantHandStick.y < -0.85) {
 									if (!_controlSleepStickyY) {
 										_controlSleepStickyY = true;
-										std::thread t1(simulateExtendedButtonPress, VK_DOWN); // Scroll down list
-										t1.detach();
+										moveSelectionDown(root);
 										std::thread t2(&Pipboy::rightStickYSleep, this, 155);
 										t2.detach();
 									}
@@ -856,7 +953,7 @@ namespace frik {
 								if (doinantHandStick.x < -0.85) {
 									if (!_controlSleepStickyX) {
 										_controlSleepStickyX = true;
-										root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0); // Next Sub Page
+										gotoPrevTab(root);
 										std::thread t3(&Pipboy::rightStickXSleep, this, 170);
 										t3.detach();
 									}
@@ -864,7 +961,7 @@ namespace frik {
 								if (doinantHandStick.x > 0.85) {
 									if (!_controlSleepStickyX) {
 										_controlSleepStickyX = true;
-										root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0); // Previous Sub Page
+										gotoNextTab(root);
 										std::thread t3(&Pipboy::rightStickXSleep, this, 170);
 										t3.detach();
 									}
@@ -872,8 +969,7 @@ namespace frik {
 							}
 							if (UISelectButton && !_UISelectSticky) {
 								_UISelectSticky = true;
-								std::thread t1(simulateExtendedButtonPress, VK_RETURN); // Select Current Item
-								t1.detach();
+								pressOnSelectedItem(root);
 							} else if (!UISelectButton) {
 								_UISelectSticky = false;
 							}
@@ -883,7 +979,7 @@ namespace frik {
 							} else if (!UIAltSelectButton) {
 								_UIAltSelectSticky = false;
 							}
-						} else if (!g_frik.isPipboyConfigurationModeActive() && !g_config.switchUIControltoPrimary) {
+						} else if (!g_frik.isPipboyConfigurationModeActive() && !g_config.enablePrimaryControllerPipboyUse) {
 							//still move Pipboy trigger mesh even if controls havent been swapped.
 							vr::VRControllerAxis_t secondaryTrigger = f4vr::isLeftHandedMode()
 								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[1]
@@ -902,12 +998,8 @@ namespace frik {
 									trans->m_localTransform.pos.z = 0.00;
 								}
 							}
-							//still move Pipboy scroll knob even if controls havent been swapped.
-							bool isPBMessageBoxVisible = false;
-							GFxValue GetSWFVar;
-							if (root->GetVariable(&GetSWFVar, "root.Menu_mc.CurrentPage.MessageHolder_mc.visible")) {
-								isPBMessageBoxVisible = GetSWFVar.GetBool();
-							}
+							//still move Pipboy scroll knob even if controls haven't been swapped.
+							const bool isPBMessageBoxVisible = isMessageHolderVisible(root);
 							if (_lastPipboyPage != 3 || isPBMessageBoxVisible) {
 								static BSFixedString KnobNode = "ScrollItemsKnobRot";
 								NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
@@ -934,14 +1026,7 @@ namespace frik {
 			IMenu* menu = (*g_ui)->GetMenu(pipboyMenu);
 			if (menu != nullptr) {
 				GFxMovieRoot* root = menu->movie->movieRoot;
-				if (root != nullptr) {
-					GFxValue PBCurrentPage;
-					if (root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage")) {
-						if (PBCurrentPage.GetType() != GFxValue::kType_Undefined) {
-							_lastPipboyPage = PBCurrentPage.GetUInt();
-						}
-					}
-				}
+				storeLastPipboyPage(root);
 			}
 		}
 	}
@@ -973,7 +1058,7 @@ namespace frik {
 		}
 	}
 
-	bool Pipboy::isLookingAtPipBoy() const {
+	bool Pipboy::isLookingAtPipBoy() {
 		const BSFixedString wandPipName("PipboyRoot_NIF_ONLY");
 		NiAVObject* pipboy = f4vr::getPlayerNodes()->SecondaryWandNode->GetObjectByName(&wandPipName);
 

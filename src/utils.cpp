@@ -1,10 +1,8 @@
 #include "utils.h"
-#include <filesystem>
-#include <shlobj_core.h>
+
 #include <f4se/GameMenus.h>
 #include <f4se/GameRTTI.h>
 
-#include "Config.h"
 #include "FRIK.h"
 #include "common/CommonUtils.h"
 #include "f4se/PapyrusEvents.h"
@@ -18,44 +16,7 @@ namespace frik {
 		CallGlobalFunctionNoWait1<bool>("Game", "TurnPlayerRadioOn", isActive);
 	}
 
-	void windowFocus() {
-		common::windowFocus("Fallout4VR");
-	}
-
-	void simulateExtendedButtonPress(WORD vkey) {
-		if (auto hwnd = ::FindWindowEx(nullptr, nullptr, "Fallout4VR", nullptr)) {
-			HWND foreground = GetForegroundWindow();
-			if (foreground && hwnd == foreground) {
-				INPUT input;
-				input.type = INPUT_KEYBOARD;
-				input.ki.wScan = MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
-				input.ki.time = 0;
-				input.ki.dwExtraInfo = 0;
-				input.ki.wVk = vkey;
-				if (vkey == VK_UP || vkey == VK_DOWN) {
-					input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY; //0; //KEYEVENTF_KEYDOWN
-				} else {
-					input.ki.dwFlags = 0;
-				}
-				SendInput(1, &input, sizeof(INPUT));
-				Sleep(30);
-				if (vkey == VK_UP || vkey == VK_DOWN) {
-					input.ki.dwFlags = KEYEVENTF_KEYUP | KEYEVENTF_EXTENDEDKEY;
-				} else {
-					input.ki.dwFlags = KEYEVENTF_KEYUP;
-				}
-				SendInput(1, &input, sizeof(INPUT));
-			}
-		}
-	}
-
 	void turnPipBoyOn() {
-		/*  From IdleHands
-			Utility.SetINIFloat("fHMDToPipboyScaleOuterAngle:VRPipboy", 0.0000)
-			Utility.SetINIFloat("fHMDToPipboyScaleInnerAngle:VRPipboy", 0.0000)
-			Utility.SetINIFloat("fPipboyScaleOuterAngle:VRPipboy", 0.0000)
-			Utility.SetINIFloat("fPipboyScaleInnerAngle:VRPipboy", 0.0000)
-		*/
 		Setting* set = GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
 		set->SetDouble(0.0);
 
@@ -67,19 +28,9 @@ namespace frik {
 
 		set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
 		set->SetDouble(0.0);
-
-		if (g_config.autoFocusWindow && g_config.switchUIControltoPrimary) {
-			windowFocus();
-		}
 	}
 
 	void turnPipBoyOff() {
-		/*  From IdleHands
-	Utility.SetINIFloat("fHMDToPipboyScaleOuterAngle:VRPipboy", 20.0000)
-	Utility.SetINIFloat("fHMDToPipboyScaleInnerAngle:VRPipboy", 5.0000)
-	Utility.SetINIFloat("fPipboyScaleOuterAngle:VRPipboy", 20.0000)
-	Utility.SetINIFloat("fPipboyScaleInnerAngle:VRPipboy", 5.0000)
-		*/
 		Setting* set = GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
 		set->SetDouble(20.0);
 

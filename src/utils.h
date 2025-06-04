@@ -4,9 +4,7 @@
 #include "f4vr/MiscStructs.h"
 
 namespace frik {
-	void windowFocus();
 	void turnPlayerRadioOn(bool isActive);
-	void simulateExtendedButtonPress(WORD vkey);
 
 	void turnPipBoyOn();
 	void turnPipBoyOff();

@@ -112,7 +112,6 @@ namespace frik {
 		float scopeAdjustDistance = 15.0f;
 
 		// In-game configuration
-		bool autoFocusWindow = false;
 		float selfieOutFrontDistance = 120.0f;
 		bool selfieIgnoreHideFlags = false;
 
@@ -124,7 +123,7 @@ namespace frik {
 		bool leftHandedPipBoy = false;
 		bool pipBoyOpenWhenLookAt = false;
 		bool pipBoyAllowMovementNotLooking = true;
-		bool switchUIControltoPrimary = true; // if the player wants to switch controls or not.
+		bool enablePrimaryControllerPipboyUse = true;
 		float pipBoyScale = 1.0;
 		int switchTorchButton = 2; // button to switch torch from head to hand
 		int pipBoyButtonArm = 0; // 0 for left 1 for right
