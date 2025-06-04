@@ -3,15 +3,18 @@
 - Fixed in two-handed mode primary hand not rotating with the weapon to keep primary hand fully on stock.
 - Fixed two-handed aim direction vector calculation, fixing jarred aiming for weapons with large offsets.
 - Fixed two-handed offhand grip trigger area calculation resulting in hard grip triggering for weapons with large offsets.
-- Remove dependency on "[Fallout4 VR Tools](https://www.nexusmods.com/fallout4/mods/45167)" mod allowing the use of [OpenComposite](https://gitlab.com/znixian/OpenOVR).
-- Changed log file to `FRIK.log` and support rolling last 6 logs (FRIK.log, FRIK_1.log, ..., FRIK_6.log).
-- FRIK.ini file-watch to detect and live reload config without need for setting reload interval and having override issues.
 - Fixed laser weapons and minigun muzzle flash shown in incorrect location especially when using two-handed.
 - Fixed entering/existing power armor delay in camera height adjustment causing jarred movement.
 - Fixes jarred movement on jump landing and areas where there is a small gap in the ground like the exist platform of vault 111.
 - Fixed weapon not disabling when interacting with on-wrist Pipboy (broken in v72).
+- Fixed need to have game window in-focus for Pipboy primary controller interactions.
+- Improve Pipboy close interaction by adding look away flag and look away threshold.
 - Fixed rare body invalid position after loading a save not from main menu.
 - Fixed unable to navigate pause menu if opened while doing weapon adjustment or Pipboy interaction.
+- Live FRIK.ini reload using file-watch, removing the need for setting reload interval and having override issues.
+- Remove dependency on "[Fallout4 VR Tools](https://www.nexusmods.com/fallout4/mods/45167)" mod allowing the use of [OpenComposite](https://gitlab.com/znixian/OpenOVR).
+- Changed log file to `FRIK.log` and support rolling last 6 logs (FRIK.log, FRIK_1.log, ..., FRIK_6.log).
+
 
 ## v0.73
 

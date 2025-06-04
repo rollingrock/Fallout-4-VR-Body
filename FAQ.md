@@ -21,7 +21,8 @@ Long press on secondary hand trigger activates the flashlight.
 To move the flashlight from hand to head: move the Pipboy hand to the head, should feel haptic, press grip.  
 
 ## Reporting Crash Log
-Please attach the crash log file and FRIK main log file.
+[Buffout 4 NG](https://www.nexusmods.com/fallout4/mods/64880) required for crash log.  
+Please attach the crash log file and FRIK main log file.  
 Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`  
 - `crash-<date time>.log` for crash logs
 - `Fallout4VRBody.log` for FRIK logs
