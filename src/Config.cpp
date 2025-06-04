@@ -53,7 +53,7 @@ namespace frik {
 		playerHeight = ini.GetFloatValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f);
 		armLength = ini.GetFloatValue(INI_SECTION_MAIN, "armLength", 36.74f);
 		armsOnly = ini.GetBoolValue(INI_SECTION_MAIN, "EnableArmsOnlyMode");
-		
+
 		// Head Geometry Hide
 		hideHead = ini.GetBoolValue(INI_SECTION_MAIN, "HideHead");
 		hideEquipment = ini.GetBoolValue(INI_SECTION_MAIN, "HideEquipment");
@@ -68,29 +68,31 @@ namespace frik {
 		playerOffset_up = ini.GetFloatValue(INI_SECTION_MAIN, "playerOffset_up", -2.0);
 		powerArmor_forward = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_forward", 0.0);
 		powerArmor_up = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_up", 0.0);
-				
+
 		// Pipboy
 		pipBoyScale = ini.GetFloatValue(INI_SECTION_MAIN, "PipboyScale", 1.0);
 		hidePipboy = ini.GetBoolValue(INI_SECTION_MAIN, "hidePipboy");
 		isHoloPipboy = ini.GetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", true);
 		leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
 		enablePrimaryControllerPipboyUse = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
-		pipBoyOpenWhenLookAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", false);
-		pipBoyAllowMovementNotLooking = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true); // !!!!
-		pipBoyLookAtGate = ini.GetFloatValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.7f);
-		pipboyDetectionRange = ini.GetFloatValue(INI_SECTION_MAIN, "pipboyDetectionRange", 15.0);
-		pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 5000));
-		pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 5000));
+		pipboyOpenWhenLookAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", false);
+		pipboyCloseWhenLookAway = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyCloseWhenLookAway", false);
+		pipboyCloseWhenMovingWhileLookingAway = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true);
+		pipboyLookAtThreshold = ini.GetFloatValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.75f);
+		pipboyLookAwayThreshold = ini.GetFloatValue(INI_SECTION_MAIN, "PipBoyLookAwayThreshold", 0.3f);
+		pipboyDetectionRange = ini.GetFloatValue(INI_SECTION_MAIN, "pipboyDetectionRange", 14.0);
+		pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 400));
+		pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 1000));
 		pipBoyButtonArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonArm", 0));
-		pipBoyButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_Grip)); //2
-		pipBoyButtonOffArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffArm", 0)); // !!!
-		pipBoyButtonOffID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip)); //2	// !!!
-		
+		pipBoyButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger));
+		pipBoyButtonOffArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffArm", 0));
+		pipBoyButtonOffID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip));
+
 		// Pipboy Torch/Flashlight
 		isPipBoyTorchOnArm = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", true);
 		isPipBoyTorchRightArmMode = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchRightArmMode", false);
 		switchTorchButton = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2));
-		
+
 		// Two-handed gripping
 		enableOffHandGripping = ini.GetBoolValue(INI_SECTION_MAIN, "EnableOffHandGripping", true);
 		enableGripButtonToGrap = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButton", true);
@@ -98,7 +100,7 @@ namespace frik {
 		onePressGripButton = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", true);
 		gripLetGoThreshold = ini.GetFloatValue(INI_SECTION_MAIN, "GripLetGoThreshold", 15.0f);
 		gripButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "GripButtonID", vr::EVRButtonId::k_EButton_Grip)); // 2
-		
+
 		// Dampen hands
 		dampenHands = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHands", true);
 		dampenHandsInVanillaScope = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHandsInVanillaScope", true);
@@ -109,7 +111,7 @@ namespace frik {
 		dampenHandsTranslationInVanillaScope = ini.GetFloatValue(INI_SECTION_MAIN, "DampenHandsTranslationInVanillaScope", 0.2f);
 		dampenPipboyRotation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenPipboyRotation", 0.7f);
 		dampenPipboyTranslation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenPipboyTranslation", 0.7f);
-		
+
 		// Misc
 		showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
 		selfieOutFrontDistance = ini.GetFloatValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0);
@@ -183,7 +185,7 @@ namespace frik {
 		ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
 		ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		ini.SetBoolValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
-		ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+		ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
 		ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);
 		ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", dampenHandsRotation);
 		ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", dampenHandsTranslation);

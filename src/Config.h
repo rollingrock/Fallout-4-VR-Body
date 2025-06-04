@@ -20,7 +20,7 @@ namespace frik {
 	static const auto PIPBOY_SCREEN_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\PipboyPosition.json)";
 	static const auto WEAPONS_OFFSETS_PATH = BASE_PATH + R"(\Weapons_Offsets)";
 
-	constexpr int FRIK_INI_VERSION = 7;
+	constexpr int FRIK_INI_VERSION = 8;
 
 	constexpr float DEFAULT_CAMERA_HEIGHT = 120.4828f;
 
@@ -67,8 +67,8 @@ namespace frik {
 		}
 
 		void togglePipBoyOpenWhenLookAt() {
-			pipBoyOpenWhenLookAt = !pipBoyOpenWhenLookAt;
-			saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+			pipboyOpenWhenLookAt = !pipboyOpenWhenLookAt;
+			saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
 		}
 
 		void savePipboyScale(const float pipboyScale) {
@@ -115,9 +115,11 @@ namespace frik {
 		bool isHoloPipboy = false;
 		bool leftHandedPipBoy = false;
 		bool enablePrimaryControllerPipboyUse = false;
-		bool pipBoyOpenWhenLookAt = false;
-		bool pipBoyAllowMovementNotLooking = false;
-		float pipBoyLookAtGate = 0;
+		bool pipboyOpenWhenLookAt = false;
+		bool pipboyCloseWhenLookAway = false;
+		bool pipboyCloseWhenMovingWhileLookingAway = false;
+		float pipboyLookAtThreshold = 0;
+		float pipboyLookAwayThreshold = 0;
 		float pipboyDetectionRange = 0;
 		int pipBoyOnDelay = 0;
 		int pipBoyOffDelay = 0;

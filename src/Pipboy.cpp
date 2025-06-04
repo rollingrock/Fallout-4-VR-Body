@@ -234,7 +234,7 @@ namespace frik {
 			std::thread t5(&Pipboy::secondaryTriggerSleep, this, 300); // switches a bool to false after 150ms
 			t5.detach();
 		} else if (!pipOnButtonPressed) {
-			if (_controlSleepStickyT && _stickybpip && isLookingAtPipBoy()) {
+			if (_controlSleepStickyT && _stickybpip && (!g_config.pipboyOpenWhenLookAt || isLookingAtPipBoy())) {
 				// if bool is still set to true on control release we know it was a short press.
 				_pipboyStatus = true;
 				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
@@ -251,11 +251,22 @@ namespace frik {
 
 		if (!isLookingAtPipBoy()) {
 			_startedLookingAtPip = 0;
-			const vr::VRControllerAxis_t axis_state = g_config.pipBoyButtonArm > 0
+			const vr::VRControllerAxis_t movingStick = g_config.pipBoyButtonArm > 0
 				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0]
 				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0];
-			const auto timeElapsed = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _lastLookingAtPip;
-			if (_pipboyStatus && timeElapsed > g_config.pipBoyOffDelay && !g_frik.isPipboyConfigurationModeActive()) {
+			const vr::VRControllerAxis_t lookingStick = f4vr::isLeftHandedMode()
+				? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
+				: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
+			const auto timeElapsed = static_cast<int>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _lastLookingAtPip);
+			const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway && _pipboyStatus
+				&& !g_frik.isPipboyConfigurationModeActive()
+				&& timeElapsed > g_config.pipBoyOffDelay;
+			const bool closeLookingWayWithMovement = g_config.pipboyCloseWhenMovingWhileLookingAway && _pipboyStatus
+				&& !g_frik.isPipboyConfigurationModeActive()
+				&& (fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f)
+					|| fNotEqual(lookingStick.x, 0, 0.3f) || fNotEqual(lookingStick.y, 0, 0.3f));
+
+			if (closeLookingWayWithDelay || closeLookingWayWithMovement) {
 				_pipboyStatus = false;
 				turnPipBoyOff();
 				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
@@ -264,27 +275,17 @@ namespace frik {
 				}
 				disablePipboyHandPose();
 				_isOperatingPipboy = false;
-				//		Log::info("Disabling PipBoy due to inactivity for %d more than %d ms", timeElapsed, g_config.pipBoyOffDelay);
-			} else if (g_config.pipBoyAllowMovementNotLooking && _pipboyStatus && (axis_state.x != 0 || axis_state.y != 0) && !g_frik.isPipboyConfigurationModeActive()) {
-				turnPipBoyOff();
-				_pipboyStatus = false;
-				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
-				if (_isWeaponinHand) {
-					_weaponStateDetected = false;
-				}
-				disablePipboyHandPose();
-				_isOperatingPipboy = false;
-				//		Log::info("Disabling PipBoy due to movement when not looking at pipboy. input: (%f, %f)", axis_state.x, axis_state.y);
 			}
 			return;
 		}
+
 		if (_pipboyStatus) {
 			_lastLookingAtPip = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-		} else if (g_config.pipBoyOpenWhenLookAt) {
+		} else if (g_config.pipboyOpenWhenLookAt) {
 			if (_startedLookingAtPip == 0) {
 				_startedLookingAtPip = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 			} else {
-				const auto timeElapsed = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _startedLookingAtPip;
+				const auto timeElapsed = static_cast<int>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _startedLookingAtPip);
 				if (timeElapsed > g_config.pipBoyOnDelay) {
 					_pipboyStatus = true;
 					f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 1.0;
@@ -1020,7 +1021,7 @@ namespace frik {
 		}
 	}
 
-	bool Pipboy::isLookingAtPipBoy() {
+	bool Pipboy::isLookingAtPipBoy() const {
 		const BSFixedString wandPipName("PipboyRoot_NIF_ONLY");
 		NiAVObject* pipboy = f4vr::getPlayerNodes()->SecondaryWandNode->GetObjectByName(&wandPipName);
 
@@ -1034,7 +1035,8 @@ namespace frik {
 			return false;
 		}
 
-		return isCameraLookingAtObject((*g_playerCamera)->cameraNode, screen, g_config.pipBoyLookAtGate);
+		const float threshhold = _pipboyStatus ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
+		return isCameraLookingAtObject((*g_playerCamera)->cameraNode, screen, threshhold);
 	}
 
 	/**

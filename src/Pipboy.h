@@ -53,7 +53,7 @@ namespace frik {
 		void replaceMeshes(const std::string& itemHide, const std::string& itemShow);
 		void pipboyManagement();
 		void dampenPipboyScreen();
-		static bool isLookingAtPipBoy();
+		bool isLookingAtPipBoy() const;
 		void rightStickXSleep(int time);
 		void rightStickYSleep(int time);
 		void secondaryTriggerSleep(int time);

@@ -571,7 +571,7 @@ namespace frik {
 								}
 								if (i == 10 || i == 11) {
 									if (i == 10) {
-										if (!g_config.pipBoyOpenWhenLookAt) {
+										if (!g_config.pipboyOpenWhenLookAt) {
 											BSFixedString bname = "PBGlanceMarker";
 											auto UIMarker = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 											if (!UIMarker) {
@@ -583,7 +583,7 @@ namespace frik {
 												UI->m_name = BSFixedString("PBGlanceMarker");
 												TouchMesh->AttachChild(UI, true);
 											}
-										} else if (g_config.pipBoyOpenWhenLookAt) {
+										} else if (g_config.pipboyOpenWhenLookAt) {
 											BSFixedString bname = "PBGlanceMarker";
 											auto UIMarker = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&bname));
 											if (UIMarker) {
@@ -748,7 +748,7 @@ namespace frik {
 			NiNode* UI2 = f4vr::cloneNode(retNode, &proc);
 			UI2->m_name = BSFixedString(meshName[i]);
 			UI->AttachChild(UI2, true);
-			if (i == 10 && g_config.pipBoyOpenWhenLookAt) {
+			if (i == 10 && g_config.pipboyOpenWhenLookAt) {
 				retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/UI-ConfigMarker.nif");
 				NiNode* UI3 = f4vr::cloneNode(retNode, &proc);
 				UI3->m_name = BSFixedString("PBGlanceMarker");
