@@ -20,6 +20,57 @@
 using namespace std::chrono;
 using namespace common;
 
+namespace {
+	bool isPrimaryTriggerPressed() {
+		return f4vr::VRControllers.isPressed(vr::k_EButton_SteamVR_Trigger, f4vr::Hand::Primary);
+	}
+
+	bool isAButtonPressed() {
+		return f4vr::VRControllers.isPressed(vr::k_EButton_A, f4vr::Hand::Primary);
+	}
+
+	bool isBButtonPressed() {
+		return f4vr::VRControllers.isPressed(vr::k_EButton_ApplicationMenu, f4vr::Hand::Primary);
+	}
+
+	bool isPrimaryGripPressHeldDown() {
+		return f4vr::VRControllers.isPressHeldDown(vr::k_EButton_Grip, f4vr::Hand::Primary);
+	}
+
+	bool isWorldMapVisible(const GFxMovieRoot* root) {
+		return f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.WorldMapHolder_mc");
+	}
+
+	std::string getCurrentMapPath(const GFxMovieRoot* root, const std::string& suffix = "") {
+		return (isWorldMapVisible(root) ? "root.Menu_mc.CurrentPage.WorldMapHolder_mc" : "root.Menu_mc.CurrentPage.LocalMapHolder_mc") + suffix;
+	}
+
+	/**
+	 * Is context menu message box popup is visible or not. Only one can be visible at a time.
+	 */
+	bool isMessageHolderVisible(const GFxMovieRoot* root) {
+		return f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.MessageHolder_mc")
+			|| f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc");
+	}
+
+	bool isQuestTabVisibleOnDataPage(const GFxMovieRoot* root) {
+		return f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.QuestsTab_mc");
+	}
+
+	bool isQuestTabObjectiveListEnabledOnDataPage(const GFxMovieRoot* root) {
+		GFxValue var;
+		return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.selectedIndex") && var.GetType() == GFxValue::kType_Int && var.GetInt() > -1;
+	}
+
+	bool isWorkshopsTabVisibleOnDataPage(const GFxMovieRoot* root) {
+		return f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.WorkshopsTab_mc");
+	}
+
+	void triggerHeptic() {
+		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
+	}
+}
+
 namespace frik {
 	/**
 	 * Turn on the Pipboy and set the status flags.
@@ -329,7 +380,7 @@ namespace frik {
 				}
 				if (pipboyTrans->m_localTransform.pos.z < -0.10 && !_stickypip) {
 					_stickypip = true;
-					f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary);
+					triggerHeptic();
 					if (_pipboyStatus) {
 						_pipboyStatus = false;
 						turnPipBoyOff();
@@ -365,7 +416,7 @@ namespace frik {
 			}
 			if (pipboyTrans->m_localTransform.pos.z < -0.14 && !stickyPBlight) {
 				stickyPBlight = true;
-				f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary);
+				triggerHeptic();
 				if (!_pipboyStatus) {
 					f4vr::togglePipboyLight(*g_player);
 				}
@@ -393,7 +444,7 @@ namespace frik {
 			}
 			if (pipboyTrans->m_localTransform.pos.y < -0.12 && !stickyPBRadio) {
 				stickyPBRadio = true;
-				f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary);
+				triggerHeptic();
 				if (!_pipboyStatus) {
 					if (f4vr::isPlayerRadioEnabled()) {
 						turnPlayerRadioOn(false);
@@ -402,6 +453,58 @@ namespace frik {
 					}
 				}
 			}
+		}
+	}
+
+	/**
+	 * Execute operation on the currently active Pipboy UI.
+	 * First thing is to detect is a message box is visible (context menu options) as message box and main lists are active at the
+	 * same time. So, if the message box is visible we will only operate on the message box list and not the main list.
+	 * @param root - Pipboy Scaleform UI root
+	 * @param triggerPressed - true if operate as trigger is pressed regardless of controller input (used for "skeleton control")
+	 */
+	void Pipboy::handlePrimaryControllerOperation(GFxMovieRoot* root, bool triggerPressed) {
+		// page level navigation
+		const bool gripPressHeldDown = isPrimaryGripPressHeldDown();
+		if (!gripPressHeldDown && isAButtonPressed()) {
+			gotoPrevPage(root);
+			return;
+		}
+		if (!gripPressHeldDown && isBButtonPressed()) {
+			gotoNextPage(root);
+			return;
+		}
+
+		// include actual controller check
+		triggerPressed = triggerPressed || isPrimaryTriggerPressed();
+
+		// Context menu message box handling
+		if (triggerPressed && isMessageHolderVisible(root)) {
+			triggerHeptic();
+			f4vr::doOperationOnScaleformMessageHolderList(root, "root.Menu_mc.CurrentPage.MessageHolder_mc", f4vr::ScaleformListOp::Select);
+			f4vr::doOperationOnScaleformMessageHolderList(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc", f4vr::ScaleformListOp::Select);
+			// prevent affecting the main list if message box is visible
+			return;
+		}
+
+		// Specific handling by current page
+		switch (f4vr::getScaleformInt(root, "root.Menu_mc.DataObj._CurrentPage").value_or(-1)) {
+		case 0:
+			handlePrimaryControllerOperationOnStatusPage(root, triggerPressed);
+			break;
+		case 1:
+			handlePrimaryControllerOperationOnInventoryPage(root, triggerPressed);
+			break;
+		case 2:
+			handlePrimaryControllerOperationOnDataPage(root, triggerPressed);
+			break;
+		case 3:
+			handlePrimaryControllerOperationOnMapPage(root, triggerPressed);
+			break;
+		case 4:
+			handlePrimaryControllerOperationOnRadioPage(root, triggerPressed);
+			break;
+		default: ;
 		}
 	}
 
@@ -414,12 +517,12 @@ namespace frik {
 	}
 
 	void Pipboy::gotoPrevTab(GFxMovieRoot* root) {
-		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
+		triggerHeptic();
 		root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0);
 	}
 
 	void Pipboy::gotoNextTab(GFxMovieRoot* root) {
-		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
+		triggerHeptic();
 		root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0);
 	}
 
@@ -431,85 +534,99 @@ namespace frik {
 	 * same time. So, if the message box is visible we will only operate on the message box list and not the main list.
 	 */
 	void Pipboy::moveListSelectionUpDown(GFxMovieRoot* root, const bool moveUp) {
-		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
+		triggerHeptic();
 
 		const auto listOp = moveUp ? f4vr::ScaleformListOp::MoveUp : f4vr::ScaleformListOp::MoveDown;
 
 		if (isMessageHolderVisible(root)) {
-			f4vr::doOperationOnMessageHolderList(root, "root.Menu_mc.CurrentPage.MessageHolder_mc", listOp);
-			f4vr::doOperationOnMessageHolderList(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc", listOp);
+			f4vr::doOperationOnScaleformMessageHolderList(root, "root.Menu_mc.CurrentPage.MessageHolder_mc", listOp);
+			f4vr::doOperationOnScaleformMessageHolderList(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc", listOp);
 			// prevent affecting the main list if message box is visible
 			return;
 		}
 
 		// Inventory, Radio, Special, and Perks tabs
-		f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.List_mc", listOp);
-		f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.SPECIALTab_mc.List_mc", listOp);
-		f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.PerksTab_mc.List_mc", listOp);
+		f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.List_mc", listOp);
+		f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.SPECIALTab_mc.List_mc", listOp);
+		f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.PerksTab_mc.List_mc", listOp);
 
 		// Quest, Workshop, and Stats tabs exist at the same time, need to check which one is visible
 		if (isQuestTabVisibleOnDataPage(root)) {
 			// Quests tab has 2 lists for the main quests and quest objectives
-			f4vr::doOperationOnList(root, isQuestTabObjectiveListEnabledOnDataPage(root)
+			const char* listPath = isQuestTabObjectiveListEnabledOnDataPage(root)
 				? "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc"
-				: "root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc", listOp);
+				: "root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc";
+			f4vr::doOperationOnScaleformList(root, listPath, listOp);
 		} else if (isWorkshopsTabVisibleOnDataPage(root)) {
-			f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc", listOp);
+			f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc", listOp);
 		} else {
-			f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.StatsTab_mc.CategoryList_mc", listOp);
+			f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.StatsTab_mc.CategoryList_mc", listOp);
+		}
+	}
+
+	void Pipboy::handlePrimaryControllerOperationOnStatusPage(GFxMovieRoot* root, const bool triggerPressed) {
+		if (triggerPressed) {
+			triggerHeptic();
+			f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.SPECIALTab_mc.List_mc", f4vr::ScaleformListOp::Select);
+			f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.PerksTab_mc.List_mc", f4vr::ScaleformListOp::Select);
+		}
+	}
+
+	void Pipboy::handlePrimaryControllerOperationOnInventoryPage(GFxMovieRoot* root, const bool triggerPressed) {
+		if (triggerPressed) {
+			triggerHeptic();
+			f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.List_mc", f4vr::ScaleformListOp::Select);
 		}
 	}
 
 	/**
-	 * See "moveListSelectionUpDown" for more details.
+	 * On DATA page all 3 tabs can exist at the same time, so we need to check which one is visible to prevent working on a hidden one.
 	 */
-	void Pipboy::pressOnSelectedItem(GFxMovieRoot* root) {
-		f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
-
-		if (isMessageHolderVisible(root)) {
-			f4vr::doOperationOnMessageHolderList(root, "root.Menu_mc.CurrentPage.MessageHolder_mc", f4vr::ScaleformListOp::Select);
-			f4vr::doOperationOnMessageHolderList(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc", f4vr::ScaleformListOp::Select);
-			// prevent affecting the main list if message box is visible
-			return;
-		}
-
-		// Quest, Workshop, and Stats tabs exist at the same time, need to check which one is visible
-		if (isQuestTabVisibleOnDataPage(root)) {
-			f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc", f4vr::ScaleformListOp::Select);
-		} else if (isWorkshopsTabVisibleOnDataPage(root)) {
-			GFxValue workshopArgs[2];
-			workshopArgs[0].SetString("XButton");
-			workshopArgs[1].SetBool(false);
-			root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.ProcessUserEvent", nullptr, workshopArgs, 2);
-		} else {
-			// The rest of the main lists that can be pressed
-			f4vr::doOperationOnList(root, "root.Menu_mc.CurrentPage.List_mc", f4vr::ScaleformListOp::Select);
+	void Pipboy::handlePrimaryControllerOperationOnDataPage(GFxMovieRoot* root, const bool triggerPressed) {
+		if (triggerPressed) {
+			triggerHeptic();
+			if (isQuestTabVisibleOnDataPage(root)) {
+				f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc", f4vr::ScaleformListOp::Select);
+			} else {
+				// open quest in map
+				f4vr::invokeScaleformProcessUserEvent(root, "root.Menu_mc.CurrentPage.WorkshopsTab_mc", "XButton");
+			}
 		}
 	}
 
 	/**
-	 * Is context menu message box popup is visible or not. Only one can be visible at a time.
+	 * For handling map faster travel or marker setting we need to know if fast travel can be done using "bCanFastTravel"
+	 * and then let the Pipboy code handle the rest by sending the right event to the currently visible map (world/local).
 	 */
-	bool Pipboy::isMessageHolderVisible(const GFxMovieRoot* root) {
-		GFxValue var;
-		if (root->GetVariable(&var, "root.Menu_mc.CurrentPage.MessageHolder_mc.visible") && var.IsBool() && var.GetBool())
-			return true;
-		return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc.visible") && var.IsBool() && var.GetBool();
+	void Pipboy::handlePrimaryControllerOperationOnMapPage(GFxMovieRoot* root, const bool triggerPressed) {
+		if (isPrimaryGripPressHeldDown()) {
+			if (triggerPressed) {
+				// switch world/local maps
+				triggerHeptic();
+				f4vr::invokeScaleformProcessUserEvent(root, "root.Menu_mc.CurrentPage", "XButton");
+			} else {
+				// zoom map
+				const auto [_, primAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
+				if (fNotEqual(primAxisY, 0, 0.5f)) {
+					GFxValue args[1];
+					args[0].SetNumber(primAxisY / 100.f);
+					root->Invoke(getCurrentMapPath(root, ".ZoomMap").c_str(), nullptr, args, 1);
+				}
+			}
+		} else if (triggerPressed) {
+			triggerHeptic();
+
+			// handle fast travel, custom marker
+			const char* eventName = f4vr::getScaleformBool(root, getCurrentMapPath(root, ".bCanFastTravel").c_str()) ? "MapHolder:activate_marker" : "MapHolder:set_custom_marker";
+			f4vr::invokeScaleformDispatchEvent(root, getCurrentMapPath(root), eventName);
+		}
 	}
 
-	bool Pipboy::isQuestTabVisibleOnDataPage(const GFxMovieRoot* root) {
-		GFxValue var;
-		return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.visible") && var.IsBool() && var.GetBool();
-	}
-
-	bool Pipboy::isQuestTabObjectiveListEnabledOnDataPage(const GFxMovieRoot* root) {
-		GFxValue var;
-		return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.selectedIndex") && var.GetType() == GFxValue::kType_Int && var.GetInt() > -1;
-	}
-
-	bool Pipboy::isWorkshopsTabVisibleOnDataPage(const GFxMovieRoot* root) {
-		GFxValue var;
-		return root->GetVariable(&var, "root.Menu_mc.CurrentPage.WorkshopsTab_mc.visible") && var.IsBool() && var.GetBool();
+	void Pipboy::handlePrimaryControllerOperationOnRadioPage(GFxMovieRoot* root, const bool triggerPressed) {
+		if (triggerPressed) {
+			triggerHeptic();
+			f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.List_mc", f4vr::ScaleformListOp::Select);
+		}
 	}
 
 	/**
@@ -809,7 +926,7 @@ namespace frik {
 									}
 									if (trans->m_localTransform.pos.z > transDistance[i] && !_PBControlsSticky[i]) {
 										_PBControlsSticky[i] = true;
-										f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary);
+										triggerHeptic();
 										if (i == 0) {
 											gotoPrevPage(root);
 										}
@@ -829,7 +946,7 @@ namespace frik {
 											moveListSelectionUpDown(root, false);
 										}
 										if (i == 6) {
-											pressOnSelectedItem(root);
+											handlePrimaryControllerOperation(root, true);
 										}
 									}
 								}
@@ -837,13 +954,6 @@ namespace frik {
 						}
 						// Mirror Left Stick Controls on Right Stick.
 						if (!g_frik.isPipboyConfigurationModeActive() && g_config.enablePrimaryControllerPipboyUse) {
-							if (f4vr::VRControllers.isPressed(vr::k_EButton_A, f4vr::Hand::Primary) || f4vr::VRControllers.isPressed(vr::k_EButton_Grip, f4vr::Hand::Primary)) {
-								gotoPrevPage(root);
-							}
-							if (f4vr::VRControllers.isPressed(vr::k_EButton_ApplicationMenu, f4vr::Hand::Primary)) {
-								gotoNextPage(root);
-							}
-
 							BSFixedString selectnodename = "SelectRotate";
 							NiNode* trans = g_config.leftHandedPipBoy
 								? _skelly->getRightArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode()
@@ -860,7 +970,6 @@ namespace frik {
 							uint64_t dominantHand = f4vr::isLeftHandedMode()
 								? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
 								: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
-							const auto UISelectButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33)); // Right Trigger
 							const auto UIAltSelectButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32)); // Right Touchpad
 							bool isPBMessageBoxVisible = false;
 							// Move Pipboy trigger mesh with controller trigger position.
@@ -889,53 +998,52 @@ namespace frik {
 									ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
 								}
 							}
-							if (_lastPipboyPage == 3 && !isPBMessageBoxVisible) {
-								// Map Tab
-								GFxValue akArgs[2];
-								akArgs[0].SetNumber(doinantHandStick.x * -1);
-								akArgs[1].SetNumber(doinantHandStick.y);
-								if (root->Invoke("root.Menu_mc.CurrentPage.WorldMapHolder_mc.PanMap", nullptr, akArgs, 2)) {} // Move Map	
-								if (root->Invoke("root.Menu_mc.CurrentPage.LocalMapHolder_mc.PanMap", nullptr, akArgs, 2)) {}
-							} else {
-								if (doinantHandStick.y > 0.85) {
-									if (!_controlSleepStickyY) {
-										_controlSleepStickyY = true;
-										moveListSelectionUpDown(root, true);
-										std::thread t2(&Pipboy::rightStickYSleep, this, 155);
-										t2.detach();
+							if (!isPrimaryGripPressHeldDown()) {
+								if (_lastPipboyPage == 3 && !isPBMessageBoxVisible) {
+									// Map Tab
+									GFxValue akArgs[2];
+									akArgs[0].SetNumber(doinantHandStick.x * -1);
+									akArgs[1].SetNumber(doinantHandStick.y);
+									if (root->Invoke("root.Menu_mc.CurrentPage.WorldMapHolder_mc.PanMap", nullptr, akArgs, 2)) {} // Move Map	
+									if (root->Invoke("root.Menu_mc.CurrentPage.LocalMapHolder_mc.PanMap", nullptr, akArgs, 2)) {}
+								} else {
+									if (doinantHandStick.y > 0.85) {
+										if (!_controlSleepStickyY) {
+											_controlSleepStickyY = true;
+											moveListSelectionUpDown(root, true);
+											std::thread t2(&Pipboy::rightStickYSleep, this, 155);
+											t2.detach();
+										}
 									}
-								}
-								if (doinantHandStick.y < -0.85) {
-									if (!_controlSleepStickyY) {
-										_controlSleepStickyY = true;
-										moveListSelectionUpDown(root, false);
-										std::thread t2(&Pipboy::rightStickYSleep, this, 155);
-										t2.detach();
+									if (doinantHandStick.y < -0.85) {
+										if (!_controlSleepStickyY) {
+											_controlSleepStickyY = true;
+											moveListSelectionUpDown(root, false);
+											std::thread t2(&Pipboy::rightStickYSleep, this, 155);
+											t2.detach();
+										}
 									}
-								}
-								if (doinantHandStick.x < -0.85) {
-									if (!_controlSleepStickyX) {
-										_controlSleepStickyX = true;
-										gotoPrevTab(root);
-										std::thread t3(&Pipboy::rightStickXSleep, this, 170);
-										t3.detach();
+									if (doinantHandStick.x < -0.85) {
+										if (!_controlSleepStickyX) {
+											_controlSleepStickyX = true;
+											gotoPrevTab(root);
+											std::thread t3(&Pipboy::rightStickXSleep, this, 170);
+											t3.detach();
+										}
 									}
-								}
-								if (doinantHandStick.x > 0.85) {
-									if (!_controlSleepStickyX) {
-										_controlSleepStickyX = true;
-										gotoNextTab(root);
-										std::thread t3(&Pipboy::rightStickXSleep, this, 170);
-										t3.detach();
+									if (doinantHandStick.x > 0.85) {
+										if (!_controlSleepStickyX) {
+											_controlSleepStickyX = true;
+											gotoNextTab(root);
+											std::thread t3(&Pipboy::rightStickXSleep, this, 170);
+											t3.detach();
+										}
 									}
 								}
 							}
-							if (UISelectButton && !_UISelectSticky) {
-								_UISelectSticky = true;
-								pressOnSelectedItem(root);
-							} else if (!UISelectButton) {
-								_UISelectSticky = false;
-							}
+
+							handlePrimaryControllerOperation(root, false);
+
 							if (UIAltSelectButton && !_UIAltSelectSticky) {
 								_UIAltSelectSticky = true;
 								if (root->Invoke("root.Menu_mc.CurrentPage.onMessageButtonPress()", nullptr, nullptr, 0)) {}

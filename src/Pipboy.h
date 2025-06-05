@@ -4,6 +4,7 @@
 
 #include "Skeleton.h"
 #include "utils.h"
+#include "f4vr/scaleformUtils.h"
 
 namespace frik {
 	/**
@@ -44,12 +45,13 @@ namespace frik {
 		static void gotoPrevTab(GFxMovieRoot* root);
 		static void gotoNextTab(GFxMovieRoot* root);
 		static void moveListSelectionUpDown(GFxMovieRoot* root, bool moveUp);
-		static void pressOnSelectedItem(GFxMovieRoot* root);
-		static bool isMessageHolderVisible(const GFxMovieRoot* root);
-		static bool isQuestTabVisibleOnDataPage(const GFxMovieRoot* root);
-		static bool isQuestTabObjectiveListEnabledOnDataPage(const GFxMovieRoot* root);
-		static bool isWorkshopsTabVisibleOnDataPage(const GFxMovieRoot* root);
+		static void handlePrimaryControllerOperationOnStatusPage(GFxMovieRoot* root, bool triggerPressed);
+		static void handlePrimaryControllerOperationOnInventoryPage(GFxMovieRoot* root, bool triggerPressed);
+		static void handlePrimaryControllerOperationOnDataPage(GFxMovieRoot* root, bool triggerPressed);
+		static void handlePrimaryControllerOperationOnMapPage(GFxMovieRoot* root, bool triggerPressed);
+		static void handlePrimaryControllerOperationOnRadioPage(GFxMovieRoot* root, bool triggerPressed);
 		void storeLastPipboyPage(const GFxMovieRoot* root);
+		static void handlePrimaryControllerOperation(GFxMovieRoot* root, bool triggerPressed);
 		void replaceMeshes(const std::string& itemHide, const std::string& itemShow);
 		void pipboyManagement();
 		void dampenPipboyScreen();
@@ -78,7 +80,6 @@ namespace frik {
 		bool _PBControlsSticky[7] = {false, false, false, false, false, false, false};
 		bool _SwithLightButtonSticky = false;
 		bool _SwitchLightHaptics = true;
-		bool _UISelectSticky = false;
 		bool _UIAltSelectSticky = false;
 		bool _isOperatingPipboy = false;
 		bool _isWeaponinHand = false;

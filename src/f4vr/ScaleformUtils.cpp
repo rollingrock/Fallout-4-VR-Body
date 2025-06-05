@@ -37,10 +37,31 @@ namespace {
 }
 
 namespace f4vr {
+	bool getScaleformBool(const GFxMovieRoot* root, const char* path) {
+		GFxValue result;
+		return root->GetVariable(&result, path) && result.IsBool() && result.GetBool();
+	}
+
+	std::optional<int> getScaleformInt(const GFxMovieRoot* root, const char* path) {
+		GFxValue result;
+		if (!root->GetVariable(&result, path))
+			return std::nullopt;
+		const auto type = result.GetType();
+		if (type == GFxValue::kType_Int || type == GFxValue::kType_UInt) {
+			return result.GetInt();
+		}
+		return std::nullopt;
+	}
+
+	bool isElementVisible(const GFxMovieRoot* root, const std::string& path) {
+		GFxValue var;
+		return root->GetVariable(&var, (path + ".visible").c_str()) && var.IsBool() && var.GetBool();
+	}
+
 	/**
 	 * Execute an operation (moveUp, moveDown, select/press) on a Scaleform list that can be found by static path.
 	 */
-	bool doOperationOnList(GFxMovieRoot* root, const char* listPath, const ScaleformListOp op) {
+	bool doOperationOnScaleformList(GFxMovieRoot* root, const char* listPath, const ScaleformListOp op) {
 		GFxValue list;
 		if (!root->GetVariable(&list, listPath)) {
 			common::Log::debug("List operation failed on list:('%s'), list not found", listPath);
@@ -53,16 +74,49 @@ namespace f4vr {
 	 * Execute an operation (moveUp, moveDown, select/press) on a Scaleform list that is inside a context menu
 	 * message box. The message box can be found by static path but the list inside is dynamic and found by traversing the hierarchy.
 	 */
-	bool doOperationOnMessageHolderList(GFxMovieRoot* root, const char* messageHolderPath, const ScaleformListOp op) {
+	bool doOperationOnScaleformMessageHolderList(GFxMovieRoot* root, const char* messageHolderPath, const ScaleformListOp op) {
 		GFxValue messageHolder;
 		if (!root->GetVariable(&messageHolder, messageHolderPath)) {
 			common::Log::debug("List operation failed on message box list:('%s'), message box not found", messageHolderPath);
 			return false;
 		}
-		return findAndWorkOnElement(&messageHolder, "List_mc", [root,op, messageHolderPath](GFxValue& list) {
+		return findAndWorkOnScaleformElement(&messageHolder, "List_mc", [root,op, messageHolderPath](GFxValue& list) {
 				invokeOperationOnListElement(root, &list, op, messageHolderPath);
 			}
 		);
+	}
+
+	/**
+	 * Invoke "ProcessUserEvent" function on the given Scaleform element found by path.
+	 * Commonly available for general UI interactions.
+	 */
+	void invokeScaleformProcessUserEvent(GFxMovieRoot* root, const std::string& path, const char* eventName) {
+		GFxValue args[2];
+		args[0].SetString(eventName);
+		args[1].SetBool(false);
+		GFxValue result;
+		if (!root->Invoke((path + ".ProcessUserEvent").c_str(), &result, args, 2)) {
+			common::Log::warn("Failed to invoke Scaleform ProcessUserEvent '%s' on '%s'", eventName, path.c_str());
+		}
+		common::Log::verbose("Scaleform ProcessUserEvent invoked with '%s' on '%s'; Result:(%d)", eventName, path.c_str(), result.IsBool() ? result.GetBool() : -1);
+	}
+
+	/**
+	 * Invoke "dispatchEvent" function on the given Scaleform element found by path.
+	 * A framework level events that can be used to trigger code.
+	 */
+	void invokeScaleformDispatchEvent(GFxMovieRoot* root, const std::string& path, const char* eventName) {
+		GFxValue event;
+		GFxValue args[3];
+		args[0].SetString(eventName);
+		args[1].SetBool(true);
+		args[2].SetBool(true);
+		root->CreateObject(&event, "flash.events.Event", args, 3);
+		GFxValue result;
+		if (!root->Invoke((path + ".dispatchEvent").c_str(), &result, &event, 1)) {
+			common::Log::warn("Failed to invoke Scaleform dispatchEvent '%s' on '%s'", eventName, path.c_str());
+		}
+		common::Log::verbose("Scaleform dispatchEvent invoked with '%s' on '%s'; Result:(%d)", eventName, path.c_str(), result.IsBool() ? result.GetBool() : -1);
 	}
 
 	/**
@@ -70,7 +124,7 @@ namespace f4vr {
 	 * Note: all my attempts to return the found element for more common API pattern result in the game crashing. I think
 	 * there may be an issue with the ref counting, or I'm an idiot.
 	 */
-	bool findAndWorkOnElement(GFxValue* elm, const std::string& name, const std::function<void(GFxValue&)>& doWork) {
+	bool findAndWorkOnScaleformElement(GFxValue* elm, const std::string& name, const std::function<void(GFxValue&)>& doWork) {
 		if (!elm || elm->IsUndefined() || !elm->IsObject())
 			return false;
 
@@ -91,7 +145,7 @@ namespace f4vr {
 			GFxValue args[1];
 			args[0].SetInt(i);
 			if (elm->Invoke("getChildAt", &child, args, 1)) {
-				if (findAndWorkOnElement(&child, name, doWork)) {
+				if (findAndWorkOnScaleformElement(&child, name, doWork)) {
 					return true; // stop on first match
 				}
 			}
