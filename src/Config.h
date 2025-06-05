@@ -20,7 +20,7 @@ namespace frik {
 	static const auto PIPBOY_SCREEN_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\PipboyPosition.json)";
 	static const auto WEAPONS_OFFSETS_PATH = BASE_PATH + R"(\Weapons_Offsets)";
 
-	constexpr int FRIK_INI_VERSION = 7;
+	constexpr int FRIK_INI_VERSION = 8;
 
 	constexpr float DEFAULT_CAMERA_HEIGHT = 120.4828f;
 
@@ -67,8 +67,8 @@ namespace frik {
 		}
 
 		void togglePipBoyOpenWhenLookAt() {
-			pipBoyOpenWhenLookAt = !pipBoyOpenWhenLookAt;
-			saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+			pipboyOpenWhenLookAt = !pipboyOpenWhenLookAt;
+			saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
 		}
 
 		void savePipboyScale(const float pipboyScale) {
@@ -82,90 +82,92 @@ namespace frik {
 		void saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
 		void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool replaceWithEmbedded);
 
-		// from F4 INIs
-		bool leftHandedMode = false;
+		// Config variables: See FRIK.ini for descriptions.
 
-		// persistent in FRIK.ini
-		float playerHeight = 0.0;
-		float cameraHeight = 0.0;
-		float PACameraHeight = 0.0;
+		// Player/Skeleton
 		bool setScale = false;
-		float fVrScale = 72.0;
-		bool showPAHUD = true;
-		float gripLetGoThreshold = 15.0f;
-
-		// Skeleton
+		float fVrScale = 0;
+		float playerHeight = 0;
+		float armLength = 0;
 		bool armsOnly = false;
+
+		// Head Geometry Hide
 		bool hideHead = false;
 		bool hideEquipment = false;
 		bool hideSkin = false;
-		float armLength = 36.74f;
-		float playerOffset_forward = -4.0;
-		float playerOffset_up = -2.0;
-		float powerArmor_forward = 0.0f;
-		float powerArmor_up = 0.0f;
-		float rootOffset = 0.0f;
-		float PARootOffset = 0.0f;
-
-		// Weapon offhand grip
-		bool enableOffHandGripping = true;
-		bool enableGripButtonToGrap = true;
-		bool enableGripButtonToLetGo = true;
-		bool onePressGripButton = false;
-		float scopeAdjustDistance = 15.0f;
-
-		// In-game configuration
-		bool autoFocusWindow = false;
-		float selfieOutFrontDistance = 120.0f;
-		bool selfieIgnoreHideFlags = false;
-
-		// Pipboy
-		bool hidePipboy = false;
-		bool isHoloPipboy = true; // false = Default, true = HoloPipBoy
-		bool isPipBoyTorchOnArm = true; // false = Head Based Torch, true = PipBoy Based Torch
-		bool isPipBoyTorchRightArmMode = false; // false = torch on left arm, true = right hand
-		bool leftHandedPipBoy = false;
-		bool pipBoyOpenWhenLookAt = false;
-		bool pipBoyAllowMovementNotLooking = true;
-		bool switchUIControltoPrimary = true; // if the player wants to switch controls or not.
-		float pipBoyScale = 1.0;
-		int switchTorchButton = 2; // button to switch torch from head to hand
-		int pipBoyButtonArm = 0; // 0 for left 1 for right
-		int pipBoyButtonID = vr::EVRButtonId::k_EButton_Grip; // grip button is 2
-		int pipBoyButtonOffArm = 0; // 0 for left 1 for right
-		int pipBoyButtonOffID = vr::EVRButtonId::k_EButton_Grip; // grip button is 2
-		int gripButtonID = vr::EVRButtonId::k_EButton_Grip; // 2
-		int pipBoyOffDelay = 5000; // 5000 ms
-		int pipBoyOnDelay = 100; // 100 ms
-		float pipBoyLookAtGate = 0.7f;
-		float pipboyDetectionRange = 15.0f;
-
-		// Dampen hands
-		bool dampenHands = true;
-		bool dampenHandsInVanillaScope = true;
-		bool dampenPipboyScreen = true;
-		float dampenHandsRotation = 0.7f;
-		float dampenHandsTranslation = 0.7f;
-		float dampenHandsRotationInVanillaScope = 0.3f;
-		float dampenHandsTranslationInVanillaScope = 0.3f;
-		float dampenPipboyRotation = 0.7f;
-		float dampenPipboyTranslation = 0.7f;
-
-		// Smooth Movement
-		bool disableSmoothMovement = false;
-		float smoothingAmount = 10.0f;
-		float smoothingAmountHorizontal = 0;
-		float dampingMultiplier = 1.0f;
-		float dampingMultiplierHorizontal = 0;
-		float stoppingMultiplier = 0.2f;
-		float stoppingMultiplierHorizontal = 0.2f;
-		int disableInteriorSmoothing = 1;
-		int disableInteriorSmoothingHorizontal = 1;
-
-		// hide meshes
 		const std::vector<std::string>& faceGeometry() const { return _faceGeometry; }
 		const std::vector<std::string>& skinGeometry() const { return _skinGeometry; }
 		const std::vector<int>& hideEquipSlotIndexes() const { return _hideEquipSlotIndexes; }
+
+		// Camera and Body offsets
+		float rootOffset = 0;
+		float PARootOffset = 0;
+		float cameraHeight = 0;
+		float PACameraHeight = 0;
+		float playerOffset_forward = 0;
+		float playerOffset_up = 0;
+		float powerArmor_forward = 0;
+		float powerArmor_up = 0;
+
+		// Pipboy
+		float pipBoyScale = 0;
+		bool hidePipboy = false;
+		bool isHoloPipboy = false;
+		bool leftHandedPipBoy = false;
+		bool enablePrimaryControllerPipboyUse = false;
+		bool pipboyOpenWhenLookAt = false;
+		bool pipboyCloseWhenLookAway = false;
+		bool pipboyCloseWhenMovingWhileLookingAway = false;
+		float pipboyLookAtThreshold = 0;
+		float pipboyLookAwayThreshold = 0;
+		float pipboyDetectionRange = 0;
+		int pipBoyOnDelay = 0;
+		int pipBoyOffDelay = 0;
+		int pipBoyButtonArm = 0;
+		int pipBoyButtonID = 0;
+		int pipBoyButtonOffArm = 0;
+		int pipBoyButtonOffID = 0;
+
+		// Pipboy Torch/Flashlight
+		bool isPipBoyTorchOnArm = false;
+		bool isPipBoyTorchRightArmMode = false;
+		int switchTorchButton = 2;
+
+		// Weapon offhand grip
+		bool enableOffHandGripping = false;
+		bool enableGripButtonToGrap = false;
+		bool enableGripButtonToLetGo = false;
+		bool onePressGripButton = false;
+		float gripLetGoThreshold = 0;
+		int gripButtonID = 0;
+
+		// Dampen hands
+		bool dampenHands = false;
+		bool dampenHandsInVanillaScope = false;
+		bool dampenPipboyScreen = false;
+		float dampenHandsRotation = 0;
+		float dampenHandsTranslation = 0;
+		float dampenHandsRotationInVanillaScope = 0;
+		float dampenHandsTranslationInVanillaScope = 0;
+		float dampenPipboyRotation = 0;
+		float dampenPipboyTranslation = 0;
+
+		// Misc
+		bool showPAHUD = false;
+		float selfieOutFrontDistance = 0;
+		bool selfieIgnoreHideFlags = false;
+		float scopeAdjustDistance = 0;
+
+		// Smooth Movement
+		bool disableSmoothMovement = false;
+		float smoothingAmount = 0;
+		float smoothingAmountHorizontal = 0;
+		float dampingMultiplier = 0;
+		float dampingMultiplierHorizontal = 0;
+		float stoppingMultiplier = 0;
+		float stoppingMultiplierHorizontal = 0;
+		int disableInteriorSmoothing = 0;
+		int disableInteriorSmoothingHorizontal = 0;
 
 	protected:
 		virtual void loadIniConfigInternal(const CSimpleIniA& ini) override;
@@ -191,6 +193,6 @@ namespace frik {
 		std::unordered_map<std::string, NiTransform> _weaponsEmbeddedOffsets;
 	};
 
-	// Not a fan of globals but it may be easiest to refactor code right now
+	// Global singleton for easy access
 	inline Config g_config;
 }

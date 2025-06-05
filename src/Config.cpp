@@ -1,17 +1,17 @@
 // ReSharper disable StringLiteralTypo
 
-#include <fstream>
-#include "include/json.hpp"
-#include "include/SimpleIni.h"
-
 #include "Config.h"
 
 #include <filesystem>
+#include <fstream>
 #include <shlobj_core.h>
 
-#include "utils.h"
+#include "include/json.hpp"
+#include "include/SimpleIni.h"
+
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
+#include "f4vr/F4VRUtils.h"
 #include "res/resource.h"
 
 using namespace common;
@@ -47,45 +47,61 @@ namespace frik {
 	}
 
 	void Config::loadIniConfigInternal(const CSimpleIniA& ini) {
-		playerHeight = ini.GetFloatValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f);
+		// Player/Skeleton
 		setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", false);
 		fVrScale = ini.GetFloatValue(INI_SECTION_MAIN, "fVrScale", 70.0);
+		playerHeight = ini.GetFloatValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f);
+		armLength = ini.GetFloatValue(INI_SECTION_MAIN, "armLength", 36.74f);
+		armsOnly = ini.GetBoolValue(INI_SECTION_MAIN, "EnableArmsOnlyMode");
+
+		// Head Geometry Hide
+		hideHead = ini.GetBoolValue(INI_SECTION_MAIN, "HideHead");
+		hideEquipment = ini.GetBoolValue(INI_SECTION_MAIN, "HideEquipment");
+		hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "HideSkin");
+
+		// Camera and Body offsets
+		rootOffset = ini.GetFloatValue(INI_SECTION_MAIN, "RootOffset", 0.0);
+		PARootOffset = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_RootOffset", 0.0);
+		cameraHeight = ini.GetFloatValue(INI_SECTION_MAIN, "cameraHeightOffset", 0.0);
+		PACameraHeight = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", 0.0);
 		playerOffset_forward = ini.GetFloatValue(INI_SECTION_MAIN, "playerOffset_forward", -4.0);
 		playerOffset_up = ini.GetFloatValue(INI_SECTION_MAIN, "playerOffset_up", -2.0);
 		powerArmor_forward = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_forward", 0.0);
 		powerArmor_up = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_up", 0.0);
-		pipboyDetectionRange = ini.GetFloatValue(INI_SECTION_MAIN, "pipboyDetectionRange", 15.0);
-		armLength = ini.GetFloatValue(INI_SECTION_MAIN, "armLength", 36.74f);
-		cameraHeight = ini.GetFloatValue(INI_SECTION_MAIN, "cameraHeightOffset", 0.0);
-		PACameraHeight = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", 0.0);
-		rootOffset = ini.GetFloatValue(INI_SECTION_MAIN, "RootOffset", 0.0);
-		PARootOffset = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_RootOffset", 0.0);
-		showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
+
+		// Pipboy
+		pipBoyScale = ini.GetFloatValue(INI_SECTION_MAIN, "PipboyScale", 1.0);
 		hidePipboy = ini.GetBoolValue(INI_SECTION_MAIN, "hidePipboy");
-		leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
-		armsOnly = ini.GetBoolValue(INI_SECTION_MAIN, "EnableArmsOnlyMode");
-		hideHead = ini.GetBoolValue(INI_SECTION_MAIN, "HideHead");
-		hideEquipment = ini.GetBoolValue(INI_SECTION_MAIN, "HideEquipment");
-		hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "HideSkin");
-		pipBoyLookAtGate = ini.GetFloatValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.7f);
-		pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 5000));
-		pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 5000));
-		gripLetGoThreshold = ini.GetFloatValue(INI_SECTION_MAIN, "GripLetGoThreshold", 15.0f);
-		pipBoyOpenWhenLookAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", false);
-		pipBoyAllowMovementNotLooking = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true);
-		pipBoyButtonArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonArm", 0));
-		pipBoyButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_Grip)); //2
-		pipBoyButtonOffArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffArm", 0));
-		pipBoyButtonOffID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip)); //2		
 		isHoloPipboy = ini.GetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", true);
+		leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
+		enablePrimaryControllerPipboyUse = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
+		pipboyOpenWhenLookAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", false);
+		pipboyCloseWhenLookAway = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyCloseWhenLookAway", false);
+		pipboyCloseWhenMovingWhileLookingAway = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true);
+		pipboyLookAtThreshold = ini.GetFloatValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.75f);
+		pipboyLookAwayThreshold = ini.GetFloatValue(INI_SECTION_MAIN, "PipBoyLookAwayThreshold", 0.3f);
+		pipboyDetectionRange = ini.GetFloatValue(INI_SECTION_MAIN, "pipboyDetectionRange", 14.0);
+		pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 400));
+		pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 1000));
+		pipBoyButtonArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonArm", 0));
+		pipBoyButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger));
+		pipBoyButtonOffArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffArm", 0));
+		pipBoyButtonOffID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip));
+
+		// Pipboy Torch/Flashlight
 		isPipBoyTorchOnArm = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", true);
 		isPipBoyTorchRightArmMode = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchRightArmMode", false);
 		switchTorchButton = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2));
-		gripButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "GripButtonID", vr::EVRButtonId::k_EButton_Grip)); // 2
+
+		// Two-handed gripping
 		enableOffHandGripping = ini.GetBoolValue(INI_SECTION_MAIN, "EnableOffHandGripping", true);
 		enableGripButtonToGrap = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButton", true);
 		enableGripButtonToLetGo = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", true);
 		onePressGripButton = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", true);
+		gripLetGoThreshold = ini.GetFloatValue(INI_SECTION_MAIN, "GripLetGoThreshold", 15.0f);
+		gripButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "GripButtonID", vr::EVRButtonId::k_EButton_Grip)); // 2
+
+		// Dampen hands
 		dampenHands = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHands", true);
 		dampenHandsInVanillaScope = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHandsInVanillaScope", true);
 		dampenPipboyScreen = ini.GetBoolValue(INI_SECTION_MAIN, "DampenPipboyScreen", true);
@@ -95,15 +111,11 @@ namespace frik {
 		dampenHandsTranslationInVanillaScope = ini.GetFloatValue(INI_SECTION_MAIN, "DampenHandsTranslationInVanillaScope", 0.2f);
 		dampenPipboyRotation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenPipboyRotation", 0.7f);
 		dampenPipboyTranslation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenPipboyTranslation", 0.7f);
+
+		// Misc
+		showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
 		selfieOutFrontDistance = ini.GetFloatValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0);
 		selfieIgnoreHideFlags = ini.GetBoolValue(INI_SECTION_MAIN, "selfieIgnoreHideFlags", false);
-
-		//Pipboy & Main Config Mode Buttons
-		pipBoyScale = ini.GetFloatValue(INI_SECTION_MAIN, "PipboyScale", 1.0);
-		switchUIControltoPrimary = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
-		autoFocusWindow = ini.GetBoolValue(INI_SECTION_MAIN, "AutoFocusWindow", false);
-
-		// weaponPositioning
 		scopeAdjustDistance = ini.GetFloatValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f);
 
 		//Smooth Movement
@@ -173,7 +185,7 @@ namespace frik {
 		ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
 		ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
 		ini.SetBoolValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
-		ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipBoyOpenWhenLookAt);
+		ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
 		ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);
 		ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", dampenHandsRotation);
 		ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", dampenHandsTranslation);
@@ -206,7 +218,7 @@ namespace frik {
 	 */
 	/// <returns></returns>
 	std::optional<NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const {
-		const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, leftHandedMode));
+		const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode()));
 		if (it != _weaponsOffsets.end()) {
 			return it->second;
 		}
@@ -218,7 +230,7 @@ namespace frik {
 	 * Save the weapon offset to config and filesystem.
 	 */
 	void Config::saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA) {
-		const auto fullName = getWeaponNameWithMode(name, mode, inPA, leftHandedMode);
+		const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
 		_weaponsOffsets[fullName] = transform;
 		saveOffsetsToJsonFile(fullName, transform, WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json");
 	}
@@ -227,7 +239,7 @@ namespace frik {
 	 * Remove the weapon offset from the config and filesystem.
 	 */
 	void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool replaceWithEmbedded) {
-		const auto fullName = getWeaponNameWithMode(name, mode, inPA, leftHandedMode);
+		const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
 		_weaponsOffsets.erase(fullName);
 		if (replaceWithEmbedded && _weaponsEmbeddedOffsets.contains(fullName)) {
 			_weaponsOffsets[fullName] = _weaponsEmbeddedOffsets[fullName];

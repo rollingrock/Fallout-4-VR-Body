@@ -1,6 +1,9 @@
 #include <sstream>
 
 #include "Debug.h"
+
+#include <f4se/ScaleformValue.h>
+
 #include "Skeleton.h"
 #include "utils.h"
 #include "common/CommonUtils.h"
@@ -322,5 +325,42 @@ namespace frik {
 		//}
 
 		fc++;
+	}
+
+	void printScaleFormElements(GFxValue* elm, const std::string& padding) {
+		GFxValue childrenCountVal;
+		elm->GetMember("numChildren", &childrenCountVal);
+		const int childrenCount = childrenCountVal.GetType() == GFxValue::kType_Int ? childrenCountVal.GetInt() : 0;
+
+		GFxValue nameVal;
+		elm->GetMember("name", &nameVal);
+		const auto name = nameVal.IsString() ? nameVal.GetString() : "Unknown";
+
+		GFxValue visibleVal;
+		elm->GetMember("visible", &visibleVal);
+		const int visible = visibleVal.IsBool() ? visibleVal.GetBool() : false;
+
+		GFxValue toStringVal;
+		elm->Invoke("toString", &toStringVal, nullptr, 0);
+		const auto toString = toStringVal.IsString() ? toStringVal.GetString() : "";
+
+		GFxValue textVal;
+		elm->GetMember("text", &textVal);
+		GFxValue buttonTextVal;
+		elm->GetMember("ButtonText", &buttonTextVal);
+		const auto text = textVal.IsString() ? textVal.GetString() : "";
+
+		Log::infoRaw("%s%s : children(%d), visible(%d), toString:(%s), text:(%s)", padding.c_str(), name, childrenCount, visible, toString, text);
+
+		for (int i = 0; i < childrenCount; ++i) {
+			GFxValue child;
+			GFxValue args[1];
+			args[0].SetInt(i);
+			if (elm->Invoke("getChildAt", &child, args, 1)) {
+				printScaleFormElements(&child, padding + "..");
+			} else {
+				Log::warn("Failed to get child at index %d.", i);
+			}
+		}
 	}
 }

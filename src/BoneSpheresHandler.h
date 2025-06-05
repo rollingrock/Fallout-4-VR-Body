@@ -9,8 +9,6 @@ namespace frik {
 		None = 0,
 		Enter = 1,
 		Exit = 2,
-		Holster = 3,
-		Draw = 4
 	};
 
 	class BoneSphere {
@@ -46,20 +44,29 @@ namespace frik {
 
 	class BoneSpheresHandler {
 	public:
-		void onFrameUpdate();
+		virtual ~BoneSpheresHandler() { _instance = nullptr; }
 
-		void holsterWeapon();
-		void drawWeapon();
+		void init(const F4SEInterface* f4se);
+		void onFrameUpdate();
 
 		UInt32 registerBoneSphere(float radius, BSFixedString bone);
 		UInt32 registerBoneSphereOffset(float radius, BSFixedString bone, VMArray<float> pos);
 		void destroyBoneSphere(UInt32 handle);
-		void registerForBoneSphereEvents(VMObject* thisObject);
-		void unRegisterForBoneSphereEvents(VMObject* thisObject);
+		void registerForBoneSphereEvents(VMObject* scriptObj);
+		void unRegisterForBoneSphereEvents(VMObject* scriptObj);
 		void toggleDebugBoneSpheres(bool turnOn) const;
 		void toggleDebugBoneSpheresAtBone(UInt32 handle, bool turnOn);
 
 	private:
+		static bool registerPapyrusFunctionsCallback(VirtualMachine* vm);
+		static UInt32 registerBoneSphereFunc(StaticFunctionTag* base, float radius, BSFixedString bone);
+		static UInt32 registerBoneSphereOffsetFunc(StaticFunctionTag* base, float radius, BSFixedString bone, VMArray<float> pos);
+		static void destroyBoneSphereFunc(StaticFunctionTag* base, UInt32 handle);
+		static void registerForBoneSphereEventsFunc(StaticFunctionTag* base, VMObject* scriptObj);
+		static void unRegisterForBoneSphereEventsFunc(StaticFunctionTag* base, VMObject* scriptObj);
+		static void toggleDebugBoneSpheresFunc(StaticFunctionTag* base, bool turnOn);
+		static void toggleDebugBoneSpheresAtBoneFunc(StaticFunctionTag* base, UInt32 handle, bool turnOn);
+
 		void detectBoneSphere();
 		void handleDebugBoneSpheres();
 
@@ -68,5 +75,8 @@ namespace frik {
 		std::map<UInt32, BoneSphere*> _boneSphereRegisteredObjects;
 		UInt32 _nextBoneSphereHandle = 1;
 		UInt32 _curDevice = 0;
+
+		// workaround as papyrus registration requires global functions.  
+		inline static BoneSpheresHandler* _instance = nullptr;
 	};
 }

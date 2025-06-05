@@ -38,7 +38,6 @@ namespace frik {
 		void pipboyConfigurationMode();
 		void mainConfigurationMode();
 		void enterPipboyConfigMode();
-		static void checkWeaponRepositionPipboyConflict();
 
 		Skeleton* _skelly;
 

@@ -48,7 +48,7 @@ namespace frik {
 
 		//float dist = abs(vec3_len(offhand->m_worldTransform.pos - bolt->m_worldTransform.pos));
 
-		const uint64_t handInput = g_config.leftHandedMode
+		const uint64_t handInput = f4vr::isLeftHandedMode()
 			? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
 			: f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
 

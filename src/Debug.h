@@ -15,4 +15,5 @@ namespace frik {
 	void printPosition(const std::string& name, const NiPoint3& pos, bool sample);
 	void dumpPlayerGeometry(BSFadeNode* rn);
 	void debug(const Skeleton* skelly);
+	void printScaleFormElements(GFxValue* elm, const std::string& padding = "");
 }

@@ -3,6 +3,7 @@
 #include "BoneSpheresHandler.h"
 #include "ConfigurationMode.h"
 #include "Pipboy.h"
+#include "PlayerControlsHandler.h"
 #include "SmoothMovementVR.h"
 #include "WeaponPositionAdjuster.h"
 #include "f4se/PapyrusEvents.h"
@@ -13,9 +14,6 @@ namespace frik {
 
 	class FRIK {
 	public:
-		// TODO: rethink bone spheres access
-		BoneSpheresHandler* boneSpheres() const { return g_boneSpheres; }
-
 		bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
 
 		bool getSelfieMode() const { return _selfieMode; }
@@ -43,35 +41,45 @@ namespace frik {
 
 		void initialize(const F4SEInterface* f4se);
 		void onFrameUpdate();
-		void smoothMovement() { _smoothMovement.onFrameUpdate(); }
+		void smoothMovement();
 
 	private:
 		void initOnGameLoaded();
 		void initOnGameSessionLoaded();
 		void initSkeleton();
 		void releaseSkeleton();
-		static bool isGameReadyForFrameUpdate();
+		static void updateWorldFinal();
+		static void configureGameVars();
+		static bool isGameReadyForSkeletonInitialization();
+		bool isRootNodeValid() const;
 		static void onF4VRSEMessage(F4SEMessagingInterface::Message* msg);
 		static void onBetterScopesMessage(F4SEMessagingInterface::Message* msg);
-		static void checkDebugDump();
+		void checkDebugDump();
 
 		bool _inPowerArmor = false;
 		bool _isLookingThroughScope = false;
 		float _dynamicCameraHeight = 0;
 		bool _selfieMode = false;
-		bool _gameVarsConfigured = false;
+
+		// the currently root node used in skeleton
+		BSFadeNode* _workingRootNode;
 
 		Skeleton* _skelly = nullptr;
 		Pipboy* _pipboy = nullptr;
 		ConfigurationMode* _configurationMode = nullptr;
-		BoneSpheresHandler* g_boneSpheres = new BoneSpheresHandler();
 		WeaponPositionAdjuster* _weaponPosition = nullptr;
+
+		// handler for the interaction spheres around the skeleton
+		BoneSpheresHandler _boneSpheres;
 
 		// handler for smooth movement logic
 		SmoothMovementVR _smoothMovement;
 
 		// handler for game menus checking
 		f4vr::GameMenusHandler _gameMenusHandler;
+
+		// handler to enable/disable player movement and other controls
+		PlayerControlsHandler _playerControlsHandler;
 
 		PluginHandle _pluginHandle = kPluginHandle_Invalid;
 		F4SEMessagingInterface* _messaging = nullptr;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <f4se/GameTypes.h>
+#include <f4se/PluginAPI.h>
 
 #include "F4VROffsets.h"
 
@@ -16,7 +17,7 @@ namespace f4vr {
 	void setControlsThumbstickEnableState(bool toEnable);
 
 	// Weapons/Armor/Player
-	void setWandsVisibility(const bool show, const bool leftWand);
+	void setWandsVisibility(bool show, bool leftWand);
 	bool isMeleeWeaponEquipped();
 	std::string getEquippedWeaponName();
 	bool hasKeyword(const TESObjectARMO* armor, UInt32 keywordFormId);
@@ -25,10 +26,11 @@ namespace f4vr {
 	bool isInInternalCell();
 
 	// settings
-	bool getLeftHandedMode();
-	Setting* getINISettingNative(const char* name);
-	void setINIBool(BSFixedString name, bool value);
-	void setINIFloat(BSFixedString name, float value);
+	inline bool isLeftHandedMode() { return *iniLeftHandedMode; }
+	float getIniSettingFloat(const char* name);
+	void setIniSettingBool(BSFixedString name, bool value);
+	void setIniSettingFloat(BSFixedString name, float value);
+	Setting* getIniSettingNative(const char* name);
 
 	// nodes
 	NiNode* getNode(const char* name, NiNode* fromNode);
@@ -38,9 +40,9 @@ namespace f4vr {
 
 	// visibility
 	bool isNodeVisible(const NiNode* node);
-	void showHideNode(NiAVObject* node, bool toHide);
-	void setVisibility(NiAVObject* nde, bool show = true);
-	void toggleVis(NiNode* nde, bool hide, bool updateSelf);
+	void setNodeVisibility(NiAVObject* node, bool show = true);
+	void setNodeVisibilityDeep(NiAVObject* node, bool show, bool updateSelf);
+	void toggleVis(NiNode* node, bool hide, bool updateSelf);
 
 	// updates
 	void updateDownFromRoot();
@@ -50,9 +52,6 @@ namespace f4vr {
 	void updateTransforms(NiNode* node);
 	void updateTransformsDown(NiNode* nde, bool updateSelf);
 
-	// persistent data
-	inline bool _controlsThumbstickEnableState = true;
-	inline float _controlsThumbstickOriginalDeadzone = 0.25f;
-	inline float _controlsThumbstickOriginalDeadzoneMax = 0.94f;
-	inline float _controlsDirectionalOriginalDeadzone = 0.5f;
+	typedef bool (*RegisterFunctions)(VirtualMachine* vm);
+	void registerPapyrusNativeFunctions(const F4SEInterface* f4se, RegisterFunctions callback);
 }

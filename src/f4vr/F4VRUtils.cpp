@@ -23,28 +23,6 @@ namespace f4vr {
 	}
 
 	/**
-	 * If to enable/disable the use of both controllers analog thumbstick.
-	 */
-	void setControlsThumbstickEnableState(const bool toEnable) {
-		if (_controlsThumbstickEnableState == toEnable) {
-			return; // no change
-		}
-		_controlsThumbstickEnableState = toEnable;
-		if (toEnable) {
-			setINIFloat("fLThumbDeadzone:Controls", _controlsThumbstickOriginalDeadzone);
-			setINIFloat("fLThumbDeadzoneMax:Controls", _controlsThumbstickOriginalDeadzoneMax);
-			setINIFloat("fDirectionalDeadzone:Controls", _controlsDirectionalOriginalDeadzone);
-		} else {
-			_controlsThumbstickOriginalDeadzone = GetINISetting("fLThumbDeadzone:Controls")->data.f32;
-			_controlsThumbstickOriginalDeadzoneMax = GetINISetting("fLThumbDeadzoneMax:Controls")->data.f32;
-			_controlsDirectionalOriginalDeadzone = GetINISetting("fDirectionalDeadzone:Controls")->data.f32;
-			setINIFloat("fLThumbDeadzone:Controls", 1.0);
-			setINIFloat("fLThumbDeadzoneMax:Controls", 1.0);
-			setINIFloat("fDirectionalDeadzone:Controls", 1.0);
-		}
-	}
-
-	/**
 	 * Set the visibility of controller wand.
 	 */
 	void setWandsVisibility(const bool show, const bool leftWand) {
@@ -52,13 +30,13 @@ namespace f4vr {
 		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
 			if (const auto child = node->m_children.m_data[i]) {
 				if (const auto triShape = child->GetAsBSTriShape()) {
-					setVisibility(triShape, show);
+					setNodeVisibility(triShape, show);
 					break;
 				}
 				if (!_stricmp(child->m_name.c_str(), "")) {
-					setVisibility(child, show);
+					setNodeVisibility(child, show);
 					if (const auto grandChild = child->GetAsNiNode()->m_children.m_data[0]) {
-						setVisibility(grandChild, show);
+						setNodeVisibility(grandChild, show);
 					}
 					break;
 				}
@@ -132,27 +110,28 @@ namespace f4vr {
 		return cell && (cell->flags & TESObjectCELL::kFlag_IsInterior) == TESObjectCELL::kFlag_IsInterior;
 	}
 
-	bool getLeftHandedMode() {
-		return GetINISetting("bLeftHandedMode:VR")->data.u8;
+	float getIniSettingFloat(const char* name) {
+		const auto setting = getIniSettingNative(name);
+		return setting ? setting->data.f32 : 0;
 	}
 
-	Setting* getINISettingNative(const char* name) {
+	void setIniSettingBool(const BSFixedString name, bool value) {
+		auto str = BSFixedString(name.c_str());
+		CallGlobalFunctionNoWait2<BSFixedString, bool>("Utility", "SetINIBool", str, value);
+	}
+
+	void setIniSettingFloat(const BSFixedString name, float value) {
+		auto str = BSFixedString(name.c_str());
+		CallGlobalFunctionNoWait2<BSFixedString, float>("Utility", "SetINIFloat", str, value);
+	}
+
+	Setting* getIniSettingNative(const char* name) {
 		Setting* setting = SettingCollectionList_GetPtr(*g_iniSettings, name);
 		if (!setting) {
 			setting = SettingCollectionList_GetPtr(*g_iniPrefSettings, name);
 		}
 
 		return setting;
-	}
-
-	void setINIBool(const BSFixedString name, bool value) {
-		auto str = BSFixedString(name.c_str());
-		CallGlobalFunctionNoWait2<BSFixedString, bool>("Utility", "SetINIBool", str, value);
-	}
-
-	void setINIFloat(const BSFixedString name, float value) {
-		auto str = BSFixedString(name.c_str());
-		CallGlobalFunctionNoWait2<BSFixedString, float>("Utility", "SetINIFloat", str, value);
 	}
 
 	/**
@@ -246,32 +225,33 @@ namespace f4vr {
 	}
 
 	/**
-	 * Update the node flags to show/hide it.
-	 */
-	void showHideNode(NiAVObject* node, const bool toHide) {
-		if (toHide) {
-			node->flags |= 0x1; // hide
-		} else {
-			node->flags &= 0xfffffffffffffffe; // show
-		}
-	}
-
-	/**
 	 * Change flags to show or hide a node
 	 */
-	void setVisibility(NiAVObject* nde, const bool show) {
-		if (nde) {
-			nde->flags = show ? nde->flags & ~0x1 : nde->flags | 0x1;
+	void setNodeVisibility(NiAVObject* node, const bool show) {
+		if (node) {
+			node->flags = show ? node->flags & ~0x1 : node->flags | 0x1;
 		}
 	}
 
-	void toggleVis(NiNode* nde, const bool hide, const bool updateSelf) {
+	void setNodeVisibilityDeep(NiAVObject* node, const bool show, const bool updateSelf) {
+		if (node && updateSelf) {
+			node->flags = show ? node->flags & ~0x1 : node->flags | 0x1;
+		}
+		if (const auto niNode = node->GetAsNiNode()) {
+			for (UInt16 i = 0; i < niNode->m_children.m_emptyRunStart; ++i) {
+				setNodeVisibilityDeep(niNode->m_children.m_data[i], show, true);
+			}
+		}
+	}
+
+	// TODO: check removing this in favor of setNodeVisibilityDeep
+	void toggleVis(NiNode* node, const bool hide, const bool updateSelf) {
 		if (updateSelf) {
-			nde->flags = hide ? nde->flags | 0x1 : nde->flags & ~0x1;
+			node->flags = hide ? node->flags | 0x1 : node->flags & ~0x1;
 		}
 
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = node->m_children.m_data[i] ? node->m_children.m_data[i]->GetAsNiNode() : nullptr) {
 				toggleVis(nextNode, hide, true);
 			}
 		}
@@ -382,6 +362,17 @@ namespace f4vr {
 			} else if (const auto triNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsBSTriShape() : nullptr) {
 				updateTransforms(reinterpret_cast<NiNode*>(triNode));
 			}
+		}
+	}
+
+	/**
+	 * Run a callback to register papyrus native functions.
+	 * Functions that papyrus can call into this mod c++ code.
+	 */
+	void registerPapyrusNativeFunctions(const F4SEInterface* f4se, const RegisterFunctions callback) {
+		const auto papyrusInterface = static_cast<F4SEPapyrusInterface*>(f4se->QueryInterface(kInterface_Papyrus));
+		if (!papyrusInterface->Register(callback)) {
+			throw std::exception("Failed to register papyrus functions");
 		}
 	}
 }
