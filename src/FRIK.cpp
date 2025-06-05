@@ -131,13 +131,18 @@ namespace frik {
 
 			f4vr::VRControllers.update();
 
-			if (_skelly && _inPowerArmor != f4vr::isInPowerArmor()) {
-				Log::info("Power Armor State Changed, reset skelly...");
-				releaseSkeleton();
+			if (_skelly) {
+				if (!isRootNodeValid()) {
+					Log::warn("Root node released, reset skelly... PowerArmorChange?(%d)", _inPowerArmor != f4vr::isInPowerArmor());
+					releaseSkeleton();
+				} else if (_inPowerArmor != f4vr::isInPowerArmor()) {
+					Log::info("Power Armor state changed, reset skeleton...");
+					releaseSkeleton();
+				}
 			}
 
 			if (!_skelly) {
-				if (!isGameReadyForFrameUpdate()) {
+				if (!isGameReadyForSkeletonInitialization()) {
 					return;
 				}
 				initSkeleton();
@@ -185,6 +190,7 @@ namespace frik {
 			_inPowerArmor ? "PowerArmor" : "Regular", *g_player, (*g_player)->unkF0, (*g_player)->unkF0->rootNode, f4vr::getRootNode(), f4vr::getCommonNode());
 
 		// init skeleton
+		_workingRootNode = f4vr::getRootNode();
 		_skelly = new Skeleton(f4vr::getRootNode(), _inPowerArmor);
 
 		// init handlers depending on skeleton
@@ -194,18 +200,20 @@ namespace frik {
 	}
 
 	/**
-	 * Check if game all nodes exist and ready for frame update flow.
+	 * Check if game all nodes exist and ready for skeleton handling flow.
+	 * Based on random crashes and the objects that were missing.
+	 * Probably not all checks are required, but it's cheap and only happens when skeleton is not initialized.
 	 */
-	bool FRIK::isGameReadyForFrameUpdate() {
+	bool FRIK::isGameReadyForSkeletonInitialization() {
 		if (!g_player || !(*g_player)->unkF0) {
 			Log::sample(3000, "Player global not set yet!");
 			return false;
 		}
-		if (!(*g_player)->unkF0->rootNode || !f4vr::getRootNode()) {
+		if (!(*g_player)->unkF0->rootNode || !f4vr::getRootNode() || !f4vr::getWorldRootNode()) {
 			Log::info("Player root nodes not set yet!");
 			return false;
 		}
-		if (!f4vr::getCommonNode() || !f4vr::getPlayerNodes()) {
+		if (!f4vr::getCommonNode() || !f4vr::getPlayerNodes() || !f4vr::getFlattenedBoneTree()) {
 			Log::info("Common or Player nodes not set yet!");
 			return false;
 		}
@@ -213,6 +221,25 @@ namespace frik {
 			Log::info("Arm node not set yet!");
 			return false;
 		}
+		if (!f4vr::getWeaponNode()) {
+			Log::info("Weapon node not set yet!");
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * The game can change the basic root object under us.
+	 * It doesn't happen often but when it does, we should reinitialize the skeleton.
+	 * Known root release: entering/exiting power armor, after character creation in new game.
+	 */
+	bool FRIK::isRootNodeValid() const {
+		if (!_workingRootNode)
+			return false;
+		if (_workingRootNode != f4vr::getRootNode())
+			return false;
+		if (_workingRootNode->m_parent == nullptr)
+			return false;
 		return true;
 	}
 
@@ -220,6 +247,8 @@ namespace frik {
 	 * On switch from normal and power armor, reset the skelly and all dependencies with persistent data.
 	 */
 	void FRIK::releaseSkeleton() {
+		_workingRootNode = nullptr;
+
 		delete _skelly;
 		_skelly = nullptr;
 

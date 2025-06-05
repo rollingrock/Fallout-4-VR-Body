@@ -50,7 +50,8 @@ namespace frik {
 		void releaseSkeleton();
 		static void updateWorldFinal();
 		static void configureGameVars();
-		static bool isGameReadyForFrameUpdate();
+		static bool isGameReadyForSkeletonInitialization();
+		bool isRootNodeValid() const;
 		static void onF4VRSEMessage(F4SEMessagingInterface::Message* msg);
 		static void onBetterScopesMessage(F4SEMessagingInterface::Message* msg);
 		void checkDebugDump();
@@ -59,6 +60,9 @@ namespace frik {
 		bool _isLookingThroughScope = false;
 		float _dynamicCameraHeight = 0;
 		bool _selfieMode = false;
+
+		// the currently root node used in skeleton
+		BSFadeNode* _workingRootNode;
 
 		Skeleton* _skelly = nullptr;
 		Pipboy* _pipboy = nullptr;
