@@ -9,8 +9,10 @@
 - Fixed weapon not disabling when interacting with on-wrist Pipboy (broken in v72).
 - Fixed need to have game window in-focus for Pipboy primary controller interactions.
 - Improve Pipboy close interaction by adding look away flag and look away threshold.
+- Improve Pipboy map primary controller interaction: switch world/local map by grip+trigger and zooming by grip+thumbstick.
 - Fixed rare body invalid position after loading a save not from main menu.
 - Fixed unable to navigate pause menu if opened while doing weapon adjustment or Pipboy interaction.
+- Fixed (probably) equipped weapon becomes invisible sometime ([#97](https://github.com/rollingrock/Fallout-4-VR-Body/issues/97)).
 - Live FRIK.ini reload using file-watch, removing the need for setting reload interval and having override issues.
 - Remove dependency on "[Fallout4 VR Tools](https://www.nexusmods.com/fallout4/mods/45167)" mod allowing the use of [OpenComposite](https://gitlab.com/znixian/OpenOVR).
 - Changed log file to `FRIK.log` and support rolling last 6 logs (FRIK.log, FRIK_1.log, ..., FRIK_6.log).
