@@ -24,7 +24,11 @@ EndEvent
 
 Event OnMenuOpenCloseEvent(string asMenuName, bool abOpening)
     if (asMenuName== "PipboyMenu")
-        Debug.Trace("FRIK: Pipboy menu opened/closed")
+        if abOpening
+            Debug.Trace("FRIK: Pipboy menu opened")
+        else
+            Debug.Trace("FRIK: Pipboy menu closed")
+        endif
         if (FRIK_PBSFX.GetValue()==0.0)
             int instanceID = UIPipBoyOKPress.play(PlayerRef)
             int instanceID2 = UIPipBoyFavoriteOn.play(PlayerRef)

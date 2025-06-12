@@ -79,6 +79,10 @@ namespace f4vr {
 		void executePapyrusScript(const char* functionName, VMArray<VMVariable>& arguments) const {
 			const auto vm = (*g_gameVM)->m_virtualMachine;
 			VMIdentifier* ident = nullptr;
+			if (_scriptHandle == 0) {
+				common::Log::error("No registered gateway script handle found, Papyrus script missing?");
+				return;
+			}
 			if (!vm->GetObjectIdentifier(_scriptHandle, _scriptName.c_str(), 0, &ident, 0)) {
 				common::Log::error("Failed to get script identifier for '%s' (%lld)", _scriptName.c_str(), _scriptHandle);
 				return;
