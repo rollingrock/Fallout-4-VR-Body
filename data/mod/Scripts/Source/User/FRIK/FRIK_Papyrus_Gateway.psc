@@ -1,14 +1,24 @@
-Scriptname FRIK:FRIK_Papyrus_Gateway extends Quest
+Scriptname FRIK:FRIK_Papyrus_Gateway extends ReferenceAlias
 
 ;Import
 Import FRIK:FRIK
 
 ;Properties
-Actor Property PlayerRef Auto Const
+Actor Property PlayerRef Auto Const Mandatory
 InputEnableLayer NoActivateLayer
 
 ; Init
 Event OnInit()
+    Debug.Trace("FRIK: Init Papyrus Gateway on OnInit")
+    InitGateway()
+EndEvent
+
+Event OnPlayerLoadGame()
+    Debug.Trace("FRIK: Init Papyrus Gateway on OnPlayerLoadGame")
+    InitGateway()
+EndEvent
+
+Function InitGateway()
     ; the already initialized doesn't really work, but the OnInit is only called on start and game save load
     if NoActivateLayer == None
         Debug.Trace("FRIK: Init Papyrus Gateway")
@@ -18,7 +28,7 @@ Event OnInit()
     else
         Debug.Trace("FRIK: Papyrus Gateway already initialized")
     endif
-EndEvent
+EndFunction	
 
 ; Just enable everything
 ; drawWeapon - if true will draw the equipped weapon (useful if disableWeapon was used calling DisablePlayerControls)
@@ -40,7 +50,7 @@ EndFunction
 ; DisablePlayerControls 11 arg flags: (abMovement, abFighting, abCamSwitch, abLooking, abSneaking, abMenu, abActivate, abJournalTabs, abVATS, abFavorites, abRunning)
 ; Note: disabling abMovement causes back-of-hand UI to be hidden
 Function DisablePlayerControls(Bool disableFighting, Bool restrain)
-    Debug.Trace("FRIK: Disable Player Controls, disableFighting = " + disableFighting)
+    Debug.Trace("FRIK: Disable Player Controls, disableFighting = " + disableFighting + ", restrain = " + restrain)
     if !disableFighting
         ; enable fighting if we don't want to disable it now and maybe it was disabled before
         NoActivateLayer.EnablePlayerControls(False, True, False, False, False, False, False, False, False, False, False)
