@@ -19,14 +19,16 @@ Event OnPlayerLoadGame()
 EndEvent
 
 Function InitGateway()
-    ; the already initialized doesn't really work, but the OnInit is only called on start and game save load
+    ; Register is idempotence so it's not a problem to call multiple times
+    Debug.Trace("FRIK: Register Papyrus Gateway")
+    RegisterPapyrusGatewayScript(Self)
+    
+    ; Try to init InputEnableLayer only once
     if NoActivateLayer == None
-        Debug.Trace("FRIK: Init Papyrus Gateway")
-        ; Register is idempotence so it's not a problem OnInit is called multiple times
-        RegisterPapyrusGatewayScript(Self)
+        Debug.Trace("FRIK: Init Papyrus Gateway InputEnableLayer")
         NoActivateLayer = InputEnableLayer.Create()	
     else
-        Debug.Trace("FRIK: Papyrus Gateway already initialized")
+        Debug.Trace("FRIK: Papyrus Gateway InputEnableLayer already initialized")
     endif
 EndFunction	
 
@@ -34,8 +36,8 @@ EndFunction
 ; drawWeapon - if true will draw the equipped weapon (useful if disableWeapon was used calling DisablePlayerControls)
 Function EnablePlayerControls(Bool drawWeapon)
     Debug.Trace("FRIK: Enable Player Controls, drawWeapon = " + drawWeapon)
-    NoActivateLayer.EnablePlayerControls()
     PlayerRef.SetRestrained(False)
+    NoActivateLayer.EnablePlayerControls()
     if drawWeapon
         DrawWeapon()
     endif
@@ -51,12 +53,12 @@ EndFunction
 ; Note: disabling abMovement causes back-of-hand UI to be hidden
 Function DisablePlayerControls(Bool disableFighting, Bool restrain)
     Debug.Trace("FRIK: Disable Player Controls, disableFighting = " + disableFighting + ", restrain = " + restrain)
+    PlayerRef.SetRestrained(restrain)
     if !disableFighting
         ; enable fighting if we don't want to disable it now and maybe it was disabled before
         NoActivateLayer.EnablePlayerControls(False, True, False, False, False, False, False, False, False, False, False)
     endif
-    NoActivateLayer.DisablePlayerControls(False, disableFighting, True, True, False, True, True, False, True, True, True)
-    PlayerRef.SetRestrained(restrain)
+    NoActivateLayer.DisablePlayerControls(False, disableFighting, True, True, False, True, True, False, True, True, False)
 EndFunction	
 
 Function EnableDisableFighting(Bool enable, Bool drawWeapon)

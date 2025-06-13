@@ -30,6 +30,12 @@ namespace f4vr {
 	using _IsInAir = bool(*)(Actor* actor);
 	inline RelocAddr<_IsInAir> IsInAir(0x00DC3230);
 
+	typedef int (*_GetSitState)(VirtualMachine* registry, UInt64 stackID, Actor* actor);
+	inline RelocAddr<_GetSitState> GetSitState(0x40e410);
+
+	typedef bool (*_IsSneaking)(Actor* a_actor);
+	inline RelocAddr<_IsSneaking> IsSneaking(0x24d20);
+
 	using _AIProcess_getAnimationManager = void(*)(uint64_t aiProcess, StackPtr<BSAnimationManager*>& manager);
 	inline RelocAddr<_AIProcess_getAnimationManager> AIProcess_getAnimationManager(0xec5400);
 
