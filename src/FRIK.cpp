@@ -96,8 +96,6 @@ namespace frik {
 
 		_gameMenusHandler.init();
 
-		configureGameVars();
-
 		if (isBetterScopesVRModLoaded()) {
 			Log::info("BetterScopesVR mod detected, registering for messages...");
 			_messaging->Dispatch(_pluginHandle, 15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
@@ -116,6 +114,8 @@ namespace frik {
 			Log::info("Reload config...");
 			g_config.loadAllConfig();
 		}
+
+		configureGameVars();
 	}
 
 	/**

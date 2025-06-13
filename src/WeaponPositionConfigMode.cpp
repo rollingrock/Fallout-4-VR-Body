@@ -107,7 +107,7 @@ namespace frik {
 		handleReposition(weapon, throwable);
 
 		// reset
-		if (f4vr::VRControllers.isLongPressed(vr::k_EButton_Grip, f4vr::Hand::Primary) && _repositionTarget != RepositionTarget::Throwable) {
+		if (f4vr::VRControllers.isLongPressed(vr::k_EButton_ApplicationMenu, f4vr::Hand::Primary) && _repositionTarget != RepositionTarget::Throwable) {
 			f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, .6f, .5f);
 			resetConfig();
 		}

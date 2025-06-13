@@ -147,7 +147,7 @@
     <PostBuildEvent>
       <Command>xcopy /Y "$(TargetDir)$(TargetName).dll" "%FRIK_MOD_PATH%"
 xcopy /Y "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%"
-echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
+echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder: "%FRIK_MOD_PATH%"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -177,7 +177,7 @@ echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
     <PostBuildEvent>
       <Command>xcopy /Y "$(TargetDir)$(TargetName).dll" "%FRIK_MOD_PATH%"
 xcopy /Y "$(TargetDir)$(TargetName).pdb" "%FRIK_MOD_PATH%"
-echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder</Command>
+echo Copied FRIK.dll and .pdb to Fallout 4 VR Plugins folder: "%FRIK_MOD_PATH%"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

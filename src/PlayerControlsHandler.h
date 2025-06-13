@@ -17,6 +17,12 @@ namespace frik {
 				return;
 			}
 
+			if (_state == State::DISABLED_FULL) {
+				// safer to re-enable if was fully disabled and then apply whatever other states (handle draw weapon after opening pip-boy during reposition)
+				enable();
+				return;
+			}
+
 			if (weaponPosition->inWeaponRepositionMode()) {
 				if (gameMenusHandler->isPauseMenuOpen() || isAnyPipboyOpen()) {
 					// In case the pause menu or Pipboy if opened while weapon repositioning, re-enable the thumbstick controllers
