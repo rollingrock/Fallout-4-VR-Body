@@ -27,6 +27,8 @@ Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`
 - `crash-<date time>.log` for crash logs
 - `Fallout4VRBody.log` for FRIK logs
 
+**Bonus points** if you set `LogLevel = 5` in FRIK.ini before reproducing the crash for more debug logs.
+
 ## Why is the Config in "Documents\My Games\Fallout4VR\FRIK_Config"
 [See this](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Development#frik-config-folder).
 
