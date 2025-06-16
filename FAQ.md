@@ -53,6 +53,11 @@ Watch this guide: [YouTube - MO2 F4SE Setup](https://www.youtube.com/watch?v=-rF
 
 ---
 
+## My game crashes on New Game
+
+It is possible of a conflict with other mods as game start flow is fragile. The last confirmed new game conflict was for a combination of 3 mods ([#107](https://github.com/rollingrock/Fallout-4-VR-Body/issues/107)).  
+Disabling before starting a game and re-enabling just after would probably be good enough.
+
 ## My game crashes!!
 
 - Using OpenComposite instead SteamVR?
