@@ -5,6 +5,7 @@
 
 ### P2
 - There is no distinct weapon adjustment for pistol and rifle for Laser and pipe weapons even though the grip is very different.
+- When exiting the Pipboy, if you have a weapon equipped but not drawn it will be drawn out.
 
 ### Backlog
 - Fix ["known issues"](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Known-Issues)
