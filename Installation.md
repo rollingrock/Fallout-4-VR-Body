@@ -1,12 +1,13 @@
 **Requirements:**  
 * [F4SEVR](https://f4se.silverlock.org/), 
-* [Fallout4 VR Tools](https://www.nexusmods.com/fallout4/mods/45167)﻿
 * REQUIRES STEAMVR CONTROLLER BINDINGS FOR FINGER TRACKING TO WORK!!!! LOOK FOR FRIK BINDINGS PUBLISHED ON STEAM WORKSHOP
 
 **Instructions:**  
 
 * Install as normal through your mod manager and enable the esp
 * Load order is not important
+
+Legacy, I'm not sure it's really needed...
 
 * You need to edit your Fallout4Custom.ini to add or amend the following lines to look like this (thanks u/JAPH):
 

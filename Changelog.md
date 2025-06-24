@@ -1,4 +1,6 @@
-## v0.74 (in-development)
+## v0.75 (in-development)
+
+## v0.74
 - Fixed two-handed weapon rotation around the adjusted position to keep stock near primary hand pivot.
 - Fixed in two-handed mode primary hand not rotating with the weapon to keep primary hand fully on stock.
 - Fixed two-handed aim direction vector calculation, fixing jarred aiming for weapons with large offsets.

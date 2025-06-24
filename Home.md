@@ -28,7 +28,6 @@ Use to fix new modded weapons positions.
 
 ### Advanced Configuration in FRIK.ini
 Most configuration is stored in FRIK.ini file. Much more than can be configured via in-game configuration interfaces.  
-Enable FRIK.ini auto reloading using `ReloadConfigInterval` to have changed loaded live into the running game to experience the effects.  
-CAUTION: FRIK.ini auto reload will override in-game configuration changes.  
+Any changes made to `FRIK.ini` will be live loaded into the running game to experience the effects.  
 
 *Location*: `%USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config`

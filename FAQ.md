@@ -12,10 +12,6 @@ The head hiding is all in FRIK.ini config.
 Set `HideHead` and `HideEquipment` to false if you want full head to be rendered but it may obscure/clip your vision.  
 If you just want to see the head in selfie set `selfieIgnoreHideFlags` to true.
 
-## I can't scroll up/down through Pipboy menus
-The game window on your desktop needs to be in focus for primary controller Pipboy navigation to work.  
-If you still have issues, you can disable the feature in FRIK.ini by setting `PipboyUIPrimaryController` to false.
-
 ## How do I Operate the Flashlight
 Long press on secondary hand trigger activates the flashlight.  
 To move the flashlight from hand to head: move the Pipboy hand to the head, should feel haptic, press grip.  
@@ -25,7 +21,7 @@ To move the flashlight from hand to head: move the Pipboy hand to the head, shou
 Please attach the crash log file and FRIK main log file.  
 Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`  
 - `crash-<date time>.log` for crash logs
-- `Fallout4VRBody.log` for FRIK logs
+- `FRIK.log` for FRIK logs
 
 **Bonus points** if you set `LogLevel = 5` in FRIK.ini before reproducing the crash for more debug logs.
 
@@ -60,8 +56,6 @@ Disabling before starting a game and re-enabling just after would probably be go
 
 ## My game crashes!!
 
-- Using OpenComposite instead SteamVR?
-  - OpenComposite is not supported due to dependency on VR Tools. FRIK v74 will remove it.
 - The most common cause of crashes is follower mods like **Amazing Follower Tweaks**. 
   - I still don’t know exactly what causes this. Once I do, I’ll work on compatibility.
 - Anything that messes directly with the **skeleton** can cause a crash.
@@ -75,12 +69,6 @@ If you find a **reproducible crash**, please post mod and crash logs!
 
 Honestly, this is somewhat intentional—you’re wearing **bulky armor**, and some line of sight issues are expected based on Bethesda’s mesh design.  
 Tip: Use configuration to move the body downwards or camera upwards a little if needed.
-
-## Configuration changes is not being saved!
-
-Usually due to **permission issues**. Try:
-- Running the game from a directory with **full write permission**
-- Launching as **Admin** (less recommended)
 
 ## Can I have Holsters for my weapons?
 
