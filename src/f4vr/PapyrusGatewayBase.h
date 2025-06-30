@@ -13,7 +13,7 @@ namespace f4vr {
 	 *
 	 * Requires 2 papyrus scripts in the plugging. One with a native "RegisterPapyrusGatewayScript" function that is called by
 	 * the second script to register itself for the gateway access. The second script contains the actual functions that can be called from C++ code.
-	 * 
+	 *
 	 */
 	class PapyrusGatewayBase {
 	public:
@@ -27,17 +27,17 @@ namespace f4vr {
 
 			// TODO: can I get the script handle without register function?
 			//
-			// common::Log::warn("Try stuff...");
+			// common::logger::warn("Try stuff...");
 			// const auto quest = DYNAMIC_CAST(LookupFormByID(0xB4000F9B), TESForm, TESQuest);
 			//
-			// common::Log::warn("Try stuff 2...");
+			// common::logger::warn("Try stuff 2...");
 			// const auto policy = (*g_gameVM)->m_virtualMachine->GetHandlePolicy();
 			//
-			// common::Log::warn("Try stuff 3...");
+			// common::logger::warn("Try stuff 3...");
 			// const auto handle = policy->Create(kFormType_QUST, quest);
-			// common::Log::warn("got handle? %lld", handle);
+			// common::logger::warn("got handle? {}", handle);
 			//
-			// common::Log::warn("same handle? %lld", thisObject->GetHandle());
+			// common::logger::warn("same handle? {}", thisObject->GetHandle());
 		}
 
 		virtual ~PapyrusGatewayBase() { _instance = nullptr; }
@@ -57,11 +57,11 @@ namespace f4vr {
 		 */
 		static void onRegisterGatewayScript(StaticFunctionTag* base, VMObject* scriptObj) {
 			if (scriptObj && _instance) {
-				common::Log::info("Register for Papyrus gateway by Script:'%s' Handle:(%lld)", scriptObj->GetObjectType().c_str(), scriptObj->GetHandle());
+				common::logger::info("Register for Papyrus gateway by Script:'{}' Handle:({})", scriptObj->GetObjectType().c_str(), scriptObj->GetHandle());
 				_instance->_scriptHandle = scriptObj->GetHandle();
 				_instance->_scriptName = scriptObj->GetObjectType().c_str();
 			} else {
-				common::Log::error("Papyrus Gateway instance is not set or scriptObj is null");
+				common::logger::error("Papyrus Gateway instance is not set or scriptObj is null");
 			}
 		}
 
@@ -80,18 +80,18 @@ namespace f4vr {
 			const auto vm = (*g_gameVM)->m_virtualMachine;
 			VMIdentifier* ident = nullptr;
 			if (_scriptHandle == 0) {
-				common::Log::error("No registered gateway script handle found, Papyrus script missing?");
+				common::logger::error("No registered gateway script handle found, Papyrus script missing?");
 				return;
 			}
 			if (!vm->GetObjectIdentifier(_scriptHandle, _scriptName.c_str(), 0, &ident, 0)) {
-				common::Log::error("Failed to get script identifier for '%s' (%lld)", _scriptName.c_str(), _scriptHandle);
+				common::logger::error("Failed to get script identifier for '{}' ({})", _scriptName.c_str(), _scriptHandle);
 				return;
 			}
 
 			VMValue packedArgs;
 			arguments.PackArray(&packedArgs, vm);
 
-			common::Log::verbose("Calling papyrus function '%s' on script '%s'", functionName, _scriptName.c_str());
+			common::logger::debug("Calling papyrus function '{}' on script '{}'", functionName, _scriptName.c_str());
 			const BSFixedString bsFunctionName = functionName;
 			CallFunctionNoWait_Internal(vm, 0, ident, &bsFunctionName, &packedArgs);
 		}
@@ -168,7 +168,7 @@ namespace f4vr {
 		// the script name (object type) as received from registration call
 		std::string _scriptName;
 
-		// workaround as papyrus registration requires global functions.  
+		// workaround as papyrus registration requires global functions.
 		inline static PapyrusGatewayBase* _instance = nullptr;
 	};
 }

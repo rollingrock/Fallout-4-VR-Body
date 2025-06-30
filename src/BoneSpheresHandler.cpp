@@ -73,7 +73,7 @@ namespace frik {
 		NiNode* boneNode = f4vr::getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsNiNode();
 
 		if (!boneNode) {
-			Log::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
+			logger::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
 			return 0;
 		}
 
@@ -95,7 +95,7 @@ namespace frik {
 		}
 
 		if (!(*g_player)->unkF0) {
-			Log::info("can't register yet as new game");
+			logger::info("can't register yet as new game");
 			return 0;
 		}
 
@@ -111,7 +111,7 @@ namespace frik {
 			boneNode = f4vr::getChildNode(bone.c_str(), n); // ObjectLODRoot
 
 			if (!boneNode) {
-				Log::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
+				logger::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
 				return 0;
 			}
 		}
@@ -145,21 +145,21 @@ namespace frik {
 
 	void BoneSpheresHandler::registerForBoneSphereEvents(VMObject* scriptObj) {
 		if (!scriptObj) {
-			Log::warn("Failed to register for BoneSphereEvents, no scriptObj");
+			logger::warn("Failed to register for BoneSphereEvents, no scriptObj");
 			return;
 		}
 
-		Log::info("Register for BoneSphereEvents by Script:'%s'", scriptObj->GetObjectType().c_str());
+		logger::info("Register for BoneSphereEvents by Script:'{}'", scriptObj->GetObjectType().c_str());
 		_boneSphereEventRegs.Register(scriptObj->GetHandle(), scriptObj->GetObjectType());
 	}
 
 	void BoneSpheresHandler::unRegisterForBoneSphereEvents(VMObject* scriptObj) {
 		if (!scriptObj) {
-			Log::warn("Failed to unregister from BoneSphereEvents, no scriptObj");
+			logger::warn("Failed to unregister from BoneSphereEvents, no scriptObj");
 			return;
 		}
 
-		Log::info("Register from BoneSphereEvents by Script:'%s'", scriptObj->GetObjectType().c_str());
+		logger::info("Register from BoneSphereEvents by Script:'{}'", scriptObj->GetObjectType().c_str());
 		_boneSphereEventRegs.Unregister(scriptObj->GetHandle(), scriptObj->GetObjectType());
 	}
 

@@ -14,20 +14,20 @@ using namespace common;
 
 extern "C" {
 bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info) {
-	Log::init("FRIK.log");
-	Log::info("FRIK v%s", FRIK_VERSION_VERSTRING);
+	logger::init("FRIK.log");
+	logger::info("FRIK v{}", FRIK_VERSION_VERSTRING);
 
 	info->infoVersion = PluginInfo::kInfoVersion;
 	info->name = "F4VRBody";
 	info->version = FRIK_VERSION_MAJOR;
 
 	if (f4se->isEditor) {
-		Log::fatal("[FATAL ERROR] Loaded in editor, marking as incompatible!");
+		logger::fatal("[FATAL ERROR] Loaded in editor, marking as incompatible!");
 		return false;
 	}
 
 	if (f4se->runtimeVersion < RUNTIME_VR_VERSION_1_2_72) {
-		Log::fatal("Unsupported runtime version %s!", f4se->runtimeVersion);
+		logger::fatal("Unsupported runtime version {}!", f4se->runtimeVersion);
 		return false;
 	}
 
@@ -36,7 +36,7 @@ bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info) {
 
 bool F4SEPlugin_Load(const F4SEInterface* f4se) {
 	try {
-		Log::info("FRIK Init - %s", getCurrentTimeString().data());
+		logger::info("FRIK Init - {}", getCurrentTimeString().data());
 
 		constexpr size_t LEN = 1024ULL * 128;
 		if (!g_branchTrampoline.Create(LEN)) {
@@ -48,19 +48,19 @@ bool F4SEPlugin_Load(const F4SEInterface* f4se) {
 			throw std::exception("couldn't create codegen buffer");
 		}
 
-		Log::info("Run patches...");
+		logger::info("Run patches...");
 		patches::patchAll();
 
-		Log::info("Hook main...");
+		logger::info("Hook main...");
 		hookMain();
 
-		Log::info("FRIK plugin loaded...");
+		logger::info("FRIK plugin loaded...");
 		frik::g_frik.initialize(f4se);
 
-		Log::info("FRIK Loaded successfully");
+		logger::info("FRIK Loaded successfully");
 		return true;
 	} catch (const std::exception& e) {
-		Log::fatal("Fatal error in F4SEPlugin_Load: %s", e.what());
+		logger::fatal("Fatal error in F4SEPlugin_Load: {}", e.what());
 		return false;
 	}
 }

@@ -125,7 +125,7 @@ namespace vrui {
 		// use previous position to prevent press when moving hand backwards
 		if (_pressYOffset > PRESS_TRIGGER_DISTANCE) {
 			// widget pushed enough, fire press event
-			Log::info("UI Widget '%s' pressed", _node->m_name.c_str());
+			logger::info("UI Widget '{}' pressed", _node->m_name.c_str());
 			onPressEventFiredPropagate(this, context);
 		}
 	}

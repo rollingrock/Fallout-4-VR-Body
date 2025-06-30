@@ -282,7 +282,7 @@ namespace frik {
 		if (_handPointingPoseSet[rightHand] == override) {
 			return;
 		}
-		Log::verbose("Set force pointing pose for '%s' hand: %s)", rightHand ? "Right" : "Left", override ? "Pointing" : "Release");
+		logger::debug("Set force pointing pose for '{}' hand: {})", rightHand ? "Right" : "Left", override ? "Pointing" : "Release");
 		_handPointingPoseSet[rightHand] = override;
 		const auto* const fingers = rightHand ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
 		for (auto i = 0; i < FINGERS_COUNT; i++) {
@@ -304,7 +304,7 @@ namespace frik {
 		if (_offHandGripPose == override) {
 			return;
 		}
-		Log::verbose("Set offhand grip pose override: %s)", override ? "Set" : "Release");
+		logger::debug("Set offhand grip pose override: {})", override ? "Set" : "Release");
 		_offHandGripPose = override;
 		const auto* const fingers = f4vr::isLeftHandedMode() ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
 		for (auto i = 0; i < FINGERS_COUNT; i++) {

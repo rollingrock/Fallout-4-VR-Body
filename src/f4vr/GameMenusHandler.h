@@ -45,9 +45,9 @@ namespace f4vr {
 		}
 
 		void debugDumpAllMenus() {
-			common::Log::info("Current game menu state:");
+			common::logger::info("Current game menu state:");
 			for (const auto& [menuName, isOpen] : _gameMenuState) {
-				common::Log::infoRaw("%s: %s", menuName.c_str(), isOpen ? "Open" : "Closed");
+				common::logger::infoRaw("{}: {}", menuName.c_str(), isOpen ? "Open" : "Closed");
 			}
 		}
 
@@ -63,10 +63,10 @@ namespace f4vr {
 			if (evn) {
 				const auto& menuName = evn->menuName.c_str();
 				if (evn->isOpen) {
-					common::Log::verbose("Game menu '%s' opened", menuName);
+					common::logger::debug("Game menu '{}' opened", menuName);
 					_gameMenuState.insert_or_assign(menuName, true);
 				} else {
-					common::Log::verbose("Game menu '%s' closed", menuName);
+					common::logger::debug("Game menu '{}' closed", menuName);
 					_gameMenuState.insert_or_assign(menuName, false);
 				}
 			}

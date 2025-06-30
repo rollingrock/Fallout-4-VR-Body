@@ -215,9 +215,9 @@ void updateCounter() {
 }
 
 void hookMain() {
-	//Log::info("Hooking before main renderer");
+	//logger::info("Hooking before main renderer");
 	//	g_branchTrampoline.Write5Call(hookBeforeRenderer.GetUIntPtr(), (uintptr_t)hookIt);
-	//Log::info("Successfully hooked before main renderer");
+	//logger::info("Successfully hooked before main renderer");
 
 	// replace mesh pointer string
 	const auto mesh = "Data\\Meshes\\FRIK\\_primaryWand.nif";
@@ -247,7 +247,7 @@ void hookMain() {
 	g_branchTrampoline.Write5Call(hookActor_GetCurrentWeaponForGunReload.GetUIntPtr(), (uintptr_t)&gunReloadInit);
 	g_branchTrampoline.Write5Call(hookActor_SetupAnimationUpdateDataForRefernce.GetUIntPtr(), (uintptr_t)&updatePlayerAnimationHook);
 
-	//	Log::info("hooking main loop function");
+	//	logger::info("hooking main loop function");
 	//	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);
-	//	Log::info("successfully hooked main loop");
+	//	logger::info("successfully hooked main loop");
 }

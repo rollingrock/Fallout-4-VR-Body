@@ -107,7 +107,7 @@ namespace frik {
 				transform.rotate = defaultTransform.rotate;
 				_skeletonNodesToDefaultTransforms.emplace_back(node, transform);
 			} else {
-				Log::warn("Skeleton bone node not found for '%s'", boneName.c_str());
+				logger::warn("Skeleton bone node not found for '{}'", boneName.c_str());
 			}
 		}
 	}
@@ -118,7 +118,7 @@ namespace frik {
 
 		const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
 		for (auto i = 0; i < rt->numTransforms; i++) {
-			Log::verbose("BoneTree Init -> Push %s into position %d", rt->transforms[i].name.c_str(), i);
+			logger::debug("BoneTree Init -> Push {} into position {}", rt->transforms[i].name.c_str(), i);
 			_boneTreeMap.insert({rt->transforms[i].name.c_str(), i});
 			_boneTreeVec.emplace_back(rt->transforms[i].name.c_str());
 		}
@@ -144,37 +144,37 @@ namespace frik {
 		_lastPosition = _curentPosition;
 		_curentPosition = getCameraPosition();
 
-		Log::debug("Hide Wands...");
+		logger::trace("Hide Wands...");
 		setWandsVisibility(false, true);
 		setWandsVisibility(false, false);
 
-		Log::debug("Restore locals of skeleton");
+		logger::trace("Restore locals of skeleton");
 		restoreNodesToDefault();
 		updateDownFromRoot();
 
 		if (!g_config.hideHead) {
-			Log::debug("Setup Head");
+			logger::trace("Setup Head");
 			setupHead();
 		}
 
-		Log::debug("Set body under HMD");
+		logger::trace("Set body under HMD");
 		setBodyUnderHMD();
 		updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
 		// Now Set up body Posture and hook up the legs
-		Log::debug("Set body posture...");
+		logger::trace("Set body posture...");
 		setBodyPosture();
 		updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
-		Log::debug("Set knee posture...");
+		logger::trace("Set knee posture...");
 		setKneePos();
 
-		Log::debug("Set walk...");
+		logger::trace("Set walk...");
 		if (!g_config.armsOnly) {
 			walk();
 		}
 
-		Log::debug("Set legs...");
+		logger::trace("Set legs...");
 		setSingleLeg(false);
 		setSingleLeg(true);
 
@@ -182,7 +182,7 @@ namespace frik {
 		updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
 		// do arm IK - Right then Left
-		Log::debug("Set Arms...");
+		logger::trace("Set Arms...");
 		handleLeftHandedWeaponNodesSwitch();
 		setArms(false);
 		setArms(true);
@@ -190,18 +190,18 @@ namespace frik {
 		updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
 		// Misc stuff to show/hide things and also set up the wrist pipboy
-		Log::debug("Pipboy and Weapons...");
+		logger::trace("Pipboy and Weapons...");
 		hide3rdPersonWeapon();
 		positionPipboy();
 		hidePipboy();
 		hideFistHelpers();
 		showHidePAHud();
 
-		Log::debug("Cull geometry...");
+		logger::trace("Cull geometry...");
 		_cullGeometry.cullPlayerGeometry();
 
 		// project body out in front of the camera for debug purposes
-		Log::debug("Selfie Time");
+		logger::trace("Selfie Time");
 		selfieSkelly();
 		updateDownFromRoot();
 
@@ -209,7 +209,7 @@ namespace frik {
 			showOnlyArms();
 		}
 
-		Log::debug("Operate hands...");
+		logger::trace("Operate hands...");
 		setHandPose();
 
 		if (g_frik.isInScopeMenu()) {
@@ -264,7 +264,7 @@ namespace frik {
 	// Will need to take prog advice to add weights to these positions which I'll do at a later date.
 	float Skeleton::getNeckYaw() const {
 		if (!_playerNodes) {
-			Log::info("player nodes not set in neck yaw");
+			logger::info("player nodes not set in neck yaw");
 			return 0.0;
 		}
 
@@ -649,7 +649,7 @@ namespace frik {
 				_currentStepTime = 0.0;
 				_stepDir = dir;
 				_stepTimeinStep = stepTime;
-				//Log::info("%2f %2f", curSpeed, stepTime);
+				//logger::info("%2f %2f", curSpeed, stepTime);
 
 				if (_footStepping == 1) {
 					_footStepping = 2;
@@ -950,7 +950,7 @@ namespace frik {
 		}
 
 		_lastLeftHandedModeSwitch = isLeftHandedMode();
-		Log::warn("Left-handed mode weapon nodes switch (LeftHanded:%d)", _lastLeftHandedModeSwitch);
+		logger::warn("Left-handed mode weapon nodes switch (LeftHanded:{})", _lastLeftHandedModeSwitch);
 
 		NiNode* rightWeapon = getWeaponNode();
 		NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
@@ -958,7 +958,7 @@ namespace frik {
 		NiNode* lHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
 
 		if (!rightWeapon || !rHand || !leftWeapon || !lHand) {
-			Log::sample("Cannot set up weapon nodes for left-handed mode switch");
+			logger::sample("Cannot set up weapon nodes for left-handed mode switch");
 			_lastLeftHandedModeSwitch = isLeftHandedMode();
 			return;
 		}
@@ -1143,14 +1143,14 @@ namespace frik {
 		// Blend the two twist angles together, using the primary angle more when the wrist is pointing downward
 		//float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.25f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
 		float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.45f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
-		//		Log::info("%2f %2f %2f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), interpTwist);
+		//		logger::info("%2f %2f %2f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), interpTwist);
 		twistAngle = twistAngle + interpTwist * (twistAngle2 - twistAngle);
 		// Wonkiness is bad.  Interpolate twist angle towards zero to correct it when the angles are pointed a certain way.
 		/*	float fixWonkiness1 = (std::clamp)(vec3_dot(handSide, vec3_norm(-sidewaysDir - forwardDir * 0.25f + RE::NiPoint3(0, 0, -0.25f))), 0.0f, 1.0f);
 			float fixWonkiness2 = 1.0f - (std::clamp)(vec3_dot(handBack, vec3_norm(forwardDir + sidewaysDir)), 0.0f, 1.0f);
 			twistAngle = twistAngle + fixWonkiness1 * fixWonkiness2 * (-PI / 2.0f - twistAngle);*/
 
-		//		Log::info("final angle %2f", rads_to_degrees(twistAngle));
+		//		logger::info("final angle %2f", rads_to_degrees(twistAngle));
 
 		// Smooth out sudden changes in the twist angle over time to reduce elbow shake
 		static std::array<float, 2> prevAngle = {0, 0};
@@ -1185,7 +1185,7 @@ namespace frik {
 		// Twist angle ranges from -PI/2 to +PI/2; map that range to go from the minimum to the maximum instead
 		float twistLimitAngle = twistMinAngle + (twistAngle + PI / 2.0f) / PI * (twistMaxAngle - twistMinAngle);
 
-		//Log::info("%f %f %f %f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), rads_to_degrees(twistAngle), rads_to_degrees(twistLimitAngle));
+		//logger::info("{} {} {} {}", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), rads_to_degrees(twistAngle), rads_to_degrees(twistLimitAngle));
 		// The bendDownDir vector points in the direction the player faces, and bends up/down with the final elbow angle
 		NiMatrix43 rot = getRotationAxisAngle(sidewaysDir * negLeft, twistLimitAngle);
 		RE::NiPoint3 bendDownDir = rot * forwardDir;

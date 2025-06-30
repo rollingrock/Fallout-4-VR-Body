@@ -56,7 +56,7 @@ namespace patches {
 		//		cmp(ebx, 0x2710);
 		//		jnc(retLab);
 		//		jmp(ptr[rip + retLab3]);
-		//		
+		//
 		//		L(retLab);
 		//		push(rax);
 		//		mov(eax, ptr[rdi + 4]);
@@ -161,14 +161,14 @@ namespace patches {
 	}
 
 	static void patchBody() {
-		Log::info("Patch Body In (address: %p)", RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr());
+		logger::info("Patch Body In (address: {:p})", RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr());
 
 		// For new game
 		SafeWrite8(RelocAddr<uintptr_t>(0xF08D5B).GetUIntPtr(), 0x74);
 
 		// now for existing games to update
 		SafeWrite32(RelocAddr<uintptr_t>(0xf29ac8), 0x9090D231); // This was movzx EDX,R14B.   Want to just zero out EDX with an xor instead
-		Log::info("Patch Body Succeeded");
+		logger::info("Patch Body Succeeded");
 	}
 
 	void patchAll() {

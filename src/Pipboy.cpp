@@ -222,7 +222,7 @@ namespace frik {
 			showNode->m_localTransform.scale = 1;
 		}
 
-		Log::info("Pipboy Meshes replaced! Hide: %s, Show: %s", itemHide.c_str(), itemShow.c_str());
+		logger::info("Pipboy Meshes replaced! Hide: {}, Show: {}", itemHide.c_str(), itemShow.c_str());
 	}
 
 	/**
@@ -266,7 +266,7 @@ namespace frik {
 				}
 				disablePipboyHandPose();
 				f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->m_localTransform.scale = 0.0;
-				Log::info("Disabling Pipboy with button");
+				logger::info("Disabling Pipboy with button");
 				_stickyoffpip = true;
 			}
 		} else if (!pipOffButtonPressed) {
@@ -292,7 +292,7 @@ namespace frik {
 				turnPipBoyOn();
 				setPipboyHandPose();
 				_isOperatingPipboy = true;
-				Log::info("Enabling Pipboy with button");
+				logger::info("Enabling Pipboy with button");
 				_stickybpip = false;
 			} else {
 				// guard so we don't constantly toggle the pip boy every frame

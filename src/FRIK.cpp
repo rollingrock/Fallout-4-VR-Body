@@ -55,7 +55,7 @@ namespace frik {
 		_messaging = static_cast<F4SEMessagingInterface*>(f4se->QueryInterface(kInterface_Messaging));
 		_messaging->RegisterListener(_pluginHandle, "F4SE", onF4VRSEMessage);
 
-		Log::info("Register papyrus native functions...");
+		logger::info("Register papyrus native functions...");
 		initPapyrusApis(f4se);
 		PapyrusGateway::init(f4se);
 		_boneSpheres.init(f4se);
@@ -71,13 +71,13 @@ namespace frik {
 
 		if (msg->type == F4SEMessagingInterface::kMessage_GameLoaded) {
 			// One time event fired after all plugins are loaded and game is full in main menu
-			Log::info("F4VRSE On Game Loaded Message...");
+			logger::info("F4VRSE On Game Loaded Message...");
 			g_frik.initOnGameLoaded();
 		}
 
 		if (msg->type == F4SEMessagingInterface::kMessage_PostLoadGame || msg->type == F4SEMessagingInterface::kMessage_NewGame) {
 			// If a game is loaded or a new game started re-initialize FRIK for clean slate
-			Log::info("F4VRSE On Post Load Message...");
+			logger::info("F4VRSE On Post Load Message...");
 			g_frik.initOnGameSessionLoaded();
 		}
 	}
@@ -86,10 +86,10 @@ namespace frik {
 	 * On game fully loaded initialize things that should be initialized only once.
 	 */
 	void FRIK::initOnGameLoaded() {
-		Log::info("Initialize FRIK...");
+		logger::info("Initialize FRIK...");
 		std::srand(static_cast<unsigned int>(time(nullptr)));
 
-		Log::info("Init config...");
+		logger::info("Init config...");
 		g_config.loadAllConfig();
 
 		vrui::initUIManager();
@@ -97,7 +97,7 @@ namespace frik {
 		_gameMenusHandler.init();
 
 		if (isBetterScopesVRModLoaded()) {
-			Log::info("BetterScopesVR mod detected, registering for messages...");
+			logger::info("BetterScopesVR mod detected, registering for messages...");
 			_messaging->Dispatch(_pluginHandle, 15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
 			_messaging->RegisterListener(_pluginHandle, BETTER_SCOPES_VR_MOD_NAME, onBetterScopesMessage);
 		}
@@ -109,9 +109,9 @@ namespace frik {
 	 */
 	void FRIK::initOnGameSessionLoaded() {
 		if (_skelly) {
-			Log::info("Resetting skeleton for new game session...");
+			logger::info("Resetting skeleton for new game session...");
 			releaseSkeleton();
-			Log::info("Reload config...");
+			logger::info("Reload config...");
 			g_config.loadAllConfig();
 		}
 
@@ -133,10 +133,10 @@ namespace frik {
 
 			if (_skelly) {
 				if (!isRootNodeValid()) {
-					Log::warn("Root node released, reset skelly... PowerArmorChange?(%d)", _inPowerArmor != f4vr::isInPowerArmor());
+					logger::warn("Root node released, reset skelly... PowerArmorChange?({})", _inPowerArmor != f4vr::isInPowerArmor());
 					releaseSkeleton();
 				} else if (_inPowerArmor != f4vr::isInPowerArmor()) {
-					Log::info("Power Armor state changed, reset skeleton...");
+					logger::info("Power Armor state changed, reset skeleton...");
 					releaseSkeleton();
 				}
 			}
@@ -148,16 +148,16 @@ namespace frik {
 				initSkeleton();
 			}
 
-			Log::debug("Update Skeleton...");
+			logger::trace("Update Skeleton...");
 			_skelly->onFrameUpdate();
 
-			Log::debug("Update Bone Sphere...");
+			logger::trace("Update Bone Sphere...");
 			_boneSpheres.onFrameUpdate();
 
-			Log::debug("Update Weapon Position...");
+			logger::trace("Update Weapon Position...");
 			_weaponPosition->onFrameUpdate();
 
-			Log::debug("Update Pipboy...");
+			logger::trace("Update Pipboy...");
 			_pipboy->onFrameUpdate();
 
 			_configurationMode->onFrameUpdate();
@@ -171,7 +171,7 @@ namespace frik {
 
 			checkDebugDump();
 		} catch (const std::exception& e) {
-			Log::error("Error in FRIK::onFrameUpdate: %s", e.what());
+			logger::error("Error in FRIK::onFrameUpdate: {}", e.what());
 		}
 	}
 
@@ -179,14 +179,14 @@ namespace frik {
 		try {
 			_smoothMovement.onFrameUpdate();
 		} catch (const std::exception& e) {
-			Log::error("Error in FRIK::smoothMovement: %s", e.what());
+			logger::error("Error in FRIK::smoothMovement: {}", e.what());
 		}
 	}
 
 	void FRIK::initSkeleton() {
 		_inPowerArmor = f4vr::isInPowerArmor();
 
-		Log::info("Initialize Skeleton (%s) ; Nodes: Player=%p, Data=%p, Root=%p, Skeleton=%p, Common=%p",
+		logger::info("Initialize Skeleton ({}) ; Nodes: Player={:p}, Data={:p}, Root={:p}, Skeleton={:p}, Common={:p}",
 			_inPowerArmor ? "PowerArmor" : "Regular", *g_player, (*g_player)->unkF0, (*g_player)->unkF0->rootNode, f4vr::getRootNode(), f4vr::getCommonNode());
 
 		// init skeleton
@@ -206,23 +206,23 @@ namespace frik {
 	 */
 	bool FRIK::isGameReadyForSkeletonInitialization() {
 		if (!g_player || !(*g_player)->unkF0) {
-			Log::sample(3000, "Player global not set yet!");
+			logger::sample(3000, "Player global not set yet!");
 			return false;
 		}
 		if (!(*g_player)->unkF0->rootNode || !f4vr::getRootNode() || !f4vr::getWorldRootNode()) {
-			Log::info("Player root nodes not set yet!");
+			logger::info("Player root nodes not set yet!");
 			return false;
 		}
 		if (!f4vr::getCommonNode() || !f4vr::getPlayerNodes() || !f4vr::getFlattenedBoneTree()) {
-			Log::info("Common or Player nodes not set yet!");
+			logger::info("Common or Player nodes not set yet!");
 			return false;
 		}
 		if (!f4vr::getNode("RArm_Hand", f4vr::getFirstPersonSkeleton())) {
-			Log::info("Arm node not set yet!");
+			logger::info("Arm node not set yet!");
 			return false;
 		}
 		if (!f4vr::getWeaponNode()) {
-			Log::info("Weapon node not set yet!");
+			logger::info("Weapon node not set yet!");
 			return false;
 		}
 		return true;
@@ -279,7 +279,7 @@ namespace frik {
 	}
 
 	void FRIK::configureGameVars() {
-		Log::info("Setting VRScale from:(%.3f) to:(%.3f)", f4vr::getIniSettingFloat("fVrScale:VR"), g_config.fVrScale);
+		logger::info("Setting VRScale from:({:.3f}) to:({:.3f})", f4vr::getIniSettingFloat("fVrScale:VR"), g_config.fVrScale);
 		f4vr::setIniSettingFloat("fVrScale:VR", g_config.fVrScale);
 
 		f4vr::setIniSettingFloat("fPipboyMaxScale:VRPipboy", 3.0000);
@@ -300,7 +300,7 @@ namespace frik {
 		}
 
 		if (msg->type == 15) {
-			Log::info("BetterScopesVR looking through scopes: %d", msg->dataLen);
+			logger::info("BetterScopesVR looking through scopes: {}", msg->dataLen);
 			g_frik.setLookingThroughScope(static_cast<bool>(msg->data));
 		}
 	}

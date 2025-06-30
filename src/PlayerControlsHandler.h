@@ -52,7 +52,7 @@ namespace frik {
 		void enable(const bool drawWeapon = true) {
 			if (_state != State::ENABLED) {
 				_state = State::ENABLED;
-				common::Log::info("Player controls - enabled");
+				common::logger::info("Player controls - enabled");
 				PapyrusGateway::instance()->enablePlayerControls(drawWeapon);
 				setControlsThumbstickEnableState(true);
 			}
@@ -64,7 +64,7 @@ namespace frik {
 		void disableFull() {
 			if (_state != State::DISABLED_FULL) {
 				_state = State::DISABLED_FULL;
-				common::Log::info("Player controls - disabled full");
+				common::logger::info("Player controls - disabled full");
 				PapyrusGateway::instance()->disablePlayerControls(true, true);
 			}
 		}
@@ -75,7 +75,7 @@ namespace frik {
 		void disableWeaponOnly() {
 			if (_state != State::DISABLED_WEAPON_ONLY) {
 				_state = State::DISABLED_WEAPON_ONLY;
-				common::Log::info("Player controls - disabled weapon");
+				common::logger::info("Player controls - disabled weapon");
 				PapyrusGateway::instance()->enableDisableFighting(false, false);
 			}
 		}
@@ -86,7 +86,7 @@ namespace frik {
 		void disableWithoutWeapon() {
 			if (_state != State::DISABLED_WITHOUT_WEAPON) {
 				_state = State::DISABLED_WITHOUT_WEAPON;
-				common::Log::info("Player controls - disabled WITHOUT weapon");
+				common::logger::info("Player controls - disabled WITHOUT weapon");
 				PapyrusGateway::instance()->disablePlayerControls(false, false);
 
 				// Because restrain blocks weapon use (throwable) we don't use it but have to disable primary hand thumbstick in a different way
@@ -103,7 +103,7 @@ namespace frik {
 				return; // no change
 			}
 			_controlsThumbstickEnableState = toEnable;
-			common::Log::verbose("Set player controls thumbstick '%s'", toEnable ? "enable" : "disable");
+			common::logger::debug("Set player controls thumbstick '{}'", toEnable ? "enable" : "disable");
 			if (toEnable) {
 				f4vr::setIniSettingFloat("fLThumbDeadzone:Controls", _controlsThumbstickOriginalDeadzone);
 				f4vr::setIniSettingFloat("fLThumbDeadzoneMax:Controls", _controlsThumbstickOriginalDeadzoneMax);
@@ -113,7 +113,7 @@ namespace frik {
 					_controlsThumbstickOriginalDeadzone = controlsThumbstickOriginalDeadzone;
 					_controlsThumbstickOriginalDeadzoneMax = f4vr::getIniSettingFloat("fLThumbDeadzoneMax:Controls");
 				} else {
-					common::Log::warn("Controls thumbstick deadzone is already set to 1.0, not changing it.");
+					common::logger::warn("Controls thumbstick deadzone is already set to 1.0, not changing it.");
 				}
 				f4vr::setIniSettingFloat("fLThumbDeadzone:Controls", 1.0);
 				f4vr::setIniSettingFloat("fLThumbDeadzoneMax:Controls", 1.0);

@@ -17,7 +17,7 @@ namespace {
 		const auto scale = std::fabs(node->m_localTransform.scale - node->m_worldTransform.scale) < 0.001f
 			? std::format("{:.2f}", node->m_localTransform.scale)
 			: std::format("{:.2f}/{:.2f}", node->m_localTransform.scale, node->m_worldTransform.scale);
-		Log::infoRaw("%s%s : children(%d), hidden(%d), Local:(%.2f, %.2f, %.2f), World:(%.2f, %.2f, %.2f), Scale:(%s)",
+		logger::infoRaw("{}{} : children({}), hidden({}), Local:({:.2f}, {:.2f}, {:.2f}), World:({:.2f}, {:.2f}, {:.2f}), Scale:({})",
 			padding.c_str(), node->m_name.c_str(),
 			node->m_children.m_emptyRunStart, node->flags & 0x1,
 			node->m_localTransform.translate.x, node->m_localTransform.translate.y, node->m_localTransform.translate.z,
@@ -49,14 +49,14 @@ namespace {
 
 namespace frik {
 	void printMatrix(const Matrix44* mat) {
-		Log::info("Dump matrix:");
+		logger::info("Dump matrix:");
 		std::string row;
 		for (auto i = 0; i < 4; i++) {
 			for (auto j = 0; j < 4; j++) {
 				row += std::to_string(mat->data[i][j]);
 				row += " ";
 			}
-			Log::info("%s", row.c_str());
+			logger::info("{}", row.c_str());
 			row = "";
 		}
 	}
@@ -65,7 +65,7 @@ namespace frik {
 		const RE::NiPoint3 firstpos = f4vr::getPlayerNodes()->HmdNode->m_worldTransform.translate;
 		const RE::NiPoint3 skellypos = f4vr::getRootNode()->m_worldTransform.translate;
 
-		Log::info("difference = %f %f %f", firstpos.x - skellypos.x, firstpos.y - skellypos.y, firstpos.z - skellypos.z);
+		logger::info("difference = {} {} {}", firstpos.x - skellypos.x, firstpos.y - skellypos.y, firstpos.z - skellypos.z);
 	}
 
 	void printAllNodes() {
@@ -77,16 +77,16 @@ namespace frik {
 	}
 
 	void printNodes(NiNode* node, const bool printAncestors) {
-		Log::info("Children of '%s':", node->m_name.c_str());
+		logger::info("Children of '{}':", node->m_name.c_str());
 		printNodeChildren(node, "");
 		if (printAncestors) {
-			Log::info("Ancestors of '%s':", node->m_name.c_str());
+			logger::info("Ancestors of '{}':", node->m_name.c_str());
 			printNodeAncestors(node, "");
 		}
 	}
 
 	void printNodes(NiNode* nde, const long long curTime) {
-		Log::info("%d %s : children = %d %d: local %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f", curTime, nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
+		logger::info("{} {} : children = {} {}: local {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", curTime, nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
 			nde->m_localTransform.rotate.arr[0], nde->m_localTransform.rotate.arr[1], nde->m_localTransform.rotate.arr[2],
 			nde->m_localTransform.rotate.arr[3], nde->m_localTransform.rotate.arr[4], nde->m_localTransform.rotate.arr[5],
 			nde->m_localTransform.rotate.arr[6], nde->m_localTransform.rotate.arr[7], nde->m_localTransform.rotate.arr[8],
@@ -106,7 +106,7 @@ namespace frik {
 	 * Print the local transform data of nodes tree.
 	 */
 	void printNodesTransform(NiNode* node, std::string padding) {
-		Log::info("%s%s child=%d, %s, Pos:(%2.3f, %2.3f, %2.3f), Rot:[[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f]]",
+		logger::info("{}{} child={}, {}, Pos:({:2.3f}, {:2.3f}, {:2.3f}), Rot:[[{:2.4f}, {:2.4f}, {:2.4f}][{:2.4f}, {:2.4f}, {:2.4f}][{:2.4f}, {:2.4f}, {:2.4f}]]",
 			padding.c_str(), node->m_name.c_str(),
 			node->m_children.m_emptyRunStart, node->flags & 0x1 ? "hidden" : "visible",
 			node->m_localTransform.translate.x,
@@ -128,16 +128,16 @@ namespace frik {
 	}
 
 	void printTransform(const std::string& name, const RE::NiTransform& transform, const bool sample) {
-		const auto frm = "Transform '" + name + "' Pos:(%.2f, %.2f, %.2f), Rot:[[%.2f, %.2f, %.2f][%.2f, %.2f, %.2f][%.2f, %.2f, %.2f]], Scale:(%.2f)";
+		const auto frm = "Transform '" + name + "' Pos:({:.2f}, {:.2f}, {:.2f}), Rot:[[{:.2f}, {:.2f}, {:.2f}][{:.2f}, {:.2f}, {:.2f}][{:.2f}, {:.2f}, {:.2f}]], Scale:({:.2f})";
 		if (sample) {
-			Log::sample(frm.c_str(),
+			logger::sample(frm.c_str(),
 				transform.translate.x, transform.translate.y, transform.translate.z,
 				transform.rotate.data[0][0], transform.rotate.data[1][0], transform.rotate.data[2][0],
 				transform.rotate.data[0][1], transform.rotate.data[1][1], transform.rotate.data[2][1],
 				transform.rotate.data[0][2], transform.rotate.data[1][2], transform.rotate.data[2][2],
 				transform.scale);
 		} else {
-			Log::info(frm.c_str(),
+			logger::info(frm.c_str(),
 				transform.translate.x, transform.translate.y, transform.translate.z,
 				transform.rotate.data[0][0], transform.rotate.data[1][0], transform.rotate.data[2][0],
 				transform.rotate.data[0][1], transform.rotate.data[1][1], transform.rotate.data[2][1],
@@ -147,11 +147,11 @@ namespace frik {
 	}
 
 	void printPosition(const std::string& name, const RE::NiPoint3& pos, const bool sample) {
-		const auto frm = "Transform '" + name + "' Pos: (%.2f, %.2f, %.2f)";
+		const auto frm = "Transform '" + name + "' Pos: ({:.2f}, {:.2f}, {:.2f})";
 		if (sample) {
-			Log::sample(frm.c_str(), pos.x, pos.y, pos.z);
+			logger::sample(frm.c_str(), pos.x, pos.y, pos.z);
 		} else {
-			Log::info(frm.c_str(), pos.x, pos.y, pos.z);
+			logger::info(frm.c_str(), pos.x, pos.y, pos.z);
 		}
 	}
 
@@ -161,7 +161,7 @@ namespace frik {
 	void dumpPlayerGeometry(BSFadeNode* rn) {
 		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
 			const auto& geometry = rn->kGeomArray[i].spGeometry;
-			Log::info("Geometry[%d] = '%s' (%s)", i, geometry->m_name.c_str(), geometry->flags & 0x1 ? "Hidden" : "Visible");
+			logger::info("Geometry[{}] = '{}' ({})", i, geometry->m_name.c_str(), geometry->flags & 0x1 ? "Hidden" : "Visible");
 		}
 	}
 
@@ -171,17 +171,17 @@ namespace frik {
 		//Offsets::ForceGamePause(*g_menuControls);
 
 		auto rn = static_cast<BSFadeNode*>(f4vr::getRootNode()->m_parent);
-		//Log::info("newrun");
+		//logger::info("newrun");
 
 		//for (int i = 0; i < 44; i++) {
 		//	if ((*g_player)->equipData->slots[i].item != nullptr) {
 		//		std::string name = (*g_player)->equipData->slots[i].item->GetFullName();
 		//		auto form_type = (*g_player)->equipData->slots[i].item->GetFormType();
-		//		Log::info("%s formType = %d", name.c_str(), form_type);
+		//		logger::info("{} formType = {}", name.c_str(), form_type);
 		//		if (form_type == FormType::kFormType_ARMO) {
 		//			auto form = reinterpret_cast<TESObjectARMO*>((*g_player)->equipData->slots[i].item);
 		//			auto bipedslot = form->bipedObject.data.parts;
-		//			Log::info("biped slot = %d", bipedslot);
+		//			logger::info("biped slot = {}", bipedslot);
 		//		}
 		//	}
 		//}
@@ -209,11 +209,11 @@ namespace frik {
 		//	}
 		//}
 
-		//Log::info("throwing-> %d", Actor_CanThrow(*g_player, g_equipIndex));
+		//logger::info("throwing-> {}", Actor_CanThrow(*g_player, g_equipIndex));
 
 		//for (auto i = 0; i < rn->kGeomArray.capacity-1; ++i) {
 		//	BSFadeNode::FlattenedGeometryData data = rn->kGeomArray[i];
-		//	Log::info("%s", data.spGeometry->m_name.c_str());
+		//	logger::info("{}", data.spGeometry->m_name.c_str());
 		//}
 
 		//_playerNodes->ScopeParentNode->flags &= 0xfffffffffffffffe;
@@ -223,7 +223,7 @@ namespace frik {
 		////	NiAVObject* node = (*g_player)->firstPersonSkeleton->GetObjectByName(&name);
 		//	NiAVObject* node = _root->GetObjectByName(&name);
 		//	if (!node) { return; }
-		//	Log::info("%d %f %f %f %f %f %f", node->flags & 0xF, node->m_localTransform.translate.x,
+		//	logger::info("{} {} {} {} {} {} {}", node->flags & 0xF, node->m_localTransform.translate.x,
 		//									 node->m_localTransform.translate.y,
 		//									 node->m_localTransform.translate.z,
 		//									 node->m_worldTransform.translate.x,
@@ -232,7 +232,7 @@ namespace frik {
 		//									);
 
 		//	for (auto i = 0; i < (*g_player)->inventoryList->items.count; i++) {
-		//	Log::info("%d,%d,%x,%x,%s", fc, i, (*g_player)->inventoryList->items[i].form->formID, (*g_player)->inventoryList->items[i].form->formType, (*g_player)->inventoryList->items[i].form->GetFullName());
+		//	logger::info("{},{},%x,%x,{}", fc, i, (*g_player)->inventoryList->items[i].form->formID, (*g_player)->inventoryList->items[i].form->formType, (*g_player)->inventoryList->items[i].form->GetFullName());
 		//}
 
 		//if (fc < 1) {
@@ -243,21 +243,21 @@ namespace frik {
 		//for (auto i = 0; i < rt->numTransforms; i++) {
 
 		//if (rt->transforms[i].refNode) {
-		//	Log::info("%d,%s,%d,%d", fc, rt->transforms[i].refNode->m_name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
+		//	logger::info("{},{},{},{}", fc, rt->transforms[i].refNode->m_name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
 		//}
 		//else {
-		//	Log::info("%d,%s,%d,%d", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
+		//	logger::info("{},{},{},{}", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
 		//}
-		//		Log::info("%d,%d,%s", fc, i, rt->transforms[i].name.c_str());
+		//		logger::info("{},{},{}", fc, i, rt->transforms[i].name.c_str());
 		//}
 		//
 		//for (auto i = 0; i < rt->numTransforms; i++) {
 		//	int pos = rt->bonePositions[i].translateition;
 		//	if (rt->bonePositions[i].name && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
-		//		Log::info("%d,%d,%s", fc, pos, rt->bonePositions[i].name->data);
+		//		logger::info("{},{},{}", fc, pos, rt->bonePositions[i].name->data);
 		//	}
 		//	else {
-		//		Log::info("%d,%d", fc, pos);
+		//		logger::info("{},{}", fc, pos);
 		//	}
 		//}
 
@@ -266,7 +266,7 @@ namespace frik {
 		//		if (pos > rt->numTransforms) {
 		//			continue;
 		//		}
-		//		Log::info("%d,%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", fc, rt->bonePositions[i].name->data,
+		//		logger::info("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}", fc, rt->bonePositions[i].name->data,
 		//							rt->bonePositions[i].translateition,
 		//							rt->transforms[pos].local.rotate.arr[0],
 		//							rt->transforms[pos].local.rotate.arr[1],
@@ -350,7 +350,7 @@ namespace frik {
 		elm->GetMember("ButtonText", &buttonTextVal);
 		const auto text = textVal.IsString() ? textVal.GetString() : "";
 
-		Log::infoRaw("%s%s : children(%d), visible(%d), toString:(%s), text:(%s)", padding.c_str(), name, childrenCount, visible, toString, text);
+		logger::infoRaw("{}{} : children({}), visible({}), toString:({}), text:({})", padding.c_str(), name, childrenCount, visible, toString, text);
 
 		for (int i = 0; i < childrenCount; ++i) {
 			GFxValue child;
@@ -359,7 +359,7 @@ namespace frik {
 			if (elm->Invoke("getChildAt", &child, args, 1)) {
 				printScaleFormElements(&child, padding + "..");
 			} else {
-				Log::warn("Failed to get child at index %d.", i);
+				logger::warn("Failed to get child at index {}.", i);
 			}
 		}
 	}

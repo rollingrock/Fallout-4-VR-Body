@@ -125,7 +125,7 @@ namespace frik {
 			f4vr::TESObjectREFR_InitHavokForCollisionObject(currentRefr);
 			f4vr::bhkUtilFunctions_SetLayer(currentRefr->unkF0->rootNode, 5);
 
-			//Log::info("%p", currentRefr);
+			//logger::info("{:p}", currentRefr);
 			return true;
 		}
 		return false;

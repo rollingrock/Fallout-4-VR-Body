@@ -8,70 +8,70 @@
 
 namespace frik {
 	static void openMainConfigurationMode(StaticFunctionTag* base) {
-		common::Log::info("Open Main Configuration Mode...");
+		common::logger::info("Open Main Configuration Mode...");
 		g_frik.openMainConfigurationModeActive();
 	}
 
 	static void openPipboyConfigurationMode(StaticFunctionTag* base) {
-		common::Log::info("Open Pipboy Configuration Mode...");
+		common::logger::info("Open Pipboy Configuration Mode...");
 		g_frik.openPipboyConfigurationModeActive();
 	}
 
 	static void openFrikIniFile(StaticFunctionTag* base) {
-		common::Log::info("Open FRIK.ini file in notepad...");
+		common::logger::info("Open FRIK.ini file in notepad...");
 		Config::openInNotepad();
 	}
 
 	static UInt32 getWeaponRepositionMode(StaticFunctionTag* base) {
-		common::Log::info("Papyrus: Get Weapon Reposition Mode");
+		common::logger::info("Papyrus: Get Weapon Reposition Mode");
 		return g_frik.inWeaponRepositionMode() ? 1 : 0;
 	}
 
 	static UInt32 toggleWeaponRepositionMode(StaticFunctionTag* base) {
-		common::Log::info("Papyrus: Toggle Weapon Reposition Mode: %s", !g_frik.inWeaponRepositionMode() ? "ON" : "OFF");
+		common::logger::info("Papyrus: Toggle Weapon Reposition Mode: {}", !g_frik.inWeaponRepositionMode() ? "ON" : "OFF");
 		g_frik.toggleWeaponRepositionMode();
 		return getWeaponRepositionMode(base);
 	}
 
 	static bool isLeftHandedMode(StaticFunctionTag* base) {
-		common::Log::info("Papyrus: Is Left Handed Mode");
+		common::logger::info("Papyrus: Is Left Handed Mode");
 		return f4vr::isLeftHandedMode();
 	}
 
 	static void setSelfieMode(StaticFunctionTag* base, const bool isSelfieMode) {
-		common::Log::info("Papyrus: Set Selfie Mode: %s", isSelfieMode ? "ON" : "OFF");
+		common::logger::info("Papyrus: Set Selfie Mode: {}", isSelfieMode ? "ON" : "OFF");
 		g_frik.setSelfieMode(isSelfieMode);
 	}
 
 	static void toggleSelfieMode(StaticFunctionTag* base) {
-		common::Log::info("Papyrus: toggle selfie mode");
+		common::logger::info("Papyrus: toggle selfie mode");
 		g_frik.setSelfieMode(!g_frik.getSelfieMode());
 	}
 
 	static void moveForward(StaticFunctionTag* base) {
-		common::Log::info("Papyrus: Move Forward");
+		common::logger::info("Papyrus: Move Forward");
 		g_config.playerOffset_forward += 1.0f;
 	}
 
 	static void moveBackward(StaticFunctionTag* base) {
-		common::Log::info("Papyrus: Move Backward");
+		common::logger::info("Papyrus: Move Backward");
 		g_config.playerOffset_forward -= 1.0f;
 	}
 
 	static void setDynamicCameraHeight(StaticFunctionTag* base, const float dynamicCameraHeight) {
-		common::Log::info("Papyrus: Set Dynamic Camera Height: %f", dynamicCameraHeight);
+		common::logger::info("Papyrus: Set Dynamic Camera Height: {}", dynamicCameraHeight);
 		g_frik.setDynamicCameraHeight(dynamicCameraHeight);
 	}
 
 	// Finger pose related APIs
 	static void setFingerPositionScalar2(
 		StaticFunctionTag* base, const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky) {
-		common::Log::info("Papyrus: Set Finger Position Scalar '%s' (%.3f, %.3f, %.3f, %.3f, %.3f)", isLeft ? "Left" : "Right", thumb, index, middle, ring, pinky);
+		common::logger::info("Papyrus: Set Finger Position Scalar '{}' ({:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f})", isLeft ? "Left" : "Right", thumb, index, middle, ring, pinky);
 		setFingerPositionScalar(isLeft, thumb, index, middle, ring, pinky);
 	}
 
 	static void restoreFingerPoseControl2(StaticFunctionTag* base, const bool isLeft) {
-		common::Log::info("Papyrus: Restore Finger Pose Control '%s'", isLeft ? "Left" : "Right");
+		common::logger::info("Papyrus: Restore Finger Pose Control '{}'", isLeft ? "Left" : "Right");
 		restoreFingerPoseControl(isLeft);
 	}
 

@@ -50,7 +50,7 @@ namespace vrui {
 		element->attachToNode(attachNode);
 		// only the root can exists in the manager collection
 		if (!element->getParent()) {
-			Log::info("UI Manager root element added and attached to '%s'", attachNode->m_name.c_str());
+			logger::info("UI Manager root element added and attached to '{}'", attachNode->m_name.c_str());
 			_rootElements.emplace_back(element);
 		}
 	}
@@ -96,7 +96,7 @@ namespace vrui {
 				if (releaseSafe) {
 					_releaseSafeList.push_back(*it);
 				}
-				Log::info("UI Manager root element removed (ReleaseSafe: %d)", releaseSafe);
+				logger::info("UI Manager root element removed (ReleaseSafe: {})", releaseSafe);
 				_rootElements.erase(it);
 				break;
 			}
@@ -108,18 +108,18 @@ namespace vrui {
 	 */
 	void UIManager::dumpUITree() const {
 		if (_rootElements.empty()) {
-			Log::info("--- UI Manager EMPTY ---");
+			logger::info("--- UI Manager EMPTY ---");
 			return;
 		}
 
 		for (const auto& element : _rootElements) {
-			Log::info("--- UI Manager Root ---");
+			logger::info("--- UI Manager Root ---");
 			dumpUITreeRecursive(element.get(), "");
 		}
 	}
 
 	void UIManager::dumpUITreeRecursive(UIElement* element, std::string padding) {
-		Log::info("%s%s", padding.c_str(), element->toString().c_str());
+		logger::info("{}{}", padding.c_str(), element->toString().c_str());
 		const auto container = dynamic_cast<UIContainer*>(element);
 		if (!container) {
 			return;

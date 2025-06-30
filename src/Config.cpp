@@ -33,16 +33,16 @@ namespace frik {
 		setupFolders();
 		migrateConfigFilesIfNeeded();
 
-		Log::info("Load ini config...");
+		logger::info("Load ini config...");
 		initIniConfig();
 
-		Log::info("Load hide meshes...");
+		logger::info("Load hide meshes...");
 		loadHideMeshes();
 
-		Log::info("Load pipboy offsets...");
+		logger::info("Load pipboy offsets...");
 		loadPipboyOffsets();
 
-		Log::info("Load weapon offsets...");
+		logger::info("Load weapon offsets...");
 		loadWeaponsOffsets();
 	}
 
@@ -246,9 +246,9 @@ namespace frik {
 		}
 
 		const auto path = WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json";
-		Log::info("Removing weapon offsets '%s', file: '%s'", fullName.c_str(), path.c_str());
+		logger::info("Removing weapon offsets '{}', file: '{}'", fullName.c_str(), path.c_str());
 		if (!std::filesystem::remove(WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json")) {
-			Log::warn("Failed to remove weapon offset file: %s", fullName.c_str());
+			logger::warn("Failed to remove weapon offset file: {}", fullName.c_str());
 		}
 	}
 
@@ -275,7 +275,7 @@ namespace frik {
 		for (auto& [key, value] : weaponCustomOffsets) {
 			_weaponsOffsets.insert_or_assign(key, value);
 		}
-		Log::info("Loaded weapon offsets	; Total:%d, Embedded:%d, Custom:%d", _weaponsOffsets.size(), _weaponsEmbeddedOffsets.size(), weaponCustomOffsets.size());
+		logger::info("Loaded weapon offsets	; Total:{}, Embedded:{}, Custom:{}", _weaponsOffsets.size(), _weaponsEmbeddedOffsets.size(), weaponCustomOffsets.size());
 	}
 
 	/**
@@ -296,7 +296,7 @@ namespace frik {
 	 */
 	void Config::migrateConfigFilesIfNeeded() {
 		// migrate pre v72 and v72 config files to v73 location
-		Log::info("Migrate configs if exists in old locations...");
+		logger::info("Migrate configs if exists in old locations...");
 		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK.ini)", FRIK_INI_PATH);
 		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
 		moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);

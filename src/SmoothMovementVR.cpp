@@ -50,7 +50,7 @@ namespace frik {
 		if (_notMoving && distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, _lastAppliedLocalX, _lastAppliedLocalY) > 100) {
 			_smoothedPos = curPos;
 			playerLocalTransformPos.z = 0;
-			Log::sample("[SmoothMovement] Not moving values exceed normal; curPos:(%.2f, %.2f), curPos:(%.2f, %.2f), lastApplied:(%.2f, %.2f)",
+			logger::sample("[SmoothMovement] Not moving values exceed normal; curPos:({:.2f}, {:.2f}), curPos:({:.2f}, {:.2f}), lastApplied:({:.2f}, {:.2f})",
 				curPos.x, curPos.y, newPos.x, newPos.y, _lastAppliedLocalX, _lastAppliedLocalY);
 		} else {
 			playerLocalTransformPos = newPos - curPos;
@@ -58,7 +58,7 @@ namespace frik {
 			_lastAppliedLocalY = playerLocalTransformPos.y;
 		}
 
-		// Log::sample("[SmoothMovement] curPos:(%.2f, %.2f, %.2f), newPos:(%.2f, %.2f, %.2f), appliedPos:(%.2f, %.2f, %.2f)",
+		// logger::sample("[SmoothMovement] curPos:({:.2f}, {:.2f}, {:.2f}), newPos:({:.2f}, {:.2f}, {:.2f}), appliedPos:({:.2f}, {:.2f}, {:.2f})",
 		// 	curPos.x, curPos.y, curPos.z, newPos.x, newPos.y, newPos.z, playerLocalTransformPos.x, playerLocalTransformPos.y, playerLocalTransformPos.z);
 
 		const float cameraHeightOffset = f4vr::isInPowerArmor()
@@ -83,7 +83,7 @@ namespace frik {
 
 		if (distanceNoSqrt(curPos, prevPos) > 4000000.0f) {
 			// don't smooth if values are way off
-			Log::sample("[SmoothMovement] Values exceed normal; curPos:(%.2f, %.2f, %.2f), SmoothPos:(%.2f, %.2f, %.2f)",
+			logger::sample("[SmoothMovement] Values exceed normal; curPos:({:.2f}, {:.2f}, {:.2f}), SmoothPos:({:.2f}, {:.2f}, {:.2f})",
 				curPos.x, curPos.y, curPos.z, prevPos.x, prevPos.y, prevPos.z);
 			return curPos;
 		}
@@ -99,7 +99,7 @@ namespace frik {
 			newPos.y = prevPos.y + _frameTime * ((curPos.y - prevPos.y) /
 				(g_config.smoothingAmountHorizontal * (g_config.dampingMultiplierHorizontal / absValY) * (_notMoving ? g_config.stoppingMultiplierHorizontal : 1.0f)));
 		} else {
-			Log::sample("shouldn't be here!");
+			logger::sample("shouldn't be here!");
 		}
 
 		// Don't smooth vertical movement if jumping or in air as it will break the jump

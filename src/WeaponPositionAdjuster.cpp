@@ -21,7 +21,7 @@ namespace frik {
 	 * Enable/Disable reposition configuration mode.
 	 */
 	void WeaponPositionAdjuster::toggleWeaponRepositionMode() {
-		Log::info("Toggle Weapon Reposition Config Mode: %s", !inWeaponRepositionMode() ? "ON" : "OFF");
+		logger::info("Toggle Weapon Reposition Config Mode: {}", !inWeaponRepositionMode() ? "ON" : "OFF");
 		_configMode = _configMode ? nullptr : std::make_unique<WeaponPositionConfigMode>(this);
 		if (!inWeaponRepositionMode()) {
 			// reload offset to handle player didn't save changes
@@ -63,7 +63,7 @@ namespace frik {
 				? offsetLookup.value()
 				: WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(_throwableWeaponOriginalTransform, _currentlyInPA);
 
-			Log::info("Equipped Throwable Weapon changed to '%s' (InPA:%d); HasWeaponOffset:%d", _currentThrowableWeaponName.c_str(), _currentlyInPA, offsetLookup.has_value());
+			logger::info("Equipped Throwable Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}", _currentThrowableWeaponName.c_str(), _currentlyInPA, offsetLookup.has_value());
 		}
 
 		// use custom offset
@@ -169,14 +169,14 @@ namespace frik {
 		}
 		if (backOfHandOffsetLookup.has_value()) {
 			_backOfHandUIOffsetTransform = backOfHandOffsetLookup.value();
-			Log::verbose("Use back of hand offset Pos: (%2.2f, %2.2f, %2.2f), Scale: %1.3f, InPA: %d",
+			logger::debug("Use back of hand offset Pos: ({:2.2f}, {:2.2f}, {:2.2f}), Scale: {:.3f}, InPA: {}",
 				_currentWeapon.c_str(), _weaponOffsetTransform.translate.x, _weaponOffsetTransform.translate.y, _weaponOffsetTransform.translate.z, _weaponOffsetTransform.scale, _currentlyInPA);
 		} else {
 			// No stored offset, use default adjustment
 			_backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->m_localTransform, _currentlyInPA);
 		}
 
-		Log::info("Equipped Weapon changed to '%s' (InPA:%d); HasWeaponOffset:%d, HasOffhandOffset:%d, HasBackOfHandOffset:%d",
+		logger::info("Equipped Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
 			_currentWeapon.c_str(), _currentlyInPA, weaponOffsetLookup.has_value(), offhandOffsetLookup.has_value(), backOfHandOffsetLookup.has_value());
 	}
 
@@ -462,7 +462,7 @@ namespace frik {
 		// is hand near scope
 		if (offset < g_config.scopeAdjustDistance) {
 			// Zoom toggling
-			Log::info("Zoom Toggle pressed; sending message to switch zoom state");
+			logger::info("Zoom Toggle pressed; sending message to switch zoom state");
 			g_frik.dispatchMessageToBetterScopesVR(16, nullptr, 0);
 			f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
 		}
@@ -505,7 +505,7 @@ namespace frik {
 			return;
 		}
 
-		Log::info("Weapon: %s, InPA: %d", _currentWeapon.c_str(), _currentlyInPA);
+		logger::info("Weapon: {}, InPA: {}", _currentWeapon.c_str(), _currentlyInPA);
 		printTransform("Weapon Original: ", _weaponOriginalTransform);
 		printTransform("Weapon Offset  : ", _weaponOffsetTransform);
 		printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);
