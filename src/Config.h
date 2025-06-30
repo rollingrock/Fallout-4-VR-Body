@@ -5,7 +5,6 @@
 #include "api/openvr.h"
 #include "common/CommonUtils.h"
 #include "common/ConfigBase.h"
-#include "common/Logger.h"
 #include "res/resource.h"
 
 namespace frik {
@@ -20,8 +19,6 @@ namespace frik {
 	static const auto PIPBOY_HOLO_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\HoloPipboyPosition.json)";
 	static const auto PIPBOY_SCREEN_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\PipboyPosition.json)";
 	static const auto WEAPONS_OFFSETS_PATH = BASE_PATH + R"(\Weapons_Offsets)";
-
-	constexpr int FRIK_INI_VERSION = 8;
 
 	constexpr float DEFAULT_CAMERA_HEIGHT = 120.4828f;
 
@@ -47,7 +44,7 @@ namespace frik {
 	class Config : public common::ConfigBase {
 	public:
 		explicit Config()
-			: ConfigBase(FRIK_INI_PATH, IDR_FRIK_INI, FRIK_INI_VERSION) {}
+			: ConfigBase(FRIK_INI_PATH, IDR_FRIK_INI) {}
 
 		void loadAllConfig();
 		void save() { saveIniConfig(); }
@@ -172,7 +169,7 @@ namespace frik {
 
 	protected:
 		virtual void loadIniConfigInternal(const CSimpleIniA& ini) override;
-		virtual void saveIniConfigInternal(CSimpleIniA& ini) const override;
+		virtual void saveIniConfigInternal(CSimpleIniA& ini) override;
 
 	private:
 		void loadHideMeshes();

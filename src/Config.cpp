@@ -3,11 +3,6 @@
 #include "Config.h"
 
 #include <filesystem>
-#include <fstream>
-#include <shlobj_core.h>
-
-#include "include/json.hpp"
-#include "include/SimpleIni.h"
 
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
@@ -21,7 +16,8 @@ namespace frik {
 	 * Open the FRIK.ini file in Notepad for editing.
 	 */
 	void Config::openInNotepad() {
-		ShellExecute(nullptr, "open", "notepad.exe", FRIK_INI_PATH.c_str(), nullptr, SW_SHOWNORMAL);
+        // TODO: CLF4 migration
+		// ShellExecute(nullptr, "open", "notepad.exe", FRIK_INI_PATH.c_str(), nullptr, SW_SHOWNORMAL);
 	}
 
 	/**
@@ -49,9 +45,9 @@ namespace frik {
 	void Config::loadIniConfigInternal(const CSimpleIniA& ini) {
 		// Player/Skeleton
 		setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", false);
-		fVrScale = ini.GetFloatValue(INI_SECTION_MAIN, "fVrScale", 70.0);
-		playerHeight = ini.GetFloatValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f);
-		armLength = ini.GetFloatValue(INI_SECTION_MAIN, "armLength", 36.74f);
+        fVrScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fVrScale", 70.0));
+        playerHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f));
+        armLength = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "armLength", 36.74f));
 		armsOnly = ini.GetBoolValue(INI_SECTION_MAIN, "EnableArmsOnlyMode");
 
 		// Head Geometry Hide
@@ -60,17 +56,17 @@ namespace frik {
 		hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "HideSkin");
 
 		// Camera and Body offsets
-		rootOffset = ini.GetFloatValue(INI_SECTION_MAIN, "RootOffset", 0.0);
-		PARootOffset = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_RootOffset", 0.0);
-		cameraHeight = ini.GetFloatValue(INI_SECTION_MAIN, "cameraHeightOffset", 0.0);
-		PACameraHeight = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", 0.0);
-		playerOffset_forward = ini.GetFloatValue(INI_SECTION_MAIN, "playerOffset_forward", -4.0);
-		playerOffset_up = ini.GetFloatValue(INI_SECTION_MAIN, "playerOffset_up", -2.0);
-		powerArmor_forward = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_forward", 0.0);
-		powerArmor_up = ini.GetFloatValue(INI_SECTION_MAIN, "powerArmor_up", 0.0);
+		rootOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "RootOffset", 0.0));
+        PARootOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", 0.0));
+        cameraHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", 0.0));
+        PACameraHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", 0.0));
+        playerOffset_forward = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", -4.0));
+        playerOffset_up = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", -2.0));
+        powerArmor_forward = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", 0.0));
+        powerArmor_up = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_up", 0.0));
 
 		// Pipboy
-		pipBoyScale = ini.GetFloatValue(INI_SECTION_MAIN, "PipboyScale", 1.0);
+        pipBoyScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipboyScale", 1.0));
 		hidePipboy = ini.GetBoolValue(INI_SECTION_MAIN, "hidePipboy");
 		isHoloPipboy = ini.GetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", true);
 		leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
@@ -78,9 +74,9 @@ namespace frik {
 		pipboyOpenWhenLookAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", false);
 		pipboyCloseWhenLookAway = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyCloseWhenLookAway", false);
 		pipboyCloseWhenMovingWhileLookingAway = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true);
-		pipboyLookAtThreshold = ini.GetFloatValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.75f);
-		pipboyLookAwayThreshold = ini.GetFloatValue(INI_SECTION_MAIN, "PipBoyLookAwayThreshold", 0.3f);
-		pipboyDetectionRange = ini.GetFloatValue(INI_SECTION_MAIN, "pipboyDetectionRange", 14.0);
+        pipboyLookAtThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.75f));
+        pipboyLookAwayThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAwayThreshold", 0.3f));
+        pipboyDetectionRange = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "pipboyDetectionRange", 14.0));
 		pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 400));
 		pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 1000));
 		pipBoyButtonArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonArm", 0));
@@ -98,34 +94,34 @@ namespace frik {
 		enableGripButtonToGrap = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButton", true);
 		enableGripButtonToLetGo = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", true);
 		onePressGripButton = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", true);
-		gripLetGoThreshold = ini.GetFloatValue(INI_SECTION_MAIN, "GripLetGoThreshold", 15.0f);
+        gripLetGoThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "GripLetGoThreshold", 15.0f));
 		gripButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "GripButtonID", vr::EVRButtonId::k_EButton_Grip)); // 2
 
 		// Dampen hands
 		dampenHands = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHands", true);
 		dampenHandsInVanillaScope = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHandsInVanillaScope", true);
 		dampenPipboyScreen = ini.GetBoolValue(INI_SECTION_MAIN, "DampenPipboyScreen", true);
-		dampenHandsRotation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenHandsRotation", 0.7f);
-		dampenHandsTranslation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenHandsTranslation", 0.7f);
-		dampenHandsRotationInVanillaScope = ini.GetFloatValue(INI_SECTION_MAIN, "DampenHandsRotationInVanillaScope", 0.2f);
-		dampenHandsTranslationInVanillaScope = ini.GetFloatValue(INI_SECTION_MAIN, "DampenHandsTranslationInVanillaScope", 0.2f);
-		dampenPipboyRotation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenPipboyRotation", 0.7f);
-		dampenPipboyTranslation = ini.GetFloatValue(INI_SECTION_MAIN, "DampenPipboyTranslation", 0.7f);
+		dampenHandsRotation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", 0.7f));
+		dampenHandsTranslation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", 0.7f));
+		dampenHandsRotationInVanillaScope = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotationInVanillaScope", 0.2f));
+		dampenHandsTranslationInVanillaScope = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslationInVanillaScope", 0.2f));
+		dampenPipboyRotation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenPipboyRotation", 0.7f));
+		dampenPipboyTranslation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenPipboyTranslation", 0.7f));
 
 		// Misc
 		showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
-		selfieOutFrontDistance = ini.GetFloatValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0);
+		selfieOutFrontDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0));
 		selfieIgnoreHideFlags = ini.GetBoolValue(INI_SECTION_MAIN, "selfieIgnoreHideFlags", false);
-		scopeAdjustDistance = ini.GetFloatValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f);
+		scopeAdjustDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f));
 
 		//Smooth Movement
 		disableSmoothMovement = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableSmoothMovement");
-		smoothingAmount = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmount", 15.0);
-		smoothingAmountHorizontal = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmountHorizontal", 5.0);
-		dampingMultiplier = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "Damping", 1.0);
-		dampingMultiplierHorizontal = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "DampingHorizontal", 1.0);
-		stoppingMultiplier = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplier", 0.6f);
-		stoppingMultiplierHorizontal = ini.GetFloatValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplierHorizontal", 0.6f);
+		smoothingAmount = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmount", 15.0));
+		smoothingAmountHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmountHorizontal", 5.0));
+		dampingMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "Damping", 1.0));
+		dampingMultiplierHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "DampingHorizontal", 1.0));
+		stoppingMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplier", 0.6f));
+		stoppingMultiplierHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplierHorizontal", 0.6f));
 		disableInteriorSmoothing = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothing", true);
 		disableInteriorSmoothingHorizontal = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothingHorizontal", true);
 	}
@@ -170,7 +166,7 @@ namespace frik {
 		}
 	}
 
-	void Config::saveIniConfigInternal(CSimpleIniA& ini) const {
+	void Config::saveIniConfigInternal(CSimpleIniA& ini) {
 		ini.SetDoubleValue(INI_SECTION_MAIN, "fVrScale", fVrScale);
 		ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", playerOffset_forward);
 		ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", playerOffset_up);
