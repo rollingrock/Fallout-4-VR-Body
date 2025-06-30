@@ -21,7 +21,7 @@ namespace vrui {
 		virtual void attachToNode(NiNode* attachNode) override;
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
 		virtual void onFrameUpdate(UIFrameUpdateContext* adapter) override;
-		virtual NiTransform calculateTransform() const override;
+		virtual RE::NiTransform calculateTransform() const override;
 		virtual void onPressEventFired(UIElement* element, UIFrameUpdateContext* context) override;
 		void handlePressEvent(UIFrameUpdateContext* context);
 		void updatePressableCloseToInteraction(UIFrameUpdateContext* context, float distance, float yOnlyDistance);

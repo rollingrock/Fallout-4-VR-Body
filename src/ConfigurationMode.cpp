@@ -223,34 +223,34 @@ namespace frik {
 					}
 				}
 			} else {
-				//Not exepected - show no mode lable until button pressed 
+				//Not exepected - show no mode lable until button pressed
 				for (int i = 0; i < 4; i++) {
 					UIElement = f4vr::getNode(meshName4[i], f4vr::getPlayerNodes()->primaryUIAttachNode);
 					UIElement->m_localTransform.scale = 0;
 				}
 			}
-			NiPoint3 finger;
+			RE::NiPoint3 finger;
 			f4vr::isLeftHandedMode()
-				? finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos
-				: finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos;
+				? finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate
+				: finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate;
 			for (int i = 1; i <= 9; i++) {
 				BSFixedString TouchName = meshName2[i];
 				BSFixedString TransName = meshName[i];
 				auto TouchMesh = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName));
 				auto TransMesh = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName));
 				if (TouchMesh && TransMesh) {
-					float distance = vec3Len(finger - TouchMesh->m_worldTransform.pos);
+					float distance = vec3Len(finger - TouchMesh->m_worldTransform.translate);
 					if (distance > 2.0) {
-						TransMesh->m_localTransform.pos.y = 0.0;
+						TransMesh->m_localTransform.translate.y = 0.0;
 						if (i == 7 || i == 8 || i == 9) {
 							_MCTouchbuttons[i] = false;
 						}
 					} else if (distance <= 2.0) {
 						float fz = 2.0 - distance;
 						if (fz > 0.0 && fz < 1.2) {
-							TransMesh->m_localTransform.pos.y = fz;
+							TransMesh->m_localTransform.translate.y = fz;
 						}
-						if (TransMesh->m_localTransform.pos.y > 1.0 && !_MCTouchbuttons[i]) {
+						if (TransMesh->m_localTransform.translate.y > 1.0 && !_MCTouchbuttons[i]) {
 							//_PBConfigSticky = true;
 							f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
 							for (int i = 1; i <= 7; i++) {
@@ -526,28 +526,28 @@ namespace frik {
 				float rAxisOffsetX;
 				setConfigModeHandPose();
 
-				NiPoint3 finger;
+				RE::NiPoint3 finger;
 				f4vr::isLeftHandedMode()
-					? finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos
-					: finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos;
+					? finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate
+					: finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate;
 				for (int i = 1; i <= 11; i++) {
 					BSFixedString TouchName = meshName2[i];
 					BSFixedString TransName = meshName[i];
 					auto TouchMesh = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TouchName));
 					auto TransMesh = static_cast<NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(&TransName));
 					if (TouchMesh && TransMesh) {
-						float distance = vec3Len(finger - TouchMesh->m_worldTransform.pos);
+						float distance = vec3Len(finger - TouchMesh->m_worldTransform.translate);
 						if (distance > 2.0) {
-							TransMesh->m_localTransform.pos.y = 0.0;
+							TransMesh->m_localTransform.translate.y = 0.0;
 							if (i == 1 || i == 3 || i == 10 || i == 11) {
 								_PBTouchbuttons[i] = false;
 							}
 						} else if (distance <= 2.0) {
 							float fz = 2.0 - distance;
 							if (fz > 0.0 && fz < 1.2) {
-								TransMesh->m_localTransform.pos.y = fz;
+								TransMesh->m_localTransform.translate.y = fz;
 							}
-							if (TransMesh->m_localTransform.pos.y > 1.0 && !_PBTouchbuttons[i]) {
+							if (TransMesh->m_localTransform.translate.y > 1.0 && !_PBTouchbuttons[i]) {
 								//_PBConfigSticky = true;
 								f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
 								for (int i = 1; i <= 11; i++) {
@@ -659,8 +659,8 @@ namespace frik {
 						rAxisOffsetX = 0 - rAxisOffsetX;
 					}
 					rot.setEulerAngles(degreesToRads(rAxisOffsetX), 0, 0);
-					pbRoot->m_localTransform.rot = rot.multiply43Left(pbRoot->m_localTransform.rot);
-					rot.multiply43Left(pbRoot->m_localTransform.rot);
+					pbRoot->m_localTransform.rotate = rot.multiply43Left(pbRoot->m_localTransform.rotate);
+					rot.multiply43Left(pbRoot->m_localTransform.rotate);
 				}
 				if (doinantHandStick.y > 0.10 && ScaleButtonPressed) {
 					pbRoot->m_localTransform.scale = pbRoot->m_localTransform.scale + 0.001;
@@ -670,27 +670,27 @@ namespace frik {
 				}
 				if (doinantHandStick.y > 0.10 && MoveXButtonPressed) {
 					rAxisOffsetX = doinantHandStick.y / 50;
-					pbRoot->m_localTransform.pos.x = pbRoot->m_localTransform.pos.x + rAxisOffsetX;
+					pbRoot->m_localTransform.translate.x = pbRoot->m_localTransform.translate.x + rAxisOffsetX;
 				}
 				if (doinantHandStick.y < -0.10 && MoveXButtonPressed) {
 					rAxisOffsetX = doinantHandStick.y / 50;
-					pbRoot->m_localTransform.pos.x = pbRoot->m_localTransform.pos.x + rAxisOffsetX;
+					pbRoot->m_localTransform.translate.x = pbRoot->m_localTransform.translate.x + rAxisOffsetX;
 				}
 				if (doinantHandStick.y > 0.10 && MoveYButtonPressed) {
 					rAxisOffsetX = doinantHandStick.y / 20;
-					pbRoot->m_localTransform.pos.y = pbRoot->m_localTransform.pos.y + rAxisOffsetX;
+					pbRoot->m_localTransform.translate.y = pbRoot->m_localTransform.translate.y + rAxisOffsetX;
 				}
 				if (doinantHandStick.y < -0.10 && MoveYButtonPressed) {
 					rAxisOffsetX = doinantHandStick.y / 20;
-					pbRoot->m_localTransform.pos.y = pbRoot->m_localTransform.pos.y + rAxisOffsetX;
+					pbRoot->m_localTransform.translate.y = pbRoot->m_localTransform.translate.y + rAxisOffsetX;
 				}
 				if (doinantHandStick.y > 0.10 && MoveZButtonPressed) {
 					rAxisOffsetX = doinantHandStick.y / 20;
-					pbRoot->m_localTransform.pos.z = pbRoot->m_localTransform.pos.z - rAxisOffsetX;
+					pbRoot->m_localTransform.translate.z = pbRoot->m_localTransform.translate.z - rAxisOffsetX;
 				}
 				if (doinantHandStick.y < -0.10 && MoveZButtonPressed) {
 					rAxisOffsetX = doinantHandStick.y / 20;
-					pbRoot->m_localTransform.pos.z = pbRoot->m_localTransform.pos.z - rAxisOffsetX;
+					pbRoot->m_localTransform.translate.z = pbRoot->m_localTransform.translate.z - rAxisOffsetX;
 				}
 
 				if (doinantHandStick.y > 0.10 && ModelScaleButtonPressed && _3rdPipboy) {

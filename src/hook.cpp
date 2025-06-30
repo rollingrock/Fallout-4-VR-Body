@@ -18,7 +18,7 @@ RelocAddr<uintptr_t> hookBeforeRenderer(0x1C21156);
 
 //RelocAddr<uintptr_t> hookMainLoopFunc(0xd8187e);   // now using in fo4vr better scopes
 
-RelocAddr<uintptr_t> hookAnimationVFunc(0xf2f0a8); // This is PostUpdateAnimationGraphManager virtual function that updates the player skeleton below the hmd. 
+RelocAddr<uintptr_t> hookAnimationVFunc(0xf2f0a8); // This is PostUpdateAnimationGraphManager virtual function that updates the player skeleton below the hmd.
 
 RelocAddr<uintptr_t> hookPlayerUpdate(0xf1004c);
 
@@ -128,7 +128,7 @@ RelocAddr<uint64_t> wandMesh(0x2d686d8);
 void hookIt(const uint64_t rcx) {
 	const uint64_t parm = rcx;
 	frik::g_frik.onFrameUpdate();
-	//hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.   
+	//hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.
 
 	// so all of this below is an attempt to bypass the functionality in game around my hook at resets the root parent node's world pos which screws up armor
 	// we still need to call the function i hooked below to get some things ready for the renderer however starting with the named "Root" node instead of it's parent preseves locations
@@ -195,15 +195,15 @@ void hookSmoothMovement(const uint64_t rcx) {
 void hook_main_update_player(const uint64_t rcx, const uint64_t rdx) {
 	if (*g_player && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
 		NiNode* body = (*g_player)->unkF0->rootNode->GetAsNiNode();
-		body->m_localTransform.pos.x = (*g_playerCamera)->cameraNode->m_worldTransform.pos.x;
-		body->m_localTransform.pos.y = (*g_playerCamera)->cameraNode->m_worldTransform.pos.y;
-		body->m_worldTransform.pos.x = (*g_playerCamera)->cameraNode->m_worldTransform.pos.x;
-		body->m_worldTransform.pos.y = (*g_playerCamera)->cameraNode->m_worldTransform.pos.y;
+		body->m_localTransform.translate.x = (*g_playerCamera)->cameraNode->m_worldTransform.translate.x;
+		body->m_localTransform.translate.y = (*g_playerCamera)->cameraNode->m_worldTransform.translate.y;
+		body->m_worldTransform.translate.x = (*g_playerCamera)->cameraNode->m_worldTransform.translate.x;
+		body->m_worldTransform.translate.y = (*g_playerCamera)->cameraNode->m_worldTransform.translate.y;
 
 		//static BSFixedString pwn("PlayerWorldNode");
 		//NiNode* pwn_node = (*g_player)->unkF0->rootNode->m_parent->GetObjectByName(&pwn)->GetAsNiNode();
-		//body->m_localTransform.pos.z += pwn_node->m_localTransform.pos.z;
-		//body->m_worldTransform.pos.z += pwn_node->m_localTransform.pos.z;
+		//body->m_localTransform.translate.z += pwn_node->m_localTransform.translate.z;
+		//body->m_worldTransform.translate.z += pwn_node->m_localTransform.translate.z;
 	}
 
 	main_update_player(rcx, rdx);

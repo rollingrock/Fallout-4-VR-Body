@@ -17,8 +17,8 @@ namespace vrui {
 	class UIElement {
 	public:
 		UIElement() {
-			_transform.pos = NiPoint3(0, 0, 0);
-			_transform.rot = common::Matrix44::getIdentity43();
+			_transform.translate = RE::NiPoint3(0, 0, 0);
+			_transform.rotate = common::Matrix44::getIdentity43();
 			_transform.scale = 1;
 		}
 
@@ -30,9 +30,9 @@ namespace vrui {
 		 * @param y depth: positive-forward, negative-backward
 		 * @param z vertical: positive-up, negative-down
 		 */
-		void setPosition(const float x, const float y, const float z) { _transform.pos = NiPoint3(x, y, z); }
-		void updatePosition(const float x, const float y, const float z) { _transform.pos += NiPoint3(x, y, z); }
-		const NiPoint3& getPosition() const { return _transform.pos; }
+		void setPosition(const float x, const float y, const float z) { _transform.translate = RE::NiPoint3(x, y, z); }
+		void updatePosition(const float x, const float y, const float z) { _transform.translate += RE::NiPoint3(x, y, z); }
+		const RE::NiPoint3& getPosition() const { return _transform.translate; }
 
 		float getScale() const { return _transform.scale; }
 		void setScale(const float scale) { _transform.scale = scale; }
@@ -49,7 +49,7 @@ namespace vrui {
 
 		virtual std::string toString() const;
 
-		// Internal: 
+		// Internal:
 		virtual void onLayoutUpdate(UIFrameUpdateContext* context) {}
 
 		// Internal: Handle UI interaction code on each frame of the game.
@@ -67,7 +67,7 @@ namespace vrui {
 		}
 
 	protected:
-		virtual NiTransform calculateTransform() const;
+		virtual RE::NiTransform calculateTransform() const;
 		virtual void onPressEventFired(UIElement* element, UIFrameUpdateContext* context) {}
 		void onPressEventFiredPropagate(UIElement* element, UIFrameUpdateContext* context);
 		virtual void onStateChanged(UIElement* element);
@@ -77,7 +77,7 @@ namespace vrui {
 		virtual void detachFromAttachedNode(bool releaseSafe);
 
 		UIElement* _parent = nullptr;
-		NiTransform _transform;
+		RE::NiTransform _transform;
 		bool _visible = true;
 
 		// the width (x) and height (y) of the widget

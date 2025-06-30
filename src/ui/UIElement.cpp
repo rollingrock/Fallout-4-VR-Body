@@ -7,9 +7,9 @@ namespace vrui {
 	std::string UIElement::toString() const {
 		return std::format("UIElement: {}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f})",
 			_visible ? "V" : "H",
-			_transform.pos.x,
-			_transform.pos.y,
-			_transform.pos.z,
+			_transform.translate.x,
+			_transform.translate.y,
+			_transform.translate.z,
 			_size.width,
 			_size.height
 		);
@@ -33,14 +33,14 @@ namespace vrui {
 	/**
 	 * calculate the transform of the element with respect to all parents.
 	 */
-	NiTransform UIElement::calculateTransform() const {
+	RE::NiTransform UIElement::calculateTransform() const {
 		if (!_parent) {
 			return _transform;
 		}
 
 		auto calTransform = _transform;
 		const auto parentTransform = _parent->calculateTransform();
-		calTransform.pos += parentTransform.pos;
+		calTransform.translate += parentTransform.translate;
 		calTransform.scale *= parentTransform.scale;
 		// TODO: add rotation handling
 		return calTransform;

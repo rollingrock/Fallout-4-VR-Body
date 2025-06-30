@@ -46,7 +46,7 @@ namespace frik {
 		//	return false;
 		//}
 
-		//float dist = abs(vec3_len(offhand->m_worldTransform.pos - bolt->m_worldTransform.pos));
+		//float dist = abs(vec3_len(offhand->m_worldTransform.translate - bolt->m_worldTransform.translate));
 
 		const uint64_t handInput = f4vr::isLeftHandedMode()
 			? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
@@ -54,7 +54,7 @@ namespace frik {
 
 		if (!reloadButtonPressed && handInput & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip)) {
 			const auto refrData = new f4vr::NEW_REFR_DATA();
-			refrData->location = magNode->m_worldTransform.pos;
+			refrData->location = magNode->m_worldTransform.translate;
 			refrData->direction = (*g_player)->rot;
 			refrData->interior = (*g_player)->parentCell;
 			refrData->world = f4vr::TESObjectREFR_GetWorldSpace(*g_player);

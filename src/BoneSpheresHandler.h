@@ -25,7 +25,7 @@ namespace frik {
 			debugSphere = nullptr;
 		}
 
-		BoneSphere(const float a_radius, NiNode* a_bone, const NiPoint3 a_offset)
+		BoneSphere(const float a_radius, NiNode* a_bone, const RE::NiPoint3 a_offset)
 			: radius(a_radius), bone(a_bone), offset(a_offset) {
 			stickyRight = false;
 			stickyLeft = false;
@@ -35,7 +35,7 @@ namespace frik {
 
 		float radius;
 		NiNode* bone;
-		NiPoint3 offset;
+		RE::NiPoint3 offset;
 		bool stickyRight;
 		bool stickyLeft;
 		bool turnOnDebugSpheres;
@@ -76,7 +76,7 @@ namespace frik {
 		UInt32 _nextBoneSphereHandle = 1;
 		UInt32 _curDevice = 0;
 
-		// workaround as papyrus registration requires global functions.  
+		// workaround as papyrus registration requires global functions.
 		inline static BoneSpheresHandler* _instance = nullptr;
 	};
 }

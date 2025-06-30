@@ -56,13 +56,13 @@ namespace common {
 			data[3][2] = z;
 		}
 
-		void setPosition(const NiPoint3 pt) {
+		void setPosition(const RE::NiPoint3 pt) {
 			data[3][0] = pt.x;
 			data[3][1] = pt.y;
 			data[3][2] = pt.z;
 		}
 
-		void makeTransformMatrix(const NiMatrix43& rot, const NiPoint3 pos) {
+		void makeTransformMatrix(const NiMatrix43& rot, const RE::NiPoint3 pos) {
 			for (auto i = 0; i < 3; i++) {
 				for (auto j = 0; j < 3; j++) {
 					data[i][j] = rot.data[i][j];
@@ -148,7 +148,7 @@ namespace common {
 			data[2][2] = cosX * cosY;
 		}
 
-		void rotateVectorVec(NiPoint3 toVec, NiPoint3 fromVec) {
+		void rotateVectorVec(RE::NiPoint3 toVec, RE::NiPoint3 fromVec) {
 			toVec = vec3Norm(toVec);
 			fromVec = vec3Norm(fromVec);
 
@@ -159,7 +159,7 @@ namespace common {
 				return;
 			}
 
-			NiPoint3 crossP = vec3Cross(toVec, fromVec);
+			RE::NiPoint3 crossP = vec3Cross(toVec, fromVec);
 			crossP = vec3Norm(crossP);
 
 			const float phi = acosf(dotP);
@@ -265,7 +265,7 @@ namespace common {
 		Quaternion(const float x, const float y, const float z, const float w)
 			: w(w), x(x), y(y), z(z) {}
 
-		Quaternion(const float real, const NiPoint3 v) {
+		Quaternion(const float real, const RE::NiPoint3 v) {
 			w = real;
 			x = v.x;
 			y = v.y;
@@ -297,7 +297,7 @@ namespace common {
 
 		Quaternion getNorm() const {
 			const float mag = getMag();
-			return Quaternion(w / mag, NiPoint3(x / mag, y / mag, z / mag));
+			return Quaternion(w / mag, RE::NiPoint3(x / mag, y / mag, z / mag));
 		}
 
 		void normalize() {
@@ -323,7 +323,7 @@ namespace common {
 			return q;
 		}
 
-		void setAngleAxis(float angle, NiPoint3 axis) {
+		void setAngleAxis(float angle, RE::NiPoint3 axis) {
 			axis = vec3Norm(axis);
 
 			angle /= 2;
@@ -405,8 +405,8 @@ namespace common {
 			z = s0 * z + s1 * target.z;
 		}
 
-		void vec2Vec(const NiPoint3 v1, const NiPoint3 v2) {
-			NiPoint3 cross = vec3Cross(vec3Norm(v1), vec3Norm(v2));
+		void vec2Vec(const RE::NiPoint3 v1, const RE::NiPoint3 v2) {
+			RE::NiPoint3 cross = vec3Cross(vec3Norm(v1), vec3Norm(v2));
 
 			const float dotP = vec3Dot(vec3Norm(v1), vec3Norm(v2));
 
@@ -416,9 +416,9 @@ namespace common {
 			}
 			if (dotP < -0.99999999) {
 				// reverse it
-				cross = vec3Norm(vec3Cross(NiPoint3(0, 1, 0), v1));
+				cross = vec3Norm(vec3Cross(RE::NiPoint3(0, 1, 0), v1));
 				if (vec3Len(cross) < 0.00000001) {
-					cross = vec3Norm(vec3Cross(NiPoint3(1, 0, 0), v1));
+					cross = vec3Norm(vec3Cross(RE::NiPoint3(1, 0, 0), v1));
 				}
 				this->setAngleAxis(std::numbers::pi_v<float>, cross);
 				this->normalize();

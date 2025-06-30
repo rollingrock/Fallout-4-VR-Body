@@ -25,7 +25,7 @@ namespace frik {
 	public:
 		Skeleton(BSFadeNode* rootNode, const bool inPowerArmor)
 			: _root(rootNode), _inPowerArmor(inPowerArmor) {
-			_curentPosition = NiPoint3(0, 0, 0);
+			_curentPosition = RE::NiPoint3(0, 0, 0);
 			_walkingState = 0;
 			initializeNodes();
 		}
@@ -38,9 +38,9 @@ namespace frik {
 			return _rightArm;
 		}
 
-		NiTransform getBoneWorldTransform(const std::string& boneName);
+		RE::NiTransform getBoneWorldTransform(const std::string& boneName);
 
-		NiPoint3 getOffhandIndexFingerTipWorldPosition();
+		RE::NiPoint3 getOffhandIndexFingerTipWorldPosition();
 
 		void onFrameUpdate();
 
@@ -100,13 +100,13 @@ namespace frik {
 		bool _lastLeftHandedModeSwitch = false;
 
 		// Camera positions
-		NiPoint3 _curentPosition;
-		NiPoint3 _lastPosition;
+		RE::NiPoint3 _curentPosition;
+		RE::NiPoint3 _lastPosition;
 
 		// ???
-		NiPoint3 _forwardDir;
-		NiPoint3 _sidewaysRDir;
-		NiPoint3 _upDir;
+		RE::NiPoint3 _forwardDir;
+		RE::NiPoint3 _sidewaysRDir;
+		RE::NiPoint3 _upDir;
 
 		// skeleton nodes
 		f4vr::PlayerNodes* _playerNodes;
@@ -121,38 +121,38 @@ namespace frik {
 		ArmNodes _leftArm;
 
 		// Default transform are used to reset the skeleton before each frame update to start from scratch
-		std::vector<std::pair<NiAVObject*, const NiTransform>> _skeletonNodesToDefaultTransforms;
-		static std::unordered_map<std::string, NiTransform> getSkeletonNodesDefaultTransforms();
-		static std::unordered_map<std::string, NiTransform> getSkeletonNodesDefaultTransformsInPA();
-		inline static const std::unordered_map<std::string, NiTransform> _skeletonNodesDefaultTransform = getSkeletonNodesDefaultTransforms();
-		inline static const std::unordered_map<std::string, NiTransform> _skeletonNodesDefaultTransformInPA = getSkeletonNodesDefaultTransformsInPA();
+		std::vector<std::pair<NiAVObject*, const RE::NiTransform>> _skeletonNodesToDefaultTransforms;
+		static std::unordered_map<std::string, RE::NiTransform> getSkeletonNodesDefaultTransforms();
+		static std::unordered_map<std::string, RE::NiTransform> getSkeletonNodesDefaultTransformsInPA();
+		inline static const std::unordered_map<std::string, RE::NiTransform> _skeletonNodesDefaultTransform = getSkeletonNodesDefaultTransforms();
+		inline static const std::unordered_map<std::string, RE::NiTransform> _skeletonNodesDefaultTransformInPA = getSkeletonNodesDefaultTransformsInPA();
 
 		// legs walking stuff
 		int _walkingState;
 		double _currentStepTime;
-		NiPoint3 _leftFootPos;
-		NiPoint3 _rightFootPos;
-		NiPoint3 _rightFootTarget;
-		NiPoint3 _leftFootTarget;
-		NiPoint3 _rightFootStart;
-		NiPoint3 _leftFootStart;
-		NiPoint3 _leftKneePosture;
-		NiPoint3 _rightKneePosture;
-		NiPoint3 _leftKneePos;
-		NiPoint3 _rightKneePos;
+		RE::NiPoint3 _leftFootPos;
+		RE::NiPoint3 _rightFootPos;
+		RE::NiPoint3 _rightFootTarget;
+		RE::NiPoint3 _leftFootTarget;
+		RE::NiPoint3 _rightFootStart;
+		RE::NiPoint3 _leftFootStart;
+		RE::NiPoint3 _leftKneePosture;
+		RE::NiPoint3 _rightKneePosture;
+		RE::NiPoint3 _leftKneePos;
+		RE::NiPoint3 _rightKneePos;
 		int _footStepping;
-		NiPoint3 _stepDir;
+		RE::NiPoint3 _stepDir;
 		double _prevSpeed;
 		double _stepTimeinStep;
 		int _delayFrame;
 
-		std::map<std::string, NiTransform, common::CaseInsensitiveComparator> _handBones;
+		std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator> _handBones;
 		std::map<std::string, bool, common::CaseInsensitiveComparator> _closedHand;
 		static std::unordered_map<std::string, vr::EVRButtonId> getHandBonesButtonMap();
 		inline static const std::unordered_map<std::string, vr::EVRButtonId> _handBonesButton = getHandBonesButtonMap();
 
-		NiTransform _rightHandPrevFrame;
-		NiTransform _leftHandPrevFrame;
+		RE::NiTransform _rightHandPrevFrame;
+		RE::NiTransform _leftHandPrevFrame;
 
 		// bones
 		std::map<std::string, int> _boneTreeMap;

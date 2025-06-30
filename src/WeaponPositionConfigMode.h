@@ -30,9 +30,9 @@ namespace frik {
 
 		~WeaponPositionConfigMode();
 
-		static NiTransform getMeleeWeaponDefaultAdjustment(const NiTransform& originalTransform);
-		static NiTransform getThrowableWeaponDefaultAdjustment(const NiTransform& originalTransform, bool inPA);
-		static NiTransform getBackOfHandUIDefaultAdjustment(const NiTransform& originalTransform, bool inPA);
+		static RE::NiTransform getMeleeWeaponDefaultAdjustment(const RE::NiTransform& originalTransform);
+		static RE::NiTransform getThrowableWeaponDefaultAdjustment(const RE::NiTransform& originalTransform, bool inPA);
+		static RE::NiTransform getBackOfHandUIDefaultAdjustment(const RE::NiTransform& originalTransform, bool inPA);
 		void showHideUIElements(bool weaponEquipped, bool throwableEquipped) const;
 
 		bool isInOffhandRepositioning() const { return _repositionTarget == RepositionTarget::Offhand; }

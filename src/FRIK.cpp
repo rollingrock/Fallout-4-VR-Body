@@ -27,7 +27,7 @@ namespace frik {
 		explicit FrameUpdateContext(Skeleton* skelly)
 			: _skelly(skelly) {}
 
-		virtual NiPoint3 getInteractionBoneWorldPosition() override {
+		virtual RE::NiPoint3 getInteractionBoneWorldPosition() override {
 			return _skelly->getOffhandIndexFingerTipWorldPosition();
 		}
 

@@ -14,11 +14,11 @@ namespace frik {
 		void onFrameUpdate();
 
 	private:
-		NiPoint3 smoothedValue(const NiPoint3& curPos, const NiPoint3& prevPos);
+		RE::NiPoint3 smoothedValue(const RE::NiPoint3& curPos, const RE::NiPoint3& prevPos);
 
 		bool _notMoving = false;
-		std::deque<NiPoint3> _lastPositions;
-		NiPoint3 _smoothedPos;
+		std::deque<RE::NiPoint3> _lastPositions;
+		RE::NiPoint3 _smoothedPos;
 		float _lastAppliedLocalX = 0;
 		float _lastAppliedLocalY = 0;
 

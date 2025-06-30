@@ -7,8 +7,8 @@ namespace f4vr {
 	class BSFlattenedBoneTree : public NiNode {
 	public:
 		struct BoneTransforms {
-			NiTransform local;
-			NiTransform world;
+			RE::NiTransform local;
+			RE::NiTransform world;
 			short parPos;
 			short childPos;
 			uint32_t unk8c;

@@ -191,7 +191,7 @@ namespace common {
 		 * Load offset data from given json file path and store it in the given map.
 		 * Use the entry key in the json file but for everything to work properly the name of the json should match the key.
 		 */
-		static void loadOffsetJsonFile(const std::string& file, std::unordered_map<std::string, NiTransform>& offsetsMap) {
+		static void loadOffsetJsonFile(const std::string& file, std::unordered_map<std::string, RE::NiTransform>& offsetsMap) {
 			std::ifstream inF;
 			inF.open(file, std::ios::in);
 			if (inF.fail()) {
@@ -216,8 +216,8 @@ namespace common {
 		/**
 		 * Load all embedded in resources offsets in the given resource range.
 		 */
-		static std::unordered_map<std::string, NiTransform> loadEmbeddedOffsets(const WORD fromResourceId, const WORD toResourceId) {
-			std::unordered_map<std::string, NiTransform> offsets;
+		static std::unordered_map<std::string, RE::NiTransform> loadEmbeddedOffsets(const WORD fromResourceId, const WORD toResourceId) {
+			std::unordered_map<std::string, RE::NiTransform> offsets;
 			for (WORD resourceId = fromResourceId; resourceId <= toResourceId; resourceId++) {
 				auto resourceOpt = getEmbeddedResourceAsStringIfExists(resourceId);
 				if (resourceOpt.has_value()) {
@@ -231,8 +231,8 @@ namespace common {
 		/**
 		 * Load all the offsets found in json files in a specific folder.
 		 */
-		static std::unordered_map<std::string, NiTransform> loadOffsetsFromFilesystem(const std::string& path) {
-			std::unordered_map<std::string, NiTransform> offsets;
+		static std::unordered_map<std::string, RE::NiTransform> loadOffsetsFromFilesystem(const std::string& path) {
+			std::unordered_map<std::string, RE::NiTransform> offsets;
 			for (const auto& file : std::filesystem::directory_iterator(path)) {
 				if (file.exists() && !file.is_directory()) {
 					loadOffsetJsonFile(file.path().string(), offsets);
@@ -244,13 +244,13 @@ namespace common {
 		/**
 		 * Save the given offsets transform to a json file using the given name.
 		 */
-		static void saveOffsetsToJsonFile(const std::string& name, const NiTransform& transform, const std::string& file) {
+		static void saveOffsetsToJsonFile(const std::string& name, const RE::NiTransform& transform, const std::string& file) {
 			Log::info("Saving offsets '%s' to '%s'", name.c_str(), file.c_str());
 			json offsetJson;
-			offsetJson[name]["rotation"] = transform.rot.arr;
-			offsetJson[name]["x"] = transform.pos.x;
-			offsetJson[name]["y"] = transform.pos.y;
-			offsetJson[name]["z"] = transform.pos.z;
+			offsetJson[name]["rotation"] = transform.rotate.arr;
+			offsetJson[name]["x"] = transform.translate.x;
+			offsetJson[name]["y"] = transform.translate.y;
+			offsetJson[name]["z"] = transform.translate.z;
 			offsetJson[name]["scale"] = transform.scale;
 
 			std::ofstream outF;
@@ -271,15 +271,15 @@ namespace common {
 		/**
 		 * Load the given json object with offset data into an offset map.
 		 */
-		static void loadOffsetJsonToMap(const ::json& json, std::unordered_map<std::string, NiTransform>& offsetsMap) {
+		static void loadOffsetJsonToMap(const ::json& json, std::unordered_map<std::string, RE::NiTransform>& offsetsMap) {
 			for (auto& [key, value] : json.items()) {
-				NiTransform data;
+				RE::NiTransform data;
 				for (int i = 0; i < 12; i++) {
-					data.rot.arr[i] = value["rotation"][i].get<float>();
+					data.rotate.arr[i] = value["rotation"][i].get<float>();
 				}
-				data.pos.x = value["x"].get<float>();
-				data.pos.y = value["y"].get<float>();
-				data.pos.z = value["z"].get<float>();
+				data.translate.x = value["x"].get<float>();
+				data.translate.y = value["y"].get<float>();
+				data.translate.z = value["z"].get<float>();
 				data.scale = value["scale"].get<float>();
 				offsetsMap[key] = data;
 			}
@@ -357,7 +357,7 @@ namespace common {
 		 * Setup filesystem watch on INI config file to reload config when changes are detected.
 		 * Handling duplicate modified events from file-watcher:
 		 * There can be 3-5 events fired for 1 change. Sometimes the last even can be a full second after a change.
-		 * To prevent it we check the file last write time and ignore events that 
+		 * To prevent it we check the file last write time and ignore events that
 		 */
 		void startIniConfigFileWatch() {
 			if (_iniConfigFileWatch) {

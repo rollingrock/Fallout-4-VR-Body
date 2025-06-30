@@ -339,13 +339,13 @@ namespace f4vr {
 		const auto& localTransform = node->m_localTransform;
 
 		// Calculate world position
-		const NiPoint3 pos = parentTransform.rot * (localTransform.pos * parentTransform.scale);
-		node->m_worldTransform.pos = parentTransform.pos + pos;
+		const RE::NiPoint3 pos = parentTransform.rotate * (localTransform.translate * parentTransform.scale);
+		node->m_worldTransform.translate = parentTransform.translate + pos;
 
 		// Calculate world rotation
 		common::Matrix44 loc;
-		loc.makeTransformMatrix(localTransform.rot, NiPoint3(0, 0, 0));
-		node->m_worldTransform.rot = loc.multiply43Left(parentTransform.rot);
+		loc.makeTransformMatrix(localTransform.rotate, RE::NiPoint3(0, 0, 0));
+		node->m_worldTransform.rotate = loc.multiply43Left(parentTransform.rotate);
 
 		// Calculate world scale
 		node->m_worldTransform.scale = parentTransform.scale * localTransform.scale;

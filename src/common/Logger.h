@@ -1,215 +1,136 @@
 #pragma once
 
-#include <chrono>
-#include <filesystem>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <unordered_map>
+// ReSharper disable CppUnnamedNamespaceInHeaderFile
+// ReSharper disable CppClangTidyBugproneMacroParentheses
 
-#include "CommonUtils.h"
+#include <chrono>
+#include <unordered_map>
+#include <spdlog/sinks/rotating_file_sink.h>
 
 namespace fs = std::filesystem;
 
-namespace common {
-	class Log {
-	public:
-		/**
-		 * Init logging using a log with the given name put in "My Games" folder.
-		 */
-		static void init(const std::string& logFileName) {
-			const auto path = getRelativePathInDocuments(R"(\My Games\Fallout4VR\F4SE\)" + logFileName);
-			rollLogFiles(path, 6);
+#pragma once
 
-			IDebugLog::Open(path.c_str());
-			IDebugLog::SetPrintLevel(IDebugLog::kLevel_Message);
-			IDebugLog::SetLogLevel(IDebugLog::kLevel_Message);
-		}
+#define MAKE_SOURCE_LOGGER(log_func, log_level)                                                                                                       \
+                                                                                                                                                      \
+    template <class... Args>                                                                                                                          \
+    struct [[maybe_unused]] log_func                                                                                                                  \
+    {                                                                                                                                                 \
+        log_func() = delete;                                                                                                                          \
+                                                                                                                                                      \
+        explicit log_func(spdlog::format_string_t<Args...> fmt, Args&&... args, const std::source_location& loc = std::source_location::current())    \
+        {                                                                                                                                             \
+            spdlog::source_loc sourceLoc{ loc.file_name(), static_cast<int>(loc.line()), loc.function_name() };                                       \
+            internal::_logger->log(sourceLoc, spdlog::level::log_level, fmt, std::forward<Args>(args)...);                                                       \
+        }                                                                                                                                             \
+    };                                                                                                                                                \
+                                                                                                                                                      \
+    template <class... Args>                                                                                                                          \
+    log_func(spdlog::format_string_t<Args...>, Args&&...) -> log_func<Args...>;
 
-		/**
-		 * Update the global logger log level based on the config setting.
-		 */
-		static void setLogLevel(int logLevel) {
-			if (_logLevel == logLevel)
-				return;
+namespace common::logger::internal
+{
+    /**
+     * Global logger instance
+     */
+    inline std::shared_ptr<spdlog::logger> _logger;
 
-			info("Set log level = %d", logLevel);
-			_logLevel = logLevel;
-			const auto level = static_cast<IDebugLog::LogLevel>(logLevel);
-			IDebugLog::SetPrintLevel(level);
-			IDebugLog::SetLogLevel(level);
-		}
+    /**
+     * Current log level
+     */
+    inline int _logLevel = -1;
 
-		static void verbose(const char* fmt, ...) {
-			if (_logLevel < IDebugLog::kLevel_VerboseMessage)
-				return;
+    /**
+     * Holds the last time of a log message per key.
+     */
+    inline std::unordered_map<std::string_view, std::chrono::steady_clock::time_point> _sampleMessagesTtl;
 
-			va_list args;
-			va_start(args, fmt);
-#ifdef _DEBUG // don't do extra work in release
-			const auto msg = getTimeStringForLog() + " VERB " + fmt;
-			fmt = msg.c_str();
-#endif
-			IDebugLog::Log(IDebugLog::kLevel_VerboseMessage, fmt, args);
-			va_end(args);
-		}
+    /**
+     * Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
+     */
+    template <class... Args>
+    void sampleImpl(const int time, spdlog::format_string_t<Args...> fmt, Args&&... args)
+    {
+        const fmt::basic_string_view<char> fmtView = fmt;
+        const std::string_view key(fmtView.data(), fmtView.size());
 
-		static void debug(const char* fmt, ...) {
-			if (_logLevel < IDebugLog::kLevel_DebugMessage)
-				return;
+        const auto now = std::chrono::steady_clock::now();
+        if (_sampleMessagesTtl.contains(key) && now - _sampleMessagesTtl[key] <= std::chrono::milliseconds(time))
+            return;
 
-			va_list args;
-			va_start(args, fmt);
-#ifdef _DEBUG // don't do extra work in release
-			const auto msg = getTimeStringForLog() + " DEBUG " + fmt;
-			fmt = msg.c_str();
-#endif
-			IDebugLog::Log(IDebugLog::kLevel_DebugMessage, fmt, args);
-			va_end(args);
-		}
-
-		static void info(const char* fmt, ...) {
-			va_list args;
-			va_start(args, fmt);
-#ifdef _DEBUG // don't do extra work in release
-			const auto msg = getTimeStringForLog() + " INFO " + fmt;
-			fmt = msg.c_str();
-#endif
-			IDebugLog::Log(IDebugLog::kLevel_Message, fmt, args);
-			va_end(args);
-		}
-
-		// don't add the extra prefix stuff. Useful for multiline debug dump logs
-		static void infoRaw(const char* fmt, ...) {
-			va_list args;
-			va_start(args, fmt);
-			IDebugLog::Log(IDebugLog::kLevel_Message, fmt, args);
-			va_end(args);
-		}
-
-		static void warn(const char* fmt, ...) {
-			va_list args;
-			va_start(args, fmt);
-#ifdef _DEBUG // don't do extra work in release
-			const auto msg = getTimeStringForLog() + " WARN " + fmt;
-			fmt = msg.c_str();
-#endif
-			IDebugLog::Log(IDebugLog::kLevel_Warning, fmt, args);
-			va_end(args);
-		}
-
-		static void error(const char* fmt, ...) {
-			va_list args;
-			va_start(args, fmt);
-			const auto msg = getTimeStringForLog() + " ERROR " + fmt;
-			fmt = msg.c_str();
-			IDebugLog::Log(IDebugLog::kLevel_Error, fmt, args);
-			va_end(args);
-		}
-
-		static void fatal(const char* fmt, ...) {
-			va_list args;
-			va_start(args, fmt);
-			const auto msg = getTimeStringForLog() + " FATAL " + fmt;
-			fmt = msg.c_str();
-			IDebugLog::Log(IDebugLog::kLevel_FatalError, fmt, args);
-			va_end(args);
-		}
-
-		/**
-		 * Same as calling info() but only one message log per "time" in milliseconds, other logs are dropped.
-		 * Use the message format as a key to identify the log messages that should be sampled.
-		 */
-		static void sample(const int time, const char* fmt, ...) {
-			va_list args;
-			va_start(args, fmt);
-			sampleImpl(time, fmt, args);
-			va_end(args);
-		}
-
-		/**
-		 * Same as calling info() but only one message log per second, other logs are dropped.
-		 * Use the message format as a key to identify the log messages that should be sampled.
-		 */
-		static void sample(const char* fmt, ...) {
-			va_list args;
-			va_start(args, fmt);
-			sampleImpl(1000, fmt, args);
-			va_end(args);
-		}
-
-	private:
-		/**
-		 * Get a simple string of the current time in HH:MM:SS.ms format.
-		 */
-		static std::string getTimeStringForLog() {
-			const auto now = std::chrono::system_clock::now();
-			const auto nowC = std::chrono::system_clock::to_time_t(now);
-			std::tm localTime;
-			localtime_s(&localTime, &nowC); // NOLINT(cert-err33-c)
-			const auto ms = duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000;
-			std::ostringstream oss;
-			oss << std::put_time(&localTime, "%H:%M:%S")
-				<< '.' << std::setfill('0') << std::setw(3) << ms;
-			return oss.str();
-		}
-
-		/**
-		 * Same as calling _MESSAGE but only one message log per "time" second, other logs are dropped.
-		 */
-		static void sampleImpl(const int time, const char* fmt, const va_list args) {
-			const auto key = fmt;
-			const auto now = std::chrono::steady_clock::now();
-			if (_sampleMessagesTtl.contains(key) && now - _sampleMessagesTtl[key] <= std::chrono::milliseconds(time)) {
-				return;
-			}
-			_sampleMessagesTtl[key] = now;
-			const auto msg = getTimeStringForLog() + " SMPL " + fmt;
-			IDebugLog::Log(IDebugLog::kLevel_Message, msg.c_str(), args);
-		}
-
-		/**
-		 * Roll the logfiles to have up to <max> old log files available.
-		 * The latest will be "name.log", previous "name_1.log", until "name_<max>.log"
-		 */
-		static void rollLogFiles(const std::string& logPathStr, const int max) {
-			if (max < 2)
-				return;
-
-			const fs::path logPath(logPathStr);
-			const auto parent = logPath.parent_path();
-			const auto stem = logPath.stem().string(); // "name"
-			const auto ext = logPath.extension().string(); // ".log"
-
-			// Delete the oldest one if it exists (name_6.log)
-			const fs::path oldest = parent / (stem + "_" + std::to_string(max) + ext);
-			if (fs::exists(oldest)) {
-				fs::remove(oldest);
-			}
-
-			// Roll logs: name_5.log -> name_6.log, ..., name_1.log -> name_2.log
-			for (int i = max - 1; i >= 1; --i) {
-				fs::path src = parent / std::format("{}_{}{}", stem, i, ext);
-				fs::path dst = parent / std::format("{}_{}{}", stem, i + 1, ext);
-				if (fs::exists(src)) {
-					fs::rename(src, dst);
-				}
-			}
-
-			// name.log -> name_1.log
-			if (fs::exists(logPath)) {
-				fs::rename(logPath, parent / std::format("{}_1{}", stem, ext));
-			}
-		}
-
-		/**
-		 * Current log level
-		 */
-		inline static int _logLevel = -1;
-
-		/**
-		 * Holds the last time of a log message per key.
-		 */
-		inline static std::unordered_map<std::string, std::chrono::steady_clock::time_point> _sampleMessagesTtl;
-	};
+        _sampleMessagesTtl[key] = now;
+        std::string formatted = fmt::format(fmt, std::forward<Args>(args)...);
+        _logger->log(spdlog::level::info, "[SAMPLE] {}", formatted);
+    }
 }
+
+namespace common::logger
+{
+    MAKE_SOURCE_LOGGER(trace, trace);
+    MAKE_SOURCE_LOGGER(debug, debug);
+    MAKE_SOURCE_LOGGER(info, info);
+    MAKE_SOURCE_LOGGER(warn, warn);
+    MAKE_SOURCE_LOGGER(error, err);
+    MAKE_SOURCE_LOGGER(critical, critical);
+
+    /**
+     * Same as calling info() but only one message log per "time" in milliseconds, other logs are dropped.
+     * Use the message format as a key to identify the log messages that should be sampled.
+     */
+    template <class... Args>
+    void sample(spdlog::format_string_t<Args...> fmt, Args&&... args)
+    {
+        internal::sampleImpl(1000, fmt, std::forward<Args>(args)...);
+    }
+
+    template <class... Args>
+    void sample(const int time, spdlog::format_string_t<Args...> fmt, Args&&... args)
+    {
+        internal::sampleImpl(time, fmt, std::forward<Args>(args)...);
+    }
+
+    /**
+     * Init logging using a log with the given name put in "My Games" folder.
+     */
+    inline void init(const std::string_view& logFileName)
+    {
+        auto path = F4SE::log::log_directory();
+        const auto gamepath = REL::Module::IsVR() ? "Fallout4VR/F4SE" : "Fallout4/F4SE";
+        if (!path.value().generic_string().ends_with(gamepath)) {
+            // handle bug where game directory is missing
+            path = path.value().parent_path().append(gamepath);
+        }
+
+        // Use rolling log files (5 files, max 10mb each)
+        *path /= fmt::format("{}.log"sv, logFileName);
+        auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(path->string(), 1024 * 1024 * 10, 5, true);
+
+        internal::_logger = std::make_shared<spdlog::logger>("GLOBAL"s, std::move(sink));
+
+        constexpr auto level = spdlog::level::info;
+        internal::_logger->set_level(level);
+        internal::_logger->flush_on(level);
+
+        spdlog::set_default_logger(internal::_logger);
+
+        // see: https://github.com/gabime/spdlog/wiki/Custom-formatting
+        spdlog::set_pattern("%H:%M:%S.%e %L: %v"s);
+    }
+
+    /**
+     * Update the global logger log level based on the config setting.
+     */
+    inline void setLogLevel(int logLevel)
+    {
+        if (internal::_logLevel == logLevel)
+            return;
+
+        info("Set log level = {}", logLevel);
+        internal::_logLevel = logLevel;
+        const auto levelEnum = static_cast<spdlog::level::level_enum>(logLevel);
+        internal::_logger->set_level(levelEnum);
+        internal::_logger->flush_on(levelEnum);
+    }
+}
+
+#undef MAKE_SOURCE_LOGGER

@@ -103,7 +103,7 @@ namespace f4vr {
 	using _BSGraphics_Utility_CalcBoneMatrices = void* (*)(BSSubIndexTriShape* node, uint64_t counter);
 	inline RelocAddr<_BSGraphics_Utility_CalcBoneMatrices> BSGraphics_Utility_CalcBoneMatrices(0x1dabc60);
 
-	using _TESObjectCELL_GetLandHeight = uint64_t(*)(TESObjectCELL* cell, const NiPoint3* coord, const float* height);
+	using _TESObjectCELL_GetLandHeight = uint64_t(*)(TESObjectCELL* cell, const RE::NiPoint3* coord, const float* height);
 	inline RelocAddr<_TESObjectCELL_GetLandHeight> TESObjectCell_GetLandHeight(0x039b230);
 
 	using _Actor_SwitchRace = void(*)(Actor* a_actor, TESRace* a_race, bool param3, bool param4);

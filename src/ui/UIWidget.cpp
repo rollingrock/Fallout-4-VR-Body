@@ -12,9 +12,9 @@ namespace vrui {
 			_node->m_name.c_str(),
 			_visible ? "V" : "H",
 			isPressable() ? "P" : ".",
-			_transform.pos.x,
-			_transform.pos.y,
-			_transform.pos.z,
+			_transform.translate.x,
+			_transform.translate.y,
+			_transform.translate.z,
 			_size.width,
 			_size.height
 		);
@@ -63,9 +63,9 @@ namespace vrui {
 	/**
 	 * Add soft press mimic to the transform.
 	 */
-	NiTransform UIWidget::calculateTransform() const {
+	RE::NiTransform UIWidget::calculateTransform() const {
 		auto trans = UIElement::calculateTransform();
-		trans.pos += NiPoint3(0, _pressYOffset, 0);
+		trans.translate += RE::NiPoint3(0, _pressYOffset, 0);
 		return trans;
 	}
 
@@ -80,13 +80,13 @@ namespace vrui {
 		}
 
 		const auto finger = context->getInteractionBoneWorldPosition();
-		const auto widgetCenter = _node->m_worldTransform.pos;
+		const auto widgetCenter = _node->m_worldTransform.translate;
 
 		const float distance = vec3Len(finger - widgetCenter);
 
 		// calculate the distance only in the y-axis
-		const NiPoint3 forward = _node->m_worldTransform.rot * NiPoint3(0, 1, 0);
-		const NiPoint3 vectorToCurr = widgetCenter - finger;
+		const RE::NiPoint3 forward = _node->m_worldTransform.rotate * RE::NiPoint3(0, 1, 0);
+		const RE::NiPoint3 vectorToCurr = widgetCenter - finger;
 		const float yOnlyDistance = vec3Dot(forward, vectorToCurr);
 
 		updatePressableCloseToInteraction(context, distance, yOnlyDistance);
@@ -105,7 +105,7 @@ namespace vrui {
 		}
 
 		// distance in y-axis from original location before press offset
-		const NiPoint3 vectorToOrg = vectorToCurr - _node->m_worldTransform.rot * NiPoint3(0, _pressYOffset, 0);
+		const RE::NiPoint3 vectorToOrg = vectorToCurr - _node->m_worldTransform.rotate * RE::NiPoint3(0, _pressYOffset, 0);
 		const float pressDistance = -vec3Dot(forward, vectorToOrg);
 
 		if (std::isnan(pressDistance) || pressDistance < 0) {

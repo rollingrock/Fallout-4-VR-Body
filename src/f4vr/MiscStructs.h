@@ -23,8 +23,8 @@ namespace f4vr {
 
 		// members
 		uintptr_t vtable; // 00
-		NiPoint3 location; // 08
-		NiPoint3 direction; // 14
+		RE::NiPoint3 location; // 08
+		RE::NiPoint3 direction; // 14
 		TESBoundObject* object{nullptr}; // 20
 		TESObjectCELL* interior{nullptr}; // 28
 		TESWorldSpace* world{nullptr}; // 30
@@ -155,7 +155,7 @@ namespace f4vr {
 		UInt8 m_eAffectedNodeRelationBehavior = 0; // 61 - CloneRelationBehavior - default 0
 		UInt8 m_eDynamicEffectRelationBehavior = 0; // 62 - CloneRelationBehavior - default 0
 		char m_cAppendChar = '$'; // 64 - default '$'
-		NiPoint3 scale = {1.0f, 1.0f, 1.0f}; // 0x68 - default {1, 1, 1}
+		RE::NiPoint3 scale = {1.0f, 1.0f, 1.0f}; // 0x68 - default {1, 1, 1}
 	};
 
 	class MuzzleFlash {

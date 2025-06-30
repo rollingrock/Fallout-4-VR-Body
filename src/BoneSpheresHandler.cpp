@@ -77,7 +77,7 @@ namespace frik {
 			return 0;
 		}
 
-		const auto sphere = new BoneSphere(radius, boneNode, NiPoint3(0, 0, 0));
+		const auto sphere = new BoneSphere(radius, boneNode, RE::NiPoint3(0, 0, 0));
 		const UInt32 handle = _nextBoneSphereHandle++;
 
 		_boneSphereRegisteredObjects[handle] = sphere;
@@ -116,7 +116,7 @@ namespace frik {
 			}
 		}
 
-		NiPoint3 offsetVec;
+		RE::NiPoint3 offsetVec;
 
 		pos.Get(&offsetVec.x, 0);
 		pos.Get(&offsetVec.y, 1);
@@ -201,10 +201,10 @@ namespace frik {
 		}
 
 		for (const auto& element : _boneSphereRegisteredObjects) {
-			NiPoint3 offset = element.second->bone->m_worldTransform.rot * element.second->offset;
-			offset = element.second->bone->m_worldTransform.pos + offset;
+			RE::NiPoint3 offset = element.second->bone->m_worldTransform.rotate * element.second->offset;
+			offset = element.second->bone->m_worldTransform.translate + offset;
 
-			double dist = vec3Len(rFinger->m_worldTransform.pos - offset);
+			double dist = vec3Len(rFinger->m_worldTransform.translate - offset);
 
 			if (dist <= static_cast<double>(element.second->radius) - 0.1) {
 				if (!element.second->stickyRight) {
@@ -240,7 +240,7 @@ namespace frik {
 				}
 			}
 
-			dist = static_cast<double>(vec3Len(lFinger->m_worldTransform.pos - offset));
+			dist = static_cast<double>(vec3Len(lFinger->m_worldTransform.translate - offset));
 
 			if (dist <= static_cast<double>(element.second->radius) - 0.1) {
 				if (!element.second->stickyLeft) {
@@ -302,13 +302,13 @@ namespace frik {
 			}
 
 			if (sphere) {
-				NiPoint3 offset;
+				RE::NiPoint3 offset;
 
-				offset = bone->m_worldTransform.rot * val->offset;
-				offset = bone->m_worldTransform.pos + offset;
+				offset = bone->m_worldTransform.rotate * val->offset;
+				offset = bone->m_worldTransform.translate + offset;
 
 				// wp = parWp + parWr * lp =>   lp = (wp - parWp) * parWr'
-				sphere->m_localTransform.pos = bone->m_worldTransform.rot.Transpose() * (offset - bone->m_worldTransform.pos);
+				sphere->m_localTransform.translate = bone->m_worldTransform.rotate.Transpose() * (offset - bone->m_worldTransform.translate);
 			}
 		}
 	}

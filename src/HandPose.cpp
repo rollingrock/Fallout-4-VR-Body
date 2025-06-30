@@ -9,8 +9,8 @@ using namespace common;
 
 // TODO: this code is terrible, primary it doesn't handle multiple code paths set hand pose, release will release all of them
 namespace frik {
-	std::map<std::string, NiTransform, CaseInsensitiveComparator> handClosed;
-	std::map<std::string, NiTransform, CaseInsensitiveComparator> handOpen;
+	std::map<std::string, RE::NiTransform, CaseInsensitiveComparator> handClosed;
+	std::map<std::string, RE::NiTransform, CaseInsensitiveComparator> handOpen;
 
 	std::map<std::string, float> handPapyrusPose;
 	std::map<std::string, bool> handPapyrusHasControl;
@@ -31,43 +31,43 @@ namespace frik {
 	static bool _offHandGripPose = false;
 	static constexpr float OFFHAND_FINGERS_GRIP_POSE[] = {1.0f, 1.0f, 0.9f, 0.6f, 0.6f, 0.6f, 0.5f, 0.6f, 0.55f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
 
-	static void copyDataIntoHand(std::vector<std::vector<float>> data, std::map<std::string, NiTransform, CaseInsensitiveComparator>& hand) {
-		std::ranges::copy(data[0], hand["LArm_Finger11"].rot.arr);
-		std::ranges::copy(data[1], hand["LArm_Finger12"].rot.arr);
-		std::ranges::copy(data[2], hand["LArm_Finger13"].rot.arr);
-		std::ranges::copy(data[3], hand["LArm_Finger21"].rot.arr);
-		std::ranges::copy(data[4], hand["LArm_Finger22"].rot.arr);
-		std::ranges::copy(data[5], hand["LArm_Finger23"].rot.arr);
-		std::ranges::copy(data[6], hand["LArm_Finger31"].rot.arr);
-		std::ranges::copy(data[7], hand["LArm_Finger32"].rot.arr);
-		std::ranges::copy(data[8], hand["LArm_Finger33"].rot.arr);
-		std::ranges::copy(data[9], hand["LArm_Finger41"].rot.arr);
-		std::ranges::copy(data[10], hand["LArm_Finger42"].rot.arr);
-		std::ranges::copy(data[11], hand["LArm_Finger43"].rot.arr);
-		std::ranges::copy(data[12], hand["LArm_Finger51"].rot.arr);
-		std::ranges::copy(data[13], hand["LArm_Finger52"].rot.arr);
-		std::ranges::copy(data[14], hand["LArm_Finger53"].rot.arr);
-		std::ranges::copy(data[15], hand["RArm_Finger11"].rot.arr);
-		std::ranges::copy(data[16], hand["RArm_Finger12"].rot.arr);
-		std::ranges::copy(data[17], hand["RArm_Finger13"].rot.arr);
-		std::ranges::copy(data[18], hand["RArm_Finger21"].rot.arr);
-		std::ranges::copy(data[19], hand["RArm_Finger22"].rot.arr);
-		std::ranges::copy(data[20], hand["RArm_Finger23"].rot.arr);
-		std::ranges::copy(data[21], hand["RArm_Finger31"].rot.arr);
-		std::ranges::copy(data[22], hand["RArm_Finger32"].rot.arr);
-		std::ranges::copy(data[23], hand["RArm_Finger33"].rot.arr);
-		std::ranges::copy(data[24], hand["RArm_Finger41"].rot.arr);
-		std::ranges::copy(data[25], hand["RArm_Finger42"].rot.arr);
-		std::ranges::copy(data[26], hand["RArm_Finger43"].rot.arr);
-		std::ranges::copy(data[27], hand["RArm_Finger51"].rot.arr);
-		std::ranges::copy(data[28], hand["RArm_Finger52"].rot.arr);
-		std::ranges::copy(data[29], hand["RArm_Finger53"].rot.arr);
+	static void copyDataIntoHand(std::vector<std::vector<float>> data, std::map<std::string, RE::NiTransform, CaseInsensitiveComparator>& hand) {
+		std::ranges::copy(data[0], hand["LArm_Finger11"].rotate.arr);
+		std::ranges::copy(data[1], hand["LArm_Finger12"].rotate.arr);
+		std::ranges::copy(data[2], hand["LArm_Finger13"].rotate.arr);
+		std::ranges::copy(data[3], hand["LArm_Finger21"].rotate.arr);
+		std::ranges::copy(data[4], hand["LArm_Finger22"].rotate.arr);
+		std::ranges::copy(data[5], hand["LArm_Finger23"].rotate.arr);
+		std::ranges::copy(data[6], hand["LArm_Finger31"].rotate.arr);
+		std::ranges::copy(data[7], hand["LArm_Finger32"].rotate.arr);
+		std::ranges::copy(data[8], hand["LArm_Finger33"].rotate.arr);
+		std::ranges::copy(data[9], hand["LArm_Finger41"].rotate.arr);
+		std::ranges::copy(data[10], hand["LArm_Finger42"].rotate.arr);
+		std::ranges::copy(data[11], hand["LArm_Finger43"].rotate.arr);
+		std::ranges::copy(data[12], hand["LArm_Finger51"].rotate.arr);
+		std::ranges::copy(data[13], hand["LArm_Finger52"].rotate.arr);
+		std::ranges::copy(data[14], hand["LArm_Finger53"].rotate.arr);
+		std::ranges::copy(data[15], hand["RArm_Finger11"].rotate.arr);
+		std::ranges::copy(data[16], hand["RArm_Finger12"].rotate.arr);
+		std::ranges::copy(data[17], hand["RArm_Finger13"].rotate.arr);
+		std::ranges::copy(data[18], hand["RArm_Finger21"].rotate.arr);
+		std::ranges::copy(data[19], hand["RArm_Finger22"].rotate.arr);
+		std::ranges::copy(data[20], hand["RArm_Finger23"].rotate.arr);
+		std::ranges::copy(data[21], hand["RArm_Finger31"].rotate.arr);
+		std::ranges::copy(data[22], hand["RArm_Finger32"].rotate.arr);
+		std::ranges::copy(data[23], hand["RArm_Finger33"].rotate.arr);
+		std::ranges::copy(data[24], hand["RArm_Finger41"].rotate.arr);
+		std::ranges::copy(data[25], hand["RArm_Finger42"].rotate.arr);
+		std::ranges::copy(data[26], hand["RArm_Finger43"].rotate.arr);
+		std::ranges::copy(data[27], hand["RArm_Finger51"].rotate.arr);
+		std::ranges::copy(data[28], hand["RArm_Finger52"].rotate.arr);
+		std::ranges::copy(data[29], hand["RArm_Finger53"].rotate.arr);
 	}
 
 	void initHandPoses(const bool inPowerArmor) {
 		std::vector<std::vector<float>> data;
 
-		// pulled from the game engine while running idle animations 
+		// pulled from the game engine while running idle animations
 
 		//closed fist first
 		data.push_back({0.849409F, -0.270577F, 0.453092F, 0, -0.382631F, 0.275533F, 0.881859F, 0, -0.363453F, -0.922426F, 0.130509F, 0});
@@ -139,67 +139,67 @@ namespace frik {
 		copyDataIntoHand(data, handOpen);
 
 		if (inPowerArmor) {
-			handOpen["LArm_Finger11"].pos = NiPoint3(3.993323F, -4.156268F, 3.585619F);
-			handOpen["LArm_Finger12"].pos = NiPoint3(2.893830F, 0.000042F, 0.000004F);
-			handOpen["LArm_Finger13"].pos = NiPoint3(4.687409F, 0, 0);
-			handOpen["LArm_Finger21"].pos = NiPoint3(8.474635F, -2.161191F, 3.789806F);
-			handOpen["LArm_Finger22"].pos = NiPoint3(2.613208F, 0.000026F, 0.000011F);
-			handOpen["LArm_Finger23"].pos = NiPoint3(5.145684F, 0, 0);
-			handOpen["LArm_Finger31"].pos = NiPoint3(8.151892F, -2.576661F, 1.100114F);
-			handOpen["LArm_Finger32"].pos = NiPoint3(3.722714F, 0.000021F, -0.000004F);
-			handOpen["LArm_Finger33"].pos = NiPoint3(4.984375F, 0, 0);
-			handOpen["LArm_Finger41"].pos = NiPoint3(7.967844F, -2.258833F, -1.337387F);
-			handOpen["LArm_Finger42"].pos = NiPoint3(2.933939F, 0.000027F, 0.000004F);
-			handOpen["LArm_Finger43"].pos = NiPoint3(5.102559F, 0, 0);
-			handOpen["LArm_Finger51"].pos = NiPoint3(8.365221F, -2.603350F, -3.706458F);
-			handOpen["LArm_Finger52"].pos = NiPoint3(2.128304F, 0.000018F, 0.000003F);
-			handOpen["LArm_Finger53"].pos = NiPoint3(4.594295F, 0, 0);
-			handOpen["RArm_Finger11"].pos = NiPoint3(3.993090F, -4.156340F, -3.585553F);
-			handOpen["RArm_Finger12"].pos = NiPoint3(2.893783F, 0.000042F, 0.000004F);
-			handOpen["RArm_Finger13"].pos = NiPoint3(4.686954F, 0, 0);
-			handOpen["RArm_Finger21"].pos = NiPoint3(8.474229F, -2.161169F, -3.789712F);
-			handOpen["RArm_Finger22"].pos = NiPoint3(2.613165F, 0.000026F, 0.000011F);
-			handOpen["RArm_Finger23"].pos = NiPoint3(5.145271F, 0, 0);
-			handOpen["RArm_Finger31"].pos = NiPoint3(8.151529F, -2.576689F, -1.100008F);
-			handOpen["RArm_Finger32"].pos = NiPoint3(3.722677F, 0.000021F, -0.000004F);
-			handOpen["RArm_Finger33"].pos = NiPoint3(4.973974F, 0, 0);
-			handOpen["RArm_Finger41"].pos = NiPoint3(7.967505F, -2.258873F, 1.337498F);
-			handOpen["RArm_Finger42"].pos = NiPoint3(2.933841F, 0.000027F, 0.000004F);
-			handOpen["RArm_Finger43"].pos = NiPoint3(5.102017F, 0, 0);
-			handOpen["RArm_Finger51"].pos = NiPoint3(8.364894F, -2.603419F, 3.706582F);
-			handOpen["RArm_Finger52"].pos = NiPoint3(2.128275F, 0.000018F, 0.000003F);
-			handOpen["RArm_Finger53"].pos = NiPoint3(4.593989F, 0, 0);
+			handOpen["LArm_Finger11"].translate = RE::NiPoint3(3.993323F, -4.156268F, 3.585619F);
+			handOpen["LArm_Finger12"].translate = RE::NiPoint3(2.893830F, 0.000042F, 0.000004F);
+			handOpen["LArm_Finger13"].translate = RE::NiPoint3(4.687409F, 0, 0);
+			handOpen["LArm_Finger21"].translate = RE::NiPoint3(8.474635F, -2.161191F, 3.789806F);
+			handOpen["LArm_Finger22"].translate = RE::NiPoint3(2.613208F, 0.000026F, 0.000011F);
+			handOpen["LArm_Finger23"].translate = RE::NiPoint3(5.145684F, 0, 0);
+			handOpen["LArm_Finger31"].translate = RE::NiPoint3(8.151892F, -2.576661F, 1.100114F);
+			handOpen["LArm_Finger32"].translate = RE::NiPoint3(3.722714F, 0.000021F, -0.000004F);
+			handOpen["LArm_Finger33"].translate = RE::NiPoint3(4.984375F, 0, 0);
+			handOpen["LArm_Finger41"].translate = RE::NiPoint3(7.967844F, -2.258833F, -1.337387F);
+			handOpen["LArm_Finger42"].translate = RE::NiPoint3(2.933939F, 0.000027F, 0.000004F);
+			handOpen["LArm_Finger43"].translate = RE::NiPoint3(5.102559F, 0, 0);
+			handOpen["LArm_Finger51"].translate = RE::NiPoint3(8.365221F, -2.603350F, -3.706458F);
+			handOpen["LArm_Finger52"].translate = RE::NiPoint3(2.128304F, 0.000018F, 0.000003F);
+			handOpen["LArm_Finger53"].translate = RE::NiPoint3(4.594295F, 0, 0);
+			handOpen["RArm_Finger11"].translate = RE::NiPoint3(3.993090F, -4.156340F, -3.585553F);
+			handOpen["RArm_Finger12"].translate = RE::NiPoint3(2.893783F, 0.000042F, 0.000004F);
+			handOpen["RArm_Finger13"].translate = RE::NiPoint3(4.686954F, 0, 0);
+			handOpen["RArm_Finger21"].translate = RE::NiPoint3(8.474229F, -2.161169F, -3.789712F);
+			handOpen["RArm_Finger22"].translate = RE::NiPoint3(2.613165F, 0.000026F, 0.000011F);
+			handOpen["RArm_Finger23"].translate = RE::NiPoint3(5.145271F, 0, 0);
+			handOpen["RArm_Finger31"].translate = RE::NiPoint3(8.151529F, -2.576689F, -1.100008F);
+			handOpen["RArm_Finger32"].translate = RE::NiPoint3(3.722677F, 0.000021F, -0.000004F);
+			handOpen["RArm_Finger33"].translate = RE::NiPoint3(4.973974F, 0, 0);
+			handOpen["RArm_Finger41"].translate = RE::NiPoint3(7.967505F, -2.258873F, 1.337498F);
+			handOpen["RArm_Finger42"].translate = RE::NiPoint3(2.933841F, 0.000027F, 0.000004F);
+			handOpen["RArm_Finger43"].translate = RE::NiPoint3(5.102017F, 0, 0);
+			handOpen["RArm_Finger51"].translate = RE::NiPoint3(8.364894F, -2.603419F, 3.706582F);
+			handOpen["RArm_Finger52"].translate = RE::NiPoint3(2.128275F, 0.000018F, 0.000003F);
+			handOpen["RArm_Finger53"].translate = RE::NiPoint3(4.593989F, 0, 0);
 		} else {
-			handOpen["LArm_Finger11"].pos = NiPoint3(1.582972F, -1.262648F, 1.853201F);
-			handOpen["LArm_Finger12"].pos = NiPoint3(3.569515F, 0.000042F, 0.000004F);
-			handOpen["LArm_Finger13"].pos = NiPoint3(2.401824F, 0, 0);
-			handOpen["LArm_Finger21"].pos = NiPoint3(7.501364F, 0.430291F, 2.277657F);
-			handOpen["LArm_Finger22"].pos = NiPoint3(3.018186F, 0.000026F, 0.000011F);
-			handOpen["LArm_Finger23"].pos = NiPoint3(1.850236F, 0, 0);
-			handOpen["LArm_Finger31"].pos = NiPoint3(7.595781F, 0.62098F, 0.457392F);
-			handOpen["LArm_Finger32"].pos = NiPoint3(3.091653F, 0.000021F, -0.000004F);
-			handOpen["LArm_Finger33"].pos = NiPoint3(2.187974F, 0, 0);
-			handOpen["LArm_Finger41"].pos = NiPoint3(7.464033F, 0.350152F, -1.438817F);
-			handOpen["LArm_Finger42"].pos = NiPoint3(2.664419F, 0.000027F, 0.000004F);
-			handOpen["LArm_Finger43"].pos = NiPoint3(1.89974F, 0, 0);
-			handOpen["LArm_Finger51"].pos = NiPoint3(6.637259F, -0.35742F, -3.01848F);
-			handOpen["LArm_Finger52"].pos = NiPoint3(2.238261F, 0.000018F, 0.000003F);
-			handOpen["LArm_Finger53"].pos = NiPoint3(1.665912F, 0, 0);
-			handOpen["RArm_Finger11"].pos = NiPoint3(1.582972F, -1.262648F, -1.853201F);
-			handOpen["RArm_Finger12"].pos = NiPoint3(3.569515F, 0.000042F, 0.000004F);
-			handOpen["RArm_Finger13"].pos = NiPoint3(2.401824F, 0, 0);
-			handOpen["RArm_Finger21"].pos = NiPoint3(7.501364F, 0.430291F, -2.277657F);
-			handOpen["RArm_Finger22"].pos = NiPoint3(3.018186F, 0.000026F, 0.000011F);
-			handOpen["RArm_Finger23"].pos = NiPoint3(1.850236F, 0, 0);
-			handOpen["RArm_Finger31"].pos = NiPoint3(7.595781F, 0.62098F, -0.457392F);
-			handOpen["RArm_Finger32"].pos = NiPoint3(3.091653F, 0.000021F, -0.000004F);
-			handOpen["RArm_Finger33"].pos = NiPoint3(2.187974F, 0, 0);
-			handOpen["RArm_Finger41"].pos = NiPoint3(7.464033F, 0.350152F, 1.438817F);
-			handOpen["RArm_Finger42"].pos = NiPoint3(2.664419F, 0.000027F, 0.000004F);
-			handOpen["RArm_Finger43"].pos = NiPoint3(1.89974F, 0, 0);
-			handOpen["RArm_Finger51"].pos = NiPoint3(6.637259F, -0.35742F, 3.01848F);
-			handOpen["RArm_Finger52"].pos = NiPoint3(2.238261F, 0.000018F, 0.000003F);
-			handOpen["RArm_Finger53"].pos = NiPoint3(1.665912F, 0, 0);
+			handOpen["LArm_Finger11"].translate = RE::NiPoint3(1.582972F, -1.262648F, 1.853201F);
+			handOpen["LArm_Finger12"].translate = RE::NiPoint3(3.569515F, 0.000042F, 0.000004F);
+			handOpen["LArm_Finger13"].translate = RE::NiPoint3(2.401824F, 0, 0);
+			handOpen["LArm_Finger21"].translate = RE::NiPoint3(7.501364F, 0.430291F, 2.277657F);
+			handOpen["LArm_Finger22"].translate = RE::NiPoint3(3.018186F, 0.000026F, 0.000011F);
+			handOpen["LArm_Finger23"].translate = RE::NiPoint3(1.850236F, 0, 0);
+			handOpen["LArm_Finger31"].translate = RE::NiPoint3(7.595781F, 0.62098F, 0.457392F);
+			handOpen["LArm_Finger32"].translate = RE::NiPoint3(3.091653F, 0.000021F, -0.000004F);
+			handOpen["LArm_Finger33"].translate = RE::NiPoint3(2.187974F, 0, 0);
+			handOpen["LArm_Finger41"].translate = RE::NiPoint3(7.464033F, 0.350152F, -1.438817F);
+			handOpen["LArm_Finger42"].translate = RE::NiPoint3(2.664419F, 0.000027F, 0.000004F);
+			handOpen["LArm_Finger43"].translate = RE::NiPoint3(1.89974F, 0, 0);
+			handOpen["LArm_Finger51"].translate = RE::NiPoint3(6.637259F, -0.35742F, -3.01848F);
+			handOpen["LArm_Finger52"].translate = RE::NiPoint3(2.238261F, 0.000018F, 0.000003F);
+			handOpen["LArm_Finger53"].translate = RE::NiPoint3(1.665912F, 0, 0);
+			handOpen["RArm_Finger11"].translate = RE::NiPoint3(1.582972F, -1.262648F, -1.853201F);
+			handOpen["RArm_Finger12"].translate = RE::NiPoint3(3.569515F, 0.000042F, 0.000004F);
+			handOpen["RArm_Finger13"].translate = RE::NiPoint3(2.401824F, 0, 0);
+			handOpen["RArm_Finger21"].translate = RE::NiPoint3(7.501364F, 0.430291F, -2.277657F);
+			handOpen["RArm_Finger22"].translate = RE::NiPoint3(3.018186F, 0.000026F, 0.000011F);
+			handOpen["RArm_Finger23"].translate = RE::NiPoint3(1.850236F, 0, 0);
+			handOpen["RArm_Finger31"].translate = RE::NiPoint3(7.595781F, 0.62098F, -0.457392F);
+			handOpen["RArm_Finger32"].translate = RE::NiPoint3(3.091653F, 0.000021F, -0.000004F);
+			handOpen["RArm_Finger33"].translate = RE::NiPoint3(2.187974F, 0, 0);
+			handOpen["RArm_Finger41"].translate = RE::NiPoint3(7.464033F, 0.350152F, 1.438817F);
+			handOpen["RArm_Finger42"].translate = RE::NiPoint3(2.664419F, 0.000027F, 0.000004F);
+			handOpen["RArm_Finger43"].translate = RE::NiPoint3(1.89974F, 0, 0);
+			handOpen["RArm_Finger51"].translate = RE::NiPoint3(6.637259F, -0.35742F, 3.01848F);
+			handOpen["RArm_Finger52"].translate = RE::NiPoint3(2.238261F, 0.000018F, 0.000003F);
+			handOpen["RArm_Finger53"].translate = RE::NiPoint3(1.665912F, 0, 0);
 		}
 	}
 

@@ -41,11 +41,11 @@ namespace frik {
 		void checkIfOffhandIsGripping(const NiNode* weapon);
 		void setOffhandGripping(bool isGripping);
 		void handleWeaponGrippingRotationAdjustment(NiNode* weapon) const;
-		void handleWeaponScopeCameraGrippingRotationAdjustment(const NiNode* weapon, common::Quaternion rotAdjust, NiPoint3 adjustedWeaponVec) const;
+		void handleWeaponScopeCameraGrippingRotationAdjustment(const NiNode* weapon, common::Quaternion rotAdjust, RE::NiPoint3 adjustedWeaponVec) const;
 		bool isOffhandCloseToBarrel(const NiNode* weapon) const;
 		bool isOffhandMovedFastAway() const;
-		NiPoint3 getPrimaryHandPosition() const;
-		NiPoint3 getOffhandPosition() const;
+		RE::NiPoint3 getPrimaryHandPosition() const;
+		RE::NiPoint3 getOffhandPosition() const;
 		void handleBetterScopes(NiNode* weapon) const;
 		static void fixMuzzleFlashPosition();
 		static NiNode* getBackOfHandUINode();
@@ -67,22 +67,22 @@ namespace frik {
 		bool _offHandGripping = false;
 
 		// weapon original transform before changing it
-		NiTransform _weaponOriginalTransform = NiTransform();
-		NiTransform _weaponOriginalWorldTransform = NiTransform();
+		RE::NiTransform _weaponOriginalTransform = RE::NiTransform();
+		RE::NiTransform _weaponOriginalWorldTransform = RE::NiTransform();
 
 		// custom weapon transform to update
-		NiTransform _weaponOffsetTransform = NiTransform();
+		RE::NiTransform _weaponOffsetTransform = RE::NiTransform();
 
 		// custom offhand rotation offsets matrix
 		NiMatrix43 _offhandOffsetRot = NiMatrix43();
 
 		// custom throwable weapon transform to update
-		NiTransform _throwableWeaponOriginalTransform = NiTransform();
-		NiTransform _throwableWeaponOffsetTransform = NiTransform();
+		RE::NiTransform _throwableWeaponOriginalTransform = RE::NiTransform();
+		RE::NiTransform _throwableWeaponOffsetTransform = RE::NiTransform();
 		std::string _currentThrowableWeaponName;
 
 		// custom back of hand UI transform to update
-		NiTransform _backOfHandUIOffsetTransform = NiTransform();
+		RE::NiTransform _backOfHandUIOffsetTransform = RE::NiTransform();
 
 		// configuration mode to update custom transforms
 		std::unique_ptr<WeaponPositionConfigMode> _configMode;

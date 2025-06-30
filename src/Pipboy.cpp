@@ -233,12 +233,12 @@ namespace frik {
 			return;
 		}
 
-		NiPoint3 finger;
+		RE::NiPoint3 finger;
 		const NiAVObject* pipboy;
 		NiAVObject* pipboyTrans;
 		g_config.leftHandedPipBoy
-			? finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos
-			: finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos;
+			? finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate
+			: finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate;
 		g_config.leftHandedPipBoy
 			? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder->GetAsNiNode())
 			: pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder->GetAsNiNode());
@@ -364,11 +364,11 @@ namespace frik {
 		if (!pipboyTrans || !pipboy) {
 			return;
 		}
-		float distance = vec3Len(finger - pipboy->m_worldTransform.pos);
+		float distance = vec3Len(finger - pipboy->m_worldTransform.translate);
 		if (distance > 2.0) {
 			_pipTimer = 0;
 			_stickypip = false;
-			pipboyTrans->m_localTransform.pos.z = 0.0;
+			pipboyTrans->m_localTransform.translate.z = 0.0;
 		} else {
 			if (_pipTimer < 2) {
 				_stickypip = false;
@@ -376,9 +376,9 @@ namespace frik {
 			} else {
 				const float fz = 0 - (2.0f - distance);
 				if (fz >= -0.14 && fz <= 0.0) {
-					pipboyTrans->m_localTransform.pos.z = fz;
+					pipboyTrans->m_localTransform.translate.z = fz;
 				}
-				if (pipboyTrans->m_localTransform.pos.z < -0.10 && !_stickypip) {
+				if (pipboyTrans->m_localTransform.translate.z < -0.10 && !_stickypip) {
 					_stickypip = true;
 					triggerHeptic();
 					if (_pipboyStatus) {
@@ -405,16 +405,16 @@ namespace frik {
 		if (!pipboyTrans || !pipboy) {
 			return;
 		}
-		distance = vec3Len(finger - pipboy->m_worldTransform.pos);
+		distance = vec3Len(finger - pipboy->m_worldTransform.translate);
 		if (distance > 2.0) {
 			stickyPBlight = false;
-			pipboyTrans->m_localTransform.pos.z = 0.0;
+			pipboyTrans->m_localTransform.translate.z = 0.0;
 		} else if (distance <= 2.0) {
 			const float fz = 0 - (2.0f - distance);
 			if (fz >= -0.2 && fz <= 0.0) {
-				pipboyTrans->m_localTransform.pos.z = fz;
+				pipboyTrans->m_localTransform.translate.z = fz;
 			}
-			if (pipboyTrans->m_localTransform.pos.z < -0.14 && !stickyPBlight) {
+			if (pipboyTrans->m_localTransform.translate.z < -0.14 && !stickyPBlight) {
 				stickyPBlight = true;
 				triggerHeptic();
 				if (!_pipboyStatus) {
@@ -433,16 +433,16 @@ namespace frik {
 		if (!pipboyTrans || !pipboy) {
 			return;
 		}
-		distance = vec3Len(finger - pipboy->m_worldTransform.pos);
+		distance = vec3Len(finger - pipboy->m_worldTransform.translate);
 		if (distance > 2.0) {
 			stickyPBRadio = false;
-			pipboyTrans->m_localTransform.pos.y = 0.0;
+			pipboyTrans->m_localTransform.translate.y = 0.0;
 		} else if (distance <= 2.0) {
 			const float fz = 0 - (2.0f - distance);
 			if (fz >= -0.15 && fz <= 0.0) {
-				pipboyTrans->m_localTransform.pos.y = fz;
+				pipboyTrans->m_localTransform.translate.y = fz;
 			}
-			if (pipboyTrans->m_localTransform.pos.y < -0.12 && !stickyPBRadio) {
+			if (pipboyTrans->m_localTransform.translate.y < -0.12 && !stickyPBRadio) {
 				stickyPBRadio = true;
 				triggerHeptic();
 				if (!_pipboyStatus) {
@@ -640,7 +640,7 @@ namespace frik {
 	}
 
 	void Pipboy::pipboyManagement() {
-		//Manages all aspects of Virtual Pipboy usage outside of turning the device / radio / torch on or off. Additionally, swaps left hand controls to the right hand.  
+		//Manages all aspects of Virtual Pipboy usage outside of turning the device / radio / torch on or off. Additionally, swaps left hand controls to the right hand.
 		bool isInPA = f4vr::isInPowerArmor();
 		if (!isInPA) {
 			static BSFixedString orbNames[7] = {
@@ -691,16 +691,16 @@ namespace frik {
 				return;
 			}
 			if (isLookingAtPipBoy()) {
-				NiPoint3 finger;
+				RE::NiPoint3 finger;
 				NiAVObject* pipboy = nullptr;
 				g_config.leftHandedPipBoy
-					? finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos
-					: finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos;
+					? finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate
+					: finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate;
 				g_config.leftHandedPipBoy
 					? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder->GetAsNiNode())
 					: pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder->GetAsNiNode());
 				float distance;
-				distance = vec3Len(finger - pipboy->m_worldTransform.pos);
+				distance = vec3Len(finger - pipboy->m_worldTransform.translate);
 				if (distance < g_config.pipboyDetectionRange && !_isOperatingPipboy && !_pipboyStatus) {
 					// Hides Weapon and poses hand for pointing
 					_isOperatingPipboy = true;
@@ -716,7 +716,7 @@ namespace frik {
 					}
 				}
 			} else if (!isLookingAtPipBoy() && _isOperatingPipboy && !_pipboyStatus) {
-				// Catches if you're not looking at the pipboy when your hand moves outside the control area and restores weapon / releases hand pose							
+				// Catches if you're not looking at the pipboy when your hand moves outside the control area and restores weapon / releases hand pose
 				disablePipboyHandPose();
 				for (int i = 0; i < 7; i++) {
 					// Remove any stuck helper orbs if Pipboy times out for any reason.
@@ -734,7 +734,7 @@ namespace frik {
 			}
 			if (_lastPipboyPage == 4) {
 				// fixes broken 'Mode Knob' position when radio tab is selected
-				rot.makeTransformMatrix(pipbone8->m_localTransform.rot, NiPoint3(0, 0, 0));
+				rot.makeTransformMatrix(pipbone8->m_localTransform.rotate, RE::NiPoint3(0, 0, 0));
 				float rotx;
 				float roty;
 				float rotz;
@@ -742,26 +742,26 @@ namespace frik {
 				if (rotx < 0.57) {
 					Matrix44 kRot;
 					kRot.setEulerAngles(-0.05f, degreesToRads(0), degreesToRads(0));
-					pipbone8->m_localTransform.rot = kRot.multiply43Right(pipbone8->m_localTransform.rot);
+					pipbone8->m_localTransform.rotate = kRot.multiply43Right(pipbone8->m_localTransform.rotate);
 				}
 			} else {
 				// restores control of the 'Mode Knob' to the Pipboy behaviour file
-				pipbone8->m_localTransform.rot = pipbone9->m_localTransform.rot;
+				pipbone8->m_localTransform.rotate = pipbone9->m_localTransform.rotate;
 			}
 			// Controls Pipboy power light glow (on or off depending on Pipboy state)
 			_pipboyStatus ? pipbone->flags &= 0xfffffffffffffffe : pipbone2->flags &= 0xfffffffffffffffe;
 			_pipboyStatus ? pipbone->m_localTransform.scale = 1 : pipbone2->m_localTransform.scale = 1;
 			_pipboyStatus ? pipbone2->flags |= 0x1 : pipbone->flags |= 0x1;
 			_pipboyStatus ? pipbone2->m_localTransform.scale = 0 : pipbone->m_localTransform.scale = 0;
-			// Control switching between hand and head based Pipboy light 
+			// Control switching between hand and head based Pipboy light
 			if (lightOn && !helmetHeadLamp) {
 				NiNode* head = f4vr::getNode("Head", (*g_player)->GetActorRootNode(false)->GetAsNiNode());
 				if (!head) {
 					return;
 				}
 				const bool useRightHand = g_config.leftHandedPipBoy || g_config.isPipBoyTorchRightArmMode;
-				const auto hand = _skelly->getBoneWorldTransform(useRightHand ? "RArm_Hand" : "LArm_Hand").pos;
-				float distance = vec3Len(hand - head->m_worldTransform.pos);
+				const auto hand = _skelly->getBoneWorldTransform(useRightHand ? "RArm_Hand" : "LArm_Hand").translate;
+				float distance = vec3Len(hand - head->m_worldTransform.translate);
 				if (distance < 15.0) {
 					uint64_t pipboyHand = f4vr::VRControllers.getControllerState_DEPRECATED(useRightHand ? f4vr::TrackerType::Right : f4vr::TrackerType::Left).ulButtonPressed;
 					const auto SwitchLightButton = pipboyHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(g_config.switchTorchButton));
@@ -782,8 +782,8 @@ namespace frik {
 							Matrix44 lightRot;
 							float rotz = g_config.isPipBoyTorchOnArm ? -90 : 90;
 							lightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(rotz));
-							lght->m_localTransform.rot = lightRot.multiply43Right(lght->m_localTransform.rot);
-							lght->m_localTransform.pos.y = g_config.isPipBoyTorchOnArm ? 0 : 4;
+							lght->m_localTransform.rotate = lightRot.multiply43Right(lght->m_localTransform.rotate);
+							lght->m_localTransform.translate.y = g_config.isPipBoyTorchOnArm ? 0 : 4;
 							g_config.isPipBoyTorchOnArm ? lght->m_parent->RemoveChild(lght) : f4vr::getPlayerNodes()->HeadLightParentNode->m_parent->RemoveChild(lght);
 							g_config.isPipBoyTorchOnArm ? f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true) : LGHT_ATTACH->AttachChild(lght, true);
 							g_config.togglePipBoyTorchOnArm();
@@ -797,7 +797,7 @@ namespace frik {
 					_SwithLightButtonSticky = false;
 				}
 			}
-			//Attach light to hand 
+			//Attach light to hand
 			if (g_config.isPipBoyTorchOnArm) {
 				NiNode* LGHT_ATTACH = g_config.leftHandedPipBoy || g_config.isPipBoyTorchRightArmMode
 					? f4vr::getNode("RArm_Hand", _skelly->getRightArm().shoulder->GetAsNiNode())
@@ -810,8 +810,8 @@ namespace frik {
 							f4vr::getPlayerNodes()->HeadLightParentNode->m_parent->RemoveChild(lght);
 							Matrix44 LightRot;
 							LightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(90));
-							lght->m_localTransform.rot = LightRot.multiply43Right(lght->m_localTransform.rot);
-							lght->m_localTransform.pos.y = 4;
+							lght->m_localTransform.rotate = LightRot.multiply43Right(lght->m_localTransform.rotate);
+							lght->m_localTransform.translate.y = 4;
 							LGHT_ATTACH->AttachChild(lght, true);
 						}
 					}
@@ -822,8 +822,8 @@ namespace frik {
 							if (parentnode != "HMDNode") {
 								Matrix44 LightRot;
 								LightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(-90));
-								lght->m_localTransform.rot = LightRot.multiply43Right(lght->m_localTransform.rot);
-								lght->m_localTransform.pos.y = 0;
+								lght->m_localTransform.rotate = LightRot.multiply43Right(lght->m_localTransform.rotate);
+								lght->m_localTransform.translate.y = 0;
 								lght->m_parent->RemoveChild(lght);
 								f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true);
 							}
@@ -844,12 +844,12 @@ namespace frik {
 			if (radioOn && radFreq != lastRadioFreq) {
 				float x = -1 * (radFreq - lastRadioFreq);
 				rot.setEulerAngles(degreesToRads(0), degreesToRads(x), degreesToRads(0));
-				pipbone7->m_localTransform.rot = rot.multiply43Right(pipbone7->m_localTransform.rot);
+				pipbone7->m_localTransform.rotate = rot.multiply43Right(pipbone7->m_localTransform.rotate);
 				lastRadioFreq = radFreq;
 			} else if (!radioOn && lastRadioFreq > 0) {
 				float x = lastRadioFreq;
 				rot.setEulerAngles(degreesToRads(0), degreesToRads(x), degreesToRads(0));
-				pipbone7->m_localTransform.rot = rot.multiply43Right(pipbone7->m_localTransform.rot);
+				pipbone7->m_localTransform.rotate = rot.multiply43Right(pipbone7->m_localTransform.rotate);
 				lastRadioFreq = 0.0;
 			}
 			// Scale-form code for managing Pipboy menu controls (Virtual and Physical)
@@ -869,11 +869,11 @@ namespace frik {
 						float boneDistance[7] = {2.0f, 2.0f, 2.0f, 2.0f, 1.5f, 1.5f, 2.0f};
 						float transDistance[7] = {0.6f, 0.6f, 0.6f, 0.6f, 0.1f, 0.1f, 0.4f};
 						float maxDistance[7] = {1.2f, 1.2f, 1.2f, 1.2f, 1.2f, 1.2f, 0.6f};
-						NiPoint3 finger;
-						// Virtual Controls Code Starts here: 
+						RE::NiPoint3 finger;
+						// Virtual Controls Code Starts here:
 						g_config.leftHandedPipBoy
-							? finger = _skelly->getBoneWorldTransform("LArm_Finger23").pos
-							: finger = _skelly->getBoneWorldTransform("RArm_Finger23").pos;
+							? finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate
+							: finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate;
 						for (int i = 0; i < 7; i++) {
 							NiAVObject* bone = g_config.leftHandedPipBoy
 								? _skelly->getRightArm().forearm3->GetObjectByName(&boneNames[i])
@@ -882,9 +882,9 @@ namespace frik {
 								? _skelly->getRightArm().forearm3->GetObjectByName(&transNames[i])->GetAsNiNode()
 								: _skelly->getLeftArm().forearm3->GetObjectByName(&transNames[i])->GetAsNiNode();
 							if (bone && trans) {
-								float distance = vec3Len(finger - bone->m_worldTransform.pos);
+								float distance = vec3Len(finger - bone->m_worldTransform.translate);
 								if (distance > boneDistance[i]) {
-									trans->m_localTransform.pos.z = 0.0;
+									trans->m_localTransform.translate.z = 0.0;
 									_PBControlsSticky[i] = false;
 									NiAVObject* orb = g_config.leftHandedPipBoy
 										? _skelly->getRightArm().forearm3->GetObjectByName(&orbNames[i])
@@ -901,7 +901,7 @@ namespace frik {
 										orb->m_localTransform.scale = std::max<float>(orb->m_localTransform.scale, 1);
 									}
 									if (fz > 0.0 && fz < maxDistance[i]) {
-										trans->m_localTransform.pos.z = fz;
+										trans->m_localTransform.translate.z = fz;
 										if (i == 4) {
 											// Move Scroll Knob Anti-Clockwise when near control surface
 											static BSFixedString KnobNode = "ScrollItemsKnobRot";
@@ -910,7 +910,7 @@ namespace frik {
 												: _skelly->getLeftArm().forearm3->GetObjectByName(&KnobNode);
 											Matrix44 rot;
 											rot.setEulerAngles(degreesToRads(0), degreesToRads(fz), degreesToRads(0));
-											ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
+											ScrollKnob->m_localTransform.rotate = rot.multiply43Right(ScrollKnob->m_localTransform.rotate);
 										}
 										if (i == 5) {
 											// Move Scroll Knob Clockwise when near control surface
@@ -921,10 +921,10 @@ namespace frik {
 												: _skelly->getLeftArm().forearm3->GetObjectByName(&KnobNode);
 											Matrix44 rot;
 											rot.setEulerAngles(degreesToRads(0), degreesToRads(roty), degreesToRads(0));
-											ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
+											ScrollKnob->m_localTransform.rotate = rot.multiply43Right(ScrollKnob->m_localTransform.rotate);
 										}
 									}
-									if (trans->m_localTransform.pos.z > transDistance[i] && !_PBControlsSticky[i]) {
+									if (trans->m_localTransform.translate.z > transDistance[i] && !_PBControlsSticky[i]) {
 										_PBControlsSticky[i] = true;
 										triggerHeptic();
 										if (i == 0) {
@@ -975,11 +975,11 @@ namespace frik {
 							// Move Pipboy trigger mesh with controller trigger position.
 							if (trans != nullptr) {
 								if (doinantTrigger.x > 0.00 && secondaryTrigger.x == 0.0) {
-									trans->m_localTransform.pos.z = doinantTrigger.x / 3 * -1;
+									trans->m_localTransform.translate.z = doinantTrigger.x / 3 * -1;
 								} else if (secondaryTrigger.x > 0.00 && doinantTrigger.x == 0.0) {
-									trans->m_localTransform.pos.z = secondaryTrigger.x / 3 * -1;
+									trans->m_localTransform.translate.z = secondaryTrigger.x / 3 * -1;
 								} else {
-									trans->m_localTransform.pos.z = 0.00;
+									trans->m_localTransform.translate.z = 0.00;
 								}
 							}
 							isPBMessageBoxVisible = isMessageHolderVisible(root);
@@ -991,11 +991,11 @@ namespace frik {
 								Matrix44 rot;
 								if (doinantHandStick.y > 0.85) {
 									rot.setEulerAngles(degreesToRads(0), degreesToRads(0.4f), degreesToRads(0));
-									ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
+									ScrollKnob->m_localTransform.rotate = rot.multiply43Right(ScrollKnob->m_localTransform.rotate);
 								}
 								if (doinantHandStick.y < -0.85) {
 									rot.setEulerAngles(degreesToRads(0), degreesToRads(-0.4f), degreesToRads(0));
-									ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
+									ScrollKnob->m_localTransform.rotate = rot.multiply43Right(ScrollKnob->m_localTransform.rotate);
 								}
 							}
 							if (!isPrimaryGripPressHeldDown()) {
@@ -1004,7 +1004,7 @@ namespace frik {
 									GFxValue akArgs[2];
 									akArgs[0].SetNumber(doinantHandStick.x * -1);
 									akArgs[1].SetNumber(doinantHandStick.y);
-									if (root->Invoke("root.Menu_mc.CurrentPage.WorldMapHolder_mc.PanMap", nullptr, akArgs, 2)) {} // Move Map	
+									if (root->Invoke("root.Menu_mc.CurrentPage.WorldMapHolder_mc.PanMap", nullptr, akArgs, 2)) {} // Move Map
 									if (root->Invoke("root.Menu_mc.CurrentPage.LocalMapHolder_mc.PanMap", nullptr, akArgs, 2)) {}
 								} else {
 									if (doinantHandStick.y > 0.85) {
@@ -1064,9 +1064,9 @@ namespace frik {
 								: _skelly->getLeftArm().forearm3->GetObjectByName(&selectnodename)->GetAsNiNode();
 							if (trans != nullptr) {
 								if (secondaryTrigger.x > 0.00) {
-									trans->m_localTransform.pos.z = secondaryTrigger.x / 3 * -1;
+									trans->m_localTransform.translate.z = secondaryTrigger.x / 3 * -1;
 								} else {
-									trans->m_localTransform.pos.z = 0.00;
+									trans->m_localTransform.translate.z = 0.00;
 								}
 							}
 							//still move Pipboy scroll knob even if controls haven't been swapped.
@@ -1079,11 +1079,11 @@ namespace frik {
 								Matrix44 rot;
 								if (offHandStick.x > 0.85) {
 									rot.setEulerAngles(degreesToRads(0), degreesToRads(0.4), degreesToRads(0));
-									ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
+									ScrollKnob->m_localTransform.rotate = rot.multiply43Right(ScrollKnob->m_localTransform.rotate);
 								}
 								if (offHandStick.x < -0.85) {
 									rot.setEulerAngles(degreesToRads(0), degreesToRads(-0.4), degreesToRads(0));
-									ScrollKnob->m_localTransform.rot = rot.multiply43Right(ScrollKnob->m_localTransform.rot);
+									ScrollKnob->m_localTransform.rotate = rot.multiply43Right(ScrollKnob->m_localTransform.rotate);
 								}
 							}
 						}
@@ -1115,15 +1115,15 @@ namespace frik {
 		if (pipboyScreen && _pipboyStatus) {
 			Quaternion rq, rt;
 			// do a spherical interpolation between previous frame and current frame for the world rotation matrix
-			const NiTransform prevFrame = _pipboyScreenPrevFrame;
-			rq.fromRot(prevFrame.rot);
-			rt.fromRot(pipboyScreen->m_worldTransform.rot);
+			const RE::NiTransform prevFrame = _pipboyScreenPrevFrame;
+			rq.fromRot(prevFrame.rotate);
+			rt.fromRot(pipboyScreen->m_worldTransform.rotate);
 			rq.slerp(1 - g_config.dampenPipboyRotation, rt);
-			pipboyScreen->m_worldTransform.rot = rq.getRot().make43();
+			pipboyScreen->m_worldTransform.rotate = rq.getRot().make43();
 			// do a linear interpolation between the position from the previous frame to current frame
-			NiPoint3 deltaPos = pipboyScreen->m_worldTransform.pos - prevFrame.pos;
+			RE::NiPoint3 deltaPos = pipboyScreen->m_worldTransform.translate - prevFrame.translate;
 			deltaPos *= g_config.dampenPipboyTranslation; // just use hands dampening value for now
-			pipboyScreen->m_worldTransform.pos -= deltaPos;
+			pipboyScreen->m_worldTransform.translate -= deltaPos;
 			_pipboyScreenPrevFrame = pipboyScreen->m_worldTransform;
 			f4vr::updateDown(pipboyScreen->GetAsNiNode(), false);
 		}

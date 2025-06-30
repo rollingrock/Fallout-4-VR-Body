@@ -106,7 +106,7 @@ namespace f4vr {
 			: nullptr;
 	}
 
-	inline NiPoint3 getCameraPosition() {
-		return (*g_playerCamera)->cameraNode->m_worldTransform.pos;
+	inline RE::NiPoint3 getCameraPosition() {
+		return (*g_playerCamera)->cameraNode->m_worldTransform.translate;
 	}
 }

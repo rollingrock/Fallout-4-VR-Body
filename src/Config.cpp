@@ -199,14 +199,14 @@ namespace frik {
 	/**
 	 * Get the Pipboy offset of the currently used Pipboy type.
 	 */
-	NiTransform Config::getPipboyOffset() {
+	RE::NiTransform Config::getPipboyOffset() {
 		return _pipboyOffsets[isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition"];
 	}
 
 	/**
 	 * Save the Pipboy offset to the offsets map.
 	 */
-	void Config::savePipboyOffset(const NiTransform& transform) {
+	void Config::savePipboyOffset(const RE::NiTransform& transform) {
 		const auto type = isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
 		_pipboyOffsets[type] = transform;
 		saveOffsetsToJsonFile(type, transform, isHoloPipboy ? PIPBOY_HOLO_OFFSETS_PATH : PIPBOY_SCREEN_OFFSETS_PATH);
@@ -217,7 +217,7 @@ namespace frik {
 	 * Use non-PA mode if PA mode offsets not found.
 	 */
 	/// <returns></returns>
-	std::optional<NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const {
+	std::optional<RE::NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const {
 		const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode()));
 		if (it != _weaponsOffsets.end()) {
 			return it->second;
@@ -229,7 +229,7 @@ namespace frik {
 	/**
 	 * Save the weapon offset to config and filesystem.
 	 */
-	void Config::saveWeaponOffsets(const std::string& name, const NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA) {
+	void Config::saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA) {
 		const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
 		_weaponsOffsets[fullName] = transform;
 		saveOffsetsToJsonFile(fullName, transform, WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json");

@@ -8,9 +8,9 @@ namespace vrui {
 	std::string UIContainer::toString() const {
 		return std::format("UIContainer: {}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f}), Children({}), Layout({})",
 			_visible ? "V" : "H",
-			_transform.pos.x,
-			_transform.pos.y,
-			_transform.pos.z,
+			_transform.translate.x,
+			_transform.translate.y,
+			_transform.translate.z,
 			_size.width,
 			_size.height,
 			_childElements.size(),

@@ -20,8 +20,8 @@ namespace {
 		Log::infoRaw("%s%s : children(%d), hidden(%d), Local:(%.2f, %.2f, %.2f), World:(%.2f, %.2f, %.2f), Scale:(%s)",
 			padding.c_str(), node->m_name.c_str(),
 			node->m_children.m_emptyRunStart, node->flags & 0x1,
-			node->m_localTransform.pos.x, node->m_localTransform.pos.y, node->m_localTransform.pos.z,
-			node->m_worldTransform.pos.x, node->m_worldTransform.pos.y, node->m_worldTransform.pos.z,
+			node->m_localTransform.translate.x, node->m_localTransform.translate.y, node->m_localTransform.translate.z,
+			node->m_worldTransform.translate.x, node->m_worldTransform.translate.y, node->m_worldTransform.translate.z,
 			scale.c_str());
 	}
 
@@ -62,8 +62,8 @@ namespace frik {
 	}
 
 	void positionDiff(const Skeleton* skelly) {
-		const NiPoint3 firstpos = f4vr::getPlayerNodes()->HmdNode->m_worldTransform.pos;
-		const NiPoint3 skellypos = f4vr::getRootNode()->m_worldTransform.pos;
+		const RE::NiPoint3 firstpos = f4vr::getPlayerNodes()->HmdNode->m_worldTransform.translate;
+		const RE::NiPoint3 skellypos = f4vr::getRootNode()->m_worldTransform.translate;
 
 		Log::info("difference = %f %f %f", firstpos.x - skellypos.x, firstpos.y - skellypos.y, firstpos.z - skellypos.z);
 	}
@@ -87,11 +87,11 @@ namespace frik {
 
 	void printNodes(NiNode* nde, const long long curTime) {
 		Log::info("%d %s : children = %d %d: local %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f", curTime, nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
-			nde->m_localTransform.rot.arr[0], nde->m_localTransform.rot.arr[1], nde->m_localTransform.rot.arr[2],
-			nde->m_localTransform.rot.arr[3], nde->m_localTransform.rot.arr[4], nde->m_localTransform.rot.arr[5],
-			nde->m_localTransform.rot.arr[6], nde->m_localTransform.rot.arr[7], nde->m_localTransform.rot.arr[8],
-			nde->m_localTransform.rot.arr[9], nde->m_localTransform.rot.arr[10], nde->m_localTransform.rot.arr[11],
-			nde->m_localTransform.pos.x, nde->m_localTransform.pos.y, nde->m_localTransform.pos.z);
+			nde->m_localTransform.rotate.arr[0], nde->m_localTransform.rotate.arr[1], nde->m_localTransform.rotate.arr[2],
+			nde->m_localTransform.rotate.arr[3], nde->m_localTransform.rotate.arr[4], nde->m_localTransform.rotate.arr[5],
+			nde->m_localTransform.rotate.arr[6], nde->m_localTransform.rotate.arr[7], nde->m_localTransform.rotate.arr[8],
+			nde->m_localTransform.rotate.arr[9], nde->m_localTransform.rotate.arr[10], nde->m_localTransform.rotate.arr[11],
+			nde->m_localTransform.translate.x, nde->m_localTransform.translate.y, nde->m_localTransform.translate.z);
 
 		if (nde->GetAsNiNode()) {
 			for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
@@ -109,12 +109,12 @@ namespace frik {
 		Log::info("%s%s child=%d, %s, Pos:(%2.3f, %2.3f, %2.3f), Rot:[[%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f][%2.4f, %2.4f, %2.4f]]",
 			padding.c_str(), node->m_name.c_str(),
 			node->m_children.m_emptyRunStart, node->flags & 0x1 ? "hidden" : "visible",
-			node->m_localTransform.pos.x,
-			node->m_localTransform.pos.y,
-			node->m_localTransform.pos.z,
-			node->m_localTransform.rot.data[0][0], node->m_localTransform.rot.data[1][0], node->m_localTransform.rot.data[2][0],
-			node->m_localTransform.rot.data[0][1], node->m_localTransform.rot.data[1][1], node->m_localTransform.rot.data[2][1],
-			node->m_localTransform.rot.data[0][2], node->m_localTransform.rot.data[1][2], node->m_localTransform.rot.data[2][2]);
+			node->m_localTransform.translate.x,
+			node->m_localTransform.translate.y,
+			node->m_localTransform.translate.z,
+			node->m_localTransform.rotate.data[0][0], node->m_localTransform.rotate.data[1][0], node->m_localTransform.rotate.data[2][0],
+			node->m_localTransform.rotate.data[0][1], node->m_localTransform.rotate.data[1][1], node->m_localTransform.rotate.data[2][1],
+			node->m_localTransform.rotate.data[0][2], node->m_localTransform.rotate.data[1][2], node->m_localTransform.rotate.data[2][2]);
 		if (!node->GetAsNiNode()) {
 			return; // no children for non NiNodes
 		}
@@ -127,26 +127,26 @@ namespace frik {
 		}
 	}
 
-	void printTransform(const std::string& name, const NiTransform& transform, const bool sample) {
+	void printTransform(const std::string& name, const RE::NiTransform& transform, const bool sample) {
 		const auto frm = "Transform '" + name + "' Pos:(%.2f, %.2f, %.2f), Rot:[[%.2f, %.2f, %.2f][%.2f, %.2f, %.2f][%.2f, %.2f, %.2f]], Scale:(%.2f)";
 		if (sample) {
 			Log::sample(frm.c_str(),
-				transform.pos.x, transform.pos.y, transform.pos.z,
-				transform.rot.data[0][0], transform.rot.data[1][0], transform.rot.data[2][0],
-				transform.rot.data[0][1], transform.rot.data[1][1], transform.rot.data[2][1],
-				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2],
+				transform.translate.x, transform.translate.y, transform.translate.z,
+				transform.rotate.data[0][0], transform.rotate.data[1][0], transform.rotate.data[2][0],
+				transform.rotate.data[0][1], transform.rotate.data[1][1], transform.rotate.data[2][1],
+				transform.rotate.data[0][2], transform.rotate.data[1][2], transform.rotate.data[2][2],
 				transform.scale);
 		} else {
 			Log::info(frm.c_str(),
-				transform.pos.x, transform.pos.y, transform.pos.z,
-				transform.rot.data[0][0], transform.rot.data[1][0], transform.rot.data[2][0],
-				transform.rot.data[0][1], transform.rot.data[1][1], transform.rot.data[2][1],
-				transform.rot.data[0][2], transform.rot.data[1][2], transform.rot.data[2][2],
+				transform.translate.x, transform.translate.y, transform.translate.z,
+				transform.rotate.data[0][0], transform.rotate.data[1][0], transform.rotate.data[2][0],
+				transform.rotate.data[0][1], transform.rotate.data[1][1], transform.rotate.data[2][1],
+				transform.rotate.data[0][2], transform.rotate.data[1][2], transform.rotate.data[2][2],
 				transform.scale);
 		}
 	}
 
-	void printPosition(const std::string& name, const NiPoint3& pos, const bool sample) {
+	void printPosition(const std::string& name, const RE::NiPoint3& pos, const bool sample) {
 		const auto frm = "Transform '" + name + "' Pos: (%.2f, %.2f, %.2f)";
 		if (sample) {
 			Log::sample(frm.c_str(), pos.x, pos.y, pos.z);
@@ -223,12 +223,12 @@ namespace frik {
 		////	NiAVObject* node = (*g_player)->firstPersonSkeleton->GetObjectByName(&name);
 		//	NiAVObject* node = _root->GetObjectByName(&name);
 		//	if (!node) { return; }
-		//	Log::info("%d %f %f %f %f %f %f", node->flags & 0xF, node->m_localTransform.pos.x,
-		//									 node->m_localTransform.pos.y,
-		//									 node->m_localTransform.pos.z,
-		//									 node->m_worldTransform.pos.x,
-		//									 node->m_worldTransform.pos.y,
-		//									 node->m_worldTransform.pos.z
+		//	Log::info("%d %f %f %f %f %f %f", node->flags & 0xF, node->m_localTransform.translate.x,
+		//									 node->m_localTransform.translate.y,
+		//									 node->m_localTransform.translate.z,
+		//									 node->m_worldTransform.translate.x,
+		//									 node->m_worldTransform.translate.y,
+		//									 node->m_worldTransform.translate.z
 		//									);
 
 		//	for (auto i = 0; i < (*g_player)->inventoryList->items.count; i++) {
@@ -252,7 +252,7 @@ namespace frik {
 		//}
 		//
 		//for (auto i = 0; i < rt->numTransforms; i++) {
-		//	int pos = rt->bonePositions[i].position;
+		//	int pos = rt->bonePositions[i].translateition;
 		//	if (rt->bonePositions[i].name && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
 		//		Log::info("%d,%d,%s", fc, pos, rt->bonePositions[i].name->data);
 		//	}
@@ -261,61 +261,61 @@ namespace frik {
 		//	}
 		//}
 
-		//	if (rt->bonePositions[i].name && (rt->bonePositions[i].position != 0) && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
-		//		int pos = rt->bonePositions[i].position;
+		//	if (rt->bonePositions[i].name && (rt->bonePositions[i].translateition != 0) && ((uint64_t)rt->bonePositions[i].name > 0x1000)) {
+		//		int pos = rt->bonePositions[i].translateition;
 		//		if (pos > rt->numTransforms) {
 		//			continue;
 		//		}
 		//		Log::info("%d,%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", fc, rt->bonePositions[i].name->data,
-		//							rt->bonePositions[i].position,
-		//							rt->transforms[pos].local.rot.arr[0],
-		//							rt->transforms[pos].local.rot.arr[1],
-		//							rt->transforms[pos].local.rot.arr[2],
-		//							rt->transforms[pos].local.rot.arr[3],
-		//							rt->transforms[pos].local.rot.arr[4],
-		//							rt->transforms[pos].local.rot.arr[5],
-		//							rt->transforms[pos].local.rot.arr[6],
-		//							rt->transforms[pos].local.rot.arr[7],
-		//							rt->transforms[pos].local.rot.arr[8],
-		//							rt->transforms[pos].local.rot.arr[9],
-		//							rt->transforms[pos].local.rot.arr[10],
-		//							rt->transforms[pos].local.rot.arr[11],
-		//							rt->transforms[pos].local.pos.x,
-		//							rt->transforms[pos].local.pos.y,
-		//							rt->transforms[pos].local.pos.z,
-		//							rt->transforms[pos].world.rot.arr[0],
-		//							rt->transforms[pos].world.rot.arr[1],
-		//							rt->transforms[pos].world.rot.arr[2],
-		//							rt->transforms[pos].world.rot.arr[3],
-		//							rt->transforms[pos].world.rot.arr[4],
-		//							rt->transforms[pos].world.rot.arr[5],
-		//							rt->transforms[pos].world.rot.arr[6],
-		//							rt->transforms[pos].world.rot.arr[7],
-		//							rt->transforms[pos].world.rot.arr[8],
-		//							rt->transforms[pos].world.rot.arr[9],
-		//							rt->transforms[pos].world.rot.arr[10],
-		//							rt->transforms[pos].world.rot.arr[11],
-		//							rt->transforms[pos].world.pos.x,
-		//							rt->transforms[pos].world.pos.y,
-		//							rt->transforms[pos].world.pos.z
+		//							rt->bonePositions[i].translateition,
+		//							rt->transforms[pos].local.rotate.arr[0],
+		//							rt->transforms[pos].local.rotate.arr[1],
+		//							rt->transforms[pos].local.rotate.arr[2],
+		//							rt->transforms[pos].local.rotate.arr[3],
+		//							rt->transforms[pos].local.rotate.arr[4],
+		//							rt->transforms[pos].local.rotate.arr[5],
+		//							rt->transforms[pos].local.rotate.arr[6],
+		//							rt->transforms[pos].local.rotate.arr[7],
+		//							rt->transforms[pos].local.rotate.arr[8],
+		//							rt->transforms[pos].local.rotate.arr[9],
+		//							rt->transforms[pos].local.rotate.arr[10],
+		//							rt->transforms[pos].local.rotate.arr[11],
+		//							rt->transforms[pos].local.translate.x,
+		//							rt->transforms[pos].local.translate.y,
+		//							rt->transforms[pos].local.translate.z,
+		//							rt->transforms[pos].world.rotate.arr[0],
+		//							rt->transforms[pos].world.rotate.arr[1],
+		//							rt->transforms[pos].world.rotate.arr[2],
+		//							rt->transforms[pos].world.rotate.arr[3],
+		//							rt->transforms[pos].world.rotate.arr[4],
+		//							rt->transforms[pos].world.rotate.arr[5],
+		//							rt->transforms[pos].world.rotate.arr[6],
+		//							rt->transforms[pos].world.rotate.arr[7],
+		//							rt->transforms[pos].world.rotate.arr[8],
+		//							rt->transforms[pos].world.rotate.arr[9],
+		//							rt->transforms[pos].world.rotate.arr[10],
+		//							rt->transforms[pos].world.rotate.arr[11],
+		//							rt->transforms[pos].world.translate.x,
+		//							rt->transforms[pos].world.translate.y,
+		//							rt->transforms[pos].world.translate.z
 		//		);
 
 		//	if(strstr(rt->bonePositions[i].name->data, "Finger")) {
 		//		Matrix44 rot;
 		//		rot.makeIdentity();
-		//		rt->transforms[pos].local.rot = rot.make43();
+		//		rt->transforms[pos].local.rotate = rot.make43();
 
 		//		if (rt->transforms[pos].refNode) {
-		//			rt->transforms[pos].refNode->m_localTransform.rot = rot.make43();
+		//			rt->transforms[pos].refNode->m_localTransform.rotate = rot.make43();
 		//		}
 
-		//		rot.makeTransformMatrix(rt->transforms[pos].local.rot, NiPoint3(0, 0, 0));
+		//		rot.makeTransformMatrix(rt->transforms[pos].local.rotate, RE::NiPoint3(0, 0, 0));
 
 		//		short parent = rt->transforms[pos].parPos;
-		//		rt->transforms[pos].world.rot = rot.multiply43Left(rt->transforms[parent].world.rot);
+		//		rt->transforms[pos].world.rotate = rot.multiply43Left(rt->transforms[parent].world.rotate);
 
 		//		if (rt->transforms[pos].refNode) {
-		//			rt->transforms[pos].refNode->m_worldTransform.rot = rt->transforms[pos].world.rot;
+		//			rt->transforms[pos].refNode->m_worldTransform.rotate = rt->transforms[pos].world.rotate;
 		//		}
 
 		//	}

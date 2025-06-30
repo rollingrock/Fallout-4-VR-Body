@@ -11,7 +11,7 @@ namespace vrui {
 		 * Get the world position to be used for all UI interactions.
 		 * Like knowing if a button is pressed.
 		 */
-		virtual NiPoint3 getInteractionBoneWorldPosition() = 0;
+		virtual RE::NiPoint3 getInteractionBoneWorldPosition() = 0;
 
 		/**
 		 * Fire heptic on the interaction controller.
@@ -40,7 +40,7 @@ namespace vrui {
 			_isAnyPressableCloseToInteraction = _isAnyPressableCloseToInteraction.value_or(false) || isPressableClose;
 		}
 
-		virtual NiPoint3 getInteractionBoneWorldPosition() override { return _adapter->getInteractionBoneWorldPosition(); }
+		virtual RE::NiPoint3 getInteractionBoneWorldPosition() override { return _adapter->getInteractionBoneWorldPosition(); }
 		virtual void fireInteractionHeptic() override { _adapter->fireInteractionHeptic(); }
 		virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override { _adapter->setInteractionHandPointing(primaryHand, toPoint); }
 

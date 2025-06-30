@@ -30,50 +30,50 @@ namespace frik {
 	/**
 	 * Get default melee weapon adjustment to match how a human holds it as game default is straight forward.
 	 */
-	NiTransform WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(const NiTransform& originalTransform) {
+	RE::NiTransform WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(const RE::NiTransform& originalTransform) {
 		Matrix44 rot;
-		NiTransform transform;
+		RE::NiTransform transform;
 		transform.scale = originalTransform.scale;
 		if (f4vr::isLeftHandedMode()) {
-			transform.pos = NiPoint3(5.5f, -2.2f, 1);
+			transform.translate = RE::NiPoint3(5.5f, -2.2f, 1);
 			rot.setEulerAngles(degreesToRads(95), degreesToRads(60), 0);
 		} else {
-			transform.pos = NiPoint3(4.5f, -2.2f, -1);
+			transform.translate = RE::NiPoint3(4.5f, -2.2f, -1);
 			rot.setEulerAngles(degreesToRads(85), degreesToRads(-65), 0);
 		}
-		transform.rot = rot.multiply43Right(originalTransform.rot);
+		transform.rotate = rot.multiply43Right(originalTransform.rotate);
 		return transform;
 	}
 
 	/**
 	 * Get default melee weapon adjustment to match how a human holds it as game default is straight forward.
 	 */
-	NiTransform WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(const NiTransform& originalTransform, const bool inPA) {
-		NiTransform transform;
+	RE::NiTransform WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(const RE::NiTransform& originalTransform, const bool inPA) {
+		RE::NiTransform transform;
 		transform.scale = originalTransform.scale;
-		transform.rot = originalTransform.rot;
-		transform.pos = f4vr::isLeftHandedMode()
-			? (inPA ? NiPoint3(-2.5f, 7.5f, -1) : NiPoint3(-3, 4, 0))
+		transform.rotate = originalTransform.rotate;
+		transform.translate = f4vr::isLeftHandedMode()
+			? (inPA ? RE::NiPoint3(-2.5f, 7.5f, -1) : RE::NiPoint3(-3, 4, 0))
 			: inPA
-			? NiPoint3(-0.5f, 6, 2)
-			: NiPoint3(-2, 3, 1);
+			? RE::NiPoint3(-0.5f, 6, 2)
+			: RE::NiPoint3(-2, 3, 1);
 		return transform;
 	}
 
 	/**
 	 * Get default back of the hand UI (HP,Ammo,etc.) default adjustment for empty hand and use as base to adjust for weapon.
 	 */
-	NiTransform WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(const NiTransform& originalTransform, const bool inPA) {
-		NiTransform transform;
+	RE::NiTransform WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(const RE::NiTransform& originalTransform, const bool inPA) {
+		RE::NiTransform transform;
 		transform.scale = originalTransform.scale;
 		if (f4vr::isLeftHandedMode()) {
 			Matrix44 mat;
 			mat.setEulerAngles(degreesToRads(180), 0, degreesToRads(180));
-			transform.rot = mat.make43();
-			transform.pos = inPA ? NiPoint3(5, 6.5f, -11) : NiPoint3(6.2f, 4.8f, -12.2f);
+			transform.rotate = mat.make43();
+			transform.translate = inPA ? RE::NiPoint3(5, 6.5f, -11) : RE::NiPoint3(6.2f, 4.8f, -12.2f);
 		} else {
-			transform.rot = Matrix44::getIdentity43();
-			transform.pos = inPA ? NiPoint3(-5.8f, 5.8f, 1.8f) : NiPoint3(-6.2f, 3.6f, 0.8f);
+			transform.rotate = Matrix44::getIdentity43();
+			transform.translate = inPA ? RE::NiPoint3(-5.8f, 5.8f, 1.8f) : RE::NiPoint3(-6.2f, 3.6f, 0.8f);
 		}
 		return transform;
 	}
@@ -187,13 +187,13 @@ namespace frik {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(-degreesToRads(primAxisY / 5), -degreesToRads(secAxisX / 3), degreesToRads(primAxisX / 5));
-			transform.rot = rot.multiply43Left(transform.rot);
+			transform.rotate = rot.multiply43Left(transform.rotate);
 		} else {
 			// adjust horizontal (y - right/left, x - forward/backward) by primary stick
-			transform.pos.y += leftHandedMult * primAxisX / 12;
-			transform.pos.x += primAxisY / 12;
+			transform.translate.y += leftHandedMult * primAxisX / 12;
+			transform.translate.x += primAxisY / 12;
 			// adjust vertical (z - up/down) by secondary stick
-			transform.pos.z -= leftHandedMult * secAxisY / 12;
+			transform.translate.z -= leftHandedMult * secAxisY / 12;
 		}
 
 		// update the weapon with the offset change
@@ -237,13 +237,13 @@ namespace frik {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(degreesToRads(secAxisY / 6), degreesToRads(secAxisX / 6), degreesToRads(primAxisX / 6));
-			transform.rot = rot.multiply43Left(transform.rot);
+			transform.rotate = rot.multiply43Left(transform.rotate);
 		} else {
 			// adjust horizontal (x - right/left, z - forward/backward) by primary stick
-			transform.pos.z += -leftHandedMult * primAxisX / 14 - leftHandedMult * secAxisX / 14;
-			transform.pos.x += -primAxisY / 14;
+			transform.translate.z += -leftHandedMult * primAxisX / 14 - leftHandedMult * secAxisX / 14;
+			transform.translate.x += -primAxisY / 14;
 			// adjust vertical (y - up/down) by secondary stick
-			transform.pos.y += leftHandedMult * secAxisY / 14;
+			transform.translate.y += leftHandedMult * secAxisY / 14;
 		}
 
 		throwable->m_localTransform = transform;
@@ -269,13 +269,13 @@ namespace frik {
 			Matrix44 rot;
 			// pitch and yaw rotation by primary stick, roll rotation by secondary stick
 			rot.setEulerAngles(-degreesToRads(secAxisY / 6), -degreesToRads(primAxisX / 6), -degreesToRads(primAxisY / 6));
-			transform.rot = rot.multiply43Left(transform.rot);
+			transform.rotate = rot.multiply43Left(transform.rotate);
 		} else {
 			// adjust horizontal (z - right/left, y - forward/backward) by primary stick
-			transform.pos.z -= leftHandedMult * primAxisX / 14;
-			transform.pos.y += primAxisY / 14;
+			transform.translate.z -= leftHandedMult * primAxisX / 14;
+			transform.translate.y += primAxisY / 14;
 			// adjust vertical (x - up/down) by secondary stick
-			transform.pos.x += leftHandedMult * secAxisY / 14;
+			transform.translate.x += leftHandedMult * secAxisY / 14;
 		}
 
 		// update the weapon with the offset change
@@ -289,8 +289,8 @@ namespace frik {
 		const auto [axisX, axisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
 		if (axisX != 0.f || axisY != 0.f) {
 			// Axis_state y is up and down, which corresponds to reticule z axis
-			NiPoint3 msgData(axisX / 10, 0.f, axisY / 10);
-			g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(NiPoint3*));
+			RE::NiPoint3 msgData(axisX / 10, 0.f, axisY / 10);
+			g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(RE::NiPoint3*));
 		}
 	}
 
@@ -357,10 +357,10 @@ namespace frik {
 
 	void WeaponPositionConfigMode::saveOffhandConfig() const {
 		f4vr::showNotification("Saving Offhand Position");
-		NiTransform transform;
+		RE::NiTransform transform;
 		transform.scale = 1;
-		transform.pos = NiPoint3(0, 0, 0);
-		transform.rot = _adjuster->_offhandOffsetRot;
+		transform.translate = RE::NiPoint3(0, 0, 0);
+		transform.rotate = _adjuster->_offhandOffsetRot;
 		g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA);
 	}
 
@@ -389,14 +389,14 @@ namespace frik {
 
 	void WeaponPositionConfigMode::resetBetterScopesConfig() {
 		f4vr::showNotification("Reset BetterScopesVR Scope Offset to Default");
-		NiPoint3 msgData(0.f, 0.f, 0.f);
-		g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(NiPoint3*));
+		RE::NiPoint3 msgData(0.f, 0.f, 0.f);
+		g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(RE::NiPoint3*));
 	}
 
 	void WeaponPositionConfigMode::saveBetterScopesConfig() {
 		f4vr::showNotification("Saving BetterScopesVR Scopes Offset");
-		NiPoint3 msgData(0.f, 1, 0.f);
-		g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(NiPoint3*));
+		RE::NiPoint3 msgData(0.f, 1, 0.f);
+		g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(RE::NiPoint3*));
 	}
 
 	/**

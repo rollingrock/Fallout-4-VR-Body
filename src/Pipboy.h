@@ -69,7 +69,7 @@ namespace frik {
 		int _pipTimer = 0;
 		uint64_t _startedLookingAtPip = 0;
 		uint64_t _lastLookingAtPip = 0;
-		NiTransform _pipboyScreenPrevFrame;
+		RE::NiTransform _pipboyScreenPrevFrame;
 
 		// Pipboy interaction with hand variables
 		bool _stickyoffpip = false;
