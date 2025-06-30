@@ -37,9 +37,9 @@ namespace frik {
 		bool inWeaponRepositionMode() const { return _weaponPosition && _weaponPosition->inWeaponRepositionMode(); }
 		void toggleWeaponRepositionMode() const { if (_weaponPosition) { _weaponPosition->toggleWeaponRepositionMode(); } }
 
-		void dispatchMessageToBetterScopesVR(UInt32 messageType, void* data, UInt32 dataLen) const;
+		void dispatchMessageToBetterScopesVR(std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
 
-		void initialize(const F4SEInterface* f4se);
+		void initialize(const F4SE::detail::F4SEInterface* f4se);
 		void onFrameUpdate();
 		void smoothMovement();
 
@@ -62,7 +62,7 @@ namespace frik {
 		bool _selfieMode = false;
 
 		// the currently root node used in skeleton
-		BSFadeNode* _workingRootNode;
+		RE::BSFadeNode* _workingRootNode;
 
 		Skeleton* _skelly = nullptr;
 		Pipboy* _pipboy = nullptr;

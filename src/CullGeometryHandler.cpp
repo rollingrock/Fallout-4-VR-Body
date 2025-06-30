@@ -18,12 +18,12 @@ namespace frik {
 	/// The geometry array can change when equipment is changed, weapon is drawn, etc. To handle it we check if the last
 	/// hidden geometry didn't change. If it did, we re-calculate the indexes to hide.
 	/// </summary>
-	void CullGeometryHandler::preProcessHideGeometryIndexes(BSFadeNode* rn) {
+	void CullGeometryHandler::preProcessHideGeometryIndexes(RE::BSFadeNode* rn) {
 		const auto now = std::time(nullptr);
 		if (now - _lastPreProcessTime < 2) {
 			// check that the geometries array didn't change by verifying the last hidden geometry is the same we expect
-			if (_lastHiddenGeometryIdx >= 0 && _lastHiddenGeometryIdx < rn->kGeomArray.count) {
-				const auto gemName = std::string(rn->kGeomArray[_lastHiddenGeometryIdx].spGeometry->m_name.c_str());
+			if (_lastHiddenGeometryIdx >= 0 && _lastHiddenGeometryIdx < rn->geomArray.size()) {
+				const auto gemName = std::string(rn->geomArray[_lastHiddenGeometryIdx].geometry->name.c_str());
 				if (_lastHiddenGeometryName == gemName) {
 					return;
 				}
@@ -32,9 +32,9 @@ namespace frik {
 		_lastPreProcessTime = now;
 
 		_hideFaceSkinGeometryIndexes.clear();
-		for (UInt32 i = 0; i < rn->kGeomArray.count; i++) {
-			auto& geometry = rn->kGeomArray[i].spGeometry;
-			const auto geomName = std::string(geometry->m_name.c_str());
+		for (std::uint32_t i = 0; i < rn->geomArray.size(); i++) {
+            auto& geometry = rn->geomArray[i].geometry;
+			const auto geomName = std::string(geometry->name.c_str());
 			auto geomStr = str_tolower(trim(geomName));
 
 			bool toHide = false;
@@ -78,7 +78,7 @@ namespace frik {
 			return;
 		}
 
-		const auto rn = reinterpret_cast<BSFadeNode*>((*g_player)->unkF0->rootNode);
+		const auto rn = reinterpret_cast<RE::BSFadeNode*>((*g_player)->unkF0->rootNode);
 		if (!rn) {
 			return;
 		}
@@ -88,7 +88,7 @@ namespace frik {
 		if (g_config.hideHead || g_config.hideSkin || g_frik.getSelfieMode()) {
 			preProcessHideGeometryIndexes(rn);
 			for each (int idx in _hideFaceSkinGeometryIndexes) {
-				f4vr::setNodeVisibility(rn->kGeomArray[idx].spGeometry, false);
+                f4vr::setNodeVisibility(rn->geomArray[idx].geometry, false);
 			}
 		}
 
@@ -108,9 +108,9 @@ namespace frik {
 	/// </summary>
 	void CullGeometryHandler::restoreGeometry() {
 		//Face and Skin
-		if (const auto rn = reinterpret_cast<BSFadeNode*>((*g_player)->unkF0->rootNode)) {
-			for (UINT32 i = 0; i < rn->kGeomArray.count; ++i) {
-				f4vr::setNodeVisibility(rn->kGeomArray[i].spGeometry, true);
+		if (const auto rn = reinterpret_cast<RE::BSFadeNode*>((*g_player)->unkF0->rootNode)) {
+			for (UINT32 i = 0; i < rn->geomArray.size(); ++i) {
+                f4vr::setNodeVisibility(rn->geomArray[i].geometry, true);
 			}
 		}
 

@@ -2,7 +2,7 @@
 
 #include <format>
 
-#include "../common/CommonUtils.h"
+#include "common/MatrixUtils.h"
 
 using namespace common;
 
@@ -27,11 +27,11 @@ namespace vrui {
 
 		if (_followInteractionPosition) {
 			const auto finger = adapter->getInteractionBoneWorldPosition();
-			const auto diff = finger - _node->m_worldTransform.translate;
+			const auto diff = finger - _node->world.translate;
 			if (!std::isnan(diff.x) && !std::isnan(diff.y) && !std::isnan(diff.z) && vec3Len(diff) < 500) {
-				_node->m_localTransform.translate += diff;
+				_node->local.translate += diff;
 			} else {
-				_node->m_localTransform.translate = RE::NiPoint3(0, 0, 0);
+				_node->local.translate = RE::NiPoint3(0, 0, 0);
 			}
 		}
 	}

@@ -4,14 +4,14 @@
 #include "f4se/GameReferences.h"
 
 namespace f4vr {
-	constexpr UInt32 PipboyAA = 0x0001ED3D;
-	constexpr UInt32 PipboyArmor = 0x00021B3B;
-	constexpr UInt32 MiningHelmet = 0x0022DD1F;
-	constexpr UInt32 PALightKW = 0x000B34A6;
+	constexpr std::uint32_t PipboyAA = 0x0001ED3D;
+	constexpr std::uint32_t PipboyArmor = 0x00021B3B;
+	constexpr std::uint32_t MiningHelmet = 0x0022DD1F;
+	constexpr std::uint32_t PALightKW = 0x000B34A6;
 
 	inline RelocAddr<uintptr_t> NEW_REFR_DATA_VTABLE(0x2c8d080);
 
-	using _BGSObjectInstance_CTOR = void* (*)(void* instance, TESForm* a_form, TBO_InstanceData* a_instanceData);
+	using _BGSObjectInstance_CTOR = void* (*)(void* instance, RE::TESForm* a_form, RE::TBO_InstanceData* a_instanceData);
 	inline RelocAddr<_BGSObjectInstance_CTOR> BGSObjectInstance_CTOR(0x2dd930);
 
 	// adapted from Commonlib
@@ -25,15 +25,15 @@ namespace f4vr {
 		uintptr_t vtable; // 00
 		RE::NiPoint3 location; // 08
 		RE::NiPoint3 direction; // 14
-		TESBoundObject* object{nullptr}; // 20
-		TESObjectCELL* interior{nullptr}; // 28
-		TESWorldSpace* world{nullptr}; // 30
+		RE::TESBoundObject* object{nullptr}; // 20
+        RE::TESObjectCELL* interior{nullptr}; // 28
+        RE::TESWorldSpace* world{nullptr}; // 30
 		TESObjectREFR* reference{nullptr}; // 38
 		void* addPrimitive{nullptr}; // 40
 		void* additionalData{nullptr}; // 48
-		ExtraDataList* extra{nullptr}; // 50
+		RE::ExtraDataList* extra{nullptr}; // 50
 		void* instanceFilter{nullptr}; // 58
-		BGSObjectInstanceExtra* modExtra{nullptr}; // 60
+        RE::BGSObjectInstanceExtra* modExtra{nullptr}; // 60
 		std::uint16_t maxLevel{0}; // 68
 		bool forcePersist{false}; // 6A
 		bool clearStillLoadingFlag{false}; // 6B
@@ -55,16 +55,16 @@ namespace f4vr {
 
 	class BGSObjectInstance {
 	public:
-		BGSObjectInstance(TESForm* a_object, TBO_InstanceData* a_instanceData) {
+		BGSObjectInstance(RE::TESForm* a_object, RE::TBO_InstanceData* a_instanceData) {
 			ctor(a_object, a_instanceData);
 		}
 
 		// members
-		TESForm* object{nullptr}; // 00
-		TBO_InstanceData* instanceData; // 08
+		RE::TESForm* object{nullptr}; // 00
+		RE::TBO_InstanceData* instanceData; // 08
 
 	private:
-		BGSObjectInstance* ctor(TESForm* object, TBO_InstanceData* instanceData) {
+		BGSObjectInstance* ctor(RE::TESForm* object, RE::TBO_InstanceData* instanceData) {
 			return static_cast<BGSObjectInstance*>(BGSObjectInstance_CTOR(static_cast<void*>(this), object, instanceData));
 		}
 	};
@@ -139,18 +139,18 @@ namespace f4vr {
 	};
 
 	struct NiCloneProcess {
-		UInt64 unk00 = 0;
-		UInt64 unk08 = 0; // Start of clone list 1?
-		UInt64 unk10 = 0;
-		UInt64* unk18; // initd to RelocAddr(0x36ff560)
-		UInt64 unk20 = 0;
-		UInt64 unk28 = 0;
-		UInt64 unk30 = 0;
-		UInt64 unk38 = 0; // Start of clone list 2?
-		UInt64 unk40 = 0;
-		UInt64* unk48; // initd to RelocAddr(0x36ff564)
-		UInt64 unk50 = 0;
-		UInt64 unk58 = 0;
+		std::uint64_t unk00 = 0;
+		std::uint64_t unk08 = 0; // Start of clone list 1?
+		std::uint64_t unk10 = 0;
+		std::uint64_t* unk18; // initd to RelocAddr(0x36ff560)
+		std::uint64_t unk20 = 0;
+		std::uint64_t unk28 = 0;
+		std::uint64_t unk30 = 0;
+		std::uint64_t unk38 = 0; // Start of clone list 2?
+		std::uint64_t unk40 = 0;
+		std::uint64_t* unk48; // initd to RelocAddr(0x36ff564)
+		std::uint64_t unk50 = 0;
+		std::uint64_t unk58 = 0;
 		UInt8 copyType = 1; // 60 - CopyType - default 1
 		UInt8 m_eAffectedNodeRelationBehavior = 0; // 61 - CloneRelationBehavior - default 0
 		UInt8 m_eDynamicEffectRelationBehavior = 0; // 62 - CloneRelationBehavior - default 0
@@ -162,7 +162,7 @@ namespace f4vr {
 	public:
 		uint64_t unk00;
 		uint64_t unk08;
-		NiNode* fireNode;
-		NiNode* projectileNode;
+		RE::NiNode* fireNode;
+		RE::NiNode* projectileNode;
 	};
 }

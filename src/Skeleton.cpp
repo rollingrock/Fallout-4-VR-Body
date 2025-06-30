@@ -11,6 +11,7 @@
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
+#include "common/MatrixUtils.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
@@ -47,10 +48,10 @@ namespace frik {
 
 		_playerNodes = getPlayerNodes();
 
-		_rightHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-		_leftHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-		_rightHandPrevFrame = _rightHand->m_worldTransform;
-		_leftHandPrevFrame = _leftHand->m_worldTransform;
+		_rightHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsRE::NiNode());
+		_leftHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsRE::NiNode());
+		_rightHandPrevFrame = _rightHand->world;
+		_leftHandPrevFrame = _leftHand->world;
 
 		_head = getNode("Head", _root);
 		_spine = getNode("SPINE2", _root);
@@ -71,7 +72,7 @@ namespace frik {
 	}
 
 	void Skeleton::initArmsNodes() {
-		const std::vector<std::pair<BSFixedString, NiAVObject**>> armNodes = {
+		const std::vector<std::pair<RE::BSFixedString, RE::NiAVObject**>> armNodes = {
 			{"RArm_Collarbone", &_rightArm.shoulder},
 			{"RArm_UpperArm", &_rightArm.upper},
 			{"RArm_UpperTwist1", &_rightArm.upperT1},
@@ -100,9 +101,9 @@ namespace frik {
 	void Skeleton::initSkeletonNodesDefaults() {
 		const auto defaultBonesMap = _inPowerArmor ? _skeletonNodesDefaultTransformInPA : _skeletonNodesDefaultTransform;
 		for (const auto& [boneName, defaultTransform] : defaultBonesMap) {
-			const auto bsBoneName = BSFixedString(boneName.c_str());
+			const auto bsBoneName = RE::BSFixedString(boneName.c_str());
 			if (auto node = _root->GetObjectByName(&bsBoneName)) {
-				auto transform = node->m_localTransform; // use node transform to keep scale
+				auto transform = node->local; // use node transform to keep scale
 				transform.translate = defaultTransform.translate;
 				transform.rotate = defaultTransform.rotate;
 				_skeletonNodesToDefaultTransforms.emplace_back(node, transform);
@@ -125,12 +126,12 @@ namespace frik {
 	}
 
 	void Skeleton::setBodyLen() {
-		_torsoLen = vec3Len(getNode("Camera", _root)->m_worldTransform.translate - getNode("COM", _root)->m_worldTransform.translate);
+		_torsoLen = vec3Len(getNode("Camera", _root)->world.translate - getNode("COM", _root)->world.translate);
 		_torsoLen *= g_config.playerHeight / DEFAULT_CAMERA_HEIGHT;
 
-		_legLen = vec3Len(getNode("LLeg_Thigh", _root)->m_worldTransform.translate - getNode("Pelvis", _root)->m_worldTransform.translate);
-		_legLen += vec3Len(getNode("LLeg_Calf", _root)->m_worldTransform.translate - getNode("LLeg_Thigh", _root)->m_worldTransform.translate);
-		_legLen += vec3Len(getNode("LLeg_Foot", _root)->m_worldTransform.translate - getNode("LLeg_Calf", _root)->m_worldTransform.translate);
+		_legLen = vec3Len(getNode("LLeg_Thigh", _root)->world.translate - getNode("Pelvis", _root)->world.translate);
+		_legLen += vec3Len(getNode("LLeg_Calf", _root)->world.translate - getNode("LLeg_Thigh", _root)->world.translate);
+		_legLen += vec3Len(getNode("LLeg_Foot", _root)->world.translate - getNode("LLeg_Calf", _root)->world.translate);
 		_legLen *= g_config.playerHeight / DEFAULT_CAMERA_HEIGHT;
 	}
 
@@ -234,7 +235,7 @@ namespace frik {
 	 */
 	void Skeleton::restoreNodesToDefault() {
 		for (const auto& [boneNode, resetTransform] : _skeletonNodesToDefaultTransforms) {
-			boneNode->m_localTransform = resetTransform;
+			boneNode->local = resetTransform;
 		}
 	}
 
@@ -243,17 +244,17 @@ namespace frik {
 	 * Doing this instead of hiding with a small scale setting since it preserves neck shape
 	 */
 	void Skeleton::setupHead() const {
-		_head->m_localTransform.rotate.data[0][0] = 0.967f;
-		_head->m_localTransform.rotate.data[0][1] = -0.251f;
-		_head->m_localTransform.rotate.data[0][2] = 0.047f;
-		_head->m_localTransform.rotate.data[1][0] = 0.249f;
-		_head->m_localTransform.rotate.data[1][1] = 0.967f;
-		_head->m_localTransform.rotate.data[1][2] = 0.051f;
-		_head->m_localTransform.rotate.data[2][0] = -0.058f;
-		_head->m_localTransform.rotate.data[2][1] = -0.037f;
-		_head->m_localTransform.rotate.data[2][2] = 0.998f;
+		_head->local.rotate.data[0][0] = 0.967f;
+		_head->local.rotate.data[0][1] = -0.251f;
+		_head->local.rotate.data[0][2] = 0.047f;
+		_head->local.rotate.data[1][0] = 0.249f;
+		_head->local.rotate.data[1][1] = 0.967f;
+		_head->local.rotate.data[1][2] = 0.051f;
+		_head->local.rotate.data[2][0] = -0.058f;
+		_head->local.rotate.data[2][1] = -0.037f;
+		_head->local.rotate.data[2][2] = 0.998f;
 
-		NiAVObject::NiUpdateData* ud = nullptr;
+		RE::NiAVObject::NiUpdateData* ud = nullptr;
 		_head->UpdateWorldData(ud);
 	}
 
@@ -268,9 +269,9 @@ namespace frik {
 			return 0.0;
 		}
 
-		const RE::NiPoint3 pos = _playerNodes->UprightHmdNode->m_worldTransform.translate;
-		const RE::NiPoint3 hmdToLeft = _playerNodes->SecondaryWandNode->m_worldTransform.translate - pos;
-		const RE::NiPoint3 hmdToRight = _playerNodes->primaryWandNode->m_worldTransform.translate - pos;
+		const RE::NiPoint3 pos = _playerNodes->UprightHmdNode->world.translate;
+		const RE::NiPoint3 hmdToLeft = _playerNodes->SecondaryWandNode->world.translate - pos;
+		const RE::NiPoint3 hmdToRight = _playerNodes->primaryWandNode->world.translate - pos;
 		float weight = 1.0f;
 
 		if (vec3Len(hmdToLeft) < 10.0f || vec3Len(hmdToRight) < 10.0f) {
@@ -288,8 +289,8 @@ namespace frik {
 
 		// hands moving across the chest rotate too much.   try to handle with below
 		// wp = parWp + parWr * lp =>   lp = (wp - parWp) * parWr'
-		const RE::NiPoint3 locLeft = _playerNodes->HmdNode->m_worldTransform.rotate.Transpose() * hmdToLeft;
-		const RE::NiPoint3 locRight = _playerNodes->HmdNode->m_worldTransform.rotate.Transpose() * hmdToRight;
+		const RE::NiPoint3 locLeft = _playerNodes->HmdNode->world.rotate.Transpose() * hmdToLeft;
+		const RE::NiPoint3 locRight = _playerNodes->HmdNode->world.rotate.Transpose() * hmdToRight;
 
 		if (locLeft.x > locRight.x) {
 			const float delta = locRight.x - locLeft.x;
@@ -298,8 +299,8 @@ namespace frik {
 
 		const RE::NiPoint3 sum = hmdToRight + hmdToLeft;
 
-		const RE::NiPoint3 forwardDir = vec3Norm(_playerNodes->HmdNode->m_worldTransform.rotate.Transpose() * vec3Norm(sum)); // rotate sum to local hmd space to get the proper angle
-		const RE::NiPoint3 hmdForwardDir = vec3Norm(_playerNodes->HmdNode->m_worldTransform.rotate.Transpose() * _playerNodes->HmdNode->m_localTransform.translate);
+		const RE::NiPoint3 forwardDir = vec3Norm(_playerNodes->HmdNode->world.rotate.Transpose() * vec3Norm(sum)); // rotate sum to local hmd space to get the proper angle
+		const RE::NiPoint3 hmdForwardDir = vec3Norm(_playerNodes->HmdNode->world.rotate.Transpose() * _playerNodes->HmdNode->local.translate);
 
 		const float anglePrime = atan2f(forwardDir.x, forwardDir.y);
 		const float angleSec = atan2f(forwardDir.x, forwardDir.z);
@@ -311,7 +312,7 @@ namespace frik {
 	}
 
 	float Skeleton::getNeckPitch() const {
-		const RE::NiPoint3& lookDir = vec3Norm(_playerNodes->HmdNode->m_worldTransform.rotate.Transpose() * _playerNodes->HmdNode->m_localTransform.translate);
+		const RE::NiPoint3& lookDir = vec3Norm(_playerNodes->HmdNode->world.rotate.Transpose() * _playerNodes->HmdNode->local.translate);
 		return atan2f(lookDir.y, lookDir.z);
 	}
 
@@ -320,7 +321,7 @@ namespace frik {
 		constexpr float weight = 0.1f;
 
 		const float curHeight = g_config.playerHeight;
-		const float heightCalc = std::abs((curHeight - _playerNodes->UprightHmdNode->m_localTransform.translate.z) / curHeight);
+		const float heightCalc = std::abs((curHeight - _playerNodes->UprightHmdNode->local.translate.z) / curHeight);
 
 		const float angle = heightCalc * (basePitch + weight * radsToDegrees(getNeckPitch()));
 
@@ -332,7 +333,7 @@ namespace frik {
 	 */
 	void Skeleton::setBodyUnderHMD() {
 		if (g_config.disableSmoothMovement) {
-			_playerNodes->playerworldnode->m_localTransform.translate.z = _inPowerArmor
+			_playerNodes->playerworldnode->local.translate.z = _inPowerArmor
 				? g_config.PACameraHeight + g_frik.getDynamicCameraHeight()
 				: g_config.cameraHeight + g_frik.getDynamicCameraHeight();
 			updateDown(_playerNodes->playerworldnode, true);
@@ -340,9 +341,9 @@ namespace frik {
 
 		Matrix44 mat;
 		mat = 0.0;
-		//		float y    = (*g_playerCamera)->cameraNode->m_worldTransform.rotate.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
-		//	float x    = (*g_playerCamera)->cameraNode->m_worldTransform.rotate.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
-		const float z = _root->m_localTransform.translate.z;
+		//		float y    = (*g_playerCamera)->cameraNode->world.rotate.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
+		//	float x    = (*g_playerCamera)->cameraNode->world.rotate.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
+		const float z = _root->local.translate.z;
 		//	float z = groundHeight;
 
 		const float neckYaw = getNeckYaw();
@@ -352,89 +353,89 @@ namespace frik {
 		qa.setAngleAxis(-neckPitch, RE::NiPoint3(-1, 0, 0));
 
 		mat = qa.getRot();
-		const NiMatrix43 newRot = mat.multiply43Left(_playerNodes->HmdNode->m_localTransform.rotate);
+		const NiMatrix43 newRot = mat.multiply43Left(_playerNodes->HmdNode->local.rotate);
 
 		_forwardDir = rotateXY(RE::NiPoint3(newRot.data[1][0], newRot.data[1][1], 0), neckYaw * 0.7f);
 		_sidewaysRDir = RE::NiPoint3(_forwardDir.y, -_forwardDir.x, 0);
 
-		NiNode* body = _root->m_parent->GetAsNiNode();
-		body->m_localTransform.translate *= 0.0f;
-		body->m_worldTransform.translate.x = _curentPosition.x;
-		body->m_worldTransform.translate.y = _curentPosition.y;
-		body->m_worldTransform.translate.z += _playerNodes->playerworldnode->m_localTransform.translate.z;
+		RE::NiNode* body = _root->parent->GetAsRE::NiNode();
+		body->local.translate *= 0.0f;
+		body->world.translate.x = _curentPosition.x;
+		body->world.translate.y = _curentPosition.y;
+		body->world.translate.z += _playerNodes->playerworldnode->local.translate.z;
 
 		const RE::NiPoint3 back = vec3Norm(RE::NiPoint3(_forwardDir.x, _forwardDir.y, 0));
 		const auto bodyDir = RE::NiPoint3(0, 1, 0);
 
 		mat.rotateateVectorVec(back, bodyDir);
-		_root->m_localTransform.rotate = mat.multiply43Left(body->m_worldTransform.rotate.Transpose());
-		_root->m_localTransform.translate = body->m_worldTransform.translate - _curentPosition;
-		_root->m_localTransform.translate.z = z;
-		//_root->m_localTransform.translate *= 0.0f;
-		//_root->m_localTransform.translate.y = g_config.playerOffset_forward - 6.0f;
-		_root->m_localTransform.scale = g_config.playerHeight / DEFAULT_CAMERA_HEIGHT; // set scale based off specified user height
+		_root->local.rotate = mat.multiply43Left(body->world.rotate.Transpose());
+		_root->local.translate = body->world.translate - _curentPosition;
+		_root->local.translate.z = z;
+		//_root->local.translate *= 0.0f;
+		//_root->local.translate.y = g_config.playerOffset_forward - 6.0f;
+		_root->local.scale = g_config.playerHeight / DEFAULT_CAMERA_HEIGHT; // set scale based off specified user height
 	}
 
 	void Skeleton::setBodyPosture() {
 		const float neckPitch = getNeckPitch();
 		const float bodyPitch = _inPowerArmor ? getBodyPitch() : getBodyPitch() / 1.2f;
 
-		const NiNode* camera = (*g_playerCamera)->cameraNode;
-		NiNode* com = getNode("COM", _root);
-		const NiNode* neck = getNode("Neck", _root);
-		NiNode* spine = getNode("SPINE1", _root);
+		const RE::NiNode* camera = (*g_playerCamera)->cameraNode;
+		RE::NiNode* com = getNode("COM", _root);
+		const RE::NiNode* neck = getNode("Neck", _root);
+		RE::NiNode* spine = getNode("SPINE1", _root);
 
-		_leftKneePos = getNode("LLeg_Calf", com)->m_worldTransform.translate;
-		_rightKneePos = getNode("RLeg_Calf", com)->m_worldTransform.translate;
+		_leftKneePos = getNode("LLeg_Calf", com)->world.translate;
+		_rightKneePos = getNode("RLeg_Calf", com)->world.translate;
 
-		com->m_localTransform.translate.x = 0.0;
-		com->m_localTransform.translate.y = 0.0;
+		com->local.translate.x = 0.0;
+		com->local.translate.y = 0.0;
 
-		const float z_adjust = (_inPowerArmor ? g_config.powerArmor_up : g_config.playerOffset_up) - cosf(neckPitch) * (5.0f * _root->m_localTransform.scale);
-		//float z_adjust = g_config.playerOffset_up - cosf(neckPitch) * (5.0 * _root->m_localTransform.scale);
+		const float z_adjust = (_inPowerArmor ? g_config.powerArmor_up : g_config.playerOffset_up) - cosf(neckPitch) * (5.0f * _root->local.scale);
+		//float z_adjust = g_config.playerOffset_up - cosf(neckPitch) * (5.0 * _root->local.scale);
 		const auto neckAdjust = RE::NiPoint3(-_forwardDir.x * g_config.playerOffset_forward / 2, -_forwardDir.y * g_config.playerOffset_forward / 2, z_adjust);
-		const RE::NiPoint3 neckPos = camera->m_worldTransform.translate + neckAdjust;
+		const RE::NiPoint3 neckPos = camera->world.translate + neckAdjust;
 
-		_torsoLen = vec3Len(neck->m_worldTransform.translate - com->m_worldTransform.translate);
+		_torsoLen = vec3Len(neck->world.translate - com->world.translate);
 
-		const RE::NiPoint3 hmdToHip = neckPos - com->m_worldTransform.translate;
+		const RE::NiPoint3 hmdToHip = neckPos - com->world.translate;
 		const auto dir = RE::NiPoint3(-_forwardDir.x, -_forwardDir.y, 0);
 
 		const float dist = tanf(bodyPitch) * vec3Len(hmdToHip);
-		RE::NiPoint3 tmpHipPos = com->m_worldTransform.translate + dir * (dist / vec3Len(dir));
-		tmpHipPos.z = com->m_worldTransform.translate.z;
+		RE::NiPoint3 tmpHipPos = com->world.translate + dir * (dist / vec3Len(dir));
+		tmpHipPos.z = com->world.translate.z;
 
 		const RE::NiPoint3 hmdToNewHip = tmpHipPos - neckPos;
 		const RE::NiPoint3 newHipPos = neckPos + hmdToNewHip * (_torsoLen / vec3Len(hmdToNewHip));
 
-		const RE::NiPoint3 newPos = com->m_localTransform.translate + _root->m_worldTransform.rotate.Transpose() * (newHipPos - com->m_worldTransform.translate);
+		const RE::NiPoint3 newPos = com->local.translate + _root->world.rotate.Transpose() * (newHipPos - com->world.translate);
 		const float offsetFwd = _inPowerArmor ? g_config.powerArmor_forward : g_config.playerOffset_forward;
-		com->m_localTransform.translate.y += newPos.y + offsetFwd;
-		com->m_localTransform.translate.z = _inPowerArmor ? newPos.z / 1.7f : newPos.z / 1.5f;
-		//com->m_localTransform.translate.z -= _inPowerArmor ? g_config.powerArmor_up + g_config.PACameraHeight : 0.0f;
-		NiNode* body = _root->m_parent->GetAsNiNode();
-		body->m_worldTransform.translate.z -= _inPowerArmor ? g_config.PACameraHeight + g_config.PARootOffset : g_config.cameraHeight + g_config.rootOffset;
+		com->local.translate.y += newPos.y + offsetFwd;
+		com->local.translate.z = _inPowerArmor ? newPos.z / 1.7f : newPos.z / 1.5f;
+		//com->local.translate.z -= _inPowerArmor ? g_config.powerArmor_up + g_config.PACameraHeight : 0.0f;
+		RE::NiNode* body = _root->parent->GetAsRE::NiNode();
+		body->world.translate.z -= _inPowerArmor ? g_config.PACameraHeight + g_config.PARootOffset : g_config.cameraHeight + g_config.rootOffset;
 
 		Matrix44 rot;
 		rot.rotateateVectorVec(neckPos - tmpHipPos, hmdToHip);
-		const NiMatrix43 mat = rot.multiply43Left(spine->m_parent->m_worldTransform.rotate.Transpose());
+		const NiMatrix43 mat = rot.multiply43Left(spine->parent->world.rotate.Transpose());
 		rot.makeTransformMatrix(mat, RE::NiPoint3(0, 0, 0));
-		spine->m_localTransform.rotate = rot.multiply43Right(spine->m_worldTransform.rotate);
+		spine->local.rotate = rot.multiply43Right(spine->world.rotate);
 	}
 
 	void Skeleton::setKneePos() {
-		NiNode* lKnee = getNode("LLeg_Calf", _root);
-		NiNode* rKnee = getNode("RLeg_Calf", _root);
+		RE::NiNode* lKnee = getNode("LLeg_Calf", _root);
+		RE::NiNode* rKnee = getNode("RLeg_Calf", _root);
 
 		if (!lKnee || !rKnee) {
 			return;
 		}
 
-		lKnee->m_worldTransform.translate.z = _leftKneePos.z;
-		rKnee->m_worldTransform.translate.z = _rightKneePos.z;
+		lKnee->world.translate.z = _leftKneePos.z;
+		rKnee->world.translate.z = _rightKneePos.z;
 
-		_leftKneePos = lKnee->m_worldTransform.translate;
-		_rightKneePos = rKnee->m_worldTransform.translate;
+		_leftKneePos = lKnee->world.translate;
+		_rightKneePos = rKnee->world.translate;
 
 		updateDown(lKnee, false);
 		updateDown(rKnee, false);
@@ -442,36 +443,36 @@ namespace frik {
 
 	// TODO: does it do anything? check if it works at all
 	void Skeleton::fixArmor() const {
-		NiNode* lPauldron = getNode("L_Pauldron", _root);
-		NiNode* rPauldron = getNode("R_Pauldron", _root);
+		RE::NiNode* lPauldron = getNode("L_Pauldron", _root);
+		RE::NiNode* rPauldron = getNode("R_Pauldron", _root);
 
 		if (!lPauldron || !rPauldron) {
 			return;
 		}
 
-		//float delta = getNode("LArm_Collarbone", _root)->m_worldTransform.translate.z - _root->m_worldTransform.translate.z;
-		const float delta = getNode("LArm_UpperArm", _root)->m_worldTransform.translate.z - _root->m_worldTransform.translate.z;
-		float delta2 = getNode("RArm_UpperArm", _root)->m_worldTransform.translate.z - _root->m_worldTransform.translate.z;
+		//float delta = getNode("LArm_Collarbone", _root)->world.translate.z - _root->world.translate.z;
+		const float delta = getNode("LArm_UpperArm", _root)->world.translate.z - _root->world.translate.z;
+		float delta2 = getNode("RArm_UpperArm", _root)->world.translate.z - _root->world.translate.z;
 		if (lPauldron) {
-			lPauldron->m_localTransform.translate.z = delta - 15.0f;
+			lPauldron->local.translate.z = delta - 15.0f;
 		}
 		if (rPauldron) {
-			rPauldron->m_localTransform.translate.z = delta - 15.0f;
+			rPauldron->local.translate.z = delta - 15.0f;
 		}
 	}
 
 	void Skeleton::walk() {
-		NiNode* lHip = getNode("LLeg_Thigh", _root);
-		NiNode* rHip = getNode("RLeg_Thigh", _root);
+		RE::NiNode* lHip = getNode("LLeg_Thigh", _root);
+		RE::NiNode* rHip = getNode("RLeg_Thigh", _root);
 
 		if (!lHip || !rHip) {
 			return;
 		}
 
-		const NiNode* lKnee = getNode("LLeg_Calf", lHip);
-		const NiNode* rKnee = getNode("RLeg_Calf", rHip);
-		NiNode* lFoot = getNode("LLeg_Foot", lHip);
-		NiNode* rFoot = getNode("RLeg_Foot", rHip);
+		const RE::NiNode* lKnee = getNode("LLeg_Calf", lHip);
+		const RE::NiNode* rKnee = getNode("RLeg_Calf", rHip);
+		RE::NiNode* lFoot = getNode("LLeg_Foot", lHip);
+		RE::NiNode* rFoot = getNode("RLeg_Foot", rHip);
 
 		if (!lKnee || !rKnee || !lFoot || !rFoot) {
 			return;
@@ -479,10 +480,10 @@ namespace frik {
 
 		// move feet closer together
 		const RE::NiPoint3 leftToRight = _inPowerArmor
-			? (rFoot->m_worldTransform.translate - lFoot->m_worldTransform.translate) * -0.15f
-			: (rFoot->m_worldTransform.translate - lFoot->m_worldTransform.translate) * 0.3f;
-		lFoot->m_worldTransform.translate += leftToRight;
-		rFoot->m_worldTransform.translate -= leftToRight;
+			? (rFoot->world.translate - lFoot->world.translate) * -0.15f
+			: (rFoot->world.translate - lFoot->world.translate) * 0.3f;
+		lFoot->world.translate += leftToRight;
+		rFoot->world.translate -= leftToRight;
 
 		// want to calculate direction vector first.     Will only concern with x-y vector to start.
 		RE::NiPoint3 lastPos = _lastPosition;
@@ -521,17 +522,17 @@ namespace frik {
 					_delayFrame = 2;
 
 					if (_footStepping == 1) {
-						_rightFootTarget = rFoot->m_worldTransform.translate + _stepDir * (curSpeed * stepTime * 1.5f);
-						_rightFootStart = rFoot->m_worldTransform.translate;
-						_leftFootTarget = lFoot->m_worldTransform.translate;
-						_leftFootStart = lFoot->m_worldTransform.translate;
+						_rightFootTarget = rFoot->world.translate + _stepDir * (curSpeed * stepTime * 1.5f);
+						_rightFootStart = rFoot->world.translate;
+						_leftFootTarget = lFoot->world.translate;
+						_leftFootStart = lFoot->world.translate;
 						_leftFootPos = _leftFootStart;
 						_rightFootPos = _rightFootStart;
 					} else {
-						_rightFootTarget = rFoot->m_worldTransform.translate;
-						_rightFootStart = rFoot->m_worldTransform.translate;
-						_leftFootTarget = lFoot->m_worldTransform.translate + _stepDir * (curSpeed * stepTime * 1.5f);
-						_leftFootStart = lFoot->m_worldTransform.translate;
+						_rightFootTarget = rFoot->world.translate;
+						_rightFootStart = rFoot->world.translate;
+						_leftFootTarget = lFoot->world.translate + _stepDir * (curSpeed * stepTime * 1.5f);
+						_leftFootStart = lFoot->world.translate;
 						_leftFootPos = _leftFootStart;
 						_rightFootPos = _rightFootStart;
 					}
@@ -560,9 +561,9 @@ namespace frik {
 			case 3: {
 				_stepDir = dir;
 				if (_footStepping == 1) {
-					_rightFootTarget = rFoot->m_worldTransform.translate + _stepDir * (curSpeed * stepTime * 0.1f);
+					_rightFootTarget = rFoot->world.translate + _stepDir * (curSpeed * stepTime * 0.1f);
 				} else {
-					_leftFootTarget = lFoot->m_worldTransform.translate + _stepDir * (curSpeed * stepTime * 0.1f);
+					_leftFootTarget = lFoot->world.translate + _stepDir * (curSpeed * stepTime * 0.1f);
 				}
 				_walkingState = 1;
 				break;
@@ -578,10 +579,10 @@ namespace frik {
 
 		if (_walkingState == 0) {
 			// we're standing still so just set foot positions accordingly.
-			_leftFootPos = lFoot->m_worldTransform.translate;
-			_rightFootPos = rFoot->m_worldTransform.translate;
-			_leftFootPos.z = _root->m_worldTransform.translate.z;
-			_rightFootPos.z = _root->m_worldTransform.translate.z;
+			_leftFootPos = lFoot->world.translate;
+			_rightFootPos = rFoot->world.translate;
+			_leftFootPos.z = _root->world.translate.z;
+			_rightFootPos.z = _root->world.translate.z;
 
 			return;
 		}
@@ -611,8 +612,8 @@ namespace frik {
 				} else {
 					_delayFrame = _delayFrame == 2 ? _delayFrame : _delayFrame + 1;
 				}
-				_rightFootTarget.z = _root->m_worldTransform.translate.z;
-				_rightFootStart.z = _root->m_worldTransform.translate.z;
+				_rightFootTarget.z = _root->world.translate.z;
+				_rightFootStart.z = _root->world.translate.z;
 				_rightFootPos = _rightFootStart + (_rightFootTarget - _rightFootStart) * interp;
 				const float stepAmount = std::clamp(vec3Len(_rightFootTarget - _rightFootStart) / 150.0, 0.0, 1.0);
 				const float stepHeight = (std::max)(stepAmount * 9.0, 1.0);
@@ -630,8 +631,8 @@ namespace frik {
 				} else {
 					_delayFrame = _delayFrame == 2 ? _delayFrame : _delayFrame + 1;
 				}
-				_leftFootTarget.z = _root->m_worldTransform.translate.z;
-				_leftFootStart.z = _root->m_worldTransform.translate.z;
+				_leftFootTarget.z = _root->world.translate.z;
+				_leftFootStart.z = _root->world.translate.z;
 				_leftFootPos = _leftFootStart + (_leftFootTarget - _leftFootStart) * interp;
 				const float stepAmount = std::clamp(vec3Len(_leftFootTarget - _leftFootStart) / 150.0, 0.0, 1.0);
 				const float stepHeight = (std::max)(stepAmount * 9.0, 1.0);
@@ -643,7 +644,7 @@ namespace frik {
 			Matrix44 rot;
 
 			rot.setEulerAngles(degreesToRads(spineAngle), 0.0, 0.0);
-			_spine->m_localTransform.rotate = rot.multiply43Left(_spine->m_localTransform.rotate);
+			_spine->local.rotate = rot.multiply43Left(_spine->local.rotate);
 
 			if (_currentStepTime > stepTime) {
 				_currentStepTime = 0.0;
@@ -653,19 +654,19 @@ namespace frik {
 
 				if (_footStepping == 1) {
 					_footStepping = 2;
-					_leftFootTarget = lFoot->m_worldTransform.translate + _stepDir * scale;
+					_leftFootTarget = lFoot->world.translate + _stepDir * scale;
 					_leftFootStart = _leftFootPos;
 				} else {
 					_footStepping = 1;
-					_rightFootTarget = rFoot->m_worldTransform.translate + _stepDir * scale;
+					_rightFootTarget = rFoot->world.translate + _stepDir * scale;
 					_rightFootStart = _rightFootPos;
 				}
 			}
 			return;
 		}
 		if (_walkingState == 2) {
-			_leftFootPos = lFoot->m_worldTransform.translate;
-			_rightFootPos = rFoot->m_worldTransform.translate;
+			_leftFootPos = lFoot->world.translate;
+			_rightFootPos = rFoot->world.translate;
 			_walkingState = 0;
 		}
 	}
@@ -674,26 +675,26 @@ namespace frik {
 	void Skeleton::setSingleLeg(const bool isLeft) const {
 		Matrix44 rotMat;
 
-		NiNode* footNode = isLeft ? getNode("LLeg_Foot", _root) : getNode("RLeg_Foot", _root);
-		NiNode* kneeNode = isLeft ? getNode("LLeg_Calf", _root) : getNode("RLeg_Calf", _root);
-		NiNode* hipNode = isLeft ? getNode("LLeg_Thigh", _root) : getNode("RLeg_Thigh", _root);
+		RE::NiNode* footNode = isLeft ? getNode("LLeg_Foot", _root) : getNode("RLeg_Foot", _root);
+		RE::NiNode* kneeNode = isLeft ? getNode("LLeg_Calf", _root) : getNode("RLeg_Calf", _root);
+		RE::NiNode* hipNode = isLeft ? getNode("LLeg_Thigh", _root) : getNode("RLeg_Thigh", _root);
 
 		const RE::NiPoint3 footPos = isLeft ? _leftFootPos : _rightFootPos;
-		const RE::NiPoint3 hipPos = hipNode->m_worldTransform.translate;
+		const RE::NiPoint3 hipPos = hipNode->world.translate;
 
-		const RE::NiPoint3 footToHip = hipNode->m_worldTransform.translate - footPos;
+		const RE::NiPoint3 footToHip = hipNode->world.translate - footPos;
 
 		auto rotV = RE::NiPoint3(0, 1, 0);
 		if (_inPowerArmor) {
 			rotV.y = 0;
 			rotV.z = isLeft ? 1 : -1;
 		}
-		const RE::NiPoint3 hipDir = hipNode->m_worldTransform.rotate * rotV;
+		const RE::NiPoint3 hipDir = hipNode->world.rotate * rotV;
 		const RE::NiPoint3 xDir = vec3Norm(footToHip);
 		const RE::NiPoint3 yDir = vec3Norm(hipDir - xDir * vec3Dot(hipDir, xDir));
 
-		const float thighLenOrig = vec3Len(kneeNode->m_localTransform.translate);
-		const float calfLenOrig = vec3Len(footNode->m_localTransform.translate);
+		const float thighLenOrig = vec3Len(kneeNode->local.translate);
+		const float calfLenOrig = vec3Len(footNode->local.translate);
 		float thighLen = thighLenOrig;
 		float calfLen = calfLenOrig;
 
@@ -719,33 +720,33 @@ namespace frik {
 		const RE::NiPoint3 kneePos = footPos + xDir * xDist + yDir * yDist;
 
 		const RE::NiPoint3 pos = kneePos - hipPos;
-		RE::NiPoint3 uLocalDir = hipNode->m_worldTransform.rotate.Transpose() * vec3Norm(pos) / hipNode->m_worldTransform.scale;
-		rotMat.rotateateVectorVec(uLocalDir, kneeNode->m_localTransform.translate);
-		hipNode->m_localTransform.rotate = rotMat.multiply43Left(hipNode->m_localTransform.rotate);
+		RE::NiPoint3 uLocalDir = hipNode->world.rotate.Transpose() * vec3Norm(pos) / hipNode->world.scale;
+		rotMat.rotateateVectorVec(uLocalDir, kneeNode->local.translate);
+		hipNode->local.rotate = rotMat.multiply43Left(hipNode->local.rotate);
 
-		rotMat.makeTransformMatrix(hipNode->m_localTransform.rotate, RE::NiPoint3(0, 0, 0));
-		const NiMatrix43 hipWR = rotMat.multiply43Left(hipNode->m_parent->m_worldTransform.rotate);
+		rotMat.makeTransformMatrix(hipNode->local.rotate, RE::NiPoint3(0, 0, 0));
+		const NiMatrix43 hipWR = rotMat.multiply43Left(hipNode->parent->world.rotate);
 
-		rotMat.makeTransformMatrix(kneeNode->m_localTransform.rotate, RE::NiPoint3(0, 0, 0));
+		rotMat.makeTransformMatrix(kneeNode->local.rotate, RE::NiPoint3(0, 0, 0));
 		NiMatrix43 calfWR = rotMat.multiply43Left(hipWR);
 
-		uLocalDir = calfWR.Transpose() * vec3Norm(footPos - kneePos) / kneeNode->m_worldTransform.scale;
-		rotMat.rotateateVectorVec(uLocalDir, footNode->m_localTransform.translate);
-		kneeNode->m_localTransform.rotate = rotMat.multiply43Left(kneeNode->m_localTransform.rotate);
+		uLocalDir = calfWR.Transpose() * vec3Norm(footPos - kneePos) / kneeNode->world.scale;
+		rotMat.rotateateVectorVec(uLocalDir, footNode->local.translate);
+		kneeNode->local.rotate = rotMat.multiply43Left(kneeNode->local.rotate);
 
-		rotMat.makeTransformMatrix(kneeNode->m_localTransform.rotate, RE::NiPoint3(0, 0, 0));
+		rotMat.makeTransformMatrix(kneeNode->local.rotate, RE::NiPoint3(0, 0, 0));
 		calfWR = rotMat.multiply43Left(hipWR);
 
 		// Calculate Clp:  Cwp = Twp + Twr * (Clp * Tws) = kneePos   ===>   Clp = Twr' * (kneePos - Twp) / Tws
-		kneeNode->m_localTransform.translate = hipWR.Transpose() * (kneePos - hipPos) / hipNode->m_worldTransform.scale;
-		if (vec3Len(kneeNode->m_localTransform.translate) > thighLenOrig) {
-			kneeNode->m_localTransform.translate = vec3Norm(kneeNode->m_localTransform.translate) * thighLenOrig;
+		kneeNode->local.translate = hipWR.Transpose() * (kneePos - hipPos) / hipNode->world.scale;
+		if (vec3Len(kneeNode->local.translate) > thighLenOrig) {
+			kneeNode->local.translate = vec3Norm(kneeNode->local.translate) * thighLenOrig;
 		}
 
 		// Calculate Flp:  Fwp = Cwp + Cwr * (Flp * Cws) = footPos   ===>   Flp = Cwr' * (footPos - Cwp) / Cws
-		footNode->m_localTransform.translate = calfWR.Transpose() * (footPos - kneePos) / kneeNode->m_worldTransform.scale;
-		if (vec3Len(footNode->m_localTransform.translate) > calfLenOrig) {
-			footNode->m_localTransform.translate = vec3Norm(footNode->m_localTransform.translate) * calfLenOrig;
+		footNode->local.translate = calfWR.Transpose() * (footPos - kneePos) / kneeNode->world.scale;
+		if (vec3Len(footNode->local.translate) > calfLenOrig) {
+			footNode->local.translate = vec3Norm(footNode->local.translate) * calfLenOrig;
 		}
 	}
 
@@ -769,22 +770,22 @@ namespace frik {
 	 * Hide the 3rd-person weapon that comes with the skeleton as we are using the 1st-person weapon model.
 	 */
 	void Skeleton::hide3rdPersonWeapon() const {
-		static BSFixedString nodeName("Weapon");
-		if (NiAVObject* weapon = _rightArm.hand->GetObjectByName(&nodeName)) {
+		static RE::BSFixedString nodeName("Weapon");
+		if (RE::NiAVObject* weapon = _rightArm.hand->GetObjectByName(&nodeName)) {
 			setNodeVisibility(weapon, false);
 		}
 	}
 
 	void Skeleton::positionPipboy() const {
-		static BSFixedString wandPipName("PipboyRoot_NIF_ONLY");
-		NiAVObject* wandPip = _playerNodes->SecondaryWandNode->GetObjectByName(&wandPipName);
+		static RE::BSFixedString wandPipName("PipboyRoot_NIF_ONLY");
+		RE::NiAVObject* wandPip = _playerNodes->SecondaryWandNode->GetObjectByName(&wandPipName);
 
 		if (wandPip == nullptr) {
 			return;
 		}
 
-		static BSFixedString nodeName("PipboyBone");
-		NiAVObject* pipboyBone;
+		static RE::BSFixedString nodeName("PipboyBone");
+		RE::NiAVObject* pipboyBone;
 		if (g_config.leftHandedPipBoy) {
 			pipboyBone = _rightArm.forearm1->GetObjectByName(&nodeName);
 		} else {
@@ -797,50 +798,50 @@ namespace frik {
 
 		auto locPos = RE::NiPoint3(0, 0, 0);
 
-		locPos = pipboyBone->m_worldTransform.rotate * (locPos * pipboyBone->m_worldTransform.scale);
+		locPos = pipboyBone->world.rotate * (locPos * pipboyBone->world.scale);
 
-		const RE::NiPoint3 wandWP = pipboyBone->m_worldTransform.translate + locPos;
+		const RE::NiPoint3 wandWP = pipboyBone->world.translate + locPos;
 
-		const RE::NiPoint3 delta = wandWP - wandPip->m_parent->m_worldTransform.translate;
+		const RE::NiPoint3 delta = wandWP - wandPip->parent->world.translate;
 
-		wandPip->m_localTransform.translate = wandPip->m_parent->m_worldTransform.rotate.Transpose() * (delta / wandPip->m_parent->m_worldTransform.scale);
+		wandPip->local.translate = wandPip->parent->world.rotate.Transpose() * (delta / wandPip->parent->world.scale);
 
 		// Slr = LHwr' * RHwr * Slr
 		Matrix44 loc;
 		loc.setEulerAngles(degreesToRads(30), 0, 0);
 
-		const NiMatrix43 wandWROT = loc.multiply43Left(pipboyBone->m_worldTransform.rotate);
+		const NiMatrix43 wandWROT = loc.multiply43Left(pipboyBone->world.rotate);
 
 		loc.makeTransformMatrix(wandWROT, RE::NiPoint3(0, 0, 0));
-		wandPip->m_localTransform.rotate = loc.multiply43Left(wandPip->m_parent->m_worldTransform.rotate.Transpose());
+		wandPip->local.rotate = loc.multiply43Left(wandPip->parent->world.rotate.Transpose());
 	}
 
 	void Skeleton::leftHandedModePipboy() const {
 		if (g_config.leftHandedPipBoy) {
-			NiNode* pipbone = getNode("PipboyBone", _rightArm.forearm1->GetAsNiNode());
+			RE::NiNode* pipbone = getNode("PipboyBone", _rightArm.forearm1->GetAsRE::NiNode());
 
 			if (!pipbone) {
-				pipbone = getNode("PipboyBone", _leftArm.forearm1->GetAsNiNode());
+				pipbone = getNode("PipboyBone", _leftArm.forearm1->GetAsRE::NiNode());
 
 				if (!pipbone) {
 					return;
 				}
 
-				pipbone->m_parent->RemoveChild(pipbone);
-				_rightArm.forearm3->GetAsNiNode()->AttachChild(pipbone, true);
+				pipbone->parent->RemoveChild(pipbone);
+				_rightArm.forearm3->GetAsRE::NiNode()->AttachChild(pipbone, true);
 			}
 
 			Matrix44 rot;
 			rot.setEulerAngles(0, degreesToRads(180.0), 0);
 
-			pipbone->m_localTransform.rotate = rot.multiply43Left(pipbone->m_localTransform.rotate);
-			pipbone->m_localTransform.translate *= -1.5;
+			pipbone->local.rotate = rot.multiply43Left(pipbone->local.rotate);
+			pipbone->local.translate *= -1.5;
 		}
 	}
 
 	void Skeleton::hideFistHelpers() const {
 		if (!isLeftHandedMode()) {
-			NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->primaryWandNode);
+			RE::NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->primaryWandNode);
 			if (node != nullptr) {
 				node->flags |= 0x1; // first bit sets the cull flag so it will be hidden;
 			}
@@ -870,7 +871,7 @@ namespace frik {
 				node->flags |= 0x1;
 			}
 		} else {
-			NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->SecondaryWandNode);
+			RE::NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->SecondaryWandNode);
 			if (node != nullptr) {
 				node->flags |= 0x1; // first bit sets the cull flag so it will be hidden;
 			}
@@ -902,13 +903,13 @@ namespace frik {
 		}
 
 		if (const auto uiNode = getNode("Point002", _playerNodes->SecondaryWandNode)) {
-			uiNode->m_localTransform.scale = 0.0;
+			uiNode->local.scale = 0.0;
 		}
 	}
 
 	void Skeleton::hidePipboy() const {
-		const BSFixedString pipName("PipboyBone");
-		NiAVObject* pipboy = nullptr;
+		const RE::BSFixedString pipName("PipboyBone");
+		RE::NiAVObject* pipboy = nullptr;
 
 		if (!g_config.leftHandedPipBoy) {
 			if (_leftArm.forearm3) {
@@ -924,19 +925,19 @@ namespace frik {
 
 		// Changed to allow scaling of third person Pipboy --->
 		if (!g_config.hidePipboy) {
-			if (!fEqual(pipboy->m_localTransform.scale, g_config.pipBoyScale)) {
-				pipboy->m_localTransform.scale = g_config.pipBoyScale;
-				toggleVis(pipboy->GetAsNiNode(), false, true);
+			if (!fEqual(pipboy->local.scale, g_config.pipBoyScale)) {
+				pipboy->local.scale = g_config.pipBoyScale;
+				toggleVis(pipboy->GetAsRE::NiNode(), false, true);
 			}
-		} else if (pipboy->m_localTransform.scale != 0.0) {
-			pipboy->m_localTransform.scale = 0.0;
-			toggleVis(pipboy->GetAsNiNode(), true, true);
+		} else if (pipboy->local.scale != 0.0) {
+			pipboy->local.scale = 0.0;
+			toggleVis(pipboy->GetAsRE::NiNode(), true, true);
 		}
 	}
 
 	void Skeleton::showHidePAHud() const {
 		if (const auto hud = getNode("PowerArmorHelmetRoot", _playerNodes->roomnode)) {
-			hud->m_localTransform.scale = g_config.showPAHUD ? 1.0f : 0.0f;
+			hud->local.scale = g_config.showPAHUD ? 1.0f : 0.0f;
 		}
 	}
 
@@ -952,10 +953,10 @@ namespace frik {
 		_lastLeftHandedModeSwitch = isLeftHandedMode();
 		logger::warn("Left-handed mode weapon nodes switch (LeftHanded:{})", _lastLeftHandedModeSwitch);
 
-		NiNode* rightWeapon = getWeaponNode();
-		NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
-		NiNode* rHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-		NiNode* lHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		RE::NiNode* rightWeapon = getWeaponNode();
+		RE::NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
+		RE::NiNode* rHand = getNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsRE::NiNode());
+		RE::NiNode* lHand = getNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsRE::NiNode());
 
 		if (!rightWeapon || !rHand || !leftWeapon || !lHand) {
 			logger::sample("Cannot set up weapon nodes for left-handed mode switch");
@@ -991,22 +992,22 @@ namespace frik {
 			return;
 		}
 
-		NiNode* rightWeapon = getWeaponNode();
-		//NiNode* rightWeapon = _playerNodes->primaryWandNode;
-		NiNode* leftWeapon = _playerNodes->WeaponLeftNode; // "WeaponLeft" can return incorrect node for left-handed with throwable weapons
+		RE::NiNode* rightWeapon = getWeaponNode();
+		//RE::NiNode* rightWeapon = _playerNodes->primaryWandNode;
+		RE::NiNode* leftWeapon = _playerNodes->WeaponLeftNode; // "WeaponLeft" can return incorrect node for left-handed with throwable weapons
 
 		// handle the NON-primary hand (i.e. the hand that is NOT holding the weapon)
 		bool handleOffhand = isLeftHandedMode() ^ isLeft;
 
-		NiNode* weaponNode = handleOffhand ? leftWeapon : rightWeapon;
-		NiNode* offsetNode = handleOffhand ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
+		RE::NiNode* weaponNode = handleOffhand ? leftWeapon : rightWeapon;
+		RE::NiNode* offsetNode = handleOffhand ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
 
 		if (handleOffhand) {
-			_playerNodes->SecondaryMeleeWeaponOffsetNode2->m_localTransform = _playerNodes->primaryWeaponOffsetNOde->m_localTransform;
+			_playerNodes->SecondaryMeleeWeaponOffsetNode2->local = _playerNodes->primaryWeaponOffsetNOde->local;
 			Matrix44 lr;
 			lr.setEulerAngles(0, degreesToRads(180), 0);
-			_playerNodes->SecondaryMeleeWeaponOffsetNode2->m_localTransform.rotate = lr.multiply43Right(_playerNodes->SecondaryMeleeWeaponOffsetNode2->m_localTransform.rotate);
-			_playerNodes->SecondaryMeleeWeaponOffsetNode2->m_localTransform.translate = RE::NiPoint3(-2, -9, 2);
+			_playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate = lr.multiply43Right(_playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate);
+			_playerNodes->SecondaryMeleeWeaponOffsetNode2->local.translate = RE::NiPoint3(-2, -9, 2);
 			updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
 		}
 
@@ -1032,14 +1033,14 @@ namespace frik {
 			w.data[1][2] = -0.109f;
 			w.data[2][2] = 0.992f;
 		}
-		weaponNode->m_localTransform.rotate = w.make43();
+		weaponNode->local.rotate = w.make43();
 
 		if (handleOffhand) {
 			w.setEulerAngles(degreesToRads(0), degreesToRads(isLeft ? 45 : -45), degreesToRads(0));
-			weaponNode->m_localTransform.rotate = w.multiply43Right(weaponNode->m_localTransform.rotate);
+			weaponNode->local.rotate = w.multiply43Right(weaponNode->local.rotate);
 		}
 
-		weaponNode->m_localTransform.translate = isLeftHandedMode()
+		weaponNode->local.translate = isLeftHandedMode()
 			? (isLeft ? RE::NiPoint3(3.389f, -2.099f, 3.133f) : RE::NiPoint3(0, -4.8f, 0))
 			: isLeft
 			? RE::NiPoint3(0, 0, 0)
@@ -1050,8 +1051,8 @@ namespace frik {
 		weaponNode->IncRef();
 		Update1StPersonArm(*g_player, &weaponNode, &offsetNode);
 
-		RE::NiPoint3 handPos = isLeft ? _leftHand->m_worldTransform.translate : _rightHand->m_worldTransform.translate;
-		NiMatrix43 handRot = isLeft ? _leftHand->m_worldTransform.rotate : _rightHand->m_worldTransform.rotate;
+		RE::NiPoint3 handPos = isLeft ? _leftHand->world.translate : _rightHand->world.translate;
+		NiMatrix43 handRot = isLeft ? _leftHand->world.rotate : _rightHand->world.rotate;
 
 		const auto arm = isLeft ? _leftArm : _rightArm;
 
@@ -1059,7 +1060,7 @@ namespace frik {
 		// If it is, do not handle IK and let Fallout use its normal animations for that arm instead.
 		if (isnan(handPos.x) || isnan(handPos.y) || isnan(handPos.z) ||
 			isinf(handPos.x) || isinf(handPos.y) || isinf(handPos.z) ||
-			vec3Len(arm.upper->m_worldTransform.translate - handPos) > 200.0) {
+			vec3Len(arm.upper->world.translate - handPos) > 200.0) {
 			return;
 		}
 
@@ -1067,23 +1068,23 @@ namespace frik {
 
 		// Shoulder IK is done in a very simple way
 
-		RE::NiPoint3 shoulderToHand = handPos - arm.upper->m_worldTransform.translate;
+		RE::NiPoint3 shoulderToHand = handPos - arm.upper->world.translate;
 		float armLength = g_config.armLength;
 		float adjustAmount = (std::clamp)(vec3Len(shoulderToHand) - armLength * 0.5f, 0.0f, armLength * 0.85f) / (armLength * 0.85f);
 		RE::NiPoint3 shoulderOffset = vec3Norm(shoulderToHand) * (adjustAmount * armLength * 0.08f);
 
-		RE::NiPoint3 clavicalToNewShoulder = arm.upper->m_worldTransform.translate + shoulderOffset - arm.shoulder->m_worldTransform.translate;
+		RE::NiPoint3 clavicalToNewShoulder = arm.upper->world.translate + shoulderOffset - arm.shoulder->world.translate;
 
-		RE::NiPoint3 sLocalDir = arm.shoulder->m_worldTransform.rotate.Transpose() * clavicalToNewShoulder / arm.shoulder->m_worldTransform.scale;
+		RE::NiPoint3 sLocalDir = arm.shoulder->world.rotate.Transpose() * clavicalToNewShoulder / arm.shoulder->world.scale;
 
 		Matrix44 rotatedM;
 		rotatedM = 0.0;
 		rotatedM.rotateateVectorVec(sLocalDir, RE::NiPoint3(1, 0, 0));
 
-		NiMatrix43 result = rotatedM.multiply43Left(arm.shoulder->m_localTransform.rotate);
-		arm.shoulder->m_localTransform.rotate = result;
+		NiMatrix43 result = rotatedM.multiply43Left(arm.shoulder->local.rotate);
+		arm.shoulder->local.rotate = result;
 
-		updateDown(arm.shoulder->GetAsNiNode(), true);
+		updateDown(arm.shoulder->GetAsRE::NiNode(), true);
 
 		// The bend of the arm depends on its distance to the body.  Its distance as well as the lengths of
 		// the upper arm and forearm define the sides of a triangle:
@@ -1101,18 +1102,18 @@ namespace frik {
 
 		float negLeft = isLeft ? -1 : 1;
 
-		float originalUpperLen = vec3Len(arm.forearm1->m_localTransform.translate);
+		float originalUpperLen = vec3Len(arm.forearm1->local.translate);
 		float originalForearmLen;
 
 		if (_inPowerArmor) {
-			originalForearmLen = vec3Len(arm.hand->m_localTransform.translate);
+			originalForearmLen = vec3Len(arm.hand->local.translate);
 		} else {
-			originalForearmLen = vec3Len(arm.hand->m_localTransform.translate) + vec3Len(arm.forearm2->m_localTransform.translate) + vec3Len(arm.forearm3->m_localTransform.translate);
+			originalForearmLen = vec3Len(arm.hand->local.translate) + vec3Len(arm.forearm2->local.translate) + vec3Len(arm.forearm3->local.translate);
 		}
 		float upperLen = originalUpperLen * adjustedArmLength;
 		float forearmLen = originalForearmLen * adjustedArmLength;
 
-		RE::NiPoint3 Uwp = arm.upper->m_worldTransform.translate;
+		RE::NiPoint3 Uwp = arm.upper->world.translate;
 		RE::NiPoint3 handToShoulder = Uwp - handPos;
 		float hsLen = (std::max)(vec3Len(handToShoulder), 0.1f);
 
@@ -1159,18 +1160,18 @@ namespace frik {
 
 		// Calculate the hand's distance behind the body - It will increase the minimum elbow rotation angle
 		float size = 1.0;
-		float behindD = -(forwardDir.x * arm.shoulder->m_worldTransform.translate.x + forwardDir.y * arm.shoulder->m_worldTransform.translate.y) - 10.0f;
+		float behindD = -(forwardDir.x * arm.shoulder->world.translate.x + forwardDir.y * arm.shoulder->world.translate.y) - 10.0f;
 		float handBehindDist = -(handPos.x * forwardDir.x + handPos.y * forwardDir.y + behindD);
 		float behindAmount = (std::clamp)(handBehindDist / (40.0f * size), 0.0f, 1.0f);
 
 		// Holding hands in front of chest increases the minimum elbow rotation angle (elbows lift) and decreases the maximum angle
 		RE::NiPoint3 planeDir = rotateXY(forwardDir, negLeft * degreesToRads(135));
-		float planeD = -(planeDir.x * arm.shoulder->m_worldTransform.translate.x + planeDir.y * arm.shoulder->m_worldTransform.translate.y) + 16.0f * size;
+		float planeD = -(planeDir.x * arm.shoulder->world.translate.x + planeDir.y * arm.shoulder->world.translate.y) + 16.0f * size;
 		float armCrossAmount = (std::clamp)((handPos.x * planeDir.x + handPos.y * planeDir.y + planeD) / (20.0f * size), 0.0f, 1.0f);
 
 		// The arm lift limits how much the crossing amount can influence minimum elbow rotation
 		// The maximum rotation is also decreased as hands lift higher (elbows point further downward)
-		float armLiftLimitZ = _chest->m_worldTransform.translate.z * size;
+		float armLiftLimitZ = _chest->world.translate.z * size;
 		float armLiftThreshold = 60.0f * size;
 		float armLiftLimit = (std::clamp)((armLiftLimitZ + armLiftThreshold - handPos.z) / armLiftThreshold, 0.0f, 1.0f); // 1 at bottom, 0 at top
 		float upLimit = (std::clamp)((1.0f - armLiftLimit) * 1.4f, 0.0f, 1.0f); // 0 at bottom, 1 at a much lower top
@@ -1194,7 +1195,7 @@ namespace frik {
 		RE::NiPoint3 xDir = vec3Norm(handToShoulder);
 
 		// Get the final "Y" vector, perpendicular to "X", and pointing in elbow direction (as in the diagram above)
-		float sideD = -(sidewaysDir.x * arm.shoulder->m_worldTransform.translate.x + sidewaysDir.y * arm.shoulder->m_worldTransform.translate.y) - 1.0f * 8.0f;
+		float sideD = -(sidewaysDir.x * arm.shoulder->world.translate.x + sidewaysDir.y * arm.shoulder->world.translate.y) - 1.0f * 8.0f;
 		float acrossAmount = -(handPos.x * sidewaysDir.x + handPos.y * sidewaysDir.y + sideD) / (16.0f * 1.0f);
 		float handSideTwistOutward = vec3Dot(handSide, vec3Norm(sidewaysDir + forwardDir * 0.5f));
 		float armTwist = (std::clamp)(handSideTwistOutward - (std::max)(0.0f, acrossAmount + 0.25f), 0.0f, 1.0f);
@@ -1230,55 +1231,55 @@ namespace frik {
 
 		// The upper arm bone must be rotated from its forward vector to its shoulder-to-elbow vector in its local space
 		// Calculate Ulr:  baseUwr * rotTowardElbow = Cwr * Ulr   ===>   Ulr = Cwr' * baseUwr * rotTowardElbow
-		NiMatrix43 Uwr = arm.upper->m_worldTransform.rotate;
+		NiMatrix43 Uwr = arm.upper->world.rotate;
 		RE::NiPoint3 pos = elbowWorld - Uwp;
-		RE::NiPoint3 uLocalDir = Uwr.Transpose() * vec3Norm(pos) / arm.upper->m_worldTransform.scale;
+		RE::NiPoint3 uLocalDir = Uwr.Transpose() * vec3Norm(pos) / arm.upper->world.scale;
 
-		rotatedM.rotateateVectorVec(uLocalDir, arm.forearm1->m_localTransform.translate);
-		arm.upper->m_localTransform.rotate = rotatedM.multiply43Left(arm.upper->m_localTransform.rotate);
+		rotatedM.rotateateVectorVec(uLocalDir, arm.forearm1->local.translate);
+		arm.upper->local.rotate = rotatedM.multiply43Left(arm.upper->local.rotate);
 
-		rotatedM.makeTransformMatrix(arm.upper->m_localTransform.rotate, arm.upper->m_localTransform.translate);
+		rotatedM.makeTransformMatrix(arm.upper->local.rotate, arm.upper->local.translate);
 
-		Uwr = rotatedM.multiply43Left(arm.shoulder->m_worldTransform.rotate);
+		Uwr = rotatedM.multiply43Left(arm.shoulder->world.rotate);
 
 		// Find the angle of the forearm twisted around the upper arm and twist the upper arm to align it
 		//    Uwr * twist = Cwr * Ulr   ===>   Ulr = Cwr' * Uwr * twist
 		pos = handPos - elbowWorld;
 		RE::NiPoint3 uLocalTwist = Uwr.Transpose() * vec3Norm(pos);
 		uLocalTwist.x = 0;
-		RE::NiPoint3 upperSide = arm.upper->m_worldTransform.rotate * RE::NiPoint3(0, 1, 0);
-		RE::NiPoint3 uloc = arm.shoulder->m_worldTransform.rotate.Transpose() * upperSide;
+		RE::NiPoint3 upperSide = arm.upper->world.rotate * RE::NiPoint3(0, 1, 0);
+		RE::NiPoint3 uloc = arm.shoulder->world.rotate.Transpose() * upperSide;
 		uloc.x = 0;
 		float upperAngle = acosf(vec3Dot(vec3Norm(uLocalTwist), vec3Norm(uloc))) * (uLocalTwist.z > 0 ? 1.f : -1.f);
 
 		Matrix44 twist;
 		twist.setEulerAngles(-upperAngle, 0, 0);
-		arm.upper->m_localTransform.rotate = twist.multiply43Left(arm.upper->m_localTransform.rotate);
+		arm.upper->local.rotate = twist.multiply43Left(arm.upper->local.rotate);
 
-		rotatedM.makeTransformMatrix(arm.upper->m_localTransform.rotate, arm.upper->m_localTransform.translate);
-		Uwr = rotatedM.multiply43Left(arm.shoulder->m_worldTransform.rotate);
+		rotatedM.makeTransformMatrix(arm.upper->local.rotate, arm.upper->local.translate);
+		Uwr = rotatedM.multiply43Left(arm.shoulder->world.rotate);
 
 		twist.setEulerAngles(-upperAngle, 0, 0);
-		arm.forearm1->m_localTransform.rotate = twist.multiply43Left(arm.forearm1->m_localTransform.rotate);
+		arm.forearm1->local.rotate = twist.multiply43Left(arm.forearm1->local.rotate);
 
 		// The forearm arm bone must be rotated from its forward vector to its elbow-to-hand vector in its local space
 		// Calculate Flr:  Fwr * rotTowardHand = Uwr * Flr   ===>   Flr = Uwr' * Fwr * rotTowardHand
-		rotatedM.makeTransformMatrix(arm.forearm1->m_localTransform.rotate, arm.forearm1->m_localTransform.translate);
+		rotatedM.makeTransformMatrix(arm.forearm1->local.rotate, arm.forearm1->local.translate);
 		NiMatrix43 Fwr = rotatedM.multiply43Left(Uwr);
 		RE::NiPoint3 elbowHand = handPos - elbowWorld;
 		RE::NiPoint3 fLocalDir = Fwr.Transpose() * vec3Norm(elbowHand);
 
 		rotatedM.rotateateVectorVec(fLocalDir, RE::NiPoint3(1, 0, 0));
-		arm.forearm1->m_localTransform.rotate = rotatedM.multiply43Left(arm.forearm1->m_localTransform.rotate);
-		rotatedM.makeTransformMatrix(arm.forearm1->m_localTransform.rotate, arm.forearm1->m_localTransform.translate);
+		arm.forearm1->local.rotate = rotatedM.multiply43Left(arm.forearm1->local.rotate);
+		rotatedM.makeTransformMatrix(arm.forearm1->local.rotate, arm.forearm1->local.translate);
 		Fwr = rotatedM.multiply43Left(Uwr);
 
 		NiMatrix43 Fwr3;
 
 		if (!_inPowerArmor && arm.forearm2 != nullptr && arm.forearm3 != nullptr) {
-			rotatedM.makeTransformMatrix(arm.forearm2->m_localTransform.rotate, arm.forearm2->m_localTransform.translate);
+			rotatedM.makeTransformMatrix(arm.forearm2->local.rotate, arm.forearm2->local.translate);
 			auto Fwr2 = rotatedM.multiply43Left(Fwr);
-			rotatedM.makeTransformMatrix(arm.forearm3->m_localTransform.rotate, arm.forearm3->m_localTransform.translate);
+			rotatedM.makeTransformMatrix(arm.forearm3->local.rotate, arm.forearm3->local.translate);
 			Fwr3 = rotatedM.multiply43Left(Fwr2);
 
 			// Find the angle the wrist is pointing and twist forearm3 appropriately
@@ -1294,66 +1295,66 @@ namespace frik {
 			float forearmAngle = -1 * negLeft * atan2f(fsin, fcos);
 
 			twist.setEulerAngles(negLeft * forearmAngle / 2, 0, 0);
-			arm.forearm2->m_localTransform.rotate = twist.multiply43Left(arm.forearm2->m_localTransform.rotate);
+			arm.forearm2->local.rotate = twist.multiply43Left(arm.forearm2->local.rotate);
 
 			twist.setEulerAngles(negLeft * forearmAngle / 2, 0, 0);
-			arm.forearm3->m_localTransform.rotate = twist.multiply43Left(arm.forearm3->m_localTransform.rotate);
+			arm.forearm3->local.rotate = twist.multiply43Left(arm.forearm3->local.rotate);
 
-			rotatedM.makeTransformMatrix(arm.forearm2->m_localTransform.rotate, arm.forearm2->m_localTransform.translate);
+			rotatedM.makeTransformMatrix(arm.forearm2->local.rotate, arm.forearm2->local.translate);
 			Fwr2 = rotatedM.multiply43Left(Fwr);
-			rotatedM.makeTransformMatrix(arm.forearm3->m_localTransform.rotate, arm.forearm3->m_localTransform.translate);
+			rotatedM.makeTransformMatrix(arm.forearm3->local.rotate, arm.forearm3->local.translate);
 			Fwr3 = rotatedM.multiply43Left(Fwr2);
 		}
 
 		// Calculate Hlr:  Fwr * Hlr = handRot   ===>   Hlr = Fwr' * handRot
 		rotatedM.makeTransformMatrix(handRot, handPos);
 		if (!_inPowerArmor) {
-			arm.hand->m_localTransform.rotate = rotatedM.multiply43Left(Fwr3.Transpose());
+			arm.hand->local.rotate = rotatedM.multiply43Left(Fwr3.Transpose());
 		} else {
-			arm.hand->m_localTransform.rotate = rotatedM.multiply43Left(Fwr.Transpose());
+			arm.hand->local.rotate = rotatedM.multiply43Left(Fwr.Transpose());
 		}
 
 		// Calculate Flp:  Fwp = Uwp + Uwr * (Flp * Uws) = elbowWorld   ===>   Flp = Uwr' * (elbowWorld - Uwp) / Uws
-		arm.forearm1->m_localTransform.translate = Uwr.Transpose() * ((elbowWorld - Uwp) / arm.upper->m_worldTransform.scale);
+		arm.forearm1->local.translate = Uwr.Transpose() * ((elbowWorld - Uwp) / arm.upper->world.scale);
 
-		float origEHLen = vec3Len(arm.hand->m_worldTransform.translate - arm.forearm1->m_worldTransform.translate);
-		float forearmRatio = forearmLen / origEHLen * _root->m_localTransform.scale;
+		float origEHLen = vec3Len(arm.hand->world.translate - arm.forearm1->world.translate);
+		float forearmRatio = forearmLen / origEHLen * _root->local.scale;
 
 		if (arm.forearm2 && !_inPowerArmor) {
-			arm.forearm2->m_localTransform.translate *= forearmRatio;
-			arm.forearm3->m_localTransform.translate *= forearmRatio;
+			arm.forearm2->local.translate *= forearmRatio;
+			arm.forearm3->local.translate *= forearmRatio;
 		}
-		arm.hand->m_localTransform.translate *= forearmRatio;
+		arm.hand->local.translate *= forearmRatio;
 	}
 
 	void Skeleton::showOnlyArms() const {
-		const RE::NiPoint3 rwp = _rightArm.shoulder->m_worldTransform.translate;
-		const RE::NiPoint3 lwp = _leftArm.shoulder->m_worldTransform.translate;
-		_root->m_localTransform.scale = 0.00001f;
+		const RE::NiPoint3 rwp = _rightArm.shoulder->world.translate;
+		const RE::NiPoint3 lwp = _leftArm.shoulder->world.translate;
+		_root->local.scale = 0.00001f;
 		updateTransforms(_root);
-		_root->m_worldTransform.translate += _forwardDir * -10.0f;
-		_root->m_worldTransform.translate.z = rwp.z;
+		_root->world.translate += _forwardDir * -10.0f;
+		_root->world.translate.z = rwp.z;
 		updateDown(_root, false);
 
-		_rightArm.shoulder->m_localTransform.scale = 100000;
-		_leftArm.shoulder->m_localTransform.scale = 100000;
+		_rightArm.shoulder->local.scale = 100000;
+		_leftArm.shoulder->local.scale = 100000;
 
-		updateTransforms(reinterpret_cast<NiNode*>(_rightArm.shoulder));
-		updateTransforms(reinterpret_cast<NiNode*>(_leftArm.shoulder));
+		updateTransforms(reinterpret_cast<RE::NiNode*>(_rightArm.shoulder));
+		updateTransforms(reinterpret_cast<RE::NiNode*>(_leftArm.shoulder));
 
-		_rightArm.shoulder->m_worldTransform.translate = rwp;
-		_leftArm.shoulder->m_worldTransform.translate = lwp;
+		_rightArm.shoulder->world.translate = rwp;
+		_leftArm.shoulder->world.translate = lwp;
 
-		updateDown(reinterpret_cast<NiNode*>(_rightArm.shoulder), false);
-		updateDown(reinterpret_cast<NiNode*>(_leftArm.shoulder), false);
+		updateDown(reinterpret_cast<RE::NiNode*>(_rightArm.shoulder), false);
+		updateDown(reinterpret_cast<RE::NiNode*>(_leftArm.shoulder), false);
 	}
 
 	void Skeleton::hideHands() const {
-		const RE::NiPoint3 rwp = _rightArm.shoulder->m_worldTransform.translate;
-		_root->m_localTransform.scale = 0.00001f;
+		const RE::NiPoint3 rwp = _rightArm.shoulder->world.translate;
+		_root->local.scale = 0.00001f;
 		updateTransforms(_root);
-		_root->m_worldTransform.translate += _forwardDir * -10.0f;
-		_root->m_worldTransform.translate.z = rwp.z;
+		_root->world.translate += _forwardDir * -10.0f;
+		_root->world.translate.z = rwp.z;
 		updateDown(_root, false);
 	}
 
@@ -1407,7 +1408,7 @@ namespace frik {
 		const int pos = fpTree->GetBoneIndex(bone);
 		if (pos >= 0) {
 			if (fpTree->transforms[pos].refNode) {
-				_handBones[bone] = fpTree->transforms[pos].refNode->m_localTransform;
+				_handBones[bone] = fpTree->transforms[pos].refNode->local;
 			} else {
 				_handBones[bone] = fpTree->transforms[pos].local;
 			}
@@ -1445,12 +1446,12 @@ namespace frik {
 				rt->transforms[pos].local.translate = handOpen[name.c_str()].translate;
 
 				if (rt->transforms[pos].refNode) {
-					rt->transforms[pos].refNode->m_localTransform = rt->transforms[pos].local;
+					rt->transforms[pos].refNode->local = rt->transforms[pos].local;
 				}
 			}
 
 			if (rt->transforms[pos].refNode) {
-				rt->transforms[pos].world = rt->transforms[pos].refNode->m_worldTransform;
+				rt->transforms[pos].world = rt->transforms[pos].refNode->world;
 			} else {
 				const short parent = rt->transforms[pos].parPos;
 				RE::NiPoint3 p = rt->transforms[pos].local.translate;
@@ -1472,8 +1473,8 @@ namespace frik {
 			return;
 		}
 
-		const float z = _root->m_localTransform.translate.z;
-		const NiNode* body = _root->m_parent->GetAsNiNode();
+		const float z = _root->local.translate.z;
+		const RE::NiNode* body = _root->parent->GetAsRE::NiNode();
 
 		const RE::NiPoint3 back = vec3Norm(RE::NiPoint3(-_forwardDir.x, -_forwardDir.y, 0));
 		const auto bodyDir = RE::NiPoint3(0, 1, 0);
@@ -1481,13 +1482,13 @@ namespace frik {
 		Matrix44 mat;
 		mat.makeIdentity();
 		mat.rotateateVectorVec(back, bodyDir);
-		_root->m_localTransform.rotate = mat.multiply43Left(body->m_worldTransform.rotate.Transpose());
-		_root->m_localTransform.translate = body->m_worldTransform.translate - _curentPosition;
-		_root->m_localTransform.translate.y += g_config.selfieOutFrontDistance;
-		_root->m_localTransform.translate.z = z;
+		_root->local.rotate = mat.multiply43Left(body->world.rotate.Transpose());
+		_root->local.translate = body->world.translate - _curentPosition;
+		_root->local.translate.y += g_config.selfieOutFrontDistance;
+		_root->local.translate.z = z;
 	}
 
-	void Skeleton::dampenHand(NiNode* node, const bool isLeft) {
+	void Skeleton::dampenHand(RE::NiNode* node, const bool isLeft) {
 		if (!g_config.dampenHands) {
 			return;
 		}
@@ -1503,21 +1504,21 @@ namespace frik {
 		// Spherical interpolation between previous frame and current frame for the world rotation matrix
 		Quaternion rq, rt;
 		rq.fromRot(prevFrame.rotate);
-		rt.fromRot(node->m_worldTransform.rotate);
+		rt.fromRot(node->world.rotate);
 		rq.slerp(1 - (isInScopeMenu ? g_config.dampenHandsRotationInVanillaScope : g_config.dampenHandsRotation), rt);
-		node->m_worldTransform.rotate = rq.getRot().make43();
+		node->world.rotate = rq.getRot().make43();
 
 		// Linear interpolation between the position from the previous frame to current frame
 		const RE::NiPoint3 dir = _curentPosition - _lastPosition; // Offset the player movement from this interpolation
-		RE::NiPoint3 deltaPos = node->m_worldTransform.translate - prevFrame.translate - dir; // Add in player velocity
+		RE::NiPoint3 deltaPos = node->world.translate - prevFrame.translate - dir; // Add in player velocity
 		deltaPos *= isInScopeMenu ? g_config.dampenHandsTranslationInVanillaScope : g_config.dampenHandsTranslation;
-		node->m_worldTransform.translate -= deltaPos;
+		node->world.translate -= deltaPos;
 
 		// Update the previous frame transform
 		if (isLeft) {
-			_leftHandPrevFrame = node->m_worldTransform;
+			_leftHandPrevFrame = node->world;
 		} else {
-			_rightHandPrevFrame = node->m_worldTransform;
+			_rightHandPrevFrame = node->world;
 		}
 
 		updateDown(node, false);

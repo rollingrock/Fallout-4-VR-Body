@@ -1,7 +1,5 @@
 #pragma once
 
-#include "f4se/NiNodes.h"
-
 #include "UIModAdapter.h"
 #include "../common/Matrix.h"
 
@@ -73,7 +71,7 @@ namespace vrui {
 		virtual void onStateChanged(UIElement* element);
 
 		// Attach the UI element to the given game node.
-		virtual void attachToNode(NiNode* attachNode);
+		virtual void attachToNode(RE::NiNode* attachNode);
 		virtual void detachFromAttachedNode(bool releaseSafe);
 
 		UIElement* _parent = nullptr;
@@ -84,7 +82,7 @@ namespace vrui {
 		UISize _size = UISize(0, 0);
 
 		// Game node the main node is attached to
-		NiPointer<NiNode> _attachNode = nullptr;
+		RE::NiPointer<RE::NiNode> _attachNode = nullptr;
 
 		// Used to allow hiding attachToNode, detachFromAttachedNode from public API
 		friend class UIManager;

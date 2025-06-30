@@ -30,14 +30,14 @@ namespace frik {
 			g_animDeltaTime = 0.0f;
 		}
 
-		NiNode* weap = f4vr::getChildNode("Weapon", (*g_player)->firstPersonSkeleton);
+		RE::NiNode* weap = f4vr::getChildNode("Weapon", (*g_player)->firstPersonSkeleton);
 		//printNodes(weap, elapsed);
 	}
 
 	bool GunReload::StartReloading() {
-		//NiNode* offhand = c_leftHandedMode ? getChildNode("LArm_Finger21", (*g_player)->unkF0->rootNode) : getChildNode("RArm_Finger21", (*g_player)->unkF0->rootNode);
-		//NiNode* bolt = getChildNode("WeaponBolt", (*g_player)->firstPersonSkeleton);
-		NiNode* magNode = f4vr::getChildNode("WeaponMagazine", (*g_player)->firstPersonSkeleton);
+		//RE::NiNode* offhand = c_leftHandedMode ? getChildNode("LArm_Finger21", (*g_player)->unkF0->rootNode) : getChildNode("RArm_Finger21", (*g_player)->unkF0->rootNode);
+		//RE::NiNode* bolt = getChildNode("WeaponBolt", (*g_player)->firstPersonSkeleton);
+		RE::NiNode* magNode = f4vr::getChildNode("WeaponMagazine", (*g_player)->firstPersonSkeleton);
 		if (!magNode) {
 			return false;
 		}
@@ -46,7 +46,7 @@ namespace frik {
 		//	return false;
 		//}
 
-		//float dist = abs(vec3_len(offhand->m_worldTransform.translate - bolt->m_worldTransform.translate));
+		//float dist = abs(vec3_len(offhand->world.translate - bolt->world.translate));
 
 		const uint64_t handInput = f4vr::isLeftHandedMode()
 			? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
@@ -54,15 +54,15 @@ namespace frik {
 
 		if (!reloadButtonPressed && handInput & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip)) {
 			const auto refrData = new f4vr::NEW_REFR_DATA();
-			refrData->location = magNode->m_worldTransform.translate;
+			refrData->location = magNode->world.translate;
 			refrData->direction = (*g_player)->rot;
 			refrData->interior = (*g_player)->parentCell;
 			refrData->world = f4vr::TESObjectREFR_GetWorldSpace(*g_player);
 
-			const auto extraData = static_cast<ExtraDataList*>(f4vr::MemoryManager_Allocate(g_mainHeap, 0x28, 0, false));
-			f4vr::ExtraDataList_ExtraDataList(extraData);
+			const auto extraData = static_cast<RE::ExtraDataList*>(f4vr::MemoryManager_Allocate(g_mainHeap, 0x28, 0, false));
+			f4vr::RE::ExtraDataList_RE::ExtraDataList(extraData);
 			extraData->m_refCount += 1;
-			f4vr::ExtraDataList_setCount(extraData, 10);
+			f4vr::RE::ExtraDataList_setCount(extraData, 10);
 			refrData->extra = extraData;
 			const auto instance = new f4vr::BGSObjectInstance(nullptr, nullptr);
 			f4vr::BGSEquipIndex idx;
@@ -75,7 +75,7 @@ namespace frik {
 			}
 
 			const int clipAmount = f4vr::Actor_GetCurrentAmmoCount(*g_player, idx);
-			f4vr::ExtraDataList_setAmmoCount(extraData, clipAmount);
+			f4vr::RE::ExtraDataList_setAmmoCount(extraData, clipAmount);
 
 			refrData->object = currentAmmo;
 			void* ammoDrop = new std::size_t;
@@ -90,7 +90,7 @@ namespace frik {
 			if (!currentRefr) {
 				return false;
 			}
-			f4vr::ExtraDataList_setAmmoCount(currentRefr->extraDataList, clipAmount);
+			f4vr::RE::ExtraDataList_setAmmoCount(currentRefr->extraDataList, clipAmount);
 			magNode->flags |= 0x1;
 			reloadButtonPressed = true;
 			return true;
@@ -102,7 +102,7 @@ namespace frik {
 
 	bool GunReload::SetAmmoMesh() {
 		if (currentRefr->unkF0 && currentRefr->unkF0->rootNode) {
-			for (auto i = 0; i < currentRefr->unkF0->rootNode->m_children.m_emptyRunStart; ++i) {
+			for (auto i = 0; i < currentRefr->unkF0->rootNode->children.m_emptyRunStart; ++i) {
 				currentRefr->unkF0->rootNode->RemoveChildAt(i);
 			}
 
@@ -113,7 +113,7 @@ namespace frik {
 			proc.unk18 = f4vr::cloneAddr1;
 			proc.unk48 = f4vr::cloneAddr2;
 
-			NiNode* newMesh = f4vr::cloneNode(magMesh, &proc);
+			RE::NiNode* newMesh = f4vr::cloneNode(magMesh, &proc);
 			bhkWorld* world = f4vr::TESObjectCell_GetbhkWorld(currentRefr->parentCell);
 
 			currentRefr->unkF0->rootNode->AttachChild(newMesh, true);

@@ -8,7 +8,7 @@ namespace vrui {
 		explicit UIToggleButton(const std::string& nifPath)
 			: UIToggleButton(getClonedNiNodeForNifFile(nifPath)) {}
 
-		explicit UIToggleButton(NiNode* node)
+		explicit UIToggleButton(RE::NiNode* node)
 			: UIWidget(node), _toggleFrameNode(getClonedNiNodeForNifFile(getToggleButtonFrameNifName())) {
 			// TODO: replace with proper calculation of node size
 			_size = getButtonDefaultSize();
@@ -33,7 +33,7 @@ namespace vrui {
 		virtual std::string toString() const override;
 
 	protected:
-		virtual void attachToNode(NiNode* node) override;
+		virtual void attachToNode(RE::NiNode* node) override;
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
 		virtual bool isPressable() const override;
 		virtual void onFrameUpdate(UIFrameUpdateContext* adapter) override;
@@ -44,6 +44,6 @@ namespace vrui {
 		bool _isUnToggleAllowed = true;
 
 		// the UI of the white frame around the button
-		NiPointer<NiNode> _toggleFrameNode;
+		RE::NiPointer<RE::NiNode> _toggleFrameNode;
 	};
 }

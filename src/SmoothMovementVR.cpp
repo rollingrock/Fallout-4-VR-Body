@@ -46,7 +46,7 @@ namespace frik {
 		const auto newPos = smoothedValue(curPos, _smoothedPos);
 		_smoothedPos = newPos;
 
-		auto& playerLocalTransformPos = playerNodes->playerworldnode->m_localTransform.translate;
+		auto& playerLocalTransformPos = playerNodes->playerworldnode->local.translate;
 		if (_notMoving && distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, _lastAppliedLocalX, _lastAppliedLocalY) > 100) {
 			_smoothedPos = curPos;
 			playerLocalTransformPos.z = 0;

@@ -37,19 +37,19 @@ namespace frik {
 		void handleThrowableWeapon();
 		void handlePrimaryWeapon();
 		void checkEquippedWeaponChanged(bool emptyHand);
-		void handleScopeCameraAdjustmentByWeaponOffset(const NiNode* weapon) const;
-		void checkIfOffhandIsGripping(const NiNode* weapon);
+		void handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const;
+		void checkIfOffhandIsGripping(const RE::NiNode* weapon);
 		void setOffhandGripping(bool isGripping);
-		void handleWeaponGrippingRotationAdjustment(NiNode* weapon) const;
-		void handleWeaponScopeCameraGrippingRotationAdjustment(const NiNode* weapon, common::Quaternion rotAdjust, RE::NiPoint3 adjustedWeaponVec) const;
-		bool isOffhandCloseToBarrel(const NiNode* weapon) const;
+		void handleWeaponGrippingRotationAdjustment(RE::NiNode* weapon) const;
+		void handleWeaponScopeCameraGrippingRotationAdjustment(const RE::NiNode* weapon, common::Quaternion rotAdjust, RE::NiPoint3 adjustedWeaponVec) const;
+		bool isOffhandCloseToBarrel(const RE::NiNode* weapon) const;
 		bool isOffhandMovedFastAway() const;
 		RE::NiPoint3 getPrimaryHandPosition() const;
 		RE::NiPoint3 getOffhandPosition() const;
-		void handleBetterScopes(NiNode* weapon) const;
+		void handleBetterScopes(RE::NiNode* weapon) const;
 		static void fixMuzzleFlashPosition();
-		static NiNode* getBackOfHandUINode();
-		void debugPrintWeaponPositionData(NiNode* weapon) const;
+		static RE::NiNode* getBackOfHandUINode();
+		void debugPrintWeaponPositionData(RE::NiNode* weapon) const;
 
 		// Define a basis remapping matrix to correct coordinate system for scope camera
 		NiMatrix43 _scopeCameraBaseMatrix;

@@ -65,7 +65,7 @@ using _someRandomFunc = void(*)(uint64_t rcx);
 RelocAddr<_someRandomFunc> someRandomFunc(0xd3c820);
 RelocAddr<uintptr_t> hookSomeRandomFunc(0xd8405e);
 
-using _Actor_ReEquipAll = void(*)(Actor* a_actor);
+using _Actor_ReEquipAll = void(*)(RE::Actor* a_actor);
 RelocAddr<_Actor_ReEquipAll> Actor_ReEquipAll(0xddf050);
 RelocAddr<uintptr_t> hookActor_ReEquipAllExit(0xf01528);
 
@@ -117,7 +117,7 @@ void RendererEnable(const std::uint64_t a_ptr, const bool a_bool) {
 	return func(a_ptr, a_bool);
 }
 
-std::uint64_t RendererGetByName(const BSFixedString& a_name) {
+std::uint64_t RendererGetByName(const RE::BSFixedString& a_name) {
 	using func_t = decltype(&RendererGetByName);
 	RelocAddr<func_t> func(0x0b00270);
 	return func(a_name);
@@ -133,10 +133,10 @@ void hookIt(const uint64_t rcx) {
 	// so all of this below is an attempt to bypass the functionality in game around my hook at resets the root parent node's world pos which screws up armor
 	// we still need to call the function i hooked below to get some things ready for the renderer however starting with the named "Root" node instead of it's parent preseves locations
 	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-		if ((*g_player)->unkF0->rootNode->m_children.m_emptyRunStart > 0) {
-			if ((*g_player)->unkF0->rootNode->m_children.m_data[0]) {
+		if ((*g_player)->unkF0->rootNode->children.m_emptyRunStart > 0) {
+			if ((*g_player)->unkF0->rootNode->children.data[0]) {
 				uint64_t arr[5] = {0, 0, 0, 0, 0};
-				const uint64_t body = (uint64_t)(*g_player)->unkF0->rootNode->m_children.m_data[0];
+				const uint64_t body = (uint64_t)(*g_player)->unkF0->rootNode->children.data[0];
 				arr[1] = body + 0x180;
 				arr[2] = 0x800;
 				arr[3] = 2;
@@ -154,7 +154,7 @@ void hook2(const uint64_t rcx, const uint64_t rdx, const uint64_t r8, const uint
 
 	hookedMainDrawCandidateFunc(rcx, rdx, r8, r9);
 
-	const BSFixedString name("ScopeMenu");
+	const RE::BSFixedString name("ScopeMenu");
 
 	const std::uint64_t renderer = RendererGetByName(name);
 
@@ -168,7 +168,7 @@ void hook5(const uint64_t rcx) {
 
 	someRandomFunc(rcx);
 
-	const BSFixedString name("ScopeMenu");
+	const RE::BSFixedString name("ScopeMenu");
 
 	const std::uint64_t renderer = RendererGetByName(name);
 
@@ -194,16 +194,16 @@ void hookSmoothMovement(const uint64_t rcx) {
 
 void hook_main_update_player(const uint64_t rcx, const uint64_t rdx) {
 	if (*g_player && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-		NiNode* body = (*g_player)->unkF0->rootNode->GetAsNiNode();
-		body->m_localTransform.translate.x = (*g_playerCamera)->cameraNode->m_worldTransform.translate.x;
-		body->m_localTransform.translate.y = (*g_playerCamera)->cameraNode->m_worldTransform.translate.y;
-		body->m_worldTransform.translate.x = (*g_playerCamera)->cameraNode->m_worldTransform.translate.x;
-		body->m_worldTransform.translate.y = (*g_playerCamera)->cameraNode->m_worldTransform.translate.y;
+		RE::NiNode* body = (*g_player)->unkF0->rootNode->GetAsRE::NiNode();
+		body->local.translate.x = (*g_playerCamera)->cameraNode->world.translate.x;
+		body->local.translate.y = (*g_playerCamera)->cameraNode->world.translate.y;
+		body->world.translate.x = (*g_playerCamera)->cameraNode->world.translate.x;
+		body->world.translate.y = (*g_playerCamera)->cameraNode->world.translate.y;
 
-		//static BSFixedString pwn("PlayerWorldNode");
-		//NiNode* pwn_node = (*g_player)->unkF0->rootNode->m_parent->GetObjectByName(&pwn)->GetAsNiNode();
-		//body->m_localTransform.translate.z += pwn_node->m_localTransform.translate.z;
-		//body->m_worldTransform.translate.z += pwn_node->m_localTransform.translate.z;
+		//static RE::BSFixedString pwn("PlayerWorldNode");
+		//RE::NiNode* pwn_node = (*g_player)->unkF0->rootNode->parent->GetObjectByName(&pwn)->GetAsRE::NiNode();
+		//body->local.translate.z += pwn_node->local.translate.z;
+		//body->world.translate.z += pwn_node->local.translate.z;
 	}
 
 	main_update_player(rcx, rdx);

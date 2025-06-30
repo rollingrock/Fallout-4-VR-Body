@@ -11,7 +11,7 @@ namespace vrui {
 	enum class UIContainerLayout : uint8_t {
 		// no layout, all elements are positioned manually
 		Manual = 0,
-		// all elements will be positioned centered in a row 
+		// all elements will be positioned centered in a row
 		HorizontalCenter,
 		// all elements will be positioned in a row left to right
 		HorizontalRight,
@@ -49,7 +49,7 @@ namespace vrui {
 		virtual std::string toString() const override;
 
 	protected:
-		virtual void attachToNode(NiNode* attachNode) override;
+		virtual void attachToNode(RE::NiNode* attachNode) override;
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
 		void calculateSizeManualLayout();
 		void calculateSizeHorizontalVerticalLayout();

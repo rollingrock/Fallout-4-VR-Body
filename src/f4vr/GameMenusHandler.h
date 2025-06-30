@@ -9,7 +9,7 @@
 // Adopted from Shizof mod with permission, Thanks Shizof!!
 
 namespace f4vr {
-	class GameMenusHandler : public BSTEventSink<MenuOpenCloseEvent> {
+	class GameMenusHandler : public BSTEventSink<RE::MenuOpenCloseEvent> {
 	public:
 		~GameMenusHandler() override {
 			(*g_ui)->menuOpenCloseEventSource.RemoveEventSink(this);
@@ -59,7 +59,7 @@ namespace f4vr {
 			}
 		}
 
-		virtual EventResult ReceiveEvent(MenuOpenCloseEvent* evn, void* dispatcher) override {
+		virtual EventResult ReceiveEvent(RE::MenuOpenCloseEvent* evn, void* dispatcher) override {
 			if (evn) {
 				const auto& menuName = evn->menuName.c_str();
 				if (evn->isOpen) {

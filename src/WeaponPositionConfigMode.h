@@ -37,13 +37,13 @@ namespace frik {
 
 		bool isInOffhandRepositioning() const { return _repositionTarget == RepositionTarget::Offhand; }
 
-		void onFrameUpdate(NiNode* weapon);
+		void onFrameUpdate(RE::NiNode* weapon);
 
 	private:
-		void handleReposition(NiNode* weapon, NiNode* throwable) const;
-		void handleWeaponReposition(NiNode* weapon) const;
+		void handleReposition(RE::NiNode* weapon, RE::NiNode* throwable) const;
+		void handleWeaponReposition(RE::NiNode* weapon) const;
 		void handleOffhandReposition() const;
-		void handleThrowableReposition(NiNode* throwable) const;
+		void handleThrowableReposition(RE::NiNode* throwable) const;
 		void handleBackOfHandUIReposition() const;
 		static void handleBetterScopesReposition();
 		void resetConfig() const;

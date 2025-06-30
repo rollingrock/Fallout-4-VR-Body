@@ -36,7 +36,7 @@ namespace frik {
 		ReloadState state;
 		bool reloadButtonPressed;
 		TESAmmo* currentAmmo{nullptr};
-		NiNode* magMesh{nullptr};
+		RE::NiNode* magMesh{nullptr};
 		TESObjectREFR* currentRefr{nullptr};
 	};
 

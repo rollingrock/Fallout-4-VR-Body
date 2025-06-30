@@ -46,13 +46,13 @@ namespace frik {
 	/**
 	 * On load of FRIK plugin by F4VRSE setup messaging and papyrus handling once.
 	 */
-	void FRIK::initialize(const F4SEInterface* f4se) {
+	void FRIK::initialize(const F4SE::detail::F4SEInterface* f4se) {
 		_pluginHandle = f4se->GetPluginHandle();
 		if (_pluginHandle == kPluginHandle_Invalid) {
 			throw std::exception("Invalid plugin handle");
 		}
 
-		_messaging = static_cast<F4SEMessagingInterface*>(f4se->QueryInterface(kInterface_Messaging));
+		_messaging = static_cast<F4SE::detail::F4SEMessagingInterface*>(f4se->QueryInterface(kInterface_Messaging));
 		_messaging->RegisterListener(_pluginHandle, "F4SE", onF4VRSEMessage);
 
 		logger::info("Register papyrus native functions...");
@@ -238,7 +238,7 @@ namespace frik {
 			return false;
 		if (_workingRootNode != f4vr::getRootNode())
 			return false;
-		if (_workingRootNode->m_parent == nullptr)
+		if (_workingRootNode->parent == nullptr)
 			return false;
 		return true;
 	}
@@ -272,10 +272,10 @@ namespace frik {
 	 */
 	void FRIK::updateWorldFinal() {
 		const auto worldRootNode = f4vr::getWorldRootNode();
-		f4vr::BSFadeNode_MergeWorldBounds(worldRootNode);
+		f4vr::RE::BSFadeNode_MergeWorldBounds(worldRootNode);
 		f4vr::BSFlattenedBoneTree_UpdateBoneArray(f4vr::getRootNode());
 		// just in case any transforms missed because they are not in the tree do a full flat bone array update
-		f4vr::BSFadeNode_UpdateGeomArray(worldRootNode, 1);
+		f4vr::RE::BSFadeNode_UpdateGeomArray(worldRootNode, 1);
 	}
 
 	void FRIK::configureGameVars() {
@@ -290,7 +290,7 @@ namespace frik {
 	/**
 	 * Send a message to the BetterScopesVR mod.
 	 */
-	void FRIK::dispatchMessageToBetterScopesVR(const UInt32 messageType, void* data, const UInt32 dataLen) const {
+	void FRIK::dispatchMessageToBetterScopesVR(const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const {
 		_messaging->Dispatch(_pluginHandle, messageType, data, dataLen, BETTER_SCOPES_VR_MOD_NAME);
 	}
 
@@ -310,13 +310,13 @@ namespace frik {
 			printAllNodes();
 		}
 		if (g_config.checkDebugDumpDataOnceFor("world")) {
-			printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent->m_parent);
+			printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->parent->parent->parent->parent->parent->parent);
 		}
 		if (g_config.checkDebugDumpDataOnceFor("fp_skelly")) {
 			printNodes(f4vr::getFirstPersonSkeleton());
 		}
 		if (g_config.checkDebugDumpDataOnceFor("skelly")) {
-			printNodes(f4vr::getRootNode()->m_parent);
+			printNodes(f4vr::getRootNode()->parent);
 		}
 		if (g_config.checkDebugDumpDataOnceFor("menus")) {
 			_gameMenusHandler.debugDumpAllMenus();

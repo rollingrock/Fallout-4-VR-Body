@@ -6,24 +6,24 @@
 #include "api/openvr.h"
 #include "common/CommonUtils.h"
 #include "f4se/GameReferences.h"
-#include "f4se/NiNodes.h"
+#include "f4se/RE::NiNodes.h"
 #include "f4vr/PlayerNodes.h"
 #include "include/SimpleIni.h"
 
 namespace frik {
 	struct ArmNodes {
-		NiAVObject* shoulder;
-		NiAVObject* upper;
-		NiAVObject* upperT1;
-		NiAVObject* forearm1;
-		NiAVObject* forearm2;
-		NiAVObject* forearm3;
-		NiAVObject* hand;
+		RE::NiAVObject* shoulder;
+		RE::NiAVObject* upper;
+		RE::NiAVObject* upperT1;
+		RE::NiAVObject* forearm1;
+		RE::NiAVObject* forearm2;
+		RE::NiAVObject* forearm3;
+		RE::NiAVObject* hand;
 	};
 
 	class Skeleton {
 	public:
-		Skeleton(BSFadeNode* rootNode, const bool inPowerArmor)
+		Skeleton(RE::BSFadeNode* rootNode, const bool inPowerArmor)
 			: _root(rootNode), _inPowerArmor(inPowerArmor) {
 			_curentPosition = RE::NiPoint3(0, 0, 0);
 			_walkingState = 0;
@@ -63,7 +63,7 @@ namespace frik {
 		void setSingleLeg(bool isLeft) const;
 		void handleLeftHandedWeaponNodesSwitch();
 		void setArms(bool isLeft);
-		void dampenHand(NiNode* node, bool isLeft);
+		void dampenHand(RE::NiNode* node, bool isLeft);
 		void leftHandedModePipboy() const;
 		void hide3rdPersonWeapon() const;
 		void positionPipboy() const;
@@ -87,7 +87,7 @@ namespace frik {
 		void rotateLeg(uint32_t pos, float angle) const;
 
 		// root node and is in power armor define the Skeleton instance
-		BSFadeNode* _root;
+		RE::BSFadeNode* _root;
 		bool _inPowerArmor;
 
 		// ???
@@ -110,18 +110,18 @@ namespace frik {
 
 		// skeleton nodes
 		f4vr::PlayerNodes* _playerNodes;
-		NiNode* _rightHand;
-		NiNode* _leftHand;
-		NiNode* _head;
-		NiNode* _spine;
-		NiNode* _chest;
+		RE::NiNode* _rightHand;
+		RE::NiNode* _leftHand;
+		RE::NiNode* _head;
+		RE::NiNode* _spine;
+		RE::NiNode* _chest;
 		float _torsoLen;
 		float _legLen;
 		ArmNodes _rightArm;
 		ArmNodes _leftArm;
 
 		// Default transform are used to reset the skeleton before each frame update to start from scratch
-		std::vector<std::pair<NiAVObject*, const RE::NiTransform>> _skeletonNodesToDefaultTransforms;
+		std::vector<std::pair<RE::NiAVObject*, const RE::NiTransform>> _skeletonNodesToDefaultTransforms;
 		static std::unordered_map<std::string, RE::NiTransform> getSkeletonNodesDefaultTransforms();
 		static std::unordered_map<std::string, RE::NiTransform> getSkeletonNodesDefaultTransformsInPA();
 		inline static const std::unordered_map<std::string, RE::NiTransform> _skeletonNodesDefaultTransform = getSkeletonNodesDefaultTransforms();

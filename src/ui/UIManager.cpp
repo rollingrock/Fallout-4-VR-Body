@@ -46,11 +46,11 @@ namespace vrui {
 	/**
 	 * Attach the given element and subtree to the given attach game node to be rendered and layout with relation to the node.
 	 */
-	void UIManager::attachElement(const std::shared_ptr<UIElement>& element, NiNode* attachNode) {
+	void UIManager::attachElement(const std::shared_ptr<UIElement>& element, RE::NiNode* attachNode) {
 		element->attachToNode(attachNode);
 		// only the root can exists in the manager collection
 		if (!element->getParent()) {
-			logger::info("UI Manager root element added and attached to '{}'", attachNode->m_name.c_str());
+			logger::info("UI Manager root element added and attached to '{}'", attachNode->name.c_str());
 			_rootElements.emplace_back(element);
 		}
 	}

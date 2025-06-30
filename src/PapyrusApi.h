@@ -22,12 +22,12 @@ namespace frik {
 		Config::openInNotepad();
 	}
 
-	static UInt32 getWeaponRepositionMode(StaticFunctionTag* base) {
+	static std::uint32_t getWeaponRepositionMode(StaticFunctionTag* base) {
 		common::logger::info("Papyrus: Get Weapon Reposition Mode");
 		return g_frik.inWeaponRepositionMode() ? 1 : 0;
 	}
 
-	static UInt32 toggleWeaponRepositionMode(StaticFunctionTag* base) {
+	static std::uint32_t toggleWeaponRepositionMode(StaticFunctionTag* base) {
 		common::logger::info("Papyrus: Toggle Weapon Reposition Mode: {}", !g_frik.inWeaponRepositionMode() ? "ON" : "OFF");
 		g_frik.toggleWeaponRepositionMode();
 		return getWeaponRepositionMode(base);

@@ -13,36 +13,36 @@
 using namespace common;
 
 namespace {
-	void printNode(const NiNode* node, const std::string& padding) {
-		const auto scale = std::fabs(node->m_localTransform.scale - node->m_worldTransform.scale) < 0.001f
-			? std::format("{:.2f}", node->m_localTransform.scale)
-			: std::format("{:.2f}/{:.2f}", node->m_localTransform.scale, node->m_worldTransform.scale);
+	void printNode(const RE::NiNode* node, const std::string& padding) {
+		const auto scale = std::fabs(node->local.scale - node->world.scale) < 0.001f
+			? std::format("{:.2f}", node->local.scale)
+			: std::format("{:.2f}/{:.2f}", node->local.scale, node->world.scale);
 		logger::infoRaw("{}{} : children({}), hidden({}), Local:({:.2f}, {:.2f}, {:.2f}), World:({:.2f}, {:.2f}, {:.2f}), Scale:({})",
-			padding.c_str(), node->m_name.c_str(),
-			node->m_children.m_emptyRunStart, node->flags & 0x1,
-			node->m_localTransform.translate.x, node->m_localTransform.translate.y, node->m_localTransform.translate.z,
-			node->m_worldTransform.translate.x, node->m_worldTransform.translate.y, node->m_worldTransform.translate.z,
+			padding.c_str(), node->name.c_str(),
+			node->children.m_emptyRunStart, node->flags & 0x1,
+			node->local.translate.x, node->local.translate.y, node->local.translate.z,
+			node->world.translate.x, node->world.translate.y, node->world.translate.z,
 			scale.c_str());
 	}
 
-	void printNodeChildren(NiNode* child, std::string padding) {
+	void printNodeChildren(RE::NiNode* child, std::string padding) {
 		printNode(child, padding);
 
 		padding += "..";
-		if (child->GetAsNiNode()) {
-			for (UInt16 i = 0; i < child->m_children.m_emptyRunStart; ++i) {
-				if (const auto nextNode = child->m_children.m_data[i]) {
-					printNodeChildren(reinterpret_cast<NiNode*>(nextNode), padding);
+		if (child->GetAsRE::NiNode()) {
+			for (UInt16 i = 0; i < child->children.m_emptyRunStart; ++i) {
+				if (const auto nextNode = child->children.data[i]) {
+					printNodeChildren(reinterpret_cast<RE::NiNode*>(nextNode), padding);
 				}
 			}
 		}
 	}
 
-	void printNodeAncestors(const NiNode* node, std::string padding) {
+	void printNodeAncestors(const RE::NiNode* node, std::string padding) {
 		while (node) {
 			printNode(node, padding);
 			padding += "..";
-			node = node->m_parent;
+			node = node->parent;
 		}
 	}
 }
@@ -62,40 +62,40 @@ namespace frik {
 	}
 
 	void positionDiff(const Skeleton* skelly) {
-		const RE::NiPoint3 firstpos = f4vr::getPlayerNodes()->HmdNode->m_worldTransform.translate;
-		const RE::NiPoint3 skellypos = f4vr::getRootNode()->m_worldTransform.translate;
+		const RE::NiPoint3 firstpos = f4vr::getPlayerNodes()->HmdNode->world.translate;
+		const RE::NiPoint3 skellypos = f4vr::getRootNode()->world.translate;
 
 		logger::info("difference = {} {} {}", firstpos.x - skellypos.x, firstpos.y - skellypos.y, firstpos.z - skellypos.z);
 	}
 
 	void printAllNodes() {
-		auto* node = (*g_player)->unkF0->rootNode->GetAsNiNode();
-		while (node->m_parent) {
-			node = node->m_parent;
+		auto* node = (*g_player)->unkF0->rootNode->GetAsRE::NiNode();
+		while (node->parent) {
+			node = node->parent;
 		}
 		printNodes(node, false);
 	}
 
-	void printNodes(NiNode* node, const bool printAncestors) {
-		logger::info("Children of '{}':", node->m_name.c_str());
+	void printNodes(RE::NiNode* node, const bool printAncestors) {
+		logger::info("Children of '{}':", node->name.c_str());
 		printNodeChildren(node, "");
 		if (printAncestors) {
-			logger::info("Ancestors of '{}':", node->m_name.c_str());
+			logger::info("Ancestors of '{}':", node->name.c_str());
 			printNodeAncestors(node, "");
 		}
 	}
 
-	void printNodes(NiNode* nde, const long long curTime) {
-		logger::info("{} {} : children = {} {}: local {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", curTime, nde->m_name.c_str(), nde->m_children.m_emptyRunStart, nde->flags & 0x1,
-			nde->m_localTransform.rotate.arr[0], nde->m_localTransform.rotate.arr[1], nde->m_localTransform.rotate.arr[2],
-			nde->m_localTransform.rotate.arr[3], nde->m_localTransform.rotate.arr[4], nde->m_localTransform.rotate.arr[5],
-			nde->m_localTransform.rotate.arr[6], nde->m_localTransform.rotate.arr[7], nde->m_localTransform.rotate.arr[8],
-			nde->m_localTransform.rotate.arr[9], nde->m_localTransform.rotate.arr[10], nde->m_localTransform.rotate.arr[11],
-			nde->m_localTransform.translate.x, nde->m_localTransform.translate.y, nde->m_localTransform.translate.z);
+	void printNodes(RE::NiNode* nde, const long long curTime) {
+		logger::info("{} {} : children = {} {}: local {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", curTime, nde->name.c_str(), nde->children.m_emptyRunStart, nde->flags & 0x1,
+			nde->local.rotate.arr[0], nde->local.rotate.arr[1], nde->local.rotate.arr[2],
+			nde->local.rotate.arr[3], nde->local.rotate.arr[4], nde->local.rotate.arr[5],
+			nde->local.rotate.arr[6], nde->local.rotate.arr[7], nde->local.rotate.arr[8],
+			nde->local.rotate.arr[9], nde->local.rotate.arr[10], nde->local.rotate.arr[11],
+			nde->local.translate.x, nde->local.translate.y, nde->local.translate.z);
 
-		if (nde->GetAsNiNode()) {
-			for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-				if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+		if (nde->GetAsRE::NiNode()) {
+			for (UInt16 i = 0; i < nde->children.m_emptyRunStart; ++i) {
+				if (const auto nextNode = nde->children.data[i] ? nde->children.data[i]->GetAsRE::NiNode() : nullptr) {
 					printNodes(nextNode, curTime);
 				}
 			}
@@ -105,24 +105,24 @@ namespace frik {
 	/**
 	 * Print the local transform data of nodes tree.
 	 */
-	void printNodesTransform(NiNode* node, std::string padding) {
+	void printNodesTransform(RE::NiNode* node, std::string padding) {
 		logger::info("{}{} child={}, {}, Pos:({:2.3f}, {:2.3f}, {:2.3f}), Rot:[[{:2.4f}, {:2.4f}, {:2.4f}][{:2.4f}, {:2.4f}, {:2.4f}][{:2.4f}, {:2.4f}, {:2.4f}]]",
-			padding.c_str(), node->m_name.c_str(),
-			node->m_children.m_emptyRunStart, node->flags & 0x1 ? "hidden" : "visible",
-			node->m_localTransform.translate.x,
-			node->m_localTransform.translate.y,
-			node->m_localTransform.translate.z,
-			node->m_localTransform.rotate.data[0][0], node->m_localTransform.rotate.data[1][0], node->m_localTransform.rotate.data[2][0],
-			node->m_localTransform.rotate.data[0][1], node->m_localTransform.rotate.data[1][1], node->m_localTransform.rotate.data[2][1],
-			node->m_localTransform.rotate.data[0][2], node->m_localTransform.rotate.data[1][2], node->m_localTransform.rotate.data[2][2]);
-		if (!node->GetAsNiNode()) {
-			return; // no children for non NiNodes
+			padding.c_str(), node->name.c_str(),
+			node->children.m_emptyRunStart, node->flags & 0x1 ? "hidden" : "visible",
+			node->local.translate.x,
+			node->local.translate.y,
+			node->local.translate.z,
+			node->local.rotate.data[0][0], node->local.rotate.data[1][0], node->local.rotate.data[2][0],
+			node->local.rotate.data[0][1], node->local.rotate.data[1][1], node->local.rotate.data[2][1],
+			node->local.rotate.data[0][2], node->local.rotate.data[1][2], node->local.rotate.data[2][2]);
+		if (!node->GetAsRE::NiNode()) {
+			return; // no children for non RE::NiNodes
 		}
 
 		padding += "..";
-		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = node->m_children.m_data[i]) {
-				printNodesTransform(reinterpret_cast<NiNode*>(nextNode), padding);
+		for (UInt16 i = 0; i < node->children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = node->children.data[i]) {
+				printNodesTransform(reinterpret_cast<RE::NiNode*>(nextNode), padding);
 			}
 		}
 	}
@@ -158,10 +158,10 @@ namespace frik {
 	/**
 	 * Dump the player body parts and whatever they are hidden.
 	 */
-	void dumpPlayerGeometry(BSFadeNode* rn) {
+	void dumpPlayerGeometry(RE::BSFadeNode* rn) {
 		for (auto i = 0; i < rn->kGeomArray.count; ++i) {
 			const auto& geometry = rn->kGeomArray[i].spGeometry;
-			logger::info("Geometry[{}] = '{}' ({})", i, geometry->m_name.c_str(), geometry->flags & 0x1 ? "Hidden" : "Visible");
+			logger::info("Geometry[{}] = '{}' ({})", i, geometry->name.c_str(), geometry->flags & 0x1 ? "Hidden" : "Visible");
 		}
 	}
 
@@ -170,7 +170,7 @@ namespace frik {
 
 		//Offsets::ForceGamePause(*g_menuControls);
 
-		auto rn = static_cast<BSFadeNode*>(f4vr::getRootNode()->m_parent);
+		auto rn = static_cast<RE::BSFadeNode*>(f4vr::getRootNode()->parent);
 		//logger::info("newrun");
 
 		//for (int i = 0; i < 44; i++) {
@@ -191,7 +191,7 @@ namespace frik {
 
 		//if (fc > 400) {
 		//	fc = 0;
-		//	BSFixedString event("reloadStart");
+		//	RE::BSFixedString event("reloadStart");
 		//	IAnimationGraphManagerHolder_NotifyAnimationGraph(&(*g_player)->animGraphHolder, event);
 		//	runTimer = true;
 		//	startTime = std::chrono::high_resolution_clock::now();
@@ -201,7 +201,7 @@ namespace frik {
 		//	auto elapsed = std::chrono::high_resolution_clock::now() - startTime;
 		//	if (300 < std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count()) {
 
-		//		BSFixedString event("reloadComplete");
+		//		RE::BSFixedString event("reloadComplete");
 		//		IAnimationGraphManagerHolder_NotifyAnimationGraph(&(*g_player)->animGraphHolder, event);
 		//		TESObjectREFR_UpdateAnimation((*g_player), 5.0f);
 
@@ -212,23 +212,23 @@ namespace frik {
 		//logger::info("throwing-> {}", Actor_CanThrow(*g_player, g_equipIndex));
 
 		//for (auto i = 0; i < rn->kGeomArray.capacity-1; ++i) {
-		//	BSFadeNode::FlattenedGeometryData data = rn->kGeomArray[i];
-		//	logger::info("{}", data.spGeometry->m_name.c_str());
+		//	RE::BSFadeNode::FlattenedGeometryData data = rn->kGeomArray[i];
+		//	logger::info("{}", data.spGeometry->name.c_str());
 		//}
 
 		//_playerNodes->ScopeParentNode->flags &= 0xfffffffffffffffe;
-		//updateDown(dynamic_cast<NiNode*>(_playerNodes->ScopeParentNode), true);
+		//updateDown(dynamic_cast<RE::NiNode*>(_playerNodes->ScopeParentNode), true);
 
-		//	BSFixedString name("LArm_Hand");
-		////	NiAVObject* node = (*g_player)->firstPersonSkeleton->GetObjectByName(&name);
-		//	NiAVObject* node = _root->GetObjectByName(&name);
+		//	RE::BSFixedString name("LArm_Hand");
+		////	RE::NiAVObject* node = (*g_player)->firstPersonSkeleton->GetObjectByName(&name);
+		//	RE::NiAVObject* node = _root->GetObjectByName(&name);
 		//	if (!node) { return; }
-		//	logger::info("{} {} {} {} {} {} {}", node->flags & 0xF, node->m_localTransform.translate.x,
-		//									 node->m_localTransform.translate.y,
-		//									 node->m_localTransform.translate.z,
-		//									 node->m_worldTransform.translate.x,
-		//									 node->m_worldTransform.translate.y,
-		//									 node->m_worldTransform.translate.z
+		//	logger::info("{} {} {} {} {} {} {}", node->flags & 0xF, node->local.translate.x,
+		//									 node->local.translate.y,
+		//									 node->local.translate.z,
+		//									 node->world.translate.x,
+		//									 node->world.translate.y,
+		//									 node->world.translate.z
 		//									);
 
 		//	for (auto i = 0; i < (*g_player)->inventoryList->items.count; i++) {
@@ -243,7 +243,7 @@ namespace frik {
 		//for (auto i = 0; i < rt->numTransforms; i++) {
 
 		//if (rt->transforms[i].refNode) {
-		//	logger::info("{},{},{},{}", fc, rt->transforms[i].refNode->m_name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
+		//	logger::info("{},{},{},{}", fc, rt->transforms[i].refNode->name.c_str(), rt->transforms[i].childPos, rt->transforms[i].parPos);
 		//}
 		//else {
 		//	logger::info("{},{},{},{}", fc, "", rt->transforms[i].childPos, rt->transforms[i].parPos);
@@ -306,7 +306,7 @@ namespace frik {
 		//		rt->transforms[pos].local.rotate = rot.make43();
 
 		//		if (rt->transforms[pos].refNode) {
-		//			rt->transforms[pos].refNode->m_localTransform.rotate = rot.make43();
+		//			rt->transforms[pos].refNode->local.rotate = rot.make43();
 		//		}
 
 		//		rot.makeTransformMatrix(rt->transforms[pos].local.rotate, RE::NiPoint3(0, 0, 0));
@@ -315,7 +315,7 @@ namespace frik {
 		//		rt->transforms[pos].world.rotate = rot.multiply43Left(rt->transforms[parent].world.rotate);
 
 		//		if (rt->transforms[pos].refNode) {
-		//			rt->transforms[pos].refNode->m_worldTransform.rotate = rt->transforms[pos].world.rotate;
+		//			rt->transforms[pos].refNode->world.rotate = rt->transforms[pos].world.rotate;
 		//		}
 
 		//	}

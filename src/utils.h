@@ -10,7 +10,7 @@ namespace frik {
 	void turnPipBoyOff();
 	bool isAnyPipboyOpen();
 
-	bool isCameraLookingAtObject(const NiAVObject* cameraNode, const NiAVObject* objectNode, float detectThresh);
+	bool isCameraLookingAtObject(const RE::NiAVObject* cameraNode, const RE::NiAVObject* objectNode, float detectThresh);
 	bool isArmorHasHeadLamp();
 
 	bool isBetterScopesVRModLoaded();

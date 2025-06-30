@@ -3,6 +3,7 @@
 #include <optional>
 
 #include "api/openvr.h"
+#include "common/CommonUtils.h"
 #include "common/ConfigBase.h"
 #include "common/Logger.h"
 #include "res/resource.h"

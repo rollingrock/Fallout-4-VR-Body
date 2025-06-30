@@ -25,7 +25,7 @@ namespace frik {
 			debugSphere = nullptr;
 		}
 
-		BoneSphere(const float a_radius, NiNode* a_bone, const RE::NiPoint3 a_offset)
+		BoneSphere(const float a_radius, RE::NiNode* a_bone, const RE::NiPoint3 a_offset)
 			: radius(a_radius), bone(a_bone), offset(a_offset) {
 			stickyRight = false;
 			stickyLeft = false;
@@ -34,47 +34,47 @@ namespace frik {
 		}
 
 		float radius;
-		NiNode* bone;
+		RE::NiNode* bone;
 		RE::NiPoint3 offset;
 		bool stickyRight;
 		bool stickyLeft;
 		bool turnOnDebugSpheres;
-		NiNode* debugSphere;
+		RE::NiNode* debugSphere;
 	};
 
 	class BoneSpheresHandler {
 	public:
 		virtual ~BoneSpheresHandler() { _instance = nullptr; }
 
-		void init(const F4SEInterface* f4se);
+		void init(const F4SE::detail::F4SEInterface* f4se);
 		void onFrameUpdate();
 
-		UInt32 registerBoneSphere(float radius, BSFixedString bone);
-		UInt32 registerBoneSphereOffset(float radius, BSFixedString bone, VMArray<float> pos);
-		void destroyBoneSphere(UInt32 handle);
+		std::uint32_t registerBoneSphere(float radius, RE::BSFixedString bone);
+		std::uint32_t registerBoneSphereOffset(float radius, RE::BSFixedString bone, VMArray<float> pos);
+		void destroyBoneSphere(std::uint32_t handle);
 		void registerForBoneSphereEvents(VMObject* scriptObj);
 		void unRegisterForBoneSphereEvents(VMObject* scriptObj);
 		void toggleDebugBoneSpheres(bool turnOn) const;
-		void toggleDebugBoneSpheresAtBone(UInt32 handle, bool turnOn);
+		void toggleDebugBoneSpheresAtBone(std::uint32_t handle, bool turnOn);
 
 	private:
-		static bool registerPapyrusFunctionsCallback(VirtualMachine* vm);
-		static UInt32 registerBoneSphereFunc(StaticFunctionTag* base, float radius, BSFixedString bone);
-		static UInt32 registerBoneSphereOffsetFunc(StaticFunctionTag* base, float radius, BSFixedString bone, VMArray<float> pos);
-		static void destroyBoneSphereFunc(StaticFunctionTag* base, UInt32 handle);
+		static bool registerPapyrusFunctionsCallback(RE::BSScript::Internal::VirtualMachine* vm);
+		static std::uint32_t registerBoneSphereFunc(StaticFunctionTag* base, float radius, RE::BSFixedString bone);
+		static std::uint32_t registerBoneSphereOffsetFunc(StaticFunctionTag* base, float radius, RE::BSFixedString bone, VMArray<float> pos);
+		static void destroyBoneSphereFunc(StaticFunctionTag* base, std::uint32_t handle);
 		static void registerForBoneSphereEventsFunc(StaticFunctionTag* base, VMObject* scriptObj);
 		static void unRegisterForBoneSphereEventsFunc(StaticFunctionTag* base, VMObject* scriptObj);
 		static void toggleDebugBoneSpheresFunc(StaticFunctionTag* base, bool turnOn);
-		static void toggleDebugBoneSpheresAtBoneFunc(StaticFunctionTag* base, UInt32 handle, bool turnOn);
+		static void toggleDebugBoneSpheresAtBoneFunc(StaticFunctionTag* base, std::uint32_t handle, bool turnOn);
 
 		void detectBoneSphere();
 		void handleDebugBoneSpheres();
 
 		RegistrationSetHolder<> _boneSphereEventRegs;
 
-		std::map<UInt32, BoneSphere*> _boneSphereRegisteredObjects;
-		UInt32 _nextBoneSphereHandle = 1;
-		UInt32 _curDevice = 0;
+		std::map<std::uint32_t, BoneSphere*> _boneSphereRegisteredObjects;
+		std::uint32_t _nextBoneSphereHandle = 1;
+		std::uint32_t _curDevice = 0;
 
 		// workaround as papyrus registration requires global functions.
 		inline static BoneSpheresHandler* _instance = nullptr;

@@ -15,10 +15,10 @@ namespace vrui {
 		);
 	}
 
-	void UIElement::attachToNode(NiNode* attachNode) {
+	void UIElement::attachToNode(RE::NiNode* attachNode) {
 		if (_attachNode) {
 			throw std::runtime_error(
-				"Attempt to attach already attached widget: " + std::string(attachNode->m_name.c_str()));
+				"Attempt to attach already attached widget: " + std::string(attachNode->name.c_str()));
 		}
 		_attachNode = attachNode;
 	}

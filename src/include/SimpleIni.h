@@ -464,7 +464,7 @@ public:
     void Reset();
 
     /** Has any data been loaded */
-    bool IsEmpty() const { return m_data.empty(); }
+    bool IsEmpty() const { return data.empty(); }
 
     /*-----------------------------------------------------------------------*/
     /** @{ @name Settings */
@@ -1253,7 +1253,7 @@ private:
     const SI_CHAR * m_pFileComment;
 
     /** Parsed INI data. Section -> (Key -> Value). */
-    TSection m_data;
+    TSection data;
 
     /** This vector stores allocated memory for copies of strings that have
         been supplied after the file load. It will be empty unless SetValue()
@@ -1314,8 +1314,8 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::Reset()
     m_pData = NULL;
     m_uDataLen = 0;
     m_pFileComment = NULL;
-    if (!m_data.empty()) {
-        m_data.erase(m_data.begin(), m_data.end());
+    if (!data.empty()) {
+        data.erase(data.begin(), data.end());
     }
 
     // remove all strings
@@ -1915,8 +1915,8 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::AddEntry(
     }
 
     // create the section entry if necessary
-    typename TSection::iterator iSection = m_data.find(a_pSection);
-    if (iSection == m_data.end()) {
+    typename TSection::iterator iSection = data.find(a_pSection);
+    if (iSection == data.end()) {
         // if the section doesn't exist then we need a copy as the
         // string needs to last beyond the end of this function
         if (a_bCopyStrings) {
@@ -1932,7 +1932,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::AddEntry(
 
         typename TSection::value_type oEntry(oSection, TKeyVal());
         typedef typename TSection::iterator SectionIterator;
-        std::pair<SectionIterator,bool> i = m_data.insert(oEntry);
+        std::pair<SectionIterator,bool> i = data.insert(oEntry);
         iSection = i.first;
         bInserted = true;
     }
@@ -2012,8 +2012,8 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::GetValue(
     if (!a_pSection || !a_pKey) {
         return a_pDefault;
     }
-    typename TSection::const_iterator iSection = m_data.find(a_pSection);
-    if (iSection == m_data.end()) {
+    typename TSection::const_iterator iSection = data.find(a_pSection);
+    if (iSection == data.end()) {
         return a_pDefault;
     }
     typename TKeyVal::const_iterator iKeyVal = iSection->second.find(a_pKey);
@@ -2271,8 +2271,8 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::GetAllValues(
     if (!a_pSection || !a_pKey) {
         return false;
     }
-    typename TSection::const_iterator iSection = m_data.find(a_pSection);
-    if (iSection == m_data.end()) {
+    typename TSection::const_iterator iSection = data.find(a_pSection);
+    if (iSection == data.end()) {
         return false;
     }
     typename TKeyVal::const_iterator iKeyVal = iSection->second.find(a_pKey);
@@ -2303,8 +2303,8 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::GetSectionSize(
         return -1;
     }
 
-    typename TSection::const_iterator iSection = m_data.find(a_pSection);
-    if (iSection == m_data.end()) {
+    typename TSection::const_iterator iSection = data.find(a_pSection);
+    if (iSection == data.end()) {
         return -1;
     }
     const TKeyVal & section = iSection->second;
@@ -2335,8 +2335,8 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::GetSection(
     ) const
 {
     if (a_pSection) {
-        typename TSection::const_iterator i = m_data.find(a_pSection);
-        if (i != m_data.end()) {
+        typename TSection::const_iterator i = data.find(a_pSection);
+        if (i != data.end()) {
             return &(i->second);
         }
     }
@@ -2350,8 +2350,8 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::GetAllSections(
     ) const
 {
     a_names.clear();
-    typename TSection::const_iterator i = m_data.begin();
-    for (int n = 0; i != m_data.end(); ++i, ++n ) {
+    typename TSection::const_iterator i = data.begin();
+    for (int n = 0; i != data.end(); ++i, ++n ) {
         a_names.push_back(i->first);
     }
 }
@@ -2369,8 +2369,8 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::GetAllKeys(
         return false;
     }
 
-    typename TSection::const_iterator iSection = m_data.find(a_pSection);
-    if (iSection == m_data.end()) {
+    typename TSection::const_iterator iSection = data.find(a_pSection);
+    if (iSection == data.end()) {
         return false;
     }
 
@@ -2638,8 +2638,8 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::DeleteValue(
         return false;
     }
 
-    typename TSection::iterator iSection = m_data.find(a_pSection);
-    if (iSection == m_data.end()) {
+    typename TSection::iterator iSection = data.find(a_pSection);
+    if (iSection == data.end()) {
         return false;
     }
 
@@ -2693,7 +2693,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::DeleteValue(
 
     // delete the section itself
     DeleteString(iSection->first.pItem);
-    m_data.erase(iSection);
+    data.erase(iSection);
 
     return true;
 }

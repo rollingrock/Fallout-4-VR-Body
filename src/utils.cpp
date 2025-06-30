@@ -49,13 +49,13 @@ namespace frik {
 	 * Returns true for wrist, in-front, and projected pipboy.
 	 */
 	bool isAnyPipboyOpen() {
-		BSFixedString pipboyMenu("PipboyMenu");
+		RE::BSFixedString pipboyMenu("PipboyMenu");
 		return (*g_ui)->GetMenu(pipboyMenu) != nullptr;
 	}
 
 	// Function to check if the camera is looking at the object and the object is facing the camera
-	bool isCameraLookingAtObject(const NiAVObject* cameraNode, const NiAVObject* objectNode, const float detectThresh) {
-		return common::isCameraLookingAtObject(cameraNode->m_worldTransform, objectNode->m_worldTransform, detectThresh);
+	bool isCameraLookingAtObject(const RE::NiAVObject* cameraNode, const RE::NiAVObject* objectNode, const float detectThresh) {
+		return common::isCameraLookingAtObject(cameraNode->world, objectNode->world, detectThresh);
 	}
 
 	/**
@@ -63,7 +63,7 @@ namespace frik {
 	 */
 	bool isArmorHasHeadLamp() {
 		if (const auto equippedItem = (*g_player)->equipData->slots[0].item) {
-			if (const auto torchEnabledArmor = DYNAMIC_CAST(equippedItem, TESForm, TESObjectARMO)) {
+			if (const auto torchEnabledArmor = DYNAMIC_CAST(equippedItem, RE::TESForm, TESObjectARMO)) {
 				return f4vr::hasKeyword(torchEnabledArmor, 0xB34A6);
 			}
 		}
@@ -83,9 +83,9 @@ namespace frik {
 	 * @return muzzle flash class only if it's fully loaded with fire and projectile nodes.
 	 */
 	f4vr::MuzzleFlash* getMuzzleFlashNodes() {
-		if (const auto equipWeaponData = f4vr::getEquippedWeaponData()) {
+		if (const auto equipWeaponData = f4vr::getRE::EquippedWeaponData()) {
 			const auto vfunc = reinterpret_cast<uint64_t*>(equipWeaponData);
-			if ((*vfunc & 0xFFFF) == (f4vr::EquippedWeaponData_vfunc & 0xFFFF)) {
+			if ((*vfunc & 0xFFFF) == (f4vr::RE::EquippedWeaponData_vfunc & 0xFFFF)) {
 				const auto muzzle = reinterpret_cast<f4vr::MuzzleFlash*>(equipWeaponData->unk28);
 				if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
 					return muzzle;

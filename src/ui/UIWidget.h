@@ -11,14 +11,14 @@ namespace vrui {
 			setScale(scale);
 		}
 
-		explicit UIWidget(NiNode* node)
+		explicit UIWidget(RE::NiNode* node)
 			: _node(node) {}
 
 		virtual std::string toString() const override;
 
 	protected:
 		virtual bool isPressable() const { return false; }
-		virtual void attachToNode(NiNode* attachNode) override;
+		virtual void attachToNode(RE::NiNode* attachNode) override;
 		virtual void detachFromAttachedNode(bool releaseSafe) override;
 		virtual void onFrameUpdate(UIFrameUpdateContext* adapter) override;
 		virtual RE::NiTransform calculateTransform() const override;
@@ -27,7 +27,7 @@ namespace vrui {
 		void updatePressableCloseToInteraction(UIFrameUpdateContext* context, float distance, float yOnlyDistance);
 
 		// UI node to render
-		NiPointer<NiNode> _node;
+		RE::NiPointer<RE::NiNode> _node;
 
 		// Press handling
 		bool _pressEventFired = false;

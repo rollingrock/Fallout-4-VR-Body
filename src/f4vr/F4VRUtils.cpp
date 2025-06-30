@@ -12,14 +12,14 @@
 namespace f4vr {
 	void showMessagebox(const std::string& text) {
 		common::logger::info("Show messagebox: '{}'", text.c_str());
-		auto str = BSFixedString(text.c_str());
-		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Messagebox", str);
+		auto str = RE::BSFixedString(text.c_str());
+		CallGlobalFunctionNoWait1<RE::BSFixedString>("Debug", "Messagebox", str);
 	}
 
 	void showNotification(const std::string& text) {
 		common::logger::info("Show notification: '{}'", text.c_str());
-		auto str = BSFixedString(text.c_str());
-		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Notification", str);
+		auto str = RE::BSFixedString(text.c_str());
+		CallGlobalFunctionNoWait1<RE::BSFixedString>("Debug", "Notification", str);
 	}
 
 	/**
@@ -27,15 +27,15 @@ namespace f4vr {
 	 */
 	void setWandsVisibility(const bool show, const bool leftWand) {
 		const auto node = leftWand ? getPlayerNodes()->primaryWandNode : getPlayerNodes()->SecondaryWandNode;
-		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
-			if (const auto child = node->m_children.m_data[i]) {
+		for (UInt16 i = 0; i < node->children.m_emptyRunStart; ++i) {
+			if (const auto child = node->children.data[i]) {
 				if (const auto triShape = child->GetAsBSTriShape()) {
 					setNodeVisibility(triShape, show);
 					break;
 				}
-				if (!_stricmp(child->m_name.c_str(), "")) {
+				if (!_stricmp(child->name.c_str(), "")) {
 					setNodeVisibility(child, show);
-					if (const auto grandChild = child->GetAsNiNode()->m_children.m_data[0]) {
+					if (const auto grandChild = child->GetAsRE::NiNode()->children.data[0]) {
 						setNodeVisibility(grandChild, show);
 					}
 					break;
@@ -55,7 +55,7 @@ namespace f4vr {
 		if (!inventory) {
 			return false;
 		}
-		for (UInt32 i = 0; i < inventory->items.count; i++) {
+		for (std::uint32_t i = 0; i < inventory->items.count; i++) {
 			BGSInventoryItem item;
 			inventory->items.GetNthItem(i, item);
 			if (item.form && item.form->formType == kFormType_WEAP && item.stack->flags & 0x3) {
@@ -73,9 +73,9 @@ namespace f4vr {
 		return equipData ? equipData->item->GetFullName() : "";
 	}
 
-	bool hasKeyword(const TESObjectARMO* armor, const UInt32 keywordFormId) {
+	bool hasKeyword(const TESObjectARMO* armor, const std::uint32_t keywordFormId) {
 		if (armor) {
-			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++) {
+			for (std::uint32_t i = 0; i < armor->keywordForm.numKeywords; i++) {
 				if (armor->keywordForm.keywords[i]) {
 					if (armor->keywordForm.keywords[i]->formID == keywordFormId) {
 						return true;
@@ -92,7 +92,7 @@ namespace f4vr {
 			if ((*g_player)->equipData->slots[0x03].item != nullptr) {
 				if (const auto equippedForm = (*g_player)->equipData->slots[0x03].item) {
 					if (equippedForm->formType == TESObjectARMO::kTypeID) {
-						if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
+						if (const auto armor = DYNAMIC_CAST(equippedForm, RE::TESForm, TESObjectARMO)) {
 							return hasKeyword(armor, KEYWORD_POWER_ARMOR) || hasKeyword(armor, KEYWORD_POWER_ARMOR_FRAME);
 						}
 					}
@@ -115,18 +115,18 @@ namespace f4vr {
 		return setting ? setting->data.f32 : 0;
 	}
 
-	void setIniSettingBool(const BSFixedString name, bool value) {
-		auto str = BSFixedString(name.c_str());
-		CallGlobalFunctionNoWait2<BSFixedString, bool>("Utility", "SetINIBool", str, value);
+	void setIniSettingBool(const RE::BSFixedString name, bool value) {
+		auto str = RE::BSFixedString(name.c_str());
+		CallGlobalFunctionNoWait2<RE::BSFixedString, bool>("Utility", "SetINIBool", str, value);
 	}
 
-	void setIniSettingFloat(const BSFixedString name, float value) {
-		auto str = BSFixedString(name.c_str());
-		CallGlobalFunctionNoWait2<BSFixedString, float>("Utility", "SetINIFloat", str, value);
+	void setIniSettingFloat(const RE::BSFixedString name, float value) {
+		auto str = RE::BSFixedString(name.c_str());
+		CallGlobalFunctionNoWait2<RE::BSFixedString, float>("Utility", "SetINIFloat", str, value);
 	}
 
-	Setting* getIniSettingNative(const char* name) {
-		Setting* setting = SettingCollectionList_GetPtr(*g_iniSettings, name);
+    RE::Setting* getIniSettingNative(const char* name) {
+        RE::Setting* setting = SettingCollectionList_GetPtr(*g_iniSettings, name);
 		if (!setting) {
 			setting = SettingCollectionList_GetPtr(*g_iniPrefSettings, name);
 		}
@@ -137,17 +137,17 @@ namespace f4vr {
 	/**
 	 * Find a node by the given name in the tree under the other given node recursively.
 	 */
-	NiNode* getNode(const char* name, NiNode* fromNode) {
-		if (!fromNode || !fromNode->m_name) {
+	RE::NiNode* getNode(const char* name, RE::NiNode* fromNode) {
+		if (!fromNode || !fromNode->name) {
 			return nullptr;
 		}
 
-		if (_stricmp(name, fromNode->m_name.c_str()) == 0) {
+		if (_stricmp(name, fromNode->name.c_str()) == 0) {
 			return fromNode;
 		}
 
-		for (UInt16 i = 0; i < fromNode->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = fromNode->m_children.m_data[i] ? fromNode->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+		for (UInt16 i = 0; i < fromNode->children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = fromNode->children.data[i] ? fromNode->children.data[i]->GetAsRE::NiNode() : nullptr) {
 				if (const auto ret = getNode(name, nextNode)) {
 					return ret;
 				}
@@ -159,24 +159,24 @@ namespace f4vr {
 
 	/**
 	 * Find a node by the given name in the tree under the other given node recursively.
-	 * This one handles not only NiNode but also BSTriShape.
+	 * This one handles not only RE::NiNode but also BSTriShape.
 	 */
-	NiNode* getNode2(const char* name, NiNode* fromNode) {
-		if (!fromNode || !fromNode->m_name) {
+	RE::NiNode* getNode2(const char* name, RE::NiNode* fromNode) {
+		if (!fromNode || !fromNode->name) {
 			return nullptr;
 		}
 
-		if (_stricmp(name, fromNode->m_name.c_str()) == 0) {
+		if (_stricmp(name, fromNode->name.c_str()) == 0) {
 			return fromNode;
 		}
 
-		if (!fromNode->m_children.m_data) {
+		if (!fromNode->children.data) {
 			return nullptr;
 		}
 
 		// TODO: use better code
-		for (UInt16 i = 0; i < fromNode->m_children.m_emptyRunStart && fromNode->m_children.m_emptyRunStart < 5000; ++i) {
-			if (const auto nextNode = dynamic_cast<NiNode*>(fromNode->m_children.m_data[i])) {
+		for (UInt16 i = 0; i < fromNode->children.m_emptyRunStart && fromNode->children.m_emptyRunStart < 5000; ++i) {
+			if (const auto nextNode = dynamic_cast<RE::NiNode*>(fromNode->children.data[i])) {
 				if (const auto ret = getNode2(name, nextNode)) {
 					return ret;
 				}
@@ -186,17 +186,17 @@ namespace f4vr {
 		return nullptr;
 	}
 
-	NiNode* getChildNode(const char* nodeName, NiNode* nde) {
-		if (!nde->m_name) {
+	RE::NiNode* getChildNode(const char* nodeName, RE::NiNode* nde) {
+		if (!nde->name) {
 			return nullptr;
 		}
 
-		if (!_stricmp(nodeName, nde->m_name.c_str())) {
+		if (!_stricmp(nodeName, nde->name.c_str())) {
 			return nde;
 		}
 
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+		for (UInt16 i = 0; i < nde->children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = nde->children.data[i] ? nde->children.data[i]->GetAsRE::NiNode() : nullptr) {
 				if (const auto ret = getChildNode(nodeName, nextNode)) {
 					return ret;
 				}
@@ -206,10 +206,10 @@ namespace f4vr {
 		return nullptr;
 	}
 
-	NiNode* get1StChildNode(const char* nodeName, const NiNode* nde) {
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-				if (!_stricmp(nodeName, nextNode->m_name.c_str())) {
+	RE::NiNode* get1StChildNode(const char* nodeName, const RE::NiNode* nde) {
+		for (UInt16 i = 0; i < nde->children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = nde->children.data[i] ? nde->children.data[i]->GetAsRE::NiNode() : nullptr) {
+				if (!_stricmp(nodeName, nextNode->name.c_str())) {
 					return nextNode;
 				}
 			}
@@ -220,38 +220,38 @@ namespace f4vr {
 	/**
 	 * Return true if the node is visible, false if it is hidden or null.
 	 */
-	bool isNodeVisible(const NiNode* node) {
+	bool isNodeVisible(const RE::NiNode* node) {
 		return node && !(node->flags & 0x1);
 	}
 
 	/**
 	 * Change flags to show or hide a node
 	 */
-	void setNodeVisibility(NiAVObject* node, const bool show) {
+	void setNodeVisibility(RE::NiAVObject* node, const bool show) {
 		if (node) {
 			node->flags = show ? node->flags & ~0x1 : node->flags | 0x1;
 		}
 	}
 
-	void setNodeVisibilityDeep(NiAVObject* node, const bool show, const bool updateSelf) {
+	void setNodeVisibilityDeep(RE::NiAVObject* node, const bool show, const bool updateSelf) {
 		if (node && updateSelf) {
 			node->flags = show ? node->flags & ~0x1 : node->flags | 0x1;
 		}
-		if (const auto niNode = node->GetAsNiNode()) {
-			for (UInt16 i = 0; i < niNode->m_children.m_emptyRunStart; ++i) {
-				setNodeVisibilityDeep(niNode->m_children.m_data[i], show, true);
+		if (const auto niNode = node->GetAsRE::NiNode()) {
+			for (UInt16 i = 0; i < niNode->children.m_emptyRunStart; ++i) {
+				setNodeVisibilityDeep(niNode->children.data[i], show, true);
 			}
 		}
 	}
 
 	// TODO: check removing this in favor of setNodeVisibilityDeep
-	void toggleVis(NiNode* node, const bool hide, const bool updateSelf) {
+	void toggleVis(RE::NiNode* node, const bool hide, const bool updateSelf) {
 		if (updateSelf) {
 			node->flags = hide ? node->flags | 0x1 : node->flags & ~0x1;
 		}
 
-		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = node->m_children.m_data[i] ? node->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+		for (UInt16 i = 0; i < node->children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = node->children.data[i] ? node->children.data[i]->GetAsRE::NiNode() : nullptr) {
 				toggleVis(nextNode, hide, true);
 			}
 		}
@@ -262,23 +262,23 @@ namespace f4vr {
 		updateDown(getRootNode(), true);
 	}
 
-	void updateDown(NiNode* nde, const bool updateSelf, const char* ignoreNode) {
+	void updateDown(RE::NiNode* nde, const bool updateSelf, const char* ignoreNode) {
 		if (!nde) {
 			return;
 		}
 
-		NiAVObject::NiUpdateData* ud = nullptr;
+		RE::NiAVObject::NiUpdateData* ud = nullptr;
 
 		if (updateSelf) {
 			nde->UpdateWorldData(ud);
 		}
 
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i]) {
-				if (ignoreNode && _stricmp(nextNode->m_name.c_str(), ignoreNode) == 0) {
+		for (UInt16 i = 0; i < nde->children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = nde->children.data[i]) {
+				if (ignoreNode && _stricmp(nextNode->name.c_str(), ignoreNode) == 0) {
 					continue; // skip this node
 				}
-				if (const auto niNode = nextNode->GetAsNiNode()) {
+				if (const auto niNode = nextNode->GetAsRE::NiNode()) {
 					updateDown(niNode, true);
 				} else if (const auto triNode = nextNode->GetAsBSGeometry()) {
 					triNode->UpdateWorldData(ud);
@@ -287,37 +287,37 @@ namespace f4vr {
 		}
 	}
 
-	void updateDownTo(NiNode* toNode, NiNode* fromNode, const bool updateSelf) {
+	void updateDownTo(RE::NiNode* toNode, RE::NiNode* fromNode, const bool updateSelf) {
 		if (!toNode || !fromNode) {
 			return;
 		}
 
 		if (updateSelf) {
-			NiAVObject::NiUpdateData* ud = nullptr;
+			RE::NiAVObject::NiUpdateData* ud = nullptr;
 			fromNode->UpdateWorldData(ud);
 		}
 
-		if (_stricmp(toNode->m_name.c_str(), fromNode->m_name.c_str()) == 0) {
+		if (_stricmp(toNode->name.c_str(), fromNode->name.c_str()) == 0) {
 			return;
 		}
 
-		for (UInt16 i = 0; i < fromNode->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = fromNode->m_children.m_data[i]) {
-				if (const auto niNode = nextNode->GetAsNiNode()) {
+		for (UInt16 i = 0; i < fromNode->children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = fromNode->children.data[i]) {
+				if (const auto niNode = nextNode->GetAsRE::NiNode()) {
 					updateDownTo(toNode, niNode, true);
 				}
 			}
 		}
 	}
 
-	void updateUpTo(NiNode* toNode, NiNode* fromNode, const bool updateSelf) {
+	void updateUpTo(RE::NiNode* toNode, RE::NiNode* fromNode, const bool updateSelf) {
 		if (!toNode || !fromNode) {
 			return;
 		}
 
-		NiAVObject::NiUpdateData* ud = nullptr;
+		RE::NiAVObject::NiUpdateData* ud = nullptr;
 
-		if (_stricmp(toNode->m_name.c_str(), fromNode->m_name.c_str()) == 0) {
+		if (_stricmp(toNode->name.c_str(), fromNode->name.c_str()) == 0) {
 			if (updateSelf) {
 				fromNode->UpdateWorldData(ud);
 			}
@@ -325,42 +325,42 @@ namespace f4vr {
 		}
 
 		fromNode->UpdateWorldData(ud);
-		if (const auto parent = fromNode->m_parent ? fromNode->m_parent->GetAsNiNode() : nullptr) {
+		if (const auto parent = fromNode->parent ? fromNode->parent->GetAsRE::NiNode() : nullptr) {
 			updateUpTo(toNode, parent, true);
 		}
 	}
 
-	void updateTransforms(NiNode* node) {
-		if (!node->m_parent) {
+	void updateTransforms(RE::NiNode* node) {
+		if (!node->parent) {
 			return;
 		}
 
-		const auto& parentTransform = node->m_parent->m_worldTransform;
-		const auto& localTransform = node->m_localTransform;
+		const auto& parentTransform = node->parent->world;
+		const auto& localTransform = node->local;
 
 		// Calculate world position
 		const RE::NiPoint3 pos = parentTransform.rotate * (localTransform.translate * parentTransform.scale);
-		node->m_worldTransform.translate = parentTransform.translate + pos;
+		node->world.translate = parentTransform.translate + pos;
 
 		// Calculate world rotation
 		common::Matrix44 loc;
 		loc.makeTransformMatrix(localTransform.rotate, RE::NiPoint3(0, 0, 0));
-		node->m_worldTransform.rotate = loc.multiply43Left(parentTransform.rotate);
+		node->world.rotate = loc.multiply43Left(parentTransform.rotate);
 
 		// Calculate world scale
-		node->m_worldTransform.scale = parentTransform.scale * localTransform.scale;
+		node->world.scale = parentTransform.scale * localTransform.scale;
 	}
 
-	void updateTransformsDown(NiNode* nde, const bool updateSelf) {
+	void updateTransformsDown(RE::NiNode* nde, const bool updateSelf) {
 		if (updateSelf) {
 			updateTransforms(nde);
 		}
 
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
+		for (UInt16 i = 0; i < nde->children.m_emptyRunStart; ++i) {
+			if (const auto nextNode = nde->children.data[i] ? nde->children.data[i]->GetAsRE::NiNode() : nullptr) {
 				updateTransformsDown(nextNode, true);
-			} else if (const auto triNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsBSTriShape() : nullptr) {
-				updateTransforms(reinterpret_cast<NiNode*>(triNode));
+			} else if (const auto triNode = nde->children.data[i] ? nde->children.data[i]->GetAsBSTriShape() : nullptr) {
+				updateTransforms(reinterpret_cast<RE::NiNode*>(triNode));
 			}
 		}
 	}
@@ -369,8 +369,8 @@ namespace f4vr {
 	 * Run a callback to register papyrus native functions.
 	 * Functions that papyrus can call into this mod c++ code.
 	 */
-	void registerPapyrusNativeFunctions(const F4SEInterface* f4se, const RegisterFunctions callback) {
-		const auto papyrusInterface = static_cast<F4SEPapyrusInterface*>(f4se->QueryInterface(kInterface_Papyrus));
+	void registerPapyrusNativeFunctions(const F4SE::detail::F4SEInterface* f4se, const RegisterFunctions callback) {
+		const auto papyrusInterface = static_cast<F4SE::detail::F4SEPapyrusInterface*>(f4se->QueryInterface(kInterface_Papyrus));
 		if (!papyrusInterface->Register(callback)) {
 			throw std::exception("Failed to register papyrus functions");
 		}

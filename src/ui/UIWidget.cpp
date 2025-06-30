@@ -1,15 +1,15 @@
 #include "UIWidget.h"
 
 #include "../Debug.h"
-#include "../common/CommonUtils.h"
 #include "../common/Logger.h"
+#include "common/MatrixUtils.h"
 
 using namespace common;
 
 namespace vrui {
 	std::string UIWidget::toString() const {
 		return std::format("UIWidget({}): {}{}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f})",
-			_node->m_name.c_str(),
+			_node->name.c_str(),
 			_visible ? "V" : "H",
 			isPressable() ? "P" : ".",
 			_transform.translate.x,
@@ -21,9 +21,9 @@ namespace vrui {
 	}
 
 	/**
-	 * Attach this widget NiNode to the given node.
+	 * Attach this widget RE::NiNode to the given node.
 	 */
-	void UIWidget::attachToNode(NiNode* attachNode) {
+	void UIWidget::attachToNode(RE::NiNode* attachNode) {
 		UIElement::attachToNode(attachNode);
 		_attachNode->AttachChild(_node, true);
 	}
@@ -35,7 +35,7 @@ namespace vrui {
 		if (!_attachNode) {
 			throw std::runtime_error("Attempt to detach NOT attached widget");
 		}
-		NiPointer<NiAVObject> out;
+		RE::NiPointer<RE::NiAVObject> out;
 		_attachNode->DetachChild(_node, out);
 		UIElement::detachFromAttachedNode(releaseSafe);
 		out = nullptr;
@@ -57,7 +57,7 @@ namespace vrui {
 
 		handlePressEvent(adapter);
 
-		_node->m_localTransform = calculateTransform();
+		_node->local = calculateTransform();
 	}
 
 	/**
@@ -80,12 +80,12 @@ namespace vrui {
 		}
 
 		const auto finger = context->getInteractionBoneWorldPosition();
-		const auto widgetCenter = _node->m_worldTransform.translate;
+		const auto widgetCenter = _node->world.translate;
 
 		const float distance = vec3Len(finger - widgetCenter);
 
 		// calculate the distance only in the y-axis
-		const RE::NiPoint3 forward = _node->m_worldTransform.rotate * RE::NiPoint3(0, 1, 0);
+		const RE::NiPoint3 forward = _node->world.rotate * RE::NiPoint3(0, 1, 0);
 		const RE::NiPoint3 vectorToCurr = widgetCenter - finger;
 		const float yOnlyDistance = vec3Dot(forward, vectorToCurr);
 
@@ -105,7 +105,7 @@ namespace vrui {
 		}
 
 		// distance in y-axis from original location before press offset
-		const RE::NiPoint3 vectorToOrg = vectorToCurr - _node->m_worldTransform.rotate * RE::NiPoint3(0, _pressYOffset, 0);
+		const RE::NiPoint3 vectorToOrg = vectorToCurr - _node->world.rotate * RE::NiPoint3(0, _pressYOffset, 0);
 		const float pressDistance = -vec3Dot(forward, vectorToOrg);
 
 		if (std::isnan(pressDistance) || pressDistance < 0) {
@@ -125,7 +125,7 @@ namespace vrui {
 		// use previous position to prevent press when moving hand backwards
 		if (_pressYOffset > PRESS_TRIGGER_DISTANCE) {
 			// widget pushed enough, fire press event
-			logger::info("UI Widget '{}' pressed", _node->m_name.c_str());
+			logger::info("UI Widget '{}' pressed", _node->name.c_str());
 			onPressEventFiredPropagate(this, context);
 		}
 	}

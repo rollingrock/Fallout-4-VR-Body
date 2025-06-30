@@ -5,7 +5,7 @@
 namespace vrui {
 	std::string UIButton::toString() const {
 		return std::format("UIButton({}): {}{}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f})",
-			_node->m_name.c_str(),
+			_node->name.c_str(),
 			_visible ? "V" : "H",
 			isPressable() ? "P" : ".",
 			_transform.translate.x,

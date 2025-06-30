@@ -84,7 +84,7 @@ namespace frik {
 		bool _isOperatingPipboy = false;
 		bool _isWeaponinHand = false;
 		bool _weaponStateDetected = false;
-		UInt32 _lastPipboyPage = 0;
+		std::uint32_t _lastPipboyPage = 0;
 		float lastRadioFreq = 0.0;
 
 		bool _controlSleepStickyX = false;

@@ -10,7 +10,7 @@ namespace vrui {
 	class UIManager {
 	public:
 		void onFrameUpdate(UIModAdapter* adapter);
-		void attachElement(const std::shared_ptr<UIElement>& element, NiNode* attachNode);
+		void attachElement(const std::shared_ptr<UIElement>& element, RE::NiNode* attachNode);
 		void detachElement(const std::shared_ptr<UIElement>& element, bool releaseSafe);
 
 		void attachPresetToPrimaryWandTop(const std::shared_ptr<UIElement>& element, float zOffset = 0);

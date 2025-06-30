@@ -6,7 +6,7 @@
 namespace vrui {
 	std::string UIToggleButton::toString() const {
 		return std::format("UIToggleButton({}): {}{}{}, Pos({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f})",
-			_node->m_name.c_str(),
+			_node->name.c_str(),
 			_visible ? "V" : "H",
 			isPressable() ? "P" : ".",
 			_isToggleOn ? "T" : ".",
@@ -18,7 +18,7 @@ namespace vrui {
 		);
 	}
 
-	void UIToggleButton::attachToNode(NiNode* node) {
+	void UIToggleButton::attachToNode(RE::NiNode* node) {
 		UIWidget::attachToNode(node);
 		_attachNode->AttachChild(_toggleFrameNode, true);
 	}
@@ -27,7 +27,7 @@ namespace vrui {
 		if (!_attachNode) {
 			throw std::runtime_error("Attempt to detach NOT attached widget");
 		}
-		NiPointer<NiAVObject> out;
+		RE::NiPointer<RE::NiAVObject> out;
 		_attachNode->DetachChild(_toggleFrameNode, out);
 		UIWidget::detachFromAttachedNode(releaseSafe);
 	}
@@ -51,7 +51,7 @@ namespace vrui {
 		const bool visible = _isToggleOn && calcVisibility();
 		setNodeVisibility(_toggleFrameNode, visible, getScale());
 		if (visible) {
-			_toggleFrameNode->m_localTransform = _node->m_localTransform;
+			_toggleFrameNode->local = _node->local;
 		}
 	}
 

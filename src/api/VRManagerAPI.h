@@ -5,9 +5,9 @@
 namespace PapyrusVR
 {
 	typedef void(*OnVRButtonEvent)(VREventType, EVRButtonId, VRDevice);
-	typedef void(*OnVROverlapEvent)(VROverlapEvent, UInt32, VRDevice);
+	typedef void(*OnVROverlapEvent)(VROverlapEvent, std::uint32_t, VRDevice);
 	typedef void(*OnVRUpdateEvent)(float);
-	typedef void(*OnVRHapticEvent)(UInt32, UInt32, VRDevice);
+	typedef void(*OnVRHapticEvent)(std::uint32_t, std::uint32_t, VRDevice);
 
 	class VRManagerAPI
 	{
@@ -28,8 +28,8 @@ namespace PapyrusVR
 		virtual void RegisterVRUpdateListener(OnVRUpdateEvent listener) = 0;
 		virtual void UnregisterVRUpdateListener(OnVRUpdateEvent listener) = 0;
 
-		virtual UInt32 CreateLocalOverlapSphere(float radius, Matrix34* transform, VRDevice attachedDevice = VRDevice::VRDevice_Unknown) = 0;
-		virtual void DestroyLocalOverlapObject(UInt32 overlapObjectHandle) = 0;
+		virtual std::uint32_t CreateLocalOverlapSphere(float radius, Matrix34* transform, VRDevice attachedDevice = VRDevice::VRDevice_Unknown) = 0;
+		virtual void DestroyLocalOverlapObject(std::uint32_t overlapObjectHandle) = 0;
 
 		virtual TrackedDevicePose* GetHMDPose(bool renderPose = true) = 0;
 		virtual TrackedDevicePose* GetRightHandPose(bool renderPose = true) = 0;

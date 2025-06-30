@@ -2831,15 +2831,15 @@ class exception : public std::exception
     {
 #if JSON_DIAGNOSTICS
         std::vector<std::string> tokens;
-        for (const auto* current = &leaf_element; current->m_parent != nullptr; current = current->m_parent)
+        for (const auto* current = &leaf_element; current->parent != nullptr; current = current->parent)
         {
-            switch (current->m_parent->type())
+            switch (current->parent->type())
             {
                 case value_t::array:
                 {
-                    for (std::size_t i = 0; i < current->m_parent->m_value.array->size(); ++i)
+                    for (std::size_t i = 0; i < current->parent->m_value.array->size(); ++i)
                     {
-                        if (&current->m_parent->m_value.array->operator[](i) == current)
+                        if (&current->parent->m_value.array->operator[](i) == current)
                         {
                             tokens.emplace_back(std::to_string(i));
                             break;
@@ -2850,7 +2850,7 @@ class exception : public std::exception
 
                 case value_t::object:
                 {
-                    for (const auto& element : *current->m_parent->m_value.object)
+                    for (const auto& element : *current->parent->m_value.object)
                     {
                         if (&element.second == current)
                         {
@@ -17850,7 +17850,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
             // cppcheck-suppress assertWithSideEffect
             JSON_ASSERT(!check_parents || !is_structured() || std::all_of(begin(), end(), [this](const basic_json & j)
             {
-                return j.m_parent == this;
+                return j.parent == this;
             }));
         }
         JSON_CATCH(...) {} // LCOV_EXCL_LINE
@@ -17867,7 +17867,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
             {
                 for (auto& element : *m_value.array)
                 {
-                    element.m_parent = this;
+                    element.parent = this;
                 }
                 break;
             }
@@ -17876,7 +17876,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
             {
                 for (auto& element : *m_value.object)
                 {
-                    element.second.m_parent = this;
+                    element.second.parent = this;
                 }
                 break;
             }
@@ -17900,7 +17900,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
 #if JSON_DIAGNOSTICS
         for (typename iterator::difference_type i = 0; i < count_set_parents; ++i)
         {
-            (it + i)->m_parent = this;
+            (it + i)->parent = this;
         }
 #else
         static_cast<void>(count_set_parents);
@@ -17938,7 +17938,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
 #pragma warning( pop )
 #endif
 
-        j.m_parent = this;
+        j.parent = this;
 #else
         static_cast<void>(j);
         static_cast<void>(old_capacity);
@@ -20350,7 +20350,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
             }
             m_value.object->operator[](it.key()) = it.value();
 #if JSON_DIAGNOSTICS
-            m_value.object->operator[](it.key()).m_parent = this;
+            m_value.object->operator[](it.key()).parent = this;
 #endif
         }
     }
@@ -20994,7 +20994,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
 
 #if JSON_DIAGNOSTICS
     /// a pointer to a parent value (for debugging purposes)
-    basic_json* m_parent = nullptr;
+    basic_json* parent = nullptr;
 #endif
 
     //////////////////////////////////////////

@@ -54,8 +54,8 @@ namespace frik {
 
 		// check throwable weapon is equipped for the first time
 		if (_currentThrowableWeaponName.empty()) {
-			_currentThrowableWeaponName = throwableWeapon->m_name.c_str();
-			_throwableWeaponOriginalTransform = throwableWeapon->m_localTransform;
+			_currentThrowableWeaponName = throwableWeapon->name.c_str();
+			_throwableWeaponOriginalTransform = throwableWeapon->local;
 
 			// get saved offset or use hard-coded global default
 			const auto offsetLookup = g_config.getWeaponOffsets(_currentThrowableWeaponName, WeaponOffsetsMode::Throwable, _currentlyInPA);
@@ -67,7 +67,7 @@ namespace frik {
 		}
 
 		// use custom offset
-		throwableWeapon->m_localTransform = _throwableWeaponOffsetTransform;
+		throwableWeapon->local = _throwableWeaponOffsetTransform;
 	}
 
 	/**
@@ -82,21 +82,21 @@ namespace frik {
 				_configMode->onFrameUpdate(nullptr);
 			}
 			checkEquippedWeaponChanged(true);
-			backOfHand->m_localTransform = _backOfHandUIOffsetTransform;
+			backOfHand->local = _backOfHandUIOffsetTransform;
 			return;
 		}
 
 		// store original weapon transform in case we need it later
-		_weaponOriginalTransform = weapon->m_localTransform;
-		_weaponOriginalWorldTransform = weapon->m_worldTransform;
+		_weaponOriginalTransform = weapon->local;
+		_weaponOriginalWorldTransform = weapon->world;
 
 		checkEquippedWeaponChanged(false);
 
 		// override the back-of-hand UI transform
-		backOfHand->m_localTransform = _backOfHandUIOffsetTransform;
+		backOfHand->local = _backOfHandUIOffsetTransform;
 
 		// override the weapon transform to the saved offset
-		weapon->m_localTransform = _weaponOffsetTransform;
+		weapon->local = _weaponOffsetTransform;
 		// update world transform for later calculations
 		f4vr::updateTransforms(weapon);
 
@@ -173,7 +173,7 @@ namespace frik {
 				_currentWeapon.c_str(), _weaponOffsetTransform.translate.x, _weaponOffsetTransform.translate.y, _weaponOffsetTransform.translate.z, _weaponOffsetTransform.scale, _currentlyInPA);
 		} else {
 			// No stored offset, use default adjustment
-			_backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->m_localTransform, _currentlyInPA);
+			_backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->local, _currentlyInPA);
 		}
 
 		logger::info("Equipped Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
@@ -185,17 +185,17 @@ namespace frik {
 	 * Offset is a simple adjustment of the diff between original and offset transform.
 	 * Rotation is calculated by using weapon forward vector and the diff between it and straight in scope camera orientation.
 	 */
-	void WeaponPositionAdjuster::handleScopeCameraAdjustmentByWeaponOffset(const NiNode* weapon) const {
+	void WeaponPositionAdjuster::handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const {
 		const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
 
 		// Apply the position offset is weird because of different coordinate system
 		const auto weaponPosDiff = _weaponOffsetTransform.translate - _weaponOriginalTransform.translate;
-		scopeCamera->m_localTransform.translate = RE::NiPoint3(weaponPosDiff.y, weaponPosDiff.x, -weaponPosDiff.z);
+		scopeCamera->local.translate = RE::NiPoint3(weaponPosDiff.y, weaponPosDiff.x, -weaponPosDiff.z);
 
 		// SUPER HACK adjustment because position offset adjustment in one axis is casing small drift in other axes!
 		// The numbers were created by changing single offset axis and manually adjusting the other two axis until could hit the target
-		scopeCamera->m_localTransform.translate.z += (weaponPosDiff.y > 0 ? 0.12f : 0.04f) * weaponPosDiff.y + (weaponPosDiff.x > 0 ? 0.14f : 0.04f) * weaponPosDiff.x;
-		scopeCamera->m_localTransform.translate.x += (weaponPosDiff.x > 0 ? -0.1f : -0.11f) * weaponPosDiff.x + (weaponPosDiff.z > 0 ? 0.05f : 0.06f) * weaponPosDiff.z;
+		scopeCamera->local.translate.z += (weaponPosDiff.y > 0 ? 0.12f : 0.04f) * weaponPosDiff.y + (weaponPosDiff.x > 0 ? 0.14f : 0.04f) * weaponPosDiff.x;
+		scopeCamera->local.translate.x += (weaponPosDiff.x > 0 ? -0.1f : -0.11f) * weaponPosDiff.x + (weaponPosDiff.z > 0 ? 0.05f : 0.06f) * weaponPosDiff.z;
 
 		if (_offHandGripping) {
 			// if offhand is gripping it overrides the rotation adjustment
@@ -203,17 +203,17 @@ namespace frik {
 		}
 
 		// need to update default transform for later world rotation use
-		scopeCamera->m_localTransform.rotate = _scopeCameraBaseMatrix;
+		scopeCamera->local.rotate = _scopeCameraBaseMatrix;
 		f4vr::updateTransforms(scopeCamera);
 
 		// get the "forward" vector of the weapon (direction of the bullets)
-		const auto weaponForwardVec = RE::NiPoint3(weapon->m_worldTransform.rotate.data[1][0], weapon->m_worldTransform.rotate.data[1][1], weapon->m_worldTransform.rotate.data[1][2]);
+		const auto weaponForwardVec = RE::NiPoint3(weapon->world.rotate.data[1][0], weapon->world.rotate.data[1][1], weapon->world.rotate.data[1][2]);
 
 		// Calculate the rotation adjustment using quaternion by diff between scope camera vector and straight
 		Quaternion rotAdjust;
-		const auto weaponForwardVecInScopeTransform = scopeCamera->m_worldTransform.rotate.Transpose() * weaponForwardVec / scopeCamera->m_worldTransform.scale;
+		const auto weaponForwardVecInScopeTransform = scopeCamera->world.rotate.Transpose() * weaponForwardVec / scopeCamera->world.scale;
 		rotAdjust.vec2Vec(weaponForwardVecInScopeTransform, RE::NiPoint3(1, 0, 0));
-		scopeCamera->m_localTransform.rotate = rotAdjust.getRot().multiply43Left(_scopeCameraBaseMatrix);
+		scopeCamera->local.rotate = rotAdjust.getRot().multiply43Left(_scopeCameraBaseMatrix);
 	}
 
 	/**
@@ -223,7 +223,7 @@ namespace frik {
 	 * Mode 3: holding grip button to snap to the barrel, release grib button to let go                                  | true                   | true               | false                   |
 	 * Mode 4: press grip button to snap to the barrel, press grib button again to let go                                | true                   | false              | true                    |
 	 */
-	void WeaponPositionAdjuster::checkIfOffhandIsGripping(const NiNode* weapon) {
+	void WeaponPositionAdjuster::checkIfOffhandIsGripping(const RE::NiNode* weapon) {
 		if (!g_config.enableOffHandGripping) {
 			return;
 		}
@@ -286,14 +286,14 @@ namespace frik {
 	 * Handle adjusting weapon and scope camera rotation when offhand is gripping the weapon.
 	 * Calculate the weapon to offhand vector and then adjust the weapon and scope camera rotation to match the vector.
 	 * This is fucking complicated code so a few pointers:
-	 * - Use "_weaponOriginalWorldTransform" and not "weapon->m_worldTransform" for vector because we repositioned the weapon
+	 * - Use "_weaponOriginalWorldTransform" and not "weapon->world" for vector because we repositioned the weapon
 	 * to grip by the stock but the original transform is where the actual hand is, and the hand is what we care about.
 	 * - There is a lot of moving from world space to local space, you need to pay attention to handle it for any changes.
 	 * - Offset pivot handling is because if we just rotate the weapon it will rotate around the original point before the
 	 * adjustment made to match stock to hand resulting in the stock flying away from the hand. we need to recalculate the new
 	 * position of the stock and then move the weapon to that position.
 	 */
-	void WeaponPositionAdjuster::handleWeaponGrippingRotationAdjustment(NiNode* weapon) const {
+	void WeaponPositionAdjuster::handleWeaponGrippingRotationAdjustment(RE::NiNode* weapon) const {
 		if (!_offHandGripping && !(_configMode && _configMode->isInOffhandRepositioning())) {
 			return;
 		}
@@ -304,7 +304,7 @@ namespace frik {
 		const auto weaponToOffhandVecWorld = getOffhandPosition() - getPrimaryHandPosition();
 
 		// Convert world-space vector into weapon space
-		const auto weaponLocalVec = weapon->m_worldTransform.rotate.Transpose() * vec3Norm(weaponToOffhandVecWorld) / weapon->m_worldTransform.scale;
+		const auto weaponLocalVec = weapon->world.rotate.Transpose() * vec3Norm(weaponToOffhandVecWorld) / weapon->world.scale;
 
 		// Desired weapon forward direction after applying offhand offset
 		const auto adjustedWeaponVec = _offhandOffsetRot * weaponLocalVec;
@@ -313,7 +313,7 @@ namespace frik {
 		rotAdjust.vec2Vec(adjustedWeaponVec, RE::NiPoint3(0, 1, 0));
 
 		// Compose into final local transform
-		weapon->m_localTransform.rotate = rotAdjust.getRot().multiply43Left(_weaponOffsetTransform.rotate);
+		weapon->local.rotate = rotAdjust.getRot().multiply43Left(_weaponOffsetTransform.rotate);
 
 		// -- Handle Scope:
 		if (g_frik.isInScopeMenu()) {
@@ -326,13 +326,13 @@ namespace frik {
 		// -- Handle offset pivot:
 
 		// Pivot in local space (point where weapon touches primary hand)
-		const auto gripPivotLocal = weapon->m_worldTransform.rotate.Transpose() *
-			(getPrimaryHandPosition() - weapon->m_worldTransform.translate) / weapon->m_worldTransform.scale;
+		const auto gripPivotLocal = weapon->world.rotate.Transpose() *
+			(getPrimaryHandPosition() - weapon->world.translate) / weapon->world.scale;
 
 		// Recompute position so that the grip stays in place
-		const auto rotatedGripPos = weapon->m_localTransform.rotate * gripPivotLocal;
+		const auto rotatedGripPos = weapon->local.rotate * gripPivotLocal;
 		const auto originalGripPos = _weaponOffsetTransform.rotate * gripPivotLocal;
-		weapon->m_localTransform.translate = _weaponOffsetTransform.translate + (originalGripPos - rotatedGripPos);
+		weapon->local.translate = _weaponOffsetTransform.translate + (originalGripPos - rotatedGripPos);
 
 		f4vr::updateTransforms(weapon);
 
@@ -342,53 +342,53 @@ namespace frik {
 		const auto adjustedWeaponVecWorld = _weaponOriginalWorldTransform.rotate * (adjustedWeaponVec * _weaponOriginalWorldTransform.scale);
 
 		// Rotate the primary hand so it will stay on the weapon stock
-		const auto primaryHand = (f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand)->GetAsNiNode();
-		const auto handLocalVec = primaryHand->m_worldTransform.rotate.Transpose() * adjustedWeaponVecWorld / primaryHand->m_worldTransform.scale;
+		const auto primaryHand = (f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand)->GetAsRE::NiNode();
+		const auto handLocalVec = primaryHand->world.rotate.Transpose() * adjustedWeaponVecWorld / primaryHand->world.scale;
 		rotAdjust.vec2Vec(handLocalVec, RE::NiPoint3(1, 0, 0));
 
 		// no fucking idea why it's off by specific angle
 		const auto rotAdjustWithManual = Matrix44(rotAdjust.getRot().multiply43Right(_twoHandedPrimaryHandManualAdjustment));
 
-		primaryHand->m_localTransform.rotate = rotAdjustWithManual.multiply43Left(primaryHand->m_localTransform.rotate);
+		primaryHand->local.rotate = rotAdjustWithManual.multiply43Left(primaryHand->local.rotate);
 
 		// update all the fingers to match the hand rotation
-		f4vr::updateDown(primaryHand, true, weapon->m_name.c_str());
+		f4vr::updateDown(primaryHand, true, weapon->name.c_str());
 	}
 
 	/**
 	 * To handle scope we move the calculated two-handed vector from weapon space to world space and then into scope space to
 	 * adjust the scope. Yeah, it's a bit weird, but it works.
 	 */
-	void WeaponPositionAdjuster::handleWeaponScopeCameraGrippingRotationAdjustment(const NiNode* weapon, Quaternion rotAdjust, const RE::NiPoint3 adjustedWeaponVec) const {
+	void WeaponPositionAdjuster::handleWeaponScopeCameraGrippingRotationAdjustment(const RE::NiNode* weapon, Quaternion rotAdjust, const RE::NiPoint3 adjustedWeaponVec) const {
 		const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
 
 		// adjust the position after all the calculation above
-		const auto weaponPosDiff = weapon->m_localTransform.translate - _weaponOriginalTransform.translate;
-		scopeCamera->m_localTransform.translate = RE::NiPoint3(weaponPosDiff.y, weaponPosDiff.x, -weaponPosDiff.z);
+		const auto weaponPosDiff = weapon->local.translate - _weaponOriginalTransform.translate;
+		scopeCamera->local.translate = RE::NiPoint3(weaponPosDiff.y, weaponPosDiff.x, -weaponPosDiff.z);
 
 		// Set base camera matrix first (remaps axes from weapon to scope system)
-		scopeCamera->m_localTransform.rotate = _scopeCameraBaseMatrix;
+		scopeCamera->local.rotate = _scopeCameraBaseMatrix;
 		f4vr::updateTransforms(scopeCamera);
 
 		// Transform the offhand offset adjusted vector from weapon space to world space so we can adjust it into scope space
-		const auto adjustedWeaponVecWorld = weapon->m_worldTransform.rotate * (adjustedWeaponVec * weapon->m_worldTransform.scale);
+		const auto adjustedWeaponVecWorld = weapon->world.rotate * (adjustedWeaponVec * weapon->world.scale);
 
 		// Convert it into scope space
-		const auto scopeLocalVec = scopeCamera->m_worldTransform.rotate.Transpose() * adjustedWeaponVecWorld / scopeCamera->m_worldTransform.scale;
+		const auto scopeLocalVec = scopeCamera->world.rotate.Transpose() * adjustedWeaponVecWorld / scopeCamera->world.scale;
 
 		// Compute scope rotation: align local X with this direction
 		rotAdjust.vec2Vec(scopeLocalVec, RE::NiPoint3(1, 0, 0));
-		scopeCamera->m_localTransform.rotate = rotAdjust.getRot().multiply43Left(_scopeCameraBaseMatrix);
+		scopeCamera->local.rotate = rotAdjust.getRot().multiply43Left(_scopeCameraBaseMatrix);
 	}
 
 	/**
 	 * Return true if the angle of offhand to weapon to grip is close to barrel but far in distance from main hand
 	 * to prevent grabbing when two hands are just close.
 	 */
-	bool WeaponPositionAdjuster::isOffhandCloseToBarrel(const NiNode* weapon) const {
+	bool WeaponPositionAdjuster::isOffhandCloseToBarrel(const RE::NiNode* weapon) const {
 		const auto offhand2WeaponVec = getOffhandPosition() - getPrimaryHandPosition();
 		const float distanceFromPrimaryHand = vec3Len(offhand2WeaponVec);
-		const auto weaponLocalVec = weapon->m_worldTransform.rotate.Transpose() * vec3Norm(offhand2WeaponVec) / weapon->m_worldTransform.scale;
+		const auto weaponLocalVec = weapon->world.rotate.Transpose() * vec3Norm(offhand2WeaponVec) / weapon->world.scale;
 		const auto adjustedWeaponVec = _offhandOffsetRot * weaponLocalVec;
 		const float angleDiffToWeaponVec = vec3Dot(vec3Norm(adjustedWeaponVec), RE::NiPoint3(0, 1, 0));
 		return angleDiffToWeaponVec > 0.955 && distanceFromPrimaryHand > 15;
@@ -429,7 +429,7 @@ namespace frik {
 	 */
 	RE::NiPoint3 WeaponPositionAdjuster::getPrimaryHandPosition() const {
 		const auto primaryHandNode = f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
-		return primaryHandNode->m_worldTransform.translate;
+		return primaryHandNode->world.translate;
 	}
 
 	/**
@@ -444,18 +444,18 @@ namespace frik {
 	 * Handle toggling of scope zoom for BetterScopesVR mod.
 	 * Toggle only when player presses offhand X/A button and the hand is close to the weapon scope.
 	 */
-	void WeaponPositionAdjuster::handleBetterScopes(NiNode* weapon) const {
+	void WeaponPositionAdjuster::handleBetterScopes(RE::NiNode* weapon) const {
 		if (!f4vr::VRControllers.isPressed(vr::EVRButtonId::k_EButton_A, f4vr::Hand::Offhand)) {
 			// fast return not to make additional calculations, checking button is cheap
 			return;
 		}
 
-		static BSFixedString reticleNodeName = "ReticleNode";
-		NiAVObject* scopeRet = weapon->GetObjectByName(&reticleNodeName);
+		static RE::BSFixedString reticleNodeName = "ReticleNode";
+		RE::NiAVObject* scopeRet = weapon->GetObjectByName(&reticleNodeName);
 		if (!scopeRet) {
 			return;
 		}
-		const auto reticlePos = scopeRet->GetAsNiNode()->m_worldTransform.translate;
+		const auto reticlePos = scopeRet->GetAsRE::NiNode()->world.translate;
 		const auto offhandPos = getOffhandPosition();
 		const auto offset = vec3Len(reticlePos - offhandPos);
 
@@ -479,7 +479,7 @@ namespace frik {
 		}
 
 		// shockingly the projectile world location is exactly what we need to set of the muzzle flash node
-		muzzle->fireNode->m_localTransform = muzzle->projectileNode->m_worldTransform;
+		muzzle->fireNode->local = muzzle->projectileNode->world;
 
 		// small optimization to only run world update if the fireNode is visible
 		// note, setting fireNode local transform must happen ALWAYS or some artifact is visible in old location for some weapons
@@ -496,11 +496,11 @@ namespace frik {
 	 * Because we put the UI on the back of the hand we don't need to offset by the weapon size. And with it, it looks like we don't need per
 	 * weapon adjustment.
 	 */
-	NiNode* WeaponPositionAdjuster::getBackOfHandUINode() {
+	RE::NiNode* WeaponPositionAdjuster::getBackOfHandUINode() {
 		return f4vr::getPrimaryWandNode();
 	}
 
-	void WeaponPositionAdjuster::debugPrintWeaponPositionData(NiNode* weapon) const {
+	void WeaponPositionAdjuster::debugPrintWeaponPositionData(RE::NiNode* weapon) const {
 		if (!g_config.checkDebugDumpDataOnceFor("weapon_pos")) {
 			return;
 		}
@@ -509,7 +509,7 @@ namespace frik {
 		printTransform("Weapon Original: ", _weaponOriginalTransform);
 		printTransform("Weapon Offset  : ", _weaponOffsetTransform);
 		printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);
-		printTransform("Scope Offset   : ", f4vr::getPlayerNodes()->primaryWeaponScopeCamera->m_localTransform);
+		printTransform("Scope Offset   : ", f4vr::getPlayerNodes()->primaryWeaponScopeCamera->local);
 		printNodes(weapon);
 		printNodesTransform(weapon);
 	}

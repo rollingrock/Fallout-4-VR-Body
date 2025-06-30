@@ -1,10 +1,10 @@
 #pragma once
 
 #include "F4VROffsets.h"
-#include "f4se/NiNodes.h"
+#include "f4se/RE::NiNodes.h"
 
 namespace f4vr {
-	class BSFlattenedBoneTree : public NiNode {
+	class BSFlattenedBoneTree : public RE::NiNode {
 	public:
 		struct BoneTransforms {
 			RE::NiTransform local;
@@ -12,8 +12,8 @@ namespace f4vr {
 			short parPos;
 			short childPos;
 			uint32_t unk8c;
-			NiNode* refNode;
-			BSFixedString name;
+			RE::NiNode* refNode;
+			RE::BSFixedString name;
 			uint64_t unk98;
 		};
 
@@ -25,16 +25,16 @@ namespace f4vr {
 		};
 
 		int GetBoneIndex(const std::string& a_name) {
-			auto name = new BSFixedString(a_name.c_str());
+			auto name = new RE::BSFixedString(a_name.c_str());
 			return f4vr::BSFlattenedBoneTree_GetBoneIndex(this, name);
 		}
 
-		NiNode* GetBoneNode(const std::string& a_name) {
-			auto name = new BSFixedString(a_name.c_str());
+		RE::NiNode* GetBoneNode(const std::string& a_name) {
+			auto name = new RE::BSFixedString(a_name.c_str());
 			return f4vr::BSFlattenedBoneTree_GetBoneNode(this, name);
 		}
 
-		NiNode* GetBoneNode(const int a_pos) {
+		RE::NiNode* GetBoneNode(const int a_pos) {
 			return f4vr::BSFlattenedBoneTree_GetBoneNodeFromPos(this, a_pos);
 		}
 

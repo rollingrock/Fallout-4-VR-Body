@@ -4,8 +4,8 @@
 #include "FRIK.h"
 #include "Skeleton.h"
 #include "utils.h"
-#include "common/CommonUtils.h"
 #include "common/Logger.h"
+#include "common/MatrixUtils.h"
 #include "f4vr/VRControllersManager.h"
 #include "ui/UIButton.h"
 #include "ui/UIContainer.h"
@@ -81,7 +81,7 @@ namespace frik {
 	/**
 	 * Handle configuration UI interaction.
 	 */
-	void WeaponPositionConfigMode::onFrameUpdate(NiNode* weapon) {
+	void WeaponPositionConfigMode::onFrameUpdate(RE::NiNode* weapon) {
 		if (g_frik.isMainConfigurationModeActive() || g_frik.isPipboyConfigurationModeActive()) {
 			// don't show this config UI if main config UI is shown
 			_configUI->setVisibility(false);
@@ -147,7 +147,7 @@ namespace frik {
 	/**
 	 * Handle reposition by user input of the target config.
 	 */
-	void WeaponPositionConfigMode::handleReposition(NiNode* weapon, NiNode* throwable) const {
+	void WeaponPositionConfigMode::handleReposition(RE::NiNode* weapon, RE::NiNode* throwable) const {
 		switch (_repositionTarget) {
 		case RepositionTarget::Weapon:
 			handleWeaponReposition(weapon);
@@ -171,7 +171,7 @@ namespace frik {
 	 * In weapon reposition mode...
 	 * NOTE: because of minor tweaks on what axis are used for repositioning it doesn't make sense to create common code for it.
 	 */
-	void WeaponPositionConfigMode::handleWeaponReposition(NiNode* weapon) const {
+	void WeaponPositionConfigMode::handleWeaponReposition(RE::NiNode* weapon) const {
 		const auto [primAxisX, primAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
 		const auto [secAxisX, secAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand);
 		if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
@@ -197,7 +197,7 @@ namespace frik {
 		}
 
 		// update the weapon with the offset change
-		weapon->m_localTransform = _adjuster->_weaponOffsetTransform;
+		weapon->local = _adjuster->_weaponOffsetTransform;
 	}
 
 	/**
@@ -217,7 +217,7 @@ namespace frik {
 	 * In throwable reposition mode...
 	 * NOTE: because of minor tweaks on what axis are used for repositioning it doesn't make sense to create common code for it.
 	 */
-	void WeaponPositionConfigMode::handleThrowableReposition(NiNode* throwable) const {
+	void WeaponPositionConfigMode::handleThrowableReposition(RE::NiNode* throwable) const {
 		if (!throwable) {
 			return;
 		}
@@ -246,7 +246,7 @@ namespace frik {
 			transform.translate.y += leftHandedMult * secAxisY / 14;
 		}
 
-		throwable->m_localTransform = transform;
+		throwable->local = transform;
 	}
 
 	/**
@@ -279,7 +279,7 @@ namespace frik {
 		}
 
 		// update the weapon with the offset change
-		WeaponPositionAdjuster::getBackOfHandUINode()->m_localTransform = transform;
+		WeaponPositionAdjuster::getBackOfHandUINode()->local = transform;
 	}
 
 	/**
@@ -378,7 +378,7 @@ namespace frik {
 	void WeaponPositionConfigMode::resetBackOfHandUIConfig() const {
 		f4vr::showNotification("Reset Back of Hand UI Position to Default");
 		_adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_currentlyInPA);
-		WeaponPositionAdjuster::getBackOfHandUINode()->m_localTransform = _adjuster->_backOfHandUIOffsetTransform;
+		WeaponPositionAdjuster::getBackOfHandUINode()->local = _adjuster->_backOfHandUIOffsetTransform;
 		g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA, true);
 	}
 

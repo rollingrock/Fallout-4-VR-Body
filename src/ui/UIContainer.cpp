@@ -212,7 +212,7 @@ namespace vrui {
 	/**
 	 * Attach all the elements in this container to the given node.
 	 */
-	void UIContainer::attachToNode(NiNode* attachNode) {
+	void UIContainer::attachToNode(RE::NiNode* attachNode) {
 		if (_attachNode) {
 			throw std::runtime_error("Attempt to attach already attached container");
 		}

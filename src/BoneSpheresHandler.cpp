@@ -10,7 +10,7 @@
 using namespace common;
 
 namespace frik {
-	void BoneSpheresHandler::init(const F4SEInterface* f4se) {
+	void BoneSpheresHandler::init(const F4SE::detail::F4SEInterface* f4se) {
 		if (_instance) {
 			throw std::exception("Bone Spheres Handler is already initialized, only single instance can be used!");
 		}
@@ -21,7 +21,7 @@ namespace frik {
 	/**
 	 * Register code for Papyrus scripts.
 	 */
-	bool BoneSpheresHandler::registerPapyrusFunctionsCallback(VirtualMachine* vm) {
+	bool BoneSpheresHandler::registerPapyrusFunctionsCallback(RE::BSScript::Internal::VirtualMachine* vm) {
 		vm->RegisterFunction(new NativeFunction2("RegisterBoneSphere", "FRIK:FRIK", registerBoneSphereFunc, vm));
 		vm->RegisterFunction(new NativeFunction3("RegisterBoneSphereOffset", "FRIK:FRIK", registerBoneSphereOffsetFunc, vm));
 		vm->RegisterFunction(new NativeFunction1("DestroyBoneSphere", "FRIK:FRIK", destroyBoneSphereFunc, vm));
@@ -32,15 +32,15 @@ namespace frik {
 		return true;
 	}
 
-	UInt32 BoneSpheresHandler::registerBoneSphereFunc(StaticFunctionTag* base, const float radius, const BSFixedString bone) {
+	std::uint32_t BoneSpheresHandler::registerBoneSphereFunc(StaticFunctionTag* base, const float radius, const RE::BSFixedString bone) {
 		return _instance->registerBoneSphere(radius, bone);
 	}
 
-	UInt32 BoneSpheresHandler::registerBoneSphereOffsetFunc(StaticFunctionTag* base, const float radius, const BSFixedString bone, VMArray<float> pos) {
+	std::uint32_t BoneSpheresHandler::registerBoneSphereOffsetFunc(StaticFunctionTag* base, const float radius, const RE::BSFixedString bone, VMArray<float> pos) {
 		return _instance->registerBoneSphereOffset(radius, bone, pos);
 	}
 
-	void BoneSpheresHandler::destroyBoneSphereFunc(StaticFunctionTag* base, const UInt32 handle) {
+	void BoneSpheresHandler::destroyBoneSphereFunc(StaticFunctionTag* base, const std::uint32_t handle) {
 		_instance->destroyBoneSphere(handle);
 	}
 
@@ -56,7 +56,7 @@ namespace frik {
 		_instance->toggleDebugBoneSpheres(turnOn);
 	}
 
-	void BoneSpheresHandler::toggleDebugBoneSpheresAtBoneFunc(StaticFunctionTag* base, const UInt32 handle, const bool turnOn) {
+	void BoneSpheresHandler::toggleDebugBoneSpheresAtBoneFunc(StaticFunctionTag* base, const std::uint32_t handle, const bool turnOn) {
 		_instance->toggleDebugBoneSpheresAtBone(handle, turnOn);
 	}
 
@@ -65,12 +65,12 @@ namespace frik {
 		handleDebugBoneSpheres();
 	}
 
-	UInt32 BoneSpheresHandler::registerBoneSphere(const float radius, const BSFixedString bone) {
+	std::uint32_t BoneSpheresHandler::registerBoneSphere(const float radius, const RE::BSFixedString bone) {
 		if (radius == 0.0) {
 			return 0;
 		}
 
-		NiNode* boneNode = f4vr::getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsNiNode();
+		RE::NiNode* boneNode = f4vr::getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode)->GetAsRE::NiNode();
 
 		if (!boneNode) {
 			logger::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
@@ -78,14 +78,14 @@ namespace frik {
 		}
 
 		const auto sphere = new BoneSphere(radius, boneNode, RE::NiPoint3(0, 0, 0));
-		const UInt32 handle = _nextBoneSphereHandle++;
+		const std::uint32_t handle = _nextBoneSphereHandle++;
 
 		_boneSphereRegisteredObjects[handle] = sphere;
 
 		return handle;
 	}
 
-	UInt32 BoneSpheresHandler::registerBoneSphereOffset(const float radius, const BSFixedString bone, VMArray<float> pos) {
+	std::uint32_t BoneSpheresHandler::registerBoneSphereOffset(const float radius, const RE::BSFixedString bone, VMArray<float> pos) {
 		if (radius == 0.0) {
 			return 0;
 		}
@@ -102,10 +102,10 @@ namespace frik {
 		auto boneNode = f4vr::getChildNode(bone.c_str(), (*g_player)->unkF0->rootNode);
 
 		if (!boneNode) {
-			auto n = (*g_player)->unkF0->rootNode->GetAsNiNode();
+			auto n = (*g_player)->unkF0->rootNode->GetAsRE::NiNode();
 
-			while (n->m_parent) {
-				n = n->m_parent->GetAsNiNode();
+			while (n->parent) {
+				n = n->parent->GetAsRE::NiNode();
 			}
 
 			boneNode = f4vr::getChildNode(bone.c_str(), n); // ObjectLODRoot
@@ -123,19 +123,19 @@ namespace frik {
 		pos.Get(&offsetVec.z, 2);
 
 		const auto sphere = new BoneSphere(radius, boneNode, offsetVec);
-		const UInt32 handle = _nextBoneSphereHandle++;
+		const std::uint32_t handle = _nextBoneSphereHandle++;
 
 		_boneSphereRegisteredObjects[handle] = sphere;
 
 		return handle;
 	}
 
-	void BoneSpheresHandler::destroyBoneSphere(const UInt32 handle) {
+	void BoneSpheresHandler::destroyBoneSphere(const std::uint32_t handle) {
 		if (_boneSphereRegisteredObjects.contains(handle)) {
 			if (const auto sphere = _boneSphereRegisteredObjects[handle]->debugSphere) {
 				sphere->flags |= 0x1;
-				sphere->m_localTransform.scale = 0;
-				sphere->m_parent->RemoveChild(sphere);
+				sphere->local.scale = 0;
+				sphere->parent->RemoveChild(sphere);
 			}
 
 			delete _boneSphereRegisteredObjects[handle];
@@ -169,7 +169,7 @@ namespace frik {
 		}
 	}
 
-	void BoneSpheresHandler::toggleDebugBoneSpheresAtBone(const UInt32 handle, const bool turnOn) {
+	void BoneSpheresHandler::toggleDebugBoneSpheresAtBone(const std::uint32_t handle, const bool turnOn) {
 		if (_boneSphereRegisteredObjects.contains(handle)) {
 			_boneSphereRegisteredObjects[handle]->turnOnDebugSpheres = turnOn;
 		}
@@ -185,15 +185,15 @@ namespace frik {
 
 		// prefer to use fingers but these aren't always rendered.    so default to hand if nothing else
 
-		const NiAVObject* rFinger = f4vr::getChildNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
-		const NiAVObject* lFinger = f4vr::getChildNode("LArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+		const RE::NiAVObject* rFinger = f4vr::getChildNode("RArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsRE::NiNode());
+		const RE::NiAVObject* lFinger = f4vr::getChildNode("LArm_Finger22", (*g_player)->firstPersonSkeleton->GetAsRE::NiNode());
 
 		if (rFinger == nullptr) {
-			rFinger = f4vr::getChildNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+			rFinger = f4vr::getChildNode("RArm_Hand", (*g_player)->firstPersonSkeleton->GetAsRE::NiNode());
 		}
 
 		if (lFinger == nullptr) {
-			lFinger = f4vr::getChildNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsNiNode());
+			lFinger = f4vr::getChildNode("LArm_Hand", (*g_player)->firstPersonSkeleton->GetAsRE::NiNode());
 		}
 
 		if (lFinger == nullptr || rFinger == nullptr) {
@@ -201,23 +201,23 @@ namespace frik {
 		}
 
 		for (const auto& element : _boneSphereRegisteredObjects) {
-			RE::NiPoint3 offset = element.second->bone->m_worldTransform.rotate * element.second->offset;
-			offset = element.second->bone->m_worldTransform.translate + offset;
+			RE::NiPoint3 offset = element.second->bone->world.rotate * element.second->offset;
+			offset = element.second->bone->world.translate + offset;
 
-			double dist = vec3Len(rFinger->m_worldTransform.translate - offset);
+			double dist = vec3Len(rFinger->world.translate - offset);
 
 			if (dist <= static_cast<double>(element.second->radius) - 0.1) {
 				if (!element.second->stickyRight) {
 					element.second->stickyRight = true;
 
 					SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Enter);
-					UInt32 handle = element.first;
-					UInt32 device = 1;
+					std::uint32_t handle = element.first;
+					std::uint32_t device = 1;
 					_curDevice = device;
 
-					if (!_boneSphereEventRegs.m_data.empty()) {
+					if (!_boneSphereEventRegs.data.empty()) {
 						auto functor = [&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
+							SendPapyrusEvent3<SInt32, std::uint32_t, std::uint32_t>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
 						};
 						_boneSphereEventRegs.ForEach(functor);
 					}
@@ -227,33 +227,33 @@ namespace frik {
 					element.second->stickyRight = false;
 
 					SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Exit);
-					UInt32 handle = element.first;
+					std::uint32_t handle = element.first;
 					_curDevice = 0;
 
-					if (!_boneSphereEventRegs.m_data.empty()) {
-						UInt32 device = 1;
+					if (!_boneSphereEventRegs.data.empty()) {
+						std::uint32_t device = 1;
 						auto functor = [&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
+							SendPapyrusEvent3<SInt32, std::uint32_t, std::uint32_t>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
 						};
 						_boneSphereEventRegs.ForEach(functor);
 					}
 				}
 			}
 
-			dist = static_cast<double>(vec3Len(lFinger->m_worldTransform.translate - offset));
+			dist = static_cast<double>(vec3Len(lFinger->world.translate - offset));
 
 			if (dist <= static_cast<double>(element.second->radius) - 0.1) {
 				if (!element.second->stickyLeft) {
 					element.second->stickyLeft = true;
 
 					SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Enter);
-					UInt32 handle = element.first;
-					UInt32 device = 2;
+					std::uint32_t handle = element.first;
+					std::uint32_t device = 2;
 					_curDevice = device;
 
-					if (!_boneSphereEventRegs.m_data.empty()) {
+					if (!_boneSphereEventRegs.data.empty()) {
 						auto functor = [&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
+							SendPapyrusEvent3<SInt32, std::uint32_t, std::uint32_t>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
 						};
 						_boneSphereEventRegs.ForEach(functor);
 					}
@@ -263,13 +263,13 @@ namespace frik {
 					element.second->stickyLeft = false;
 
 					SInt32 evt = static_cast<SInt32>(BoneSphereEvent::Exit);
-					UInt32 handle = element.first;
+					std::uint32_t handle = element.first;
 					_curDevice = 0;
 
-					if (!_boneSphereEventRegs.m_data.empty()) {
-						UInt32 device = 2;
+					if (!_boneSphereEventRegs.data.empty()) {
+						std::uint32_t device = 2;
 						auto functor = [&evt, &handle, &device](const EventRegistration<NullParameters>& reg) {
-							SendPapyrusEvent3<SInt32, UInt32, UInt32>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
+							SendPapyrusEvent3<SInt32, std::uint32_t, std::uint32_t>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
 						};
 						_boneSphereEventRegs.ForEach(functor);
 					}
@@ -280,35 +280,35 @@ namespace frik {
 
 	void BoneSpheresHandler::handleDebugBoneSpheres() {
 		for (const auto& val : _boneSphereRegisteredObjects | std::views::values) {
-			NiNode* bone = val->bone;
-			NiNode* sphere = val->debugSphere;
+			RE::NiNode* bone = val->bone;
+			RE::NiNode* sphere = val->debugSphere;
 
 			if (val->turnOnDebugSpheres && !val->debugSphere) {
 				sphere = vrui::getClonedNiNodeForNifFile("Data/Meshes/FRIK/1x1Sphere.nif");
 				if (sphere) {
-					sphere->m_name = BSFixedString("Sphere01");
+					sphere->name = RE::BSFixedString("Sphere01");
 
 					bone->AttachChild(sphere, true);
 					sphere->flags &= 0xfffffffffffffffe;
-					sphere->m_localTransform.scale = val->radius * 2;
+					sphere->local.scale = val->radius * 2;
 					val->debugSphere = sphere;
 				}
 			} else if (sphere && !val->turnOnDebugSpheres) {
 				sphere->flags |= 0x1;
-				sphere->m_localTransform.scale = 0;
+				sphere->local.scale = 0;
 			} else if (sphere && val->turnOnDebugSpheres) {
 				sphere->flags &= 0xfffffffffffffffe;
-				sphere->m_localTransform.scale = val->radius * 2;
+				sphere->local.scale = val->radius * 2;
 			}
 
 			if (sphere) {
 				RE::NiPoint3 offset;
 
-				offset = bone->m_worldTransform.rotate * val->offset;
-				offset = bone->m_worldTransform.translate + offset;
+				offset = bone->world.rotate * val->offset;
+				offset = bone->world.translate + offset;
 
 				// wp = parWp + parWr * lp =>   lp = (wp - parWp) * parWr'
-				sphere->m_localTransform.translate = bone->m_worldTransform.rotate.Transpose() * (offset - bone->m_worldTransform.translate);
+				sphere->local.translate = bone->world.rotate.Transpose() * (offset - bone->world.translate);
 			}
 		}
 	}

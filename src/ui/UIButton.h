@@ -8,7 +8,7 @@ namespace vrui {
 		explicit UIButton(const std::string& nifPath)
 			: UIButton(getClonedNiNodeForNifFile(nifPath)) {}
 
-		explicit UIButton(NiNode* node)
+		explicit UIButton(RE::NiNode* node)
 			: UIWidget(node) {
 			// TODO: replace with proper calculation of node size
 			_size = getButtonDefaultSize();

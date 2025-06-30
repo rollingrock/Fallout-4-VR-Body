@@ -9,8 +9,8 @@ namespace vrui {
 	static UISize getButtonDefaultSize() { return {2.2f, 2.2f}; }
 
 	f4vr::PlayerNodes* getPlayerNodes();
-	void setNodeVisibility(NiNode* node, bool visible, float originalScale);
-	NiNode* getClonedNiNodeForNifFile(const std::string& path);
-	NiNode* loadNifFromFile(const char* path);
-	NiNode* findNode(const char* nodeName, NiNode* node);
+	void setNodeVisibility(RE::NiNode* node, bool visible, float originalScale);
+	RE::NiNode* getClonedNiNodeForNifFile(const std::string& path);
+	RE::NiNode* loadNifFromFile(const char* path);
+	RE::NiNode* findNode(const char* nodeName, RE::NiNode* node);
 }

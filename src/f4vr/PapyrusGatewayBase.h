@@ -28,7 +28,7 @@ namespace f4vr {
 			// TODO: can I get the script handle without register function?
 			//
 			// common::logger::warn("Try stuff...");
-			// const auto quest = DYNAMIC_CAST(LookupFormByID(0xB4000F9B), TESForm, TESQuest);
+			// const auto quest = DYNAMIC_CAST(LookupFormByID(0xB4000F9B), RE::TESForm, TESQuest);
 			//
 			// common::logger::warn("Try stuff 2...");
 			// const auto policy = (*g_gameVM)->m_virtualMachine->GetHandlePolicy();
@@ -92,7 +92,7 @@ namespace f4vr {
 			arguments.PackArray(&packedArgs, vm);
 
 			common::logger::debug("Calling papyrus function '{}' on script '{}'", functionName, _scriptName.c_str());
-			const BSFixedString bsFunctionName = functionName;
+			const RE::BSFixedString bsFunctionName = functionName;
 			CallFunctionNoWait_Internal(vm, 0, ident, &bsFunctionName, &packedArgs);
 		}
 
