@@ -1,14 +1,7 @@
 #include "MatrixUtils.h"
 
-#include "CommonUtils.h"
-
-#include <chrono>
-#include <filesystem>
-#include <fstream>
 #include <numbers>
-#include <shlobj_core.h>
 
-#include "Logger.h"
 #include "Matrix.h"
 
 namespace common {
@@ -17,15 +10,15 @@ namespace common {
 	                         const float r7, const float r8, const float r9, const float scale) {
 		RE::NiTransform transform;
 		transform.translate = RE::NiPoint3(x, y, z);
-		transform.rotate.data[0][0] = r1;
-		transform.rotate.data[1][0] = r2;
-		transform.rotate.data[2][0] = r3;
-		transform.rotate.data[0][1] = r4;
-		transform.rotate.data[1][1] = r5;
-		transform.rotate.data[2][1] = r6;
-		transform.rotate.data[0][2] = r7;
-		transform.rotate.data[1][2] = r8;
-		transform.rotate.data[2][2] = r9;
+		transform.rotate.entry[0][0] = r1;
+		transform.rotate.entry[1][0] = r2;
+		transform.rotate.entry[2][0] = r3;
+		transform.rotate.entry[0][1] = r4;
+		transform.rotate.entry[1][1] = r5;
+		transform.rotate.entry[2][1] = r6;
+		transform.rotate.entry[0][2] = r7;
+		transform.rotate.entry[1][2] = r8;
+		transform.rotate.entry[2][2] = r9;
 		transform.scale = scale;
 		return transform;
 	}
@@ -114,28 +107,29 @@ namespace common {
 	}
 
 	// Gets a rotation matrix from an axis and an angle
-	NiMatrix43 getRotationAxisAngle(RE::NiPoint3 axis, const float theta) {
-		NiMatrix43 result;
+    RE::NiMatrix3 getRotationAxisAngle(RE::NiPoint3 axis, const float theta)
+    {
+        RE::NiMatrix3 result;
 		// This math was found online http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToMatrix/
 		const float c = cosf(theta);
 		const float s = sinf(theta);
 		const float t = 1.0f - c;
 		axis = vec3Norm(axis);
-		result.data[0][0] = c + axis.x * axis.x * t;
-		result.data[1][1] = c + axis.y * axis.y * t;
-		result.data[2][2] = c + axis.z * axis.z * t;
+		result.entry[0][0] = c + axis.x * axis.x * t;
+		result.entry[1][1] = c + axis.y * axis.y * t;
+		result.entry[2][2] = c + axis.z * axis.z * t;
 		float tmp1 = axis.x * axis.y * t;
 		float tmp2 = axis.z * s;
-		result.data[1][0] = tmp1 + tmp2;
-		result.data[0][1] = tmp1 - tmp2;
+		result.entry[1][0] = tmp1 + tmp2;
+		result.entry[0][1] = tmp1 - tmp2;
 		tmp1 = axis.x * axis.z * t;
 		tmp2 = axis.y * s;
-		result.data[2][0] = tmp1 - tmp2;
-		result.data[0][2] = tmp1 + tmp2;
+		result.entry[2][0] = tmp1 - tmp2;
+		result.entry[0][2] = tmp1 + tmp2;
 		tmp1 = axis.y * axis.z * t;
 		tmp2 = axis.x * s;
-		result.data[2][1] = tmp1 + tmp2;
-		result.data[1][2] = tmp1 - tmp2;
+		result.entry[2][1] = tmp1 + tmp2;
+		result.entry[1][2] = tmp1 - tmp2;
 		return result.Transpose();
 	}
 
@@ -165,7 +159,7 @@ namespace common {
 	}
 
 	/**
-	 * Check if the camera is looking at the object and the object is facing the camera
+	 * Check if the camera is looking at the object and the object facing the camera
 	 */
 	bool isCameraLookingAtObject(const RE::NiTransform& cameraTrans, const RE::NiTransform& objectTrans, const float detectThresh) {
 		// Get the position of the camera and the object

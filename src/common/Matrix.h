@@ -1,10 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <numbers>
 
-#include "CommonUtils.h"
-
-#define PI 3.14159265358979323846
+#include "MatrixUtils.h"
+#include "RE/Fallout.h"
 
 namespace common {
 	class Matrix44 {
@@ -17,7 +17,8 @@ namespace common {
 			}
 		}
 
-		explicit Matrix44(const NiMatrix43& other) {
+		explicit Matrix44(const RE::NiMatrix3& other)
+        {
 			for (auto& i : data) {
 				for (float& j : i) {
 					j = 0.0;
@@ -25,7 +26,7 @@ namespace common {
 			}
 			for (auto i = 0; i < 3; i++) {
 				for (auto j = 0; j < 3; j++) {
-					data[i][j] = other.data[i][j];
+					data[i][j] = other.entry[i][j];
 				}
 			}
 		}
@@ -62,10 +63,11 @@ namespace common {
 			data[3][2] = pt.z;
 		}
 
-		void makeTransformMatrix(const NiMatrix43& rot, const RE::NiPoint3 pos) {
+		void makeTransformMatrix(const RE::NiMatrix3& rot, const RE::NiPoint3 pos)
+        {
 			for (auto i = 0; i < 3; i++) {
 				for (auto j = 0; j < 3; j++) {
-					data[i][j] = rot.data[i][j];
+					data[i][j] = rot.entry[i][j];
 				}
 			}
 			data[0][3] = 0.0;
@@ -94,20 +96,18 @@ namespace common {
 			return ident;
 		}
 
-		static NiMatrix43 getIdentity43() {
-			NiMatrix43 ident;
-			ident.data[0][0] = 1.0;
-			ident.data[0][1] = 0.0;
-			ident.data[0][2] = 0.0;
-			ident.data[0][3] = 0.0;
-			ident.data[1][0] = 0.0;
-			ident.data[1][1] = 1.0;
-			ident.data[1][2] = 0.0;
-			ident.data[1][3] = 0.0;
-			ident.data[2][0] = 0.0;
-			ident.data[2][1] = 0.0;
-			ident.data[2][2] = 1.0;
-			ident.data[2][3] = 0.0;
+		static RE::NiMatrix3 getIdentity43()
+        {
+            RE::NiMatrix3 ident;
+			ident.entry[0][0] = 1.0;
+			ident.entry[0][1] = 0.0;
+			ident.entry[0][2] = 0.0;
+			ident.entry[1][0] = 0.0;
+			ident.entry[1][1] = 1.0;
+			ident.entry[1][2] = 0.0;
+			ident.entry[2][0] = 0.0;
+			ident.entry[2][1] = 0.0;
+			ident.entry[2][2] = 1.0;
 			return ident;
 		}
 
@@ -119,12 +119,12 @@ namespace common {
 					*roll = atan2(-data[1][0], data[0][0]);
 				} else {
 					*heading = -atan2(-data[0][1], data[1][1]);
-					*attitude = -PI / 2;
+                    *attitude = -std::numbers::pi_v<float> / 2;
 					*roll = 0.0;
 				}
 			} else {
 				*heading = atan2(data[0][1], data[1][1]);
-				*attitude = PI / 2;
+                *attitude = std::numbers::pi_v<float> / 2;
 				*roll = 0.0;
 			}
 		}
@@ -178,76 +178,72 @@ namespace common {
 			data[2][2] = rCos + crossP.z * crossP.z * (1.0f - rCos);
 		}
 
-		NiMatrix43 make43() const {
-			NiMatrix43 ret;
+		RE::NiMatrix3 make43() const
+        {
+            RE::NiMatrix3 ret;
 			for (auto i = 0; i < 3; i++) {
 				for (auto j = 0; j < 3; j++) {
-					ret.data[i][j] = this->data[i][j];
+					ret.entry[i][j] = this->data[i][j];
 				}
 			}
-			ret.data[0][3] = 0.0f;
-			ret.data[1][3] = 0.0f;
-			ret.data[2][3] = 0.0f;
 			return ret;
 		}
 
-		NiMatrix43 multiply43Left(const NiMatrix43& mat) const {
+		RE::NiMatrix3 multiply43Left(const RE::NiMatrix3& mat) const {
 			return mult(mat, this->make43());
 		}
 
-		NiMatrix43 multiply43Right(const NiMatrix43& mat) const {
+		RE::NiMatrix3 multiply43Right(const RE::NiMatrix3& mat) const {
 			return mult(this->make43(), mat);
 		}
 
 		static void matrixMultiply(const Matrix44* worldMat, const Matrix44* retMat, const Matrix44* localMat) {
 			// This uses the native transform function that the updateWorld call makes
 			using func_t = decltype(&matrixMultiply);
-			RelocAddr<func_t> func(0x1a8d60);
+			REL::Relocation<func_t> func(REL::ID(0x1a8d60));
 			return func(worldMat, retMat, localMat);
 		}
 
-		static NiMatrix43 mult(const NiMatrix43& left, const NiMatrix43& right) {
-			NiMatrix43 tmp;
+		static RE::NiMatrix3 mult(const RE::NiMatrix3& left, const RE::NiMatrix3& right)
+        {
+            RE::NiMatrix3 tmp;
 			// shamelessly taken from SKSE
-			tmp.data[0][0] =
-				right.data[0][0] * left.data[0][0] +
-				right.data[0][1] * left.data[1][0] +
-				right.data[0][2] * left.data[2][0];
-			tmp.data[1][0] =
-				right.data[1][0] * left.data[0][0] +
-				right.data[1][1] * left.data[1][0] +
-				right.data[1][2] * left.data[2][0];
-			tmp.data[2][0] =
-				right.data[2][0] * left.data[0][0] +
-				right.data[2][1] * left.data[1][0] +
-				right.data[2][2] * left.data[2][0];
-			tmp.data[0][1] =
-				right.data[0][0] * left.data[0][1] +
-				right.data[0][1] * left.data[1][1] +
-				right.data[0][2] * left.data[2][1];
-			tmp.data[1][1] =
-				right.data[1][0] * left.data[0][1] +
-				right.data[1][1] * left.data[1][1] +
-				right.data[1][2] * left.data[2][1];
-			tmp.data[2][1] =
-				right.data[2][0] * left.data[0][1] +
-				right.data[2][1] * left.data[1][1] +
-				right.data[2][2] * left.data[2][1];
-			tmp.data[0][2] =
-				right.data[0][0] * left.data[0][2] +
-				right.data[0][1] * left.data[1][2] +
-				right.data[0][2] * left.data[2][2];
-			tmp.data[1][2] =
-				right.data[1][0] * left.data[0][2] +
-				right.data[1][1] * left.data[1][2] +
-				right.data[1][2] * left.data[2][2];
-			tmp.data[2][2] =
-				right.data[2][0] * left.data[0][2] +
-				right.data[2][1] * left.data[1][2] +
-				right.data[2][2] * left.data[2][2];
-			tmp.data[0][3] = 0.0f;
-			tmp.data[1][3] = 0.0f;
-			tmp.data[2][3] = 0.0f;
+			tmp.entry[0][0] =
+				right.entry[0][0] * left.entry[0][0] +
+				right.entry[0][1] * left.entry[1][0] +
+				right.entry[0][2] * left.entry[2][0];
+			tmp.entry[1][0] =
+				right.entry[1][0] * left.entry[0][0] +
+				right.entry[1][1] * left.entry[1][0] +
+				right.entry[1][2] * left.entry[2][0];
+			tmp.entry[2][0] =
+				right.entry[2][0] * left.entry[0][0] +
+				right.entry[2][1] * left.entry[1][0] +
+				right.entry[2][2] * left.entry[2][0];
+			tmp.entry[0][1] =
+				right.entry[0][0] * left.entry[0][1] +
+				right.entry[0][1] * left.entry[1][1] +
+				right.entry[0][2] * left.entry[2][1];
+			tmp.entry[1][1] =
+				right.entry[1][0] * left.entry[0][1] +
+				right.entry[1][1] * left.entry[1][1] +
+				right.entry[1][2] * left.entry[2][1];
+			tmp.entry[2][1] =
+				right.entry[2][0] * left.entry[0][1] +
+				right.entry[2][1] * left.entry[1][1] +
+				right.entry[2][2] * left.entry[2][1];
+			tmp.entry[0][2] =
+				right.entry[0][0] * left.entry[0][2] +
+				right.entry[0][1] * left.entry[1][2] +
+				right.entry[0][2] * left.entry[2][2];
+			tmp.entry[1][2] =
+				right.entry[1][0] * left.entry[0][2] +
+				right.entry[1][1] * left.entry[1][2] +
+				right.entry[1][2] * left.entry[2][2];
+			tmp.entry[2][2] =
+				right.entry[2][0] * left.entry[0][2] +
+				right.entry[2][1] * left.entry[1][2] +
+				right.entry[2][2] * left.entry[2][2];
 			return tmp;
 		}
 	};
@@ -357,17 +353,17 @@ namespace common {
 			return mat;
 		}
 
-		void fromRot(const NiMatrix43& rot) {
+		void fromRot(const RE::NiMatrix3& rot) {
 			Quaternion q;
-			q.w = sqrtf((std::max)(0.0f, 1 + rot.data[0][0] + rot.data[1][1] + rot.data[2][2])) / 2;
-			q.x = sqrtf((std::max)(0.0f, 1 + rot.data[0][0] - rot.data[1][1] - rot.data[2][2])) / 2;
-			q.y = sqrtf((std::max)(0.0f, 1 - rot.data[0][0] + rot.data[1][1] - rot.data[2][2])) / 2;
-			q.z = sqrtf((std::max)(0.0f, 1 - rot.data[0][0] - rot.data[1][1] + rot.data[2][2])) / 2;
+			q.w = sqrtf(std::max<float>(0.0f, 1 + rot.entry[0][0] + rot.entry[1][1] + rot.entry[2][2])) / 2;
+			q.x = sqrtf(std::max<float>(0.0f, 1 + rot.entry[0][0] - rot.entry[1][1] - rot.entry[2][2])) / 2;
+			q.y = sqrtf(std::max<float>(0.0f, 1 - rot.entry[0][0] + rot.entry[1][1] - rot.entry[2][2])) / 2;
+			q.z = sqrtf(std::max<float>(0.0f, 1 - rot.entry[0][0] - rot.entry[1][1] + rot.entry[2][2])) / 2;
 
 			w = q.w;
-			x = _copysign(q.x, rot.data[2][1] - rot.data[1][2]);
-			y = _copysign(q.y, rot.data[0][2] - rot.data[2][0]);
-			z = _copysign(q.z, rot.data[1][0] - rot.data[0][1]);
+			x = _copysign(q.x, rot.entry[2][1] - rot.entry[1][2]);
+			y = _copysign(q.y, rot.entry[0][2] - rot.entry[2][0]);
+			z = _copysign(q.z, rot.entry[1][0] - rot.entry[0][1]);
 		}
 
 		// slerp function adapted from VRIK - credit prog for math
@@ -376,7 +372,7 @@ namespace common {
 			const Quaternion save = this->get();
 
 			double dotp = this->dot(target);
-
+                
 			if (dotp < 0.0f) {
 				w = -w;
 				x = -x;
@@ -420,7 +416,7 @@ namespace common {
 				if (vec3Len(cross) < 0.00000001) {
 					cross = vec3Norm(vec3Cross(RE::NiPoint3(1, 0, 0), v1));
 				}
-				this->setAngleAxis(std::numbers::pi_v<float>, cross);
+                this->setAngleAxis(std::numbers::pi_v<float>, cross);
 				this->normalize();
 				return;
 			}

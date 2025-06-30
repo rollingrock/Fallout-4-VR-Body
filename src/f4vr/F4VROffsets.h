@@ -46,8 +46,8 @@ namespace f4vr {
 
 	inline RelocAddr<uint64_t> RE::EquippedWeaponData_vfunc(0x2d7fcf8);
 
-	using _RE::NiNode_UpdateWorldBound = void(*)(RE::NiNode* node);
-	inline RelocAddr<_RE::NiNode_UpdateWorldBound> RE::NiNode_UpdateWorldBound(0x1c18ab0);
+	using _NiNode_UpdateWorldBound = void(*)(RE::NiNode* node);
+	inline RelocAddr<_NiNode_UpdateWorldBound> RE::NiNode_UpdateWorldBound(0x1c18ab0);
 
 	using _AIProcess_Set2DUpdateFlags = void(*)(Actor::MiddleProcess* proc, uint64_t flags);
 	inline RelocAddr<_AIProcess_Set2DUpdateFlags> AIProcess_Set3DUpdateFlags(0x0);
@@ -65,11 +65,11 @@ namespace f4vr {
 	inline RelocAddr<_Actor_CanThrow> Actor_CanThrow(0xe52050);
 	inline RelocAddr<uint32_t> g_equipIndex(0x3706d2c);
 
-	using _IAnimationGraphManagerHolder_NotifyAnimationGraph = void(*)(IAnimationGraphManagerHolder* a_holder, const RE::BSFixedString& event);
+	using _IAnimationGraphManagerHolder_NotifyAnimationGraph = void(*)(RE::IAnimationGraphManagerHolder* a_holder, const RE::BSFixedString& event);
 	inline RelocAddr<_IAnimationGraphManagerHolder_NotifyAnimationGraph> IAnimationGraphManagerHolder_NotifyAnimationGraph(0x80e7f0);
 
-	using _TESObjectREFR_UpdateAnimation = void(*)(TESObjectREFR* obj, float a_delta);
-	inline RelocAddr<_TESObjectREFR_UpdateAnimation> TESObjectREFR_UpdateAnimation(0x419b50);
+	using _TESObjectREFR_UpdateAnimation = void(*)(RE::RE::TESObjectREFR* obj, float a_delta);
+	inline RelocAddr<_TESObjectREFR_UpdateAnimation> RE::TESObjectREFR_UpdateAnimation(0x419b50);
 
 	inline RelocPtr<RE::NiNode*> worldRootCamera1(0x6885c80);
 
@@ -85,20 +85,20 @@ namespace f4vr {
 	using _addNode = RE::NiNode * (*)(uint64_t attachNode, const RE::NiAVObject* node);
 	inline RelocAddr<_addNode> addNode(0xada20);
 
-	using _RE::BSFadeNode_UpdateGeomArray = void* (*)(RE::NiNode* node, int somevar);
-	inline RelocAddr<_RE::BSFadeNode_UpdateGeomArray> RE::BSFadeNode_UpdateGeomArray(0x27a9690);
+	using _BSFadeNode_UpdateGeomArray = void* (*)(RE::NiNode* node, int somevar);
+	inline RelocAddr<_BSFadeNode_UpdateGeomArray> RE::BSFadeNode_UpdateGeomArray(0x27a9690);
 
-	using _RE::BSFadeNode_UpdateDownwardPass = void* (*)(RE::NiNode* node, RE::NiAVObject::NiUpdateData* updateData, int somevar);
-	inline RelocAddr<_RE::BSFadeNode_UpdateDownwardPass> RE::BSFadeNode_UpdateDownwardPass(0x27a8db0);
+	using _BSFadeNode_UpdateDownwardPass = void* (*)(RE::NiNode* node, RE::NiAVObject::NiUpdateData* updateData, int somevar);
+	inline RelocAddr<_BSFadeNode_UpdateDownwardPass> RE::BSFadeNode_UpdateDownwardPass(0x27a8db0);
 
-	using _RE::BSFadeNode_MergeWorldBounds = void* (*)(RE::NiNode* node);
-	inline RelocAddr<_RE::BSFadeNode_MergeWorldBounds> RE::BSFadeNode_MergeWorldBounds(0x27a9930);
+	using _BSFadeNode_MergeWorldBounds = void* (*)(RE::NiNode* node);
+	inline RelocAddr<_BSFadeNode_MergeWorldBounds> RE::BSFadeNode_MergeWorldBounds(0x27a9930);
 
-	using _RE::NiNode_UpdateTransformsAndBounds = void* (*)(RE::NiNode* node, RE::NiAVObject::NiUpdateData* updateData);
-	inline RelocAddr<_RE::NiNode_UpdateTransformsAndBounds> RE::NiNode_UpdateTransformsAndBounds(0x1c18ce0);
+	using _NiNode_UpdateTransformsAndBounds = void* (*)(RE::NiNode* node, RE::NiAVObject::NiUpdateData* updateData);
+	inline RelocAddr<_NiNode_UpdateTransformsAndBounds> RE::NiNode_UpdateTransformsAndBounds(0x1c18ce0);
 
-	using _RE::NiNode_UpdateDownwardPass = void* (*)(RE::NiNode* node, RE::NiAVObject::NiUpdateData* updateData, uint64_t unk, int somevar);
-	inline RelocAddr<_RE::NiNode_UpdateDownwardPass> RE::NiNode_UpdateDownwardPass(0x1c18620);
+	using _NiNode_UpdateDownwardPass = void* (*)(RE::NiNode* node, RE::NiAVObject::NiUpdateData* updateData, uint64_t unk, int somevar);
+	inline RelocAddr<_NiNode_UpdateDownwardPass> RE::NiNode_UpdateDownwardPass(0x1c18620);
 
 	using _BSGraphics_Utility_CalcBoneMatrices = void* (*)(RE::BSSubIndexTriShape* node, uint64_t counter);
 	inline RelocAddr<_BSGraphics_Utility_CalcBoneMatrices> BSGraphics_Utility_CalcBoneMatrices(0x1dabc60);
@@ -115,7 +115,7 @@ namespace f4vr {
 	using _PowerArmor_ActorInPowerArmor = bool(*)(RE::Actor* a_actor);
 	inline RelocAddr<_PowerArmor_ActorInPowerArmor> PowerArmor_ActorInPowerArmor(0x9bf5d0);
 
-	using _PowerArmor_SwitchToPowerArmor = bool(*)(RE::Actor* a_actor, RE::TESObjectREFR* a_refr, uint64_t a_char);
+	using _PowerArmor_SwitchToPowerArmor = bool(*)(RE::Actor* a_actor, RE::RE::TESObjectREFR* a_refr, uint64_t a_char);
 	inline RelocAddr<_PowerArmor_SwitchToPowerArmor> PowerArmor_SwitchToPowerArmor(0x9bfbc0);
 
 	using _AIProcess_Update3DModel = void(*)(Actor::MiddleProcess* proc, RE::Actor* a_actor, uint64_t flags, uint64_t someNum);
@@ -128,13 +128,13 @@ namespace f4vr {
 	inline RelocAddr<std::uint64_t*> cloneAddr1(0x36ff560);
 	inline RelocAddr<std::uint64_t*> cloneAddr2(0x36ff564);
 
-	using _TESObjectREFR_GetWorldSpace = TESWorldSpace * (*)(TESObjectREFR* a_refr);
-	inline RelocAddr<_TESObjectREFR_GetWorldSpace> TESObjectREFR_GetWorldSpace(0x3f75a0);
+	using _TESObjectREFR_GetWorldSpace = RE::TESWorldSpace * (*)(RE::RE::TESObjectREFR* a_refr);
+	inline RelocAddr<_TESObjectREFR_GetWorldSpace> RE::TESObjectREFR_GetWorldSpace(0x3f75a0);
 
 	using _TESDataHandler_CreateReferenceAtLocation = void* (*)(DataHandler* dataHandler, void* newRefr, f4vr::NEW_REFR_DATA* refrData);
 	inline RelocAddr<_TESDataHandler_CreateReferenceAtLocation> TESDataHandler_CreateReferenceAtLocation(0x11bd80);
 
-	using _Actor_GetCurrentWeapon = TESObjectWEAP * (*)(RE::Actor* a_actor, TESObjectWEAP* weap, f4vr::BGSEquipIndex idx);
+	using _Actor_GetCurrentWeapon = RE::TESObjectWEAP * (*)(RE::Actor* a_actor, RE::TESObjectWEAP* weap, f4vr::BGSEquipIndex idx);
 	inline RelocAddr<_Actor_GetCurrentWeapon> Actor_GetCurrentWeapon(0xe50da0);
 
 	using _Actor_GetCurrentAmmo = TESAmmo * (*)(RE::Actor* a_actor, f4vr::BGSEquipIndex idx);
@@ -143,29 +143,29 @@ namespace f4vr {
 	using _Actor_GetWeaponEquipIndex = void(*)(RE::Actor* a_actor, f4vr::BGSEquipIndex* idx, f4vr::BGSObjectInstance* instance);
 	inline RelocAddr<_Actor_GetWeaponEquipIndex> Actor_GetWeaponEquipIndex(0xe50e70);
 
-	using _TESObjectREFR_Set3D = void(*)(TESObjectREFR* a_refr, RE::NiAVObject* a_obj, bool unk);
-	inline RelocAddr<_TESObjectREFR_Set3D> TESObjectREFR_Set3D(0x3ece40);
+	using _TESObjectREFR_Set3D = void(*)(RE::TESObjectREFR* a_refr, RE::NiAVObject* a_obj, bool unk);
+	inline RelocAddr<_TESObjectREFR_Set3D> RE::TESObjectREFR_Set3D(0x3ece40);
 
-	using _TESObjectREFR_Set3DSimple = void(*)(TESObjectREFR* a_refr, RE::NiAVObject* a_obj, bool unk);
-	inline RelocAddr<_TESObjectREFR_Set3DSimple> TESObjectREFR_Set3DSimple(0x3edb20);
+	using _TESObjectREFR_Set3DSimple = void(*)(RE::TESObjectREFR* a_refr, RE::NiAVObject* a_obj, bool unk);
+	inline RelocAddr<_TESObjectREFR_Set3DSimple> RE::TESObjectREFR_Set3DSimple(0x3edb20);
 
-	using _TESObjectREFR_DropAddon3DReplacement = void(*)(TESObjectREFR* a_refr, RE::NiAVObject* a_obj);
-	inline RelocAddr<_TESObjectREFR_DropAddon3DReplacement> TESObjectREFR_DropAddon3DReplacement(0x3e9c70);
+	using _TESObjectREFR_DropAddon3DReplacement = void(*)(RE::TESObjectREFR* a_refr, RE::NiAVObject* a_obj);
+	inline RelocAddr<_TESObjectREFR_DropAddon3DReplacement> RE::TESObjectREFR_DropAddon3DReplacement(0x3e9c70);
 
 	using _BSPointerHandleManagerInterface_GetSmartPointer = void(*)(void* a_handle, void* a_refr);
 	inline RelocAddr<_BSPointerHandleManagerInterface_GetSmartPointer> BSPointerHandleManagerInterface_GetSmartPointer(0xab60);
 
-	using _TESObjectCell_AttachReference3D = void(*)(TESObjectCELL* a_cell, TESObjectREFR* a_refr, bool somebool, bool somebool2);
+	using _TESObjectCell_AttachReference3D = void(*)(TESObjectCELL* a_cell, RE::TESObjectREFR* a_refr, bool somebool, bool somebool2);
 	inline RelocAddr<_TESObjectCell_AttachReference3D> TESObjectCell_AttachReference3D(0x3c8310);
 
-	using _TESObjectREFR_AttachToParentRef3D = void(*)(TESObjectREFR* a_refr);
-	inline RelocAddr<_TESObjectREFR_AttachToParentRef3D> TESObjectREFR_AttachToParentRef3D(0x46b380);
+	using _TESObjectREFR_AttachToParentRef3D = void(*)(RE::TESObjectREFR* a_refr);
+	inline RelocAddr<_TESObjectREFR_AttachToParentRef3D> RE::TESObjectREFR_AttachToParentRef3D(0x46b380);
 
-	using _TESObjectREFR_AttachAllChildRef3D = void(*)(TESObjectREFR* a_refr);
-	inline RelocAddr<_TESObjectREFR_AttachAllChildRef3D> TESObjectREFR_AttachAllChildRef3D(0x46b8d0);
+	using _TESObjectREFR_AttachAllChildRef3D = void(*)(RE::TESObjectREFR* a_refr);
+	inline RelocAddr<_TESObjectREFR_AttachAllChildRef3D> RE::TESObjectREFR_AttachAllChildRef3D(0x46b8d0);
 
-	using _TESObjectREFR_InitHavokForCollisionObject = void(*)(RE::TESObjectREFR* a_refr);
-	inline RelocAddr<_TESObjectREFR_InitHavokForCollisionObject> TESObjectREFR_InitHavokForCollisionObject(0x3eee60);
+	using _TESObjectREFR_InitHavokForCollisionObject = void(*)(RE::RE::TESObjectREFR* a_refr);
+	inline RelocAddr<_TESObjectREFR_InitHavokForCollisionObject> RE::TESObjectREFR_InitHavokForCollisionObject(0x3eee60);
 
 	using _bhkUtilFunctions_MoveFirstCollisionObjectToRoot = void(*)(RE::NiAVObject* root, RE::NiAVObject* child);
 	inline RelocAddr<_bhkUtilFunctions_MoveFirstCollisionObjectToRoot> bhkUtilFunctions_MoveFirstCollisionObjectToRoot(0x1e17050);
@@ -194,17 +194,17 @@ namespace f4vr {
 	using _Actor_SetCurrentAmmoCount = float(*)(RE::Actor* a_actor, f4vr::BGSEquipIndex a_idx, int a_count);
 	inline RelocAddr<_Actor_SetCurrentAmmoCount> Actor_SetCurrentAmmoCount(0xddf790);
 
-	using _RE::ExtraDataList_setAmmoCount = void(*)(RE::ExtraDataList* a_list, int a_count);
-	inline RelocAddr<_RE::ExtraDataList_setAmmoCount> RE::ExtraDataList_setAmmoCount(0x980d0);
+	using _ExtraDataList_setAmmoCount = void(*)(RE::ExtraDataList* a_list, int a_count);
+	inline RelocAddr<_ExtraDataList_setAmmoCount> RE::ExtraDataList_setAmmoCount(0x980d0);
 
-	using _RE::ExtraDataList_setCount = void(*)(RE::ExtraDataList* a_list, int a_count);
-	inline RelocAddr<_RE::ExtraDataList_setCount> RE::ExtraDataList_setCount(0x88fe0);
+	using _ExtraDataList_setCount = void(*)(RE::ExtraDataList* a_list, int a_count);
+	inline RelocAddr<_ExtraDataList_setCount> RE::ExtraDataList_setCount(0x88fe0);
 
-	using _RE::ExtraDataList_RE::ExtraDataList = void(*)(RE::ExtraDataList* a_list);
-	inline RelocAddr<_RE::ExtraDataList_RE::ExtraDataList> RE::ExtraDataList_RE::ExtraDataList(0x81360);
+	using _ExtraDataListExtraDataList = void(*)(RE::ExtraDataList* a_list);
+	inline RelocAddr<_ExtraDataListExtraDataList> RE::ExtraDataListExtraDataList(0x81360);
 
-	using _RE::ExtraDataListSetPersistentCell = void(*)(RE::ExtraDataList* a_list, int a_int);
-	inline RelocAddr<_RE::ExtraDataListSetPersistentCell> RE::ExtraDataListSetPersistentCell(0x87bc0);
+	using _ExtraDataListSetPersistentCell = void(*)(RE::ExtraDataList* a_list, int a_int);
+	inline RelocAddr<_ExtraDataListSetPersistentCell> RE::ExtraDataListSetPersistentCell(0x87bc0);
 
 	using _MemoryManager_Allocate = void* (*)(Heap* manager, uint64_t size, uint32_t someint, bool somebool);
 	inline RelocAddr<_MemoryManager_Allocate> MemoryManager_Allocate(0x1b91950);

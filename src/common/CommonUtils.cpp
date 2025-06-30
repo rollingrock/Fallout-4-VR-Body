@@ -6,6 +6,7 @@
 #include <shlobj_core.h>
 
 #include "Logger.h"
+#include "Version.h"
 
 namespace common
 {
@@ -51,7 +52,7 @@ namespace common
         return ltrim(rtrim(s));
     }
 
-    float vec3Len(const RE::RE::NiPoint3& v1)
+    float vec3Len(const RE::NiPoint3& v1)
     {
         return sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
     }
