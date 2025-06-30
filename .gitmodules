@@ -1,0 +1,4 @@
+[submodule "external/CommonLibF4"]
+	path = external/CommonLibF4
+	url = https://github.com/rollingrock/CommonLibF4.git
+

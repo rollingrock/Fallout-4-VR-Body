@@ -1,0 +1,6 @@
+#include <windows.h>
+
+// Embed the INI file as RCDATA resource
+#define IDR_CONFIG_INI 101
+
+IDR_CONFIG_INI RCDATA "@ROOT_DIR@/data/config/FRIK.ini"
