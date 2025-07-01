@@ -1,5 +1,6 @@
 #pragma once
 
-namespace patches {
-	void patchAll();
+namespace patches
+{
+    void patchAll();
 }

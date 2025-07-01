@@ -317,7 +317,7 @@ namespace common
         /**
          * Load the given json object with offset data into an offset map.
          */
-        static void loadOffsetJsonToMap(const ::json& json, std::unordered_map<std::string, RE::NiTransform>& offsetsMap)
+        static void loadOffsetJsonToMap(const json& json, std::unordered_map<std::string, RE::NiTransform>& offsetsMap)
         {
             for (auto& [key, value] : json.items()) {
                 RE::NiTransform data;

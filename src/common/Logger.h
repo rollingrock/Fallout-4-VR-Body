@@ -55,8 +55,9 @@ namespace common::logger::internal
         const std::string_view key(fmtView.data(), fmtView.size());
 
         const auto now = std::chrono::steady_clock::now();
-        if (_sampleMessagesTtl.contains(key) && now - _sampleMessagesTtl[key] <= std::chrono::milliseconds(time))
+        if (_sampleMessagesTtl.contains(key) && now - _sampleMessagesTtl[key] <= std::chrono::milliseconds(time)) {
             return;
+        }
 
         _sampleMessagesTtl[key] = now;
         std::string formatted = fmt::format(fmt, std::forward<Args>(args)...);
@@ -122,8 +123,9 @@ namespace common::logger
      */
     inline void setLogLevel(int logLevel)
     {
-        if (internal::_logLevel == logLevel)
+        if (internal::_logLevel == logLevel) {
             return;
+        }
 
         info("Set log level = {}", logLevel);
         internal::_logLevel = logLevel;

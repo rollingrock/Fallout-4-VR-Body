@@ -85,169 +85,184 @@ using _AIProcess_Set3DUpdateFlags = void(*)(Actor::MiddleProcess* rcx, int rdx);
 RelocAddr<_AIProcess_Set3DUpdateFlags> AIProcess_Set3DUpdateFlags(0xec8ce0);
 
 // Gun Reload Init
-uint64_t gunReloadInit(const uint64_t rcx, const uint64_t rdx, const uint64_t r8) {
-	// frik::g_gunReloadSystem->startAnimationCapture();
-	return Actor_GetCurrentWeapon(rcx, rdx, r8);
+uint64_t gunReloadInit(const uint64_t rcx, const uint64_t rdx, const uint64_t r8)
+{
+    // frik::g_gunReloadSystem->startAnimationCapture();
+    return Actor_GetCurrentWeapon(rcx, rdx, r8);
 }
 
-uint64_t updatePlayerAnimationHook(const uint64_t rcx, float* rdx) {
-	if (frik::g_animDeltaTime >= 0.0f) {
-		rdx[0] = frik::g_animDeltaTime;
-	}
-	return TESObjectREFR_SetupAnimationUpdateDataForRefernce(rcx, rdx);
+uint64_t updatePlayerAnimationHook(const uint64_t rcx, float* rdx)
+{
+    if (frik::g_animDeltaTime >= 0.0f) {
+        rdx[0] = frik::g_animDeltaTime;
+    }
+    return TESObjectREFR_SetupAnimationUpdateDataForRefernce(rcx, rdx);
 }
 
 // fix powerarmor 3d mesh hooks
 
-void fixPA3D() {
-	Actor_ReEquipAll(*g_player);
-	AIProcess_Set3DUpdateFlags((*g_player)->middleProcess, 0x520);
+void fixPA3D()
+{
+    Actor_ReEquipAll(*g_player);
+    AIProcess_Set3DUpdateFlags((*g_player)->middleProcess, 0x520);
 }
 
-void fixPA3DEnter(const std::uint64_t rcx, const std::uint64_t rdx) {
-	ExtraData_SetMultiBoundRef(rcx, rdx);
-	AIProcess_Set3DUpdateFlags((*g_player)->middleProcess, 0x520);
+void fixPA3DEnter(const std::uint64_t rcx, const std::uint64_t rdx)
+{
+    ExtraData_SetMultiBoundRef(rcx, rdx);
+    AIProcess_Set3DUpdateFlags((*g_player)->middleProcess, 0x520);
 }
 
 // renderer stuff
 
-void RendererEnable(const std::uint64_t a_ptr, const bool a_bool) {
-	using func_t = decltype(&RendererEnable);
-	RelocAddr<func_t> func(0x0b00150);
-	return func(a_ptr, a_bool);
+void RendererEnable(const std::uint64_t a_ptr, const bool a_bool)
+{
+    using func_t = decltype(&RendererEnable);
+    RelocAddr<func_t> func(0x0b00150);
+    return func(a_ptr, a_bool);
 }
 
-std::uint64_t RendererGetByName(const RE::BSFixedString& a_name) {
-	using func_t = decltype(&RendererGetByName);
-	RelocAddr<func_t> func(0x0b00270);
-	return func(a_name);
+std::uint64_t RendererGetByName(const RE::BSFixedString& a_name)
+{
+    using func_t = decltype(&RendererGetByName);
+    RelocAddr<func_t> func(0x0b00270);
+    return func(a_name);
 }
 
 RelocAddr<uint64_t> wandMesh(0x2d686d8);
 
-void hookIt(const uint64_t rcx) {
-	const uint64_t parm = rcx;
-	frik::g_frik.onFrameUpdate();
-	//hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.
+void hookIt(const uint64_t rcx)
+{
+    const uint64_t parm = rcx;
+    frik::g_frik.onFrameUpdate();
+    //hookedf10ed0((uint64_t)(*g_player));    // this function does the final body updates and does some stuff with the world bound to reporting up the parent tree.
 
-	// so all of this below is an attempt to bypass the functionality in game around my hook at resets the root parent node's world pos which screws up armor
-	// we still need to call the function i hooked below to get some things ready for the renderer however starting with the named "Root" node instead of it's parent preseves locations
-	if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-		if ((*g_player)->unkF0->rootNode->children.m_emptyRunStart > 0) {
-			if ((*g_player)->unkF0->rootNode->children.data[0]) {
-				uint64_t arr[5] = {0, 0, 0, 0, 0};
-				const uint64_t body = (uint64_t)(*g_player)->unkF0->rootNode->children.data[0];
-				arr[1] = body + 0x180;
-				arr[2] = 0x800;
-				arr[3] = 2;
-				arr[4] = 0x3c0c1400;
-				hooked1c22fb0(body, (uint64_t)&arr);
-			}
-		}
-	}
+    // so all of this below is an attempt to bypass the functionality in game around my hook at resets the root parent node's world pos which screws up armor
+    // we still need to call the function i hooked below to get some things ready for the renderer however starting with the named "Root" node instead of it's parent preseves locations
+    if ((*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
+        if ((*g_player)->unkF0->rootNode->children.m_emptyRunStart > 0) {
+            if ((*g_player)->unkF0->rootNode->children.data[0]) {
+                uint64_t arr[5] = { 0, 0, 0, 0, 0 };
+                const uint64_t body = (uint64_t)(*g_player)->unkF0->rootNode->children.data[0];
+                arr[1] = body + 0x180;
+                arr[2] = 0x800;
+                arr[3] = 2;
+                arr[4] = 0x3c0c1400;
+                hooked1c22fb0(body, (uint64_t)&arr);
+            }
+        }
+    }
 
-	hookedda09a0(parm);
+    hookedda09a0(parm);
 }
 
-void hook2(const uint64_t rcx, const uint64_t rdx, const uint64_t r8, const uint64_t r9) {
-	frik::g_frik.onFrameUpdate();
+void hook2(const uint64_t rcx, const uint64_t rdx, const uint64_t r8, const uint64_t r9)
+{
+    frik::g_frik.onFrameUpdate();
 
-	hookedMainDrawCandidateFunc(rcx, rdx, r8, r9);
+    hookedMainDrawCandidateFunc(rcx, rdx, r8, r9);
 
-	const RE::BSFixedString name("ScopeMenu");
+    const RE::BSFixedString name("ScopeMenu");
 
-	const std::uint64_t renderer = RendererGetByName(name);
+    const std::uint64_t renderer = RendererGetByName(name);
 
-	if (renderer) {
-		//		RendererEnable(renderer, false);
-	}
+    if (renderer) {
+        //		RendererEnable(renderer, false);
+    }
 }
 
-void hook5(const uint64_t rcx) {
-	frik::g_frik.onFrameUpdate();
+void hook5(const uint64_t rcx)
+{
+    frik::g_frik.onFrameUpdate();
 
-	someRandomFunc(rcx);
+    someRandomFunc(rcx);
 
-	const RE::BSFixedString name("ScopeMenu");
+    const RE::BSFixedString name("ScopeMenu");
 
-	const std::uint64_t renderer = RendererGetByName(name);
+    const std::uint64_t renderer = RendererGetByName(name);
 
-	if (renderer) {
-		//		RendererEnable(renderer, false);
-	}
+    if (renderer) {
+        //		RendererEnable(renderer, false);
+    }
 }
 
-void hook3(const double param1, const double param2, const double param3) {
-	hookedPosPlayerFunc(param1, param2, param3);
-	frik::g_frik.onFrameUpdate();
+void hook3(const double param1, const double param2, const double param3)
+{
+    hookedPosPlayerFunc(param1, param2, param3);
+    frik::g_frik.onFrameUpdate();
 }
 
-void hook4() {
-	frik::g_frik.onFrameUpdate();
-	hookMultiBoundCullingFunc();
+void hook4()
+{
+    frik::g_frik.onFrameUpdate();
+    hookMultiBoundCullingFunc();
 }
 
-void hookSmoothMovement(const uint64_t rcx) {
-	frik::g_frik.smoothMovement();
-	smoothMovementHook(rcx);
+void hookSmoothMovement(const uint64_t rcx)
+{
+    frik::g_frik.smoothMovement();
+    smoothMovementHook(rcx);
 }
 
-void hook_main_update_player(const uint64_t rcx, const uint64_t rdx) {
-	if (*g_player && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
-		RE::NiNode* body = (*g_player)->unkF0->rootNode->GetAsRE::NiNode();
-		body->local.translate.x = (*g_playerCamera)->cameraNode->world.translate.x;
-		body->local.translate.y = (*g_playerCamera)->cameraNode->world.translate.y;
-		body->world.translate.x = (*g_playerCamera)->cameraNode->world.translate.x;
-		body->world.translate.y = (*g_playerCamera)->cameraNode->world.translate.y;
+void hook_main_update_player(const uint64_t rcx, const uint64_t rdx)
+{
+    if (*g_player && (*g_player)->unkF0 && (*g_player)->unkF0->rootNode) {
+        RE::NiNode* body = (*g_player)->unkF0->rootNode->GetAsRE::NiNode();
+        body->local.translate.x = (*g_playerCamera)->cameraNode->world.translate.x;
+        body->local.translate.y = (*g_playerCamera)->cameraNode->world.translate.y;
+        body->world.translate.x = (*g_playerCamera)->cameraNode->world.translate.x;
+        body->world.translate.y = (*g_playerCamera)->cameraNode->world.translate.y;
 
-		//static RE::BSFixedString pwn("PlayerWorldNode");
-		//RE::NiNode* pwn_node = (*g_player)->unkF0->rootNode->parent->GetObjectByName(&pwn)->GetAsRE::NiNode();
-		//body->local.translate.z += pwn_node->local.translate.z;
-		//body->world.translate.z += pwn_node->local.translate.z;
-	}
+        //static RE::BSFixedString pwn("PlayerWorldNode");
+        //RE::NiNode* pwn_node = (*g_player)->unkF0->rootNode->parent->GetObjectByName(&pwn)->GetAsRE::NiNode();
+        //body->local.translate.z += pwn_node->local.translate.z;
+        //body->world.translate.z += pwn_node->local.translate.z;
+    }
 
-	main_update_player(rcx, rdx);
+    main_update_player(rcx, rdx);
 }
 
-void updateCounter() {
-	//g_mainLoopCounter++;
-	//hookedMainLoop();
+void updateCounter()
+{
+    //g_mainLoopCounter++;
+    //hookedMainLoop();
 }
 
-void hookMain() {
-	//logger::info("Hooking before main renderer");
-	//	g_branchTrampoline.Write5Call(hookBeforeRenderer.GetUIntPtr(), (uintptr_t)hookIt);
-	//logger::info("Successfully hooked before main renderer");
+void hookMain()
+{
+    //logger::info("Hooking before main renderer");
+    //	g_branchTrampoline.Write5Call(hookBeforeRenderer.GetUIntPtr(), (uintptr_t)hookIt);
+    //logger::info("Successfully hooked before main renderer");
 
-	// replace mesh pointer string
-	const auto mesh = "Data\\Meshes\\FRIK\\_primaryWand.nif";
+    // replace mesh pointer string
+    const auto mesh = "Data\\Meshes\\FRIK\\_primaryWand.nif";
 
-	for (int i = 0; i < strlen(mesh); ++i) {
-		SafeWrite8(wandMesh.GetUIntPtr() + i, mesh[i]);
-	}
+    for (int i = 0; i < strlen(mesh); ++i) {
+        SafeWrite8(wandMesh.GetUIntPtr() + i, mesh[i]);
+    }
 
-	const int bytesToNOP = 0x1FF;
+    const int bytesToNOP = 0x1FF;
 
-	for (int i = 0; i < bytesToNOP; ++i) {
-		SafeWrite8(hookAnimationVFunc.GetUIntPtr() + i, 0x90); // this block resets the body pose to hang off the camera.    Blocking this off so body height is correct.
-	}
+    for (int i = 0; i < bytesToNOP; ++i) {
+        SafeWrite8(hookAnimationVFunc.GetUIntPtr() + i, 0x90); // this block resets the body pose to hang off the camera.    Blocking this off so body height is correct.
+    }
 
-	//	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&frik::update);
+    //	g_branchTrampoline.Write5Call(hookAnimationVFunc.GetUIntPtr(), (uintptr_t)&frik::update);
 
-	//	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
-	//g_branchTrampoline.Write5Call(hookMainDrawCandidate.GetUIntPtr(), (uintptr_t)&hook2);
-	//	g_branchTrampoline.Write5Call(hookMultiBoundCulling.GetUIntPtr(), (uintptr_t)&hook4);
-	g_branchTrampoline.Write5Call(hookSomeRandomFunc.GetUIntPtr(), (uintptr_t)&hook5);
+    //	g_branchTrampoline.Write5Call(hookEndUpdate.GetUIntPtr(), (uintptr_t)&hookIt);
+    //g_branchTrampoline.Write5Call(hookMainDrawCandidate.GetUIntPtr(), (uintptr_t)&hook2);
+    //	g_branchTrampoline.Write5Call(hookMultiBoundCulling.GetUIntPtr(), (uintptr_t)&hook4);
+    g_branchTrampoline.Write5Call(hookSomeRandomFunc.GetUIntPtr(), (uintptr_t)&hook5);
 
-	g_branchTrampoline.Write5Call(hookMainUpdatePlayer.GetUIntPtr(), (uintptr_t)&hook_main_update_player);
-	g_branchTrampoline.Write5Call(hook_smoothMovementHook.GetUIntPtr(), (uintptr_t)&hookSmoothMovement);
+    g_branchTrampoline.Write5Call(hookMainUpdatePlayer.GetUIntPtr(), (uintptr_t)&hook_main_update_player);
+    g_branchTrampoline.Write5Call(hook_smoothMovementHook.GetUIntPtr(), (uintptr_t)&hookSmoothMovement);
 
-	g_branchTrampoline.Write5Call(hookActor_ReEquipAllExit.GetUIntPtr(), (uintptr_t)&fixPA3D);
-	g_branchTrampoline.Write5Call(hookExtraData_SetMultiBoundRef.GetUIntPtr(), (uintptr_t)&fixPA3DEnter);
-	g_branchTrampoline.Write5Call(hookActor_GetCurrentWeaponForGunReload.GetUIntPtr(), (uintptr_t)&gunReloadInit);
-	g_branchTrampoline.Write5Call(hookActor_SetupAnimationUpdateDataForRefernce.GetUIntPtr(), (uintptr_t)&updatePlayerAnimationHook);
+    g_branchTrampoline.Write5Call(hookActor_ReEquipAllExit.GetUIntPtr(), (uintptr_t)&fixPA3D);
+    g_branchTrampoline.Write5Call(hookExtraData_SetMultiBoundRef.GetUIntPtr(), (uintptr_t)&fixPA3DEnter);
+    g_branchTrampoline.Write5Call(hookActor_GetCurrentWeaponForGunReload.GetUIntPtr(), (uintptr_t)&gunReloadInit);
+    g_branchTrampoline.Write5Call(hookActor_SetupAnimationUpdateDataForRefernce.GetUIntPtr(), (uintptr_t)&updatePlayerAnimationHook);
 
-	//	logger::info("hooking main loop function");
-	//	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);
-	//	logger::info("successfully hooked main loop");
+    //	logger::info("hooking main loop function");
+    //	g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)updateCounter);
+    //	logger::info("successfully hooked main loop");
 }
