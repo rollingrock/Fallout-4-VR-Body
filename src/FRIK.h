@@ -42,7 +42,7 @@ namespace frik
 
         void dispatchMessageToBetterScopesVR(std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
 
-        void initialize(const F4SE::detail::F4SEInterface* f4se);
+        void initialize(const F4SE::LoadInterface* f4se);
         void onFrameUpdate();
         void smoothMovement();
 

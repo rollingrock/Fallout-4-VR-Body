@@ -1,55 +1,61 @@
-#include <chrono>
-#include <ShlObj.h>  // CSIDL_MYDOCUMENTS
-#include <F4SE_common/BranchTrampoline.h>
+#include <Version.h>
 
 #include "FRIK.h"
 #include "hook.h"
 #include "patches.h"
-#include "version.h"
 #include "common/Logger.h"
-#include "f4se/PluginAPI.h"  // SKSEInterface, PluginInfo
-#include "f4se_common/f4se_version.h"  // RUNTIME_VERSION
 
 using namespace common;
 
-extern "C"
+namespace
 {
-bool F4SEPlugin_Query(const F4SEInterface* f4se, PluginInfo* info)
+    void logPluginGameStart()
+    {
+        const auto game = REL::Module::IsVR() ? "Fallout4VR" : "Fallout4";
+        const auto runtimeVer = REL::Module::get().version();
+        logger::info("Starting '{}' v{} ; {} v{} ; {} at {} ; BaseAddress: 0x{:X}", Version::PROJECT, Version::NAME, game, runtimeVer.string(), __DATE__, __TIME__,
+            REL::Module::get().base());
+    }
+}
+
+extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* a_skse, F4SE::PluginInfo* a_info)
 {
-    logger::init("FRIK.log");
-    logger::info("FRIK v{}", FRIK_VERSION_VERSTRING);
+    a_info->infoVersion = F4SE::PluginInfo::kVersion;
+    a_info->name = "F4VRBody"; // backward compatibility name
+    a_info->version = Version::MAJOR;
 
-    info->infoVersion = PluginInfo::kInfoVersion;
-    info->name = "F4VRBody";
-    info->version = FRIK_VERSION_MAJOR;
-
-    if (f4se->isEditor) {
-        logger::fatal("[FATAL ERROR] Loaded in editor, marking as incompatible!");
+    if (a_skse->IsEditor()) {
+        logger::critical("Loaded in editor, marking as incompatible");
         return false;
     }
 
-    if (f4se->runtimeVersion < RUNTIME_VR_VERSION_1_2_72) {
-        logger::fatal("Unsupported runtime version {}!", f4se->runtimeVersion);
+    const auto ver = a_skse->RuntimeVersion();
+    if (ver < (REL::Module::IsF4() ? F4SE::RUNTIME_LATEST : F4SE::RUNTIME_LATEST_VR)) {
+        logger::critical("Unsupported runtime version {}", ver.string());
         return false;
     }
 
     return true;
 }
 
-bool F4SEPlugin_Load(const F4SEInterface* f4se)
+extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface* a_f4se)
 {
     try {
-        logger::info("FRIK Init - {}", getCurrentTimeString().data());
+        logger::init(Version::PROJECT);
+        logPluginGameStart();
 
-        constexpr size_t LEN = 1024ULL * 128;
-        if (!g_branchTrampoline.Create(LEN)) {
-            throw std::exception("couldn't create branch trampoline");
-        }
+        F4SE::Init(a_f4se, false);
 
-        const auto moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("FRIK.dll"));
-        if (!g_localTrampoline.Create(LEN, moduleHandle)) {
-            throw std::exception("couldn't create codegen buffer");
-        }
+        // TODO: commonlibf4 migration (probably not needed anymore)
+        // constexpr size_t LEN = 1024ULL * 128;
+        // if (!g_branchTrampoline.Create(LEN)) {
+        //     throw std::exception("couldn't create branch trampoline");
+        // }
+        //
+        // const auto moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("FRIK.dll"));
+        // if (!g_localTrampoline.Create(LEN, moduleHandle)) {
+        //     throw std::exception("couldn't create codegen buffer");
+        // }
 
         logger::info("Run patches...");
         patches::patchAll();
@@ -58,13 +64,12 @@ bool F4SEPlugin_Load(const F4SEInterface* f4se)
         hookMain();
 
         logger::info("FRIK plugin loaded...");
-        frik::g_frik.initialize(f4se);
+        frik::g_frik.initialize(a_f4se);
 
         logger::info("FRIK Loaded successfully");
         return true;
-    } catch (const std::exception& e) {
-        logger::fatal("Fatal error in F4SEPlugin_Load: {}", e.what());
+    } catch (const std::exception& ex) {
+        logger::error("Unhandled exception: {}", ex.what());
         return false;
     }
 }
-};
