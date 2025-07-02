@@ -4,24 +4,29 @@
 #include <unordered_map>
 
 #include "../common/Logger.h"
-#include "f4se/GameMenus.h"
 
 // Adopted from Shizof mod with permission, Thanks Shizof!!
 
 namespace f4vr
 {
-    class GameMenusHandler : public BSTEventSink<RE::MenuOpenCloseEvent>
+    class GameMenusHandler : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
     {
     public:
         ~GameMenusHandler() override
         {
-            (*g_ui)->menuOpenCloseEventSource.RemoveEventSink(this);
+            RE::UI::GetSingleton()->UnregisterSink(this);
         }
 
         void init()
         {
+            const auto ui = RE::UI::GetSingleton();
+            if (!ui) {
+                common::logger::error("Failed to init GameMenusHandler: UI is not initialized!");
+                return;
+            }
+
             initGameMenuState();
-            (*g_ui)->menuOpenCloseEventSource.AddEventSink(this);
+            ui->RegisterSink(this);
         }
 
         bool isVatsActive()
@@ -57,7 +62,7 @@ namespace f4vr
         {
             common::logger::info("Current game menu state:");
             for (const auto& [menuName, isOpen] : _gameMenuState) {
-                common::logger::infoRaw("{}: {}", menuName.c_str(), isOpen ? "Open" : "Closed");
+                common::logger::info("{}: {}", menuName.c_str(), isOpen ? "Open" : "Closed");
             }
         }
 
@@ -70,19 +75,22 @@ namespace f4vr
             }
         }
 
-        virtual EventResult ReceiveEvent(RE::MenuOpenCloseEvent* evn, void* dispatcher) override
+        virtual RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent& a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>* a_source) override
         {
-            if (evn) {
-                const auto& menuName = evn->menuName.c_str();
-                if (evn->isOpen) {
-                    common::logger::debug("Game menu '{}' opened", menuName);
-                    _gameMenuState.insert_or_assign(menuName, true);
-                } else {
-                    common::logger::debug("Game menu '{}' closed", menuName);
-                    _gameMenuState.insert_or_assign(menuName, false);
-                }
+            if (!a_event.menuName.c_str()) {
+                common::logger::warn("ProcessEvent: menuName is null");
+                return RE::BSEventNotifyControl::kContinue;
             }
-            return kEvent_Continue;
+
+            const auto& menuName = a_event.menuName.c_str();
+            if (a_event.opening) {
+                common::logger::debug("Game menu '{}' opened", menuName);
+                _gameMenuState.insert_or_assign(menuName, true);
+            } else {
+                common::logger::debug("Game menu '{}' closed", menuName);
+                _gameMenuState.insert_or_assign(menuName, false);
+            }
+            return RE::BSEventNotifyControl::kContinue;
         }
 
         // each menu and whatever it is open (true) or closed (false)
