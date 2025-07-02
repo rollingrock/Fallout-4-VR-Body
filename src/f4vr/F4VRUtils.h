@@ -17,7 +17,7 @@ namespace f4vr
     void setWandsVisibility(bool show, bool leftWand);
     bool isMeleeWeaponEquipped();
     std::string getEquippedWeaponName();
-    bool hasKeyword(const RE::TESObjectARMO* armor, std::uint32_t keywordFormId);
+    bool hasKeyword(const F4SEVR::TESObjectARMO* armor, std::uint32_t keywordFormId);
     bool isJumpingOrInAir();
     bool isInPowerArmor();
     bool isInInternalCell();
@@ -29,8 +29,8 @@ namespace f4vr
     bool isLeftHandedMode();
     bool useWandDirectionalMovement();
     float getIniSettingFloat(const char* name);
-    void setIniSettingBool(char* name, bool value);
-    void setIniSettingFloat(char* name, float value);
+    void setIniSettingBool(const char* name, bool value);
+    void setIniSettingFloat(const char* name, float value);
     RE::Setting* getIniSettingNative(const char* name);
 
     // nodes

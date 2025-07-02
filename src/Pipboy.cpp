@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <chrono>
 #include <thread>
-#include <f4se/GameCamera.h>
 
 #include "Config.h"
 #include "ConfigurationMode.h"
@@ -1182,7 +1181,9 @@ namespace frik
         }
 
         const float threshhold = _pipboyStatus ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
-        return isCameraLookingAtObject((*g_playerCamera)->cameraNode, screen, threshhold);
+        // TODO: commonlibf4 migration
+        // return isCameraLookingAtObject((*g_playerCamera)->cameraNode, screen, threshhold);
+        return false;
     }
 
     /**

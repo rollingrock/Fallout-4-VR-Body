@@ -1,7 +1,8 @@
 #pragma once
 
 #include <deque>
-#include <f4se/NiTypes.h>
+
+#include "common/CommonUtils.h"
 
 namespace frik
 {

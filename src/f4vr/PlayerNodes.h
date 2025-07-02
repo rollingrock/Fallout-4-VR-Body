@@ -96,7 +96,7 @@ namespace f4vr
         return reinterpret_cast<BSFlattenedBoneTree*>(g_player->firstPersonSkeleton->children[0]->IsNode());
     }
 
-    inline RE::EquippedWeaponData* getEquippedWeaponData()
+    inline F4SEVR::EquippedWeaponData* getEquippedWeaponData()
     {
         const auto g_player = getPlayer();
         return g_player->middleProcess->unk08 && g_player->middleProcess->unk08->equipData

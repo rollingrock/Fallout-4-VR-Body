@@ -1,11 +1,10 @@
-﻿#include "WeaponPositionAdjuster.h"
+#include "WeaponPositionAdjuster.h"
 
 #include "Config.h"
 #include "Debug.h"
 #include "FRIK.h"
 #include "HandPose.h"
 #include "Skeleton.h"
-#include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "common/Matrix.h"
 #include "f4vr/F4VRUtils.h"
@@ -216,7 +215,7 @@ namespace frik
         f4vr::updateTransforms(scopeCamera);
 
         // get the "forward" vector of the weapon (direction of the bullets)
-        const auto weaponForwardVec = RE::NiPoint3(weapon->world.rotate.data[1][0], weapon->world.rotate.data[1][1], weapon->world.rotate.data[1][2]);
+        const auto weaponForwardVec = RE::NiPoint3(weapon->world.rotate.entry[1][0], weapon->world.rotate.entry[1][1], weapon->world.rotate.entry[1][2]);
 
         // Calculate the rotation adjustment using quaternion by diff between scope camera vector and straight
         Quaternion rotAdjust;
@@ -354,7 +353,7 @@ namespace frik
         const auto adjustedWeaponVecWorld = _weaponOriginalWorldTransform.rotate * (adjustedWeaponVec * _weaponOriginalWorldTransform.scale);
 
         // Rotate the primary hand so it will stay on the weapon stock
-        const auto primaryHand = (f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand)->GetAsRE::NiNode();
+        const auto primaryHand = (f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand)->IsNode();
         const auto handLocalVec = primaryHand->world.rotate.Transpose() * adjustedWeaponVecWorld / primaryHand->world.scale;
         rotAdjust.vec2Vec(handLocalVec, RE::NiPoint3(1, 0, 0));
 
@@ -468,12 +467,11 @@ namespace frik
             return;
         }
 
-        static RE::BSFixedString reticleNodeName = "ReticleNode";
-        RE::NiAVObject* scopeRet = weapon->GetObjectByName(&reticleNodeName);
+        const RE::NiAVObject* scopeRet = weapon->GetObjectByName("ReticleNode");
         if (!scopeRet) {
             return;
         }
-        const auto reticlePos = scopeRet->GetAsRE::NiNode()->world.translate;
+        const auto reticlePos = scopeRet->world.translate;
         const auto offhandPos = getOffhandPosition();
         const auto offset = vec3Len(reticlePos - offhandPos);
 

@@ -434,6 +434,26 @@ namespace F4SEVR
         virtual void Unk_20() = 0;
     };
 
+    // 08
+    class EquippedItemData : public RE::NiRefObject
+    {
+    public:
+        virtual ~EquippedItemData() override;
+    };
+
+    // 38
+    class EquippedWeaponData : public EquippedItemData
+    {
+    public:
+        virtual ~EquippedWeaponData() override;
+
+        RE::TESAmmo* ammo; // 10
+        std::uint64_t unk18; // 18
+        void* unk20; // 20
+        std::uint64_t unk28; // 28
+        RE::NiAVObject* object; // 30
+    };
+
     // 10
     class ActorState : public IMovementState
     {
@@ -668,7 +688,7 @@ namespace F4SEVR
                     RE::TBO_InstanceData* instanceData; // 08
                     RE::BGSEquipSlot* equipSlot; // 10
                     std::uint64_t unk18; // 18
-                    RE::EquippedWeaponData* equippedData; // 20
+                    EquippedWeaponData* equippedData; // 20
                 };
 
                 EquipData* equipData; // 288

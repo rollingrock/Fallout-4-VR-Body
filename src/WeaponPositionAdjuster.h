@@ -55,10 +55,10 @@ namespace frik
         void debugPrintWeaponPositionData(RE::NiNode* weapon) const;
 
         // Define a basis remapping matrix to correct coordinate system for scope camera
-        NiMatrix43 _scopeCameraBaseMatrix;
+        RE::NiMatrix3 _scopeCameraBaseMatrix;
 
         // For unknown reason my primary hand calculation is off by specific angle
-        NiMatrix43 _twoHandedPrimaryHandManualAdjustment;
+        RE::NiMatrix3 _twoHandedPrimaryHandManualAdjustment;
 
         Skeleton* _skelly;
 
@@ -77,7 +77,7 @@ namespace frik
         RE::NiTransform _weaponOffsetTransform = RE::NiTransform();
 
         // custom offhand rotation offsets matrix
-        NiMatrix43 _offhandOffsetRot = NiMatrix43();
+        RE::NiMatrix3 _offhandOffsetRot = RE::NiMatrix3();
 
         // custom throwable weapon transform to update
         RE::NiTransform _throwableWeaponOriginalTransform = RE::NiTransform();

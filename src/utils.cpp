@@ -1,11 +1,6 @@
 #include "utils.h"
 
-#include <f4se/GameMenus.h>
-#include <f4se/GameRTTI.h>
-
 #include "FRIK.h"
-#include "common/CommonUtils.h"
-#include "f4se/PapyrusEvents.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/PlayerNodes.h"
 
@@ -15,37 +10,41 @@ namespace frik
 {
     void turnPlayerRadioOn(bool isActive)
     {
-        CallGlobalFunctionNoWait1<bool>("Game", "TurnPlayerRadioOn", isActive);
+        // TODO: commonlibf4 migration
+        // CallGlobalFunctionNoWait1<bool>("Game", "TurnPlayerRadioOn", isActive);
     }
 
     void turnPipBoyOn()
     {
-        Setting* set = GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
-        set->SetDouble(0.0);
+        RE::Setting* set = RE::GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
+        set->SetFloat(0.0);
 
-        set = GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
-        set->SetDouble(0.0);
+        set = RE::GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
+        set->SetFloat(0.0);
 
-        set = GetINISetting("fPipboyScaleOuterAngle:VRPipboy");
-        set->SetDouble(0.0);
+        set = RE::GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
+        set->SetFloat(0.0);
 
-        set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
-        set->SetDouble(0.0);
+        set = RE::GetINISetting("fPipboyScaleOuterAngle:VRPipboy");
+        set->SetFloat(0.0);
+
+        set = RE::GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
+        set->SetFloat(0.0);
     }
 
     void turnPipBoyOff()
     {
-        Setting* set = GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
-        set->SetDouble(20.0);
+        RE::Setting* set = RE::GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
+        set->SetFloat(20.0);
 
-        set = GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
-        set->SetDouble(5.0);
+        set = RE::GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
+        set->SetFloat(5.0);
 
-        set = GetINISetting("fPipboyScaleOuterAngle:VRPipboy");
-        set->SetDouble(20.0);
+        set = RE::GetINISetting("fPipboyScaleOuterAngle:VRPipboy");
+        set->SetFloat(20.0);
 
-        set = GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
-        set->SetDouble(5.0);
+        set = RE::GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
+        set->SetFloat(5.0);
     }
 
     /**
@@ -54,8 +53,7 @@ namespace frik
      */
     bool isAnyPipboyOpen()
     {
-        RE::BSFixedString pipboyMenu("PipboyMenu");
-        return (*g_ui)->GetMenu(pipboyMenu) != nullptr;
+        return RE::UI::GetSingleton()->GetMenu("PipboyMenu") != nullptr;
     }
 
     // Function to check if the camera is looking at the object and the object is facing the camera
@@ -69,8 +67,8 @@ namespace frik
      */
     bool isArmorHasHeadLamp()
     {
-        if (const auto equippedItem = (*g_player)->equipData->slots[0].item) {
-            if (const auto torchEnabledArmor = DYNAMIC_CAST(equippedItem, RE::TESForm, TESObjectARMO)) {
+        if (const auto equippedItem = f4vr::getPlayer()->equipData->slots[0].item) {
+            if (const auto torchEnabledArmor = dynamic_cast<F4SEVR::TESObjectARMO*>(equippedItem)) {
                 return f4vr::hasKeyword(torchEnabledArmor, 0xB34A6);
             }
         }
@@ -82,7 +80,8 @@ namespace frik
      */
     bool isBetterScopesVRModLoaded()
     {
-        DataHandler* dataHandler = *g_dataHandler;
+        // TODO: commonlibf4 migration (verify it works)
+        auto* dataHandler = RE::TESDataHandler::GetSingleton();
         const auto mod = dataHandler ? dataHandler->LookupModByName("3dscopes-replacer.esp") : nullptr;
         return mod != nullptr;
     }
@@ -92,9 +91,9 @@ namespace frik
      */
     f4vr::MuzzleFlash* getMuzzleFlashNodes()
     {
-        if (const auto equipWeaponData = f4vr::getRE::EquippedWeaponData()) {
+        if (const auto equipWeaponData = f4vr::getEquippedWeaponData()) {
             const auto vfunc = reinterpret_cast<uint64_t*>(equipWeaponData);
-            if ((*vfunc & 0xFFFF) == (f4vr::RE::EquippedWeaponData_vfunc & 0xFFFF)) {
+            if ((*vfunc & 0xFFFF) == (f4vr::EquippedWeaponData_vfunc.get() & 0xFFFF)) {
                 const auto muzzle = reinterpret_cast<f4vr::MuzzleFlash*>(equipWeaponData->unk28);
                 if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
                     return muzzle;

@@ -2,7 +2,6 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "f4se/NiExtraData.h"
 
 using namespace common;
 
@@ -20,7 +19,8 @@ namespace frik
             return;
         }
 
-        const RE::NiPoint3 curPos = (*g_player)->pos;
+        const auto player = RE::PlayerCharacter::GetSingleton();
+        const RE::NiPoint3 curPos = player->GetPosition();
 
         if (_lastPositions.size() < 2 && fNotEqual(curPos.z, 0)) {
             _smoothedPos = curPos;
