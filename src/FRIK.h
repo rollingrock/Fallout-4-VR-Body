@@ -17,6 +17,7 @@ namespace frik
     {
     public:
         bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
+        bool isFavoritesMenuOpen() { return _gameMenusHandler.isFavoritesMenuOpen(); }
 
         bool getSelfieMode() const { return _selfieMode; }
         void setSelfieMode(const bool selfieMode) { _selfieMode = selfieMode; }

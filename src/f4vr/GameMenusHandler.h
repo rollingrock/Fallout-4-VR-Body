@@ -39,6 +39,11 @@ namespace f4vr
             return _gameMenuState["ScopeMenu"] == true;
         }
 
+        bool isFavoritesMenuOpen()
+        {
+            return _gameMenuState["FavoritesMenu"] == true;
+        }
+
         bool isPauseMenuOpen()
         {
             return _gameMenuState["PauseMenu"] == true;

@@ -54,4 +54,6 @@ namespace f4vr
 
     typedef bool (*RegisterFunctions)(RE::BSScript::Internal::VirtualMachine* vm);
     void registerPapyrusNativeFunctions(const F4SE::detail::F4SEInterface* f4se, RegisterFunctions callback);
+
+    RE::NiNode* getClonedNiNodeForNifFile(const std::string& path, const std::string& name = "");
 }

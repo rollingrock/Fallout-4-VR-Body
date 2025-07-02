@@ -442,4 +442,31 @@ namespace f4vr
         // 	throw std::exception("Failed to register papyrus functions");
         // }
     }
+
+    /**
+     * Load .nif file from the filesystem and return the root node.
+     */
+    RE::NiNode* loadNifFromFile(const std::string& path)
+    {
+        uint64_t flags[2] = { 0x0, 0xed };
+        uint64_t mem = 0;
+        int ret = f4vr::loadNif((uint64_t)path.c_str(), (uint64_t)&mem, (uint64_t)&flags);
+        return reinterpret_cast<RE::NiNode*>(mem);
+    }
+
+    /**
+     * Get a RE::NiNode that can be used in game UI for the given .nif file.
+     * Why is just loading not enough?
+     */
+    RE::NiNode* getClonedNiNodeForNifFile(const std::string& path, const std::string& name)
+    {
+        auto& normPath = path._Starts_with("Data") ? path : "Data/Meshes/" + path;
+        const RE::NiNode* nifNode = loadNifFromFile(normPath);
+        f4vr::NiCloneProcess proc;
+        proc.unk18 = reinterpret_cast<uint64_t*>(cloneAddr1.address());
+        proc.unk48 = reinterpret_cast<uint64_t*>(cloneAddr2.address());
+        const auto uiNode = f4vr::cloneNode(nifNode, &proc);
+        uiNode->name = !name.empty() ? name : path.c_str();
+        return uiNode;
+    }
 }
