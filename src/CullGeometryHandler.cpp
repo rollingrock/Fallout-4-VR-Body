@@ -1,8 +1,8 @@
 #include "CullGeometryHandler.h"
+
 #include "Config.h"
 #include "Debug.h"
 #include "FRIK.h"
-#include "utils.h"
 #include "common/CommonUtils.h"
 
 using namespace common;
@@ -59,7 +59,7 @@ namespace frik
             }
 
             // in case it was hidden before and shouldn't be anymore
-            f4vr::setNodeVisibility(geometry, true);
+            f4vr::setNodeVisibility(geometry.get(), true);
 
             if (toHide) {
                 _hideFaceSkinGeometryIndexes.push_back(i);
@@ -81,7 +81,7 @@ namespace frik
             return;
         }
 
-        const auto rn = reinterpret_cast<RE::BSFadeNode*>((*g_player)->unkF0->rootNode);
+        const auto rn = reinterpret_cast<RE::BSFadeNode*>(f4vr::getWorldRootNode());
         if (!rn) {
             return;
         }
@@ -91,7 +91,7 @@ namespace frik
         if (g_config.hideHead || g_config.hideSkin || g_frik.getSelfieMode()) {
             preProcessHideGeometryIndexes(rn);
             for each (int idx in _hideFaceSkinGeometryIndexes) {
-                f4vr::setNodeVisibility(rn->geomArray[idx].geometry, false);
+                f4vr::setNodeVisibility(rn->geomArray[idx].geometry.get(), false);
             }
         }
 
@@ -112,9 +112,9 @@ namespace frik
     void CullGeometryHandler::restoreGeometry()
     {
         //Face and Skin
-        if (const auto rn = reinterpret_cast<RE::BSFadeNode*>((*g_player)->unkF0->rootNode)) {
+        if (const auto rn = reinterpret_cast<RE::BSFadeNode*>(f4vr::getWorldRootNode())) {
             for (UINT32 i = 0; i < rn->geomArray.size(); ++i) {
-                f4vr::setNodeVisibility(rn->geomArray[i].geometry, true);
+                f4vr::setNodeVisibility(rn->geomArray[i].geometry.get(), true);
             }
         }
 
@@ -135,14 +135,14 @@ namespace frik
     /// </summary>
     void CullGeometryHandler::setEquipmentSlotByIndexVisibility(const int slotId, const bool toHide)
     {
-        const auto& slot = (*g_player)->equipData->slots[slotId];
+        const auto& slot = f4vr::getPlayer()->equipData->slots[slotId];
 
         if (slot.item == nullptr || slot.node == nullptr) {
             return;
         }
 
         const auto formType = slot.item->GetFormType();
-        if (formType != kFormType_ARMO) {
+        if (formType != RE::ENUM_FORM_ID::kARMO) {
             return;
         }
 
