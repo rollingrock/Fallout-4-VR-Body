@@ -1,10 +1,7 @@
 #pragma once
 
-#include <f4se/ScaleformMovie.h>
-
 #include "Skeleton.h"
 #include "utils.h"
-#include "f4vr/scaleformUtils.h"
 
 namespace frik
 {
@@ -45,18 +42,18 @@ namespace frik
 
     private:
         void operatePipBoy();
-        static void gotoPrevPage(GFxMovieRoot* root);
-        static void gotoNextPage(GFxMovieRoot* root);
-        static void gotoPrevTab(GFxMovieRoot* root);
-        static void gotoNextTab(GFxMovieRoot* root);
-        static void moveListSelectionUpDown(GFxMovieRoot* root, bool moveUp);
-        static void handlePrimaryControllerOperationOnStatusPage(GFxMovieRoot* root, bool triggerPressed);
-        static void handlePrimaryControllerOperationOnInventoryPage(GFxMovieRoot* root, bool triggerPressed);
-        static void handlePrimaryControllerOperationOnDataPage(GFxMovieRoot* root, bool triggerPressed);
-        static void handlePrimaryControllerOperationOnMapPage(GFxMovieRoot* root, bool triggerPressed);
-        static void handlePrimaryControllerOperationOnRadioPage(GFxMovieRoot* root, bool triggerPressed);
-        void storeLastPipboyPage(const GFxMovieRoot* root);
-        static void handlePrimaryControllerOperation(GFxMovieRoot* root, bool triggerPressed);
+        static void gotoPrevPage(RE::Scaleform::GFx::Movie* root);
+        static void gotoNextPage(RE::Scaleform::GFx::Movie* root);
+        static void gotoPrevTab(RE::Scaleform::GFx::Movie* root);
+        static void gotoNextTab(RE::Scaleform::GFx::Movie* root);
+        static void moveListSelectionUpDown(RE::Scaleform::GFx::Movie* root, bool moveUp);
+        static void handlePrimaryControllerOperationOnStatusPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
+        static void handlePrimaryControllerOperationOnInventoryPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
+        static void handlePrimaryControllerOperationOnDataPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
+        static void handlePrimaryControllerOperationOnMapPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
+        static void handlePrimaryControllerOperationOnRadioPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
+        void storeLastPipboyPage(const RE::Scaleform::GFx::Movie* root);
+        static void handlePrimaryControllerOperation(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
         void replaceMeshes(const std::string& itemHide, const std::string& itemShow);
         void pipboyManagement();
         void dampenPipboyScreen();

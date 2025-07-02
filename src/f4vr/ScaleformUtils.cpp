@@ -13,7 +13,7 @@ namespace
     /**
      * Execute an operation (moveUp, moveDown, select/press) on a generic Scaleform list element.
      */
-    bool invokeOperationOnListElement(GFx::AS3::MovieRoot* root, GFx::Value* list, const f4vr::ScaleformListOp op, const char* listPath)
+    bool invokeOperationOnListElement(GFx::Movie* root, GFx::Value* list, const f4vr::ScaleformListOp op, const char* listPath)
     {
         bool success;
         switch (op) {
@@ -42,13 +42,13 @@ namespace
 
 namespace f4vr
 {
-    bool getScaleformBool(const GFx::AS3::MovieRoot* root, const char* path)
+    bool getScaleformBool(const GFx::Movie* root, const char* path)
     {
         GFx::Value result;
         return root->GetVariable(&result, path) && result.IsBoolean() && result.GetBoolean();
     }
 
-    std::optional<int> getScaleformInt(const GFx::AS3::MovieRoot* root, const char* path)
+    std::optional<int> getScaleformInt(const GFx::Movie* root, const char* path)
     {
         GFx::Value result;
         if (!root->GetVariable(&result, path)) {
@@ -61,7 +61,7 @@ namespace f4vr
         return std::nullopt;
     }
 
-    bool isElementVisible(const GFx::AS3::MovieRoot* root, const std::string& path)
+    bool isElementVisible(const GFx::Movie* root, const std::string& path)
     {
         GFx::Value var;
         return root->GetVariable(&var, (path + ".visible").c_str()) && var.IsBoolean() && var.GetBoolean();
@@ -70,7 +70,7 @@ namespace f4vr
     /**
      * Execute an operation (moveUp, moveDown, select/press) on a Scaleform list that can be found by static path.
      */
-    bool doOperationOnScaleformList(GFx::AS3::MovieRoot* root, const char* listPath, const ScaleformListOp op)
+    bool doOperationOnScaleformList(GFx::Movie* root, const char* listPath, const ScaleformListOp op)
     {
         GFx::Value list;
         if (!root->GetVariable(&list, listPath)) {
@@ -84,7 +84,7 @@ namespace f4vr
      * Execute an operation (moveUp, moveDown, select/press) on a Scaleform list that is inside a context menu
      * message box. The message box can be found by static path but the list inside is dynamic and found by traversing the hierarchy.
      */
-    bool doOperationOnScaleformMessageHolderList(GFx::AS3::MovieRoot* root, const char* messageHolderPath, const ScaleformListOp op)
+    bool doOperationOnScaleformMessageHolderList(GFx::Movie* root, const char* messageHolderPath, const ScaleformListOp op)
     {
         GFx::Value messageHolder;
         if (!root->GetVariable(&messageHolder, messageHolderPath)) {
@@ -101,7 +101,7 @@ namespace f4vr
      * Invoke "ProcessUserEvent" function on the given Scaleform element found by path.
      * Commonly available for general UI interactions.
      */
-    void invokeScaleformProcessUserEvent(GFx::AS3::MovieRoot* root, const std::string& path, const char* eventName)
+    void invokeScaleformProcessUserEvent(GFx::Movie* root, const std::string& path, const char* eventName)
     {
         GFx::Value args[2];
         args[0] = eventName;
@@ -117,7 +117,7 @@ namespace f4vr
      * Invoke "dispatchEvent" function on the given Scaleform element found by path.
      * A framework level events that can be used to trigger code.
      */
-    void invokeScaleformDispatchEvent(GFx::AS3::MovieRoot* root, const std::string& path, const char* eventName)
+    void invokeScaleformDispatchEvent(GFx::Movie* root, const std::string& path, const char* eventName)
     {
         GFx::Value event;
         GFx::Value args[3];
