@@ -59,7 +59,7 @@ namespace frik
         logger::info("Register papyrus native functions...");
         initPapyrusApis(f4se);
         PapyrusGateway::init(f4se);
-        _boneSpheres.init(f4se);
+        _boneSpheres.init();
     }
 
     /**

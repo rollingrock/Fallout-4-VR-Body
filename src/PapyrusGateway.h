@@ -9,10 +9,10 @@ namespace frik
     class PapyrusGateway : public f4vr::PapyrusGatewayBase
     {
     public:
-        explicit PapyrusGateway(const F4SEInterface* f4se) :
+        explicit PapyrusGateway(const F4SE::LoadInterface* f4se) :
             PapyrusGatewayBase(f4se, "FRIK:FRIK") {}
 
-        static const PapyrusGateway* init(const F4SEInterface* f4se)
+        static const PapyrusGateway* init(const F4SE::LoadInterface* f4se)
         {
             if (_instance) {
                 throw std::exception("Papyrus Gateway is already initialized, only single instance can be used!");
@@ -32,8 +32,8 @@ namespace frik
          */
         void enablePlayerControls(const bool drawWeapon) const
         {
-            auto arguments = getArgs(drawWeapon);
-            executePapyrusScript("EnablePlayerControls", arguments);
+            // auto arguments = getArgs(drawWeapon);
+            // executePapyrusScript("EnablePlayerControls", arguments);
         }
 
         /**
@@ -48,8 +48,8 @@ namespace frik
          */
         void disablePlayerControls(const bool disableWeapon, const bool restrain) const
         {
-            auto arguments = getArgs(disableWeapon, restrain);
-            executePapyrusScript("DisablePlayerControls", arguments);
+            // auto arguments = getArgs(disableWeapon, restrain);
+            // executePapyrusScript("DisablePlayerControls", arguments);
         }
 
         /**
@@ -57,8 +57,8 @@ namespace frik
          */
         void enableDisableFighting(const bool enable, const bool drawWeapon) const
         {
-            auto arguments = getArgs(enable, drawWeapon);
-            executePapyrusScript("EnableDisableFighting", arguments);
+            // auto arguments = getArgs(enable, drawWeapon);
+            // executePapyrusScript("EnableDisableFighting", arguments);
         }
 
         /**
@@ -67,8 +67,8 @@ namespace frik
          */
         void enableDisableVats(const bool enable) const
         {
-            auto arguments = getArgs(enable);
-            executePapyrusScript("EnableDisableVats", arguments);
+            // auto arguments = getArgs(enable);
+            // executePapyrusScript("EnableDisableVats", arguments);
         }
 
         /**
@@ -109,8 +109,8 @@ namespace frik
          */
         void activateFix(const bool enable) const
         {
-            auto arguments = getArgs(enable);
-            executePapyrusScript("ActivateFix", arguments);
+            // auto arguments = getArgs(enable);
+            // executePapyrusScript("ActivateFix", arguments);
         }
     };
 }

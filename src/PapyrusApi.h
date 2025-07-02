@@ -118,6 +118,6 @@ namespace frik
 
     static void initPapyrusApis(const F4SEInterface* f4se)
     {
-        f4vr::registerPapyrusNativeFunctions(f4se, registerPapyrusFunctionsCallback);
+        f4vr::registerPapyrusNativeFunctions(registerPapyrusFunctionsCallback);
     }
 }

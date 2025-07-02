@@ -434,13 +434,16 @@ namespace f4vr
      * Run a callback to register papyrus native functions.
      * Functions that papyrus can call into this mod c++ code.
      */
-    void registerPapyrusNativeFunctions(const F4SE::detail::F4SEInterface* f4se, const RegisterFunctions callback)
+    void registerPapyrusNativeFunctions(const F4SE::PapyrusInterface::RegisterFunctions callback)
     {
-        // TODO: commonlibf4 migration
-        // const auto papyrusInterface = static_cast<F4SE::detail::F4SEPapyrusInterface*>(f4se->QueryInterface(kInterface_Papyrus));
-        // if (!papyrusInterface->Register(callback)) {
-        // 	throw std::exception("Failed to register papyrus functions");
-        // }
+        const auto papyrusInterface = F4SE::GetPapyrusInterface();
+        if (!papyrusInterface) {
+            throw std::exception("Failed to get papyrus interface");
+        }
+
+        if (!papyrusInterface->Register(callback)) {
+            throw std::exception("Failed to register papyrus functions");
+        }
     }
 
     /**
