@@ -6,7 +6,6 @@
 #include "PlayerControlsHandler.h"
 #include "SmoothMovementVR.h"
 #include "WeaponPositionAdjuster.h"
-#include "f4se/PapyrusEvents.h"
 #include "f4vr/GameMenusHandler.h"
 
 namespace frik
@@ -55,8 +54,8 @@ namespace frik
         static void configureGameVars();
         static bool isGameReadyForSkeletonInitialization();
         bool isRootNodeValid() const;
-        static void onF4VRSEMessage(F4SEMessagingInterface::Message* msg);
-        static void onBetterScopesMessage(F4SEMessagingInterface::Message* msg);
+        static void onF4VRSEMessage(F4SE::MessagingInterface::Message* msg);
+        static void onBetterScopesMessage(F4SE::MessagingInterface::Message* msg);
         void checkDebugDump();
 
         bool _inPowerArmor = false;
@@ -65,7 +64,7 @@ namespace frik
         bool _selfieMode = false;
 
         // the currently root node used in skeleton
-        RE::BSFadeNode* _workingRootNode;
+        RE::BSFadeNode* _workingRootNode = nullptr;
 
         Skeleton* _skelly = nullptr;
         Pipboy* _pipboy = nullptr;
@@ -84,8 +83,7 @@ namespace frik
         // handler to enable/disable player movement and other controls
         PlayerControlsHandler _playerControlsHandler;
 
-        PluginHandle _pluginHandle = kPluginHandle_Invalid;
-        F4SEMessagingInterface* _messaging = nullptr;
+        const F4SE::MessagingInterface* _messaging = nullptr;
     };
 
     // The ONE global to rule them ALL

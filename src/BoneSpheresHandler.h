@@ -52,7 +52,7 @@ namespace frik
     public:
         virtual ~BoneSpheresHandler() { _instance = nullptr; }
 
-        void init(const F4SE::detail::F4SEInterface* f4se);
+        void init(const F4SE::LoadInterface* f4se);
         void onFrameUpdate();
 
         std::uint32_t registerBoneSphere(float radius, RE::BSFixedString bone);

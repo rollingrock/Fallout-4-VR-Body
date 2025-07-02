@@ -51,15 +51,10 @@ namespace frik
     /**
      * On load of FRIK plugin by F4VRSE setup messaging and papyrus handling once.
      */
-    void FRIK::initialize(const F4SE::detail::F4SEInterface* f4se)
+    void FRIK::initialize(const F4SE::LoadInterface* f4se)
     {
-        _pluginHandle = f4se->GetPluginHandle();
-        if (_pluginHandle == kPluginHandle_Invalid) {
-            throw std::exception("Invalid plugin handle");
-        }
-
-        _messaging = static_cast<F4SE::detail::F4SEMessagingInterface*>(f4se->QueryInterface(kInterface_Messaging));
-        _messaging->RegisterListener(_pluginHandle, "F4SE", onF4VRSEMessage);
+        _messaging = F4SE::GetMessagingInterface();
+        _messaging->RegisterListener(onF4VRSEMessage);
 
         logger::info("Register papyrus native functions...");
         initPapyrusApis(f4se);
@@ -70,19 +65,19 @@ namespace frik
     /**
      * F4VRSE messages listener to handle game loaded, new game, and save loaded events.
      */
-    void FRIK::onF4VRSEMessage(F4SEMessagingInterface::Message* msg)
+    void FRIK::onF4VRSEMessage(F4SE::MessagingInterface::Message* msg)
     {
         if (!msg) {
             return;
         }
 
-        if (msg->type == F4SEMessagingInterface::kMessage_GameLoaded) {
+        if (msg->type == F4SE::MessagingInterface::kGameLoaded) {
             // One time event fired after all plugins are loaded and game is full in main menu
             logger::info("F4VRSE On Game Loaded Message...");
             g_frik.initOnGameLoaded();
         }
 
-        if (msg->type == F4SEMessagingInterface::kMessage_PostLoadGame || msg->type == F4SEMessagingInterface::kMessage_NewGame) {
+        if (msg->type == F4SE::MessagingInterface::kPostLoadGame || msg->type == F4SE::MessagingInterface::kNewGame) {
             // If a game is loaded or a new game started re-initialize FRIK for clean slate
             logger::info("F4VRSE On Post Load Message...");
             g_frik.initOnGameSessionLoaded();
@@ -104,10 +99,11 @@ namespace frik
 
         _gameMenusHandler.init();
 
+        // TODO: commonlibf4 migration (verify receiving messages)
         if (isBetterScopesVRModLoaded()) {
             logger::info("BetterScopesVR mod detected, registering for messages...");
-            _messaging->Dispatch(_pluginHandle, 15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
-            _messaging->RegisterListener(_pluginHandle, BETTER_SCOPES_VR_MOD_NAME, onBetterScopesMessage);
+            _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
+            _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
         }
     }
 
@@ -134,7 +130,7 @@ namespace frik
     void FRIK::onFrameUpdate()
     {
         try {
-            if (!g_player || !(*g_player)->unkF0) {
+            if (!RE::PlayerCharacter::GetSingleton()) {
                 // game not loaded or existing
                 return;
             }
@@ -198,8 +194,9 @@ namespace frik
     {
         _inPowerArmor = f4vr::isInPowerArmor();
 
+        const auto player = f4vr::getPlayer();
         logger::info("Initialize Skeleton ({}) ; Nodes: Player={:p}, Data={:p}, Root={:p}, Skeleton={:p}, Common={:p}",
-            _inPowerArmor ? "PowerArmor" : "Regular", *g_player, (*g_player)->unkF0, (*g_player)->unkF0->rootNode, f4vr::getRootNode(), f4vr::getCommonNode());
+            _inPowerArmor ? "PowerArmor" : "Regular", player, player->unkF0, player->unkF0->rootNode, f4vr::getRootNode(), f4vr::getCommonNode());
 
         // init skeleton
         _workingRootNode = f4vr::getRootNode();
@@ -218,11 +215,12 @@ namespace frik
      */
     bool FRIK::isGameReadyForSkeletonInitialization()
     {
-        if (!g_player || !(*g_player)->unkF0) {
+        const auto player = f4vr::getPlayer();
+        if (!player || !player->unkF0) {
             logger::sample(3000, "Player global not set yet!");
             return false;
         }
-        if (!(*g_player)->unkF0->rootNode || !f4vr::getRootNode() || !f4vr::getWorldRootNode()) {
+        if (!player->unkF0->rootNode || !f4vr::getRootNode() || !f4vr::getWorldRootNode()) {
             logger::info("Player root nodes not set yet!");
             return false;
         }
@@ -291,10 +289,10 @@ namespace frik
     void FRIK::updateWorldFinal()
     {
         const auto worldRootNode = f4vr::getWorldRootNode();
-        f4vr::RE::BSFadeNode_MergeWorldBounds(worldRootNode);
+        f4vr::BSFadeNode_MergeWorldBounds(worldRootNode);
         f4vr::BSFlattenedBoneTree_UpdateBoneArray(f4vr::getRootNode());
         // just in case any transforms missed because they are not in the tree do a full flat bone array update
-        f4vr::RE::BSFadeNode_UpdateGeomArray(worldRootNode, 1);
+        f4vr::BSFadeNode_UpdateGeomArray(worldRootNode, 1);
     }
 
     void FRIK::configureGameVars()
@@ -312,10 +310,10 @@ namespace frik
      */
     void FRIK::dispatchMessageToBetterScopesVR(const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const
     {
-        _messaging->Dispatch(_pluginHandle, messageType, data, dataLen, BETTER_SCOPES_VR_MOD_NAME);
+        _messaging->Dispatch(messageType, data, dataLen, BETTER_SCOPES_VR_MOD_NAME);
     }
 
-    void FRIK::onBetterScopesMessage(F4SEMessagingInterface::Message* msg)
+    void FRIK::onBetterScopesMessage(F4SE::MessagingInterface::Message* msg)
     {
         if (!msg) {
             return;

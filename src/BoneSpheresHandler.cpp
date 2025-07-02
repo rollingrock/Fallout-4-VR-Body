@@ -11,7 +11,7 @@ using namespace common;
 
 namespace frik
 {
-    void BoneSpheresHandler::init(const F4SE::detail::F4SEInterface* f4se)
+    void BoneSpheresHandler::init(const F4SE::LoadInterface* f4se)
     {
         if (_instance) {
             throw std::exception("Bone Spheres Handler is already initialized, only single instance can be used!");
