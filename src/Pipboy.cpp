@@ -17,6 +17,7 @@
 #include "f4vr/scaleformUtils.h"
 #include "f4vr/VRControllersManager.h"
 
+using namespace RE::Scaleform;
 using namespace std::chrono;
 using namespace common;
 
@@ -42,12 +43,12 @@ namespace
         return f4vr::VRControllers.isPressHeldDown(vr::k_EButton_Grip, f4vr::Hand::Primary);
     }
 
-    bool isWorldMapVisible(const GFxMovieRoot* root)
+    bool isWorldMapVisible(const GFx::AS3::MovieRoot* root)
     {
         return f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.WorldMapHolder_mc");
     }
 
-    std::string getCurrentMapPath(const GFxMovieRoot* root, const std::string& suffix = "")
+    std::string getCurrentMapPath(const GFx::AS3::MovieRoot* root, const std::string& suffix = "")
     {
         return (isWorldMapVisible(root) ? "root.Menu_mc.CurrentPage.WorldMapHolder_mc" : "root.Menu_mc.CurrentPage.LocalMapHolder_mc") + suffix;
     }
@@ -55,24 +56,25 @@ namespace
     /**
      * Is context menu message box popup is visible or not. Only one can be visible at a time.
      */
-    bool isMessageHolderVisible(const GFxMovieRoot* root)
+    bool isMessageHolderVisible(const GFx::AS3::MovieRoot* root)
     {
         return f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.MessageHolder_mc")
             || f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc");
     }
 
-    bool isQuestTabVisibleOnDataPage(const GFxMovieRoot* root)
+    bool isQuestTabVisibleOnDataPage(const GFx::AS3::MovieRoot* root)
     {
         return f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.QuestsTab_mc");
     }
 
-    bool isQuestTabObjectiveListEnabledOnDataPage(const GFxMovieRoot* root)
+    bool isQuestTabObjectiveListEnabledOnDataPage(const GFx::AS3::MovieRoot* root)
     {
-        GFxValue var;
-        return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.selectedIndex") && var.GetType() == GFxValue::kType_Int && var.GetInt() > -1;
+        GFx::Value var;
+        return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.selectedIndex") && var.GetType() == GFx::Value::ValueType::kInt && var.GetInt() > -
+            1;
     }
 
-    bool isWorkshopsTabVisibleOnDataPage(const GFxMovieRoot* root)
+    bool isWorkshopsTabVisibleOnDataPage(const GFx::AS3::MovieRoot* root)
     {
         return f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.WorkshopsTab_mc");
     }
@@ -484,7 +486,7 @@ namespace frik
      * @param root - Pipboy Scaleform UI root
      * @param triggerPressed - true if operate as trigger is pressed regardless of controller input (used for "skeleton control")
      */
-    void Pipboy::handlePrimaryControllerOperation(GFxMovieRoot* root, bool triggerPressed)
+    void Pipboy::handlePrimaryControllerOperation(GFx::AS3::MovieRoot* root, bool triggerPressed)
     {
         // page level navigation
         const bool gripPressHeldDown = isPrimaryGripPressHeldDown();
@@ -530,23 +532,23 @@ namespace frik
         }
     }
 
-    void Pipboy::gotoPrevPage(GFxMovieRoot* root)
+    void Pipboy::gotoPrevPage(GFx::AS3::MovieRoot* root)
     {
         root->Invoke("root.Menu_mc.gotoPrevPage", nullptr, nullptr, 0);
     }
 
-    void Pipboy::gotoNextPage(GFxMovieRoot* root)
+    void Pipboy::gotoNextPage(GFx::AS3::MovieRoot* root)
     {
         root->Invoke("root.Menu_mc.gotoNextPage", nullptr, nullptr, 0);
     }
 
-    void Pipboy::gotoPrevTab(GFxMovieRoot* root)
+    void Pipboy::gotoPrevTab(GFx::AS3::MovieRoot* root)
     {
         triggerHeptic();
         root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0);
     }
 
-    void Pipboy::gotoNextTab(GFxMovieRoot* root)
+    void Pipboy::gotoNextTab(GFx::AS3::MovieRoot* root)
     {
         triggerHeptic();
         root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0);
@@ -559,7 +561,7 @@ namespace frik
      * First thing is to detect is a message box is visible (context menu options) as message box and main lists are active at the
      * same time. So, if the message box is visible we will only operate on the message box list and not the main list.
      */
-    void Pipboy::moveListSelectionUpDown(GFxMovieRoot* root, const bool moveUp)
+    void Pipboy::moveListSelectionUpDown(GFx::AS3::MovieRoot* root, const bool moveUp)
     {
         triggerHeptic();
 
@@ -591,7 +593,7 @@ namespace frik
         }
     }
 
-    void Pipboy::handlePrimaryControllerOperationOnStatusPage(GFxMovieRoot* root, const bool triggerPressed)
+    void Pipboy::handlePrimaryControllerOperationOnStatusPage(GFx::AS3::MovieRoot* root, const bool triggerPressed)
     {
         if (triggerPressed) {
             triggerHeptic();
@@ -600,7 +602,7 @@ namespace frik
         }
     }
 
-    void Pipboy::handlePrimaryControllerOperationOnInventoryPage(GFxMovieRoot* root, const bool triggerPressed)
+    void Pipboy::handlePrimaryControllerOperationOnInventoryPage(GFx::AS3::MovieRoot* root, const bool triggerPressed)
     {
         if (triggerPressed) {
             triggerHeptic();
@@ -611,7 +613,7 @@ namespace frik
     /**
      * On DATA page all 3 tabs can exist at the same time, so we need to check which one is visible to prevent working on a hidden one.
      */
-    void Pipboy::handlePrimaryControllerOperationOnDataPage(GFxMovieRoot* root, const bool triggerPressed)
+    void Pipboy::handlePrimaryControllerOperationOnDataPage(GFx::AS3::MovieRoot* root, const bool triggerPressed)
     {
         if (triggerPressed) {
             triggerHeptic();
@@ -628,7 +630,7 @@ namespace frik
      * For handling map faster travel or marker setting we need to know if fast travel can be done using "bCanFastTravel"
      * and then let the Pipboy code handle the rest by sending the right event to the currently visible map (world/local).
      */
-    void Pipboy::handlePrimaryControllerOperationOnMapPage(GFxMovieRoot* root, const bool triggerPressed)
+    void Pipboy::handlePrimaryControllerOperationOnMapPage(GFx::AS3::MovieRoot* root, const bool triggerPressed)
     {
         if (isPrimaryGripPressHeldDown()) {
             if (triggerPressed) {
@@ -639,7 +641,7 @@ namespace frik
                 // zoom map
                 const auto [_, primAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
                 if (fNotEqual(primAxisY, 0, 0.5f)) {
-                    GFxValue args[1];
+                    GFx::Value args[1];
                     args[0].SetNumber(primAxisY / 100.f);
                     root->Invoke(getCurrentMapPath(root, ".ZoomMap").c_str(), nullptr, args, 1);
                 }
@@ -653,7 +655,7 @@ namespace frik
         }
     }
 
-    void Pipboy::handlePrimaryControllerOperationOnRadioPage(GFxMovieRoot* root, const bool triggerPressed)
+    void Pipboy::handlePrimaryControllerOperationOnRadioPage(GFx::AS3::MovieRoot* root, const bool triggerPressed)
     {
         if (triggerPressed) {
             triggerHeptic();
@@ -664,10 +666,10 @@ namespace frik
     /**
      * Get Current Pipboy Tab and store it.
      */
-    void Pipboy::storeLastPipboyPage(const GFxMovieRoot* root)
+    void Pipboy::storeLastPipboyPage(const GFx::AS3::MovieRoot* root)
     {
-        GFxValue PBCurrentPage;
-        if (root && root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage") && PBCurrentPage.GetType() != GFxValue::kType_Undefined) {
+        GFx::Value PBCurrentPage;
+        if (root && root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage") && PBCurrentPage.GetType() != GFx::Value::kType_Undefined) {
             _lastPipboyPage = PBCurrentPage.GetUInt();
         }
     }
@@ -891,7 +893,7 @@ namespace frik
                 RE::BSFixedString pipboyMenu("PipboyMenu");
                 IMenu* menu = (*g_ui)->GetMenu(pipboyMenu);
                 if (menu != nullptr) {
-                    GFxMovieRoot* root = menu->movie->movieRoot;
+                    GFx::AS3::MovieRoot* root = menu->movie->movieRoot;
                     if (root != nullptr) {
                         storeLastPipboyPage(root);
                         static RE::BSFixedString boneNames[7] = {
@@ -1035,7 +1037,7 @@ namespace frik
                             if (!isPrimaryGripPressHeldDown()) {
                                 if (_lastPipboyPage == 3 && !isPBMessageBoxVisible) {
                                     // Map Tab
-                                    GFxValue akArgs[2];
+                                    GFx::Value akArgs[2];
                                     akArgs[0].SetNumber(doinantHandStick.x * -1);
                                     akArgs[1].SetNumber(doinantHandStick.y);
                                     if (root->Invoke("root.Menu_mc.CurrentPage.WorldMapHolder_mc.PanMap", nullptr, akArgs, 2)) {} // Move Map
@@ -1130,7 +1132,7 @@ namespace frik
             RE::BSFixedString pipboyMenu("PipboyMenu");
             IMenu* menu = (*g_ui)->GetMenu(pipboyMenu);
             if (menu != nullptr) {
-                GFxMovieRoot* root = menu->movie->movieRoot;
+                GFx::AS3::MovieRoot* root = menu->movie->movieRoot;
                 storeLastPipboyPage(root);
             }
         }
