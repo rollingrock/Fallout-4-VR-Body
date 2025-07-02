@@ -1,9 +1,11 @@
 #pragma once
 
 #include <chrono>
+#include <numbers>
 #include <unordered_map>
 
-#include "../api/openvr.h"
+#include "F4VRUtils.h"
+#include "../../external/openvr/openvr.h"
 
 namespace f4vr
 {
@@ -177,6 +179,44 @@ namespace f4vr
         }
 
         /**
+         * Get the heading (yaw) of the specified controller in radians [0, 2π)
+         * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+         */
+        float getControllerHeading(const Hand primaryHand) const
+        {
+            return getControllerHeading(getHand(primaryHand));
+        }
+
+        float getControllerHeading(const vr::ETrackedControllerRole hand) const
+        {
+            return get(hand).getHeading();
+        }
+
+        /**
+         * Get the relative heading difference between controller and HMD
+         * Returns the angle in radians [-PI, PI] that the controller is pointing relative to HMD
+         */
+        float getControllerRelativeHeading(const Hand primaryHand) const { return getControllerRelativeHeading(getHand(primaryHand)); }
+
+        float getControllerRelativeHeading(const vr::ETrackedControllerRole hand) const
+        {
+            const float hmdHeading = getHMDHeading();
+            const float controllerHeading = getControllerHeading(hand);
+
+            // Calculate relative difference
+            float diff = controllerHeading - hmdHeading;
+
+            // Normalize to [-PI, PI] range
+            if (diff > std::numbers::pi_v<float>) {
+                diff -= 2.0f * std::numbers::pi_v<float>;
+            } else if (diff < -std::numbers::pi_v<float>) {
+                diff += 2.0f * std::numbers::pi_v<float>;
+            }
+
+            return diff;
+        }
+
+        /**
          * Trigger a haptic pulse on the specified controller for specific duration and intensity.
          * Regular primary is right hand, but if left hand mode is on then primary is left hand.
          * Duration in seconds and intensity between 0.0 and 1.0.
@@ -191,6 +231,37 @@ namespace f4vr
             get(hand).startHaptic(_currentTime + durationSeconds, intensity);
         }
 
+        /**
+         * Get the heading (yaw) of the HMD in radians [0, 2π)
+         */
+        static float getHMDHeading()
+        {
+            if (!vr::VRSystem()) {
+                return 0.0f;
+            }
+
+            vr::TrackedDevicePose_t poses[vr::k_unMaxTrackedDeviceCount];
+            vr::VRSystem()->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseStanding, 0, poses, vr::k_unMaxTrackedDeviceCount);
+
+            const auto& hmdPose = poses[vr::k_unTrackedDeviceIndex_Hmd];
+            if (!hmdPose.bPoseIsValid) {
+                return 0.0f;
+            }
+
+            // Extract the forward direction vector from the transformation matrix
+            const vr::HmdMatrix34_t& mat = hmdPose.mDeviceToAbsoluteTracking;
+            const float x = -mat.m[0][2];
+            const float z = -mat.m[2][2];
+
+            // Calculate yaw angle using atan2 and normalize to [0, 2π) range
+            float heading = std::atan2(x, z);
+            if (heading < 0) {
+                heading += 2.0f * std::numbers::pi_v<float>;
+            }
+
+            return heading;
+        }
+
     private:
         // Internal state for one controller (left or right)
         struct ControllerState
@@ -198,6 +269,7 @@ namespace f4vr
             vr::TrackedDeviceIndex_t index = vr::k_unTrackedDeviceIndexInvalid;
             vr::VRControllerState_t current{};
             vr::VRControllerState_t previous{};
+            vr::TrackedDevicePose_t pose{};
             bool valid = false;
             std::unordered_map<vr::EVRButtonId, float> pressStartTimes; // Track how long each button has been held
             std::unordered_map<vr::EVRButtonId, float> lastPressTime;
@@ -215,7 +287,7 @@ namespace f4vr
                 }
 
                 previous = current;
-                valid = vr::VRSystem()->GetControllerState(newIndex, &current, sizeof(current));
+                valid = vr::VRSystem()->GetControllerStateWithPose(vr::TrackingUniverseStanding, newIndex, &current, sizeof(current), &pose);
                 if (!valid) {
                     return;
                 }
@@ -322,7 +394,32 @@ namespace f4vr
              */
             void triggerHapticPulse() const
             {
-                vr::VRSystem()->TriggerHapticPulse(index, 0, max(0, min(3000, static_cast<uint16_t>( hapticIntensity * 3000))));
+                vr::VRSystem()->TriggerHapticPulse(index, 0, max(0, min(3000, static_cast<uint16_t>(hapticIntensity * 3000))));
+            }
+
+            /**
+             * Get the current heading (yaw) of the controller in radians [0, 2π)
+             */
+            float getHeading() const
+            {
+                if (!pose.bPoseIsValid) {
+                    return 0.0f;
+                }
+
+                const vr::HmdMatrix34_t& mat = pose.mDeviceToAbsoluteTracking;
+
+                // Extract the forward direction vector from the transformation matrix
+                // The forward direction is the negative Z axis in VR coordinate space
+                const float x = -mat.m[0][2];
+                const float z = -mat.m[2][2];
+
+                // Calculate yaw angle using atan2 and normalize to [0, 2π) range
+                float heading = std::atan2(x, z);
+                if (heading < 0) {
+                    heading += 2.0f * std::numbers::pi_v<float>;
+                }
+
+                return heading;
             }
         };
 

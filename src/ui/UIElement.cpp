@@ -23,7 +23,7 @@ namespace vrui
             throw std::runtime_error(
                 "Attempt to attach already attached widget: " + std::string(attachNode->name.c_str()));
         }
-        _attachNode = attachNode;
+        _attachNode.reset(attachNode);
     }
 
     void UIElement::detachFromAttachedNode(bool releaseSafe)

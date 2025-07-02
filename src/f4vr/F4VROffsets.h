@@ -23,10 +23,10 @@ namespace f4vr
     using _IsInAir = bool(*)(F4SEVR::Actor* actor);
     inline REL::Relocation<_IsInAir> IsInAir(REL::Offset(0x00DC3230));
 
-    typedef int (*_GetSitState)(RE::BSScript::Internal::VirtualMachine* registry, std::uint64_t stackID, F4SEVR::Actor* actor);
+    using _GetSitState = int(*)(RE::BSScript::Internal::VirtualMachine* registry, std::uint64_t stackID, F4SEVR::Actor* actor);
     inline REL::Relocation<_GetSitState> GetSitState(REL::Offset(0x40e410));
 
-    typedef bool (*_IsSneaking)(F4SEVR::Actor* a_actor);
+    using _IsSneaking = bool(*)(F4SEVR::Actor* a_actor);
     inline REL::Relocation<_IsSneaking> IsSneaking(REL::Offset(0x24d20));
 
     using _AIProcess_getAnimationManager = void(*)(uint64_t aiProcess, StackPtr<BSAnimationManager*>& manager);
@@ -70,7 +70,7 @@ namespace f4vr
     inline REL::Relocation<_loadNif> loadNif(REL::Offset(0x1d0dee0));
     //REL::Relocation<_loadNif> loadNif(REL::Offset(0x1d0dd80));
 
-    using _cloneNode = RE::NiNode * (*)(const RE::NiNode* node, f4vr::NiCloneProcess* obj);
+    using _cloneNode = RE::NiNode * (*)(const RE::NiNode* node, NiCloneProcess* obj);
     inline REL::Relocation<_cloneNode> cloneNode(REL::Offset(0x1c13ff0));
 
     using _addNode = RE::NiNode * (*)(uint64_t attachNode, const RE::NiAVObject* node);
@@ -125,13 +125,13 @@ namespace f4vr
     // using _TESDataHandler_CreateReferenceAtLocation = void* (*)(DataHandler* dataHandler, void* newRefr, f4vr::NEW_REFR_DATA* refrData);
     // inline REL::Relocation<_TESDataHandler_CreateReferenceAtLocation> TESDataHandler_CreateReferenceAtLocation(REL::Offset(0x11bd80));
 
-    using _Actor_GetCurrentWeapon = RE::TESObjectWEAP * (*)(F4SEVR::Actor* a_actor, RE::TESObjectWEAP* weap, f4vr::BGSEquipIndex idx);
+    using _Actor_GetCurrentWeapon = RE::TESObjectWEAP * (*)(F4SEVR::Actor* a_actor, RE::TESObjectWEAP* weap, BGSEquipIndex idx);
     inline REL::Relocation<_Actor_GetCurrentWeapon> Actor_GetCurrentWeapon(REL::Offset(0xe50da0));
 
-    using _Actor_GetCurrentAmmo = RE::TESAmmo * (*)(F4SEVR::Actor* a_actor, f4vr::BGSEquipIndex idx);
+    using _Actor_GetCurrentAmmo = RE::TESAmmo * (*)(F4SEVR::Actor* a_actor, BGSEquipIndex idx);
     inline REL::Relocation<_Actor_GetCurrentAmmo> Actor_GetCurrentAmmo(REL::Offset(0xe05ba0));
 
-    using _Actor_GetWeaponEquipIndex = void(*)(F4SEVR::Actor* a_actor, f4vr::BGSEquipIndex* idx, f4vr::BGSObjectInstance* instance);
+    using _Actor_GetWeaponEquipIndex = void(*)(F4SEVR::Actor* a_actor, BGSEquipIndex* idx, BGSObjectInstance* instance);
     inline REL::Relocation<_Actor_GetWeaponEquipIndex> Actor_GetWeaponEquipIndex(REL::Offset(0xe50e70));
 
     using _TESObjectREFR_Set3D = void(*)(RE::TESObjectREFR* a_refr, RE::NiAVObject* a_obj, bool unk);
@@ -167,7 +167,7 @@ namespace f4vr
     using _bhkWorld_RemoveObject = void(*)(RE::NiAVObject* root, bool a_bool, bool a_bool2);
     inline REL::Relocation<_bhkWorld_RemoveObject> bhkWorld_RemoveObject(REL::Offset(0x1df9480));
 
-    using _bhkWorld_SetMotion = void(*)(RE::NiAVObject* root, f4vr::hknpMotionPropertiesId::Preset preset, bool bool1, bool bool2, bool bool3);
+    using _bhkWorld_SetMotion = void(*)(RE::NiAVObject* root, hknpMotionPropertiesId::Preset preset, bool bool1, bool bool2, bool bool3);
     inline REL::Relocation<_bhkWorld_SetMotion> bhkWorld_SetMotion(REL::Offset(0x1df95b0));
 
     using _bhkNPCollisionObject_AddToWorld = void(*)(RE::bhkNPCollisionObject* a_obj, RE::bhkWorld* a_world);
@@ -176,13 +176,13 @@ namespace f4vr
     using _TESObjectCell_GetbhkWorld = RE::bhkWorld * (*)(RE::TESObjectCELL* a_cell);
     inline REL::Relocation<_TESObjectCell_GetbhkWorld> TESObjectCell_GetbhkWorld(REL::Offset(0x39b070));
 
-    using _Actor_GetAmmoClipPercentage = float(*)(F4SEVR::Actor* a_actor, f4vr::BGSEquipIndex a_idx);
+    using _Actor_GetAmmoClipPercentage = float(*)(F4SEVR::Actor* a_actor, BGSEquipIndex a_idx);
     inline REL::Relocation<_Actor_GetAmmoClipPercentage> Actor_GetAmmoClipPercentage(REL::Offset(0xddf6c0));
 
-    using _Actor_GetCurrentAmmoCount = float(*)(F4SEVR::Actor* a_actor, f4vr::BGSEquipIndex a_idx);
+    using _Actor_GetCurrentAmmoCount = float(*)(F4SEVR::Actor* a_actor, BGSEquipIndex a_idx);
     inline REL::Relocation<_Actor_GetCurrentAmmoCount> Actor_GetCurrentAmmoCount(REL::Offset(0xddf690));
 
-    using _Actor_SetCurrentAmmoCount = float(*)(F4SEVR::Actor* a_actor, f4vr::BGSEquipIndex a_idx, int a_count);
+    using _Actor_SetCurrentAmmoCount = float(*)(F4SEVR::Actor* a_actor, BGSEquipIndex a_idx, int a_count);
     inline REL::Relocation<_Actor_SetCurrentAmmoCount> Actor_SetCurrentAmmoCount(REL::Offset(0xddf790));
 
     using _ExtraDataList_setAmmoCount = void(*)(RE::ExtraDataList* a_list, int a_count);

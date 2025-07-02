@@ -231,7 +231,7 @@ namespace vrui
             throw std::runtime_error("Attempt to attach already attached container");
         }
 
-        _attachNode = attachNode;
+        _attachNode.reset(attachNode);
         for (const auto& childElm : _childElements) {
             g_uiManager->attachElement(childElm, attachNode);
         }
@@ -256,7 +256,7 @@ namespace vrui
         element->setParent(this);
         _childElements.emplace_back(element);
         if (_attachNode) {
-            g_uiManager->attachElement(element, _attachNode);
+            g_uiManager->attachElement(element, _attachNode.get());
         }
     }
 }

@@ -393,7 +393,6 @@ namespace F4SEVR
     // 08
     struct IMovementInterface
     {
-    public:
         virtual ~IMovementInterface();
     };
 
@@ -861,7 +860,7 @@ namespace F4SEVR
     class TESFullName : public BaseFormComponent
     {
     public:
-        virtual ~TESFullName();
+        ~TESFullName() override;
 
         virtual void Unk_07(void);
         virtual void Unk_08(void);
@@ -1037,9 +1036,8 @@ namespace F4SEVR
         BGSInstanceNamingRulesForm namingRules; // 240
 
         // 58
-        struct InstanceData : public RE::TBO_InstanceData
+        struct InstanceData : RE::TBO_InstanceData
         {
-        public:
             std::uint64_t unk10; // 10
             std::uint64_t unk18; // 18
             std::uint64_t unk20; // 20

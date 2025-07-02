@@ -11,7 +11,9 @@ namespace vrui
      */
     f4vr::PlayerNodes* getPlayerNodes()
     {
-        return reinterpret_cast<f4vr::PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
+        const auto player = RE::PlayerCharacter::GetSingleton();
+        auto* nodes = reinterpret_cast<f4vr::PlayerNodes*>(reinterpret_cast<std::uintptr_t>(player) + 0x6E0);
+        return nodes;
     }
 
     /**
@@ -39,8 +41,8 @@ namespace vrui
         auto& normPath = path._Starts_with("Data") ? path : "Data/Meshes/" + path;
         const RE::NiNode* nifNode = loadNifFromFile(normPath.c_str());
         f4vr::NiCloneProcess proc;
-        proc.unk18 = f4vr::cloneAddr1;
-        proc.unk48 = f4vr::cloneAddr2;
+        proc.unk18 = reinterpret_cast<uint64_t*>(f4vr::cloneAddr1.address());
+        proc.unk48 = reinterpret_cast<uint64_t*>(f4vr::cloneAddr2.address());
         const auto uiNode = f4vr::cloneNode(nifNode, &proc);
         uiNode->name = RE::BSFixedString(path.c_str());
         return uiNode;
@@ -62,7 +64,7 @@ namespace vrui
      */
     RE::NiNode* findNode(const char* nodeName, RE::NiNode* node)
     {
-        if (!node || !node->name) {
+        if (!node) {
             return nullptr;
         }
 
@@ -70,12 +72,10 @@ namespace vrui
             return node;
         }
 
-        if (node->GetAsRE::NiNode()) {
-            for (auto i = 0; i < node->children.m_emptyRunStart; ++i) {
-                if (const auto nextNode = node->children.data[i]) {
-                    if (const auto ret = findNode(nodeName, dynamic_cast<RE::NiNode*>(nextNode))) {
-                        return ret;
-                    }
+        for (const auto& child : node->children) {
+            if (const auto childNiNode = child->IsNode()) {
+                if (const auto result = findNode(nodeName, childNiNode)) {
+                    return result;
                 }
             }
         }
@@ -84,7 +84,7 @@ namespace vrui
 
     static void getNodeWidthHeight(RE::NiNode* node)
     {
-        const auto shape = node->GetAsBSTriShape();
-        auto bla = shape->geometryData->vertexData->vertexBlock[0];
+        // const auto shape = node->GetAsBSTriShape();
+        // auto bla = shape->geometryData->vertexData->vertexBlock[0];
     }
 }

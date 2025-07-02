@@ -207,14 +207,16 @@ namespace f4vr
 
     void setIniSettingBool(const char* name, const bool value)
     {
-        if (const auto setting = getIniSettingNative(name))
+        if (const auto setting = getIniSettingNative(name)) {
             setting->SetBinary(value);
+        }
     }
 
     void setIniSettingFloat(const char* name, const float value)
     {
-        if (const auto setting = getIniSettingNative(name))
+        if (const auto setting = getIniSettingNative(name)) {
             setting->SetFloat(value);
+        }
     }
 
     RE::Setting* getIniSettingNative(const char* name)
@@ -236,7 +238,7 @@ namespace f4vr
         }
 
         for (const auto& child : fromNode->children) {
-            if (auto const childNiNode = child->IsNode()) {
+            if (const auto childNiNode = child->IsNode()) {
                 if (const auto result = getNode(name, childNiNode)) {
                     return result;
                 }
@@ -312,7 +314,7 @@ namespace f4vr
         }
 
         for (const auto& child : node->children) {
-            if (auto const childNiNode = child->IsNode()) {
+            if (const auto childNiNode = child->IsNode()) {
                 toggleVis(childNiNode, hide, true);
             }
         }
@@ -364,7 +366,7 @@ namespace f4vr
         }
 
         for (const auto& child : fromNode->children) {
-            if (auto const childNiNode = child->IsNode()) {
+            if (const auto childNiNode = child->IsNode()) {
                 updateDownTo(toNode, childNiNode, true);
             }
         }

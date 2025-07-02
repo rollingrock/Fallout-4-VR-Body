@@ -28,7 +28,7 @@ namespace vrui
     void UIWidget::attachToNode(RE::NiNode* attachNode)
     {
         UIElement::attachToNode(attachNode);
-        _attachNode->AttachChild(_node, true);
+        _attachNode->AttachChild(_node.get(), true);
     }
 
     /**
@@ -40,7 +40,7 @@ namespace vrui
             throw std::runtime_error("Attempt to detach NOT attached widget");
         }
         RE::NiPointer<RE::NiAVObject> out;
-        _attachNode->DetachChild(_node, out);
+        _attachNode->DetachChild(_node.get(), out);
         UIElement::detachFromAttachedNode(releaseSafe);
         out = nullptr;
     }
@@ -55,7 +55,7 @@ namespace vrui
         }
 
         const auto visible = calcVisibility();
-        setNodeVisibility(_node, visible, getScale());
+        setNodeVisibility(_node.get(), visible, getScale());
         if (!visible) {
             return;
         }
@@ -99,7 +99,7 @@ namespace vrui
         updatePressableCloseToInteraction(context, distance, yOnlyDistance);
 
         // Generally outside the bounds of the widget
-        if (!_pressEventFired && distance > _node->m_worldBound.m_fRadius) {
+        if (!_pressEventFired && distance > _node->worldBound.fRadius) {
             _pressYOffset = 0;
             return;
         }

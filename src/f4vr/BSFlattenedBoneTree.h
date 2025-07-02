@@ -28,11 +28,13 @@ namespace f4vr
             {
                 Entry* iter = this;
 
-                while (iter->state & kState_External)
+                while (iter->state & kState_External) {
                     iter = iter->externData;
+                }
 
-                if ((iter->state & kState_Wide) == kState_Wide)
+                if ((iter->state & kState_Wide) == kState_Wide) {
                     return true;
+                }
 
                 return false;
             }
@@ -40,12 +42,13 @@ namespace f4vr
             template <typename T>
             T* Get()
             {
-                Entry* iter = this;
+                auto iter = this;
 
-                while (iter->state & kState_External)
+                while (iter->state & kState_External) {
                     iter = iter->externData;
+                }
 
-                return (T*)iter->data;
+                return static_cast<T*>(iter->data);
             }
         };
     };
@@ -76,23 +79,23 @@ namespace f4vr
         int GetBoneIndex(const std::string& a_name)
         {
             auto name = new RE::BSFixedString(a_name.c_str());
-            return f4vr::BSFlattenedBoneTree_GetBoneIndex(this, name);
+            return BSFlattenedBoneTree_GetBoneIndex(this, name);
         }
 
         RE::NiNode* GetBoneNode(const std::string& a_name)
         {
             auto name = new RE::BSFixedString(a_name.c_str());
-            return f4vr::BSFlattenedBoneTree_GetBoneNode(this, name);
+            return BSFlattenedBoneTree_GetBoneNode(this, name);
         }
 
         RE::NiNode* GetBoneNode(const int a_pos)
         {
-            return f4vr::BSFlattenedBoneTree_GetBoneNodeFromPos(this, a_pos);
+            return BSFlattenedBoneTree_GetBoneNodeFromPos(this, a_pos);
         }
 
         void UpdateBoneArray()
         {
-            f4vr::BSFlattenedBoneTree_UpdateBoneArray(this);
+            BSFlattenedBoneTree_UpdateBoneArray(this);
         }
 
         int numTransforms;
