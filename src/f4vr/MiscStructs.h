@@ -1,8 +1,5 @@
 #pragma once
 
-#include "f4se/GameObjects.h"
-#include "f4se/GameReferences.h"
-
 namespace f4vr
 {
     constexpr std::uint32_t PipboyAA = 0x0001ED3D;
@@ -10,10 +7,10 @@ namespace f4vr
     constexpr std::uint32_t MiningHelmet = 0x0022DD1F;
     constexpr std::uint32_t PALightKW = 0x000B34A6;
 
-    inline RelocAddr<uintptr_t> NEW_REFR_DATA_VTABLE(0x2c8d080);
+    inline REL::Relocation NEW_REFR_DATA_VTABLE(REL::Offset(0x2c8d080));
 
     using _BGSObjectInstance_CTOR = void* (*)(void* instance, RE::TESForm* a_form, RE::TBO_InstanceData* a_instanceData);
-    inline RelocAddr<_BGSObjectInstance_CTOR> BGSObjectInstance_CTOR(0x2dd930);
+    inline REL::Relocation<_BGSObjectInstance_CTOR> BGSObjectInstance_CTOR(REL::Offset(0x2dd930));
 
     // adapted from Commonlib
     class __declspec(novtable) NEW_REFR_DATA
@@ -25,13 +22,13 @@ namespace f4vr
         }
 
         // members
-        uintptr_t vtable; // 00
+        REL::Relocation<> vtable; // 00
         RE::NiPoint3 location; // 08
         RE::NiPoint3 direction; // 14
         RE::TESBoundObject* object{ nullptr }; // 20
         RE::TESObjectCELL* interior{ nullptr }; // 28
         RE::TESWorldSpace* world{ nullptr }; // 30
-        TESObjectREFR* reference{ nullptr }; // 38
+        RE::TESObjectREFR* reference{ nullptr }; // 38
         void* addPrimitive{ nullptr }; // 40
         void* additionalData{ nullptr }; // 48
         RE::ExtraDataList* extra{ nullptr }; // 50
@@ -163,9 +160,9 @@ namespace f4vr
         std::uint64_t* unk48; // initd to RelocAddr(0x36ff564)
         std::uint64_t unk50 = 0;
         std::uint64_t unk58 = 0;
-        UInt8 copyType = 1; // 60 - CopyType - default 1
-        UInt8 m_eAffectedNodeRelationBehavior = 0; // 61 - CloneRelationBehavior - default 0
-        UInt8 m_eDynamicEffectRelationBehavior = 0; // 62 - CloneRelationBehavior - default 0
+        std::uint8_t copyType = 1; // 60 - CopyType - default 1
+        std::uint8_t m_eAffectedNodeRelationBehavior = 0; // 61 - CloneRelationBehavior - default 0
+        std::uint8_t m_eDynamicEffectRelationBehavior = 0; // 62 - CloneRelationBehavior - default 0
         char m_cAppendChar = '$'; // 64 - default '$'
         RE::NiPoint3 scale = { 1.0f, 1.0f, 1.0f }; // 0x68 - default {1, 1, 1}
     };

@@ -1,8 +1,4 @@
 #pragma once
-
-#include <f4se/GameTypes.h>
-#include <f4se/PluginAPI.h>
-
 #include "F4VROffsets.h"
 
 namespace f4vr
@@ -22,22 +18,25 @@ namespace f4vr
     bool isMeleeWeaponEquipped();
     std::string getEquippedWeaponName();
     bool hasKeyword(const RE::TESObjectARMO* armor, std::uint32_t keywordFormId);
-    inline bool isJumpingOrInAir() { return IsInAir(*g_player); }
+    bool isJumpingOrInAir();
     bool isInPowerArmor();
     bool isInInternalCell();
+    bool isSwimming(const RE::PlayerCharacter* player = RE::PlayerCharacter::GetSingleton());
+    bool isUnderwater(const RE::PlayerCharacter* player = RE::PlayerCharacter::GetSingleton());
+    bool isMovementSafe(RE::PlayerCharacter* player, const RE::NiPoint3& currentPos, const RE::NiPoint3& targetPos);
 
     // settings
-    inline bool isLeftHandedMode() { return *iniLeftHandedMode; }
+    bool isLeftHandedMode();
+    bool useWandDirectionalMovement();
     float getIniSettingFloat(const char* name);
-    void setIniSettingBool(RE::BSFixedString name, bool value);
-    void setIniSettingFloat(RE::BSFixedString name, float value);
+    void setIniSettingBool(char* name, bool value);
+    void setIniSettingFloat(char* name, float value);
     RE::Setting* getIniSettingNative(const char* name);
 
     // nodes
-    RE::NiNode* getNode(const char* name, RE::NiNode* fromNode);
-    RE::NiNode* getNode2(const char* name, RE::NiNode* fromNode);
-    RE::NiNode* getChildNode(const char* nodeName, RE::NiNode* nde);
-    RE::NiNode* get1StChildNode(const char* nodeName, const RE::NiNode* nde);
+    RE::NiAVObject* getNode(const char* name, RE::NiNode* fromNode);
+    RE::NiNode* getChildNode(const char* nodeName, RE::NiNode* node);
+    RE::NiNode* get1StChildNode(const char* nodeName, const RE::NiNode* node);
 
     // visibility
     bool isNodeVisible(const RE::NiNode* node);
@@ -47,11 +46,11 @@ namespace f4vr
 
     // updates
     void updateDownFromRoot();
-    void updateDown(RE::NiNode* nde, bool updateSelf, const char* ignoreNode = nullptr);
+    void updateDown(RE::NiNode* node, bool updateSelf, const char* ignoreNode = nullptr);
     void updateDownTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
     void updateUpTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
     void updateTransforms(RE::NiNode* node);
-    void updateTransformsDown(RE::NiNode* nde, bool updateSelf);
+    void updateTransformsDown(RE::NiNode* node, bool updateSelf);
 
     typedef bool (*RegisterFunctions)(RE::BSScript::Internal::VirtualMachine* vm);
     void registerPapyrusNativeFunctions(const F4SE::detail::F4SEInterface* f4se, RegisterFunctions callback);

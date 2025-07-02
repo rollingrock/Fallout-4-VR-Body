@@ -1,8 +1,7 @@
 #pragma once
 
-#include <f4se/GameCamera.h>
-
 #include "BSFlattenedBoneTree.h"
+#include "F4SEVRStructs.h"
 #include "F4VRUtils.h"
 
 namespace f4vr
@@ -54,57 +53,70 @@ namespace f4vr
         RE::NiNode* LockPickParentNode; //0x0828
     };
 
+    inline F4SEVR::PlayerCharacter* getPlayer()
+    {
+        const auto player = RE::PlayerCharacter::GetSingleton();
+        return reinterpret_cast<F4SEVR::PlayerCharacter*>(player);
+    }
+
     inline PlayerNodes* getPlayerNodes()
     {
-        return reinterpret_cast<PlayerNodes*>(reinterpret_cast<char*>(*g_player) + 0x6E0);
+        const auto player = RE::PlayerCharacter::GetSingleton();
+        auto* nodes = reinterpret_cast<PlayerNodes*>(reinterpret_cast<std::uintptr_t>(player) + 0x6E0);
+        return nodes;
     }
 
     inline RE::NiNode* getWorldRootNode()
     {
-        return (*g_player) ? (*g_player)->unkF0->rootNode : nullptr;
+        const auto g_player = getPlayer();
+        return g_player ? g_player->unkF0->rootNode : nullptr;
     }
 
     inline RE::BSFadeNode* getRootNode()
     {
-        return reinterpret_cast<RE::BSFadeNode*>((*g_player)->unkF0->rootNode->children.data[0]->GetAsRE::NiNode());
+        const auto niAVObject = getPlayer()->unkF0->rootNode->children[0];
+        return niAVObject ? niAVObject->IsFadeNode() : nullptr;
     }
 
     // is it the 3rd-person bone tree?
     inline BSFlattenedBoneTree* getFlattenedBoneTree()
     {
-        return reinterpret_cast<BSFlattenedBoneTree*>((*g_player)->unkF0->rootNode->children.data[0]->GetAsRE::NiNode());
+        const auto g_player = getPlayer();
+        return reinterpret_cast<BSFlattenedBoneTree*>(g_player->unkF0->rootNode->children[0]->IsNode());
     }
 
     inline RE::NiNode* getFirstPersonSkeleton()
     {
-        return (*g_player)->firstPersonSkeleton->GetAsRE::NiNode();
+        return getPlayer()->firstPersonSkeleton;
     }
 
     inline BSFlattenedBoneTree* getFirstPersonBoneTree()
     {
-        return reinterpret_cast<BSFlattenedBoneTree*>((*g_player)->firstPersonSkeleton->children.data[0]->GetAsRE::NiNode());
+        const auto g_player = getPlayer();
+        return reinterpret_cast<BSFlattenedBoneTree*>(g_player->firstPersonSkeleton->children[0]->IsNode());
     }
 
-    inline RE::EquippedWeaponData* getRE::EquippedWeaponData()
+    inline RE::EquippedWeaponData* getEquippedWeaponData()
     {
-        return (*g_player)->middleProcess->unk08 && (*g_player)->middleProcess->unk08->equipData
-            ? (*g_player)->middleProcess->unk08->equipData->equippedData
+        const auto g_player = getPlayer();
+        return g_player->middleProcess->unk08 && g_player->middleProcess->unk08->equipData
+            ? g_player->middleProcess->unk08->equipData->equippedData
             : nullptr;
     }
 
     inline RE::NiNode* getCommonNode()
     {
-        return getNode("COM", getRootNode());
+        return dynamic_cast<RE::NiNode*>(getNode("COM", getRootNode()));
     }
 
     inline RE::NiNode* getWeaponNode()
     {
-        return getNode("Weapon", (*g_player)->firstPersonSkeleton);
+        return dynamic_cast<RE::NiNode*>(getNode("Weapon", getPlayer()->firstPersonSkeleton));
     }
 
     inline RE::NiNode* getPrimaryWandNode()
     {
-        return getNode("world_primaryWand.nif", getPlayerNodes()->primaryUIAttachNode);
+        return dynamic_cast<RE::NiNode*>(getNode("world_primaryWand.nif", getPlayerNodes()->primaryUIAttachNode));
     }
 
     /**
@@ -114,13 +126,13 @@ namespace f4vr
     inline RE::NiNode* getThrowableWeaponNode()
     {
         const auto meleeNode = getPlayerNodes()->primaryMeleeWeaponOffsetNode;
-        return meleeNode->children.m_emptyRunStart > 0
-            ? meleeNode->children.data[0]->GetAsRE::NiNode()
-            : nullptr;
+        return !meleeNode->children.empty() ? meleeNode->children[0]->IsNode() : nullptr;
     }
 
     inline RE::NiPoint3 getCameraPosition()
     {
-        return (*g_playerCamera)->cameraNode->world.translate;
+        // TODO: commonlibf4 migration
+        return { 0, 0, 0 };
+        // return (*g_playerCamera)->cameraNode->world.translate;
     }
 }
