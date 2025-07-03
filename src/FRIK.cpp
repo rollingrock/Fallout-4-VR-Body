@@ -137,8 +137,6 @@ namespace frik
 
             f4vr::VRControllers.update();
 
-            waitForDebugger();
-
             if (_skelly) {
                 if (!isRootNodeValid()) {
                     logger::warn("Root node released, reset skelly... PowerArmorChange?({})", _inPowerArmor != f4vr::isInPowerArmor());
@@ -166,8 +164,9 @@ namespace frik
             logger::trace("Update Weapon Position...");
             _weaponPosition->onFrameUpdate();
 
-            logger::trace("Update Pipboy...");
-            _pipboy->onFrameUpdate();
+            // TODO: commonlibf4 migration
+            // logger::trace("Update Pipboy...");
+            // _pipboy->onFrameUpdate();
 
             _configurationMode->onFrameUpdate();
 

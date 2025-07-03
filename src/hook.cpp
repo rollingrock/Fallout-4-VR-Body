@@ -10,20 +10,20 @@
 #include "xbyak/xbyak.h"
 
 //REL::Relocation<uintptr_t> hookBeforeRenderer(REL::Offset(0xd844bc));   // this hook didn't work as only a few nodes get moved
-REL::Relocation<uintptr_t> hookBeforeRenderer(REL::Offset(0x1C21156));
+REL::Relocation hookBeforeRenderer(REL::Offset(0x1C21156));
 // This hook is in member function REL::Offset(0x33) for BSFlattenedBoneTree right before it updates it's own data buffer of all the skeleton world transforms.   I think that buffer is what actually gets rendered
 
 //REL::Relocation<uintptr_t> hookMainLoopFunc(REL::Offset(0xd8187e));   // now using in fo4vr better scopes
 
-REL::Relocation<uintptr_t> hookAnimationVFunc(REL::Offset(0xf2f0a8)); // This is PostUpdateAnimationGraphManager virtual function that updates the player skeleton below the hmd.
+REL::Relocation hookAnimationVFunc(REL::Offset(0xf2f0a8)); // This is PostUpdateAnimationGraphManager virtual function that updates the player skeleton below the hmd.
 
-REL::Relocation<uintptr_t> hookPlayerUpdate(REL::Offset(0xf1004c));
+REL::Relocation hookPlayerUpdate(REL::Offset(0xf1004c));
 
-REL::Relocation<uintptr_t> hookBoneTreeUpdate(REL::Offset(0xd84ee4));
+REL::Relocation hookBoneTreeUpdate(REL::Offset(0xd84ee4));
 
-REL::Relocation<uintptr_t> hookEndUpdate(REL::Offset(0xd84f2c));
-REL::Relocation<uintptr_t> hookMainDrawCandidate(REL::Offset(0xd844bc));
-REL::Relocation<uintptr_t> hookMainDrawandUi(REL::Offset(0xd87ace));
+REL::Relocation hookEndUpdate(REL::Offset(0xd84f2c));
+REL::Relocation hookMainDrawCandidate(REL::Offset(0xd844bc));
+REL::Relocation hookMainDrawandUi(REL::Offset(0xd87ace));
 
 using _hookedFunc = void(*)(uint64_t param1, uint64_t param2, uint64_t param3);
 REL::Relocation<_hookedFunc> hookedFunc(REL::Offset(0x1C18620));
@@ -48,35 +48,35 @@ REL::Relocation<_hooked1c22fb0> hooked1c22fb0(REL::Offset(0x1c22fb0));
 
 using _main_update_player = void(*)(uint64_t rcx, uint64_t rdx);
 REL::Relocation<_main_update_player> main_update_player(REL::Offset(0x1c22fb0));
-REL::Relocation<uintptr_t> hookMainUpdatePlayer(REL::Offset(0x0f0ff6a));
+REL::Relocation hookMainUpdatePlayer(REL::Offset(0x0f0ff6a));
 
 using _hookMultiBoundCullingFunc = void(*)();
 REL::Relocation<_hookMultiBoundCullingFunc> hookMultiBoundCullingFunc(REL::Offset(0x0d84930));
-REL::Relocation<uintptr_t> hookMultiBoundCulling(REL::Offset(0x0d8445d));
+REL::Relocation hookMultiBoundCulling(REL::Offset(0x0d8445d));
 
 using _smoothMovementHook = void(*)(uint64_t rcx);
 REL::Relocation<_smoothMovementHook> smoothMovementHook(REL::Offset(0x1ba7ba0));
-REL::Relocation<uintptr_t> hook_smoothMovementHook(REL::Offset(0xd83ec4));
+REL::Relocation hook_smoothMovementHook(REL::Offset(0xd83ec4));
 
 using _someRandomFunc = void(*)(uint64_t rcx);
 REL::Relocation<_someRandomFunc> someRandomFunc(REL::Offset(0xd3c820));
-REL::Relocation<uintptr_t> hookSomeRandomFunc(REL::Offset(0xd8405e));
+REL::Relocation hookSomeRandomFunc(REL::Offset(0xd8405e));
 
 using _Actor_ReEquipAll = void(*)(F4SEVR::Actor* a_actor);
 REL::Relocation<_Actor_ReEquipAll> Actor_ReEquipAll(REL::Offset(0xddf050));
-REL::Relocation<uintptr_t> hookActor_ReEquipAllExit(REL::Offset(0xf01528));
+REL::Relocation hookActor_ReEquipAllExit(REL::Offset(0xf01528));
 
 using _ExtraData_SetMultiBoundRef = void(*)(std::uint64_t rcx, std::uint64_t rdx);
 REL::Relocation<_ExtraData_SetMultiBoundRef> ExtraData_SetMultiBoundRef(REL::Offset(0x91320));
-REL::Relocation<uintptr_t> hookExtraData_SetMultiBoundRef(REL::Offset(0xf00dc6));
+REL::Relocation hookExtraData_SetMultiBoundRef(REL::Offset(0xf00dc6));
 
 using _Actor_GetCurrentWeapon = uint64_t(*)(uint64_t rcx, uint64_t rdx, uint64_t r8);
 REL::Relocation<_Actor_GetCurrentWeapon> Actor_GetCurrentWeapon(REL::Offset(0xe50da0));
-REL::Relocation<uintptr_t> hookActor_GetCurrentWeaponForGunReload(REL::Offset(0xf3027c));
+REL::Relocation hookActor_GetCurrentWeaponForGunReload(REL::Offset(0xf3027c));
 
 using _TESObjectREFR_SetupAnimationUpdateDataForRefernce = uint64_t(*)(uint64_t rcx, float* rdx);
 REL::Relocation<_TESObjectREFR_SetupAnimationUpdateDataForRefernce> TESObjectREFR_SetupAnimationUpdateDataForRefernce(REL::Offset(0x4189c0));
-REL::Relocation<uintptr_t> hookActor_SetupAnimationUpdateDataForRefernce(REL::Offset(0xf0fbdf));
+REL::Relocation hookActor_SetupAnimationUpdateDataForRefernce(REL::Offset(0xf0fbdf));
 
 using _AIProcess_Set3DUpdateFlags = void(*)(F4SEVR::Actor::MiddleProcess* rcx, int rdx);
 REL::Relocation<_AIProcess_Set3DUpdateFlags> AIProcess_Set3DUpdateFlags(REL::Offset(0xec8ce0));
@@ -129,7 +129,7 @@ std::uint64_t RendererGetByName(const RE::BSFixedString& a_name)
     return func(a_name);
 }
 
-REL::Relocation<uint64_t> wandMesh(REL::Offset(0x2d686d8));
+REL::Relocation wandMesh(REL::Offset(0x2d686d8));
 
 void hookIt(const uint64_t rcx)
 {
@@ -240,19 +240,17 @@ void hookMain()
     //	trampoline.write_call<5>(hookBeforeRenderer.address(), (uintptr_t)hookIt);
     //logger::info("Successfully hooked before main renderer");
 
-    // replace mesh pointer string
-    const auto mesh = "Data\\Meshes\\FRIK\\_primaryWand.nif";
+    // replace mesh pointer string (replaces HP,Ammo,etc. UI to use nif that puts it on the back of the hand)
+    const auto mesh = R"(Data\Meshes\FRIK\_primaryWand.nif)";
+    for (int i = 0; i < strlen(mesh); ++i) {
+        REL::safe_write(wandMesh.address() + i, mesh[i]);
+    }
 
-    // TODO: commonlibf4 migration
-    // for (int i = 0; i < strlen(mesh); ++i) {
-    //     SafeWrite8(wandMesh.address() + i, mesh[i]);
-    // }
-
-    // TODO: commonlibf4 migration
-    // const int bytesToNOP = 0x1FF;
-    // for (int i = 0; i < bytesToNOP; ++i) {
-    //     SafeWrite8(hookAnimationVFunc.address() + i, 0x90); // this block resets the body pose to hang off the camera.    Blocking this off so body height is correct.
-    // }
+    const int bytesToNOP = 0x1FF;
+    for (int i = 0; i < bytesToNOP; ++i) {
+        // this block resets the body pose to hang off the camera. Blocking this off so body height is correct.
+        REL::safe_write(hookAnimationVFunc.address() + i, static_cast<uint8_t>(0x90));
+    }
 
     //	trampoline.write_call<5>(hookAnimationVFunc.address(), (uintptr_t)&frik::update);
 
@@ -260,7 +258,6 @@ void hookMain()
     //trampoline.write_call<5>(hookMainDrawCandidate.address(), (uintptr_t)&hook2);
     //	trampoline.write_call<5>(hookMultiBoundCulling.address(), (uintptr_t)&hook4);
 
-    F4SE::AllocTrampoline(128);
     auto& trampoline = F4SE::GetTrampoline();
 
     trampoline.write_call<5>(hookSomeRandomFunc.address(), &hook5);

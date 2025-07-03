@@ -1181,8 +1181,7 @@ namespace frik
         }
 
         const float threshhold = _pipboyStatus ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
-        // TODO: commonlibf4 migration
-        // return isCameraLookingAtObject((*g_playerCamera)->cameraNode, screen, threshhold);
+        return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraNode, screen, threshhold);
         return false;
     }
 

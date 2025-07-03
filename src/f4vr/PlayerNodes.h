@@ -142,10 +142,8 @@ namespace f4vr
 
     inline F4SEVR::PlayerCamera* getPlayerCamera()
     {
-        const auto playerCamera = RE::PlayerCamera::GetSingleton();
-        return reinterpret_cast<F4SEVR::PlayerCamera*>(playerCamera);
-        // static REL::Relocation<F4SEVR::PlayerCamera*> g_playerCamera(REL::Offset(0x5930608));
-        // return g_playerCamera.get();
+        static REL::Relocation<F4SEVR::PlayerCamera**> g_playerCamera(REL::Offset(0x5930608));
+        return *g_playerCamera.get();
     }
 
     inline RE::NiPoint3 getCameraPosition()

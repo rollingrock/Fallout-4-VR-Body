@@ -46,16 +46,8 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface* a_f
 
         F4SE::Init(a_f4se, false);
 
-        // TODO: commonlibf4 migration (probably not needed anymore)
-        // constexpr size_t LEN = 1024ULL * 128;
-        // if (!g_branchTrampoline.Create(LEN)) {
-        //     throw std::exception("couldn't create branch trampoline");
-        // }
-        //
-        // const auto moduleHandle = reinterpret_cast<void*>(GetModuleHandleA("FRIK.dll"));
-        // if (!g_localTrampoline.Create(LEN, moduleHandle)) {
-        //     throw std::exception("couldn't create codegen buffer");
-        // }
+        // allocate enough space for patches and hooks
+        F4SE::AllocTrampoline(4096);
 
         logger::info("Run patches...");
         patches::patchAll();
