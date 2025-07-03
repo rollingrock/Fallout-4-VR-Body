@@ -90,7 +90,7 @@ namespace frik
         // preProcessHideGeometryIndexes will restore them (even equipment) so it's a hacky fix
         if (g_config.hideHead || g_config.hideSkin || g_frik.getSelfieMode()) {
             preProcessHideGeometryIndexes(rn);
-            for each (int idx in _hideFaceSkinGeometryIndexes) {
+            for (const int idx : _hideFaceSkinGeometryIndexes) {
                 f4vr::setNodeVisibility(rn->geomArray[idx].geometry.get(), false);
             }
         }

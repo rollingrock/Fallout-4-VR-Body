@@ -1,9 +1,9 @@
 #pragma once
 
 #include <map>
+#include <openvr.h>
 
 #include "CullGeometryHandler.h"
-#include "api/openvr.h"
 #include "common/CommonUtils.h"
 #include "f4vr/PlayerNodes.h"
 

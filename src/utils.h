@@ -1,6 +1,5 @@
 #pragma once
 
-#include "f4se/GameReferences.h"
 #include "f4vr/MiscStructs.h"
 
 namespace frik

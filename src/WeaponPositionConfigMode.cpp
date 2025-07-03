@@ -309,7 +309,7 @@ namespace frik
 
     void WeaponPositionConfigMode::resetConfig() const
     {
-        logger::info("Reset Reposition Config for target: {}, Weapon: {}", _repositionTarget, _adjuster->_currentWeapon.c_str());
+        logger::info("Reset Reposition Config for target: {}, Weapon: {}", static_cast<int>(_repositionTarget), _adjuster->_currentWeapon.c_str());
         switch (_repositionTarget) {
         case RepositionTarget::Weapon:
             resetWeaponConfig();
@@ -331,7 +331,7 @@ namespace frik
 
     void WeaponPositionConfigMode::saveConfig() const
     {
-        logger::info("Save Reposition Config for target: {}, Weapon: {}", _repositionTarget, _adjuster->_currentWeapon.c_str());
+        logger::info("Save Reposition Config for target: {}, Weapon: {}", static_cast<int>(_repositionTarget), _adjuster->_currentWeapon.c_str());
         switch (_repositionTarget) {
         case RepositionTarget::Weapon:
             saveWeaponConfig();

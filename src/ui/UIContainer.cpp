@@ -3,6 +3,7 @@
 #include <format>
 
 #include "UIManager.h"
+#include "common/CommonUtils.h"
 
 namespace vrui
 {

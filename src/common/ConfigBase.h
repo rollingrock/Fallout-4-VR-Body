@@ -323,7 +323,7 @@ namespace common
                 RE::NiTransform data;
                 for (int i = 0; i < 3; i++) {
                     for (int j = 0; j < 4; j++) {
-                        data.rotate[i][j] = value["rotation"][i++].get<float>();
+                        data.rotate[i][j] = value["rotation"][i * 4 + j].get<float>();
                     }
                 }
                 data.translate.x = value["x"].get<float>();

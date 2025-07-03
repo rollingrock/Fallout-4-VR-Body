@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UIElement.h"
+#include "f4vr/PlayerNodes.h"
 
 namespace vrui
 {

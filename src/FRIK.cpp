@@ -57,7 +57,7 @@ namespace frik
         _messaging->RegisterListener(onF4VRSEMessage);
 
         logger::info("Register papyrus native functions...");
-        initPapyrusApis(f4se);
+        initPapyrusApis();
         PapyrusGateway::init(f4se);
         _boneSpheres.init();
     }
@@ -194,9 +194,10 @@ namespace frik
     {
         _inPowerArmor = f4vr::isInPowerArmor();
 
-        const auto player = f4vr::getPlayer();
-        logger::info("Initialize Skeleton ({}) ; Nodes: Player={:p}, Data={:p}, Root={:p}, Skeleton={:p}, Common={:p}",
-            _inPowerArmor ? "PowerArmor" : "Regular", player, player->unkF0, player->unkF0->rootNode, f4vr::getRootNode(), f4vr::getCommonNode());
+        // TODO: commonlibf4 migration
+        // const auto player = f4vr::getPlayer();
+        // logger::info("Initialize Skeleton ({}) ; Nodes: Player={:p}, Data={:p}, Root={:p}, Skeleton={:p}, Common={:p}",
+        //     _inPowerArmor ? "PowerArmor" : "Regular", player, player->unkF0, player->unkF0->rootNode, f4vr::getRootNode(), f4vr::getCommonNode());
 
         // init skeleton
         _workingRootNode = f4vr::getRootNode();

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Skeleton.h"
-#include "f4se/NiTypes.h"
 
 namespace frik
 {

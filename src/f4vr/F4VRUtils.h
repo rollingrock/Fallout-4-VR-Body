@@ -52,7 +52,7 @@ namespace f4vr
     void updateTransforms(RE::NiNode* node);
     void updateTransformsDown(RE::NiNode* node, bool updateSelf);
 
-    void registerPapyrusNativeFunctions(const F4SE::PapyrusInterface::RegisterFunctions callback);
+    void registerPapyrusNativeFunctions(F4SE::PapyrusInterface::RegisterFunctions callback);
 
     RE::NiNode* getClonedNiNodeForNifFile(const std::string& path, const std::string& name = "");
 }

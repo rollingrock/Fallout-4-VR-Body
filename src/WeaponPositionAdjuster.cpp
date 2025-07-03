@@ -176,15 +176,14 @@ namespace frik
         if (backOfHandOffsetLookup.has_value()) {
             _backOfHandUIOffsetTransform = backOfHandOffsetLookup.value();
             logger::debug("Use back of hand offset Pos: ({:2.2f}, {:2.2f}, {:2.2f}), Scale: {:.3f}, InPA: {}",
-                _currentWeapon.c_str(), _weaponOffsetTransform.translate.x, _weaponOffsetTransform.translate.y, _weaponOffsetTransform.translate.z, _weaponOffsetTransform.scale,
-                _currentlyInPA);
+                _weaponOffsetTransform.translate.x, _weaponOffsetTransform.translate.y, _weaponOffsetTransform.translate.z, _weaponOffsetTransform.scale, _currentlyInPA);
         } else {
             // No stored offset, use default adjustment
             _backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->local, _currentlyInPA);
         }
 
         logger::info("Equipped Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
-            _currentWeapon.c_str(), _currentlyInPA, weaponOffsetLookup.has_value(), offhandOffsetLookup.has_value(), backOfHandOffsetLookup.has_value());
+            _currentWeapon, _currentlyInPA, weaponOffsetLookup.has_value(), offhandOffsetLookup.has_value(), backOfHandOffsetLookup.has_value());
     }
 
     /**
@@ -353,7 +352,7 @@ namespace frik
         const auto adjustedWeaponVecWorld = _weaponOriginalWorldTransform.rotate * (adjustedWeaponVec * _weaponOriginalWorldTransform.scale);
 
         // Rotate the primary hand so it will stay on the weapon stock
-        const auto primaryHand = (f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand)->IsNode();
+        const auto primaryHand = (f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand);
         const auto handLocalVec = primaryHand->world.rotate.Transpose() * adjustedWeaponVecWorld / primaryHand->world.scale;
         rotAdjust.vec2Vec(handLocalVec, RE::NiPoint3(1, 0, 0));
 

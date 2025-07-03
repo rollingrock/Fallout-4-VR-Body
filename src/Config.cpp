@@ -3,6 +3,7 @@
 #include "Config.h"
 
 #include <filesystem>
+#include <openvr.h>
 
 #include "common/CommonUtils.h"
 #include "common/Logger.h"

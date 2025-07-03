@@ -24,13 +24,14 @@ namespace frik
      */
     bool BoneSpheresHandler::registerPapyrusFunctionsCallback(RE::BSScript::IVirtualMachine* vm)
     {
-        vm->BindNativeMethod("FRIK:FRIK", "RegisterBoneSphere", registerBoneSphereFunc);
-        vm->BindNativeMethod("FRIK:FRIK", "RegisterBoneSphereOffset", registerBoneSphereOffsetFunc);
-        vm->BindNativeMethod("FRIK:FRIK", "DestroyBoneSphere", destroyBoneSphereFunc);
-        vm->BindNativeMethod("FRIK:FRIK", "RegisterForBoneSphereEvents", registerForBoneSphereEventsFunc);
-        vm->BindNativeMethod("FRIK:FRIK", "UnRegisterForBoneSphereEvents", unRegisterForBoneSphereEventsFunc);
-        vm->BindNativeMethod("FRIK:FRIK", "toggleDebugBoneSpheres", toggleDebugBoneSpheresFunc);
-        vm->BindNativeMethod("FRIK:FRIK", "toggleDebugBoneSpheresAtBone", toggleDebugBoneSpheresAtBoneFunc);
+        // TODO: commonlibf4 migration
+        // vm->BindNativeMethod("FRIK:FRIK", "RegisterBoneSphere", registerBoneSphereFunc);
+        // vm->BindNativeMethod("FRIK:FRIK", "RegisterBoneSphereOffset", registerBoneSphereOffsetFunc);
+        // vm->BindNativeMethod("FRIK:FRIK", "DestroyBoneSphere", destroyBoneSphereFunc);
+        // vm->BindNativeMethod("FRIK:FRIK", "RegisterForBoneSphereEvents", registerForBoneSphereEventsFunc);
+        // vm->BindNativeMethod("FRIK:FRIK", "UnRegisterForBoneSphereEvents", unRegisterForBoneSphereEventsFunc);
+        // vm->BindNativeMethod("FRIK:FRIK", "toggleDebugBoneSpheres", toggleDebugBoneSpheresFunc);
+        // vm->BindNativeMethod("FRIK:FRIK", "toggleDebugBoneSpheresAtBone", toggleDebugBoneSpheresAtBoneFunc);
         return true;
     }
 
