@@ -29,16 +29,18 @@ namespace f4vr
     {
         const auto node = leftWand ? getPlayerNodes()->primaryWandNode : getPlayerNodes()->SecondaryWandNode;
         for (const auto& child : node->children) {
-            if (child->IsNiTriShape()) {
-                setNodeVisibility(child.get(), show);
-                break;
-            }
-            if (!_stricmp(child->name.c_str(), "")) {
-                setNodeVisibility(child.get(), show);
-                if (const auto grandChild = child->IsNode()) {
-                    setNodeVisibility(grandChild, show);
+            if (child) {
+                if (child->IsNiTriShape()) {
+                    setNodeVisibility(child.get(), show);
+                    break;
                 }
-                break;
+                if (!_stricmp(child->name.c_str(), "")) {
+                    setNodeVisibility(child.get(), show);
+                    if (const auto grandChild = child->IsNode()) {
+                        setNodeVisibility(grandChild, show);
+                    }
+                    break;
+                }
             }
         }
     }
@@ -239,9 +241,11 @@ namespace f4vr
 
         if (const auto niNode = node->IsNode()) {
             for (const auto& child : niNode->children) {
-                if (const auto childNiNode = child->IsNode()) {
-                    if (const auto result = getNode(name, childNiNode)) {
-                        return result;
+                if (child) {
+                    if (const auto childNiNode = child->IsNode()) {
+                        if (const auto result = getNode(name, childNiNode)) {
+                            return result;
+                        }
                     }
                 }
             }
@@ -257,9 +261,11 @@ namespace f4vr
         }
 
         for (const auto& child : node->children) {
-            if (const auto childNiNode = child->IsNode()) {
-                if (const auto ret = getChildNode(nodeName, childNiNode)) {
-                    return ret;
+            if (child) {
+                if (const auto childNiNode = child->IsNode()) {
+                    if (const auto ret = getChildNode(nodeName, childNiNode)) {
+                        return ret;
+                    }
                 }
             }
         }
@@ -269,9 +275,11 @@ namespace f4vr
     RE::NiNode* get1StChildNode(const char* nodeName, const RE::NiNode* node)
     {
         for (const auto& child : node->children) {
-            if (const auto childNiNode = child->IsNode()) {
-                if (!_stricmp(nodeName, childNiNode->name.c_str())) {
-                    return childNiNode;
+            if (child) {
+                if (const auto childNiNode = child->IsNode()) {
+                    if (!_stricmp(nodeName, childNiNode->name.c_str())) {
+                        return childNiNode;
+                    }
                 }
             }
         }
@@ -303,7 +311,9 @@ namespace f4vr
         }
         if (const auto niNode = node->IsNode()) {
             for (const auto& child : niNode->children) {
-                setNodeVisibilityDeep(child.get(), show, true);
+                if (child) {
+                    setNodeVisibilityDeep(child.get(), show, true);
+                }
             }
         }
     }
@@ -317,7 +327,9 @@ namespace f4vr
 
         if (const auto niNode = node->IsNode()) {
             for (const auto& child : niNode->children) {
-                toggleVis(child.get(), hide, true);
+                if (child) {
+                    toggleVis(child.get(), hide, true);
+                }
             }
         }
     }
@@ -330,6 +342,9 @@ namespace f4vr
 
     void updateDown(RE::NiAVObject* node, const bool updateSelf, const char* ignoreNode)
     {
+        // TODO: commonlibf4 migration
+        return;
+
         if (!node) {
             return;
         }
@@ -342,13 +357,15 @@ namespace f4vr
 
         if (const auto niNode = node->IsNode()) {
             for (const auto& child : niNode->children) {
-                if (ignoreNode && _stricmp(child->name.c_str(), ignoreNode) == 0) {
-                    continue; // skip this node
-                }
-                if (const auto childNiNode = child->IsNode()) {
-                    updateDown(childNiNode, true);
-                } else if (const auto triNode = child->IsGeometry()) {
-                    triNode->UpdateWorldData(ud);
+                if (child) {
+                    if (ignoreNode && _stricmp(child->name.c_str(), ignoreNode) == 0) {
+                        continue; // skip this node
+                    }
+                    if (const auto childNiNode = child->IsNode()) {
+                        updateDown(childNiNode, true);
+                    } else if (const auto triNode = child->IsGeometry()) {
+                        triNode->UpdateWorldData(ud);
+                    }
                 }
             }
         }
@@ -370,8 +387,10 @@ namespace f4vr
         }
 
         for (const auto& child : fromNode->children) {
-            if (const auto childNiNode = child->IsNode()) {
-                updateDownTo(toNode, childNiNode, true);
+            if (child) {
+                if (const auto childNiNode = child->IsNode()) {
+                    updateDownTo(toNode, childNiNode, true);
+                }
             }
         }
     }
@@ -426,10 +445,12 @@ namespace f4vr
         }
 
         for (const auto& child : node->children) {
-            if (const auto childNiNode = child->IsNode()) {
-                updateTransformsDown(childNiNode, true);
-            } else if (const auto childTriNode = child->IsTriShape()) {
-                updateTransforms(reinterpret_cast<RE::NiNode*>(childTriNode));
+            if (child) {
+                if (const auto childNiNode = child->IsNode()) {
+                    updateTransformsDown(childNiNode, true);
+                } else if (const auto childTriNode = child->IsTriShape()) {
+                    updateTransforms(reinterpret_cast<RE::NiNode*>(childTriNode));
+                }
             }
         }
     }

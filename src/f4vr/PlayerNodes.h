@@ -72,51 +72,62 @@ namespace f4vr
         return g_player ? g_player->unkF0->rootNode : nullptr;
     }
 
-    inline RE::BSFadeNode* getRootNode()
+    inline RE::NiNode* getRootNode()
     {
-        const auto niAVObject = getPlayer()->unkF0->rootNode->children[0];
-        return niAVObject ? niAVObject->IsFadeNode() : nullptr;
+        const auto player = getPlayer();
+        if (!player || !player->unkF0 || !player->unkF0->rootNode) {
+            return nullptr;
+        }
+        const auto root = player->unkF0->rootNode;
+        if (root->children.empty()) {
+            return nullptr;
+        }
+        return root->children[0] ? root->children[0]->IsNode() : nullptr;
     }
 
     // is it the 3rd-person bone tree?
     inline BSFlattenedBoneTree* getFlattenedBoneTree()
     {
-        const auto g_player = getPlayer();
-        return reinterpret_cast<BSFlattenedBoneTree*>(g_player->unkF0->rootNode->children[0]->IsNode());
+        const auto rootNode = getRootNode();
+        return rootNode ? reinterpret_cast<BSFlattenedBoneTree*>(rootNode) : nullptr;
     }
 
     inline RE::NiNode* getFirstPersonSkeleton()
     {
-        return getPlayer()->firstPersonSkeleton;
+        const auto player = getPlayer();
+        return player ? player->firstPersonSkeleton : nullptr;
     }
 
     inline BSFlattenedBoneTree* getFirstPersonBoneTree()
     {
-        const auto g_player = getPlayer();
-        return reinterpret_cast<BSFlattenedBoneTree*>(g_player->firstPersonSkeleton->children[0]->IsNode());
+        const auto fpSkeleton = getFirstPersonSkeleton();
+        if (!fpSkeleton || fpSkeleton->children.empty()) {
+            return nullptr;
+        }
+        return fpSkeleton->children[0] ? reinterpret_cast<BSFlattenedBoneTree*>(fpSkeleton->children[0]->IsNode()) : nullptr;
     }
 
     inline F4SEVR::EquippedWeaponData* getEquippedWeaponData()
     {
-        const auto g_player = getPlayer();
-        return g_player->middleProcess->unk08 && g_player->middleProcess->unk08->equipData
-            ? g_player->middleProcess->unk08->equipData->equippedData
+        const auto midProcUnk08 = getPlayer()->middleProcess->unk08;
+        return midProcUnk08 && midProcUnk08->equipData
+            ? midProcUnk08->equipData->equippedData
             : nullptr;
     }
 
     inline RE::NiNode* getCommonNode()
     {
-        return dynamic_cast<RE::NiNode*>(getNode("COM", getRootNode()));
+        return getNode("COM", getRootNode());
     }
 
     inline RE::NiNode* getWeaponNode()
     {
-        return dynamic_cast<RE::NiNode*>(getNode("Weapon", getPlayer()->firstPersonSkeleton));
+        return getNode("Weapon", getPlayer()->firstPersonSkeleton);
     }
 
     inline RE::NiNode* getPrimaryWandNode()
     {
-        return dynamic_cast<RE::NiNode*>(getNode("world_primaryWand.nif", getPlayerNodes()->primaryUIAttachNode));
+        return getNode("world_primaryWand.nif", getPlayerNodes()->primaryUIAttachNode);
     }
 
     /**

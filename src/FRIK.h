@@ -64,7 +64,7 @@ namespace frik
         bool _selfieMode = false;
 
         // the currently root node used in skeleton
-        RE::BSFadeNode* _workingRootNode = nullptr;
+        RE::NiNode* _workingRootNode = nullptr;
 
         Skeleton* _skelly = nullptr;
         Pipboy* _pipboy = nullptr;

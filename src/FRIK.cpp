@@ -137,6 +137,8 @@ namespace frik
 
             f4vr::VRControllers.update();
 
+            common::waitForDebugger();
+
             if (_skelly) {
                 if (!isRootNodeValid()) {
                     logger::warn("Root node released, reset skelly... PowerArmorChange?({})", _inPowerArmor != f4vr::isInPowerArmor());
@@ -151,6 +153,7 @@ namespace frik
                 if (!isGameReadyForSkeletonInitialization()) {
                     return;
                 }
+
                 initSkeleton();
             }
 
@@ -222,19 +225,24 @@ namespace frik
             return false;
         }
         if (!player->unkF0->rootNode || !f4vr::getRootNode() || !f4vr::getWorldRootNode()) {
-            logger::info("Player root nodes not set yet!");
+            logger::sample("Player root nodes not set yet!");
             return false;
         }
         if (!f4vr::getCommonNode() || !f4vr::getPlayerNodes() || !f4vr::getFlattenedBoneTree()) {
-            logger::info("Common or Player nodes not set yet!");
+            logger::sample("Common or Player nodes not set yet!");
             return false;
         }
         if (!f4vr::getNode("RArm_Hand", f4vr::getFirstPersonSkeleton())) {
-            logger::info("Arm node not set yet!");
+            logger::sample("Arm node not set yet!");
             return false;
         }
         if (!f4vr::getWeaponNode()) {
-            logger::info("Weapon node not set yet!");
+            logger::sample("Weapon node not set yet!");
+            return false;
+        }
+        const auto camera = RE::PlayerCamera::GetSingleton();
+        if (!camera || !camera->cameraRoot) {
+            logger::sample("Camera node not set yet!");
             return false;
         }
         return true;

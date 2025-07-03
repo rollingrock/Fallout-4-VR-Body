@@ -16,9 +16,14 @@ namespace
         const auto scale = std::fabs(node->local.scale - node->world.scale) < 0.001f
             ? std::format("{:.2f}", node->local.scale)
             : std::format("{:.2f}/{:.2f}", node->local.scale, node->world.scale);
-        logger::infoRaw("{}{} : children({}), hidden({}), Local:({:.2f}, {:.2f}, {:.2f}), World:({:.2f}, {:.2f}, {:.2f}), Scale:({})", padding, node->name.c_str(),
-            niNode ? niNode->children.size() : 0, node->flags.flags & 0x1, node->local.translate.x, node->local.translate.y, node->local.translate.z, node->world.translate.x,
-            node->world.translate.y, node->world.translate.z, scale);
+        logger::infoRaw("{}{} : children({}), hidden({}), Local:({:.2f}, {:.2f}, {:.2f}), World:({:.2f}, {:.2f}, {:.2f}), Scale:({})",
+            padding,
+            node->name.c_str(),
+            niNode ? niNode->children.size() : 0,
+            node->flags.flags & 0x1,
+            node->local.translate.x, node->local.translate.y, node->local.translate.z,
+            node->world.translate.x, node->world.translate.y, node->world.translate.z,
+            scale);
     }
 
     void printNodeChildren(RE::NiAVObject* node, std::string padding)
@@ -27,7 +32,9 @@ namespace
         if (const auto niNode = node->IsNode()) {
             padding += "..";
             for (const auto& child : niNode->children) {
-                printNodeChildren(child.get(), padding);
+                if (child) {
+                    printNodeChildren(child.get(), padding);
+                }
             }
         }
     }
@@ -94,7 +101,9 @@ namespace frik
 
         if (niNode) {
             for (const auto& child : niNode->children) {
-                printNodes(child.get(), curTime);
+                if (child) {
+                    printNodes(child.get(), curTime);
+                }
             }
         }
     }
@@ -113,7 +122,9 @@ namespace frik
         if (niNode) {
             padding += "..";
             for (const auto& child : niNode->children) {
-                printNodesTransform(child.get(), padding);
+                if (child) {
+                    printNodesTransform(child.get(), padding);
+                }
             }
         }
     }

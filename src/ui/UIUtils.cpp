@@ -73,9 +73,11 @@ namespace vrui
         }
 
         for (const auto& child : node->children) {
-            if (const auto childNiNode = child->IsNode()) {
-                if (const auto result = findNode(nodeName, childNiNode)) {
-                    return result;
+            if (child) {
+                if (const auto childNiNode = child->IsNode()) {
+                    if (const auto result = findNode(nodeName, childNiNode)) {
+                        return result;
+                    }
                 }
             }
         }

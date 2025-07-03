@@ -23,7 +23,7 @@ namespace frik
     class Skeleton
     {
     public:
-        Skeleton(RE::BSFadeNode* rootNode, const bool inPowerArmor) :
+        Skeleton(RE::NiNode* rootNode, const bool inPowerArmor) :
             _root(rootNode), _inPowerArmor(inPowerArmor)
         {
             _curentPosition = RE::NiPoint3(0, 0, 0);
@@ -90,7 +90,7 @@ namespace frik
         void rotateLeg(uint32_t pos, float angle) const;
 
         // root node and is in power armor define the Skeleton instance
-        RE::BSFadeNode* _root;
+        RE::NiNode* _root;
         bool _inPowerArmor;
 
         // ???
