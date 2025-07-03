@@ -83,7 +83,7 @@ namespace frik
         }
 
         // TODO: there must be a lower node we can start the search at
-        RE::NiNode* boneNode = f4vr::getChildNode(bone.c_str(), f4vr::getWorldRootNode());
+        RE::NiNode* boneNode = f4vr::findChildNode(f4vr::getWorldRootNode(), bone.c_str());
 
         if (!boneNode) {
             logger::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
@@ -115,7 +115,7 @@ namespace frik
             return 0;
         }
 
-        auto boneNode = f4vr::getChildNode(bone.c_str(), rootNode);
+        auto boneNode = f4vr::findChildNode(rootNode, bone.c_str());
 
         if (!boneNode) {
             auto n = rootNode;
@@ -124,7 +124,7 @@ namespace frik
                 n = n->parent;
             }
 
-            boneNode = f4vr::getChildNode(bone.c_str(), n); // ObjectLODRoot
+            boneNode = f4vr::findChildNode(n, bone.c_str()); // ObjectLODRoot
 
             if (!boneNode) {
                 logger::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
@@ -207,15 +207,15 @@ namespace frik
 
         // prefer to use fingers but these aren't always rendered.    so default to hand if nothing else
 
-        const RE::NiAVObject* rFinger = f4vr::getChildNode("RArm_Finger22", fpSkeleton);
-        const RE::NiAVObject* lFinger = f4vr::getChildNode("LArm_Finger22", fpSkeleton);
+        const RE::NiAVObject* rFinger = f4vr::findChildNode(fpSkeleton, "RArm_Finger22");
+        const RE::NiAVObject* lFinger = f4vr::findChildNode(fpSkeleton, "LArm_Finger22");
 
         if (rFinger == nullptr) {
-            rFinger = f4vr::getChildNode("RArm_Hand", fpSkeleton);
+            rFinger = f4vr::findChildNode(fpSkeleton, "RArm_Hand");
         }
 
         if (lFinger == nullptr) {
-            lFinger = f4vr::getChildNode("LArm_Hand", fpSkeleton);
+            lFinger = f4vr::findChildNode(fpSkeleton, "LArm_Hand");
         }
 
         if (lFinger == nullptr || rFinger == nullptr) {

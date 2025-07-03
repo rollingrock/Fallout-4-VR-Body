@@ -229,7 +229,7 @@ namespace f4vr
     /**
      * Find a node by the given name in the tree under the other given node recursively.
      */
-    RE::NiAVObject* findAVObjectNode(RE::NiAVObject* node, const std::string& name, const int maxDepth)
+    RE::NiAVObject* findAVObject(RE::NiAVObject* node, const std::string& name, const int maxDepth)
     {
         if (!node || maxDepth < 0) {
             return nullptr;
@@ -242,7 +242,7 @@ namespace f4vr
         if (const auto niNode = node->IsNode()) {
             for (const auto& child : niNode->children) {
                 if (child) {
-                    if (const auto result = findAVObjectNode(child.get(), name, maxDepth - 1)) {
+                    if (const auto result = findAVObject(child.get(), name, maxDepth - 1)) {
                         return result;
                     }
                 }
@@ -254,9 +254,9 @@ namespace f4vr
     /**
      * Find a node by the given name in the tree under the other given node recursively.
      */
-    RE::NiNode* getNode(const char* name, RE::NiAVObject* node)
+    RE::NiNode* findNode(RE::NiAVObject* node, const char* name, const int maxDepth)
     {
-        if (!node) {
+        if (!node || maxDepth < 0) {
             return nullptr;
         }
 
@@ -268,7 +268,7 @@ namespace f4vr
             for (const auto& child : niNode->children) {
                 if (child) {
                     if (const auto childNiNode = child->IsNode()) {
-                        if (const auto result = getNode(name, childNiNode)) {
+                        if (const auto result = findNode(childNiNode, name, maxDepth - 1)) {
                             return result;
                         }
                     }
@@ -279,7 +279,7 @@ namespace f4vr
     }
 
     // TODO: remove duplicate
-    RE::NiNode* getChildNode(const char* nodeName, RE::NiNode* node)
+    RE::NiNode* findChildNode(RE::NiNode* node, const char* nodeName)
     {
         if (!_stricmp(nodeName, node->name.c_str())) {
             return node;
@@ -288,7 +288,7 @@ namespace f4vr
         for (const auto& child : node->children) {
             if (child) {
                 if (const auto childNiNode = child->IsNode()) {
-                    if (const auto ret = getChildNode(nodeName, childNiNode)) {
+                    if (const auto ret = findChildNode(childNiNode, nodeName)) {
                         return ret;
                     }
                 }
@@ -297,7 +297,7 @@ namespace f4vr
         return nullptr;
     }
 
-    RE::NiNode* get1StChildNode(const char* nodeName, const RE::NiAVObject* node)
+    RE::NiNode* find1StChildNode(const RE::NiAVObject* node, const char* nodeName)
     {
         if (const auto niNode = node->IsNode()) {
             for (const auto& child : niNode->children) {

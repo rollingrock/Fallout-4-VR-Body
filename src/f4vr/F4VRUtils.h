@@ -34,10 +34,10 @@ namespace f4vr
     RE::Setting* getIniSettingNative(const char* name);
 
     // nodes
-    RE::NiAVObject* findAVObjectNode(RE::NiAVObject* node, const std::string& name, const int maxDepth = 999);
-    RE::NiNode* getNode(const char* name, RE::NiAVObject* fromNode);
-    RE::NiNode* getChildNode(const char* nodeName, RE::NiNode* node);
-    RE::NiNode* get1StChildNode(const char* nodeName, const RE::NiAVObject* node);
+    RE::NiAVObject* findAVObject(RE::NiAVObject* node, const std::string& name, const int maxDepth = 999);
+    RE::NiNode* findNode(RE::NiAVObject* node, const char* name, const int maxDepth = 999);
+    RE::NiNode* findChildNode(RE::NiNode* node, const char* nodeName);
+    RE::NiNode* find1StChildNode(const RE::NiAVObject* node, const char* nodeName);
 
     // visibility
     bool isNodeVisible(const RE::NiNode* node);

@@ -232,7 +232,7 @@ namespace frik
             logger::sample("Common or Player nodes not set yet!");
             return false;
         }
-        if (!f4vr::getNode("RArm_Hand", f4vr::getFirstPersonSkeleton())) {
+        if (!f4vr::findNode(f4vr::getFirstPersonSkeleton(), "RArm_Hand")) {
             logger::sample("Arm node not set yet!");
             return false;
         }

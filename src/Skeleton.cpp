@@ -50,14 +50,14 @@ namespace frik
         _playerNodes = getPlayerNodes();
 
         const auto fpSkeleton = getFirstPersonSkeleton();
-        _rightHand = getNode("RArm_Hand", fpSkeleton);
-        _leftHand = getNode("LArm_Hand", fpSkeleton);
+        _rightHand = findNode(fpSkeleton, "RArm_Hand");
+        _leftHand = findNode(fpSkeleton, "LArm_Hand");
         _rightHandPrevFrame = _rightHand->world;
         _leftHandPrevFrame = _leftHand->world;
 
-        _head = getNode("Head", _root);
-        _spine = getNode("SPINE2", _root);
-        _chest = getNode("Chest", _root);
+        _head = findNode(_root, "Head");
+        _spine = findNode(_root, "SPINE2");
+        _chest = findNode(_root, "Chest");
 
         // Setup Arms
         initArmsNodes();
@@ -93,8 +93,8 @@ namespace frik
         };
         const auto commonNode = getCommonNode();
         for (const auto& [name, node] : armNodes) {
-            *node = getNode(name.c_str(), commonNode);
-            // *node = f4vr::findAVObjectNode(commonNode,name);
+            *node = findNode(commonNode, name.c_str());
+            // *node = f4vr::findAVObject(commonNode,name);
             // TODO: commonlibf4 migration (should we replace all GetObjectByName)
         }
     }
@@ -107,7 +107,7 @@ namespace frik
     {
         const auto defaultBonesMap = _inPowerArmor ? _skeletonNodesDefaultTransformInPA : _skeletonNodesDefaultTransform;
         for (const auto& [boneName, defaultTransform] : defaultBonesMap) {
-            if (auto node = f4vr::findAVObjectNode(_root, boneName)) {
+            if (auto node = f4vr::findAVObject(_root, boneName)) {
                 auto transform = node->local; // use node transform to keep scale
                 transform.translate = defaultTransform.translate;
                 transform.rotate = defaultTransform.rotate;
@@ -133,12 +133,12 @@ namespace frik
 
     void Skeleton::setBodyLen()
     {
-        _torsoLen = vec3Len(getNode("Camera", _root)->world.translate - getNode("COM", _root)->world.translate);
+        _torsoLen = vec3Len(findNode(_root, "Camera")->world.translate - findNode(_root, "COM")->world.translate);
         _torsoLen *= g_config.playerHeight / DEFAULT_CAMERA_HEIGHT;
 
-        _legLen = vec3Len(getNode("LLeg_Thigh", _root)->world.translate - getNode("Pelvis", _root)->world.translate);
-        _legLen += vec3Len(getNode("LLeg_Calf", _root)->world.translate - getNode("LLeg_Thigh", _root)->world.translate);
-        _legLen += vec3Len(getNode("LLeg_Foot", _root)->world.translate - getNode("LLeg_Calf", _root)->world.translate);
+        _legLen = vec3Len(findNode(_root, "LLeg_Thigh")->world.translate - findNode(_root, "Pelvis")->world.translate);
+        _legLen += vec3Len(findNode(_root, "LLeg_Calf")->world.translate - findNode(_root, "LLeg_Thigh")->world.translate);
+        _legLen += vec3Len(findNode(_root, "LLeg_Foot")->world.translate - findNode(_root, "LLeg_Calf")->world.translate);
         _legLen *= g_config.playerHeight / DEFAULT_CAMERA_HEIGHT;
     }
 
@@ -396,12 +396,12 @@ namespace frik
         const float neckPitch = getNeckPitch();
         const float bodyPitch = _inPowerArmor ? getBodyPitch() : getBodyPitch() / 1.2f;
 
-        RE::NiNode* com = getNode("COM", _root);
-        const RE::NiNode* neck = getNode("Neck", _root);
-        RE::NiNode* spine = getNode("SPINE1", _root);
+        RE::NiNode* com = findNode(_root, "COM");
+        const RE::NiNode* neck = findNode(_root, "Neck");
+        RE::NiNode* spine = findNode(_root, "SPINE1");
 
-        _leftKneePos = getNode("LLeg_Calf", com)->world.translate;
-        _rightKneePos = getNode("RLeg_Calf", com)->world.translate;
+        _leftKneePos = findNode(com, "LLeg_Calf")->world.translate;
+        _rightKneePos = findNode(com, "RLeg_Calf")->world.translate;
 
         com->local.translate.x = 0.0;
         com->local.translate.y = 0.0;
@@ -440,8 +440,8 @@ namespace frik
 
     void Skeleton::setKneePos()
     {
-        auto lKnee = getNode("LLeg_Calf", _root);
-        auto rKnee = getNode("RLeg_Calf", _root);
+        auto lKnee = findNode(_root, "LLeg_Calf");
+        auto rKnee = findNode(_root, "RLeg_Calf");
 
         if (!lKnee || !rKnee) {
             return;
@@ -460,16 +460,16 @@ namespace frik
     // TODO: does it do anything? check if it works at all
     void Skeleton::fixArmor() const
     {
-        auto lPauldron = getNode("L_Pauldron", _root);
-        auto rPauldron = getNode("R_Pauldron", _root);
+        auto lPauldron = findNode(_root, "L_Pauldron");
+        auto rPauldron = findNode(_root, "R_Pauldron");
 
         if (!lPauldron || !rPauldron) {
             return;
         }
 
-        //float delta = getNode("LArm_Collarbone", _root)->world.translate.z - _root->world.translate.z;
-        const float delta = getNode("LArm_UpperArm", _root)->world.translate.z - _root->world.translate.z;
-        float delta2 = getNode("RArm_UpperArm", _root)->world.translate.z - _root->world.translate.z;
+        //float delta = findNode("LArm_Collarbone", _root)->world.translate.z - _root->world.translate.z;
+        const float delta = findNode(_root, "LArm_UpperArm")->world.translate.z - _root->world.translate.z;
+        float delta2 = findNode(_root, "RArm_UpperArm")->world.translate.z - _root->world.translate.z;
         if (lPauldron) {
             lPauldron->local.translate.z = delta - 15.0f;
         }
@@ -480,17 +480,17 @@ namespace frik
 
     void Skeleton::walk()
     {
-        const auto lHip = getNode("LLeg_Thigh", _root);
-        const auto rHip = getNode("RLeg_Thigh", _root);
+        const auto lHip = findNode(_root, "LLeg_Thigh");
+        const auto rHip = findNode(_root, "RLeg_Thigh");
 
         if (!lHip || !rHip) {
             return;
         }
 
-        const auto lKnee = getNode("LLeg_Calf", lHip);
-        const auto rKnee = getNode("RLeg_Calf", rHip);
-        const auto lFoot = getNode("LLeg_Foot", lHip);
-        const auto rFoot = getNode("RLeg_Foot", rHip);
+        const auto lKnee = findNode(lHip, "LLeg_Calf");
+        const auto rKnee = findNode(rHip, "RLeg_Calf");
+        const auto lFoot = findNode(lHip, "LLeg_Foot");
+        const auto rFoot = findNode(rHip, "RLeg_Foot");
 
         if (!lKnee || !rKnee || !lFoot || !rFoot) {
             return;
@@ -694,9 +694,9 @@ namespace frik
     {
         Matrix44 rotMat;
 
-        const auto footNode = isLeft ? getNode("LLeg_Foot", _root) : getNode("RLeg_Foot", _root);
-        const auto kneeNode = isLeft ? getNode("LLeg_Calf", _root) : getNode("RLeg_Calf", _root);
-        const auto hipNode = isLeft ? getNode("LLeg_Thigh", _root) : getNode("RLeg_Thigh", _root);
+        const auto footNode = isLeft ? findNode(_root, "LLeg_Foot") : findNode(_root, "RLeg_Foot");
+        const auto kneeNode = isLeft ? findNode(_root, "LLeg_Calf") : findNode(_root, "RLeg_Calf");
+        const auto hipNode = isLeft ? findNode(_root, "LLeg_Thigh") : findNode(_root, "RLeg_Thigh");
 
         const RE::NiPoint3 footPos = isLeft ? _leftFootPos : _rightFootPos;
         const RE::NiPoint3 hipPos = hipNode->world.translate;
@@ -791,14 +791,14 @@ namespace frik
      */
     void Skeleton::hide3rdPersonWeapon() const
     {
-        if (RE::NiAVObject* weapon = get1StChildNode("Weapon", _rightArm.hand)) {
+        if (RE::NiAVObject* weapon = find1StChildNode(_rightArm.hand, "Weapon")) {
             setNodeVisibility(weapon, false);
         }
     }
 
     void Skeleton::positionPipboy() const
     {
-        RE::NiAVObject* wandPip = f4vr::findAVObjectNode(_playerNodes->SecondaryWandNode, "PipboyRoot_NIF_ONLY");
+        RE::NiAVObject* wandPip = f4vr::findAVObject(_playerNodes->SecondaryWandNode, "PipboyRoot_NIF_ONLY");
 
         if (wandPip == nullptr) {
             return;
@@ -806,9 +806,9 @@ namespace frik
 
         RE::NiAVObject* pipboyBone;
         if (g_config.leftHandedPipBoy) {
-            pipboyBone = f4vr::findAVObjectNode(_rightArm.forearm1, "PipboyBone");
+            pipboyBone = f4vr::findAVObject(_rightArm.forearm1, "PipboyBone");
         } else {
-            pipboyBone = f4vr::findAVObjectNode(_leftArm.forearm1, "PipboyBone");
+            pipboyBone = f4vr::findAVObject(_leftArm.forearm1, "PipboyBone");
         }
 
         if (pipboyBone == nullptr) {
@@ -838,10 +838,10 @@ namespace frik
     void Skeleton::leftHandedModePipboy() const
     {
         if (g_config.leftHandedPipBoy) {
-            auto pipbone = getNode("PipboyBone", _rightArm.forearm1);
+            auto pipbone = findNode(_rightArm.forearm1, "PipboyBone");
 
             if (!pipbone) {
-                pipbone = getNode("PipboyBone", _leftArm.forearm1);
+                pipbone = findNode(_leftArm.forearm1, "PipboyBone");
 
                 if (!pipbone) {
                     return;
@@ -862,68 +862,68 @@ namespace frik
     void Skeleton::hideFistHelpers() const
     {
         if (!isLeftHandedMode()) {
-            RE::NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->primaryWandNode);
+            RE::NiAVObject* node = findNode(_playerNodes->primaryWandNode, "fist_M_Right_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1; // first bit sets the cull flag so it will be hidden;
             }
 
-            node = getNode("fist_F_Right_HELPER", _playerNodes->primaryWandNode);
+            node = findNode(_playerNodes->primaryWandNode, "fist_F_Right_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
 
-            node = getNode("PA_fist_R_HELPER", _playerNodes->primaryWandNode);
+            node = findNode(_playerNodes->primaryWandNode, "PA_fist_R_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
 
-            node = getNode("fist_M_Left_HELPER", _playerNodes->SecondaryWandNode);
+            node = findNode(_playerNodes->SecondaryWandNode, "fist_M_Left_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1; // first bit sets the cull flag so it will be hidden;
             }
 
-            node = getNode("fist_F_Left_HELPER", _playerNodes->SecondaryWandNode);
+            node = findNode(_playerNodes->SecondaryWandNode, "fist_F_Left_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
 
-            node = getNode("PA_fist_L_HELPER", _playerNodes->SecondaryWandNode);
+            node = findNode(_playerNodes->SecondaryWandNode, "PA_fist_L_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
         } else {
-            RE::NiAVObject* node = getNode("fist_M_Right_HELPER", _playerNodes->SecondaryWandNode);
+            RE::NiAVObject* node = findNode(_playerNodes->SecondaryWandNode, "fist_M_Right_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1; // first bit sets the cull flag so it will be hidden;
             }
 
-            node = getNode("fist_F_Right_HELPER", _playerNodes->SecondaryWandNode);
+            node = findNode(_playerNodes->SecondaryWandNode, "fist_F_Right_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
 
-            node = getNode("PA_fist_R_HELPER", _playerNodes->SecondaryWandNode);
+            node = findNode(_playerNodes->SecondaryWandNode, "PA_fist_R_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
 
-            node = getNode("fist_M_Left_HELPER", _playerNodes->primaryWandNode);
+            node = findNode(_playerNodes->primaryWandNode, "fist_M_Left_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1; // first bit sets the cull flag so it will be hidden;
             }
 
-            node = getNode("fist_F_Left_HELPER", _playerNodes->primaryWandNode);
+            node = findNode(_playerNodes->primaryWandNode, "fist_F_Left_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
 
-            node = getNode("PA_fist_L_HELPER", _playerNodes->primaryWandNode);
+            node = findNode(_playerNodes->primaryWandNode, "PA_fist_L_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
         }
 
-        if (const auto uiNode = getNode("Point002", _playerNodes->SecondaryWandNode)) {
+        if (const auto uiNode = findNode(_playerNodes->SecondaryWandNode, "Point002")) {
             uiNode->local.scale = 0.0;
         }
     }
@@ -934,10 +934,10 @@ namespace frik
 
         if (!g_config.leftHandedPipBoy) {
             if (_leftArm.forearm3) {
-                pipboy = f4vr::findAVObjectNode(_leftArm.forearm3, "PipboyBone");
+                pipboy = f4vr::findAVObject(_leftArm.forearm3, "PipboyBone");
             }
         } else {
-            pipboy = f4vr::findAVObjectNode(_rightArm.forearm3, "PipboyBone");
+            pipboy = f4vr::findAVObject(_rightArm.forearm3, "PipboyBone");
         }
 
         if (!pipboy) {
@@ -958,7 +958,7 @@ namespace frik
 
     void Skeleton::showHidePAHud() const
     {
-        if (const auto hud = getNode("PowerArmorHelmetRoot", _playerNodes->roomnode)) {
+        if (const auto hud = findNode(_playerNodes->roomnode, "PowerArmorHelmetRoot")) {
             hud->local.scale = g_config.showPAHUD ? 1.0f : 0.0f;
         }
     }
@@ -978,8 +978,8 @@ namespace frik
 
         RE::NiNode* rightWeapon = getWeaponNode();
         RE::NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
-        const auto rHand = getNode("RArm_Hand", getFirstPersonSkeleton());
-        const auto lHand = getNode("LArm_Hand", getFirstPersonSkeleton());
+        const auto rHand = findNode(getFirstPersonSkeleton(), "RArm_Hand");
+        const auto lHand = findNode(getFirstPersonSkeleton(), "LArm_Hand");
 
         if (!rightWeapon || !rHand || !leftWeapon || !lHand) {
             logger::sample("Cannot set up weapon nodes for left-handed mode switch");

@@ -111,7 +111,7 @@ namespace frik
             return;
         }
         if (RE::NiNode* screenNode = f4vr::getPlayerNodes()->ScreenNode) {
-            if (const RE::NiAVObject* screen = f4vr::findAVObjectNode(screenNode, std::string("Screen:0"))) {
+            if (const RE::NiAVObject* screen = f4vr::findAVObject(screenNode, std::string("Screen:0"))) {
                 _pipboyScreenPrevFrame = screen->world;
             }
         }
@@ -153,8 +153,8 @@ namespace frik
         //Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
         RE::NiNode* hideNode;
         g_config.isHoloPipboy
-            ? hideNode = f4vr::getChildNode("Screen", f4vr::getWorldRootNode())
-            : hideNode = f4vr::getChildNode("HoloEmitter", f4vr::getWorldRootNode());
+            ? hideNode = f4vr::findChildNode(f4vr::getWorldRootNode(), "Screen")
+            : hideNode = f4vr::findChildNode(f4vr::getWorldRootNode(), "HoloEmitter");
         if (hideNode) {
             if (hideNode->local.scale != 0) {
                 hideNode->flags.flags |= 0x1;
@@ -164,7 +164,7 @@ namespace frik
 
         // TODO: moved from end of F4VRBody, check works well
         // sets 3rd Person Pipboy Scale
-        if (const auto pipboy3Rd = f4vr::getChildNode("PipboyBone", f4vr::getWorldRootNode())) {
+        if (const auto pipboy3Rd = f4vr::findChildNode(f4vr::getWorldRootNode(), "PipboyBone")) {
             pipboy3Rd->local.scale = g_config.pipBoyScale;
         }
     }
@@ -174,12 +174,12 @@ namespace frik
         const auto pn = f4vr::getPlayerNodes();
         if (const auto screenNode = pn->ScreenNode) {
             const std::string screenName("Screen:0");
-            const RE::NiAVObject* newScreen = f4vr::findAVObjectNode(screenNode, screenName);
+            const RE::NiAVObject* newScreen = f4vr::findAVObject(screenNode, screenName);
 
             if (!newScreen) {
                 pn->ScreenNode->DetachChildAt(0);
 
-                newScreen = f4vr::findAVObjectNode(pn->PipboyRoot_nif_only_node, screenName)->parent;
+                newScreen = f4vr::findAVObject(pn->PipboyRoot_nif_only_node, screenName)->parent;
                 RE::NiNode* rn = f4vr::addNode((uint64_t)&pn->ScreenNode, newScreen);
             }
         }
@@ -192,7 +192,7 @@ namespace frik
     {
         const auto pn = f4vr::getPlayerNodes();
         const RE::NiNode* ui = pn->primaryUIAttachNode;
-        RE::NiNode* wand = f4vr::get1StChildNode("world_primaryWand.nif", ui);
+        RE::NiNode* wand = f4vr::find1StChildNode(ui, "world_primaryWand.nif");
         RE::NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
         if (retNode) {
             // ui->DetachChild(wand);
@@ -200,17 +200,17 @@ namespace frik
         }
 
         wand = pn->SecondaryWandNode;
-        RE::NiNode* pipParent = f4vr::get1StChildNode("PipboyParent", wand);
+        RE::NiNode* pipParent = f4vr::find1StChildNode(wand, "PipboyParent");
 
         if (!pipParent) {
             meshesReplaced = false;
             return;
         }
-        wand = f4vr::get1StChildNode("PipboyRoot_NIF_ONLY", pipParent);
+        wand = f4vr::find1StChildNode(pipParent, "PipboyRoot_NIF_ONLY");
         g_config.isHoloPipboy ? retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/HoloPipboyVR.nif") : retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/PipboyVR.nif");
         if (retNode && wand) {
             const std::string screenName("Screen:0");
-            const RE::NiAVObject* newScreen = f4vr::findAVObjectNode(retNode, screenName)->parent;
+            const RE::NiAVObject* newScreen = f4vr::findAVObject(retNode, screenName)->parent;
 
             if (!newScreen) {
                 meshesReplaced = false;
@@ -229,16 +229,16 @@ namespace frik
         meshesReplaced = true;
 
         static std::string wandPipName("PipboyRoot");
-        if (const auto pbRoot = f4vr::findAVObjectNode(pn->SecondaryWandNode, wandPipName)) {
+        if (const auto pbRoot = f4vr::findAVObject(pn->SecondaryWandNode, wandPipName)) {
             pbRoot->local = g_config.getPipboyOffset();
         }
 
         pn->PipboyRoot_nif_only_node->local.scale = 0.0; //prevents the VRPipboy screen from being displayed on first load whilst PB is off.
-        if (const auto hideNode = f4vr::getChildNode(itemHide.c_str(), f4vr::getWorldRootNode())) {
+        if (const auto hideNode = f4vr::findChildNode(f4vr::getWorldRootNode(), itemHide.c_str())) {
             hideNode->flags.flags |= 0x1;
             hideNode->local.scale = 0;
         }
-        if (const auto showNode = f4vr::getChildNode(itemShow.c_str(), f4vr::getWorldRootNode())) {
+        if (const auto showNode = f4vr::findChildNode(f4vr::getWorldRootNode(), itemShow.c_str())) {
             showNode->flags.flags &= 0xfffffffffffffffe;
             showNode->local.scale = 1;
         }
@@ -262,8 +262,8 @@ namespace frik
             ? finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate
             : finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate;
         g_config.leftHandedPipBoy
-            ? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder)
-            : pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder);
+            ? pipboy = f4vr::findNode(_skelly->getRightArm().shoulder, "PipboyRoot")
+            : pipboy = f4vr::findNode(_skelly->getLeftArm().shoulder, "PipboyRoot");
         if (pipboy == nullptr) {
             return;
         }
@@ -378,11 +378,11 @@ namespace frik
         //Virtual Power Button Code
         static std::string pwrButtonTrans("PowerTranslate");
         g_config.leftHandedPipBoy
-            ? pipboy = f4vr::getNode("PowerDetect", _skelly->getRightArm().shoulder)
-            : pipboy = f4vr::getNode("PowerDetect", _skelly->getLeftArm().shoulder);
+            ? pipboy = f4vr::findNode(_skelly->getRightArm().shoulder, "PowerDetect")
+            : pipboy = f4vr::findNode(_skelly->getLeftArm().shoulder, "PowerDetect");
         g_config.leftHandedPipBoy
-            ? pipboyTrans = f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, pwrButtonTrans)
-            : pipboyTrans = f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, pwrButtonTrans);
+            ? pipboyTrans = f4vr::findAVObject(_skelly->getRightArm().forearm3, pwrButtonTrans)
+            : pipboyTrans = f4vr::findAVObject(_skelly->getLeftArm().forearm3, pwrButtonTrans);
         if (!pipboyTrans || !pipboy) {
             return;
         }
@@ -419,11 +419,11 @@ namespace frik
         //Virtual Light Button Code
         static std::string lhtButtontrans("LightTranslate");
         g_config.leftHandedPipBoy
-            ? pipboy = f4vr::getNode("LightDetect", _skelly->getRightArm().shoulder)
-            : pipboy = f4vr::getNode("LightDetect", _skelly->getLeftArm().shoulder);
+            ? pipboy = f4vr::findNode(_skelly->getRightArm().shoulder, "LightDetect")
+            : pipboy = f4vr::findNode(_skelly->getLeftArm().shoulder, "LightDetect");
         g_config.leftHandedPipBoy
-            ? pipboyTrans = f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, lhtButtontrans)
-            : pipboyTrans = f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, lhtButtontrans);
+            ? pipboyTrans = f4vr::findAVObject(_skelly->getRightArm().forearm3, lhtButtontrans)
+            : pipboyTrans = f4vr::findAVObject(_skelly->getLeftArm().forearm3, lhtButtontrans);
         if (!pipboyTrans || !pipboy) {
             return;
         }
@@ -447,11 +447,11 @@ namespace frik
         //Virtual Radio Button Code
         static std::string radioButtontrans("RadioTranslate");
         g_config.leftHandedPipBoy
-            ? pipboy = f4vr::getNode("RadioDetect", _skelly->getRightArm().shoulder)
-            : pipboy = f4vr::getNode("RadioDetect", _skelly->getLeftArm().shoulder);
+            ? pipboy = f4vr::findNode(_skelly->getRightArm().shoulder, "RadioDetect")
+            : pipboy = f4vr::findNode(_skelly->getLeftArm().shoulder, "RadioDetect");
         g_config.leftHandedPipBoy
-            ? pipboyTrans = f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, radioButtontrans)
-            : pipboyTrans = f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, radioButtontrans);
+            ? pipboyTrans = f4vr::findAVObject(_skelly->getRightArm().forearm3, radioButtontrans)
+            : pipboyTrans = f4vr::findAVObject(_skelly->getLeftArm().forearm3, radioButtontrans);
         if (!pipboyTrans || !pipboy) {
             return;
         }
@@ -696,32 +696,32 @@ namespace frik
             static std::string newModeKnob("ModeKnobDuplicate");
             static std::string originalModeKnob("ModeKnob02");
             RE::NiAVObject* pipbone = g_config.leftHandedPipBoy
-                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, pwrButtonOn)
-                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, pwrButtonOn);
+                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, pwrButtonOn)
+                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, pwrButtonOn);
             RE::NiAVObject* pipbone2 = g_config.leftHandedPipBoy
-                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, pwrButtonOff)
-                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, pwrButtonOff);
+                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, pwrButtonOff)
+                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, pwrButtonOff);
             RE::NiAVObject* pipbone3 = g_config.leftHandedPipBoy
-                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, lhtButtonOn)
-                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, lhtButtonOn);
+                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, lhtButtonOn)
+                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, lhtButtonOn);
             RE::NiAVObject* pipbone4 = g_config.leftHandedPipBoy
-                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, lhtButtonOff)
-                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, lhtButtonOff);
+                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, lhtButtonOff)
+                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, lhtButtonOff);
             RE::NiAVObject* pipbone5 = g_config.leftHandedPipBoy
-                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, radButtonOn)
-                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, radButtonOn);
+                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, radButtonOn)
+                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, radButtonOn);
             RE::NiAVObject* pipbone6 = g_config.leftHandedPipBoy
-                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, radButtonOff)
-                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, radButtonOff);
+                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, radButtonOff)
+                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, radButtonOff);
             RE::NiAVObject* pipbone7 = g_config.leftHandedPipBoy
-                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, radioNeedle)
-                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, radioNeedle);
+                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, radioNeedle)
+                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, radioNeedle);
             RE::NiAVObject* pipbone8 = g_config.leftHandedPipBoy
-                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, newModeKnob)
-                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, newModeKnob);
+                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, newModeKnob)
+                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, newModeKnob);
             RE::NiAVObject* pipbone9 = g_config.leftHandedPipBoy
-                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, originalModeKnob)
-                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, originalModeKnob);
+                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, originalModeKnob)
+                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, originalModeKnob);
             if (!pipbone || !pipbone2 || !pipbone3 || !pipbone4 || !pipbone5 || !pipbone6 || !pipbone7 || !pipbone8) {
                 return;
             }
@@ -732,8 +732,8 @@ namespace frik
                     ? finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate
                     : finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate;
                 g_config.leftHandedPipBoy
-                    ? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder)
-                    : pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder);
+                    ? pipboy = f4vr::findNode(_skelly->getRightArm().shoulder, "PipboyRoot")
+                    : pipboy = f4vr::findNode(_skelly->getLeftArm().shoulder, "PipboyRoot");
                 float distance;
                 distance = vec3Len(finger - pipboy->world.translate);
                 if (distance < g_config.pipboyDetectionRange && !_isOperatingPipboy && !_pipboyStatus) {
@@ -756,8 +756,8 @@ namespace frik
                 for (int i = 0; i < 7; i++) {
                     // Remove any stuck helper orbs if Pipboy times out for any reason.
                     RE::NiAVObject* orb = g_config.leftHandedPipBoy
-                        ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, orbNames[i])
-                        : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, orbNames[i]);
+                        ? f4vr::findAVObject(_skelly->getRightArm().forearm3, orbNames[i])
+                        : f4vr::findAVObject(_skelly->getLeftArm().forearm3, orbNames[i]);
                     if (orb != nullptr) {
                         orb->local.scale = std::min<float>(orb->local.scale, 0);
                     }
@@ -790,7 +790,7 @@ namespace frik
             _pipboyStatus ? pipbone2->local.scale = 0 : pipbone->local.scale = 0;
             // Control switching between hand and head based Pipboy light
             if (lightOn && !helmetHeadLamp) {
-                RE::NiAVObject* head = f4vr::getNode("Head", f4vr::getPlayer()->GetActorRootNode(false));
+                RE::NiAVObject* head = f4vr::findNode(f4vr::getPlayer()->GetActorRootNode(false), "Head");
                 if (!head) {
                     return;
                 }
@@ -807,10 +807,10 @@ namespace frik
                         _SwitchLightHaptics = false;
                         f4vr::VRControllers.triggerHaptic(useRightHand ? vr::TrackedControllerRole_RightHand : vr::TrackedControllerRole_LeftHand, 0.1f);
                         auto LGHT_ATTACH = useRightHand
-                            ? f4vr::getNode("RArm_Hand", _skelly->getRightArm().shoulder)
-                            : f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder);
+                            ? f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand")
+                            : f4vr::findNode(_skelly->getLeftArm().shoulder, "LArm_Hand");
                         RE::NiNode* lght = g_config.isPipBoyTorchOnArm
-                            ? f4vr::get1StChildNode("HeadLightParent", LGHT_ATTACH)
+                            ? f4vr::find1StChildNode(LGHT_ATTACH, "HeadLightParent")
                             : f4vr::getPlayerNodes()->HeadLightParentNode;
                         if (lght) {
                             auto parentnode = g_config.isPipBoyTorchOnArm ? lght->parent->name : f4vr::getPlayerNodes()->HeadLightParentNode->parent->name;
@@ -835,8 +835,8 @@ namespace frik
             //Attach light to hand
             if (g_config.isPipBoyTorchOnArm) {
                 auto LGHT_ATTACH = g_config.leftHandedPipBoy || g_config.isPipBoyTorchRightArmMode
-                    ? f4vr::getNode("RArm_Hand", _skelly->getRightArm().shoulder)
-                    : f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder);
+                    ? f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand")
+                    : f4vr::findNode(_skelly->getLeftArm().shoulder, "LArm_Hand");
                 if (LGHT_ATTACH) {
                     if (lightOn && !helmetHeadLamp) {
                         RE::NiNode* lght = f4vr::getPlayerNodes()->HeadLightParentNode;
@@ -852,7 +852,7 @@ namespace frik
                     }
                     //Restore HeadLight to correct node when light is powered off (to avoid any crashes)
                     else if (!lightOn || helmetHeadLamp) {
-                        if (auto lght = f4vr::get1StChildNode("HeadLightParent", LGHT_ATTACH)) {
+                        if (auto lght = f4vr::find1StChildNode(LGHT_ATTACH, "HeadLightParent")) {
                             auto parentnode = lght->parent->name;
                             if (parentnode != "HMDNode") {
                                 Matrix44 LightRot;
@@ -911,27 +911,27 @@ namespace frik
                             : finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate;
                         for (int i = 0; i < 7; i++) {
                             RE::NiAVObject* bone = g_config.leftHandedPipBoy
-                                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, boneNames[i])
-                                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, boneNames[i]);
+                                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, boneNames[i])
+                                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, boneNames[i]);
                             auto trans = g_config.leftHandedPipBoy
-                                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, transNames[i])
-                                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, transNames[i]);
+                                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, transNames[i])
+                                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, transNames[i]);
                             if (bone && trans) {
                                 float distance = vec3Len(finger - bone->world.translate);
                                 if (distance > boneDistance[i]) {
                                     trans->local.translate.z = 0.0;
                                     _PBControlsSticky[i] = false;
                                     RE::NiAVObject* orb = g_config.leftHandedPipBoy
-                                        ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, orbNames[i])
-                                        : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, orbNames[i]); //Hide helper Orbs when not near a control surface
+                                        ? f4vr::findAVObject(_skelly->getRightArm().forearm3, orbNames[i])
+                                        : f4vr::findAVObject(_skelly->getLeftArm().forearm3, orbNames[i]); //Hide helper Orbs when not near a control surface
                                     if (orb != nullptr) {
                                         orb->local.scale = std::min<float>(orb->local.scale, 0);
                                     }
                                 } else if (distance <= boneDistance[i]) {
                                     float fz = boneDistance[i] - distance;
                                     RE::NiAVObject* orb = g_config.leftHandedPipBoy
-                                        ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, orbNames[i])
-                                        : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, orbNames[i]); //Show helper Orbs when not near a control surface
+                                        ? f4vr::findAVObject(_skelly->getRightArm().forearm3, orbNames[i])
+                                        : f4vr::findAVObject(_skelly->getLeftArm().forearm3, orbNames[i]); //Show helper Orbs when not near a control surface
                                     if (orb != nullptr) {
                                         orb->local.scale = std::max<float>(orb->local.scale, 1);
                                     }
@@ -941,8 +941,8 @@ namespace frik
                                             // Move Scroll Knob Anti-Clockwise when near control surface
                                             static std::string KnobNode = "ScrollItemsKnobRot";
                                             RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
-                                                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, KnobNode)
-                                                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, KnobNode);
+                                                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
+                                                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
                                             Matrix44 rot;
                                             rot.setEulerAngles(degreesToRads(0), degreesToRads(fz), degreesToRads(0));
                                             ScrollKnob->local.rotate = rot.multiply43Right(ScrollKnob->local.rotate);
@@ -952,8 +952,8 @@ namespace frik
                                             float roty = fz * -1;
                                             static std::string KnobNode = "ScrollItemsKnobRot";
                                             RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
-                                                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, KnobNode)
-                                                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, KnobNode);
+                                                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
+                                                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
                                             Matrix44 rot;
                                             rot.setEulerAngles(degreesToRads(0), degreesToRads(roty), degreesToRads(0));
                                             ScrollKnob->local.rotate = rot.multiply43Right(ScrollKnob->local.rotate);
@@ -991,8 +991,8 @@ namespace frik
                         if (!g_frik.isPipboyConfigurationModeActive() && g_config.enablePrimaryControllerPipboyUse) {
                             std::string selectnodename = "SelectRotate";
                             auto trans = g_config.leftHandedPipBoy
-                                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, selectnodename)
-                                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, selectnodename);
+                                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, selectnodename)
+                                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, selectnodename);
                             vr::VRControllerAxis_t doinantHandStick = f4vr::isLeftHandedMode()
                                 ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
                                 : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
@@ -1021,8 +1021,8 @@ namespace frik
                             if (_lastPipboyPage != 3 || isPBMessageBoxVisible) {
                                 static std::string KnobNode = "ScrollItemsKnobRot";
                                 RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
-                                    ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, KnobNode)
-                                    : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, KnobNode);
+                                    ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
+                                    : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
                                 Matrix44 rot;
                                 if (doinantHandStick.y > 0.85) {
                                     rot.setEulerAngles(degreesToRads(0), degreesToRads(0.4f), degreesToRads(0));
@@ -1095,8 +1095,8 @@ namespace frik
                                 : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0];
                             std::string selectnodename = "SelectRotate";
                             auto trans = g_config.leftHandedPipBoy
-                                ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, selectnodename)
-                                : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, selectnodename);
+                                ? f4vr::findAVObject(_skelly->getRightArm().forearm3, selectnodename)
+                                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, selectnodename);
                             if (trans != nullptr) {
                                 if (secondaryTrigger.x > 0.00) {
                                     trans->local.translate.z = secondaryTrigger.x / 3 * -1;
@@ -1109,8 +1109,8 @@ namespace frik
                             if (_lastPipboyPage != 3 || isPBMessageBoxVisible) {
                                 static std::string KnobNode = "ScrollItemsKnobRot";
                                 RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
-                                    ? f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, KnobNode)
-                                    : f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, KnobNode);
+                                    ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
+                                    : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
                                 Matrix44 rot;
                                 if (offHandStick.x > 0.85) {
                                     rot.setEulerAngles(degreesToRads(0), degreesToRads(0.4), degreesToRads(0));
@@ -1168,14 +1168,14 @@ namespace frik
     bool Pipboy::isLookingAtPipBoy() const
     {
         const std::string wandPipName("PipboyRoot_NIF_ONLY");
-        RE::NiAVObject* pipboy = f4vr::findAVObjectNode(f4vr::getPlayerNodes()->SecondaryWandNode, wandPipName);
+        RE::NiAVObject* pipboy = f4vr::findAVObject(f4vr::getPlayerNodes()->SecondaryWandNode, wandPipName);
 
         if (pipboy == nullptr) {
             return false;
         }
 
         const std::string screenName("Screen:0");
-        const RE::NiAVObject* screen = f4vr::findAVObjectNode(pipboy, screenName);
+        const RE::NiAVObject* screen = f4vr::findAVObject(pipboy, screenName);
         if (screen == nullptr) {
             return false;
         }

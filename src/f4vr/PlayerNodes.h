@@ -117,17 +117,17 @@ namespace f4vr
 
     inline RE::NiNode* getCommonNode()
     {
-        return getNode("COM", getRootNode());
+        return findNode(getRootNode(), "COM");
     }
 
     inline RE::NiNode* getWeaponNode()
     {
-        return getNode("Weapon", getPlayer()->firstPersonSkeleton);
+        return findNode(getPlayer()->firstPersonSkeleton, "Weapon");
     }
 
     inline RE::NiNode* getPrimaryWandNode()
     {
-        return getNode("world_primaryWand.nif", getPlayerNodes()->primaryUIAttachNode);
+        return findNode(getPlayerNodes()->primaryUIAttachNode, "world_primaryWand.nif");
     }
 
     /**

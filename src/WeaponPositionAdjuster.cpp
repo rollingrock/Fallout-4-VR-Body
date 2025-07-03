@@ -466,7 +466,7 @@ namespace frik
             return;
         }
 
-        const RE::NiAVObject* scopeRet = f4vr::findAVObjectNode(weapon, "ReticleNode");
+        const RE::NiAVObject* scopeRet = f4vr::findAVObject(weapon, "ReticleNode");
         if (!scopeRet) {
             return;
         }
