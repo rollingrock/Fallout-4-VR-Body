@@ -140,10 +140,16 @@ namespace f4vr
         return !meleeNode->children.empty() ? meleeNode->children[0]->IsNode() : nullptr;
     }
 
+    inline F4SEVR::PlayerCamera* getPlayerCamera()
+    {
+        const auto playerCamera = RE::PlayerCamera::GetSingleton();
+        return reinterpret_cast<F4SEVR::PlayerCamera*>(playerCamera);
+        // static REL::Relocation<F4SEVR::PlayerCamera*> g_playerCamera(REL::Offset(0x5930608));
+        // return g_playerCamera.get();
+    }
+
     inline RE::NiPoint3 getCameraPosition()
     {
-        // TODO: commonlibf4 migration
-        return { 0, 0, 0 };
-        // return (*g_playerCamera)->cameraNode->world.translate;
+        return getPlayerCamera()->cameraNode->world.translate;
     }
 }

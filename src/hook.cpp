@@ -209,14 +209,15 @@ void hookSmoothMovement(const uint64_t rcx)
 void hook_main_update_player(const uint64_t rcx, const uint64_t rdx)
 {
     const auto player = f4vr::getPlayer();
-    const auto playerCamera = RE::PlayerCamera::GetSingleton();
-    if (player && playerCamera && player->unkF0 && player->unkF0->rootNode) {
+    const auto playerCamera = f4vr::getPlayerCamera();
+    if (player && playerCamera && playerCamera->cameraNode && player->unkF0 && player->unkF0->rootNode) {
         RE::NiNode* body = player->unkF0->rootNode;
 
-        body->local.translate.x = playerCamera->cameraRoot->world.translate.x;
-        body->local.translate.y = playerCamera->cameraRoot->world.translate.y;
-        body->world.translate.x = playerCamera->cameraRoot->world.translate.x;
-        body->world.translate.y = playerCamera->cameraRoot->world.translate.y;
+        const auto cameraPos = playerCamera->cameraNode->world.translate;
+        body->local.translate.x = cameraPos.x;
+        body->local.translate.y = cameraPos.y;
+        body->world.translate.x = cameraPos.x;
+        body->world.translate.y = cameraPos.y;
 
         //static RE::BSFixedString pwn("PlayerWorldNode");
         //RE::NiNode* pwn_node = player->unkF0->rootNode->parent->GetObjectByName(&pwn)->GetAsRE::NiNode();
@@ -264,7 +265,7 @@ void hookMain()
 
     trampoline.write_call<5>(hookSomeRandomFunc.address(), &hook5);
 
-    // trampoline.write_call<5>(hookMainUpdatePlayer.address(), &hook_main_update_player);
+    trampoline.write_call<5>(hookMainUpdatePlayer.address(), &hook_main_update_player);
     trampoline.write_call<5>(hook_smoothMovementHook.address(), &hookSmoothMovement);
 
     trampoline.write_call<5>(hookActor_ReEquipAllExit.address(), &fixPA3D);

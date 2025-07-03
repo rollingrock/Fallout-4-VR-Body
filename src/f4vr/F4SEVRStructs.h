@@ -1150,4 +1150,145 @@ namespace F4SEVR
 
     static_assert(offsetof(TESObjectARMA, unk220) == 0x220);
     static_assert(sizeof(TESObjectARMA) == 0x228);
+
+    // 10
+    class BSInputEventReceiver
+    {
+    public:
+        virtual ~BSInputEventReceiver();
+
+        std::uint32_t unk08; // 08
+        std::uint32_t unk0C; // 0C
+    };
+
+    // 24
+    class TESCameraState : public RE::BSIntrusiveRefCounted, public RE::BSInputEventUser
+    {
+    public:
+        ~TESCameraState() override;
+
+        virtual void Unk_09();
+        virtual void Unk_0A();
+        virtual void Unk_0B(void* arg);
+        virtual void GetRotation(RE::NiQuaternion* out);
+        virtual void GetPosition(RE::NiPoint3* out);
+        virtual void Unk_0E();
+        virtual void Unk_0F();
+        virtual void Unk_10();
+
+        void* unk18; // 18
+        std::uint32_t stateID; // 20
+        std::uint32_t pad24; // 24
+    };
+
+    static_assert(sizeof(TESCameraState) == 0x28);
+
+    // 138
+    class ThirdPersonState : public TESCameraState
+    {
+    public:
+        ~ThirdPersonState() override;
+
+        virtual void UpdateMode(bool weaponDrawn);
+        virtual bool Unk_12();
+        virtual void Unk_13();
+        virtual void Unk_14();
+        virtual void Unk_15();
+    };
+
+    // 38
+    class TESCamera
+    {
+    public:
+        virtual ~TESCamera();
+
+        virtual void SetCameraNode(RE::NiNode* node);
+        virtual void Unk_02(std::uint8_t unk1); // Sets 0x30
+        virtual void Unk_03();
+
+        float unk08; // 08
+        float unk0C; // 0C
+        float unk10; // 10
+        float unk14; // 14
+        float unk18; // 18
+        std::uint32_t unk1C; // 1C
+        RE::NiNode* cameraNode; // 20
+        TESCameraState* cameraState; // 28
+        std::uint8_t unk30; // 30
+        std::uint8_t unk31; // 31
+        std::uint16_t unk32; // 32
+        std::uint32_t unk34; // 34
+
+        // MEMBER_FN_PREFIX(TESCamera);
+        // DEFINE_MEMBER_FN(SetCameraState, void, 0x0081EFF0, TESCameraState* cameraState);
+    };
+
+    class PlayerCamera : public TESCamera
+    {
+    public:
+        ~PlayerCamera() override;
+
+        enum
+        {
+            kCameraState_FirstPerson = 0,
+            kCameraState_AutoVanity,
+            kCameraState_VATS,
+            kCameraState_Free,
+            kCameraState_IronSights,
+            kCameraState_Transition,
+            kCameraState_TweenMenu,
+            kCameraState_ThirdPerson1,
+            kCameraState_ThirdPerson2,
+            kCameraState_Furniture,
+            kCameraState_Horse,
+            kCameraState_Bleedout,
+            kCameraState_Dialogue,
+            kNumCameraStates
+        };
+
+        BSInputEventReceiver inputEventReceiver; // 38
+        std::uint64_t idleInputSink; // 48
+        std::uint64_t userEventEnabledSink; // 50
+        std::uint64_t otherEventEnabledSink; // 58
+
+        std::uint32_t unk60; // 60
+        std::uint32_t unk64; // 64 - Handle
+        std::uint32_t unk68; // 68
+        std::uint32_t unk6C; // 6C
+
+        std::uint64_t unk70[(0xE0 - 0x70) >> 3];
+
+        TESCameraState* cameraStates[kNumCameraStates]; // E0
+        std::uint64_t unk148; // 148
+        std::uint64_t unk150; // 150 - hknpSphereShape
+        std::uint64_t unk158; // 158 - hknpBSWorld
+        std::uint32_t unk160; // 160
+        std::uint32_t unk164; // 164 - Handle
+        float fDefaultWorldFov; // 168 - fDefaultWorldFOV:Display
+        float fDefault1stPersonFOV; // 16C - fDefault1stPersonFOV:Display
+        std::uint64_t unk170; // 170
+        std::uint64_t unk178; // 178
+        float unk180; // 180
+        float unk184; // 184
+        float unk188; // 188
+        float unk18C; // 18C
+        float unk190; // 190
+        float unk194; // 194
+        float unk198; // 198
+        float unk19C; // 19C
+        std::uint32_t unk1A0; // 1A0
+        std::uint8_t unk1A4; // 1A4
+        std::uint8_t unk1A5; // 1A5
+        std::uint8_t unk1A6; // 1A6
+        std::uint8_t unk1A7; // 1A7
+        std::uint8_t unk1A8; // 1A8
+        std::uint8_t unk1A9; // 1A9
+
+        std::int32_t GetCameraStateId(TESCameraState* state);
+    };
+
+    inline PlayerCamera::~PlayerCamera() = default;
+
+    static_assert(offsetof(PlayerCamera, cameraStates) == 0xE0);
+    static_assert(offsetof(PlayerCamera, unk148) == 0x148);
 }

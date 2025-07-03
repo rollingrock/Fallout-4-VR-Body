@@ -137,7 +137,7 @@ namespace frik
 
             f4vr::VRControllers.update();
 
-            common::waitForDebugger();
+            waitForDebugger();
 
             if (_skelly) {
                 if (!isRootNodeValid()) {
@@ -240,8 +240,8 @@ namespace frik
             logger::sample("Weapon node not set yet!");
             return false;
         }
-        const auto camera = RE::PlayerCamera::GetSingleton();
-        if (!camera || !camera->cameraRoot) {
+        const auto camera = f4vr::getPlayerCamera();
+        if (!camera || !camera->cameraNode) {
             logger::sample("Camera node not set yet!");
             return false;
         }
