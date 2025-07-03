@@ -103,10 +103,10 @@ namespace frik
             }
             RE::NiNode* HUD = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigHUD.nif", "MCCONFIGHUD");
             // TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
-            RE::NiAVObject* UIATTACH = f4vr::isLeftHandedMode()
+            auto UIATTACH = f4vr::isLeftHandedMode()
                 ? f4vr::getPlayerNodes()->primaryUIAttachNode
                 : f4vr::getNode("world_primaryWand.nif", f4vr::getPlayerNodes()->primaryUIAttachNode);
-            UIATTACH->IsNode()->AttachChild(HUD, true);
+            UIATTACH->AttachChild(HUD, true);
             const char* MainHud[10] = {
                 "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile03.nif",
                 "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif", "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile07.nif",
@@ -671,10 +671,10 @@ namespace frik
         f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
         RE::NiNode* HUD = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigHUD.nif", "PBCONFIGHUD");
         // TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
-        RE::NiAVObject* UIATTACH = f4vr::isLeftHandedMode()
+        auto UIATTACH = f4vr::isLeftHandedMode()
             ? f4vr::getPlayerNodes()->primaryUIAttachNode
             : f4vr::getNode("world_primaryWand.nif", f4vr::getPlayerNodes()->primaryUIAttachNode);
-        UIATTACH->IsNode()->AttachChild(HUD, true);
+        UIATTACH->AttachChild(HUD, true);
         const char* MainHud[12] = {
             "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif",
             "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif",

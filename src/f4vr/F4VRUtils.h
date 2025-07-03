@@ -34,7 +34,7 @@ namespace f4vr
     RE::Setting* getIniSettingNative(const char* name);
 
     // nodes
-    RE::NiAVObject* getNode(const char* name, RE::NiNode* fromNode);
+    RE::NiNode* getNode(const char* name, RE::NiAVObject* fromNode);
     RE::NiNode* getChildNode(const char* nodeName, RE::NiNode* node);
     RE::NiNode* get1StChildNode(const char* nodeName, const RE::NiNode* node);
 
@@ -42,11 +42,11 @@ namespace f4vr
     bool isNodeVisible(const RE::NiNode* node);
     void setNodeVisibility(RE::NiAVObject* node, bool show = true);
     void setNodeVisibilityDeep(RE::NiAVObject* node, bool show, bool updateSelf);
-    void toggleVis(RE::NiNode* node, bool hide, bool updateSelf);
+    void toggleVis(RE::NiAVObject* node, bool hide, bool updateSelf);
 
     // updates
     void updateDownFromRoot();
-    void updateDown(RE::NiNode* node, bool updateSelf, const char* ignoreNode = nullptr);
+    void updateDown(RE::NiAVObject* node, bool updateSelf, const char* ignoreNode = nullptr);
     void updateDownTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
     void updateUpTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
     void updateTransforms(RE::NiNode* node);

@@ -262,8 +262,8 @@ namespace frik
             ? finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate
             : finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate;
         g_config.leftHandedPipBoy
-            ? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder->IsNode())
-            : pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder->IsNode());
+            ? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder)
+            : pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder);
         if (pipboy == nullptr) {
             return;
         }
@@ -378,8 +378,8 @@ namespace frik
         //Virtual Power Button Code
         static std::string pwrButtonTrans("PowerTranslate");
         g_config.leftHandedPipBoy
-            ? pipboy = f4vr::getNode("PowerDetect", _skelly->getRightArm().shoulder->IsNode())
-            : pipboy = f4vr::getNode("PowerDetect", _skelly->getLeftArm().shoulder->IsNode());
+            ? pipboy = f4vr::getNode("PowerDetect", _skelly->getRightArm().shoulder)
+            : pipboy = f4vr::getNode("PowerDetect", _skelly->getLeftArm().shoulder);
         g_config.leftHandedPipBoy
             ? pipboyTrans = _skelly->getRightArm().forearm3->GetObjectByName(pwrButtonTrans)
             : pipboyTrans = _skelly->getLeftArm().forearm3->GetObjectByName(pwrButtonTrans);
@@ -419,8 +419,8 @@ namespace frik
         //Virtual Light Button Code
         static std::string lhtButtontrans("LightTranslate");
         g_config.leftHandedPipBoy
-            ? pipboy = f4vr::getNode("LightDetect", _skelly->getRightArm().shoulder->IsNode())
-            : pipboy = f4vr::getNode("LightDetect", _skelly->getLeftArm().shoulder->IsNode());
+            ? pipboy = f4vr::getNode("LightDetect", _skelly->getRightArm().shoulder)
+            : pipboy = f4vr::getNode("LightDetect", _skelly->getLeftArm().shoulder);
         g_config.leftHandedPipBoy
             ? pipboyTrans = _skelly->getRightArm().forearm3->GetObjectByName(lhtButtontrans)
             : pipboyTrans = _skelly->getLeftArm().forearm3->GetObjectByName(lhtButtontrans);
@@ -447,8 +447,8 @@ namespace frik
         //Virtual Radio Button Code
         static std::string radioButtontrans("RadioTranslate");
         g_config.leftHandedPipBoy
-            ? pipboy = f4vr::getNode("RadioDetect", _skelly->getRightArm().shoulder->IsNode())
-            : pipboy = f4vr::getNode("RadioDetect", _skelly->getLeftArm().shoulder->IsNode());
+            ? pipboy = f4vr::getNode("RadioDetect", _skelly->getRightArm().shoulder)
+            : pipboy = f4vr::getNode("RadioDetect", _skelly->getLeftArm().shoulder);
         g_config.leftHandedPipBoy
             ? pipboyTrans = _skelly->getRightArm().forearm3->GetObjectByName(radioButtontrans)
             : pipboyTrans = _skelly->getLeftArm().forearm3->GetObjectByName(radioButtontrans);
@@ -732,8 +732,8 @@ namespace frik
                     ? finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate
                     : finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate;
                 g_config.leftHandedPipBoy
-                    ? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder->IsNode())
-                    : pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder->IsNode());
+                    ? pipboy = f4vr::getNode("PipboyRoot", _skelly->getRightArm().shoulder)
+                    : pipboy = f4vr::getNode("PipboyRoot", _skelly->getLeftArm().shoulder);
                 float distance;
                 distance = vec3Len(finger - pipboy->world.translate);
                 if (distance < g_config.pipboyDetectionRange && !_isOperatingPipboy && !_pipboyStatus) {
@@ -790,7 +790,7 @@ namespace frik
             _pipboyStatus ? pipbone2->local.scale = 0 : pipbone->local.scale = 0;
             // Control switching between hand and head based Pipboy light
             if (lightOn && !helmetHeadLamp) {
-                RE::NiAVObject* head = f4vr::getNode("Head", f4vr::getPlayer()->GetActorRootNode(false)->IsNode());
+                RE::NiAVObject* head = f4vr::getNode("Head", f4vr::getPlayer()->GetActorRootNode(false));
                 if (!head) {
                     return;
                 }
@@ -806,12 +806,12 @@ namespace frik
                         _SwithLightButtonSticky = true;
                         _SwitchLightHaptics = false;
                         f4vr::VRControllers.triggerHaptic(useRightHand ? vr::TrackedControllerRole_RightHand : vr::TrackedControllerRole_LeftHand, 0.1f);
-                        RE::NiAVObject* LGHT_ATTACH = useRightHand
-                            ? f4vr::getNode("RArm_Hand", _skelly->getRightArm().shoulder->IsNode())
-                            : f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder->IsNode());
+                        auto LGHT_ATTACH = useRightHand
+                            ? f4vr::getNode("RArm_Hand", _skelly->getRightArm().shoulder)
+                            : f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder);
                         RE::NiNode* lght = g_config.isPipBoyTorchOnArm
-                            ? f4vr::get1StChildNode("HeadLightParent", LGHT_ATTACH->IsNode())
-                            : f4vr::getPlayerNodes()->HeadLightParentNode->IsNode();
+                            ? f4vr::get1StChildNode("HeadLightParent", LGHT_ATTACH)
+                            : f4vr::getPlayerNodes()->HeadLightParentNode;
                         if (lght) {
                             auto parentnode = g_config.isPipBoyTorchOnArm ? lght->parent->name : f4vr::getPlayerNodes()->HeadLightParentNode->parent->name;
                             Matrix44 lightRot;
@@ -820,7 +820,7 @@ namespace frik
                             lght->local.rotate = lightRot.multiply43Right(lght->local.rotate);
                             lght->local.translate.y = g_config.isPipBoyTorchOnArm ? 0 : 4;
                             g_config.isPipBoyTorchOnArm ? lght->parent->DetachChild(lght) : f4vr::getPlayerNodes()->HeadLightParentNode->parent->DetachChild(lght);
-                            g_config.isPipBoyTorchOnArm ? f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true) : LGHT_ATTACH->IsNode()->AttachChild(lght, true);
+                            g_config.isPipBoyTorchOnArm ? f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true) : LGHT_ATTACH->AttachChild(lght, true);
                             g_config.togglePipBoyTorchOnArm();
                         }
                     }
@@ -834,12 +834,12 @@ namespace frik
             }
             //Attach light to hand
             if (g_config.isPipBoyTorchOnArm) {
-                RE::NiAVObject* LGHT_ATTACH = g_config.leftHandedPipBoy || g_config.isPipBoyTorchRightArmMode
-                    ? f4vr::getNode("RArm_Hand", _skelly->getRightArm().shoulder->IsNode())
-                    : f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder->IsNode());
+                auto LGHT_ATTACH = g_config.leftHandedPipBoy || g_config.isPipBoyTorchRightArmMode
+                    ? f4vr::getNode("RArm_Hand", _skelly->getRightArm().shoulder)
+                    : f4vr::getNode("LArm_Hand", _skelly->getLeftArm().shoulder);
                 if (LGHT_ATTACH) {
                     if (lightOn && !helmetHeadLamp) {
-                        RE::NiNode* lght = f4vr::getPlayerNodes()->HeadLightParentNode->IsNode();
+                        RE::NiNode* lght = f4vr::getPlayerNodes()->HeadLightParentNode;
                         auto parentnode = f4vr::getPlayerNodes()->HeadLightParentNode->parent->name;
                         if (parentnode == "HMDNode") {
                             f4vr::getPlayerNodes()->HeadLightParentNode->parent->DetachChild(lght);
@@ -847,12 +847,12 @@ namespace frik
                             LightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(90));
                             lght->local.rotate = LightRot.multiply43Right(lght->local.rotate);
                             lght->local.translate.y = 4;
-                            LGHT_ATTACH->IsNode()->AttachChild(lght, true);
+                            LGHT_ATTACH->AttachChild(lght, true);
                         }
                     }
                     //Restore HeadLight to correct node when light is powered off (to avoid any crashes)
                     else if (!lightOn || helmetHeadLamp) {
-                        if (auto lght = f4vr::get1StChildNode("HeadLightParent", LGHT_ATTACH->IsNode())) {
+                        if (auto lght = f4vr::get1StChildNode("HeadLightParent", LGHT_ATTACH)) {
                             auto parentnode = lght->parent->name;
                             if (parentnode != "HMDNode") {
                                 Matrix44 LightRot;
@@ -913,9 +913,9 @@ namespace frik
                             RE::NiAVObject* bone = g_config.leftHandedPipBoy
                                 ? _skelly->getRightArm().forearm3->GetObjectByName(boneNames[i])
                                 : _skelly->getLeftArm().forearm3->GetObjectByName(boneNames[i]);
-                            RE::NiNode* trans = g_config.leftHandedPipBoy
-                                ? _skelly->getRightArm().forearm3->GetObjectByName(transNames[i])->IsNode()
-                                : _skelly->getLeftArm().forearm3->GetObjectByName(transNames[i])->IsNode();
+                            auto trans = g_config.leftHandedPipBoy
+                                ? _skelly->getRightArm().forearm3->GetObjectByName(transNames[i])
+                                : _skelly->getLeftArm().forearm3->GetObjectByName(transNames[i]);
                             if (bone && trans) {
                                 float distance = vec3Len(finger - bone->world.translate);
                                 if (distance > boneDistance[i]) {
@@ -990,9 +990,9 @@ namespace frik
                         // Mirror Left Stick Controls on Right Stick.
                         if (!g_frik.isPipboyConfigurationModeActive() && g_config.enablePrimaryControllerPipboyUse) {
                             std::string selectnodename = "SelectRotate";
-                            RE::NiNode* trans = g_config.leftHandedPipBoy
-                                ? _skelly->getRightArm().forearm3->GetObjectByName(selectnodename)->IsNode()
-                                : _skelly->getLeftArm().forearm3->GetObjectByName(selectnodename)->IsNode();
+                            auto trans = g_config.leftHandedPipBoy
+                                ? _skelly->getRightArm().forearm3->GetObjectByName(selectnodename)
+                                : _skelly->getLeftArm().forearm3->GetObjectByName(selectnodename);
                             vr::VRControllerAxis_t doinantHandStick = f4vr::isLeftHandedMode()
                                 ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
                                 : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
@@ -1094,9 +1094,9 @@ namespace frik
                                 ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0]
                                 : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0];
                             std::string selectnodename = "SelectRotate";
-                            RE::NiNode* trans = g_config.leftHandedPipBoy
-                                ? _skelly->getRightArm().forearm3->GetObjectByName(selectnodename)->IsNode()
-                                : _skelly->getLeftArm().forearm3->GetObjectByName(selectnodename)->IsNode();
+                            auto trans = g_config.leftHandedPipBoy
+                                ? _skelly->getRightArm().forearm3->GetObjectByName(selectnodename)
+                                : _skelly->getLeftArm().forearm3->GetObjectByName(selectnodename);
                             if (trans != nullptr) {
                                 if (secondaryTrigger.x > 0.00) {
                                     trans->local.translate.z = secondaryTrigger.x / 3 * -1;
@@ -1161,7 +1161,7 @@ namespace frik
             deltaPos *= g_config.dampenPipboyTranslation; // just use hands dampening value for now
             pipboyScreen->world.translate -= deltaPos;
             _pipboyScreenPrevFrame = pipboyScreen->world;
-            f4vr::updateDown(pipboyScreen->IsNode(), false);
+            f4vr::updateDown(pipboyScreen, false);
         }
     }
 

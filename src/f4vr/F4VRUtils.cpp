@@ -227,20 +227,22 @@ namespace f4vr
     /**
      * Find a node by the given name in the tree under the other given node recursively.
      */
-    RE::NiAVObject* getNode(const char* name, RE::NiNode* fromNode)
+    RE::NiNode* getNode(const char* name, RE::NiAVObject* node)
     {
-        if (!fromNode) {
+        if (!node) {
             return nullptr;
         }
 
-        if (_stricmp(name, fromNode->name.c_str()) == 0) {
-            return fromNode;
+        if (_stricmp(name, node->name.c_str()) == 0) {
+            return node->IsNode();
         }
 
-        for (const auto& child : fromNode->children) {
-            if (const auto childNiNode = child->IsNode()) {
-                if (const auto result = getNode(name, childNiNode)) {
-                    return result;
+        if (const auto niNode = node->IsNode()) {
+            for (const auto& child : niNode->children) {
+                if (const auto childNiNode = child->IsNode()) {
+                    if (const auto result = getNode(name, childNiNode)) {
+                        return result;
+                    }
                 }
             }
         }
@@ -307,15 +309,15 @@ namespace f4vr
     }
 
     // TODO: check removing this in favor of setNodeVisibilityDeep
-    void toggleVis(RE::NiNode* node, const bool hide, const bool updateSelf)
+    void toggleVis(RE::NiAVObject* node, const bool hide, const bool updateSelf)
     {
         if (updateSelf) {
             node->flags.flags = hide ? node->flags.flags | 0x1 : node->flags.flags & ~0x1;
         }
 
-        for (const auto& child : node->children) {
-            if (const auto childNiNode = child->IsNode()) {
-                toggleVis(childNiNode, hide, true);
+        if (const auto niNode = node->IsNode()) {
+            for (const auto& child : niNode->children) {
+                toggleVis(child.get(), hide, true);
             }
         }
     }
@@ -326,7 +328,7 @@ namespace f4vr
         updateDown(getRootNode(), true);
     }
 
-    void updateDown(RE::NiNode* node, const bool updateSelf, const char* ignoreNode)
+    void updateDown(RE::NiAVObject* node, const bool updateSelf, const char* ignoreNode)
     {
         if (!node) {
             return;
@@ -338,14 +340,16 @@ namespace f4vr
             node->UpdateWorldData(ud);
         }
 
-        for (const auto& child : node->children) {
-            if (ignoreNode && _stricmp(child->name.c_str(), ignoreNode) == 0) {
-                continue; // skip this node
-            }
-            if (const auto childNiNode = child->IsNode()) {
-                updateDown(childNiNode, true);
-            } else if (const auto triNode = child->IsGeometry()) {
-                triNode->UpdateWorldData(ud);
+        if (const auto niNode = node->IsNode()) {
+            for (const auto& child : niNode->children) {
+                if (ignoreNode && _stricmp(child->name.c_str(), ignoreNode) == 0) {
+                    continue; // skip this node
+                }
+                if (const auto childNiNode = child->IsNode()) {
+                    updateDown(childNiNode, true);
+                } else if (const auto triNode = child->IsGeometry()) {
+                    triNode->UpdateWorldData(ud);
+                }
             }
         }
     }
