@@ -229,6 +229,31 @@ namespace f4vr
     /**
      * Find a node by the given name in the tree under the other given node recursively.
      */
+    RE::NiAVObject* findAVObjectNode(RE::NiAVObject* node, const std::string& name, const int maxDepth)
+    {
+        if (!node || maxDepth < 0) {
+            return nullptr;
+        }
+
+        if (_stricmp(name.c_str(), node->name.c_str()) == 0) {
+            return node;
+        }
+
+        if (const auto niNode = node->IsNode()) {
+            for (const auto& child : niNode->children) {
+                if (child) {
+                    if (const auto result = findAVObjectNode(child.get(), name, maxDepth - 1)) {
+                        return result;
+                    }
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    /**
+     * Find a node by the given name in the tree under the other given node recursively.
+     */
     RE::NiNode* getNode(const char* name, RE::NiAVObject* node)
     {
         if (!node) {
@@ -272,13 +297,15 @@ namespace f4vr
         return nullptr;
     }
 
-    RE::NiNode* get1StChildNode(const char* nodeName, const RE::NiNode* node)
+    RE::NiNode* get1StChildNode(const char* nodeName, const RE::NiAVObject* node)
     {
-        for (const auto& child : node->children) {
-            if (child) {
-                if (const auto childNiNode = child->IsNode()) {
-                    if (!_stricmp(nodeName, childNiNode->name.c_str())) {
-                        return childNiNode;
+        if (const auto niNode = node->IsNode()) {
+            for (const auto& child : niNode->children) {
+                if (child) {
+                    if (const auto childNiNode = child->IsNode()) {
+                        if (!_stricmp(nodeName, childNiNode->name.c_str())) {
+                            return childNiNode;
+                        }
                     }
                 }
             }

@@ -93,7 +93,9 @@ namespace frik
         };
         const auto commonNode = getCommonNode();
         for (const auto& [name, node] : armNodes) {
-            *node = commonNode->GetObjectByName(name);
+            *node = getNode(name.c_str(), commonNode);
+            // *node = f4vr::findAVObjectNode(commonNode,name);
+            // TODO: commonlibf4 migration (should we replace all GetObjectByName)
         }
     }
 
@@ -105,7 +107,7 @@ namespace frik
     {
         const auto defaultBonesMap = _inPowerArmor ? _skeletonNodesDefaultTransformInPA : _skeletonNodesDefaultTransform;
         for (const auto& [boneName, defaultTransform] : defaultBonesMap) {
-            if (auto node = _root->GetObjectByName(boneName)) {
+            if (auto node = f4vr::findAVObjectNode(_root, boneName)) {
                 auto transform = node->local; // use node transform to keep scale
                 transform.translate = defaultTransform.translate;
                 transform.rotate = defaultTransform.rotate;
@@ -394,7 +396,6 @@ namespace frik
         const float neckPitch = getNeckPitch();
         const float bodyPitch = _inPowerArmor ? getBodyPitch() : getBodyPitch() / 1.2f;
 
-        const auto camera = RE::PlayerCamera::GetSingleton()->cameraRoot;
         RE::NiNode* com = getNode("COM", _root);
         const RE::NiNode* neck = getNode("Neck", _root);
         RE::NiNode* spine = getNode("SPINE1", _root);
@@ -408,7 +409,7 @@ namespace frik
         const float z_adjust = (_inPowerArmor ? g_config.powerArmor_up : g_config.playerOffset_up) - cosf(neckPitch) * (5.0f * _root->local.scale);
         //float z_adjust = g_config.playerOffset_up - cosf(neckPitch) * (5.0 * _root->local.scale);
         const auto neckAdjust = RE::NiPoint3(-_forwardDir.x * g_config.playerOffset_forward / 2, -_forwardDir.y * g_config.playerOffset_forward / 2, z_adjust);
-        const RE::NiPoint3 neckPos = camera->world.translate + neckAdjust;
+        const RE::NiPoint3 neckPos = getCameraPosition() + neckAdjust;
 
         _torsoLen = vec3Len(neck->world.translate - com->world.translate);
 
@@ -790,14 +791,14 @@ namespace frik
      */
     void Skeleton::hide3rdPersonWeapon() const
     {
-        if (RE::NiAVObject* weapon = _rightArm.hand->GetObjectByName("Weapon")) {
+        if (RE::NiAVObject* weapon = get1StChildNode("Weapon", _rightArm.hand)) {
             setNodeVisibility(weapon, false);
         }
     }
 
     void Skeleton::positionPipboy() const
     {
-        RE::NiAVObject* wandPip = _playerNodes->SecondaryWandNode->GetObjectByName("PipboyRoot_NIF_ONLY");
+        RE::NiAVObject* wandPip = f4vr::findAVObjectNode(_playerNodes->SecondaryWandNode, "PipboyRoot_NIF_ONLY");
 
         if (wandPip == nullptr) {
             return;
@@ -805,9 +806,9 @@ namespace frik
 
         RE::NiAVObject* pipboyBone;
         if (g_config.leftHandedPipBoy) {
-            pipboyBone = _rightArm.forearm1->GetObjectByName("PipboyBone");
+            pipboyBone = f4vr::findAVObjectNode(_rightArm.forearm1, "PipboyBone");
         } else {
-            pipboyBone = _leftArm.forearm1->GetObjectByName("PipboyBone");
+            pipboyBone = f4vr::findAVObjectNode(_leftArm.forearm1, "PipboyBone");
         }
 
         if (pipboyBone == nullptr) {
@@ -933,10 +934,10 @@ namespace frik
 
         if (!g_config.leftHandedPipBoy) {
             if (_leftArm.forearm3) {
-                pipboy = _leftArm.forearm3->GetObjectByName("PipboyBone");
+                pipboy = f4vr::findAVObjectNode(_leftArm.forearm3, "PipboyBone");
             }
         } else {
-            pipboy = _rightArm.forearm3->GetObjectByName("PipboyBone");
+            pipboy = f4vr::findAVObjectNode(_rightArm.forearm3, "PipboyBone");
         }
 
         if (!pipboy) {

@@ -41,7 +41,7 @@ namespace frik
         }
         if (_calibrateModeActive) {
             std::fill(std::begin(_MCTouchbuttons), std::end(_MCTouchbuttons), false);
-            if (auto MCConfigUI = f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName("MCCONFIGHUD")) {
+            if (auto MCConfigUI = f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "MCCONFIGHUD")) {
                 MCConfigUI->flags.flags |= 0x1;
                 MCConfigUI->local.scale = 0;
                 MCConfigUI->parent->DetachChild(MCConfigUI);
@@ -58,7 +58,7 @@ namespace frik
             for (int i = 0; i <= 11; i++) {
                 _PBTouchbuttons[i] = false;
             }
-            RE::NiAVObject* PBConfigUI = f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName("PBCONFIGHUD");
+            RE::NiAVObject* PBConfigUI = f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBCONFIGHUD");
             if (PBConfigUI) {
                 PBConfigUI->flags.flags |= 0x1;
                 PBConfigUI->local.scale = 0;
@@ -215,8 +215,8 @@ namespace frik
                 ? finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate
                 : finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate;
             for (int i = 1; i <= 9; i++) {
-                auto TouchMesh = static_cast<RE::NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(meshName2[i]));
-                auto TransMesh = static_cast<RE::NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(meshName[i]));
+                auto TouchMesh = static_cast<RE::NiNode*>(f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, meshName2[i]));
+                auto TransMesh = static_cast<RE::NiNode*>(f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, meshName[i]));
                 if (TouchMesh && TransMesh) {
                     float distance = vec3Len(finger - TouchMesh->world.translate);
                     if (distance > 2.0) {
@@ -235,7 +235,7 @@ namespace frik
                             for (int i = 1; i <= 7; i++) {
                                 _MCTouchbuttons[i] = false;
                             }
-                            auto UIMarker = static_cast<RE::NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName("MCCONFIGMarker"));
+                            auto UIMarker = static_cast<RE::NiNode*>(f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "MCCONFIGMarker"));
                             if (UIMarker) {
                                 UIMarker->parent->DetachChild(UIMarker);
                             }
@@ -473,17 +473,17 @@ namespace frik
             bool ExitButtonPressed = _PBTouchbuttons[9];
             bool GlanceButtonPressed = _PBTouchbuttons[10];
             bool DampenScreenButtonPressed = _PBTouchbuttons[11];
-            RE::NiAVObject* pbRoot = f4vr::getPlayerNodes()->SecondaryWandNode->GetObjectByName("PipboyRoot");
+            RE::NiAVObject* pbRoot = f4vr::findAVObjectNode(f4vr::getPlayerNodes()->SecondaryWandNode, "PipboyRoot");
             if (!pbRoot) {
                 return;
             }
             RE::NiAVObject* _3rdPipboy = nullptr;
             if (!g_config.leftHandedPipBoy) {
                 if (_skelly->getLeftArm().forearm3) {
-                    _3rdPipboy = _skelly->getLeftArm().forearm3->GetObjectByName("PipboyBone");
+                    _3rdPipboy = f4vr::findAVObjectNode(_skelly->getLeftArm().forearm3, "PipboyBone");
                 }
             } else {
-                _3rdPipboy = _skelly->getRightArm().forearm3->GetObjectByName("PipboyBone");
+                _3rdPipboy = f4vr::findAVObjectNode(_skelly->getRightArm().forearm3, "PipboyBone");
             }
             // Enter Pipboy Config Mode by holding down favorites button.
             if (PBConfigButtonPressed && !_isPBConfigModeActive) {
@@ -504,8 +504,8 @@ namespace frik
                     ? finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate
                     : finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate;
                 for (int i = 1; i <= 11; i++) {
-                    auto TouchMesh = static_cast<RE::NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(meshName2[i]));
-                    auto TransMesh = static_cast<RE::NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(meshName[i]));
+                    auto TouchMesh = static_cast<RE::NiNode*>(f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, meshName2[i]));
+                    auto TransMesh = static_cast<RE::NiNode*>(f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, meshName[i]));
                     if (TouchMesh && TransMesh) {
                         float distance = vec3Len(finger - TouchMesh->world.translate);
                         if (distance > 2.0) {
@@ -526,7 +526,7 @@ namespace frik
                                         _PBTouchbuttons[i] = false;
                                     }
                                 }
-                                auto UIMarker = static_cast<RE::NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName("PBCONFIGMarker"));
+                                auto UIMarker = static_cast<RE::NiNode*>(f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBCONFIGMarker"));
                                 if (UIMarker) {
                                     UIMarker->parent->DetachChild(UIMarker);
                                 }
@@ -538,14 +538,14 @@ namespace frik
                                     if (i == 10) {
                                         if (!g_config.pipboyOpenWhenLookAt) {
                                             auto bname = "PBGlanceMarker";
-                                            auto UIMarker = static_cast<RE::NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(bname));
+                                            auto UIMarker = static_cast<RE::NiNode*>(f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, bname));
                                             if (!UIMarker) {
                                                 RE::NiNode* UI = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigMarker.nif", "PBGlanceMarker");
                                                 TouchMesh->AttachChild(UI, true);
                                             }
                                         } else if (g_config.pipboyOpenWhenLookAt) {
                                             auto bname = "PBGlanceMarker";
-                                            auto UIMarker = static_cast<RE::NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(bname));
+                                            auto UIMarker = static_cast<RE::NiNode*>(f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, bname));
                                             if (UIMarker) {
                                                 UIMarker->parent->DetachChild(UIMarker);
                                             }
@@ -554,14 +554,14 @@ namespace frik
                                     if (i == 11) {
                                         if (!g_config.dampenPipboyScreen) {
                                             auto bname = "PBDampenMarker";
-                                            auto UIMarker = static_cast<RE::NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(bname));
+                                            auto UIMarker = static_cast<RE::NiNode*>(f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, bname));
                                             if (!UIMarker) {
                                                 RE::NiNode* UI = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigMarker.nif", "PBDampenMarker");
                                                 TouchMesh->AttachChild(UI, true);
                                             }
                                         } else if (g_config.dampenPipboyScreen) {
                                             auto bname = "PBDampenMarker";
-                                            auto UIMarker = static_cast<RE::NiNode*>(f4vr::getPlayerNodes()->primaryUIAttachNode->GetObjectByName(bname));
+                                            auto UIMarker = static_cast<RE::NiNode*>(f4vr::findAVObjectNode(f4vr::getPlayerNodes()->primaryUIAttachNode, bname));
                                             if (UIMarker) {
                                                 UIMarker->parent->DetachChild(UIMarker);
                                             }
