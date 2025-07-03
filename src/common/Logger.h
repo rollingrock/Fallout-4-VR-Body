@@ -90,6 +90,13 @@ namespace common::logger
         internal::sampleImpl(time, fmt, std::forward<Args>(args)...);
     }
 
+    template <class... Args>
+    void infoRaw(spdlog::format_string_t<Args...> fmt, Args&&... args)
+    {
+        // TODO:: handle no extra formatting logging
+        internal::_logger->log(spdlog::level::info, fmt, std::forward<Args>(args)...);
+    }
+
     /**
      * Init logging using a log with the given name put in "My Games" folder.
      */
