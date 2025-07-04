@@ -151,7 +151,7 @@ namespace frik
             if (const auto sphere = _boneSphereRegisteredObjects[handle]->debugSphere) {
                 sphere->flags.flags |= 0x1;
                 sphere->local.scale = 0;
-                sphere->parent->DetachChild(sphere);
+                f4vr::removeChildFromNode(sphere->parent, sphere);
             }
 
             delete _boneSphereRegisteredObjects[handle];
@@ -311,7 +311,7 @@ namespace frik
                 if (sphere) {
                     sphere->name = RE::BSFixedString("Sphere01");
 
-                    bone->AttachChild(sphere, true);
+                    f4vr::attachChildToNode(bone, sphere);
                     sphere->flags.flags &= 0xfffffffffffffffe;
                     sphere->local.scale = val->radius * 2;
                     val->debugSphere = sphere;

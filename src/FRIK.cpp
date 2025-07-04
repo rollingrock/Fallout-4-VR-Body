@@ -164,9 +164,8 @@ namespace frik
             logger::trace("Update Weapon Position...");
             _weaponPosition->onFrameUpdate();
 
-            // TODO: commonlibf4 migration
-            // logger::trace("Update Pipboy...");
-            // _pipboy->onFrameUpdate();
+            logger::trace("Update Pipboy...");
+            _pipboy->onFrameUpdate();
 
             _configurationMode->onFrameUpdate();
 

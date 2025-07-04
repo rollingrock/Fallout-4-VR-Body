@@ -23,7 +23,7 @@ namespace vrui
     void UIToggleButton::attachToNode(RE::NiNode* node)
     {
         UIWidget::attachToNode(node);
-        _attachNode->AttachChild(_toggleFrameNode.get(), true);
+        f4vr::attachChildToNode(_attachNode.get(), _toggleFrameNode.get());
     }
 
     void UIToggleButton::detachFromAttachedNode(const bool releaseSafe)

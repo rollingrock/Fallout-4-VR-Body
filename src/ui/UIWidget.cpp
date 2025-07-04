@@ -28,7 +28,7 @@ namespace vrui
     void UIWidget::attachToNode(RE::NiNode* attachNode)
     {
         UIElement::attachToNode(attachNode);
-        _attachNode->AttachChild(_node.get(), true);
+        f4vr::attachChildToNode(_attachNode.get(), _node.get());
     }
 
     /**

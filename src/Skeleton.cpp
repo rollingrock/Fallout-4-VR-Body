@@ -93,9 +93,7 @@ namespace frik
         };
         const auto commonNode = getCommonNode();
         for (const auto& [name, node] : armNodes) {
-            *node = findNode(commonNode, name.c_str());
-            // *node = f4vr::findAVObject(commonNode,name);
-            // TODO: commonlibf4 migration (should we replace all GetObjectByName)
+            *node = findAVObject(commonNode, name.c_str());
         }
     }
 
@@ -107,7 +105,7 @@ namespace frik
     {
         const auto defaultBonesMap = _inPowerArmor ? _skeletonNodesDefaultTransformInPA : _skeletonNodesDefaultTransform;
         for (const auto& [boneName, defaultTransform] : defaultBonesMap) {
-            if (auto node = f4vr::findAVObject(_root, boneName)) {
+            if (auto node = findAVObject(_root, boneName)) {
                 auto transform = node->local; // use node transform to keep scale
                 transform.translate = defaultTransform.translate;
                 transform.rotate = defaultTransform.rotate;
@@ -798,7 +796,7 @@ namespace frik
 
     void Skeleton::positionPipboy() const
     {
-        RE::NiAVObject* wandPip = f4vr::findAVObject(_playerNodes->SecondaryWandNode, "PipboyRoot_NIF_ONLY");
+        RE::NiAVObject* wandPip = findAVObject(_playerNodes->SecondaryWandNode, "PipboyRoot_NIF_ONLY");
 
         if (wandPip == nullptr) {
             return;
@@ -806,9 +804,9 @@ namespace frik
 
         RE::NiAVObject* pipboyBone;
         if (g_config.leftHandedPipBoy) {
-            pipboyBone = f4vr::findAVObject(_rightArm.forearm1, "PipboyBone");
+            pipboyBone = findAVObject(_rightArm.forearm1, "PipboyBone");
         } else {
-            pipboyBone = f4vr::findAVObject(_leftArm.forearm1, "PipboyBone");
+            pipboyBone = findAVObject(_leftArm.forearm1, "PipboyBone");
         }
 
         if (pipboyBone == nullptr) {
@@ -847,8 +845,8 @@ namespace frik
                     return;
                 }
 
-                pipbone->parent->DetachChild(pipbone);
-                _rightArm.forearm3->IsNode()->AttachChild(pipbone, true);
+                removeChildFromNode(pipbone->parent, pipbone);
+                attachChildToNode(_rightArm.forearm3->IsNode(), pipbone);
             }
 
             Matrix44 rot;
@@ -934,10 +932,10 @@ namespace frik
 
         if (!g_config.leftHandedPipBoy) {
             if (_leftArm.forearm3) {
-                pipboy = f4vr::findAVObject(_leftArm.forearm3, "PipboyBone");
+                pipboy = findAVObject(_leftArm.forearm3, "PipboyBone");
             }
         } else {
-            pipboy = f4vr::findAVObject(_rightArm.forearm3, "PipboyBone");
+            pipboy = findAVObject(_rightArm.forearm3, "PipboyBone");
         }
 
         if (!pipboy) {
@@ -987,17 +985,17 @@ namespace frik
             return;
         }
 
-        rHand->DetachChild(rightWeapon);
-        rHand->DetachChild(leftWeapon);
-        lHand->DetachChild(rightWeapon);
-        lHand->DetachChild(leftWeapon);
+        removeChildFromNode(rHand, rightWeapon);
+        removeChildFromNode(rHand, leftWeapon);
+        removeChildFromNode(lHand, rightWeapon);
+        removeChildFromNode(lHand, leftWeapon);
 
         if (isLeftHandedMode()) {
-            rHand->AttachChild(leftWeapon, true);
-            lHand->AttachChild(rightWeapon, true);
+            attachChildToNode(rHand, leftWeapon);
+            attachChildToNode(lHand, rightWeapon);
         } else {
-            rHand->AttachChild(rightWeapon, true);
-            lHand->AttachChild(leftWeapon, true);
+            attachChildToNode(rHand, rightWeapon);
+            attachChildToNode(lHand, leftWeapon);
         }
     }
 

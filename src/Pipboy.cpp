@@ -191,12 +191,12 @@ namespace frik
     void Pipboy::replaceMeshes(const std::string& itemHide, const std::string& itemShow)
     {
         const auto pn = f4vr::getPlayerNodes();
-        const RE::NiNode* ui = pn->primaryUIAttachNode;
-        RE::NiNode* wand = f4vr::find1StChildNode(ui, "world_primaryWand.nif");
-        RE::NiNode* retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
+        const auto ui = pn->primaryUIAttachNode;
+        auto wand = f4vr::find1StChildNode(ui, "world_primaryWand.nif");
+        auto retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
         if (retNode) {
-            // ui->DetachChild(wand);
-            // ui->AttachChild(retNode, true);
+            f4vr::removeChildFromNode(ui, wand);
+            f4vr::attachChildToNode(ui, retNode);
         }
 
         wand = pn->SecondaryWandNode;
@@ -217,8 +217,8 @@ namespace frik
                 return;
             }
 
-            pipParent->DetachChild(wand);
-            pipParent->AttachChild(retNode, true);
+            f4vr::removeChildFromNode(pipParent, wand);
+            f4vr::attachChildToNode(pipParent, retNode);
 
             pn->ScreenNode->DetachChildAt(0);
             // using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
@@ -819,8 +819,12 @@ namespace frik
                             lightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(rotz));
                             lght->local.rotate = lightRot.multiply43Right(lght->local.rotate);
                             lght->local.translate.y = g_config.isPipBoyTorchOnArm ? 0 : 4;
-                            g_config.isPipBoyTorchOnArm ? lght->parent->DetachChild(lght) : f4vr::getPlayerNodes()->HeadLightParentNode->parent->DetachChild(lght);
-                            g_config.isPipBoyTorchOnArm ? f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true) : LGHT_ATTACH->AttachChild(lght, true);
+                            g_config.isPipBoyTorchOnArm
+                                ? f4vr::removeChildFromNode(lght->parent, lght)
+                                : f4vr::removeChildFromNode(f4vr::getPlayerNodes()->HeadLightParentNode->parent, lght);
+                            g_config.isPipBoyTorchOnArm
+                                ? f4vr::attachChildToNode(f4vr::getPlayerNodes()->HmdNode, lght)
+                                : f4vr::attachChildToNode(LGHT_ATTACH, lght);
                             g_config.togglePipBoyTorchOnArm();
                         }
                     }
@@ -842,12 +846,12 @@ namespace frik
                         RE::NiNode* lght = f4vr::getPlayerNodes()->HeadLightParentNode;
                         auto parentnode = f4vr::getPlayerNodes()->HeadLightParentNode->parent->name;
                         if (parentnode == "HMDNode") {
-                            f4vr::getPlayerNodes()->HeadLightParentNode->parent->DetachChild(lght);
+                            f4vr::removeChildFromNode(f4vr::getPlayerNodes()->HeadLightParentNode->parent, lght);
                             Matrix44 LightRot;
                             LightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(90));
                             lght->local.rotate = LightRot.multiply43Right(lght->local.rotate);
                             lght->local.translate.y = 4;
-                            LGHT_ATTACH->AttachChild(lght, true);
+                            f4vr::attachChildToNode(LGHT_ATTACH, lght);
                         }
                     }
                     //Restore HeadLight to correct node when light is powered off (to avoid any crashes)
@@ -859,8 +863,8 @@ namespace frik
                                 LightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(-90));
                                 lght->local.rotate = LightRot.multiply43Right(lght->local.rotate);
                                 lght->local.translate.y = 0;
-                                lght->parent->DetachChild(lght);
-                                f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true);
+                                f4vr::removeChildFromNode(lght->parent, lght);
+                                f4vr::attachChildToNode(f4vr::getPlayerNodes()->HmdNode, lght);
                             }
                         }
                     }

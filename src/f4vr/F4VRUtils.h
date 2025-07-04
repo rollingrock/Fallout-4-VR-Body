@@ -55,5 +55,10 @@ namespace f4vr
 
     void registerPapyrusNativeFunctions(F4SE::PapyrusInterface::RegisterFunctions callback);
 
+    // CommonLib migration
+    RE::NiNode* loadNifFromFile(const std::string& path);
     RE::NiNode* getClonedNiNodeForNifFile(const std::string& path, const std::string& name = "");
+    void attachChildToNode(RE::NiNode* node, RE::NiAVObject* child, bool firstAvail = true);
+    void removeChildFromNode(RE::NiNode* node, RE::NiAVObject* child);
+    void updateNodeWorldData(RE::NiAVObject* node);
 }

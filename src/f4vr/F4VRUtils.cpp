@@ -369,17 +369,12 @@ namespace f4vr
 
     void updateDown(RE::NiAVObject* node, const bool updateSelf, const char* ignoreNode)
     {
-        // TODO: commonlibf4 migration
-        return;
-
         if (!node) {
             return;
         }
 
-        RE::NiUpdateData* ud = nullptr;
-
         if (updateSelf) {
-            node->UpdateWorldData(ud);
+            updateNodeWorldData(node);
         }
 
         if (const auto niNode = node->IsNode()) {
@@ -391,7 +386,7 @@ namespace f4vr
                     if (const auto childNiNode = child->IsNode()) {
                         updateDown(childNiNode, true);
                     } else if (const auto triNode = child->IsGeometry()) {
-                        triNode->UpdateWorldData(ud);
+                        updateNodeWorldData(triNode);
                     }
                 }
             }
@@ -505,7 +500,7 @@ namespace f4vr
     {
         uint64_t flags[2] = { 0x0, 0xed };
         uint64_t mem = 0;
-        int ret = f4vr::loadNif((uint64_t)path.c_str(), (uint64_t)&mem, (uint64_t)&flags);
+        int ret = loadNif((uint64_t)path.c_str(), (uint64_t)&mem, (uint64_t)&flags);
         return reinterpret_cast<RE::NiNode*>(mem);
     }
 
@@ -517,11 +512,32 @@ namespace f4vr
     {
         auto& normPath = path._Starts_with("Data") ? path : "Data/Meshes/" + path;
         const RE::NiNode* nifNode = loadNifFromFile(normPath);
-        f4vr::NiCloneProcess proc;
+        NiCloneProcess proc;
         proc.unk18 = reinterpret_cast<uint64_t*>(cloneAddr1.address());
         proc.unk48 = reinterpret_cast<uint64_t*>(cloneAddr2.address());
-        const auto uiNode = f4vr::cloneNode(nifNode, &proc);
-        uiNode->name = !name.empty() ? name : path.c_str();
+        const auto uiNode = cloneNode(nifNode, &proc);
+        uiNode->name = name.empty() ? path : name;
         return uiNode;
+    }
+
+    void attachChildToNode(RE::NiNode* node, RE::NiAVObject* child, const bool firstAvail)
+    {
+        const auto f4seNode = reinterpret_cast<F4SEVR::NiNode*>(node);
+        const auto f4seChild = reinterpret_cast<F4SEVR::NiNode*>(child);
+        f4seNode->AttachChild(f4seChild, firstAvail);
+    }
+
+    void removeChildFromNode(RE::NiNode* node, RE::NiAVObject* child)
+    {
+        const auto f4seNode = reinterpret_cast<F4SEVR::NiNode*>(node);
+        const auto f4seChild = reinterpret_cast<F4SEVR::NiNode*>(child);
+        f4seNode->RemoveChild(f4seChild);
+    }
+
+    void updateNodeWorldData(RE::NiAVObject* node)
+    {
+        const auto f4seNode = reinterpret_cast<F4SEVR::NiAVObject*>(node);
+        F4SEVR::NiAVObject::NiUpdateData* ud = nullptr;
+        f4seNode->UpdateWorldData(ud);
     }
 }
