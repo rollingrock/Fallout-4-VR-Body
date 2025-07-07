@@ -559,6 +559,16 @@ namespace f4vr
      * HACK! To handle RE::NiNode not having the correct vtable alignment for F4 VR.
      * Until fixed we call the same method on the F4SEVR::NiNode class.
      */
+    void removeChildAtFromNode(RE::NiNode* node, const int childIndex)
+    {
+        const auto f4seNode = reinterpret_cast<F4SEVR::NiNode*>(node);
+        f4seNode->RemoveChildAt(childIndex);
+    }
+
+    /**
+     * HACK! To handle RE::NiNode not having the correct vtable alignment for F4 VR.
+     * Until fixed we call the same method on the F4SEVR::NiNode class.
+     */
     void updateNodeWorldData(RE::NiAVObject* node)
     {
         const auto f4seNode = reinterpret_cast<F4SEVR::NiAVObject*>(node);

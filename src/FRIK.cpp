@@ -196,10 +196,14 @@ namespace frik
     {
         _inPowerArmor = f4vr::isInPowerArmor();
 
-        // TODO: commonlibf4 migration
-        // const auto player = f4vr::getPlayer();
-        // logger::info("Initialize Skeleton ({}) ; Nodes: Player={:p}, Data={:p}, Root={:p}, Skeleton={:p}, Common={:p}",
-        //     _inPowerArmor ? "PowerArmor" : "Regular", player, player->unkF0, player->unkF0->rootNode, f4vr::getRootNode(), f4vr::getCommonNode());
+        const auto player = f4vr::getPlayer();
+        logger::info("Initialize Skeleton ({}) ; Nodes: Player={}, Data={}, Root={}, Skeleton={}, Common={}",
+            _inPowerArmor ? "PowerArmor" : "Regular",
+            static_cast<const void*>(player),
+            static_cast<const void*>(player->unkF0),
+            static_cast<const void*>(player->unkF0->rootNode),
+            static_cast<const void*>(f4vr::getRootNode()),
+            static_cast<const void*>(f4vr::getCommonNode()));
 
         // init skeleton
         _workingRootNode = f4vr::getRootNode();

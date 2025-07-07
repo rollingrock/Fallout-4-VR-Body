@@ -61,6 +61,7 @@ namespace f4vr
     void attachChildToNode(RE::NiNode* node, RE::NiAVObject* child, bool firstAvail = true);
     void detachChildFromNode(RE::NiNode* node, RE::NiAVObject* child, RE::NiPointer<RE::NiAVObject>& out);
     void removeChildFromNode(RE::NiNode* node, RE::NiAVObject* child);
+    void removeChildAtFromNode(RE::NiNode* node, int childIndex);
     void updateNodeWorldData(RE::NiAVObject* node);
     F4SEVR::NiNode* getF4SEVRNode(RE::NiNode* node);
 }

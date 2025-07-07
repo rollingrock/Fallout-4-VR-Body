@@ -177,7 +177,7 @@ namespace frik
             const RE::NiAVObject* newScreen = f4vr::findAVObject(screenNode, screenName);
 
             if (!newScreen) {
-                pn->ScreenNode->DetachChildAt(0);
+                f4vr::removeChildAtFromNode(pn->ScreenNode, 0);
 
                 newScreen = f4vr::findAVObject(pn->PipboyRoot_nif_only_node, screenName)->parent;
                 RE::NiNode* rn = f4vr::addNode((uint64_t)&pn->ScreenNode, newScreen);
@@ -220,7 +220,7 @@ namespace frik
             f4vr::removeChildFromNode(pipParent, wand);
             f4vr::attachChildToNode(pipParent, retNode);
 
-            pn->ScreenNode->DetachChildAt(0);
+            f4vr::removeChildAtFromNode(pn->ScreenNode, 0);
             // using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
             RE::NiNode* rn = f4vr::addNode((uint64_t)&pn->ScreenNode, newScreen);
             pn->PipboyRoot_nif_only_node = retNode;

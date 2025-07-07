@@ -55,8 +55,11 @@ namespace f4vr
             return std::nullopt;
         }
         const auto type = result.GetType();
-        if (type == GFx::Value::ValueType::kInt || type == GFx::Value::ValueType::kUInt) {
+        if (type == GFx::Value::ValueType::kInt) {
             return result.GetInt();
+        }
+        if (type == GFx::Value::ValueType::kUInt) {
+            return result.GetUInt();
         }
         return std::nullopt;
     }
