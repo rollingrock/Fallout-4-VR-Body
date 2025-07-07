@@ -57,7 +57,6 @@ namespace frik
         _messaging->RegisterListener(onF4VRSEMessage);
 
         logger::info("Register papyrus native functions...");
-        initPapyrusApis();
         PapyrusGateway::init(f4se);
         _boneSpheres.init();
     }
@@ -94,6 +93,8 @@ namespace frik
 
         logger::info("Init config...");
         g_config.loadAllConfig();
+
+        initPapyrusApis();
 
         vrui::initUIManager();
 
