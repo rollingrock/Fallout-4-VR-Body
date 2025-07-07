@@ -118,9 +118,19 @@ source_group(
 )
 
 # >>> Add resource files
-set(resource_files
+list(APPEND resource_files
 	"${ROOT_DIR}/data/config/FRIK.ini"
+	"${ROOT_DIR}/data/config/mesh_hide_face.ini"
+	"${ROOT_DIR}/data/config/mesh_hide_skins.ini"
+	"${ROOT_DIR}/data/config/mesh_hide_slots.ini"
+	"${ROOT_DIR}/data/config/pipboy_holo_offsets.json"
+	"${ROOT_DIR}/data/config/pipboy_screen_offsets.json"
 )
+
+# Add all weapons offset files
+file(GLOB weapons_offset_files "${ROOT_DIR}/data/config/weapons_offsets/*.json")
+list(APPEND resource_files ${weapons_offset_files})
+
 source_group(
 	"Resource Files"
 	FILES ${resource_files}

@@ -8,7 +8,6 @@
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "f4vr/F4VRUtils.h"
-#include "res/resource.h"
 
 using namespace common;
 
@@ -286,7 +285,7 @@ namespace frik
         for (auto& [key, value] : weaponCustomOffsets) {
             _weaponsOffsets.insert_or_assign(key, value);
         }
-        logger::info("Loaded weapon offsets	; Total:{}, Embedded:{}, Custom:{}", _weaponsOffsets.size(), _weaponsEmbeddedOffsets.size(), weaponCustomOffsets.size());
+        logger::info("Loaded weapon offsets ; Total:{}, Embedded:{}, Custom:{}", _weaponsOffsets.size(), _weaponsEmbeddedOffsets.size(), weaponCustomOffsets.size());
     }
 
     /**

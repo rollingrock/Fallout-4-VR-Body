@@ -2,9 +2,9 @@
 
 #include <optional>
 
+#include "resources.h"
 #include "common/CommonUtils.h"
 #include "common/ConfigBase.h"
-#include "res/resource.h"
 
 namespace frik
 {
