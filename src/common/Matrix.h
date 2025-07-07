@@ -214,7 +214,7 @@ namespace common
         {
             // This uses the native transform function that the updateWorld call makes
             using func_t = decltype(&matrixMultiply);
-            REL::Relocation<func_t> func(REL::ID(0x1a8d60));
+            REL::Relocation<func_t> func(REL::Offset(0x1a8d60));
             return func(worldMat, retMat, localMat);
         }
 

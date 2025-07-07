@@ -540,4 +540,9 @@ namespace f4vr
         F4SEVR::NiAVObject::NiUpdateData* ud = nullptr;
         f4seNode->UpdateWorldData(ud);
     }
+
+    F4SEVR::NiNode* getF4SEVRNode(RE::NiNode* node)
+    {
+        return reinterpret_cast<F4SEVR::NiNode*>(node);
+    }
 }

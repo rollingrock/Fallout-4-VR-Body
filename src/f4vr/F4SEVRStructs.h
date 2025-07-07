@@ -9,6 +9,60 @@ namespace F4SEVR
     class BSGeometry;
     class TESObjectARMA;
 
+    // 30
+    class NiMatrix43
+    {
+    public:
+        union
+        {
+            float data[3][4];
+            float arr[12];
+        };
+
+        NiMatrix43 Transpose() const
+        {
+            NiMatrix43 result;
+            result.data[0][0] = data[0][0];
+            result.data[0][1] = data[1][0];
+            result.data[0][2] = data[2][0];
+            result.data[0][3] = data[0][3];
+            result.data[1][0] = data[0][1];
+            result.data[1][1] = data[1][1];
+            result.data[1][2] = data[2][1];
+            result.data[1][3] = data[1][3];
+            result.data[2][0] = data[0][2];
+            result.data[2][1] = data[1][2];
+            result.data[2][2] = data[2][2];
+            result.data[2][3] = data[2][3];
+            return result;
+        }
+
+        RE::NiPoint3 operator*(const RE::NiPoint3& pt) const
+        {
+            float x, y, z;
+            //x = data[0][0] * pt.x + data[0][1] * pt.y + data[0][2] * pt.z;
+            //y = data[1][0] * pt.x + data[1][1] * pt.y + data[1][2] * pt.z;
+            //z = data[2][0] * pt.x + data[2][1] * pt.y + data[2][2] * pt.z;
+            x = data[0][0] * pt.x + data[1][0] * pt.y + data[2][0] * pt.z;
+            y = data[0][1] * pt.x + data[1][1] * pt.y + data[2][1] * pt.z;
+            z = data[0][2] * pt.x + data[1][2] * pt.y + data[2][2] * pt.z;
+            return RE::NiPoint3(x, y, z);
+        }
+    };
+
+    // 40
+    class NiTransform
+    {
+    public:
+        NiMatrix43 rotate; // 00
+        RE::NiPoint3 translate; // 30 (renamed from pos)
+        float scale; // 3C
+
+        RE::NiPoint3 operator*(const RE::NiPoint3& pt) const;
+    };
+
+    static_assert(sizeof(NiTransform) == 0x40);
+
     struct DamageTypes
     {
         RE::BGSDamageType* damageType; // 00
