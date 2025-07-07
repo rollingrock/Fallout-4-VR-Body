@@ -31,39 +31,50 @@ namespace frik
     static bool _offHandGripPose = false;
     static constexpr float OFFHAND_FINGERS_GRIP_POSE[] = { 1.0f, 1.0f, 0.9f, 0.6f, 0.6f, 0.6f, 0.5f, 0.6f, 0.55f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
 
+    static void copyDataIntoHand(const std::vector<float>& fingerData, std::map<std::string, RE::NiTransform, CaseInsensitiveComparator>& hand, const char* finger)
+    {
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 4; col++) {
+                hand[finger].rotate.entry[row][col] = fingerData[row * 4 + col];
+            }
+        }
+    }
+
     static void copyDataIntoHand(std::vector<std::vector<float>> data, std::map<std::string, RE::NiTransform, CaseInsensitiveComparator>& hand)
     {
-        // TODO: commonlibf4 migration
-        // std::ranges::copy(data[0], hand["LArm_Finger11"].rotate.arr);
-        // std::ranges::copy(data[1], hand["LArm_Finger12"].rotate.arr);
-        // std::ranges::copy(data[2], hand["LArm_Finger13"].rotate.arr);
-        // std::ranges::copy(data[3], hand["LArm_Finger21"].rotate.arr);
-        // std::ranges::copy(data[4], hand["LArm_Finger22"].rotate.arr);
-        // std::ranges::copy(data[5], hand["LArm_Finger23"].rotate.arr);
-        // std::ranges::copy(data[6], hand["LArm_Finger31"].rotate.arr);
-        // std::ranges::copy(data[7], hand["LArm_Finger32"].rotate.arr);
-        // std::ranges::copy(data[8], hand["LArm_Finger33"].rotate.arr);
-        // std::ranges::copy(data[9], hand["LArm_Finger41"].rotate.arr);
-        // std::ranges::copy(data[10], hand["LArm_Finger42"].rotate.arr);
-        // std::ranges::copy(data[11], hand["LArm_Finger43"].rotate.arr);
-        // std::ranges::copy(data[12], hand["LArm_Finger51"].rotate.arr);
-        // std::ranges::copy(data[13], hand["LArm_Finger52"].rotate.arr);
-        // std::ranges::copy(data[14], hand["LArm_Finger53"].rotate.arr);
-        // std::ranges::copy(data[15], hand["RArm_Finger11"].rotate.arr);
-        // std::ranges::copy(data[16], hand["RArm_Finger12"].rotate.arr);
-        // std::ranges::copy(data[17], hand["RArm_Finger13"].rotate.arr);
-        // std::ranges::copy(data[18], hand["RArm_Finger21"].rotate.arr);
-        // std::ranges::copy(data[19], hand["RArm_Finger22"].rotate.arr);
-        // std::ranges::copy(data[20], hand["RArm_Finger23"].rotate.arr);
-        // std::ranges::copy(data[21], hand["RArm_Finger31"].rotate.arr);
-        // std::ranges::copy(data[22], hand["RArm_Finger32"].rotate.arr);
-        // std::ranges::copy(data[23], hand["RArm_Finger33"].rotate.arr);
-        // std::ranges::copy(data[24], hand["RArm_Finger41"].rotate.arr);
-        // std::ranges::copy(data[25], hand["RArm_Finger42"].rotate.arr);
-        // std::ranges::copy(data[26], hand["RArm_Finger43"].rotate.arr);
-        // std::ranges::copy(data[27], hand["RArm_Finger51"].rotate.arr);
-        // std::ranges::copy(data[28], hand["RArm_Finger52"].rotate.arr);
-        // std::ranges::copy(data[29], hand["RArm_Finger53"].rotate.arr);
+        // Left hand fingers
+        copyDataIntoHand(data[0], hand, "LArm_Finger11");
+        copyDataIntoHand(data[1], hand, "LArm_Finger12");
+        copyDataIntoHand(data[2], hand, "LArm_Finger13");
+        copyDataIntoHand(data[3], hand, "LArm_Finger21");
+        copyDataIntoHand(data[4], hand, "LArm_Finger22");
+        copyDataIntoHand(data[5], hand, "LArm_Finger23");
+        copyDataIntoHand(data[6], hand, "LArm_Finger31");
+        copyDataIntoHand(data[7], hand, "LArm_Finger32");
+        copyDataIntoHand(data[8], hand, "LArm_Finger33");
+        copyDataIntoHand(data[9], hand, "LArm_Finger41");
+        copyDataIntoHand(data[10], hand, "LArm_Finger42");
+        copyDataIntoHand(data[11], hand, "LArm_Finger43");
+        copyDataIntoHand(data[12], hand, "LArm_Finger51");
+        copyDataIntoHand(data[13], hand, "LArm_Finger52");
+        copyDataIntoHand(data[14], hand, "LArm_Finger53");
+
+        // Right hand fingers
+        copyDataIntoHand(data[15], hand, "RArm_Finger11");
+        copyDataIntoHand(data[16], hand, "RArm_Finger12");
+        copyDataIntoHand(data[17], hand, "RArm_Finger13");
+        copyDataIntoHand(data[18], hand, "RArm_Finger21");
+        copyDataIntoHand(data[19], hand, "RArm_Finger22");
+        copyDataIntoHand(data[20], hand, "RArm_Finger23");
+        copyDataIntoHand(data[21], hand, "RArm_Finger31");
+        copyDataIntoHand(data[22], hand, "RArm_Finger32");
+        copyDataIntoHand(data[23], hand, "RArm_Finger33");
+        copyDataIntoHand(data[24], hand, "RArm_Finger41");
+        copyDataIntoHand(data[25], hand, "RArm_Finger42");
+        copyDataIntoHand(data[26], hand, "RArm_Finger43");
+        copyDataIntoHand(data[27], hand, "RArm_Finger51");
+        copyDataIntoHand(data[28], hand, "RArm_Finger52");
+        copyDataIntoHand(data[29], hand, "RArm_Finger53");
     }
 
     void initHandPoses(const bool inPowerArmor)
