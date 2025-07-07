@@ -59,6 +59,7 @@ namespace f4vr
     RE::NiNode* loadNifFromFile(const std::string& path);
     RE::NiNode* getClonedNiNodeForNifFile(const std::string& path, const std::string& name = "");
     void attachChildToNode(RE::NiNode* node, RE::NiAVObject* child, bool firstAvail = true);
+    void detachChildFromNode(RE::NiNode* node, RE::NiAVObject* child, RE::NiPointer<RE::NiAVObject>& out);
     void removeChildFromNode(RE::NiNode* node, RE::NiAVObject* child);
     void updateNodeWorldData(RE::NiAVObject* node);
     F4SEVR::NiNode* getF4SEVRNode(RE::NiNode* node);

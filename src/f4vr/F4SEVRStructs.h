@@ -9,6 +9,71 @@ namespace F4SEVR
     class BSGeometry;
     class TESObjectARMA;
 
+    // 8
+    template <class T>
+    class NiPointer
+    {
+    public:
+        T* m_pObject; // 00
+
+        inline NiPointer(T* pObject = (T*)0)
+        {
+            m_pObject = pObject;
+            if (m_pObject)
+                m_pObject->IncRef();
+        }
+
+        inline ~NiPointer()
+        {
+            if (m_pObject)
+                m_pObject->DecRef();
+        }
+
+        inline operator bool() const { return m_pObject != nullptr; }
+
+        inline operator T*() const { return m_pObject; }
+
+        inline T& operator*() const { return *m_pObject; }
+
+        inline T* operator->() const { return m_pObject; }
+
+        inline NiPointer<T>& operator=(const NiPointer& rhs)
+        {
+            if (m_pObject != rhs.m_pObject) {
+                if (rhs)
+                    rhs.m_pObject->IncRef();
+                if (m_pObject)
+                    m_pObject->DecRef();
+
+                m_pObject = rhs.m_pObject;
+            }
+
+            return *this;
+        }
+
+        inline NiPointer<T>& operator=(T* rhs)
+        {
+            if (m_pObject != rhs) {
+                if (rhs)
+                    rhs->IncRef();
+                if (m_pObject)
+                    m_pObject->DecRef();
+
+                m_pObject = rhs;
+            }
+
+            return *this;
+        }
+
+        inline bool operator==(T* pObject) const { return m_pObject == pObject; }
+
+        inline bool operator!=(T* pObject) const { return m_pObject != pObject; }
+
+        inline bool operator==(const NiPointer& ptr) const { return m_pObject == ptr.m_pObject; }
+
+        inline bool operator!=(const NiPointer& ptr) const { return m_pObject != ptr.m_pObject; }
+    };
+
     // 30
     class NiMatrix43
     {
@@ -1358,8 +1423,10 @@ namespace F4SEVR
 
         virtual void DeleteThis(void) { delete this; }; // calls virtual dtor
 
-        void IncRef(void);
-        void DecRef(void);
+        void IncRef(void) {}
+
+        void DecRef(void) {}
+
         bool Release(void);
 
         //	void	** _vtbl;		// 00
@@ -1561,11 +1628,11 @@ namespace F4SEVR
         virtual void Unk_39(void);
         virtual void AttachChild(NiAVObject* obj, bool firstAvail);
         virtual void InsertChildAt(std::uint32_t index, NiAVObject* obj);
-        virtual void DetachChild(NiAVObject* obj, RE::NiPointer<NiAVObject>& out);
+        virtual void DetachChild(NiAVObject* obj, NiPointer<NiAVObject>& out);
         virtual void RemoveChild(NiAVObject* obj);
-        virtual void DetachChildAt(std::uint32_t i, RE::NiPointer<NiAVObject>& out);
+        virtual void DetachChildAt(std::uint32_t i, NiPointer<NiAVObject>& out);
         virtual void RemoveChildAt(std::uint32_t i);
-        virtual void SetAt(std::uint32_t index, NiAVObject* obj, RE::NiPointer<NiAVObject>& replaced);
+        virtual void SetAt(std::uint32_t index, NiAVObject* obj, NiPointer<NiAVObject>& replaced);
         virtual void SetAt(std::uint32_t index, NiAVObject* obj);
         virtual void Unk_42(void);
 

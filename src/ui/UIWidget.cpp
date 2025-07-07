@@ -40,7 +40,7 @@ namespace vrui
             throw std::runtime_error("Attempt to detach NOT attached widget");
         }
         RE::NiPointer<RE::NiAVObject> out;
-        _attachNode->DetachChild(_node.get(), out);
+        f4vr::detachChildFromNode(_attachNode.get(), _node.get(), out);
         UIElement::detachFromAttachedNode(releaseSafe);
         out = nullptr;
     }

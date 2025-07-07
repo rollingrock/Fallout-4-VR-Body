@@ -128,7 +128,7 @@ namespace vrui
 
     void UIManager::dumpUITreeRecursive(UIElement* element, std::string padding)
     {
-        logger::info("{}{}", padding.c_str(), element->toString().c_str());
+        logger::infoRaw("{}{}", padding.c_str(), element->toString().c_str());
         const auto container = dynamic_cast<UIContainer*>(element);
         if (!container) {
             return;
