@@ -100,7 +100,6 @@ namespace frik
 
         _gameMenusHandler.init();
 
-        // TODO: commonlibf4 migration (verify receiving messages)
         if (isBetterScopesVRModLoaded()) {
             logger::info("BetterScopesVR mod detected, registering for messages...");
             _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);

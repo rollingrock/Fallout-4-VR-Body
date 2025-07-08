@@ -5,6 +5,7 @@
 #include "../common/Matrix.h"
 #include "f4sevr/Forms.h"
 #include "f4sevr/Nodes.h"
+#include "f4sevr/VM.h"
 
 namespace f4vr
 {
@@ -22,6 +23,16 @@ namespace f4vr
         // common::logger::info("Show notification: '{}'", text.c_str());
         // auto str = RE::BSFixedString(text.c_str());
         // CallGlobalFunctionNoWait1<RE::BSFixedString>("Debug", "Notification", str);
+    }
+
+    /**
+     * Close the weapon favorites menu.
+     */
+    void closeFavoriteMenu()
+    {
+        if (RE::UIMessageQueue* uiQueue = RE::UIMessageQueue::GetSingleton()) {
+            uiQueue->AddMessage("FavoritesMenu", RE::UI_MESSAGE_TYPE::kHide);
+        }
     }
 
     /**
@@ -225,7 +236,7 @@ namespace f4vr
 
     RE::Setting* getIniSettingNative(const char* name)
     {
-        return RE::INIPrefSettingCollection::GetSingleton()->GetSetting(name);
+        return RE::INISettingCollection::GetSingleton()->GetSetting(name);
     }
 
     /**

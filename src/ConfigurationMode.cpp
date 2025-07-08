@@ -96,9 +96,7 @@ namespace frik
                 c_MBox->local.scale = 0;
             }
             if (g_frik.isFavoritesMenuOpen()) {
-                // close favorites menu if open.
-                // TODO: commonlibf4 migration
-                // CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+                f4vr::closeFavoriteMenu();
                 f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
             }
             RE::NiNode* HUD = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigHUD.nif", "MCCONFIGHUD");
@@ -661,8 +659,7 @@ namespace frik
     void ConfigurationMode::enterPipboyConfigMode()
     {
         if (g_frik.isFavoritesMenuOpen()) {
-            // TODO: commonlibf4 migration
-            // CALL_MEMBER_FN(*g_uiMessageManager, SendUIMessage)(menuName, kMessage_Close);
+            f4vr::closeFavoriteMenu();
         }
         f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
         RE::NiNode* HUD = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigHUD.nif", "PBCONFIGHUD");

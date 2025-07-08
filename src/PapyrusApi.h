@@ -28,7 +28,6 @@ namespace frik
 
     static std::uint32_t getWeaponRepositionMode(std::monostate)
     {
-        // TODO: commonlibf4 migration - verify return value is working
         common::logger::info("Papyrus: Get Weapon Reposition Mode");
         return g_frik.inWeaponRepositionMode() ? 1 : 0;
     }

@@ -80,7 +80,6 @@ namespace frik
      */
     bool isBetterScopesVRModLoaded()
     {
-        // TODO: commonlibf4 migration (verify it works)
         auto* dataHandler = RE::TESDataHandler::GetSingleton();
         const auto mod = dataHandler ? dataHandler->LookupModByName("3dscopes-replacer.esp") : nullptr;
         return mod != nullptr;

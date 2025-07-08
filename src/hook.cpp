@@ -90,7 +90,7 @@ uint64_t gunReloadInit(const uint64_t rcx, const uint64_t rdx, const uint64_t r8
 
 uint64_t updatePlayerAnimationHook(const uint64_t rcx, float* rdx)
 {
-    // TODO: commonlibf4 migration
+    // Use in gun reload
     // if (frik::g_animDeltaTime >= 0.0f) {
     //     rdx[0] = frik::g_animDeltaTime;
     // }
@@ -268,7 +268,9 @@ void hookMain()
     trampoline.write_call<5>(hookActor_ReEquipAllExit.address(), &fixPA3D);
     trampoline.write_call<5>(hookExtraData_SetMultiBoundRef.address(), &fixPA3DEnter);
     trampoline.write_call<5>(hookActor_GetCurrentWeaponForGunReload.address(), &gunReloadInit);
-    trampoline.write_call<5>(hookActor_SetupAnimationUpdateDataForRefernce.address(), &updatePlayerAnimationHook);
+
+    // gun reload animation hook
+    // trampoline.write_call<5>(hookActor_SetupAnimationUpdateDataForRefernce.address(), &updatePlayerAnimationHook);
 
     //	logger::info("hooking main loop function");
     //	trampoline.write_call<5>(hookMainLoopFunc.address(), (uintptr_t)updateCounter);

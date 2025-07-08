@@ -12,6 +12,7 @@ namespace f4vr
 
     // Controls
     void setControlsThumbstickEnableState(bool toEnable);
+    void closeFavoriteMenu();
 
     // Weapons/Armor/Player
     void setWandsVisibility(bool show, bool leftWand);
