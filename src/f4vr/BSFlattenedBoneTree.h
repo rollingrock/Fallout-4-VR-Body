@@ -1,58 +1,10 @@
 #pragma once
 
 #include "F4VROffsets.h"
+#include "f4sevr/Common.h"
 
 namespace f4vr
 {
-    // 80808
-    class StringCache
-    {
-    public:
-        // 18+
-        struct Entry
-        {
-            enum
-            {
-                kState_RefcountMask = 0x3FFF,
-                kState_External = 0x4000,
-                kState_Wide = 0x8000
-            };
-
-            Entry* next; // 00
-            std::uint32_t state; // 08 - refcount, hash, flags
-            std::uint32_t length; // 0C
-            Entry* externData; // 10
-            char data[0]; // 18
-
-            bool IsWide()
-            {
-                Entry* iter = this;
-
-                while (iter->state & kState_External) {
-                    iter = iter->externData;
-                }
-
-                if ((iter->state & kState_Wide) == kState_Wide) {
-                    return true;
-                }
-
-                return false;
-            }
-
-            template <typename T>
-            T* Get()
-            {
-                auto iter = this;
-
-                while (iter->state & kState_External) {
-                    iter = iter->externData;
-                }
-
-                return static_cast<T*>(iter->data);
-            }
-        };
-    };
-
     class BSFlattenedBoneTree : public RE::NiNode
     {
     public:
@@ -70,7 +22,7 @@ namespace f4vr
 
         struct BoneNodePosition
         {
-            StringCache::Entry* name;
+            F4SEVR::StringCache::Entry* name;
             int position;
             uint32_t pad;
             uintptr_t unk;

@@ -18,8 +18,7 @@ namespace frik
      */
     void Config::openInNotepad()
     {
-        // TODO: CLF4 migration
-        // ShellExecute(nullptr, "open", "notepad.exe", FRIK_INI_PATH.c_str(), nullptr, SW_SHOWNORMAL);
+        ShellExecuteA(nullptr, "open", "notepad.exe", FRIK_INI_PATH.c_str(), nullptr, SW_SHOWNORMAL);
     }
 
     /**

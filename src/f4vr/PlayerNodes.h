@@ -1,7 +1,6 @@
 #pragma once
 
 #include "BSFlattenedBoneTree.h"
-#include "F4SEVRStructs.h"
 #include "F4VRUtils.h"
 
 namespace f4vr

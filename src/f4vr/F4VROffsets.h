@@ -3,8 +3,8 @@
 // ReSharper disable CppClangTidyClangDiagnosticReservedIdentifier
 // ReSharper disable CppClangTidyBugproneReservedIdentifier
 
-#include "F4SEVRStructs.h"
 #include "MiscStructs.h"
+#include "f4sevr/Forms.h"
 
 class BSAnimationManager;
 
