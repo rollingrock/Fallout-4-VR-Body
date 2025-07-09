@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include "FRIK.h"
+#include "f4sevr/PapyrusUtils.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/PlayerNodes.h"
 
@@ -10,8 +11,7 @@ namespace frik
 {
     void turnPlayerRadioOn(bool isActive)
     {
-        // TODO: commonlibf4 migration
-        // CallGlobalFunctionNoWait1<bool>("Game", "TurnPlayerRadioOn", isActive);
+        F4SEVR::execPapyrusGlobalFunction("Game", "TurnPlayerRadioOn", isActive);
     }
 
     void turnPipBoyOn()

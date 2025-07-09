@@ -5,24 +5,20 @@
 #include "../common/Matrix.h"
 #include "f4sevr/Forms.h"
 #include "f4sevr/Nodes.h"
-#include "f4sevr/VM.h"
+#include "f4sevr/PapyrusUtils.h"
 
 namespace f4vr
 {
     void showMessagebox(const std::string& text)
     {
-        // TODO: commonlibf4 migration
-        // common::logger::info("Show messagebox: '{}'", text.c_str());
-        // auto str = RE::BSFixedString(text.c_str());
-        // CallGlobalFunctionNoWait1<RE::BSFixedString>("Debug", "Messagebox", str);
+        common::logger::info("Show messagebox: '{}'", text.c_str());
+        F4SEVR::execPapyrusGlobalFunction("Debug", "Messagebox", text);
     }
 
     void showNotification(const std::string& text)
     {
-        // TODO: commonlibf4 migration
-        // common::logger::info("Show notification: '{}'", text.c_str());
-        // auto str = RE::BSFixedString(text.c_str());
-        // CallGlobalFunctionNoWait1<RE::BSFixedString>("Debug", "Notification", str);
+        common::logger::info("Show notification: '{}'", text.c_str());
+        F4SEVR::execPapyrusGlobalFunction("Debug", "Notification", text);
     }
 
     /**
