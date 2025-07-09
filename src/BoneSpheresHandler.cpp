@@ -5,8 +5,10 @@
 #include "FRIK.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
+#include "f4sevr/PapyrusNativeFunctions.h"
 
 using namespace common;
+using namespace F4SEVR;
 
 namespace frik
 {
@@ -16,56 +18,51 @@ namespace frik
             throw std::exception("Bone Spheres Handler is already initialized, only single instance can be used!");
         }
         _instance = this;
-        f4vr::registerPapyrusNativeFunctions(registerPapyrusFunctionsCallback);
+
+        const auto vm = getGameVM()->m_virtualMachine;
+        vm->RegisterFunction(new NativeFunction2("RegisterBoneSphere", "FRIK:FRIK", registerBoneSphereFunc, vm));
+        vm->RegisterFunction(new NativeFunction3("RegisterBoneSphereOffset", "FRIK:FRIK", registerBoneSphereOffsetFunc, vm));
+        vm->RegisterFunction(new NativeFunction1("DestroyBoneSphere", "FRIK:FRIK", destroyBoneSphereFunc, vm));
+        vm->RegisterFunction(new NativeFunction1("RegisterForBoneSphereEvents", "FRIK:FRIK", registerForBoneSphereEventsFunc, vm));
+        vm->RegisterFunction(new NativeFunction1("UnRegisterForBoneSphereEvents", "FRIK:FRIK", unRegisterForBoneSphereEventsFunc, vm));
+        vm->RegisterFunction(new NativeFunction1("toggleDebugBoneSpheres", "FRIK:FRIK", toggleDebugBoneSpheresFunc, vm));
+        vm->RegisterFunction(new NativeFunction2("toggleDebugBoneSpheresAtBone", "FRIK:FRIK", toggleDebugBoneSpheresAtBoneFunc, vm));
     }
 
-    /**
-     * Register code for Papyrus scripts.
-     */
-    bool BoneSpheresHandler::registerPapyrusFunctionsCallback(RE::BSScript::IVirtualMachine* vm)
-    {
-        // TODO: commonlibf4 migration
-        // vm->BindNativeMethod("FRIK:FRIK", "RegisterBoneSphere", registerBoneSphereFunc);
-        // vm->BindNativeMethod("FRIK:FRIK", "RegisterBoneSphereOffset", registerBoneSphereOffsetFunc);
-        // vm->BindNativeMethod("FRIK:FRIK", "DestroyBoneSphere", destroyBoneSphereFunc);
-        // vm->BindNativeMethod("FRIK:FRIK", "RegisterForBoneSphereEvents", registerForBoneSphereEventsFunc);
-        // vm->BindNativeMethod("FRIK:FRIK", "UnRegisterForBoneSphereEvents", unRegisterForBoneSphereEventsFunc);
-        // vm->BindNativeMethod("FRIK:FRIK", "toggleDebugBoneSpheres", toggleDebugBoneSpheresFunc);
-        // vm->BindNativeMethod("FRIK:FRIK", "toggleDebugBoneSpheresAtBone", toggleDebugBoneSpheresAtBoneFunc);
-        return true;
-    }
-
-    std::uint32_t BoneSpheresHandler::registerBoneSphereFunc(RE::BSScript::Object*, const float radius, const RE::BSFixedString bone)
+    // ReSharper disable once CppParameterMayBeConst
+    std::uint32_t BoneSpheresHandler::registerBoneSphereFunc(StaticFunctionTag*, const float radius, BSFixedString bone)
     {
         return _instance->registerBoneSphere(radius, bone);
     }
 
-    std::uint32_t BoneSpheresHandler::registerBoneSphereOffsetFunc(RE::BSScript::Object*, const float radius, const RE::BSFixedString bone, std::vector<float> pos)
+    // ReSharper disable once CppParameterMayBeConst
+    // ReSharper disable once CppPassValueParameterByConstReference
+    std::uint32_t BoneSpheresHandler::registerBoneSphereOffsetFunc(StaticFunctionTag*, const float radius, BSFixedString bone, VMArray<float> pos)
     {
         return _instance->registerBoneSphereOffset(radius, bone, pos);
     }
 
-    void BoneSpheresHandler::destroyBoneSphereFunc(RE::BSScript::Object*, const std::uint32_t handle)
+    void BoneSpheresHandler::destroyBoneSphereFunc(StaticFunctionTag*, const std::uint32_t handle)
     {
         _instance->destroyBoneSphere(handle);
     }
 
-    void BoneSpheresHandler::registerForBoneSphereEventsFunc(RE::BSScript::Object*, RE::BSScript::Object* scriptObj)
+    void BoneSpheresHandler::registerForBoneSphereEventsFunc(StaticFunctionTag*, VMObject* scriptObj)
     {
         _instance->registerForBoneSphereEvents(scriptObj);
     }
 
-    void BoneSpheresHandler::unRegisterForBoneSphereEventsFunc(RE::BSScript::Object*, RE::BSScript::Object* scriptObj)
+    void BoneSpheresHandler::unRegisterForBoneSphereEventsFunc(StaticFunctionTag*, VMObject* scriptObj)
     {
         _instance->unRegisterForBoneSphereEvents(scriptObj);
     }
 
-    void BoneSpheresHandler::toggleDebugBoneSpheresFunc(RE::BSScript::Object*, const bool turnOn)
+    void BoneSpheresHandler::toggleDebugBoneSpheresFunc(StaticFunctionTag*, const bool turnOn)
     {
         _instance->toggleDebugBoneSpheres(turnOn);
     }
 
-    void BoneSpheresHandler::toggleDebugBoneSpheresAtBoneFunc(RE::BSScript::Object*, const std::uint32_t handle, const bool turnOn)
+    void BoneSpheresHandler::toggleDebugBoneSpheresAtBoneFunc(StaticFunctionTag*, const std::uint32_t handle, const bool turnOn)
     {
         _instance->toggleDebugBoneSpheresAtBone(handle, turnOn);
     }
@@ -76,15 +73,13 @@ namespace frik
         handleDebugBoneSpheres();
     }
 
-    std::uint32_t BoneSpheresHandler::registerBoneSphere(const float radius, const RE::BSFixedString bone)
+    std::uint32_t BoneSpheresHandler::registerBoneSphere(const float radius, const BSFixedString& bone)
     {
         if (radius == 0.0) {
             return 0;
         }
 
-        // TODO: there must be a lower node we can start the search at
-        RE::NiNode* boneNode = f4vr::findChildNode(f4vr::getWorldRootNode(), bone.c_str());
-
+        const auto boneNode = f4vr::findChildNode(f4vr::getWorldRootNode(), bone.c_str());
         if (!boneNode) {
             logger::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
             return 0;
@@ -98,28 +93,25 @@ namespace frik
         return handle;
     }
 
-    std::uint32_t BoneSpheresHandler::registerBoneSphereOffset(const float radius, const RE::BSFixedString bone, std::vector<float> pos)
+    std::uint32_t BoneSpheresHandler::registerBoneSphereOffset(const float radius, const BSFixedString& bone, VMArray<float> pos)
     {
         if (radius == 0.0) {
             return 0;
         }
 
-        if (pos.size() != 3) {
+        if (pos.Length() != 3) {
             return 0;
         }
 
-        // TODO: there must be a lower node we can start the search at
-        const auto rootNode = f4vr::getWorldRootNode();
-        if (!rootNode) {
+        if (!f4vr::getPlayer()->unkF0) {
             logger::info("can't register yet as new game");
             return 0;
         }
 
-        auto boneNode = f4vr::findChildNode(rootNode, bone.c_str());
+        auto n = f4vr::getWorldRootNode();
+        auto boneNode = f4vr::findChildNode(n, bone.c_str());
 
         if (!boneNode) {
-            auto n = rootNode;
-
             while (n->parent) {
                 n = n->parent;
             }
@@ -133,9 +125,10 @@ namespace frik
         }
 
         RE::NiPoint3 offsetVec;
-        offsetVec.x = pos[0];
-        offsetVec.y = pos[1];
-        offsetVec.z = pos[2];
+
+        pos.Get(&offsetVec.x, 0);
+        pos.Get(&offsetVec.y, 1);
+        pos.Get(&offsetVec.z, 2);
 
         const auto sphere = new BoneSphere(radius, boneNode, offsetVec);
         const std::uint32_t handle = _nextBoneSphereHandle++;
@@ -159,26 +152,30 @@ namespace frik
         }
     }
 
-    void BoneSpheresHandler::registerForBoneSphereEvents(RE::BSScript::Object* scriptObj)
+    void BoneSpheresHandler::registerForBoneSphereEvents(VMObject* scriptObj)
     {
         if (!scriptObj) {
             logger::warn("Failed to register for BoneSphereEvents, no scriptObj");
             return;
         }
 
-        logger::info("Register for BoneSphereEvents by Script:'{}'", scriptObj->GetTypeInfo()->GetName());
-        _boneSphereEventRegs.Register(scriptObj->GetHandle(), scriptObj->GetTypeInfo()->GetName());
+        const auto scriptName = scriptObj->GetObjectType();
+        const auto scriptHandle = scriptObj->GetHandle();
+        logger::debug("Register for BoneSphereEvents by Script:'{}' ({})", scriptName.c_str(), scriptHandle);
+        _boneSphereEventRegs.insert_or_assign(scriptHandle, scriptName);
     }
 
-    void BoneSpheresHandler::unRegisterForBoneSphereEvents(RE::BSScript::Object* scriptObj)
+    void BoneSpheresHandler::unRegisterForBoneSphereEvents(VMObject* scriptObj)
     {
         if (!scriptObj) {
             logger::warn("Failed to unregister from BoneSphereEvents, no scriptObj");
             return;
         }
 
-        logger::info("Unregister from BoneSphereEvents by Script:'{}'", scriptObj->GetTypeInfo()->GetName());
-        _boneSphereEventRegs.Unregister(scriptObj->GetHandle(), scriptObj->GetTypeInfo()->GetName());
+        const auto scriptName = scriptObj->GetObjectType();
+        const auto scriptHandle = scriptObj->GetHandle();
+        logger::debug("UnRegister from BoneSphereEvents by Script:'{}' ({})", scriptName.c_str(), scriptHandle);
+        _boneSphereEventRegs.erase(scriptHandle);
     }
 
     void BoneSpheresHandler::toggleDebugBoneSpheres(const bool turnOn) const
@@ -232,33 +229,18 @@ namespace frik
                 if (!element.second->stickyRight) {
                     element.second->stickyRight = true;
 
-                    std::int32_t evt = static_cast<std::int32_t>(BoneSphereEvent::Enter);
-                    std::uint32_t handle = element.first;
-                    std::uint32_t device = 1;
-                    _curDevice = device;
-
-                    if (!_boneSphereEventRegs.data.empty()) {
-                        auto functor = [&evt, &handle, &device](const auto& reg) {
-                            SendPapyrusEvent3<std::int32_t, std::uint32_t, std::uint32_t>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
-                        };
-                        _boneSphereEventRegs.ForEach(functor);
-                    }
+                    const std::uint32_t handle = element.first;
+                    constexpr std::uint32_t device = 1;
+                    _curDevice = 1;
+                    sendPapyrusEventToRegisteredScripts(BoneSphereEvent::Enter, handle, device);
                 }
             } else if (dist >= static_cast<double>(element.second->radius) + 0.1) {
                 if (element.second->stickyRight) {
                     element.second->stickyRight = false;
 
-                    std::int32_t evt = static_cast<std::int32_t>(BoneSphereEvent::Exit);
-                    std::uint32_t handle = element.first;
+                    const std::uint32_t handle = element.first;
                     _curDevice = 0;
-
-                    if (!_boneSphereEventRegs.data.empty()) {
-                        std::uint32_t device = 1;
-                        auto functor = [&evt, &handle, &device](const auto& reg) {
-                            SendPapyrusEvent3<std::int32_t, std::uint32_t, std::uint32_t>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
-                        };
-                        _boneSphereEventRegs.ForEach(functor);
-                    }
+                    sendPapyrusEventToRegisteredScripts(BoneSphereEvent::Exit, handle, 1);
                 }
             }
 
@@ -268,35 +250,33 @@ namespace frik
                 if (!element.second->stickyLeft) {
                     element.second->stickyLeft = true;
 
-                    std::int32_t evt = static_cast<std::int32_t>(BoneSphereEvent::Enter);
-                    std::uint32_t handle = element.first;
-                    std::uint32_t device = 2;
+                    const std::uint32_t handle = element.first;
+                    constexpr std::uint32_t device = 2;
                     _curDevice = device;
-
-                    if (!_boneSphereEventRegs.data.empty()) {
-                        auto functor = [&evt, &handle, &device](const auto& reg) {
-                            SendPapyrusEvent3<std::int32_t, std::uint32_t, std::uint32_t>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
-                        };
-                        _boneSphereEventRegs.ForEach(functor);
-                    }
+                    sendPapyrusEventToRegisteredScripts(BoneSphereEvent::Enter, handle, device);
                 }
             } else if (dist >= static_cast<double>(element.second->radius) + 0.1) {
                 if (element.second->stickyLeft) {
                     element.second->stickyLeft = false;
 
-                    std::int32_t evt = static_cast<std::int32_t>(BoneSphereEvent::Exit);
-                    std::uint32_t handle = element.first;
+                    const std::uint32_t handle = element.first;
                     _curDevice = 0;
-
-                    if (!_boneSphereEventRegs.data.empty()) {
-                        std::uint32_t device = 2;
-                        auto functor = [&evt, &handle, &device](const auto& reg) {
-                            SendPapyrusEvent3<std::int32_t, std::uint32_t, std::uint32_t>(reg.handle, reg.scriptName, BONE_SPHERE_EVEN_NAME, evt, handle, device);
-                        };
-                        _boneSphereEventRegs.ForEach(functor);
-                    }
+                    sendPapyrusEventToRegisteredScripts(BoneSphereEvent::Exit, handle, 2);
                 }
             }
+        }
+    }
+
+    /**
+     * Send the given bone sphere event to all registered scripts.
+     */
+    void BoneSpheresHandler::sendPapyrusEventToRegisteredScripts(const BoneSphereEvent event, const std::uint32_t handle, const std::uint32_t device)
+    {
+        const int evt = static_cast<int>(event);
+        for (auto [scriptHandle, scriptName] : _boneSphereEventRegs) {
+            logger::debug("Send BoneSphere Event({}) to '{}' ({}): Enter, Handle: {}, Device: {}", evt, scriptName, scriptHandle, handle, device);
+            auto arguments = getArgs(evt, handle, device);
+            execPapyrusFunction(scriptHandle, scriptName, BONE_SPHERE_EVEN_NAME, arguments);
         }
     }
 
@@ -311,7 +291,7 @@ namespace frik
                 if (sphere) {
                     sphere->name = RE::BSFixedString("Sphere01");
 
-                    f4vr::attachChildToNode(bone, sphere);
+                    bone->AttachChild(sphere, true);
                     sphere->flags.flags &= 0xfffffffffffffffe;
                     sphere->local.scale = val->radius * 2;
                     val->debugSphere = sphere;

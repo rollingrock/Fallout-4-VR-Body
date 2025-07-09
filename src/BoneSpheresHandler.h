@@ -1,72 +1,6 @@
 #pragma once
 
-// TODO: commonlibf4 migration (verify this code)
-// Forward declarations for event registration
-template <typename T = void>
-class RegistrationSetHolder
-{
-public:
-    struct Registration
-    {
-        std::uint64_t handle;
-        RE::BSFixedString scriptName;
-
-        Registration(std::uint64_t a_handle, const RE::BSFixedString& a_scriptName) :
-            handle(a_handle), scriptName(a_scriptName) {}
-    };
-
-    std::vector<Registration> data;
-
-    void Register(std::uint64_t handle, const RE::BSFixedString& scriptName)
-    {
-        data.emplace_back(handle, scriptName);
-    }
-
-    void Unregister(std::uint64_t handle, const RE::BSFixedString& scriptName)
-    {
-        for (auto it = data.begin(); it != data.end(); ++it) {
-            if (it->handle == handle && it->scriptName == scriptName) {
-                data.erase(it);
-                break;
-            }
-        }
-    }
-
-    template <typename Func>
-    void ForEach(Func&& func)
-    {
-        for (const auto& reg : data) {
-            func(reg);
-        }
-    }
-};
-
-// TODO: commonlibf4 migration (verify this code)
-// Helper function to send Papyrus events with 3 parameters
-template <typename T1, typename T2, typename T3>
-void SendPapyrusEvent3(std::uint64_t handle, const RE::BSFixedString& scriptName, const char* eventName, T1 param1, T2 param2, T3 param3)
-{
-    if (auto vm = RE::BSScript::Internal::VirtualMachine::GetSingleton()) {
-        // Create event arguments
-        auto argsFunc = [=](RE::BSScrapArray<RE::BSScript::Variable>& args) -> bool {
-            args.resize(3);
-            args[0] = RE::BSScript::Variable();
-            args[0] = param1;
-            args[1] = RE::BSScript::Variable();
-            args[1] = param2;
-            args[2] = RE::BSScript::Variable();
-            args[2] = param3;
-            return true;
-        };
-
-        // No filter - send to all objects
-        auto filterFunc = [](const RE::BSTSmartPointer<RE::BSScript::Object>&) -> bool {
-            return true;
-        };
-
-        vm->SendEvent(handle, eventName, argsFunc, filterFunc, nullptr);
-    }
-}
+#include "f4sevr/PapyrusNativeFunctions.h"
 
 namespace frik
 {
@@ -121,28 +55,29 @@ namespace frik
         void init();
         void onFrameUpdate();
 
-        std::uint32_t registerBoneSphere(float radius, RE::BSFixedString bone);
-        std::uint32_t registerBoneSphereOffset(float radius, RE::BSFixedString bone, std::vector<float> pos);
+        std::uint32_t registerBoneSphere(float radius, const F4SEVR::BSFixedString& bone);
+        std::uint32_t registerBoneSphereOffset(float radius, const F4SEVR::BSFixedString& bone, F4SEVR::VMArray<float> pos);
         void destroyBoneSphere(std::uint32_t handle);
-        void registerForBoneSphereEvents(RE::BSScript::Object* scriptObj);
-        void unRegisterForBoneSphereEvents(RE::BSScript::Object* scriptObj);
+        void registerForBoneSphereEvents(F4SEVR::VMObject* scriptObj);
+        void unRegisterForBoneSphereEvents(F4SEVR::VMObject* scriptObj);
         void toggleDebugBoneSpheres(bool turnOn) const;
         void toggleDebugBoneSpheresAtBone(std::uint32_t handle, bool turnOn);
 
     private:
-        static bool registerPapyrusFunctionsCallback(RE::BSScript::IVirtualMachine* vm);
-        static std::uint32_t registerBoneSphereFunc(RE::BSScript::Object*, float radius, RE::BSFixedString bone);
-        static std::uint32_t registerBoneSphereOffsetFunc(RE::BSScript::Object*, float radius, RE::BSFixedString bone, std::vector<float> pos);
-        static void destroyBoneSphereFunc(RE::BSScript::Object*, std::uint32_t handle);
-        static void registerForBoneSphereEventsFunc(RE::BSScript::Object*, RE::BSScript::Object* scriptObj);
-        static void unRegisterForBoneSphereEventsFunc(RE::BSScript::Object*, RE::BSScript::Object* scriptObj);
-        static void toggleDebugBoneSpheresFunc(RE::BSScript::Object*, bool turnOn);
-        static void toggleDebugBoneSpheresAtBoneFunc(RE::BSScript::Object*, std::uint32_t handle, bool turnOn);
+        static std::uint32_t registerBoneSphereFunc(F4SEVR::StaticFunctionTag* base, float radius, F4SEVR::BSFixedString bone);
+        static std::uint32_t registerBoneSphereOffsetFunc(F4SEVR::StaticFunctionTag* base, float radius, F4SEVR::BSFixedString bone, F4SEVR::VMArray<float> pos);
+        static void destroyBoneSphereFunc(F4SEVR::StaticFunctionTag* base, std::uint32_t handle);
+        static void registerForBoneSphereEventsFunc(F4SEVR::StaticFunctionTag* base, F4SEVR::VMObject* scriptObj);
+        static void unRegisterForBoneSphereEventsFunc(F4SEVR::StaticFunctionTag* base, F4SEVR::VMObject* scriptObj);
+        static void toggleDebugBoneSpheresFunc(F4SEVR::StaticFunctionTag* base, bool turnOn);
+        static void toggleDebugBoneSpheresAtBoneFunc(F4SEVR::StaticFunctionTag* base, std::uint32_t handle, bool turnOn);
+        void sendPapyrusEventToRegisteredScripts(BoneSphereEvent event, std::uint32_t handle, std::uint32_t device);
 
         void detectBoneSphere();
         void handleDebugBoneSpheres();
 
-        RegistrationSetHolder<> _boneSphereEventRegs;
+        //
+        std::unordered_map<std::uint64_t, std::string> _boneSphereEventRegs;
 
         std::map<std::uint32_t, BoneSphere*> _boneSphereRegisteredObjects;
         std::uint32_t _nextBoneSphereHandle = 1;

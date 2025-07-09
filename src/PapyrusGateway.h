@@ -32,7 +32,7 @@ namespace frik
          */
         void enablePlayerControls(const bool drawWeapon) const
         {
-            auto arguments = getArgs(drawWeapon);
+            auto arguments = F4SEVR::getArgs(drawWeapon);
             executePapyrusScript("EnablePlayerControls", arguments);
         }
 
@@ -48,7 +48,7 @@ namespace frik
          */
         void disablePlayerControls(const bool disableWeapon, const bool restrain) const
         {
-            auto arguments = getArgs(disableWeapon, restrain);
+            auto arguments = F4SEVR::getArgs(disableWeapon, restrain);
             executePapyrusScript("DisablePlayerControls", arguments);
         }
 
@@ -57,7 +57,7 @@ namespace frik
          */
         void enableDisableFighting(const bool enable, const bool drawWeapon) const
         {
-            auto arguments = getArgs(enable, drawWeapon);
+            auto arguments = F4SEVR::getArgs(enable, drawWeapon);
             executePapyrusScript("EnableDisableFighting", arguments);
         }
 
@@ -67,7 +67,7 @@ namespace frik
          */
         void enableDisableVats(const bool enable) const
         {
-            auto arguments = getArgs(enable);
+            auto arguments = F4SEVR::getArgs(enable);
             executePapyrusScript("EnableDisableVats", arguments);
         }
 
@@ -109,7 +109,7 @@ namespace frik
          */
         void activateFix(const bool enable) const
         {
-            auto arguments = getArgs(enable);
+            auto arguments = F4SEVR::getArgs(enable);
             executePapyrusScript("ActivateFix", arguments);
         }
     };

@@ -20,8 +20,8 @@ namespace f4vr
     class PapyrusGatewayBase
     {
     public:
-        explicit PapyrusGatewayBase(const std::string& registerScriptClassName) :
-            _registerScriptClassName(registerScriptClassName)
+        explicit PapyrusGatewayBase(std::string registerScriptClassName) :
+            _registerScriptClassName(std::move(registerScriptClassName))
         {
             if (_instance && _instance != this) {
                 throw std::exception("Papyrus Gateway is already initialized, only single instance can be used!");
@@ -30,7 +30,7 @@ namespace f4vr
 
             // Register a native papyrus function that is called from a papyrus script to register for gateway access.
             // I couldn't find a way to get the script object handle so this is a workaround for the papyrus script to send its handle.
-            auto vm = F4SEVR::getGameVM()->m_virtualMachine;
+            const auto vm = F4SEVR::getGameVM()->m_virtualMachine;
             vm->RegisterFunction(new F4SEVR::NativeFunction1("RegisterPapyrusGatewayScript", _instance->_registerScriptClassName.c_str(), onRegisterGatewayScript, vm));
         }
 
@@ -74,75 +74,6 @@ namespace f4vr
 
             common::logger::debug("Calling papyrus function '{}' on script '{}'", functionName, _scriptName.c_str());
             F4SEVR::execPapyrusFunction(_scriptHandle, _scriptName, functionName, arguments);
-        }
-
-        /**
-         * Small helper function to add an arguments
-         */
-        template <typename T>
-        static void addArgument(F4SEVR::VMArray<F4SEVR::VMVariable>& arguments, T arg)
-        {
-            F4SEVR::VMVariable var1;
-            var1.Set(&arg);
-            arguments.Push(&var1);
-        }
-
-        template <typename T>
-        static F4SEVR::VMArray<F4SEVR::VMVariable> getArgs(T arg)
-        {
-            F4SEVR::VMArray<F4SEVR::VMVariable> arguments;
-            F4SEVR::VMVariable var1;
-            var1.Set(&arg);
-            arguments.Push(&var1);
-            return arguments;
-        }
-
-        template <typename T1, typename T2>
-        static F4SEVR::VMArray<F4SEVR::VMVariable> getArgs(T1 arg1, T2 arg2)
-        {
-            F4SEVR::VMArray<F4SEVR::VMVariable> arguments;
-            F4SEVR::VMVariable var1;
-            var1.Set(&arg1);
-            arguments.Push(&var1);
-            F4SEVR::VMVariable var2;
-            var2.Set(&arg2);
-            arguments.Push(&var2);
-            return arguments;
-        }
-
-        template <typename T1, typename T2, typename T3>
-        static F4SEVR::VMArray<F4SEVR::VMVariable> getArgs(T1 arg1, T2 arg2, T3 arg3)
-        {
-            F4SEVR::VMArray<F4SEVR::VMVariable> arguments;
-            F4SEVR::VMVariable var1;
-            var1.Set(&arg1);
-            arguments.Push(&var1);
-            F4SEVR::VMVariable var2;
-            var2.Set(&arg2);
-            arguments.Push(&var2);
-            F4SEVR::VMVariable var3;
-            var3.Set(&arg3);
-            arguments.Push(&var3);
-            return arguments;
-        }
-
-        template <typename T1, typename T2, typename T3, typename T4>
-        static F4SEVR::VMArray<F4SEVR::VMVariable> getArgs(T1 arg1, T2 arg2, T3 arg3, T4 arg4)
-        {
-            F4SEVR::VMArray<F4SEVR::VMVariable> arguments;
-            F4SEVR::VMVariable var1;
-            var1.Set(&arg1);
-            arguments.Push(&var1);
-            F4SEVR::VMVariable var2;
-            var2.Set(&arg2);
-            arguments.Push(&var2);
-            F4SEVR::VMVariable var3;
-            var3.Set(&arg3);
-            arguments.Push(&var3);
-            F4SEVR::VMVariable var4;
-            var4.Set(&arg4);
-            arguments.Push(&var4);
-            return arguments;
         }
 
         std::string _registerScriptClassName;
