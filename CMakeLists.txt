@@ -112,9 +112,10 @@ source_group(
 # >>> Add all headers and source files in src folder
 file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${SOURCE_DIR}/*.h")
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${SOURCE_DIR}/*.cpp")
+file(GLOB_RECURSE inls CONFIGURE_DEPENDS "${SOURCE_DIR}/*.inl")
 source_group(
 	TREE ${ROOT_DIR}
-	FILES ${headers} ${sources}
+	FILES ${headers} ${sources}	${inls}
 )
 
 # >>> Add resource files
@@ -143,6 +144,7 @@ add_library(
 	SHARED
 	${headers}
 	${sources}
+	${inls}
 	${resource_files}
 	${BUILD_DIR}/include/Version.h
 	${BUILD_DIR}/version.rc

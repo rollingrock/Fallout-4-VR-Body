@@ -77,8 +77,7 @@ namespace F4SEVR
             UInt64 handle = handlePolicy->Create(typeID, srcData);
 
             if (handlePolicy->IsType(unk, handle) || (handle == handlePolicy->GetInvalidHandle())) {
-                // TODO: commonlibf4 migration (error need fixing)
-                //CALL_MEMBER_FN(vm->GetObjectBindPolicy(), BindObject)(identifier, handle);
+                CALL_MEMBER_FN(vm->GetObjectBindPolicy(), BindObject)(identifier, handle);
             }
         }
 

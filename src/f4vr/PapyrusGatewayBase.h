@@ -1,7 +1,10 @@
 #pragma once
 
-#include "F4VRUtils.h"
-#include "../common/Logger.h"
+#include "common/Logger.h"
+#include "f4sevr/PapyrusArgs.h"
+#include "f4sevr/PapyrusNativeFunctions.h"
+#include "f4sevr/PapyrusUtils.h"
+#include "f4sevr/PapyrusVM.h"
 
 namespace f4vr
 {
@@ -17,159 +20,130 @@ namespace f4vr
     class PapyrusGatewayBase
     {
     public:
-        explicit PapyrusGatewayBase(const F4SE::LoadInterface* f4se, std::string registerScriptClassName) :
-            _registerScriptClassName(std::move(registerScriptClassName))
+        explicit PapyrusGatewayBase(const std::string& registerScriptClassName) :
+            _registerScriptClassName(registerScriptClassName)
         {
             if (_instance && _instance != this) {
                 throw std::exception("Papyrus Gateway is already initialized, only single instance can be used!");
             }
             _instance = this;
-            registerPapyrusNativeFunctions(registerPapyrusFunctionsCallback);
 
-            // TODO: can I get the script handle without register function?
-            //
-            // common::logger::warn("Try stuff...");
-            // const auto quest = DYNAMIC_CAST(LookupFormByID(0xB4000F9B), RE::TESForm, TESQuest);
-            //
-            // common::logger::warn("Try stuff 2...");
-            // const auto policy = (*g_gameVM)->m_virtualMachine->GetHandlePolicy();
-            //
-            // common::logger::warn("Try stuff 3...");
-            // const auto handle = policy->Create(kFormType_QUST, quest);
-            // common::logger::warn("got handle? {}", handle);
-            //
-            // common::logger::warn("same handle? {}", thisObject->GetHandle());
+            // Register a native papyrus function that is called from a papyrus script to register for gateway access.
+            // I couldn't find a way to get the script object handle so this is a workaround for the papyrus script to send its handle.
+            auto vm = F4SEVR::getGameVM()->m_virtualMachine;
+            vm->RegisterFunction(new F4SEVR::NativeFunction1("RegisterPapyrusGatewayScript", _instance->_registerScriptClassName.c_str(), onRegisterGatewayScript, vm));
         }
 
         virtual ~PapyrusGatewayBase() { _instance = nullptr; }
 
     protected:
         /**
-         * Register a native papyrus function that is called from a papyrus script to register for gateway access.
-         * I couldn't find a way to get the script object handle so this is a workaround for the papyrus script to send its handle.
-         */
-        static bool registerPapyrusFunctionsCallback(RE::BSScript::IVirtualMachine* vm)
-        {
-            // TODO: commonlibf4 migration
-            // vm->RegisterFunction(new NativeFunction1("RegisterPapyrusGatewayScript", _instance->_registerScriptClassName.c_str(), onRegisterGatewayScript, vm));
-            return true;
-        }
-
-        /**
          * On receiving a papyrus script registration call, we store the script handle and name for later to call scripts in it.
          */
-        // static void onRegisterGatewayScript(StaticFunctionTag* base, VMObject* scriptObj)
-        // {
-        //     if (scriptObj && _instance) {
-        //         common::logger::info("Register for Papyrus gateway by Script:'{}' Handle:({})", scriptObj->GetObjectType().c_str(), scriptObj->GetHandle());
-        //         _instance->_scriptHandle = scriptObj->GetHandle();
-        //         _instance->_scriptName = scriptObj->GetObjectType().c_str();
-        //     } else {
-        //         common::logger::error("Papyrus Gateway instance is not set or scriptObj is null");
-        //     }
-        // }
+        static void onRegisterGatewayScript(F4SEVR::StaticFunctionTag* base, F4SEVR::VMObject* scriptObj)
+        {
+            if (scriptObj && _instance) {
+                const auto scriptName = scriptObj->GetObjectType();
+                uint64_t scriptHandle = scriptObj->GetHandle();
+                common::logger::info("Register for Papyrus gateway by Script:'{}' Handle:({})", scriptName.c_str(), scriptHandle);
+                _instance->_scriptHandle = scriptHandle;
+                _instance->_scriptName = scriptName.c_str();
+            } else {
+                common::logger::error("Papyrus Gateway instance is not set or scriptObj is null");
+            }
+        }
 
         /**
          * No args papyrus function call.
          */
         void executePapyrusScript(const char* functionName) const
         {
-            // VMArray < VMVariable > arguments;
-            // executePapyrusScript(functionName, arguments);
+            F4SEVR::VMArray<F4SEVR::VMVariable> arguments;
+            executePapyrusScript(functionName, arguments);
         }
 
         /**
          * Execute the given papyrus function on the registered script object with the given arguments.
          */
-        // void executePapyrusScript(const char* functionName, VMArray<VMVariable>& arguments) const
-        // {
-        //     const auto vm = (*g_gameVM)->m_virtualMachine;
-        //     VMIdentifier* ident = nullptr;
-        //     if (_scriptHandle == 0) {
-        //         common::logger::error("No registered gateway script handle found, Papyrus script missing?");
-        //         return;
-        //     }
-        //     if (!vm->GetObjectIdentifier(_scriptHandle, _scriptName.c_str(), 0, &ident, 0)) {
-        //         common::logger::error("Failed to get script identifier for '{}' ({})", _scriptName.c_str(), _scriptHandle);
-        //         return;
-        //     }
-        //     
-        //     VMValue packedArgs;
-        //     arguments.PackArray(&packedArgs, vm);
-        //     
-        //     common::logger::debug("Calling papyrus function '{}' on script '{}'", functionName, _scriptName.c_str());
-        //     const RE::BSFixedString bsFunctionName = functionName;
-        //     CallFunctionNoWait_Internal(vm, 0, ident, &bsFunctionName, &packedArgs);
-        // }
+        void executePapyrusScript(const char* functionName, F4SEVR::VMArray<F4SEVR::VMVariable>& arguments) const
+        {
+            if (_scriptHandle == 0) {
+                common::logger::error("No registered gateway script handle found, Papyrus script missing?");
+                return;
+            }
+
+            common::logger::debug("Calling papyrus function '{}' on script '{}'", functionName, _scriptName.c_str());
+            F4SEVR::execPapyrusFunction(_scriptHandle, _scriptName, functionName, arguments);
+        }
 
         /**
          * Small helper function to add an arguments
          */
-        // template <typename T>
-        // static void addArgument(VMArray<VMVariable>& arguments, T arg)
-        // {
-        //     VMVariable var1;
-        //     var1.Set(&arg);
-        //     arguments.Push(&var1);
-        // }
-        //
-        // template <typename T>
-        // static VMArray<VMVariable> getArgs(T arg)
-        // {
-        //     VMArray < VMVariable > arguments;
-        //     VMVariable var1;
-        //     var1.Set(&arg);
-        //     arguments.Push(&var1);
-        //     return arguments;
-        // }
-        //
-        // template <typename T1, typename T2>
-        // static VMArray<VMVariable> getArgs(T1 arg1, T2 arg2)
-        // {
-        //     VMArray < VMVariable > arguments;
-        //     VMVariable var1;
-        //     var1.Set(&arg1);
-        //     arguments.Push(&var1);
-        //     VMVariable var2;
-        //     var2.Set(&arg2);
-        //     arguments.Push(&var2);
-        //     return arguments;
-        // }
-        //
-        // template <typename T1, typename T2, typename T3>
-        // static VMArray<VMVariable> getArgs(T1 arg1, T2 arg2, T3 arg3)
-        // {
-        //     VMArray < VMVariable > arguments;
-        //     VMVariable var1;
-        //     var1.Set(&arg1);
-        //     arguments.Push(&var1);
-        //     VMVariable var2;
-        //     var2.Set(&arg2);
-        //     arguments.Push(&var2);
-        //     VMVariable var3;
-        //     var3.Set(&arg3);
-        //     arguments.Push(&var3);
-        //     return arguments;
-        // }
-        //
-        // template <typename T1, typename T2, typename T3, typename T4>
-        // static VMArray<VMVariable> getArgs(T1 arg1, T2 arg2, T3 arg3, T4 arg4)
-        // {
-        //     VMArray < VMVariable > arguments;
-        //     VMVariable var1;
-        //     var1.Set(&arg1);
-        //     arguments.Push(&var1);
-        //     VMVariable var2;
-        //     var2.Set(&arg2);
-        //     arguments.Push(&var2);
-        //     VMVariable var3;
-        //     var3.Set(&arg3);
-        //     arguments.Push(&var3);
-        //     VMVariable var4;
-        //     var4.Set(&arg4);
-        //     arguments.Push(&var4);
-        //     return arguments;
-        // }
+        template <typename T>
+        static void addArgument(F4SEVR::VMArray<F4SEVR::VMVariable>& arguments, T arg)
+        {
+            F4SEVR::VMVariable var1;
+            var1.Set(&arg);
+            arguments.Push(&var1);
+        }
+
+        template <typename T>
+        static F4SEVR::VMArray<F4SEVR::VMVariable> getArgs(T arg)
+        {
+            F4SEVR::VMArray<F4SEVR::VMVariable> arguments;
+            F4SEVR::VMVariable var1;
+            var1.Set(&arg);
+            arguments.Push(&var1);
+            return arguments;
+        }
+
+        template <typename T1, typename T2>
+        static F4SEVR::VMArray<F4SEVR::VMVariable> getArgs(T1 arg1, T2 arg2)
+        {
+            F4SEVR::VMArray<F4SEVR::VMVariable> arguments;
+            F4SEVR::VMVariable var1;
+            var1.Set(&arg1);
+            arguments.Push(&var1);
+            F4SEVR::VMVariable var2;
+            var2.Set(&arg2);
+            arguments.Push(&var2);
+            return arguments;
+        }
+
+        template <typename T1, typename T2, typename T3>
+        static F4SEVR::VMArray<F4SEVR::VMVariable> getArgs(T1 arg1, T2 arg2, T3 arg3)
+        {
+            F4SEVR::VMArray<F4SEVR::VMVariable> arguments;
+            F4SEVR::VMVariable var1;
+            var1.Set(&arg1);
+            arguments.Push(&var1);
+            F4SEVR::VMVariable var2;
+            var2.Set(&arg2);
+            arguments.Push(&var2);
+            F4SEVR::VMVariable var3;
+            var3.Set(&arg3);
+            arguments.Push(&var3);
+            return arguments;
+        }
+
+        template <typename T1, typename T2, typename T3, typename T4>
+        static F4SEVR::VMArray<F4SEVR::VMVariable> getArgs(T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+        {
+            F4SEVR::VMArray<F4SEVR::VMVariable> arguments;
+            F4SEVR::VMVariable var1;
+            var1.Set(&arg1);
+            arguments.Push(&var1);
+            F4SEVR::VMVariable var2;
+            var2.Set(&arg2);
+            arguments.Push(&var2);
+            F4SEVR::VMVariable var3;
+            var3.Set(&arg3);
+            arguments.Push(&var3);
+            F4SEVR::VMVariable var4;
+            var4.Set(&arg4);
+            arguments.Push(&var4);
+            return arguments;
+        }
 
         std::string _registerScriptClassName;
 

@@ -3,15 +3,14 @@
 #include "PapyrusInterfaces.h"
 #include "PapyrusValue.h"
 #include "PapyrusVM.h"
+#include "common/Logger.h"
 
 // Forward declarations
-namespace F4SEVR {
-    class VirtualMachine;
-    class VMValue;
-}
-
 namespace F4SEVR
 {
+    class VirtualMachine;
+    class VMValue;
+
     bool CreateStruct(VMValue* dst, BSFixedString* structName, VirtualMachine* vm, bool bNone);
 
     template <const char* T_structName>
@@ -48,8 +47,7 @@ namespace F4SEVR
                 }
 #if _DEBUG
                 else {
-                    // TODO: commonlibf4 migration (log)
-                    // _DMESSAGE("Failed to unpack %s argument (%s) struct member not found.", structName.c_str(), name.c_str());
+                    common::logger::warn("Failed to unpack {} argument ({}) struct member not found.", structName.c_str(), name.c_str());
                 }
 #endif
                 typeInfo->Release();
@@ -81,8 +79,7 @@ namespace F4SEVR
                 }
 #if _DEBUG
                 else {
-                    // TODO: commonlibf4 migration (log)
-                    // _DMESSAGE("Failed to pack %s argument (%s) struct member not found.", structName.c_str(), name.c_str());
+                    common::logger::warn("Failed to pack {} argument ({}) struct member not found.", structName.c_str(), name.c_str());
                 }
 #endif
 
@@ -111,9 +108,8 @@ namespace F4SEVR
                         }
 #if _DEBUG
                         else {
-                            // TODO: commonlibf4 migration (log)
-                            // _DMESSAGE("Failed to pack %s argument (%s) struct member type mismatch got (%016I64X) expected (%016I64X).", structName.c_str(), item->name.c_str(),
-                            //     m_data[item->name].type, memberType);
+                            common::logger::warn("Failed to pack {} argument ({}) struct member type mismatch got ({}) expected ({}).",
+                                structName.c_str(), item->name.c_str(), m_data[item->name].type, memberType);
                         }
 #endif
 

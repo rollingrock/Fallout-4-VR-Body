@@ -8,6 +8,9 @@ namespace F4SEVR
         const RE::BSFixedString* eventName, VMValue* args);
     inline REL::Relocation<CallGlobalFunctionNoWaitType> CallGlobalFunctionNoWait_Internal(REL::Offset(0x014D6BD0));
 
+    typedef void (*CallFunctionNoWaitType)(VirtualMachine* vm, std::uint64_t unk1, VMIdentifier* vmIdentifier, const RE::BSFixedString* eventName, VMValue* args);
+    inline REL::Relocation<CallFunctionNoWaitType> CallFunctionNoWait_Internal(REL::Offset(0x0145BB20));
+
     template <typename T>
     void execPapyrusGlobalFunction(const std::string& className, const std::string& funcName, T arg1)
     {
@@ -30,5 +33,22 @@ namespace F4SEVR
     {
         const BSFixedString bsFixedString(text.c_str());
         execPapyrusGlobalFunction(className, funcName, bsFixedString);
+    }
+
+    inline void execPapyrusFunction(const std::uint64_t scriptHandle, const std::string& scriptName, const std::string& funcName, VMArray<VMVariable>& arguments)
+    {
+        auto vm = getGameVM()->m_virtualMachine;
+
+        VMIdentifier* ident = nullptr;
+        if (!vm->GetObjectIdentifier(scriptHandle, scriptName.c_str(), 0, &ident, 0)) {
+            common::logger::error("Failed to get script identifier for '{}' ({})", scriptName.c_str(), scriptHandle);
+            return;
+        }
+
+        VMValue packedArgs;
+        arguments.PackArray(&packedArgs, vm);
+
+        auto bsFuncName = RE::BSFixedString(funcName.c_str());
+        CallFunctionNoWait_Internal(vm, 0, ident, &bsFuncName, &packedArgs);
     }
 }

@@ -55,10 +55,6 @@ namespace frik
     {
         _messaging = F4SE::GetMessagingInterface();
         _messaging->RegisterListener(onF4VRSEMessage);
-
-        logger::info("Register papyrus native functions...");
-        PapyrusGateway::init(f4se);
-        _boneSpheres.init();
     }
 
     /**
@@ -88,22 +84,30 @@ namespace frik
      */
     void FRIK::initOnGameLoaded()
     {
-        logger::info("Initialize FRIK...");
-        std::srand(static_cast<unsigned int>(time(nullptr)));
+        try {
+            logger::info("Initialize FRIK...");
+            std::srand(static_cast<unsigned int>(time(nullptr)));
 
-        logger::info("Init config...");
-        g_config.loadAllConfig();
+            logger::info("Init config...");
+            g_config.loadAllConfig();
 
-        initPapyrusApis();
+            logger::info("Register papyrus native functions...");
+            initPapyrusApis();
+            PapyrusGateway::init();
+            _boneSpheres.init();
 
-        vrui::initUIManager();
+            vrui::initUIManager();
 
-        _gameMenusHandler.init();
+            _gameMenusHandler.init();
 
-        if (isBetterScopesVRModLoaded()) {
-            logger::info("BetterScopesVR mod detected, registering for messages...");
-            _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
-            _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
+            if (isBetterScopesVRModLoaded()) {
+                logger::info("BetterScopesVR mod detected, registering for messages...");
+                _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
+                _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
+            }
+        } catch (const std::exception& ex) {
+            logger::critical("Error in initOnGameLoaded: {}", ex.what());
+            throw;
         }
     }
 
