@@ -89,7 +89,7 @@ namespace frik
             std::srand(static_cast<unsigned int>(time(nullptr)));
 
             logger::info("Init config...");
-            g_config.loadAllConfig();
+            g_config.load();
 
             logger::info("Register papyrus native functions...");
             initPapyrusApis();
@@ -121,7 +121,7 @@ namespace frik
             logger::info("Resetting skeleton for new game session...");
             releaseSkeleton();
             logger::info("Reload config...");
-            g_config.loadAllConfig();
+            g_config.load();
         }
 
         configureGameVars();

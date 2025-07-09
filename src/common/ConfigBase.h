@@ -32,7 +32,7 @@ namespace common
         {
             logger::info("Load ini config...");
             createDirDeep(_iniFilePath);
-            initIniConfig();
+            loadIniConfig();
         }
 
         // Can be used to test things at runtime during development
@@ -77,7 +77,7 @@ namespace common
          * If INI file doesn't exist it will be created from the default embedded resource.
          * If the found INI version is not the latest it will run update to the latest using embedded resource.
          */
-        void initIniConfig()
+        void loadIniConfig()
         {
             // create .ini if it doesn't exist
             createFileFromResourceIfNotExists(_iniFilePath, _iniDefaultConfigEmbeddedResourceId, true);
@@ -128,13 +128,14 @@ namespace common
 
             _iniConfigVersion = ini.GetLongValue(INI_SECTION_DEBUG, "iVersion", 0);
             _logLevel = ini.GetLongValue(INI_SECTION_DEBUG, "iLogLevel", 2);
+            _logPattern = ini.GetValue(INI_SECTION_DEBUG, "sLogPattern", "%H:%M:%S.%e %L: %v");
             debugFlowFlag1 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "fDebugFlowFlag1", 0));
             debugFlowFlag2 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "fDebugFlowFlag2", 0));
             debugFlowFlag3 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "fDebugFlowFlag3", 0));
             _debugDumpDataOnceNames = ini.GetValue(INI_SECTION_DEBUG, "sDebugDumpDataOnceNames", "");
 
             // set log after loading from config
-            logger::setLogLevel(_logLevel);
+            logger::setLogLevelAndPattern(_logLevel, _logPattern);
 
             // let inherited class load all its values
             loadIniConfigInternal(ini);
@@ -468,6 +469,9 @@ namespace common
 
         // The log level to set for the logger
         int _logLevel = 0;
+
+        // the log message pattern to use for the logger
+        std::string _logPattern;
 
         std::string _debugDumpDataOnceNames;
 

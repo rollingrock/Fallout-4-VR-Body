@@ -48,7 +48,7 @@ namespace frik
         explicit Config() :
             ConfigBase(FRIK_INI_PATH, IDR_FRIK_INI) {}
 
-        void loadAllConfig();
+        void load();
         void save() { saveIniConfig(); }
 
         void togglePipBoyTorchOnArm()

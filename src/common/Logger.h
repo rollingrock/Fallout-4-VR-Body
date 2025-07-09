@@ -41,6 +41,11 @@ namespace common::logger::internal
     inline int _logLevel = -1;
 
     /**
+     * Current global log pattern
+     */
+    inline std::string _logPattern = "%H:%M:%S.%e %L: %v";
+
+    /**
      * Holds the last time of a log message per key.
      */
     inline std::unordered_map<std::string_view, std::chrono::steady_clock::time_point> _sampleMessagesTtl;
@@ -122,23 +127,26 @@ namespace common::logger
         spdlog::set_default_logger(internal::_logger);
 
         // see: https://github.com/gabime/spdlog/wiki/Custom-formatting
-        spdlog::set_pattern("%H:%M:%S.%e %L: %v"s);
+        spdlog::set_pattern(internal::_logPattern);
     }
 
     /**
      * Update the global logger log level based on the config setting.
      */
-    inline void setLogLevel(int logLevel)
+    inline void setLogLevelAndPattern(int logLevel, const std::string& logPattern)
     {
-        if (internal::_logLevel == logLevel) {
-            return;
+        if (internal::_logLevel != logLevel) {
+            info("Set log level = {}", logLevel);
+            internal::_logLevel = logLevel;
+            const auto levelEnum = static_cast<spdlog::level::level_enum>(logLevel);
+            internal::_logger->set_level(levelEnum);
+            internal::_logger->flush_on(levelEnum);
         }
 
-        info("Set log level = {}", logLevel);
-        internal::_logLevel = logLevel;
-        const auto levelEnum = static_cast<spdlog::level::level_enum>(logLevel);
-        internal::_logger->set_level(levelEnum);
-        internal::_logger->flush_on(levelEnum);
+        if (internal::_logPattern != logPattern) {
+            info("Set log pattern = {}", logPattern);
+            spdlog::set_pattern(logPattern);
+        }
     }
 }
 

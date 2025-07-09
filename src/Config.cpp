@@ -26,13 +26,13 @@ namespace frik
      * Handle creating the FRIK.ini file if it doesn't exist.
      * Handle updating the FRIK.ini file if the version is old.
      */
-    void Config::loadAllConfig()
+    void Config::load()
     {
         setupFolders();
         migrateConfigFilesIfNeeded();
 
         logger::info("Load ini config...");
-        initIniConfig();
+        loadIniConfig();
 
         logger::info("Load hide meshes...");
         loadHideMeshes();
