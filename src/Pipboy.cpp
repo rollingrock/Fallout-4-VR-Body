@@ -769,11 +769,10 @@ namespace frik
             }
             if (_lastPipboyPage == 4) {
                 // fixes broken 'Mode Knob' position when radio tab is selected
-                rot.makeTransformMatrix(pipbone8->local.rotate, RE::NiPoint3(0, 0, 0));
                 float rotx;
                 float roty;
                 float rotz;
-                rot.getEulerAngles(&rotx, &roty, &rotz);
+                getEulerAngles(pipbone8->local.rotate, &rotx, &roty, &rotz);
                 if (rotx < 0.57) {
                     Matrix44 kRot;
                     kRot.setEulerAngles(-0.05f, degreesToRads(0), degreesToRads(0));

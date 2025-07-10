@@ -69,22 +69,6 @@ namespace common
             data[3][2] = pt.z;
         }
 
-        void makeTransformMatrix(const RE::NiMatrix3& rot, const RE::NiPoint3 pos)
-        {
-            for (auto i = 0; i < 3; i++) {
-                for (auto j = 0; j < 3; j++) {
-                    data[i][j] = rot.entry[i][j];
-                }
-            }
-            data[0][3] = 0.0;
-            data[1][3] = 0.0;
-            data[2][3] = 0.0;
-            data[3][3] = 1.0;
-            data[3][0] = pos.x;
-            data[3][1] = pos.y;
-            data[3][2] = pos.z;
-        }
-
         //overload
         void operator =(const float num)
         {
@@ -117,25 +101,6 @@ namespace common
             ident.entry[2][1] = 0.0;
             ident.entry[2][2] = 1.0;
             return ident;
-        }
-
-        void getEulerAngles(float* heading, float* roll, float* attitude) const
-        {
-            if (data[2][0] < 1.0) {
-                if (data[2][0] > -1.0) {
-                    *heading = atan2(-data[2][1], data[2][2]);
-                    *attitude = asin(data[2][0]);
-                    *roll = atan2(-data[1][0], data[0][0]);
-                } else {
-                    *heading = -atan2(-data[0][1], data[1][1]);
-                    *attitude = -std::numbers::pi_v<float> / 2;
-                    *roll = 0.0;
-                }
-            } else {
-                *heading = atan2(data[0][1], data[1][1]);
-                *attitude = std::numbers::pi_v<float> / 2;
-                *roll = 0.0;
-            }
         }
 
         void setEulerAngles(const float heading, const float roll, const float attitude)

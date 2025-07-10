@@ -15,6 +15,7 @@ namespace common
     float radsToDegrees(float rad);
     RE::NiPoint3 rotateXY(RE::NiPoint3 vec, float angle);
     RE::NiPoint3 pitchVec(RE::NiPoint3 vec, float angle);
+    void getEulerAngles(const RE::NiMatrix3& matrix, float* heading, float* roll, float* attitude);
     RE::NiMatrix3 getRotationAxisAngle(RE::NiPoint3 axis, float theta);
     RE::NiTransform getDeltaTransform(const RE::NiTransform& from, const RE::NiTransform& to);
     RE::NiTransform getTargetTransform(const RE::NiTransform& baseFrom, const RE::NiTransform& baseTo, const RE::NiTransform& targetFrom);

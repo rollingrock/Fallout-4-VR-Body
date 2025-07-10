@@ -110,11 +110,26 @@ namespace common
     RE::NiPoint3 pitchVec(const RE::NiPoint3 vec, const float angle)
     {
         const auto rotAxis = RE::NiPoint3(vec.y, -vec.x, 0);
-        Matrix44 rot;
+        return getRotationAxisAngle(vec3Norm(rotAxis), angle) * vec;
+    }
 
-        rot.makeTransformMatrix(getRotationAxisAngle(vec3Norm(rotAxis), angle), RE::NiPoint3(0, 0, 0));
-
-        return rot.make43() * vec;
+    void getEulerAngles(const RE::NiMatrix3& matrix, float* heading, float* roll, float* attitude)
+    {
+        if (matrix.entry[2][0] < 1.0) {
+            if (matrix.entry[2][0] > -1.0) {
+                *heading = atan2(-matrix.entry[2][1], matrix.entry[2][2]);
+                *attitude = asin(matrix.entry[2][0]);
+                *roll = atan2(-matrix.entry[1][0], matrix.entry[0][0]);
+            } else {
+                *heading = -atan2(-matrix.entry[0][1], matrix.entry[1][1]);
+                *attitude = -std::numbers::pi_v<float> / 2;
+                *roll = 0.0;
+            }
+        } else {
+            *heading = atan2(matrix.entry[0][1], matrix.entry[1][1]);
+            *attitude = std::numbers::pi_v<float> / 2;
+            *roll = 0.0;
+        }
     }
 
     // Gets a rotation matrix from an axis and an angle
