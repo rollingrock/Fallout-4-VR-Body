@@ -8,21 +8,6 @@
 
 namespace common
 {
-    /**
-     * Fixing matrix/vector multiplication to use column-major order.
-     * To prevent everything from breaking, we use this as a temporary fix.
-     * When the migration is complete this method will be removed to use NiMatrix3 multiplication directly.
-     * TODO: commonlibf4 migration - replace with NiMatrix3 multiplication directly
-     */
-    inline RE::NiPoint3 matrixVecMultTempFix(const RE::NiMatrix3& mat, const RE::NiPoint3& vec)
-    {
-        // Use correct column-major matrix multiplication (CommonLibF4 standard)
-        return RE::NiPoint3(
-            mat.entry[0][0] * vec.x + mat.entry[0][1] * vec.y + mat.entry[0][2] * vec.z,
-            mat.entry[1][0] * vec.x + mat.entry[1][1] * vec.y + mat.entry[1][2] * vec.z,
-            mat.entry[2][0] * vec.x + mat.entry[2][1] * vec.y + mat.entry[2][2] * vec.z);
-    }
-
     class Matrix44
     {
     public:

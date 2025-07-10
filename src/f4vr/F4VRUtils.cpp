@@ -448,7 +448,7 @@ namespace f4vr
     }
 
     /**
-     * TODO: commonlibf4 migration - replace with updateTransformsFixed implementation
+     * Update the world transform data (location,rotation,scale) of the given node by the local transform of the parent node.
      */
     void updateTransforms(RE::NiNode* node)
     {
@@ -460,32 +460,7 @@ namespace f4vr
         const auto& localTransform = node->local;
 
         // Calculate world position
-        const RE::NiPoint3 pos = parentTransform.rotate * (localTransform.translate * parentTransform.scale);
-        node->world.translate = parentTransform.translate + pos;
-
-        // Calculate world rotation
-        common::Matrix44 loc;
-        loc.makeTransformMatrix(localTransform.rotate, RE::NiPoint3(0, 0, 0));
-        node->world.rotate = loc.multiply43Left(parentTransform.rotate);
-
-        // Calculate world scale
-        node->world.scale = parentTransform.scale * localTransform.scale;
-    }
-
-    /**
-     * Update the world transform data (location,rotation,scale) of the given node by the local transform of the parent node.
-     */
-    void updateTransformsFixed(RE::NiNode* node)
-    {
-        if (!node->parent) {
-            return;
-        }
-
-        const auto& parentTransform = node->parent->world;
-        const auto& localTransform = node->local;
-
-        // Calculate world position
-        const RE::NiPoint3 pos = common::matrixVecMultTempFix(parentTransform.rotate.Transpose(), localTransform.translate * parentTransform.scale);
+        const RE::NiPoint3 pos = parentTransform.rotate.Transpose() * (localTransform.translate * parentTransform.scale);
         node->world.translate = parentTransform.translate + pos;
 
         // Calculate world rotation

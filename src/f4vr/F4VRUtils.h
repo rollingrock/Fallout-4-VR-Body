@@ -52,7 +52,6 @@ namespace f4vr
     void updateDownTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
     void updateUpTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
     void updateTransforms(RE::NiNode* node);
-    void updateTransformsFixed(RE::NiNode* node);
     void updateTransformsDown(RE::NiNode* node, bool updateSelf);
 
     void registerPapyrusNativeFunctions(F4SE::PapyrusInterface::RegisterFunctions callback);
