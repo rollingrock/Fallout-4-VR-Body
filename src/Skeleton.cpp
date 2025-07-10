@@ -32,7 +32,7 @@ namespace frik
     {
         const auto offhandIndexFinger = isLeftHandedMode() ? "RArm_Finger23" : "LArm_Finger23";
         const auto boneTransform = getBoneWorldTransform(offhandIndexFinger);
-        const auto forward = boneTransform.rotate * RE::NiPoint3(1, 0, 0);
+        const auto forward = matrixVecMultTempFix(boneTransform.rotate.Transpose(), RE::NiPoint3(1, 0, 0));
         return boneTransform.translate + forward * (_inPowerArmor ? 3 : 1.8f);
     }
 
