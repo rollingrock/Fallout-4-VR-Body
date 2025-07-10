@@ -16,6 +16,7 @@ namespace common
     RE::NiPoint3 pitchVec(RE::NiPoint3 vec, float angle);
 
     // matrix
+    RE::NiMatrix3 getIdentityMatrix();
     RE::NiMatrix3 getMatrix(float r1, float r2, float r3, float r4, float r5, float r6, float r7, float r8, float r9);
     void getEulerAnglesFromMatrix(const RE::NiMatrix3& matrix, float* heading, float* roll, float* attitude);
     RE::NiMatrix3 getMatrixFromEulerAngles(float heading, float roll, float attitude);

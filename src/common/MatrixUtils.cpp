@@ -2,8 +2,6 @@
 
 #include <numbers>
 
-#include "Quaternion.h"
-
 namespace common
 {
     RE::NiPoint3 vec3Norm(RE::NiPoint3 v1)
@@ -95,6 +93,13 @@ namespace common
         return getRotationAxisAngle(vec3Norm(rotAxis), angle) * vec;
     }
 
+    RE::NiMatrix3 getIdentityMatrix()
+    {
+        RE::NiMatrix3 iden;
+        iden.MakeIdentity();
+        return iden;
+    }
+
     RE::NiMatrix3 getMatrix(const float r1, const float r2, const float r3, const float r4, const float r5, const float r6, const float r7, const float r8, const float r9)
     {
         RE::NiMatrix3 result;
@@ -159,12 +164,10 @@ namespace common
         const float dotP = vec3Dot(fromVecNorm, toVecNorm);
 
         if (dotP >= 0.99999) {
-            return RE::NiMatrix3::IDENTITY;
+            return getIdentityMatrix();
         }
 
-        RE::NiPoint3 crossP = vec3Cross(toVecNorm, fromVecNorm);
-        crossP = vec3Norm(crossP);
-
+        const auto crossP = vec3Norm(vec3Cross(toVecNorm, fromVecNorm));
         const float phi = acosf(dotP);
         const float rCos = cos(phi);
         const float rSin = sin(phi);

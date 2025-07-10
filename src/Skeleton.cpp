@@ -352,8 +352,6 @@ namespace frik
             updateDown(_playerNodes->playerworldnode, true);
         }
 
-        Matrix44 mat;
-        mat = 0.0;
         //		float y    = (*g_playerCamera)->cameraNode->world.rotate.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
         //	float x    = (*g_playerCamera)->cameraNode->world.rotate.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
         const float z = _root->local.translate.z;
@@ -365,8 +363,7 @@ namespace frik
         Quaternion qa;
         qa.setAngleAxis(-neckPitch, RE::NiPoint3(-1, 0, 0));
 
-        mat = qa.getRot();
-        const RE::NiMatrix3 newRot = mat.make43() * _playerNodes->HmdNode->local.rotate;
+        const RE::NiMatrix3 newRot = qa.getMatrix3() * _playerNodes->HmdNode->local.rotate;
 
         _forwardDir = rotateXY(RE::NiPoint3(newRot.entry[1][0], newRot.entry[1][1], 0), neckYaw * 0.7f);
         _sidewaysRDir = RE::NiPoint3(_forwardDir.y, -_forwardDir.x, 0);
@@ -380,8 +377,7 @@ namespace frik
         const RE::NiPoint3 back = vec3Norm(RE::NiPoint3(_forwardDir.x, _forwardDir.y, 0));
         const auto bodyDir = RE::NiPoint3(0, 1, 0);
 
-        mat.rotateVectorVec(back, bodyDir);
-        _root->local.rotate = mat.make43() * body->world.rotate.Transpose();
+        _root->local.rotate = getMatrixFromRotateVectorVec(back, bodyDir) * body->world.rotate.Transpose();
         _root->local.translate = body->world.translate - _curentPosition;
         _root->local.translate.z = z;
         //_root->local.translate *= 0.0f;
@@ -429,9 +425,7 @@ namespace frik
         RE::NiNode* body = _root->parent;
         body->world.translate.z -= _inPowerArmor ? g_config.PACameraHeight + g_config.PARootOffset : g_config.cameraHeight + g_config.rootOffset;
 
-        Matrix44 rot;
-        rot.rotateVectorVec(neckPos - tmpHipPos, hmdToHip);
-        const RE::NiMatrix3 mat = rot.make43() * spine->parent->world.rotate.Transpose();
+        const RE::NiMatrix3 mat = getMatrixFromRotateVectorVec(neckPos - tmpHipPos, hmdToHip) * spine->parent->world.rotate.Transpose();
         spine->local.rotate = spine->world.rotate * mat;
     }
 
@@ -656,7 +650,6 @@ namespace frik
             }
 
             spineAngle = sign * sinf(interp * std::numbers::pi_v<float>) * 3.0f;
-            Matrix44 rot;
 
             _spine->local.rotate = getMatrixFromEulerAngles(degreesToRads(spineAngle), 0.0, 0.0) * _spine->local.rotate;
 
@@ -688,8 +681,6 @@ namespace frik
     // adapted solver from VRIK.  Thanks prog!
     void Skeleton::setSingleLeg(const bool isLeft) const
     {
-        Matrix44 rotMat;
-
         const auto footNode = isLeft ? findNode(_root, "LLeg_Foot") : findNode(_root, "RLeg_Foot");
         const auto kneeNode = isLeft ? findNode(_root, "LLeg_Calf") : findNode(_root, "RLeg_Calf");
         const auto hipNode = isLeft ? findNode(_root, "LLeg_Thigh") : findNode(_root, "RLeg_Thigh");
@@ -736,16 +727,14 @@ namespace frik
 
         const RE::NiPoint3 pos = kneePos - hipPos;
         RE::NiPoint3 uLocalDir = hipNode->world.rotate * (vec3Norm(pos) / hipNode->world.scale);
-        rotMat.rotateVectorVec(uLocalDir, kneeNode->local.translate);
-        hipNode->local.rotate = rotMat.make43() * hipNode->local.rotate;
+        hipNode->local.rotate = getMatrixFromRotateVectorVec(uLocalDir, kneeNode->local.translate) * hipNode->local.rotate;
 
         const RE::NiMatrix3 hipWR = hipNode->local.rotate * hipNode->parent->world.rotate;
 
         RE::NiMatrix3 calfWR = kneeNode->local.rotate * hipWR;
 
         uLocalDir = calfWR * (vec3Norm(footPos - kneePos) / kneeNode->world.scale);
-        rotMat.rotateVectorVec(uLocalDir, footNode->local.translate);
-        kneeNode->local.rotate = rotMat.make43() * kneeNode->local.rotate;
+        kneeNode->local.rotate = getMatrixFromRotateVectorVec(uLocalDir, footNode->local.translate) * kneeNode->local.rotate;
 
         calfWR = kneeNode->local.rotate * hipWR;
 
@@ -1018,29 +1007,9 @@ namespace frik
             updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
 
-        Matrix44 w;
-        if (!isLeftHandedMode()) {
-            w.data[0][0] = -0.122f;
-            w.data[1][0] = 0.987f;
-            w.data[2][0] = 0.100f;
-            w.data[0][1] = 0.990f;
-            w.data[1][1] = 0.114f;
-            w.data[2][1] = 0.081f;
-            w.data[0][2] = 0.069f;
-            w.data[1][2] = 0.109f;
-            w.data[2][2] = -0.992f;
-        } else {
-            w.data[0][0] = -0.122f;
-            w.data[1][0] = 0.987f;
-            w.data[2][0] = 0.100f;
-            w.data[0][1] = -0.990f;
-            w.data[1][1] = -0.114f;
-            w.data[2][1] = -0.081f;
-            w.data[0][2] = -0.069f;
-            w.data[1][2] = -0.109f;
-            w.data[2][2] = 0.992f;
-        }
-        weaponNode->local.rotate = w.make43();
+        weaponNode->local.rotate = !isLeftHandedMode()
+            ? getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
+            : getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
 
         if (handleOffhand) {
             weaponNode->local.rotate = weaponNode->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(isLeft ? 45 : -45), 0);
@@ -1083,11 +1052,7 @@ namespace frik
 
         RE::NiPoint3 sLocalDir = arm.shoulder->world.rotate * (clavicalToNewShoulder / arm.shoulder->world.scale);
 
-        Matrix44 rotatedM;
-        rotatedM = 0.0;
-        rotatedM.rotateVectorVec(sLocalDir, RE::NiPoint3(1, 0, 0));
-
-        RE::NiMatrix3 result = rotatedM.make43() * arm.shoulder->local.rotate;
+        RE::NiMatrix3 result = getMatrixFromRotateVectorVec(sLocalDir, RE::NiPoint3(1, 0, 0)) * arm.shoulder->local.rotate;
         arm.shoulder->local.rotate = result;
 
         updateDown(arm.shoulder, true);
@@ -1241,8 +1206,7 @@ namespace frik
         RE::NiPoint3 pos = elbowWorld - Uwp;
         RE::NiPoint3 uLocalDir = Uwr * (vec3Norm(pos) / arm.upper->world.scale);
 
-        rotatedM.rotateVectorVec(uLocalDir, arm.forearm1->local.translate);
-        arm.upper->local.rotate = rotatedM.make43() * arm.upper->local.rotate;
+        arm.upper->local.rotate = getMatrixFromRotateVectorVec(uLocalDir, arm.forearm1->local.translate) * arm.upper->local.rotate;
 
         Uwr = arm.upper->local.rotate * arm.shoulder->world.rotate;
 
@@ -1268,8 +1232,7 @@ namespace frik
         RE::NiPoint3 elbowHand = handPos - elbowWorld;
         RE::NiPoint3 fLocalDir = Fwr * (vec3Norm(elbowHand));
 
-        rotatedM.rotateVectorVec(fLocalDir, RE::NiPoint3(1, 0, 0));
-        arm.forearm1->local.rotate = rotatedM.make43() * arm.forearm1->local.rotate;
+        arm.forearm1->local.rotate = getMatrixFromRotateVectorVec(fLocalDir, RE::NiPoint3(1, 0, 0)) * arm.forearm1->local.rotate;
         Fwr = arm.forearm1->local.rotate * Uwr;
 
         RE::NiMatrix3 Fwr3;
@@ -1386,7 +1349,7 @@ namespace frik
         qc.fromRot(_handBones[bone].rotate);
         const float blend = std::clamp(_frameTime * 7, 0.0, 1.0);
         qc.slerp(blend, qt);
-        _handBones[bone].rotate = qc.getRot().make43();
+        _handBones[bone].rotate = qc.getMatrix3();
     }
 
     // TODO: this may be the place to fix left-handed fingers on weapon
@@ -1466,10 +1429,7 @@ namespace frik
         const RE::NiPoint3 back = vec3Norm(RE::NiPoint3(-_forwardDir.x, -_forwardDir.y, 0));
         const auto bodyDir = RE::NiPoint3(0, 1, 0);
 
-        Matrix44 mat;
-        mat.makeIdentity();
-        mat.rotateVectorVec(back, bodyDir);
-        _root->local.rotate = mat.make43() * body->world.rotate.Transpose();
+        _root->local.rotate = getMatrixFromRotateVectorVec(back, bodyDir) * body->world.rotate.Transpose();
         _root->local.translate = body->world.translate - _curentPosition;
         _root->local.translate.y += g_config.selfieOutFrontDistance;
         _root->local.translate.z = z;
@@ -1494,7 +1454,7 @@ namespace frik
         rq.fromRot(prevFrame.rotate);
         rt.fromRot(node->world.rotate);
         rq.slerp(1 - (isInScopeMenu ? g_config.dampenHandsRotationInVanillaScope : g_config.dampenHandsRotation), rt);
-        node->world.rotate = rq.getRot().make43();
+        node->world.rotate = rq.getMatrix3();
 
         // Linear interpolation between the position from the previous frame to current frame
         const RE::NiPoint3 dir = _curentPosition - _lastPosition; // Offset the player movement from this interpolation
