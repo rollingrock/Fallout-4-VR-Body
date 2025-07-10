@@ -2,7 +2,6 @@
 
 #include "PlayerNodes.h"
 #include "../Config.h"
-#include "../common/Matrix.h"
 #include "f4sevr/Forms.h"
 #include "f4sevr/Nodes.h"
 #include "f4sevr/PapyrusUtils.h"

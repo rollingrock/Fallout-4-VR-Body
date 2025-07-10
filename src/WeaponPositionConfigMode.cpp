@@ -34,17 +34,17 @@ namespace frik
      */
     RE::NiTransform WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(const RE::NiTransform& originalTransform)
     {
-        Matrix44 rot;
+        RE::NiMatrix3 rot;
         RE::NiTransform transform;
         transform.scale = originalTransform.scale;
         if (f4vr::isLeftHandedMode()) {
             transform.translate = RE::NiPoint3(5.5f, -2.2f, 1);
-            rot.setEulerAngles(degreesToRads(95), degreesToRads(60), 0);
+            rot = getMatrixFromEulerAngles(degreesToRads(95), degreesToRads(60), 0);
         } else {
             transform.translate = RE::NiPoint3(4.5f, -2.2f, -1);
-            rot.setEulerAngles(degreesToRads(85), degreesToRads(-65), 0);
+            rot = getMatrixFromEulerAngles(degreesToRads(85), degreesToRads(-65), 0);
         }
-        transform.rotate = originalTransform.rotate * rot.make43();
+        transform.rotate = originalTransform.rotate * rot;
         return transform;
     }
 
@@ -72,9 +72,7 @@ namespace frik
         RE::NiTransform transform;
         transform.scale = originalTransform.scale;
         if (f4vr::isLeftHandedMode()) {
-            Matrix44 mat;
-            mat.setEulerAngles(degreesToRads(180), 0, degreesToRads(180));
-            transform.rotate = mat.make43();
+            transform.rotate = getMatrixFromEulerAngles(degreesToRads(180), 0, degreesToRads(180));
             transform.translate = inPA ? RE::NiPoint3(5, 6.5f, -11) : RE::NiPoint3(6.2f, 4.8f, -12.2f);
         } else {
             transform.rotate = Matrix44::getIdentity43();
@@ -193,10 +191,9 @@ namespace frik
         // Update the weapon transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
         if (f4vr::VRControllers.isPressHeldDown(vr::EVRButtonId::k_EButton_Grip, f4vr::Hand::Offhand)) {
-            Matrix44 rot;
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            rot.setEulerAngles(-degreesToRads(primAxisY / 5), -degreesToRads(secAxisX / 3), degreesToRads(primAxisX / 5));
-            transform.rotate = rot.make43() * transform.rotate;
+            const auto rot = getMatrixFromEulerAngles(-degreesToRads(primAxisY / 5), -degreesToRads(secAxisX / 3), degreesToRads(primAxisX / 5));
+            transform.rotate = rot * transform.rotate;
         } else {
             // adjust horizontal (y - right/left, x - forward/backward) by primary stick
             transform.translate.y += leftHandedMult * primAxisX / 12;
@@ -217,9 +214,8 @@ namespace frik
         // Update the offset position by player thumbstick.
         const auto [axisX, axisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
-            Matrix44 rot;
-            rot.setEulerAngles(-degreesToRads(axisY / 5), 0, degreesToRads(axisX / 5));
-            _adjuster->_offhandOffsetRot = rot.make43() * _adjuster->_offhandOffsetRot;
+            const auto rot = getMatrixFromEulerAngles(-degreesToRads(axisY / 5), 0, degreesToRads(axisX / 5));
+            _adjuster->_offhandOffsetRot = rot * _adjuster->_offhandOffsetRot;
         }
     }
 
@@ -245,10 +241,9 @@ namespace frik
         // Update the transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
         if (f4vr::VRControllers.isPressHeldDown(vr::EVRButtonId::k_EButton_Grip, f4vr::Hand::Offhand)) {
-            Matrix44 rot;
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            rot.setEulerAngles(degreesToRads(secAxisY / 6), degreesToRads(secAxisX / 6), degreesToRads(primAxisX / 6));
-            transform.rotate = rot.make43() * transform.rotate;
+            const auto rot = getMatrixFromEulerAngles(degreesToRads(secAxisY / 6), degreesToRads(secAxisX / 6), degreesToRads(primAxisX / 6));
+            transform.rotate = rot * transform.rotate;
         } else {
             // adjust horizontal (x - right/left, z - forward/backward) by primary stick
             transform.translate.z += -leftHandedMult * primAxisX / 14 - leftHandedMult * secAxisX / 14;
@@ -278,10 +273,9 @@ namespace frik
         // Update the transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
         if (f4vr::VRControllers.isPressHeldDown(vr::EVRButtonId::k_EButton_Grip, f4vr::Hand::Offhand)) {
-            Matrix44 rot;
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            rot.setEulerAngles(-degreesToRads(secAxisY / 6), -degreesToRads(primAxisX / 6), -degreesToRads(primAxisY / 6));
-            transform.rotate = rot.make43() * transform.rotate;
+            const auto rot = getMatrixFromEulerAngles(-degreesToRads(secAxisY / 6), -degreesToRads(primAxisX / 6), -degreesToRads(primAxisY / 6));
+            transform.rotate = rot * transform.rotate;
         } else {
             // adjust horizontal (z - right/left, y - forward/backward) by primary stick
             transform.translate.z -= leftHandedMult * primAxisX / 14;

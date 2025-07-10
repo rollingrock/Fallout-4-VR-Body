@@ -658,8 +658,7 @@ namespace frik
             spineAngle = sign * sinf(interp * std::numbers::pi_v<float>) * 3.0f;
             Matrix44 rot;
 
-            rot.setEulerAngles(degreesToRads(spineAngle), 0.0, 0.0);
-            _spine->local.rotate = rot.make43() * _spine->local.rotate;
+            _spine->local.rotate = getMatrixFromEulerAngles(degreesToRads(spineAngle), 0.0, 0.0) * _spine->local.rotate;
 
             if (_currentStepTime > stepTime) {
                 _currentStepTime = 0.0;
@@ -766,11 +765,9 @@ namespace frik
     void Skeleton::rotateLeg(const uint32_t pos, const float angle) const
     {
         const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
-        Matrix44 rot;
-        rot.setEulerAngles(degreesToRads(angle), 0, 0);
 
         auto& transform = rt->transforms[pos];
-        transform.local.rotate = rot.make43() * transform.local.rotate;
+        transform.local.rotate = getMatrixFromEulerAngles(degreesToRads(angle), 0, 0) * transform.local.rotate;
 
         const auto& parentTransform = rt->transforms[transform.parPos];
         const RE::NiPoint3 p = parentTransform.world.rotate * (transform.local.translate * parentTransform.world.scale);
@@ -819,10 +816,8 @@ namespace frik
         wandPip->local.translate = wandPip->parent->world.rotate * ((delta / wandPip->parent->world.scale));
 
         // Slr = LHwr' * RHwr * Slr
-        Matrix44 loc;
-        loc.setEulerAngles(degreesToRads(30), 0, 0);
 
-        const RE::NiMatrix3 wandWROT = loc.make43() * pipboyBone->world.rotate;
+        const RE::NiMatrix3 wandWROT = getMatrixFromEulerAngles(degreesToRads(30), 0, 0) * pipboyBone->world.rotate;
 
         wandPip->local.rotate = wandWROT * wandPip->parent->world.rotate.Transpose();
     }
@@ -843,10 +838,7 @@ namespace frik
                 attachChildToNode(_rightArm.forearm3->IsNode(), pipbone);
             }
 
-            Matrix44 rot;
-            rot.setEulerAngles(0, degreesToRads(180.0), 0);
-
-            pipbone->local.rotate = rot.make43() * pipbone->local.rotate;
+            pipbone->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(180.0), 0) * pipbone->local.rotate;
             pipbone->local.translate *= -1.5;
         }
     }
@@ -1020,9 +1012,8 @@ namespace frik
 
         if (handleOffhand) {
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local = _playerNodes->primaryWeaponOffsetNOde->local;
-            Matrix44 lr;
-            lr.setEulerAngles(0, degreesToRads(180), 0);
-            _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate = _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate * lr.make43();
+            _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate =
+                _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(180), 0);
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.translate = RE::NiPoint3(-2, -9, 2);
             updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
@@ -1052,8 +1043,7 @@ namespace frik
         weaponNode->local.rotate = w.make43();
 
         if (handleOffhand) {
-            w.setEulerAngles(degreesToRads(0), degreesToRads(isLeft ? 45 : -45), degreesToRads(0));
-            weaponNode->local.rotate = weaponNode->local.rotate * w.make43();
+            weaponNode->local.rotate = weaponNode->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(isLeft ? 45 : -45), 0);
         }
 
         weaponNode->local.translate = isLeftHandedMode()
@@ -1266,14 +1256,11 @@ namespace frik
         uloc.x = 0;
         float upperAngle = acosf(vec3Dot(vec3Norm(uLocalTwist), vec3Norm(uloc))) * (uLocalTwist.z > 0 ? 1.f : -1.f);
 
-        Matrix44 twist;
-        twist.setEulerAngles(-upperAngle, 0, 0);
-        arm.upper->local.rotate = twist.make43() * arm.upper->local.rotate;
+        arm.upper->local.rotate = getMatrixFromEulerAngles(-upperAngle, 0, 0) * arm.upper->local.rotate;
 
         Uwr = arm.upper->local.rotate * arm.shoulder->world.rotate;
 
-        twist.setEulerAngles(-upperAngle, 0, 0);
-        arm.forearm1->local.rotate = twist.make43() * arm.forearm1->local.rotate;
+        arm.forearm1->local.rotate = getMatrixFromEulerAngles(-upperAngle, 0, 0) * arm.forearm1->local.rotate;
 
         // The forearm arm bone must be rotated from its forward vector to its elbow-to-hand vector in its local space
         // Calculate Flr:  Fwr * rotTowardHand = Uwr * Flr   ===>   Flr = Uwr' * Fwr * rotTowardHand
@@ -1304,11 +1291,8 @@ namespace frik
             float fsin = vec3Det(vec3Norm(wLocalDir), vec3Norm(floc), RE::NiPoint3(-1, 0, 0));
             float forearmAngle = -1 * negLeft * atan2f(fsin, fcos);
 
-            twist.setEulerAngles(negLeft * forearmAngle / 2, 0, 0);
-            arm.forearm2->local.rotate = twist.make43() * arm.forearm2->local.rotate;
-
-            twist.setEulerAngles(negLeft * forearmAngle / 2, 0, 0);
-            arm.forearm3->local.rotate = twist.make43() * arm.forearm3->local.rotate;
+            arm.forearm2->local.rotate = getMatrixFromEulerAngles(negLeft * forearmAngle / 2, 0, 0) * arm.forearm2->local.rotate;
+            arm.forearm3->local.rotate = getMatrixFromEulerAngles(negLeft * forearmAngle / 2, 0, 0) * arm.forearm3->local.rotate;
 
             Fwr2 = arm.forearm2->local.rotate * Fwr;
             Fwr3 = arm.forearm3->local.rotate * Fwr2;
@@ -1378,16 +1362,13 @@ namespace frik
         }
         // thumbUp pose
         else if (thumbUp && bone.find("Finger1") != std::string::npos) {
-            Matrix44 rot;
             if (bone.find("Finger11") != std::string::npos) {
-                rot.setEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f);
                 RE::NiMatrix3 wr = handOpen[bone].rotate;
-                wr = rot.make43() * wr;
+                wr = getMatrixFromEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f) * wr;
                 qt.fromRot(wr);
             } else if (bone.find("Finger13") != std::string::npos) {
-                rot.setEulerAngles(0, 0, degreesToRads(-35.0));
                 RE::NiMatrix3 wr = handOpen[bone].rotate;
-                wr = rot.make43() * wr;
+                wr = getMatrixFromEulerAngles(0, 0, degreesToRads(-35.0)) * wr;
                 qt.fromRot(wr);
             }
         } else if (_closedHand[bone]) {

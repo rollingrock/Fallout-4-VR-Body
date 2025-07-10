@@ -103,26 +103,6 @@ namespace common
             return ident;
         }
 
-        void setEulerAngles(const float heading, const float roll, const float attitude)
-        {
-            const float sinX = sin(heading);
-            const float cosX = cos(heading);
-            const float sinY = sin(roll);
-            const float cosY = cos(roll);
-            const float sinZ = sin(attitude);
-            const float cosZ = cos(attitude);
-
-            data[0][0] = cosY * cosZ;
-            data[1][0] = sinX * sinY * cosZ + sinZ * cosX;
-            data[2][0] = sinX * sinZ - cosX * sinY * cosZ;
-            data[0][1] = -cosY * sinZ;
-            data[1][1] = cosX * cosZ - sinX * sinY * sinZ;
-            data[2][1] = cosX * sinY * sinZ + sinX * cosZ;
-            data[0][2] = sinY;
-            data[1][2] = -sinX * cosY;
-            data[2][2] = cosX * cosY;
-        }
-
         void rotateVectorVec(RE::NiPoint3 toVec, RE::NiPoint3 fromVec)
         {
             toVec = vec3Norm(toVec);

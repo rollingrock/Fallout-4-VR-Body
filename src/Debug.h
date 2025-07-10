@@ -1,10 +1,8 @@
 #pragma once
 
-#include "common/Matrix.h"
-
 namespace frik
 {
-    void printMatrix(const common::Matrix44* mat);
+    void printMatrix(const RE::NiMatrix3* mat);
     void positionDiff();
     void printAllNodes();
     void printNodes(RE::NiAVObject* node, bool printAncestors = true);

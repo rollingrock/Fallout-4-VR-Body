@@ -23,10 +23,7 @@ namespace frik
             _scopeCameraBaseMatrix = ident.make43();
 
             // the angle was calculated by looking at the weapon in hand, seems to work for all weapons
-            common::Matrix44 manualAdjust;
-            manualAdjust.makeIdentity();
-            manualAdjust.setEulerAngles(0, common::degreesToRads(-6), common::degreesToRads(7));
-            _twoHandedPrimaryHandManualAdjustment = manualAdjust.make43();
+            _twoHandedPrimaryHandManualAdjustment = common::getMatrixFromEulerAngles(0, common::degreesToRads(-6), common::degreesToRads(7));
         }
 
         bool inWeaponRepositionMode() const { return _configMode != nullptr; }

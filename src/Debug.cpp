@@ -2,7 +2,6 @@
 
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
-#include "common/Matrix.h"
 #include "f4vr/PlayerNodes.h"
 
 using namespace common;
@@ -51,12 +50,12 @@ namespace
 
 namespace frik
 {
-    void printMatrix(const Matrix44* mat)
+    void printMatrix(const RE::NiMatrix3* mat)
     {
         logger::info("Dump matrix:");
         std::string row;
-        for (const auto i : mat->data) {
-            for (auto j = 0; j < 4; j++) {
+        for (const auto i : mat->entry) {
+            for (auto j = 0; j < 3; j++) {
                 row += std::to_string(i[j]);
                 row += " ";
             }

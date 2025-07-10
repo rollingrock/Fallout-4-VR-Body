@@ -2,28 +2,10 @@
 
 #include <numbers>
 
-#include "Matrix.h"
+#include "Quaternion.h"
 
 namespace common
 {
-    RE::NiTransform getTransform(const float x, const float y, const float z, const float r1, const float r2, const float r3, const float r4, const float r5, const float r6,
-        const float r7, const float r8, const float r9, const float scale)
-    {
-        RE::NiTransform transform;
-        transform.translate = RE::NiPoint3(x, y, z);
-        transform.rotate.entry[0][0] = r1;
-        transform.rotate.entry[1][0] = r2;
-        transform.rotate.entry[2][0] = r3;
-        transform.rotate.entry[0][1] = r4;
-        transform.rotate.entry[1][1] = r5;
-        transform.rotate.entry[2][1] = r6;
-        transform.rotate.entry[0][2] = r7;
-        transform.rotate.entry[1][2] = r8;
-        transform.rotate.entry[2][2] = r9;
-        transform.scale = scale;
-        return transform;
-    }
-
     RE::NiPoint3 vec3Norm(RE::NiPoint3 v1)
     {
         const float mag = vec3Len(v1);
@@ -113,7 +95,22 @@ namespace common
         return getRotationAxisAngle(vec3Norm(rotAxis), angle) * vec;
     }
 
-    void getEulerAngles(const RE::NiMatrix3& matrix, float* heading, float* roll, float* attitude)
+    RE::NiMatrix3 getMatrix(const float r1, const float r2, const float r3, const float r4, const float r5, const float r6, const float r7, const float r8, const float r9)
+    {
+        RE::NiMatrix3 result;
+        result.entry[0][0] = r1;
+        result.entry[1][0] = r2;
+        result.entry[2][0] = r3;
+        result.entry[0][1] = r4;
+        result.entry[1][1] = r5;
+        result.entry[2][1] = r6;
+        result.entry[0][2] = r7;
+        result.entry[1][2] = r8;
+        result.entry[2][2] = r9;
+        return result;
+    }
+
+    void getEulerAnglesFromMatrix(const RE::NiMatrix3& matrix, float* heading, float* roll, float* attitude)
     {
         if (matrix.entry[2][0] < 1.0) {
             if (matrix.entry[2][0] > -1.0) {
@@ -130,6 +127,60 @@ namespace common
             *attitude = std::numbers::pi_v<float> / 2;
             *roll = 0.0;
         }
+    }
+
+    RE::NiMatrix3 getMatrixFromEulerAngles(const float heading, const float roll, const float attitude)
+    {
+        const float sinX = sin(heading);
+        const float cosX = cos(heading);
+        const float sinY = sin(roll);
+        const float cosY = cos(roll);
+        const float sinZ = sin(attitude);
+        const float cosZ = cos(attitude);
+
+        RE::NiMatrix3 result;
+        result.entry[0][0] = cosY * cosZ;
+        result.entry[1][0] = sinX * sinY * cosZ + sinZ * cosX;
+        result.entry[2][0] = sinX * sinZ - cosX * sinY * cosZ;
+        result.entry[0][1] = -cosY * sinZ;
+        result.entry[1][1] = cosX * cosZ - sinX * sinY * sinZ;
+        result.entry[2][1] = cosX * sinY * sinZ + sinX * cosZ;
+        result.entry[0][2] = sinY;
+        result.entry[1][2] = -sinX * cosY;
+        result.entry[2][2] = cosX * cosY;
+        return result;
+    }
+
+    RE::NiMatrix3 getMatrixFromRotateVectorVec(const RE::NiPoint3& toVec, const RE::NiPoint3& fromVec)
+    {
+        const auto toVecNorm = vec3Norm(toVec);
+        const auto fromVecNorm = vec3Norm(fromVec);
+
+        const float dotP = vec3Dot(fromVecNorm, toVecNorm);
+
+        if (dotP >= 0.99999) {
+            return RE::NiMatrix3::IDENTITY;
+        }
+
+        RE::NiPoint3 crossP = vec3Cross(toVecNorm, fromVecNorm);
+        crossP = vec3Norm(crossP);
+
+        const float phi = acosf(dotP);
+        const float rCos = cos(phi);
+        const float rSin = sin(phi);
+
+        // Build the matrix
+        RE::NiMatrix3 result;
+        result.entry[0][0] = rCos + crossP.x * crossP.x * (1.0f - rCos);
+        result.entry[0][1] = -crossP.z * rSin + crossP.x * crossP.y * (1.0f - rCos);
+        result.entry[0][2] = crossP.y * rSin + crossP.x * crossP.z * (1.0f - rCos);
+        result.entry[1][0] = crossP.z * rSin + crossP.y * crossP.x * (1.0f - rCos);
+        result.entry[1][1] = rCos + crossP.y * crossP.y * (1.0f - rCos);
+        result.entry[1][2] = -crossP.x * rSin + crossP.y * crossP.z * (1.0f - rCos);
+        result.entry[2][0] = -crossP.y * rSin + crossP.z * crossP.x * (1.0f - rCos);
+        result.entry[2][1] = crossP.x * rSin + crossP.z * crossP.y * (1.0f - rCos);
+        result.entry[2][2] = rCos + crossP.z * crossP.z * (1.0f - rCos);
+        return result;
     }
 
     // Gets a rotation matrix from an axis and an angle
@@ -157,6 +208,16 @@ namespace common
         result.entry[2][1] = tmp1 + tmp2;
         result.entry[1][2] = tmp1 - tmp2;
         return result.Transpose();
+    }
+
+    RE::NiTransform getTransform(const float x, const float y, const float z, const float r1, const float r2, const float r3, const float r4, const float r5, const float r6,
+        const float r7, const float r8, const float r9, const float scale)
+    {
+        RE::NiTransform transform;
+        transform.translate = RE::NiPoint3(x, y, z);
+        transform.rotate = getMatrix(r1, r2, r3, r4, r5, r6, r7, r8, r9);
+        transform.scale = scale;
+        return transform;
     }
 
     /**
