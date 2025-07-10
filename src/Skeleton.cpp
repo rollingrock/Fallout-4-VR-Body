@@ -366,7 +366,7 @@ namespace frik
         qa.setAngleAxis(-neckPitch, RE::NiPoint3(-1, 0, 0));
 
         mat = qa.getRot();
-        const RE::NiMatrix3 newRot = mat.multiply43Left(_playerNodes->HmdNode->local.rotate);
+        const RE::NiMatrix3 newRot = mat.make43() * _playerNodes->HmdNode->local.rotate;
 
         _forwardDir = rotateXY(RE::NiPoint3(newRot.entry[1][0], newRot.entry[1][1], 0), neckYaw * 0.7f);
         _sidewaysRDir = RE::NiPoint3(_forwardDir.y, -_forwardDir.x, 0);
@@ -381,7 +381,7 @@ namespace frik
         const auto bodyDir = RE::NiPoint3(0, 1, 0);
 
         mat.rotateVectorVec(back, bodyDir);
-        _root->local.rotate = mat.multiply43Left(body->world.rotate.Transpose());
+        _root->local.rotate = mat.make43() * body->world.rotate.Transpose();
         _root->local.translate = body->world.translate - _curentPosition;
         _root->local.translate.z = z;
         //_root->local.translate *= 0.0f;
@@ -431,9 +431,9 @@ namespace frik
 
         Matrix44 rot;
         rot.rotateVectorVec(neckPos - tmpHipPos, hmdToHip);
-        const RE::NiMatrix3 mat = rot.multiply43Left(spine->parent->world.rotate.Transpose());
+        const RE::NiMatrix3 mat = rot.make43() * spine->parent->world.rotate.Transpose();
         rot.makeTransformMatrix(mat, RE::NiPoint3(0, 0, 0));
-        spine->local.rotate = rot.multiply43Right(spine->world.rotate);
+        spine->local.rotate = spine->world.rotate * rot.make43();
     }
 
     void Skeleton::setKneePos()
@@ -660,7 +660,7 @@ namespace frik
             Matrix44 rot;
 
             rot.setEulerAngles(degreesToRads(spineAngle), 0.0, 0.0);
-            _spine->local.rotate = rot.multiply43Left(_spine->local.rotate);
+            _spine->local.rotate = rot.make43() * _spine->local.rotate;
 
             if (_currentStepTime > stepTime) {
                 _currentStepTime = 0.0;
@@ -739,20 +739,20 @@ namespace frik
         const RE::NiPoint3 pos = kneePos - hipPos;
         RE::NiPoint3 uLocalDir = hipNode->world.rotate * (vec3Norm(pos) / hipNode->world.scale);
         rotMat.rotateVectorVec(uLocalDir, kneeNode->local.translate);
-        hipNode->local.rotate = rotMat.multiply43Left(hipNode->local.rotate);
+        hipNode->local.rotate = rotMat.make43() * hipNode->local.rotate;
 
         rotMat.makeTransformMatrix(hipNode->local.rotate, RE::NiPoint3(0, 0, 0));
-        const RE::NiMatrix3 hipWR = rotMat.multiply43Left(hipNode->parent->world.rotate);
+        const RE::NiMatrix3 hipWR = rotMat.make43() * hipNode->parent->world.rotate;
 
         rotMat.makeTransformMatrix(kneeNode->local.rotate, RE::NiPoint3(0, 0, 0));
-        RE::NiMatrix3 calfWR = rotMat.multiply43Left(hipWR);
+        RE::NiMatrix3 calfWR = rotMat.make43() * hipWR;
 
         uLocalDir = calfWR * (vec3Norm(footPos - kneePos) / kneeNode->world.scale);
         rotMat.rotateVectorVec(uLocalDir, footNode->local.translate);
-        kneeNode->local.rotate = rotMat.multiply43Left(kneeNode->local.rotate);
+        kneeNode->local.rotate = rotMat.make43() * kneeNode->local.rotate;
 
         rotMat.makeTransformMatrix(kneeNode->local.rotate, RE::NiPoint3(0, 0, 0));
-        calfWR = rotMat.multiply43Left(hipWR);
+        calfWR = rotMat.make43() * hipWR;
 
         // Calculate Clp:  Cwp = Twp + Twr * (Clp * Tws) = kneePos   ===>   Clp = Twr' * (kneePos - Twp) / Tws
         kneeNode->local.translate = hipWR * ((kneePos - hipPos) / hipNode->world.scale);
@@ -774,14 +774,14 @@ namespace frik
         rot.setEulerAngles(degreesToRads(angle), 0, 0);
 
         auto& transform = rt->transforms[pos];
-        transform.local.rotate = rot.multiply43Left(transform.local.rotate);
+        transform.local.rotate = rot.make43() * transform.local.rotate;
 
         const auto& parentTransform = rt->transforms[transform.parPos];
         const RE::NiPoint3 p = parentTransform.world.rotate * (transform.local.translate * parentTransform.world.scale);
         transform.world.translate = parentTransform.world.translate + p;
 
         rot.makeTransformMatrix(transform.local.rotate, RE::NiPoint3(0, 0, 0));
-        transform.world.rotate = rot.multiply43Left(parentTransform.world.rotate);
+        transform.world.rotate = rot.make43() * parentTransform.world.rotate;
     }
 
     /**
@@ -827,10 +827,10 @@ namespace frik
         Matrix44 loc;
         loc.setEulerAngles(degreesToRads(30), 0, 0);
 
-        const RE::NiMatrix3 wandWROT = loc.multiply43Left(pipboyBone->world.rotate);
+        const RE::NiMatrix3 wandWROT = loc.make43() * pipboyBone->world.rotate;
 
         loc.makeTransformMatrix(wandWROT, RE::NiPoint3(0, 0, 0));
-        wandPip->local.rotate = loc.multiply43Left(wandPip->parent->world.rotate.Transpose());
+        wandPip->local.rotate = loc.make43() * wandPip->parent->world.rotate.Transpose();
     }
 
     void Skeleton::leftHandedModePipboy() const
@@ -852,7 +852,7 @@ namespace frik
             Matrix44 rot;
             rot.setEulerAngles(0, degreesToRads(180.0), 0);
 
-            pipbone->local.rotate = rot.multiply43Left(pipbone->local.rotate);
+            pipbone->local.rotate = rot.make43() * pipbone->local.rotate;
             pipbone->local.translate *= -1.5;
         }
     }
@@ -1028,7 +1028,7 @@ namespace frik
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local = _playerNodes->primaryWeaponOffsetNOde->local;
             Matrix44 lr;
             lr.setEulerAngles(0, degreesToRads(180), 0);
-            _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate = lr.multiply43Right(_playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate);
+            _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate = _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate * lr.make43();
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.translate = RE::NiPoint3(-2, -9, 2);
             updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
@@ -1059,7 +1059,7 @@ namespace frik
 
         if (handleOffhand) {
             w.setEulerAngles(degreesToRads(0), degreesToRads(isLeft ? 45 : -45), degreesToRads(0));
-            weaponNode->local.rotate = w.multiply43Right(weaponNode->local.rotate);
+            weaponNode->local.rotate = weaponNode->local.rotate * w.make43();
         }
 
         weaponNode->local.translate = isLeftHandedMode()
@@ -1103,7 +1103,7 @@ namespace frik
         rotatedM = 0.0;
         rotatedM.rotateVectorVec(sLocalDir, RE::NiPoint3(1, 0, 0));
 
-        RE::NiMatrix3 result = rotatedM.multiply43Left(arm.shoulder->local.rotate);
+        RE::NiMatrix3 result = rotatedM.make43() * arm.shoulder->local.rotate;
         arm.shoulder->local.rotate = result;
 
         updateDown(arm.shoulder, true);
@@ -1258,11 +1258,11 @@ namespace frik
         RE::NiPoint3 uLocalDir = Uwr * (vec3Norm(pos) / arm.upper->world.scale);
 
         rotatedM.rotateVectorVec(uLocalDir, arm.forearm1->local.translate);
-        arm.upper->local.rotate = rotatedM.multiply43Left(arm.upper->local.rotate);
+        arm.upper->local.rotate = rotatedM.make43() * arm.upper->local.rotate;
 
         rotatedM.makeTransformMatrix(arm.upper->local.rotate, arm.upper->local.translate);
 
-        Uwr = rotatedM.multiply43Left(arm.shoulder->world.rotate);
+        Uwr = rotatedM.make43() * arm.shoulder->world.rotate;
 
         // Find the angle of the forearm twisted around the upper arm and twist the upper arm to align it
         //    Uwr * twist = Cwr * Ulr   ===>   Ulr = Cwr' * Uwr * twist
@@ -1276,33 +1276,33 @@ namespace frik
 
         Matrix44 twist;
         twist.setEulerAngles(-upperAngle, 0, 0);
-        arm.upper->local.rotate = twist.multiply43Left(arm.upper->local.rotate);
+        arm.upper->local.rotate = twist.make43() * arm.upper->local.rotate;
 
         rotatedM.makeTransformMatrix(arm.upper->local.rotate, arm.upper->local.translate);
-        Uwr = rotatedM.multiply43Left(arm.shoulder->world.rotate);
+        Uwr = rotatedM.make43() * arm.shoulder->world.rotate;
 
         twist.setEulerAngles(-upperAngle, 0, 0);
-        arm.forearm1->local.rotate = twist.multiply43Left(arm.forearm1->local.rotate);
+        arm.forearm1->local.rotate = twist.make43() * arm.forearm1->local.rotate;
 
         // The forearm arm bone must be rotated from its forward vector to its elbow-to-hand vector in its local space
         // Calculate Flr:  Fwr * rotTowardHand = Uwr * Flr   ===>   Flr = Uwr' * Fwr * rotTowardHand
         rotatedM.makeTransformMatrix(arm.forearm1->local.rotate, arm.forearm1->local.translate);
-        RE::NiMatrix3 Fwr = rotatedM.multiply43Left(Uwr);
+        RE::NiMatrix3 Fwr = rotatedM.make43() * Uwr;
         RE::NiPoint3 elbowHand = handPos - elbowWorld;
         RE::NiPoint3 fLocalDir = Fwr * (vec3Norm(elbowHand));
 
         rotatedM.rotateVectorVec(fLocalDir, RE::NiPoint3(1, 0, 0));
-        arm.forearm1->local.rotate = rotatedM.multiply43Left(arm.forearm1->local.rotate);
+        arm.forearm1->local.rotate = rotatedM.make43() * arm.forearm1->local.rotate;
         rotatedM.makeTransformMatrix(arm.forearm1->local.rotate, arm.forearm1->local.translate);
-        Fwr = rotatedM.multiply43Left(Uwr);
+        Fwr = rotatedM.make43() * Uwr;
 
         RE::NiMatrix3 Fwr3;
 
         if (!_inPowerArmor && arm.forearm2 != nullptr && arm.forearm3 != nullptr) {
             rotatedM.makeTransformMatrix(arm.forearm2->local.rotate, arm.forearm2->local.translate);
-            auto Fwr2 = rotatedM.multiply43Left(Fwr);
+            auto Fwr2 = rotatedM.make43() * Fwr;
             rotatedM.makeTransformMatrix(arm.forearm3->local.rotate, arm.forearm3->local.translate);
-            Fwr3 = rotatedM.multiply43Left(Fwr2);
+            Fwr3 = rotatedM.make43() * Fwr2;
 
             // Find the angle the wrist is pointing and twist forearm3 appropriately
             //    Fwr * twist = Uwr * Flr   ===>   Flr = (Uwr' * Fwr) * twist = (Flr) * twist
@@ -1318,23 +1318,23 @@ namespace frik
             float forearmAngle = -1 * negLeft * atan2f(fsin, fcos);
 
             twist.setEulerAngles(negLeft * forearmAngle / 2, 0, 0);
-            arm.forearm2->local.rotate = twist.multiply43Left(arm.forearm2->local.rotate);
+            arm.forearm2->local.rotate = twist.make43() * arm.forearm2->local.rotate;
 
             twist.setEulerAngles(negLeft * forearmAngle / 2, 0, 0);
-            arm.forearm3->local.rotate = twist.multiply43Left(arm.forearm3->local.rotate);
+            arm.forearm3->local.rotate = twist.make43() * arm.forearm3->local.rotate;
 
             rotatedM.makeTransformMatrix(arm.forearm2->local.rotate, arm.forearm2->local.translate);
-            Fwr2 = rotatedM.multiply43Left(Fwr);
+            Fwr2 = rotatedM.make43() * Fwr;
             rotatedM.makeTransformMatrix(arm.forearm3->local.rotate, arm.forearm3->local.translate);
-            Fwr3 = rotatedM.multiply43Left(Fwr2);
+            Fwr3 = rotatedM.make43() * Fwr2;
         }
 
         // Calculate Hlr:  Fwr * Hlr = handRot   ===>   Hlr = Fwr' * handRot
         rotatedM.makeTransformMatrix(handRot, handPos);
         if (!_inPowerArmor) {
-            arm.hand->local.rotate = rotatedM.multiply43Left(Fwr3.Transpose());
+            arm.hand->local.rotate = rotatedM.make43() * Fwr3.Transpose();
         } else {
-            arm.hand->local.rotate = rotatedM.multiply43Left(Fwr.Transpose());
+            arm.hand->local.rotate = rotatedM.make43() * Fwr.Transpose();
         }
 
         // Calculate Flp:  Fwp = Uwp + Uwr * (Flp * Uws) = elbowWorld   ===>   Flp = Uwr' * (elbowWorld - Uwp) / Uws
@@ -1402,12 +1402,12 @@ namespace frik
             if (bone.find("Finger11") != std::string::npos) {
                 rot.setEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f);
                 RE::NiMatrix3 wr = handOpen[bone].rotate;
-                wr = rot.multiply43Left(wr);
+                wr = rot.make43() * wr;
                 qt.fromRot(wr);
             } else if (bone.find("Finger13") != std::string::npos) {
                 rot.setEulerAngles(0, 0, degreesToRads(-35.0));
                 RE::NiMatrix3 wr = handOpen[bone].rotate;
-                wr = rot.multiply43Left(wr);
+                wr = rot.make43() * wr;
                 qt.fromRot(wr);
             }
         } else if (_closedHand[bone]) {
@@ -1490,7 +1490,7 @@ namespace frik
                 Matrix44 rot;
                 rot.makeTransformMatrix(rt->transforms[pos].local.rotate, RE::NiPoint3(0, 0, 0));
 
-                rt->transforms[pos].world.rotate = rot.multiply43Left(rt->transforms[parent].world.rotate);
+                rt->transforms[pos].world.rotate = rot.make43() * rt->transforms[parent].world.rotate;
             }
         }
     }
@@ -1511,7 +1511,7 @@ namespace frik
         Matrix44 mat;
         mat.makeIdentity();
         mat.rotateVectorVec(back, bodyDir);
-        _root->local.rotate = mat.multiply43Left(body->world.rotate.Transpose());
+        _root->local.rotate = mat.make43() * body->world.rotate.Transpose();
         _root->local.translate = body->world.translate - _curentPosition;
         _root->local.translate.y += g_config.selfieOutFrontDistance;
         _root->local.translate.z = z;

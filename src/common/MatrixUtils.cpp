@@ -152,8 +152,8 @@ namespace common
     {
         RE::NiTransform delta;
         delta.scale = to.scale / from.scale;
-        delta.rotate = Matrix44(to.rotate).multiply43Right(from.rotate.Transpose());
-        delta.translate = to.translate - delta.rotate.Transpose() * ( from.translate * delta.scale);
+        delta.rotate = from.rotate.Transpose() * to.rotate;
+        delta.translate = to.translate - delta.rotate.Transpose() * (from.translate * delta.scale);
         return delta;
     }
 
@@ -166,8 +166,8 @@ namespace common
         const auto delta = getDeltaTransform(baseFrom, baseTo);
         RE::NiTransform target;
         target.scale = delta.scale * targetFrom.scale;
-        target.rotate = Matrix44(delta.rotate).multiply43Right(targetFrom.rotate);
-        target.translate = delta.rotate.Transpose() * ( (targetFrom.translate * delta.scale) + delta.translate);
+        target.rotate = targetFrom.rotate * delta.rotate;
+        target.translate = delta.rotate.Transpose() * ((targetFrom.translate * delta.scale) + delta.translate);
         return target;
     }
 
@@ -184,10 +184,10 @@ namespace common
         const auto direction = vec3Norm(RE::NiPoint3(objectPos.x - cameraPos.x, objectPos.y - cameraPos.y, objectPos.z - cameraPos.z));
 
         // Get the forward vector of the camera (assuming it's the y-axis)
-        const auto cameraForward = vec3Norm(cameraTrans.rotate.Transpose() * ( RE::NiPoint3(0, 1, 0)));
+        const auto cameraForward = vec3Norm(cameraTrans.rotate.Transpose() * (RE::NiPoint3(0, 1, 0)));
 
         // Get the forward vector of the object (assuming it's the y-axis)
-        const auto objectForward = vec3Norm(objectTrans.rotate.Transpose() * ( RE::NiPoint3(0, 1, 0)));
+        const auto objectForward = vec3Norm(objectTrans.rotate.Transpose() * (RE::NiPoint3(0, 1, 0)));
 
         // Check if the camera is looking at the object
         const float cameraDot = vec3Dot(cameraForward, direction);

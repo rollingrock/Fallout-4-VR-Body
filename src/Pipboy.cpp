@@ -777,7 +777,7 @@ namespace frik
                 if (rotx < 0.57) {
                     Matrix44 kRot;
                     kRot.setEulerAngles(-0.05f, degreesToRads(0), degreesToRads(0));
-                    pipbone8->local.rotate = kRot.multiply43Right(pipbone8->local.rotate);
+                    pipbone8->local.rotate = pipbone8->local.rotate * kRot.make43();
                 }
             } else {
                 // restores control of the 'Mode Knob' to the Pipboy behaviour file
@@ -817,7 +817,7 @@ namespace frik
                             Matrix44 lightRot;
                             float rotz = g_config.isPipBoyTorchOnArm ? -90 : 90;
                             lightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(rotz));
-                            lght->local.rotate = lightRot.multiply43Right(lght->local.rotate);
+                            lght->local.rotate = lght->local.rotate * lightRot.make43();
                             lght->local.translate.y = g_config.isPipBoyTorchOnArm ? 0 : 4;
                             g_config.isPipBoyTorchOnArm
                                 ? f4vr::removeChildFromNode(lght->parent, lght)
@@ -849,7 +849,7 @@ namespace frik
                             f4vr::removeChildFromNode(f4vr::getPlayerNodes()->HeadLightParentNode->parent, lght);
                             Matrix44 LightRot;
                             LightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(90));
-                            lght->local.rotate = LightRot.multiply43Right(lght->local.rotate);
+                            lght->local.rotate = lght->local.rotate * LightRot.make43();
                             lght->local.translate.y = 4;
                             f4vr::attachChildToNode(LGHT_ATTACH, lght);
                         }
@@ -861,7 +861,7 @@ namespace frik
                             if (parentnode != "HMDNode") {
                                 Matrix44 LightRot;
                                 LightRot.setEulerAngles(degreesToRads(0), degreesToRads(0), degreesToRads(-90));
-                                lght->local.rotate = LightRot.multiply43Right(lght->local.rotate);
+                                lght->local.rotate = lght->local.rotate * LightRot.make43();
                                 lght->local.translate.y = 0;
                                 f4vr::removeChildFromNode(lght->parent, lght);
                                 f4vr::attachChildToNode(f4vr::getPlayerNodes()->HmdNode, lght);
@@ -883,12 +883,12 @@ namespace frik
             if (radioOn && radFreq != lastRadioFreq) {
                 float x = -1 * (radFreq - lastRadioFreq);
                 rot.setEulerAngles(degreesToRads(0), degreesToRads(x), degreesToRads(0));
-                pipbone7->local.rotate = rot.multiply43Right(pipbone7->local.rotate);
+                pipbone7->local.rotate = pipbone7->local.rotate * rot.make43();
                 lastRadioFreq = radFreq;
             } else if (!radioOn && lastRadioFreq > 0) {
                 float x = lastRadioFreq;
                 rot.setEulerAngles(degreesToRads(0), degreesToRads(x), degreesToRads(0));
-                pipbone7->local.rotate = rot.multiply43Right(pipbone7->local.rotate);
+                pipbone7->local.rotate = pipbone7->local.rotate * rot.make43();
                 lastRadioFreq = 0.0;
             }
             // Scale-form code for managing Pipboy menu controls (Virtual and Physical)
@@ -949,7 +949,7 @@ namespace frik
                                                 : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
                                             Matrix44 rot;
                                             rot.setEulerAngles(degreesToRads(0), degreesToRads(fz), degreesToRads(0));
-                                            ScrollKnob->local.rotate = rot.multiply43Right(ScrollKnob->local.rotate);
+                                            ScrollKnob->local.rotate = ScrollKnob->local.rotate * rot.make43();
                                         }
                                         if (i == 5) {
                                             // Move Scroll Knob Clockwise when near control surface
@@ -960,7 +960,7 @@ namespace frik
                                                 : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
                                             Matrix44 rot;
                                             rot.setEulerAngles(degreesToRads(0), degreesToRads(roty), degreesToRads(0));
-                                            ScrollKnob->local.rotate = rot.multiply43Right(ScrollKnob->local.rotate);
+                                            ScrollKnob->local.rotate = ScrollKnob->local.rotate * rot.make43();
                                         }
                                     }
                                     if (trans->local.translate.z > transDistance[i] && !_PBControlsSticky[i]) {
@@ -1030,11 +1030,11 @@ namespace frik
                                 Matrix44 rot;
                                 if (doinantHandStick.y > 0.85) {
                                     rot.setEulerAngles(degreesToRads(0), degreesToRads(0.4f), degreesToRads(0));
-                                    ScrollKnob->local.rotate = rot.multiply43Right(ScrollKnob->local.rotate);
+                                    ScrollKnob->local.rotate = ScrollKnob->local.rotate * rot.make43();
                                 }
                                 if (doinantHandStick.y < -0.85) {
                                     rot.setEulerAngles(degreesToRads(0), degreesToRads(-0.4f), degreesToRads(0));
-                                    ScrollKnob->local.rotate = rot.multiply43Right(ScrollKnob->local.rotate);
+                                    ScrollKnob->local.rotate = ScrollKnob->local.rotate * rot.make43();
                                 }
                             }
                             if (!isPrimaryGripPressHeldDown()) {
@@ -1118,11 +1118,11 @@ namespace frik
                                 Matrix44 rot;
                                 if (offHandStick.x > 0.85) {
                                     rot.setEulerAngles(degreesToRads(0), degreesToRads(0.4), degreesToRads(0));
-                                    ScrollKnob->local.rotate = rot.multiply43Right(ScrollKnob->local.rotate);
+                                    ScrollKnob->local.rotate = ScrollKnob->local.rotate * rot.make43();
                                 }
                                 if (offHandStick.x < -0.85) {
                                     rot.setEulerAngles(degreesToRads(0), degreesToRads(-0.4), degreesToRads(0));
-                                    ScrollKnob->local.rotate = rot.multiply43Right(ScrollKnob->local.rotate);
+                                    ScrollKnob->local.rotate = ScrollKnob->local.rotate * rot.make43();
                                 }
                             }
                         }

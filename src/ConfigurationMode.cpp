@@ -608,8 +608,8 @@ namespace frik
                         rAxisOffsetX = 0 - rAxisOffsetX;
                     }
                     rot.setEulerAngles(degreesToRads(rAxisOffsetX), 0, 0);
-                    pbRoot->local.rotate = rot.multiply43Left(pbRoot->local.rotate);
-                    rot.multiply43Left(pbRoot->local.rotate);
+                    pbRoot->local.rotate = rot.make43() * pbRoot->local.rotate;
+                    rot.make43() * pbRoot->local.rotate;
                 }
                 if (doinantHandStick.y > 0.10 && ScaleButtonPressed) {
                     pbRoot->local.scale = pbRoot->local.scale + 0.001;

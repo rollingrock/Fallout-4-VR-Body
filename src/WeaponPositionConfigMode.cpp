@@ -44,7 +44,7 @@ namespace frik
             transform.translate = RE::NiPoint3(4.5f, -2.2f, -1);
             rot.setEulerAngles(degreesToRads(85), degreesToRads(-65), 0);
         }
-        transform.rotate = rot.multiply43Right(originalTransform.rotate);
+        transform.rotate = originalTransform.rotate * rot.make43();
         return transform;
     }
 
@@ -196,7 +196,7 @@ namespace frik
             Matrix44 rot;
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
             rot.setEulerAngles(-degreesToRads(primAxisY / 5), -degreesToRads(secAxisX / 3), degreesToRads(primAxisX / 5));
-            transform.rotate = rot.multiply43Left(transform.rotate);
+            transform.rotate = rot.make43() * transform.rotate;
         } else {
             // adjust horizontal (y - right/left, x - forward/backward) by primary stick
             transform.translate.y += leftHandedMult * primAxisX / 12;
@@ -219,7 +219,7 @@ namespace frik
         if (axisX != 0.f || axisY != 0.f) {
             Matrix44 rot;
             rot.setEulerAngles(-degreesToRads(axisY / 5), 0, degreesToRads(axisX / 5));
-            _adjuster->_offhandOffsetRot = rot.multiply43Left(_adjuster->_offhandOffsetRot);
+            _adjuster->_offhandOffsetRot = rot.make43() * _adjuster->_offhandOffsetRot;
         }
     }
 
@@ -248,7 +248,7 @@ namespace frik
             Matrix44 rot;
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
             rot.setEulerAngles(degreesToRads(secAxisY / 6), degreesToRads(secAxisX / 6), degreesToRads(primAxisX / 6));
-            transform.rotate = rot.multiply43Left(transform.rotate);
+            transform.rotate = rot.make43() * transform.rotate;
         } else {
             // adjust horizontal (x - right/left, z - forward/backward) by primary stick
             transform.translate.z += -leftHandedMult * primAxisX / 14 - leftHandedMult * secAxisX / 14;
@@ -281,7 +281,7 @@ namespace frik
             Matrix44 rot;
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
             rot.setEulerAngles(-degreesToRads(secAxisY / 6), -degreesToRads(primAxisX / 6), -degreesToRads(primAxisY / 6));
-            transform.rotate = rot.multiply43Left(transform.rotate);
+            transform.rotate = rot.make43() * transform.rotate;
         } else {
             // adjust horizontal (z - right/left, y - forward/backward) by primary stick
             transform.translate.z -= leftHandedMult * primAxisX / 14;

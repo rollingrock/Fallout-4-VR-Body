@@ -199,69 +199,6 @@ namespace common
             }
             return ret;
         }
-
-        RE::NiMatrix3 multiply43Left(const RE::NiMatrix3& mat) const
-        {
-            return this->make43() * mat;
-            // return mult(mat, this->make43());
-        }
-
-        RE::NiMatrix3 multiply43Right(const RE::NiMatrix3& mat) const
-        {
-            return mat * this->make43();
-            // return mult(this->make43(), mat);
-        }
-
-        static void matrixMultiply(const Matrix44* worldMat, const Matrix44* retMat, const Matrix44* localMat)
-        {
-            // This uses the native transform function that the updateWorld call makes
-            using func_t = decltype(&matrixMultiply);
-            REL::Relocation<func_t> func(REL::Offset(0x1a8d60));
-            return func(worldMat, retMat, localMat);
-        }
-
-        static RE::NiMatrix3 mult(const RE::NiMatrix3& left, const RE::NiMatrix3& right)
-        {
-            RE::NiMatrix3 tmp;
-            // shamelessly taken from SKSE
-            tmp.entry[0][0] =
-                right.entry[0][0] * left.entry[0][0] +
-                right.entry[0][1] * left.entry[1][0] +
-                right.entry[0][2] * left.entry[2][0];
-            tmp.entry[1][0] =
-                right.entry[1][0] * left.entry[0][0] +
-                right.entry[1][1] * left.entry[1][0] +
-                right.entry[1][2] * left.entry[2][0];
-            tmp.entry[2][0] =
-                right.entry[2][0] * left.entry[0][0] +
-                right.entry[2][1] * left.entry[1][0] +
-                right.entry[2][2] * left.entry[2][0];
-            tmp.entry[0][1] =
-                right.entry[0][0] * left.entry[0][1] +
-                right.entry[0][1] * left.entry[1][1] +
-                right.entry[0][2] * left.entry[2][1];
-            tmp.entry[1][1] =
-                right.entry[1][0] * left.entry[0][1] +
-                right.entry[1][1] * left.entry[1][1] +
-                right.entry[1][2] * left.entry[2][1];
-            tmp.entry[2][1] =
-                right.entry[2][0] * left.entry[0][1] +
-                right.entry[2][1] * left.entry[1][1] +
-                right.entry[2][2] * left.entry[2][1];
-            tmp.entry[0][2] =
-                right.entry[0][0] * left.entry[0][2] +
-                right.entry[0][1] * left.entry[1][2] +
-                right.entry[0][2] * left.entry[2][2];
-            tmp.entry[1][2] =
-                right.entry[1][0] * left.entry[0][2] +
-                right.entry[1][1] * left.entry[1][2] +
-                right.entry[1][2] * left.entry[2][2];
-            tmp.entry[2][2] =
-                right.entry[2][0] * left.entry[0][2] +
-                right.entry[2][1] * left.entry[1][2] +
-                right.entry[2][2] * left.entry[2][2];
-            return tmp;
-        }
     };
 
     class Quaternion

@@ -312,7 +312,7 @@ namespace frik
         //		rot.makeTransformMatrix(rt->transforms[pos].local.rotate, RE::NiPoint3(0, 0, 0));
 
         //		short parent = rt->transforms[pos].parPos;
-        //		rt->transforms[pos].world.rotate = rot.multiply43Left(rt->transforms[parent].world.rotate);
+        //		rt->transforms[pos].world.rotate = rot.make43() * rt->transforms[parent].world.rotate;
 
         //		if (rt->transforms[pos].refNode) {
         //			rt->transforms[pos].refNode->world.rotate = rt->transforms[pos].world.rotate;
