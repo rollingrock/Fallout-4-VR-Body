@@ -600,7 +600,6 @@ namespace frik
                     _isModelSwapButtonPressed = false;
                 }
                 if ((doinantHandStick.y > 0.10 || doinantHandStick.y < -0.10) && RotateButtonPressed) {
-                    Matrix44 rot;
                     rAxisOffsetX = doinantHandStick.y / 10;
                     if (rAxisOffsetX < 0) {
                         rAxisOffsetX = rAxisOffsetX * -1;

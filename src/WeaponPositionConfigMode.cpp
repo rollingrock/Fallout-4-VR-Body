@@ -75,7 +75,7 @@ namespace frik
             transform.rotate = getMatrixFromEulerAngles(degreesToRads(180), 0, degreesToRads(180));
             transform.translate = inPA ? RE::NiPoint3(5, 6.5f, -11) : RE::NiPoint3(6.2f, 4.8f, -12.2f);
         } else {
-            transform.rotate = Matrix44::getIdentity43();
+            transform.rotate = getIdentityMatrix();
             transform.translate = inPA ? RE::NiPoint3(-5.8f, 5.8f, 1.8f) : RE::NiPoint3(-6.2f, 3.6f, 0.8f);
         }
         return transform;
@@ -363,7 +363,7 @@ namespace frik
     void WeaponPositionConfigMode::resetOffhandConfig() const
     {
         f4vr::showNotification("Reset Offhand Position to Default");
-        _adjuster->_offhandOffsetRot = Matrix44::getIdentity43();
+        _adjuster->_offhandOffsetRot = getIdentityMatrix();
         g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA, true);
     }
 

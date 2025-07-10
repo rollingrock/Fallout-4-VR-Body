@@ -7,7 +7,7 @@
 #include "HandPose.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
-#include "common/Matrix.h"
+#include "common/Quaternion.h"
 #include "common/MatrixUtils.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
@@ -363,7 +363,7 @@ namespace frik
         Quaternion qa;
         qa.setAngleAxis(-neckPitch, RE::NiPoint3(-1, 0, 0));
 
-        const RE::NiMatrix3 newRot = qa.getMatrix3() * _playerNodes->HmdNode->local.rotate;
+        const RE::NiMatrix3 newRot = qa.getMatrix() * _playerNodes->HmdNode->local.rotate;
 
         _forwardDir = rotateXY(RE::NiPoint3(newRot.entry[1][0], newRot.entry[1][1], 0), neckYaw * 0.7f);
         _sidewaysRDir = RE::NiPoint3(_forwardDir.y, -_forwardDir.x, 0);
@@ -1317,9 +1317,9 @@ namespace frik
 
         // if a mod is using the papyrus interface to manually set finger poses
         if (handPapyrusHasControl[bone]) {
-            qt.fromRot(handOpen[bone].rotate);
+            qt.fromMatrix(handOpen[bone].rotate);
             Quaternion qo;
-            qo.fromRot(handClosed[bone].rotate);
+            qo.fromMatrix(handClosed[bone].rotate);
             qo.slerp(std::clamp(handPapyrusPose[bone], 0.0f, 1.0f), qt);
             qt = qo;
         }
@@ -1328,28 +1328,28 @@ namespace frik
             if (bone.find("Finger11") != std::string::npos) {
                 RE::NiMatrix3 wr = handOpen[bone].rotate;
                 wr = getMatrixFromEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f) * wr;
-                qt.fromRot(wr);
+                qt.fromMatrix(wr);
             } else if (bone.find("Finger13") != std::string::npos) {
                 RE::NiMatrix3 wr = handOpen[bone].rotate;
                 wr = getMatrixFromEulerAngles(0, 0, degreesToRads(-35.0)) * wr;
-                qt.fromRot(wr);
+                qt.fromMatrix(wr);
             }
         } else if (_closedHand[bone]) {
-            qt.fromRot(handClosed[bone].rotate);
+            qt.fromMatrix(handClosed[bone].rotate);
         } else {
-            qt.fromRot(handOpen[bone].rotate);
+            qt.fromMatrix(handOpen[bone].rotate);
             if (_handBonesButton.at(bone) == vr::k_EButton_Grip) {
                 Quaternion qo;
-                qo.fromRot(handClosed[bone].rotate);
+                qo.fromMatrix(handClosed[bone].rotate);
                 qo.slerp(1.0f - gripProx, qt);
                 qt = qo;
             }
         }
 
-        qc.fromRot(_handBones[bone].rotate);
+        qc.fromMatrix(_handBones[bone].rotate);
         const float blend = std::clamp(_frameTime * 7, 0.0, 1.0);
         qc.slerp(blend, qt);
-        _handBones[bone].rotate = qc.getMatrix3();
+        _handBones[bone].rotate = qc.getMatrix();
     }
 
     // TODO: this may be the place to fix left-handed fingers on weapon
@@ -1451,10 +1451,10 @@ namespace frik
 
         // Spherical interpolation between previous frame and current frame for the world rotation matrix
         Quaternion rq, rt;
-        rq.fromRot(prevFrame.rotate);
-        rt.fromRot(node->world.rotate);
+        rq.fromMatrix(prevFrame.rotate);
+        rt.fromMatrix(node->world.rotate);
         rq.slerp(1 - (isInScopeMenu ? g_config.dampenHandsRotationInVanillaScope : g_config.dampenHandsRotation), rt);
-        node->world.rotate = rq.getMatrix3();
+        node->world.rotate = rq.getMatrix();
 
         // Linear interpolation between the position from the previous frame to current frame
         const RE::NiPoint3 dir = _curentPosition - _lastPosition; // Offset the player movement from this interpolation

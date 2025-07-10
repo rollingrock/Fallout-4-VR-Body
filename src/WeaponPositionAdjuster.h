@@ -15,12 +15,10 @@ namespace frik
         {
             _skelly = skelly;
 
-            auto ident = common::Matrix44();
-            ident.data[2][0] = 1.0; // new X = old Z
-            ident.data[0][1] = 1.0; // new Y = old X
-            ident.data[1][2] = 1.0; // new Z = old Y
-            ident.data[3][3] = 1.0;
-            _scopeCameraBaseMatrix = ident.make43();
+            _scopeCameraBaseMatrix = RE::NiMatrix3();
+            _scopeCameraBaseMatrix.entry[2][0] = 1.0; // new X = old Z
+            _scopeCameraBaseMatrix.entry[0][1] = 1.0; // new Y = old X
+            _scopeCameraBaseMatrix.entry[1][2] = 1.0; // new Z = old Y
 
             // the angle was calculated by looking at the weapon in hand, seems to work for all weapons
             _twoHandedPrimaryHandManualAdjustment = common::getMatrixFromEulerAngles(0, common::degreesToRads(-6), common::degreesToRads(7));

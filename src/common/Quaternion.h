@@ -8,144 +8,6 @@
 
 namespace common
 {
-    class Matrix44
-    {
-    public:
-        Matrix44()
-        {
-            for (auto& i : data) {
-                for (float& j : i) {
-                    j = 0.0;
-                }
-            }
-        }
-
-        explicit Matrix44(const RE::NiMatrix3& other)
-        {
-            for (auto& i : data) {
-                for (float& j : i) {
-                    j = 0.0;
-                }
-            }
-            for (auto i = 0; i < 3; i++) {
-                for (auto j = 0; j < 3; j++) {
-                    data[i][j] = other.entry[i][j];
-                }
-            }
-        }
-
-        Matrix44& makeIdentity()
-        {
-            data[0][0] = 1.0;
-            data[0][1] = 0.0;
-            data[0][2] = 0.0;
-            data[0][3] = 0.0;
-            data[1][0] = 0.0;
-            data[1][1] = 1.0;
-            data[1][2] = 0.0;
-            data[1][3] = 0.0;
-            data[2][0] = 0.0;
-            data[2][1] = 0.0;
-            data[2][2] = 1.0;
-            data[2][3] = 0.0;
-            data[3][0] = 0.0;
-            data[3][1] = 0.0;
-            data[3][2] = 0.0;
-            data[3][3] = 0.0;
-            return *this;
-        }
-
-        void setPosition(const float x, const float y, const float z)
-        {
-            data[3][0] = x;
-            data[3][1] = y;
-            data[3][2] = z;
-        }
-
-        void setPosition(const RE::NiPoint3 pt)
-        {
-            data[3][0] = pt.x;
-            data[3][1] = pt.y;
-            data[3][2] = pt.z;
-        }
-
-        //overload
-        void operator =(const float num)
-        {
-            for (auto& i : data) {
-                for (float& j : i) {
-                    j = num;
-                }
-            }
-        }
-
-        float data[4][4];
-
-        static Matrix44 getIdentity()
-        {
-            Matrix44 ident;
-            ident.makeIdentity();
-            return ident;
-        }
-
-        static RE::NiMatrix3 getIdentity43()
-        {
-            RE::NiMatrix3 ident;
-            ident.entry[0][0] = 1.0;
-            ident.entry[0][1] = 0.0;
-            ident.entry[0][2] = 0.0;
-            ident.entry[1][0] = 0.0;
-            ident.entry[1][1] = 1.0;
-            ident.entry[1][2] = 0.0;
-            ident.entry[2][0] = 0.0;
-            ident.entry[2][1] = 0.0;
-            ident.entry[2][2] = 1.0;
-            return ident;
-        }
-
-        void rotateVectorVec(RE::NiPoint3 toVec, RE::NiPoint3 fromVec)
-        {
-            toVec = vec3Norm(toVec);
-            fromVec = vec3Norm(fromVec);
-
-            const float dotP = vec3Dot(fromVec, toVec);
-
-            if (dotP >= 0.99999) {
-                this->makeIdentity();
-                return;
-            }
-
-            RE::NiPoint3 crossP = vec3Cross(toVec, fromVec);
-            crossP = vec3Norm(crossP);
-
-            const float phi = acosf(dotP);
-            const float rCos = cos(phi);
-            const float rSin = sin(phi);
-
-            // Build the matrix
-            data[0][0] = rCos + crossP.x * crossP.x * (1.0f - rCos);
-            data[0][1] = -crossP.z * rSin + crossP.x * crossP.y * (1.0f - rCos);
-            data[0][2] = crossP.y * rSin + crossP.x * crossP.z * (1.0f - rCos);
-            data[1][0] = crossP.z * rSin + crossP.y * crossP.x * (1.0f - rCos);
-            data[1][1] = rCos + crossP.y * crossP.y * (1.0f - rCos);
-            data[1][2] = -crossP.x * rSin + crossP.y * crossP.z * (1.0f - rCos);
-            data[2][0] = -crossP.y * rSin + crossP.z * crossP.x * (1.0f - rCos);
-            data[2][1] = crossP.x * rSin + crossP.z * crossP.y * (1.0f - rCos);
-            data[2][2] = rCos + crossP.z * crossP.z * (1.0f - rCos);
-        }
-
-        RE::NiMatrix3 make43() const
-        {
-            RE::NiMatrix3 ret;
-            for (auto i = 0; i < 3; i++) {
-                for (auto j = 0; j < 3; j++) {
-                    ret.entry[i][j] = this->data[i][j];
-                }
-            }
-            return ret;
-        }
-    };
-
     class Quaternion
     {
     public:
@@ -241,30 +103,7 @@ namespace common
             z = sinAngle * axis.z;
         }
 
-        float getAngleFromAxisAngle(const Quaternion& target) const
-        {
-            const auto ret = target * this->conjugate();
-            return 2 * acosf(ret.w);
-        }
-
-        Matrix44 getRot() const
-        {
-            Matrix44 mat;
-
-            mat.data[0][0] = 2 * (w * w + x * x) - 1;
-            mat.data[0][1] = 2 * (x * y - w * z);
-            mat.data[0][2] = 2 * (x * z + w * y);
-            mat.data[1][0] = 2 * (x * y + w * z);
-            mat.data[1][1] = 2 * (w * w + y * y) - 1;
-            mat.data[1][2] = 2 * (y * z - w * x);
-            mat.data[2][0] = 2 * (x * z - w * y);
-            mat.data[2][1] = 2 * (y * z + w * x);
-            mat.data[2][2] = 2 * (w * w + z * z) - 1;
-
-            return mat;
-        }
-
-        RE::NiMatrix3 getMatrix3() const
+        RE::NiMatrix3 getMatrix() const
         {
             RE::NiMatrix3 ret;
 
@@ -283,7 +122,7 @@ namespace common
             return ret;
         }
 
-        void fromRot(const RE::NiMatrix3& rot)
+        void fromMatrix(const RE::NiMatrix3& rot)
         {
             Quaternion q;
             q.w = sqrtf(std::max<float>(0.0f, 1 + rot.entry[0][0] + rot.entry[1][1] + rot.entry[2][2])) / 2;

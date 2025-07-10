@@ -11,7 +11,7 @@
 #include "utils.h"
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
-#include "common/Matrix.h"
+#include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/scaleformUtils.h"
 #include "f4vr/VRControllersManager.h"
@@ -684,7 +684,6 @@ namespace frik
             bool helmetHeadLamp = isArmorHasHeadLamp();
             bool lightOn = f4vr::isPipboyLightOn(f4vr::getPlayer());
             bool radioOn = f4vr::isPlayerRadioEnabled();
-            Matrix44 rot;
             float radFreq = f4vr::getPlayerRadioFreq() - 23;
             static std::string pwrButtonOn("PowerButton_mesh:2");
             static std::string pwrButtonOff("PowerButton_mesh:off");
@@ -811,7 +810,6 @@ namespace frik
                             : f4vr::getPlayerNodes()->HeadLightParentNode;
                         if (lght) {
                             auto parentnode = g_config.isPipBoyTorchOnArm ? lght->parent->name : f4vr::getPlayerNodes()->HeadLightParentNode->parent->name;
-                            Matrix44 lightRot;
                             float rotz = g_config.isPipBoyTorchOnArm ? -90 : 90;
                             lght->local.rotate = lght->local.rotate * getMatrixFromEulerAngles(0, 0, degreesToRads(rotz));
                             lght->local.translate.y = g_config.isPipBoyTorchOnArm ? 0 : 4;
@@ -843,7 +841,6 @@ namespace frik
                         auto parentnode = f4vr::getPlayerNodes()->HeadLightParentNode->parent->name;
                         if (parentnode == "HMDNode") {
                             f4vr::removeChildFromNode(f4vr::getPlayerNodes()->HeadLightParentNode->parent, lght);
-                            Matrix44 LightRot;
                             lght->local.rotate = lght->local.rotate * getMatrixFromEulerAngles(0, 0, degreesToRads(90));
                             lght->local.translate.y = 4;
                             f4vr::attachChildToNode(LGHT_ATTACH, lght);
@@ -854,7 +851,6 @@ namespace frik
                         if (auto lght = f4vr::find1StChildNode(LGHT_ATTACH, "HeadLightParent")) {
                             auto parentnode = lght->parent->name;
                             if (parentnode != "HMDNode") {
-                                Matrix44 LightRot;
                                 lght->local.rotate = lght->local.rotate * getMatrixFromEulerAngles(0, 0, degreesToRads(-90));
                                 lght->local.translate.y = 0;
                                 f4vr::removeChildFromNode(lght->parent, lght);
@@ -939,7 +935,6 @@ namespace frik
                                             RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
                                                 ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
                                                 : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
-                                            Matrix44 rot;
                                             ScrollKnob->local.rotate = ScrollKnob->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(fz), 0);
                                         }
                                         if (i == 5) {
@@ -949,7 +944,6 @@ namespace frik
                                             RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
                                                 ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
                                                 : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
-                                            Matrix44 rot;
                                             ScrollKnob->local.rotate = ScrollKnob->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(roty), 0);
                                         }
                                     }
@@ -1017,7 +1011,6 @@ namespace frik
                                 RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
                                     ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
                                     : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
-                                Matrix44 rot;
                                 if (doinantHandStick.y > 0.85) {
                                     ScrollKnob->local.rotate = ScrollKnob->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(0.4f), 0);
                                 }
@@ -1103,7 +1096,6 @@ namespace frik
                                 RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
                                     ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
                                     : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
-                                Matrix44 rot;
                                 if (offHandStick.x > 0.85) {
                                     ScrollKnob->local.rotate = ScrollKnob->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(0.4), 0);
                                 }
@@ -1142,10 +1134,10 @@ namespace frik
             Quaternion rq, rt;
             // do a spherical interpolation between previous frame and current frame for the world rotation matrix
             const RE::NiTransform prevFrame = _pipboyScreenPrevFrame;
-            rq.fromRot(prevFrame.rotate);
-            rt.fromRot(pipboyScreen->world.rotate);
+            rq.fromMatrix(prevFrame.rotate);
+            rt.fromMatrix(pipboyScreen->world.rotate);
             rq.slerp(1 - g_config.dampenPipboyRotation, rt);
-            pipboyScreen->world.rotate = rq.getRot().make43();
+            pipboyScreen->world.rotate = rq.getMatrix();
             // do a linear interpolation between the position from the previous frame to current frame
             RE::NiPoint3 deltaPos = pipboyScreen->world.translate - prevFrame.translate;
             deltaPos *= g_config.dampenPipboyTranslation; // just use hands dampening value for now

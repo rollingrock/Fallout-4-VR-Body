@@ -6,7 +6,7 @@
 #include "HandPose.h"
 #include "Skeleton.h"
 #include "common/Logger.h"
-#include "common/Matrix.h"
+#include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 
@@ -164,7 +164,7 @@ namespace frik
             _offhandOffsetRot = offhandOffsetLookup.value().rotate;
         } else {
             // No stored offset for offhand, use identity for no change
-            _offhandOffsetRot = Matrix44::getIdentity43();
+            _offhandOffsetRot = getIdentityMatrix();
         }
 
         // Load stored offsets for back of hand UI for the new weapon
@@ -220,7 +220,7 @@ namespace frik
         Quaternion rotAdjust;
         const auto weaponForwardVecInScopeTransform = scopeCamera->world.rotate * (weaponForwardVec / scopeCamera->world.scale);
         rotAdjust.vec2Vec(weaponForwardVecInScopeTransform, RE::NiPoint3(1, 0, 0));
-        scopeCamera->local.rotate = rotAdjust.getMatrix3() * _scopeCameraBaseMatrix;
+        scopeCamera->local.rotate = rotAdjust.getMatrix() * _scopeCameraBaseMatrix;
     }
 
     /**
@@ -323,7 +323,7 @@ namespace frik
         rotAdjust.vec2Vec(adjustedWeaponVec, RE::NiPoint3(0, 1, 0));
 
         // Compose into final local transform
-        weapon->local.rotate = rotAdjust.getMatrix3() * _weaponOffsetTransform.rotate;
+        weapon->local.rotate = rotAdjust.getMatrix() * _weaponOffsetTransform.rotate;
 
         // -- Handle Scope:
         if (g_frik.isInScopeMenu()) {
@@ -356,7 +356,7 @@ namespace frik
         rotAdjust.vec2Vec(handLocalVec, RE::NiPoint3(1, 0, 0));
 
         // no fucking idea why it's off by specific angle
-        const auto rotAdjustWithManual = _twoHandedPrimaryHandManualAdjustment * rotAdjust.getMatrix3();
+        const auto rotAdjustWithManual = _twoHandedPrimaryHandManualAdjustment * rotAdjust.getMatrix();
 
         primaryHand->local.rotate = rotAdjustWithManual * primaryHand->local.rotate;
 
@@ -389,7 +389,7 @@ namespace frik
 
         // Compute scope rotation: align local X with this direction
         rotAdjust.vec2Vec(scopeLocalVec, RE::NiPoint3(1, 0, 0));
-        scopeCamera->local.rotate = rotAdjust.getMatrix3() * _scopeCameraBaseMatrix;
+        scopeCamera->local.rotate = rotAdjust.getMatrix() * _scopeCameraBaseMatrix;
     }
 
     /**

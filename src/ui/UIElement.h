@@ -1,7 +1,7 @@
 #pragma once
 
 #include "UIModAdapter.h"
-#include "../common/Matrix.h"
+#include "../common/Quaternion.h"
 
 namespace vrui
 {
@@ -20,7 +20,7 @@ namespace vrui
         UIElement()
         {
             _transform.translate = RE::NiPoint3(0, 0, 0);
-            _transform.rotate = common::Matrix44::getIdentity43();
+            _transform.rotate = common::getIdentityMatrix();
             _transform.scale = 1;
         }
 
