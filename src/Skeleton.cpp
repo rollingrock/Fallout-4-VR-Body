@@ -299,8 +299,8 @@ namespace frik
 
         // hands moving across the chest rotate too much.   try to handle with below
         // wp = parWp + parWr * lp =>   lp = (wp - parWp) * parWr'
-        const RE::NiPoint3 locLeft = _playerNodes->HmdNode->world.rotate.Transpose() * hmdToLeft;
-        const RE::NiPoint3 locRight = _playerNodes->HmdNode->world.rotate.Transpose() * hmdToRight;
+        const RE::NiPoint3 locLeft = matrixVecMultTempFix(_playerNodes->HmdNode->world.rotate, hmdToLeft);
+        const RE::NiPoint3 locRight = matrixVecMultTempFix(_playerNodes->HmdNode->world.rotate, hmdToRight);
 
         if (locLeft.x > locRight.x) {
             const float delta = locRight.x - locLeft.x;
@@ -309,8 +309,8 @@ namespace frik
 
         const RE::NiPoint3 sum = hmdToRight + hmdToLeft;
 
-        const RE::NiPoint3 forwardDir = vec3Norm(_playerNodes->HmdNode->world.rotate.Transpose() * vec3Norm(sum)); // rotate sum to local hmd space to get the proper angle
-        const RE::NiPoint3 hmdForwardDir = vec3Norm(_playerNodes->HmdNode->world.rotate.Transpose() * _playerNodes->HmdNode->local.translate);
+        const RE::NiPoint3 forwardDir = vec3Norm(matrixVecMultTempFix(_playerNodes->HmdNode->world.rotate, vec3Norm(sum))); // rotate sum to local hmd space to get the proper angle
+        const RE::NiPoint3 hmdForwardDir = vec3Norm(matrixVecMultTempFix(_playerNodes->HmdNode->world.rotate, _playerNodes->HmdNode->local.translate));
 
         const float anglePrime = atan2f(forwardDir.x, forwardDir.y);
         const float angleSec = atan2f(forwardDir.x, forwardDir.z);
@@ -323,7 +323,7 @@ namespace frik
 
     float Skeleton::getNeckPitch() const
     {
-        const RE::NiPoint3& lookDir = vec3Norm(_playerNodes->HmdNode->world.rotate.Transpose() * _playerNodes->HmdNode->local.translate);
+        const RE::NiPoint3& lookDir = vec3Norm(matrixVecMultTempFix(_playerNodes->HmdNode->world.rotate, _playerNodes->HmdNode->local.translate));
         return atan2f(lookDir.y, lookDir.z);
     }
 
@@ -421,7 +421,7 @@ namespace frik
         const RE::NiPoint3 hmdToNewHip = tmpHipPos - neckPos;
         const RE::NiPoint3 newHipPos = neckPos + hmdToNewHip * (_torsoLen / vec3Len(hmdToNewHip));
 
-        const RE::NiPoint3 newPos = com->local.translate + _root->world.rotate.Transpose() * (newHipPos - com->world.translate);
+        const RE::NiPoint3 newPos = com->local.translate + matrixVecMultTempFix(_root->world.rotate, (newHipPos - com->world.translate));
         const float offsetFwd = _inPowerArmor ? g_config.powerArmor_forward : g_config.playerOffset_forward;
         com->local.translate.y += newPos.y + offsetFwd;
         com->local.translate.z = _inPowerArmor ? newPos.z / 1.7f : newPos.z / 1.5f;
@@ -706,7 +706,7 @@ namespace frik
             rotV.y = 0;
             rotV.z = isLeft ? 1 : -1;
         }
-        const RE::NiPoint3 hipDir = hipNode->world.rotate * rotV;
+        const RE::NiPoint3 hipDir = matrixVecMultTempFix(hipNode->world.rotate.Transpose(), rotV);
         const RE::NiPoint3 xDir = vec3Norm(footToHip);
         const RE::NiPoint3 yDir = vec3Norm(hipDir - xDir * vec3Dot(hipDir, xDir));
 
@@ -737,7 +737,7 @@ namespace frik
         const RE::NiPoint3 kneePos = footPos + xDir * xDist + yDir * yDist;
 
         const RE::NiPoint3 pos = kneePos - hipPos;
-        RE::NiPoint3 uLocalDir = hipNode->world.rotate.Transpose() * vec3Norm(pos) / hipNode->world.scale;
+        RE::NiPoint3 uLocalDir = matrixVecMultTempFix(hipNode->world.rotate, vec3Norm(pos) / hipNode->world.scale);
         rotMat.rotateVectorVec(uLocalDir, kneeNode->local.translate);
         hipNode->local.rotate = rotMat.multiply43Left(hipNode->local.rotate);
 
@@ -747,7 +747,7 @@ namespace frik
         rotMat.makeTransformMatrix(kneeNode->local.rotate, RE::NiPoint3(0, 0, 0));
         RE::NiMatrix3 calfWR = rotMat.multiply43Left(hipWR);
 
-        uLocalDir = calfWR.Transpose() * vec3Norm(footPos - kneePos) / kneeNode->world.scale;
+        uLocalDir = matrixVecMultTempFix(calfWR, vec3Norm(footPos - kneePos) / kneeNode->world.scale);
         rotMat.rotateVectorVec(uLocalDir, footNode->local.translate);
         kneeNode->local.rotate = rotMat.multiply43Left(kneeNode->local.rotate);
 
@@ -755,13 +755,13 @@ namespace frik
         calfWR = rotMat.multiply43Left(hipWR);
 
         // Calculate Clp:  Cwp = Twp + Twr * (Clp * Tws) = kneePos   ===>   Clp = Twr' * (kneePos - Twp) / Tws
-        kneeNode->local.translate = hipWR.Transpose() * (kneePos - hipPos) / hipNode->world.scale;
+        kneeNode->local.translate = matrixVecMultTempFix(hipWR, (kneePos - hipPos) / hipNode->world.scale);
         if (vec3Len(kneeNode->local.translate) > thighLenOrig) {
             kneeNode->local.translate = vec3Norm(kneeNode->local.translate) * thighLenOrig;
         }
 
         // Calculate Flp:  Fwp = Cwp + Cwr * (Flp * Cws) = footPos   ===>   Flp = Cwr' * (footPos - Cwp) / Cws
-        footNode->local.translate = calfWR.Transpose() * (footPos - kneePos) / kneeNode->world.scale;
+        footNode->local.translate = matrixVecMultTempFix(calfWR, (footPos - kneePos) / kneeNode->world.scale);
         if (vec3Len(footNode->local.translate) > calfLenOrig) {
             footNode->local.translate = vec3Norm(footNode->local.translate) * calfLenOrig;
         }
@@ -815,13 +815,13 @@ namespace frik
 
         auto locPos = RE::NiPoint3(0, 0, 0);
 
-        locPos = pipboyBone->world.rotate * (locPos * pipboyBone->world.scale);
+        locPos = matrixVecMultTempFix(pipboyBone->world.rotate.Transpose(), (locPos * pipboyBone->world.scale));
 
         const RE::NiPoint3 wandWP = pipboyBone->world.translate + locPos;
 
         const RE::NiPoint3 delta = wandWP - wandPip->parent->world.translate;
 
-        wandPip->local.translate = wandPip->parent->world.rotate.Transpose() * (delta / wandPip->parent->world.scale);
+        wandPip->local.translate = matrixVecMultTempFix(wandPip->parent->world.rotate, (delta / wandPip->parent->world.scale));
 
         // Slr = LHwr' * RHwr * Slr
         Matrix44 loc;
@@ -1030,7 +1030,7 @@ namespace frik
             lr.setEulerAngles(0, degreesToRads(180), 0);
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate = lr.multiply43Right(_playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate);
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.translate = RE::NiPoint3(-2, -9, 2);
-            updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
+            updateTransformsFixed(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
 
         Matrix44 w;
@@ -1097,7 +1097,7 @@ namespace frik
 
         RE::NiPoint3 clavicalToNewShoulder = arm.upper->world.translate + shoulderOffset - arm.shoulder->world.translate;
 
-        RE::NiPoint3 sLocalDir = arm.shoulder->world.rotate.Transpose() * clavicalToNewShoulder / arm.shoulder->world.scale;
+        RE::NiPoint3 sLocalDir = matrixVecMultTempFix(arm.shoulder->world.rotate, clavicalToNewShoulder / arm.shoulder->world.scale);
 
         Matrix44 rotatedM;
         rotatedM = 0.0;
@@ -1155,11 +1155,11 @@ namespace frik
         RE::NiPoint3 sidewaysDir = vec3Norm(_sidewaysRDir * negLeft);
 
         // The primary twist angle comes from the direction the wrist is pointing into the forearm
-        RE::NiPoint3 handBack = handRot * RE::NiPoint3(-1, 0, 0);
+        RE::NiPoint3 handBack = matrixVecMultTempFix(handRot.Transpose(), RE::NiPoint3(-1, 0, 0));
         float twistAngle = asinf((std::clamp)(handBack.z, -0.999f, 0.999f));
 
         // The second twist angle comes from a side vector pointing "outward" from the side of the wrist
-        RE::NiPoint3 handSide = handRot * RE::NiPoint3(0, -1, 0);
+        RE::NiPoint3 handSide = matrixVecMultTempFix(handRot.Transpose(), RE::NiPoint3(0, -1, 0));
         RE::NiPoint3 handInSide = handSide * negLeft;
         float twistAngle2 = -1 * asinf((std::clamp)(handSide.z, -0.599f, 0.999f));
 
@@ -1211,7 +1211,7 @@ namespace frik
         //logger::info("{} {} {} {}", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), rads_to_degrees(twistAngle), rads_to_degrees(twistLimitAngle));
         // The bendDownDir vector points in the direction the player faces, and bends up/down with the final elbow angle
         RE::NiMatrix3 rot = getRotationAxisAngle(sidewaysDir * negLeft, twistLimitAngle);
-        RE::NiPoint3 bendDownDir = rot * forwardDir;
+        RE::NiPoint3 bendDownDir = matrixVecMultTempFix(rot.Transpose(), forwardDir);
 
         // Get the "X" direction vectors pointing to the shoulder
         RE::NiPoint3 xDir = vec3Norm(handToShoulder);
@@ -1255,7 +1255,7 @@ namespace frik
         // Calculate Ulr:  baseUwr * rotTowardElbow = Cwr * Ulr   ===>   Ulr = Cwr' * baseUwr * rotTowardElbow
         RE::NiMatrix3 Uwr = arm.upper->world.rotate;
         RE::NiPoint3 pos = elbowWorld - Uwp;
-        RE::NiPoint3 uLocalDir = Uwr.Transpose() * vec3Norm(pos) / arm.upper->world.scale;
+        RE::NiPoint3 uLocalDir = matrixVecMultTempFix(Uwr, vec3Norm(pos) / arm.upper->world.scale);
 
         rotatedM.rotateVectorVec(uLocalDir, arm.forearm1->local.translate);
         arm.upper->local.rotate = rotatedM.multiply43Left(arm.upper->local.rotate);
@@ -1267,10 +1267,10 @@ namespace frik
         // Find the angle of the forearm twisted around the upper arm and twist the upper arm to align it
         //    Uwr * twist = Cwr * Ulr   ===>   Ulr = Cwr' * Uwr * twist
         pos = handPos - elbowWorld;
-        RE::NiPoint3 uLocalTwist = Uwr.Transpose() * vec3Norm(pos);
+        RE::NiPoint3 uLocalTwist = matrixVecMultTempFix(Uwr, vec3Norm(pos));
         uLocalTwist.x = 0;
-        RE::NiPoint3 upperSide = arm.upper->world.rotate * RE::NiPoint3(0, 1, 0);
-        RE::NiPoint3 uloc = arm.shoulder->world.rotate.Transpose() * upperSide;
+        RE::NiPoint3 upperSide = matrixVecMultTempFix(arm.upper->world.rotate.Transpose(), RE::NiPoint3(0, 1, 0));
+        RE::NiPoint3 uloc = matrixVecMultTempFix(arm.shoulder->world.rotate, upperSide);
         uloc.x = 0;
         float upperAngle = acosf(vec3Dot(vec3Norm(uLocalTwist), vec3Norm(uloc))) * (uLocalTwist.z > 0 ? 1.f : -1.f);
 
@@ -1289,7 +1289,7 @@ namespace frik
         rotatedM.makeTransformMatrix(arm.forearm1->local.rotate, arm.forearm1->local.translate);
         RE::NiMatrix3 Fwr = rotatedM.multiply43Left(Uwr);
         RE::NiPoint3 elbowHand = handPos - elbowWorld;
-        RE::NiPoint3 fLocalDir = Fwr.Transpose() * vec3Norm(elbowHand);
+        RE::NiPoint3 fLocalDir = matrixVecMultTempFix(Fwr, vec3Norm(elbowHand));
 
         rotatedM.rotateVectorVec(fLocalDir, RE::NiPoint3(1, 0, 0));
         arm.forearm1->local.rotate = rotatedM.multiply43Left(arm.forearm1->local.rotate);
@@ -1307,10 +1307,11 @@ namespace frik
             // Find the angle the wrist is pointing and twist forearm3 appropriately
             //    Fwr * twist = Uwr * Flr   ===>   Flr = (Uwr' * Fwr) * twist = (Flr) * twist
 
-            RE::NiPoint3 wLocalDir = Fwr3.Transpose() * vec3Norm(handInSide);
+            RE::NiPoint3 wLocalDir = matrixVecMultTempFix(Fwr3, vec3Norm(handInSide));
             wLocalDir.x = 0;
-            RE::NiPoint3 forearm3Side = Fwr3 * RE::NiPoint3(0, 0, -1); // forearm is rotated 90 degrees already from hand so need this vector instead of 0,-1,0
-            RE::NiPoint3 floc = Fwr2.Transpose() * vec3Norm(forearm3Side);
+            RE::NiPoint3 forearm3Side = matrixVecMultTempFix(Fwr3.Transpose(), RE::NiPoint3(0, 0, -1));
+            // forearm is rotated 90 degrees already from hand so need this vector instead of 0,-1,0
+            RE::NiPoint3 floc = matrixVecMultTempFix(Fwr2, vec3Norm(forearm3Side));
             floc.x = 0;
             float fcos = vec3Dot(vec3Norm(wLocalDir), vec3Norm(floc));
             float fsin = vec3Det(vec3Norm(wLocalDir), vec3Norm(floc), RE::NiPoint3(-1, 0, 0));
@@ -1337,7 +1338,7 @@ namespace frik
         }
 
         // Calculate Flp:  Fwp = Uwp + Uwr * (Flp * Uws) = elbowWorld   ===>   Flp = Uwr' * (elbowWorld - Uwp) / Uws
-        arm.forearm1->local.translate = Uwr.Transpose() * ((elbowWorld - Uwp) / arm.upper->world.scale);
+        arm.forearm1->local.translate = matrixVecMultTempFix(Uwr, (elbowWorld - Uwp) / arm.upper->world.scale);
 
         float origEHLen = vec3Len(arm.hand->world.translate - arm.forearm1->world.translate);
         float forearmRatio = forearmLen / origEHLen * _root->local.scale;
@@ -1354,7 +1355,7 @@ namespace frik
         const RE::NiPoint3 rwp = _rightArm.shoulder->world.translate;
         const RE::NiPoint3 lwp = _leftArm.shoulder->world.translate;
         _root->local.scale = 0.00001f;
-        updateTransforms(_root);
+        updateTransformsFixed(_root);
         _root->world.translate += _forwardDir * -10.0f;
         _root->world.translate.z = rwp.z;
         updateDown(_root, false);
@@ -1362,8 +1363,8 @@ namespace frik
         _rightArm.shoulder->local.scale = 100000;
         _leftArm.shoulder->local.scale = 100000;
 
-        updateTransforms(reinterpret_cast<RE::NiNode*>(_rightArm.shoulder));
-        updateTransforms(reinterpret_cast<RE::NiNode*>(_leftArm.shoulder));
+        updateTransformsFixed(reinterpret_cast<RE::NiNode*>(_rightArm.shoulder));
+        updateTransformsFixed(reinterpret_cast<RE::NiNode*>(_leftArm.shoulder));
 
         _rightArm.shoulder->world.translate = rwp;
         _leftArm.shoulder->world.translate = lwp;
@@ -1376,7 +1377,7 @@ namespace frik
     {
         const RE::NiPoint3 rwp = _rightArm.shoulder->world.translate;
         _root->local.scale = 0.00001f;
-        updateTransforms(_root);
+        updateTransformsFixed(_root);
         _root->world.translate += _forwardDir * -10.0f;
         _root->world.translate.z = rwp.z;
         updateDown(_root, false);
@@ -1482,7 +1483,7 @@ namespace frik
             } else {
                 const short parent = rt->transforms[pos].parPos;
                 RE::NiPoint3 p = rt->transforms[pos].local.translate;
-                p = rt->transforms[parent].world.rotate * (p * rt->transforms[parent].world.scale);
+                p = matrixVecMultTempFix(rt->transforms[parent].world.rotate.Transpose(), (p * rt->transforms[parent].world.scale));
 
                 rt->transforms[pos].world.translate = rt->transforms[parent].world.translate + p;
 

@@ -217,12 +217,14 @@ namespace common
 
         RE::NiMatrix3 multiply43Left(const RE::NiMatrix3& mat) const
         {
-            return mult(mat, this->make43());
+            return this->make43() * mat;
+            // return mult(mat, this->make43());
         }
 
         RE::NiMatrix3 multiply43Right(const RE::NiMatrix3& mat) const
         {
-            return mult(this->make43(), mat);
+            return mat * this->make43();
+            // return mult(this->make43(), mat);
         }
 
         static void matrixMultiply(const Matrix44* worldMat, const Matrix44* retMat, const Matrix44* localMat)
