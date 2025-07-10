@@ -8,6 +8,21 @@
 
 namespace common
 {
+    /**
+     * Fixing matrix/vector multiplication to use column-major order.
+     * To prevent everything from breaking, we use this as a temporary fix.
+     * When the migration is complete this method will be removed to use NiMatrix3 multiplication directly.
+     * TODO: commonlibf4 migration - replace with NiMatrix3 multiplication directly
+     */
+    inline RE::NiPoint3 matrixVecMultTempFix(const RE::NiMatrix3& mat, const RE::NiPoint3& vec)
+    {
+        // Use correct column-major matrix multiplication (CommonLibF4 standard)
+        return RE::NiPoint3(
+            mat.entry[0][0] * vec.x + mat.entry[0][1] * vec.y + mat.entry[0][2] * vec.z,
+            mat.entry[1][0] * vec.x + mat.entry[1][1] * vec.y + mat.entry[1][2] * vec.z,
+            mat.entry[2][0] * vec.x + mat.entry[2][1] * vec.y + mat.entry[2][2] * vec.z);
+    }
+
     class Matrix44
     {
     public:
@@ -378,6 +393,25 @@ namespace common
             mat.data[2][2] = 2 * (w * w + z * z) - 1;
 
             return mat;
+        }
+
+        RE::NiMatrix3 getMatrix3() const
+        {
+            RE::NiMatrix3 ret;
+
+            ret.entry[0][0] = 2 * (w * w + x * x) - 1;
+            ret.entry[0][1] = 2 * (x * y - w * z);
+            ret.entry[0][2] = 2 * (x * z + w * y);
+
+            ret.entry[1][0] = 2 * (x * y + w * z);
+            ret.entry[1][1] = 2 * (w * w + y * y) - 1;
+            ret.entry[1][2] = 2 * (y * z - w * x);
+
+            ret.entry[2][0] = 2 * (x * z - w * y);
+            ret.entry[2][1] = 2 * (y * z + w * x);
+            ret.entry[2][2] = 2 * (w * w + z * z) - 1;
+
+            return ret;
         }
 
         void fromRot(const RE::NiMatrix3& rot)

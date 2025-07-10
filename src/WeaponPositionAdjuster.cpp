@@ -102,7 +102,7 @@ namespace frik
         // override the weapon transform to the saved offset
         weapon->local = _weaponOffsetTransform;
         // update world transform for later calculations
-        f4vr::updateTransforms(weapon);
+        f4vr::updateTransformsFixed(weapon);
 
         if (_configMode) {
             _configMode->onFrameUpdate(weapon);
@@ -211,16 +211,16 @@ namespace frik
 
         // need to update default transform for later world rotation use
         scopeCamera->local.rotate = _scopeCameraBaseMatrix;
-        f4vr::updateTransforms(scopeCamera);
+        f4vr::updateTransformsFixed(scopeCamera);
 
         // get the "forward" vector of the weapon (direction of the bullets)
         const auto weaponForwardVec = RE::NiPoint3(weapon->world.rotate.entry[1][0], weapon->world.rotate.entry[1][1], weapon->world.rotate.entry[1][2]);
 
         // Calculate the rotation adjustment using quaternion by diff between scope camera vector and straight
         Quaternion rotAdjust;
-        const auto weaponForwardVecInScopeTransform = scopeCamera->world.rotate.Transpose() * weaponForwardVec / scopeCamera->world.scale;
+        const auto weaponForwardVecInScopeTransform = matrixVecMultTempFix(scopeCamera->world.rotate, weaponForwardVec / scopeCamera->world.scale);
         rotAdjust.vec2Vec(weaponForwardVecInScopeTransform, RE::NiPoint3(1, 0, 0));
-        scopeCamera->local.rotate = rotAdjust.getRot().multiply43Left(_scopeCameraBaseMatrix);
+        scopeCamera->local.rotate = rotAdjust.getMatrix3() * _scopeCameraBaseMatrix;
     }
 
     /**
@@ -314,16 +314,16 @@ namespace frik
         const auto weaponToOffhandVecWorld = getOffhandPosition() - getPrimaryHandPosition();
 
         // Convert world-space vector into weapon space
-        const auto weaponLocalVec = weapon->world.rotate.Transpose() * vec3Norm(weaponToOffhandVecWorld) / weapon->world.scale;
+        const auto weaponLocalVec = matrixVecMultTempFix(weapon->world.rotate, vec3Norm(weaponToOffhandVecWorld) / weapon->world.scale);
 
         // Desired weapon forward direction after applying offhand offset
-        const auto adjustedWeaponVec = _offhandOffsetRot * weaponLocalVec;
+        const auto adjustedWeaponVec = matrixVecMultTempFix(_offhandOffsetRot.Transpose(), weaponLocalVec);
 
         // Compute rotation from canonical forward (Y) to adjusted direction
         rotAdjust.vec2Vec(adjustedWeaponVec, RE::NiPoint3(0, 1, 0));
 
         // Compose into final local transform
-        weapon->local.rotate = rotAdjust.getRot().multiply43Left(_weaponOffsetTransform.rotate);
+        weapon->local.rotate = rotAdjust.getMatrix3() * _weaponOffsetTransform.rotate;
 
         // -- Handle Scope:
         if (g_frik.isInScopeMenu()) {
@@ -336,30 +336,29 @@ namespace frik
         // -- Handle offset pivot:
 
         // Pivot in local space (point where weapon touches primary hand)
-        const auto gripPivotLocal = weapon->world.rotate.Transpose() *
-            (getPrimaryHandPosition() - weapon->world.translate) / weapon->world.scale;
+        const auto gripPivotLocal = matrixVecMultTempFix(weapon->world.rotate, (getPrimaryHandPosition() - weapon->world.translate) / weapon->world.scale);
 
         // Recompute position so that the grip stays in place
-        const auto rotatedGripPos = weapon->local.rotate * gripPivotLocal;
-        const auto originalGripPos = _weaponOffsetTransform.rotate * gripPivotLocal;
+        const auto rotatedGripPos = matrixVecMultTempFix(weapon->local.rotate.Transpose(), gripPivotLocal);
+        const auto originalGripPos = matrixVecMultTempFix(_weaponOffsetTransform.rotate.Transpose(), gripPivotLocal);
         weapon->local.translate = _weaponOffsetTransform.translate + (originalGripPos - rotatedGripPos);
 
-        f4vr::updateTransforms(weapon);
+        f4vr::updateTransformsFixed(weapon);
 
         // -- Handle primary hand rotation:
 
         // Transform the offhand offset adjusted vector from weapon space to world space so we can adjust it into hand and scope space
-        const auto adjustedWeaponVecWorld = _weaponOriginalWorldTransform.rotate * (adjustedWeaponVec * _weaponOriginalWorldTransform.scale);
+        const auto adjustedWeaponVecWorld = matrixVecMultTempFix(_weaponOriginalWorldTransform.rotate.Transpose(), (adjustedWeaponVec * _weaponOriginalWorldTransform.scale));
 
         // Rotate the primary hand so it will stay on the weapon stock
         const auto primaryHand = (f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand);
-        const auto handLocalVec = primaryHand->world.rotate.Transpose() * adjustedWeaponVecWorld / primaryHand->world.scale;
+        const auto handLocalVec = matrixVecMultTempFix(primaryHand->world.rotate, adjustedWeaponVecWorld / primaryHand->world.scale);
         rotAdjust.vec2Vec(handLocalVec, RE::NiPoint3(1, 0, 0));
 
         // no fucking idea why it's off by specific angle
-        const auto rotAdjustWithManual = Matrix44(rotAdjust.getRot().multiply43Right(_twoHandedPrimaryHandManualAdjustment));
+        const auto rotAdjustWithManual = _twoHandedPrimaryHandManualAdjustment * rotAdjust.getMatrix3();
 
-        primaryHand->local.rotate = rotAdjustWithManual.multiply43Left(primaryHand->local.rotate);
+        primaryHand->local.rotate = rotAdjustWithManual * primaryHand->local.rotate;
 
         // update all the fingers to match the hand rotation
         f4vr::updateDown(primaryHand, true, weapon->name.c_str());
@@ -373,23 +372,24 @@ namespace frik
     {
         const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
 
-        // adjust the position after all the calculation above
+        // Adjust the position after all the calculation above using consistent coordinate system
+        // Use the same coordinate transformation as the main scope function: (y, x, -z)
         const auto weaponPosDiff = weapon->local.translate - _weaponOriginalTransform.translate;
         scopeCamera->local.translate = RE::NiPoint3(weaponPosDiff.y, weaponPosDiff.x, -weaponPosDiff.z);
 
         // Set base camera matrix first (remaps axes from weapon to scope system)
         scopeCamera->local.rotate = _scopeCameraBaseMatrix;
-        f4vr::updateTransforms(scopeCamera);
+        f4vr::updateTransformsFixed(scopeCamera);
 
         // Transform the offhand offset adjusted vector from weapon space to world space so we can adjust it into scope space
-        const auto adjustedWeaponVecWorld = weapon->world.rotate * (adjustedWeaponVec * weapon->world.scale);
+        const auto adjustedWeaponVecWorld = matrixVecMultTempFix(weapon->world.rotate.Transpose(), (adjustedWeaponVec * weapon->world.scale));
 
         // Convert it into scope space
-        const auto scopeLocalVec = scopeCamera->world.rotate.Transpose() * adjustedWeaponVecWorld / scopeCamera->world.scale;
+        const auto scopeLocalVec = matrixVecMultTempFix(scopeCamera->world.rotate, adjustedWeaponVecWorld / scopeCamera->world.scale);
 
         // Compute scope rotation: align local X with this direction
         rotAdjust.vec2Vec(scopeLocalVec, RE::NiPoint3(1, 0, 0));
-        scopeCamera->local.rotate = rotAdjust.getRot().multiply43Left(_scopeCameraBaseMatrix);
+        scopeCamera->local.rotate = rotAdjust.getMatrix3() * _scopeCameraBaseMatrix;
     }
 
     /**
@@ -400,8 +400,8 @@ namespace frik
     {
         const auto offhand2WeaponVec = getOffhandPosition() - getPrimaryHandPosition();
         const float distanceFromPrimaryHand = vec3Len(offhand2WeaponVec);
-        const auto weaponLocalVec = weapon->world.rotate.Transpose() * vec3Norm(offhand2WeaponVec) / weapon->world.scale;
-        const auto adjustedWeaponVec = _offhandOffsetRot * weaponLocalVec;
+        const auto weaponLocalVec = matrixVecMultTempFix(weapon->world.rotate, vec3Norm(offhand2WeaponVec) / weapon->world.scale);
+        const auto adjustedWeaponVec = matrixVecMultTempFix(_offhandOffsetRot.Transpose(), weaponLocalVec);
         const float angleDiffToWeaponVec = vec3Dot(vec3Norm(adjustedWeaponVec), RE::NiPoint3(0, 1, 0));
         return angleDiffToWeaponVec > 0.955 && distanceFromPrimaryHand > 15;
     }
