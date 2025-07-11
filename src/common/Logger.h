@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <unordered_map>
+#include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
 namespace fs = std::filesystem;
@@ -30,10 +31,19 @@ namespace fs = std::filesystem;
 
 namespace common::logger::internal
 {
+    class HybridFormatter;
+
+    static constexpr auto RAW_LOGGER_NAME = "RAW"sv;
+
     /**
      * Global logger instance
      */
     inline std::shared_ptr<spdlog::logger> _logger;
+
+    /**
+     * Logger for raw logging (without the log pattern)
+     */
+    inline std::shared_ptr<spdlog::logger> _rawLogger;
 
     /**
      * Current log level
@@ -68,6 +78,36 @@ namespace common::logger::internal
         std::string formatted = fmt::format(fmt, std::forward<Args>(args)...);
         _logger->log(spdlog::level::info, "[SAMPLE] {}", formatted);
     }
+
+    /**
+     * Custom formatter used to be able to format dump messages without the pattern prefix
+     */
+    class HybridFormatter : public spdlog::formatter
+    {
+    public:
+        HybridFormatter()
+        {
+            inner = std::make_unique<spdlog::pattern_formatter>(_logPattern);
+        }
+
+        virtual std::unique_ptr<formatter> clone() const override
+        {
+            return std::make_unique<HybridFormatter>();
+        }
+
+        virtual void format(const spdlog::details::log_msg& msg, spdlog::memory_buf_t& dest) override
+        {
+            if (msg.logger_name == RAW_LOGGER_NAME) {
+                dest.append(msg.payload);
+                dest.append("\n"sv);
+            } else {
+                inner->format(msg, dest);
+            }
+        }
+
+    private:
+        std::unique_ptr<spdlog::pattern_formatter> inner;
+    };
 }
 
 namespace common::logger
@@ -98,8 +138,7 @@ namespace common::logger
     template <class... Args>
     void infoRaw(spdlog::format_string_t<Args...> fmt, Args&&... args)
     {
-        // TODO:: handle no extra formatting logging
-        internal::_logger->log(spdlog::level::info, fmt, std::forward<Args>(args)...);
+        internal::_rawLogger->log(spdlog::level::info, fmt, std::forward<Args>(args)...);
     }
 
     /**
@@ -118,16 +157,15 @@ namespace common::logger
         *path /= fmt::format("{}.log"sv, logFileName);
         auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(path->string(), 1024 * 1024 * 10, 5, true);
 
-        internal::_logger = std::make_shared<spdlog::logger>("GLOBAL"s, std::move(sink));
-
-        constexpr auto level = spdlog::level::info;
-        internal::_logger->set_level(level);
-        internal::_logger->flush_on(level);
-
+        internal::_logger = std::make_shared<spdlog::logger>("GLOBAL"s, sink);
+        internal::_logger->set_level(spdlog::level::info);
+        internal::_logger->flush_on(spdlog::level::info);
+        internal::_logger->set_formatter(std::make_unique<internal::HybridFormatter>());
         spdlog::set_default_logger(internal::_logger);
 
-        // see: https://github.com/gabime/spdlog/wiki/Custom-formatting
-        spdlog::set_pattern(internal::_logPattern);
+        internal::_rawLogger = std::make_shared<spdlog::logger>(std::string(internal::RAW_LOGGER_NAME), sink);
+        internal::_rawLogger->set_level(spdlog::level::info);
+        internal::_rawLogger->flush_on(spdlog::level::info);
     }
 
     /**
@@ -143,9 +181,11 @@ namespace common::logger
             internal::_logger->flush_on(levelEnum);
         }
 
+        // see: https://github.com/gabime/spdlog/wiki/Custom-formatting
         if (internal::_logPattern != logPattern) {
             info("Set log pattern = {}", logPattern);
-            spdlog::set_pattern(logPattern);
+            internal::_logPattern = logPattern;
+            spdlog::set_formatter(std::make_unique<internal::HybridFormatter>());
         }
     }
 }
