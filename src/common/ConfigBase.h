@@ -232,25 +232,29 @@ namespace common
          */
         static void loadOffsetJsonFile(const std::string& file, std::unordered_map<std::string, RE::NiTransform>& offsetsMap)
         {
-            std::ifstream inF;
-            inF.open(file, std::ios::in);
-            if (inF.fail()) {
-                logger::warn("cannot open {}", file.c_str());
-                inF.close();
-                return;
-            }
-
-            json weaponJson;
             try {
-                inF >> weaponJson;
-            } catch (json::parse_error& ex) {
-                logger::info("cannot open {}: parse error at byte {}", file.c_str(), ex.byte);
-                inF.close();
-                return;
-            }
-            inF.close();
+                std::ifstream inF;
+                inF.open(file, std::ios::in);
+                if (inF.fail()) {
+                    logger::warn("cannot open {}", file.c_str());
+                    inF.close();
+                    return;
+                }
 
-            loadOffsetJsonToMap(weaponJson, offsetsMap);
+                json weaponJson;
+                try {
+                    inF >> weaponJson;
+                } catch (json::parse_error& ex) {
+                    logger::info("cannot open {}: parse error at byte {}", file.c_str(), ex.byte);
+                    inF.close();
+                    return;
+                }
+                inF.close();
+
+                loadOffsetJsonToMap(weaponJson, offsetsMap);
+            } catch (std::exception& ex) {
+                std::throw_with_nested(std::runtime_error(fmt::format("Failed to load offset json from file '{}':\n\t{}", file.c_str(), ex.what())));
+            }
         }
 
         /**
@@ -292,7 +296,7 @@ namespace common
             json offsetJson;
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 4; j++) {
-                    offsetJson[name]["rotation"] = transform.rotate[i][j];
+                    offsetJson[name]["rotation"].push_back(transform.rotate[i][j]);
                 }
             }
             offsetJson[name]["x"] = transform.translate.x;
@@ -320,18 +324,22 @@ namespace common
          */
         static void loadOffsetJsonToMap(const json& json, std::unordered_map<std::string, RE::NiTransform>& offsetsMap)
         {
-            for (auto& [key, value] : json.items()) {
-                RE::NiTransform data;
-                for (int i = 0; i < 3; i++) {
-                    for (int j = 0; j < 4; j++) {
-                        data.rotate[i][j] = value["rotation"][i * 4 + j].get<float>();
+            try {
+                for (auto& [key, value] : json.items()) {
+                    RE::NiTransform data;
+                    for (int i = 0; i < 3; i++) {
+                        for (int j = 0; j < 4; j++) {
+                            data.rotate[i][j] = value["rotation"][i * 4 + j].get<float>();
+                        }
                     }
+                    data.translate.x = value["x"].get<float>();
+                    data.translate.y = value["y"].get<float>();
+                    data.translate.z = value["z"].get<float>();
+                    data.scale = value["scale"].get<float>();
+                    offsetsMap[key] = data;
                 }
-                data.translate.x = value["x"].get<float>();
-                data.translate.y = value["y"].get<float>();
-                data.translate.z = value["z"].get<float>();
-                data.scale = value["scale"].get<float>();
-                offsetsMap[key] = data;
+            } catch (std::exception& ex) {
+                std::throw_with_nested(std::runtime_error(fmt::format("Failed to load offset json:\n\t{}", ex.what())));
             }
         }
 
