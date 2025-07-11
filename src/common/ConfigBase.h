@@ -55,7 +55,7 @@ namespace common
             }
             _debugDumpDataOnceNames = _debugDumpDataOnceNames.erase(idx, strlen(name));
             // write to INI for auto-reload not to re-enable it
-            saveIniConfigValue(INI_SECTION_DEBUG, "DebugDumpDataOnceNames", _debugDumpDataOnceNames.c_str());
+            saveIniConfigValue(INI_SECTION_DEBUG, "sDebugDumpDataOnceNames", _debugDumpDataOnceNames.c_str());
 
             logger::info("---- Debug Dump Data check passed for '{}' ----", name);
             return true;

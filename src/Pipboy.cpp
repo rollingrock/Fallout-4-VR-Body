@@ -156,13 +156,12 @@ namespace frik
             ? hideNode = f4vr::findChildNode(f4vr::getWorldRootNode(), "Screen")
             : hideNode = f4vr::findChildNode(f4vr::getWorldRootNode(), "HoloEmitter");
         if (hideNode) {
-            if (hideNode->local.scale != 0) {
+            if (fNotEqual(hideNode->local.scale, 0)) {
                 hideNode->flags.flags |= 0x1;
                 hideNode->local.scale = 0;
             }
         }
 
-        // TODO: moved from end of F4VRBody, check works well
         // sets 3rd Person Pipboy Scale
         if (const auto pipboy3Rd = f4vr::findChildNode(f4vr::getWorldRootNode(), "PipboyBone")) {
             pipboy3Rd->local.scale = g_config.pipBoyScale;
@@ -180,7 +179,7 @@ namespace frik
                 f4vr::removeChildAtFromNode(pn->ScreenNode, 0);
 
                 newScreen = f4vr::findAVObject(pn->PipboyRoot_nif_only_node, screenName)->parent;
-                RE::NiNode* rn = f4vr::addNode((uint64_t)&pn->ScreenNode, newScreen);
+                f4vr::addNode(reinterpret_cast<uint64_t>(&pn->ScreenNode), newScreen);
             }
         }
     }
@@ -191,39 +190,28 @@ namespace frik
     void Pipboy::replaceMeshes(const std::string& itemHide, const std::string& itemShow)
     {
         const auto pn = f4vr::getPlayerNodes();
-        const auto ui = pn->primaryUIAttachNode;
-        auto wand = f4vr::find1StChildNode(ui, "world_primaryWand.nif");
-        auto retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/_primaryWand.nif");
-        if (retNode) {
-            f4vr::removeChildFromNode(ui, wand);
-            f4vr::attachChildToNode(ui, retNode);
-        }
-
-        wand = pn->SecondaryWandNode;
-        RE::NiNode* pipParent = f4vr::find1StChildNode(wand, "PipboyParent");
-
+        RE::NiNode* pipParent = f4vr::find1StChildNode(pn->SecondaryWandNode, "PipboyParent");
         if (!pipParent) {
             meshesReplaced = false;
             return;
         }
-        wand = f4vr::find1StChildNode(pipParent, "PipboyRoot_NIF_ONLY");
-        g_config.isHoloPipboy ? retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/HoloPipboyVR.nif") : retNode = vrui::loadNifFromFile("Data/Meshes/FRIK/PipboyVR.nif");
-        if (retNode && wand) {
-            const std::string screenName("Screen:0");
-            const RE::NiAVObject* newScreen = f4vr::findAVObject(retNode, screenName)->parent;
 
+        const auto pipboyRoot = f4vr::find1StChildNode(pipParent, "PipboyRoot_NIF_ONLY");
+        const auto pipboyReplacetNode = vrui::loadNifFromFile(g_config.isHoloPipboy ? "Data/Meshes/FRIK/HoloPipboyVR.nif" : "Data/Meshes/FRIK/PipboyVR.nif");
+        if (pipboyReplacetNode && pipboyRoot) {
+            const auto newScreen = f4vr::findAVObject(pipboyReplacetNode, "Screen:0")->parent;
             if (!newScreen) {
                 meshesReplaced = false;
                 return;
             }
 
-            f4vr::removeChildFromNode(pipParent, wand);
-            f4vr::attachChildToNode(pipParent, retNode);
+            f4vr::removeChildFromNode(pipParent, pipboyRoot);
+            f4vr::attachChildToNode(pipParent, pipboyReplacetNode);
 
             f4vr::removeChildAtFromNode(pn->ScreenNode, 0);
             // using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
-            RE::NiNode* rn = f4vr::addNode((uint64_t)&pn->ScreenNode, newScreen);
-            pn->PipboyRoot_nif_only_node = retNode;
+            f4vr::addNode(reinterpret_cast<uint64_t>(&pn->ScreenNode), newScreen);
+            pn->PipboyRoot_nif_only_node = pipboyReplacetNode;
         }
 
         meshesReplaced = true;
