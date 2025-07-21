@@ -312,12 +312,12 @@ namespace frik
 
     void FRIK::configureGameVars()
     {
-        logger::info("Setting VRScale from:({:.3f}) to:({:.3f})", f4vr::getIniSettingFloat("fVrScale:VR"), g_config.fVrScale);
-        f4vr::setIniSettingFloat("fVrScale:VR", g_config.fVrScale);
+        logger::info("Setting VRScale from:({:.3f}) to:({:.3f})", f4vr::getIniSetting("fVrScale:VR")->GetFloat(), g_config.fVrScale);
+        f4vr::getIniSetting("fVrScale:VR", true)->SetFloat(g_config.fVrScale);
 
-        f4vr::setIniSettingFloat("fPipboyMaxScale:VRPipboy", 3.0000);
-        f4vr::setIniSettingFloat("fPipboyMinScale:VRPipboy", 0.0100f);
-        f4vr::setIniSettingFloat("fVrPowerArmorScaleMultiplier:VR", 1.0000);
+        f4vr::getIniSetting("fPipboyMaxScale:VRPipboy", true)->SetFloat(3.0000);
+        f4vr::getIniSetting("fPipboyMinScale:VRPipboy", true)->SetFloat(0.0100f);
+        f4vr::getIniSetting("fVrPowerArmorScaleMultiplier:VR", true)->SetFloat(1.0000);
     }
 
     /**

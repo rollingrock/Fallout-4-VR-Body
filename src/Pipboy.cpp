@@ -153,8 +153,8 @@ namespace frik
         //Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
         RE::NiNode* hideNode;
         g_config.isHoloPipboy
-            ? hideNode = f4vr::findChildNode(f4vr::getWorldRootNode(), "Screen")
-            : hideNode = f4vr::findChildNode(f4vr::getWorldRootNode(), "HoloEmitter");
+            ? hideNode = f4vr::findNode(f4vr::getWorldRootNode(), "Screen")
+            : hideNode = f4vr::findNode(f4vr::getWorldRootNode(), "HoloEmitter");
         if (hideNode) {
             if (fNotEqual(hideNode->local.scale, 0)) {
                 hideNode->flags.flags |= 0x1;
@@ -163,7 +163,7 @@ namespace frik
         }
 
         // sets 3rd Person Pipboy Scale
-        if (const auto pipboy3Rd = f4vr::findChildNode(f4vr::getWorldRootNode(), "PipboyBone")) {
+        if (const auto pipboy3Rd = f4vr::findNode(f4vr::getWorldRootNode(), "PipboyBone")) {
             pipboy3Rd->local.scale = g_config.pipBoyScale;
         }
     }
@@ -222,11 +222,11 @@ namespace frik
         }
 
         pn->PipboyRoot_nif_only_node->local.scale = 0.0; //prevents the VRPipboy screen from being displayed on first load whilst PB is off.
-        if (const auto hideNode = f4vr::findChildNode(f4vr::getWorldRootNode(), itemHide.c_str())) {
+        if (const auto hideNode = f4vr::findNode(f4vr::getWorldRootNode(), itemHide.c_str())) {
             hideNode->flags.flags |= 0x1;
             hideNode->local.scale = 0;
         }
-        if (const auto showNode = f4vr::findChildNode(f4vr::getWorldRootNode(), itemShow.c_str())) {
+        if (const auto showNode = f4vr::findNode(f4vr::getWorldRootNode(), itemShow.c_str())) {
             showNode->flags.flags &= 0xfffffffffffffffe;
             showNode->local.scale = 1;
         }

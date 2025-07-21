@@ -29,22 +29,17 @@ namespace f4vr
     // settings
     bool isLeftHandedMode();
     bool useWandDirectionalMovement();
-    float getIniSettingFloat(const char* name);
-    void setIniSettingBool(const char* name, bool value);
-    void setIniSettingFloat(const char* name, float value);
-    RE::Setting* getIniSettingNative(const char* name);
+    RE::Setting* getIniSetting(const char* name, bool addNew = false);
 
     // nodes
     RE::NiAVObject* findAVObject(RE::NiAVObject* node, const std::string& name, const int maxDepth = 999);
     RE::NiNode* findNode(RE::NiAVObject* node, const char* name, const int maxDepth = 999);
-    RE::NiNode* findChildNode(RE::NiNode* node, const char* nodeName);
-    RE::NiNode* find1StChildNode(const RE::NiAVObject* node, const char* nodeName);
+    RE::NiNode* find1StChildNode(RE::NiAVObject* node, const char* name);
 
     // visibility
     bool isNodeVisible(const RE::NiNode* node);
-    void setNodeVisibility(RE::NiAVObject* node, bool show = true);
-    void setNodeVisibilityDeep(RE::NiAVObject* node, bool show, bool updateSelf);
-    void toggleVis(RE::NiAVObject* node, bool hide, bool updateSelf);
+    void setNodeVisibility(RE::NiAVObject* node, bool show);
+    void setNodeVisibilityDeep(RE::NiAVObject* node, bool show, bool updateSelf = true);
 
     // updates
     void updateDownFromRoot();

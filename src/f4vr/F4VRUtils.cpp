@@ -66,13 +66,9 @@ namespace f4vr
         if (!inventory) {
             return false;
         }
-        for (const auto& item : inventory->data) {
-            const bool isWeapon = item.object->formType == RE::ENUM_FORM_ID::kWEAP;
-            if (isWeapon && item.stackData->flags.any(RE::BGSInventoryItem::Stack::Flag::kSlotMask)) {
-                return true;
-            }
-        }
-        return false;
+        return std::ranges::any_of(inventory->data, [](const auto& item) {
+            return item.object->formType == RE::ENUM_FORM_ID::kWEAP && item.stackData->flags.any(RE::BGSInventoryItem::Stack::Flag::kSlotMask);
+        });
     }
 
     /**
@@ -209,29 +205,31 @@ namespace f4vr
         return *iniUseWandDirectionalMovement;
     }
 
-    float getIniSettingFloat(const char* name)
+    /**
+     * Get the INI setting by name.
+     */
+    RE::Setting* getIniSetting(const char* name, const bool addNew)
     {
-        const auto setting = getIniSettingNative(name);
-        return setting ? setting->GetFloat() : 0;
-    }
-
-    void setIniSettingBool(const char* name, const bool value)
-    {
-        if (const auto setting = getIniSettingNative(name)) {
-            setting->SetBinary(value);
+        auto setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting(name);
+        if (setting) {
+            return setting;
         }
-    }
 
-    void setIniSettingFloat(const char* name, const float value)
-    {
-        if (const auto setting = getIniSettingNative(name)) {
-            setting->SetFloat(value);
+        const auto collection = RE::INISettingCollection::GetSingleton();
+        setting = collection->GetSetting(name);
+        if (setting) {
+            return setting;
         }
-    }
 
-    RE::Setting* getIniSettingNative(const char* name)
-    {
-        return RE::INISettingCollection::GetSingleton()->GetSetting(name);
+        if (!addNew) {
+            common::logger::warn("Setting '{}' not found in INI settings", name);
+            return nullptr;
+        }
+
+        common::logger::warn("Setting '{}' not found in INI settings, adding new", name);
+        RE::Setting newSetting("", 0);
+        collection->Add(&newSetting);
+        return collection->GetSetting(name);
     }
 
     /**
@@ -264,12 +262,16 @@ namespace f4vr
      */
     RE::NiNode* findNode(RE::NiAVObject* node, const char* name, const int maxDepth)
     {
-        if (!node || maxDepth < 0) {
+        if (!node) {
             return nullptr;
         }
 
         if (_stricmp(name, node->name.c_str()) == 0) {
             return node->IsNode();
+        }
+
+        if (maxDepth < 1) {
+            return nullptr;
         }
 
         if (const auto niNode = node->IsNode()) {
@@ -286,39 +288,12 @@ namespace f4vr
         return nullptr;
     }
 
-    // TODO: remove duplicate
-    RE::NiNode* findChildNode(RE::NiNode* node, const char* nodeName)
+    /**
+     * Find a node by name restricted to firest level of children only.
+     */
+    RE::NiNode* find1StChildNode(RE::NiAVObject* node, const char* name)
     {
-        if (!_stricmp(nodeName, node->name.c_str())) {
-            return node;
-        }
-
-        for (const auto& child : node->children) {
-            if (child) {
-                if (const auto childNiNode = child->IsNode()) {
-                    if (const auto ret = findChildNode(childNiNode, nodeName)) {
-                        return ret;
-                    }
-                }
-            }
-        }
-        return nullptr;
-    }
-
-    RE::NiNode* find1StChildNode(const RE::NiAVObject* node, const char* nodeName)
-    {
-        if (const auto niNode = node->IsNode()) {
-            for (const auto& child : niNode->children) {
-                if (child) {
-                    if (const auto childNiNode = child->IsNode()) {
-                        if (!_stricmp(nodeName, childNiNode->name.c_str())) {
-                            return childNiNode;
-                        }
-                    }
-                }
-            }
-        }
-        return nullptr;
+        return findNode(node, name, 1);
     }
 
     /**
@@ -339,31 +314,18 @@ namespace f4vr
         }
     }
 
+    /**
+     * Change flags to show or hide a node and ALL of its children recursively.
+     */
     void setNodeVisibilityDeep(RE::NiAVObject* node, const bool show, const bool updateSelf)
     {
         if (node && updateSelf) {
-            node->flags.flags = show ? (node->flags.flags & ~0x1) : (node->flags.flags | 0x1);
+            setNodeVisibility(node, show);
         }
         if (const auto niNode = node->IsNode()) {
             for (const auto& child : niNode->children) {
                 if (child) {
                     setNodeVisibilityDeep(child.get(), show, true);
-                }
-            }
-        }
-    }
-
-    // TODO: check removing this in favor of setNodeVisibilityDeep
-    void toggleVis(RE::NiAVObject* node, const bool hide, const bool updateSelf)
-    {
-        if (updateSelf) {
-            node->flags.flags = hide ? node->flags.flags | 0x1 : node->flags.flags & ~0x1;
-        }
-
-        if (const auto niNode = node->IsNode()) {
-            for (const auto& child : niNode->children) {
-                if (child) {
-                    toggleVis(child.get(), hide, true);
                 }
             }
         }

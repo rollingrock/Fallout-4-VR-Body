@@ -113,18 +113,18 @@ namespace frik
             _controlsThumbstickEnableState = toEnable;
             common::logger::debug("Set player controls thumbstick '{}'", toEnable ? "enable" : "disable");
             if (toEnable) {
-                f4vr::setIniSettingFloat("fLThumbDeadzone:Controls", _controlsThumbstickOriginalDeadzone);
-                f4vr::setIniSettingFloat("fLThumbDeadzoneMax:Controls", _controlsThumbstickOriginalDeadzoneMax);
+                f4vr::getIniSetting("fLThumbDeadzone:Controls")->SetFloat(_controlsThumbstickOriginalDeadzone);
+                f4vr::getIniSetting("fLThumbDeadzoneMax:Controls")->SetFloat(_controlsThumbstickOriginalDeadzoneMax);
             } else {
-                const auto controlsThumbstickOriginalDeadzone = f4vr::getIniSettingFloat("fLThumbDeadzone:Controls");
+                const auto controlsThumbstickOriginalDeadzone = f4vr::getIniSetting("fLThumbDeadzone:Controls")->GetFloat();
                 if (controlsThumbstickOriginalDeadzone < 1) {
                     _controlsThumbstickOriginalDeadzone = controlsThumbstickOriginalDeadzone;
-                    _controlsThumbstickOriginalDeadzoneMax = f4vr::getIniSettingFloat("fLThumbDeadzoneMax:Controls");
+                    _controlsThumbstickOriginalDeadzoneMax = f4vr::getIniSetting("fLThumbDeadzoneMax:Controls")->GetFloat();
                 } else {
                     common::logger::warn("Controls thumbstick deadzone is already set to 1.0, not changing it.");
                 }
-                f4vr::setIniSettingFloat("fLThumbDeadzone:Controls", 1.0);
-                f4vr::setIniSettingFloat("fLThumbDeadzoneMax:Controls", 1.0);
+                f4vr::getIniSetting("fLThumbDeadzone:Controls")->SetFloat(1.0);
+                f4vr::getIniSetting("fLThumbDeadzoneMax:Controls")->SetFloat(1.0);
             }
         }
 

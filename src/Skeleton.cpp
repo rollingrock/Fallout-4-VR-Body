@@ -921,11 +921,11 @@ namespace frik
         if (!g_config.hidePipboy) {
             if (!fEqual(pipboy->local.scale, g_config.pipBoyScale)) {
                 pipboy->local.scale = g_config.pipBoyScale;
-                toggleVis(pipboy, false, true);
+                setNodeVisibilityDeep(pipboy, true);
             }
         } else if (pipboy->local.scale != 0.0) {
             pipboy->local.scale = 0.0;
-            toggleVis(pipboy, true, true);
+            setNodeVisibilityDeep(pipboy, false);
         }
     }
 
