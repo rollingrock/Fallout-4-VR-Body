@@ -3,7 +3,6 @@
 #include "PlayerNodes.h"
 #include "../Config.h"
 #include "f4sevr/Forms.h"
-#include "f4sevr/Nodes.h"
 #include "f4sevr/PapyrusUtils.h"
 
 namespace f4vr
@@ -343,8 +342,9 @@ namespace f4vr
             return;
         }
 
+        RE::NiUpdateData* ud = nullptr;
         if (updateSelf) {
-            updateNodeWorldData(node);
+            node->UpdateWorldData(ud);
         }
 
         if (const auto niNode = node->IsNode()) {
@@ -356,7 +356,7 @@ namespace f4vr
                     if (const auto childNiNode = child->IsNode()) {
                         updateDown(childNiNode, true);
                     } else if (const auto triNode = child->IsGeometry()) {
-                        updateNodeWorldData(triNode);
+                        triNode->UpdateWorldData(ud);
                     }
                 }
             }
@@ -489,66 +489,5 @@ namespace f4vr
         const auto uiNode = cloneNode(nifNode, &proc);
         uiNode->name = name.empty() ? path : name;
         return uiNode;
-    }
-
-    /**
-     * HACK! To handle RE::NiNode not having the correct vtable alignment for F4 VR.
-     * Until fixed we call the same method on the F4SEVR::NiNode class.
-     */
-    void attachChildToNode(RE::NiNode* node, RE::NiAVObject* child, const bool firstAvail)
-    {
-        const auto f4seNode = reinterpret_cast<F4SEVR::NiNode*>(node);
-        const auto f4seChild = reinterpret_cast<F4SEVR::NiNode*>(child);
-        f4seNode->AttachChild(f4seChild, firstAvail);
-    }
-
-    /**
-     * HACK! To handle RE::NiNode not having the correct vtable alignment for F4 VR.
-     * Until fixed we call the same method on the F4SEVR::NiNode class.
-     */
-    void detachChildFromNode(RE::NiNode* node, RE::NiAVObject* child, RE::NiPointer<RE::NiAVObject>& out)
-    {
-        const auto f4seNode = reinterpret_cast<F4SEVR::NiNode*>(node);
-        const auto f4seChild = reinterpret_cast<F4SEVR::NiNode*>(child);
-        F4SEVR::NiPointer<F4SEVR::NiAVObject> f4seOut;
-        f4seNode->DetachChild(f4seChild, f4seOut);
-        out.reset(reinterpret_cast<RE::NiAVObject*>(f4seOut.m_pObject));
-    }
-
-    /**
-     * HACK! To handle RE::NiNode not having the correct vtable alignment for F4 VR.
-     * Until fixed we call the same method on the F4SEVR::NiNode class.
-     */
-    void removeChildFromNode(RE::NiNode* node, RE::NiAVObject* child)
-    {
-        const auto f4seNode = reinterpret_cast<F4SEVR::NiNode*>(node);
-        const auto f4seChild = reinterpret_cast<F4SEVR::NiNode*>(child);
-        f4seNode->RemoveChild(f4seChild);
-    }
-
-    /**
-     * HACK! To handle RE::NiNode not having the correct vtable alignment for F4 VR.
-     * Until fixed we call the same method on the F4SEVR::NiNode class.
-     */
-    void removeChildAtFromNode(RE::NiNode* node, const int childIndex)
-    {
-        const auto f4seNode = reinterpret_cast<F4SEVR::NiNode*>(node);
-        f4seNode->RemoveChildAt(childIndex);
-    }
-
-    /**
-     * HACK! To handle RE::NiNode not having the correct vtable alignment for F4 VR.
-     * Until fixed we call the same method on the F4SEVR::NiNode class.
-     */
-    void updateNodeWorldData(RE::NiAVObject* node)
-    {
-        const auto f4seNode = reinterpret_cast<F4SEVR::NiAVObject*>(node);
-        F4SEVR::NiAVObject::NiUpdateData* ud = nullptr;
-        f4seNode->UpdateWorldData(ud);
-    }
-
-    F4SEVR::NiNode* getF4SEVRNode(RE::NiNode* node)
-    {
-        return reinterpret_cast<F4SEVR::NiNode*>(node);
     }
 }

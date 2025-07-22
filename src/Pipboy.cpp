@@ -176,7 +176,7 @@ namespace frik
             const RE::NiAVObject* newScreen = f4vr::findAVObject(screenNode, screenName);
 
             if (!newScreen) {
-                f4vr::removeChildAtFromNode(pn->ScreenNode, 0);
+                pn->ScreenNode->DetachChildAt(0);
 
                 newScreen = f4vr::findAVObject(pn->PipboyRoot_nif_only_node, screenName)->parent;
                 f4vr::addNode(reinterpret_cast<uint64_t>(&pn->ScreenNode), newScreen);
@@ -205,10 +205,10 @@ namespace frik
                 return;
             }
 
-            f4vr::removeChildFromNode(pipParent, pipboyRoot);
-            f4vr::attachChildToNode(pipParent, pipboyReplacetNode);
+            pipParent->DetachChild(pipboyRoot);
+            pipParent->AttachChild(pipboyReplacetNode, true);
 
-            f4vr::removeChildAtFromNode(pn->ScreenNode, 0);
+            pn->ScreenNode->DetachChildAt(0);
             // using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
             f4vr::addNode(reinterpret_cast<uint64_t>(&pn->ScreenNode), newScreen);
             pn->PipboyRoot_nif_only_node = pipboyReplacetNode;
@@ -802,11 +802,11 @@ namespace frik
                             lght->local.rotate = lght->local.rotate * getMatrixFromEulerAngles(0, 0, degreesToRads(rotz));
                             lght->local.translate.y = g_config.isPipBoyTorchOnArm ? 0 : 4;
                             g_config.isPipBoyTorchOnArm
-                                ? f4vr::removeChildFromNode(lght->parent, lght)
-                                : f4vr::removeChildFromNode(f4vr::getPlayerNodes()->HeadLightParentNode->parent, lght);
+                                ? lght->parent->DetachChild(lght)
+                                : f4vr::getPlayerNodes()->HeadLightParentNode->parent->DetachChild(lght);
                             g_config.isPipBoyTorchOnArm
-                                ? f4vr::attachChildToNode(f4vr::getPlayerNodes()->HmdNode, lght)
-                                : f4vr::attachChildToNode(LGHT_ATTACH, lght);
+                                ? f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true)
+                                : LGHT_ATTACH->AttachChild(lght, true);
                             g_config.togglePipBoyTorchOnArm();
                         }
                     }
@@ -828,10 +828,10 @@ namespace frik
                         RE::NiNode* lght = f4vr::getPlayerNodes()->HeadLightParentNode;
                         auto parentnode = f4vr::getPlayerNodes()->HeadLightParentNode->parent->name;
                         if (parentnode == "HMDNode") {
-                            f4vr::removeChildFromNode(f4vr::getPlayerNodes()->HeadLightParentNode->parent, lght);
+                            f4vr::getPlayerNodes()->HeadLightParentNode->parent->DetachChild(lght);
                             lght->local.rotate = lght->local.rotate * getMatrixFromEulerAngles(0, 0, degreesToRads(90));
                             lght->local.translate.y = 4;
-                            f4vr::attachChildToNode(LGHT_ATTACH, lght);
+                            LGHT_ATTACH->AttachChild(lght, true);
                         }
                     }
                     //Restore HeadLight to correct node when light is powered off (to avoid any crashes)
@@ -841,8 +841,8 @@ namespace frik
                             if (parentnode != "HMDNode") {
                                 lght->local.rotate = lght->local.rotate * getMatrixFromEulerAngles(0, 0, degreesToRads(-90));
                                 lght->local.translate.y = 0;
-                                f4vr::removeChildFromNode(lght->parent, lght);
-                                f4vr::attachChildToNode(f4vr::getPlayerNodes()->HmdNode, lght);
+                                lght->parent->DetachChild(lght);
+                                f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true);
                             }
                         }
                     }

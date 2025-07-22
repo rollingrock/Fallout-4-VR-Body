@@ -144,7 +144,7 @@ namespace frik
             if (const auto sphere = _boneSphereRegisteredObjects[handle]->debugSphere) {
                 sphere->flags.flags |= 0x1;
                 sphere->local.scale = 0;
-                f4vr::removeChildFromNode(sphere->parent, sphere);
+                sphere->parent->DetachChild(sphere);
             }
 
             delete _boneSphereRegisteredObjects[handle];
@@ -220,7 +220,7 @@ namespace frik
         }
 
         for (const auto& element : _boneSphereRegisteredObjects) {
-            RE::NiPoint3 offset = element.second->bone->world.rotate.Transpose() * ( element.second->offset);
+            RE::NiPoint3 offset = element.second->bone->world.rotate.Transpose() * (element.second->offset);
             offset = element.second->bone->world.translate + offset;
 
             double dist = vec3Len(rFinger->world.translate - offset);
@@ -307,11 +307,11 @@ namespace frik
             if (sphere) {
                 RE::NiPoint3 offset;
 
-                offset = bone->world.rotate.Transpose() * ( val->offset);
+                offset = bone->world.rotate.Transpose() * (val->offset);
                 offset = bone->world.translate + offset;
 
                 // wp = parWp + parWr * lp =>   lp = (wp - parWp) * parWr'
-                sphere->local.translate = bone->world.rotate * ( (offset - bone->world.translate));
+                sphere->local.translate = bone->world.rotate * ((offset - bone->world.translate));
             }
         }
     }

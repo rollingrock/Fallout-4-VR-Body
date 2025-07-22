@@ -23,7 +23,7 @@ namespace vrui
     void UIToggleButton::attachToNode(RE::NiNode* node)
     {
         UIWidget::attachToNode(node);
-        f4vr::attachChildToNode(_attachNode.get(), _toggleFrameNode.get());
+        _attachNode->AttachChild(_toggleFrameNode.get(), true);
     }
 
     void UIToggleButton::detachFromAttachedNode(const bool releaseSafe)
@@ -32,7 +32,7 @@ namespace vrui
             throw std::runtime_error("Attempt to detach NOT attached widget");
         }
         RE::NiPointer<RE::NiAVObject> out;
-        f4vr::detachChildFromNode(_attachNode.get(), _toggleFrameNode.get(), out);
+        _attachNode->DetachChild(_toggleFrameNode.get(), out);
         UIWidget::detachFromAttachedNode(releaseSafe);
     }
 

@@ -823,8 +823,8 @@ namespace frik
                     return;
                 }
 
-                removeChildFromNode(pipbone->parent, pipbone);
-                attachChildToNode(_rightArm.forearm3->IsNode(), pipbone);
+                pipbone->parent->DetachChild(pipbone);
+                _rightArm.forearm3->IsNode()->AttachChild(pipbone, true);
             }
 
             pipbone->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(180.0), 0) * pipbone->local.rotate;
@@ -960,17 +960,17 @@ namespace frik
             return;
         }
 
-        removeChildFromNode(rHand, rightWeapon);
-        removeChildFromNode(rHand, leftWeapon);
-        removeChildFromNode(lHand, rightWeapon);
-        removeChildFromNode(lHand, leftWeapon);
+        rHand->DetachChild(rightWeapon);
+        rHand->DetachChild(leftWeapon);
+        lHand->DetachChild(rightWeapon);
+        lHand->DetachChild(leftWeapon);
 
         if (isLeftHandedMode()) {
-            attachChildToNode(rHand, leftWeapon);
-            attachChildToNode(lHand, rightWeapon);
+            rHand->AttachChild(leftWeapon, true);
+            lHand->AttachChild(rightWeapon, true);
         } else {
-            attachChildToNode(rHand, rightWeapon);
-            attachChildToNode(lHand, leftWeapon);
+            rHand->AttachChild(rightWeapon, true);
+            lHand->AttachChild(leftWeapon, true);
         }
     }
 
