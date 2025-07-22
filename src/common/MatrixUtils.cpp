@@ -263,10 +263,10 @@ namespace common
         const auto direction = vec3Norm(RE::NiPoint3(objectPos.x - cameraPos.x, objectPos.y - cameraPos.y, objectPos.z - cameraPos.z));
 
         // Get the forward vector of the camera (assuming it's the y-axis)
-        const auto cameraForward = vec3Norm(cameraTrans.rotate.Transpose() * (RE::NiPoint3(0, 1, 0)));
+        const auto cameraForward = vec3Norm(cameraTrans.rotate.Transpose() * RE::NiPoint3(0, 1, 0));
 
         // Get the forward vector of the object (assuming it's the y-axis)
-        const auto objectForward = vec3Norm(objectTrans.rotate.Transpose() * (RE::NiPoint3(0, 1, 0)));
+        const auto objectForward = vec3Norm(objectTrans.rotate.Transpose() * RE::NiPoint3(0, 1, 0));
 
         // Check if the camera is looking at the object
         const float cameraDot = vec3Dot(cameraForward, direction);
