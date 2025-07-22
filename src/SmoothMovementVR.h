@@ -1,29 +1,33 @@
 #pragma once
 
 #include <deque>
-#include <f4se/NiTypes.h>
 
-namespace frik {
-	class SmoothMovementVR {
-	public:
-		SmoothMovementVR() {
-			QueryPerformanceFrequency(&_hpcFrequency);
-			QueryPerformanceCounter(&_prevTime);
-		}
+#include "common/CommonUtils.h"
 
-		void onFrameUpdate();
+namespace frik
+{
+    class SmoothMovementVR
+    {
+    public:
+        SmoothMovementVR()
+        {
+            QueryPerformanceFrequency(&_hpcFrequency);
+            QueryPerformanceCounter(&_prevTime);
+        }
 
-	private:
-		NiPoint3 smoothedValue(const NiPoint3& curPos, const NiPoint3& prevPos);
+        void onFrameUpdate();
 
-		bool _notMoving = false;
-		std::deque<NiPoint3> _lastPositions;
-		NiPoint3 _smoothedPos;
-		float _lastAppliedLocalX = 0;
-		float _lastAppliedLocalY = 0;
+    private:
+        RE::NiPoint3 smoothedValue(const RE::NiPoint3& curPos, const RE::NiPoint3& prevPos);
 
-		LARGE_INTEGER _hpcFrequency;
-		LARGE_INTEGER _prevTime;
-		float _frameTime = 0;
-	};
+        bool _notMoving = false;
+        std::deque<RE::NiPoint3> _lastPositions;
+        RE::NiPoint3 _smoothedPos;
+        float _lastAppliedLocalX = 0;
+        float _lastAppliedLocalY = 0;
+
+        LARGE_INTEGER _hpcFrequency;
+        LARGE_INTEGER _prevTime;
+        float _frameTime = 0;
+    };
 }

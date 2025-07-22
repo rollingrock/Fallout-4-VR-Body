@@ -1,378 +1,493 @@
 #include "F4VRUtils.h"
 
-#include <f4se/BSGeometry.h>
-#include <f4se/GameRTTI.h>
-#include <f4se/GameSettings.h>
-
 #include "PlayerNodes.h"
 #include "../Config.h"
-#include "../common/Matrix.h"
-#include "f4se/PapyrusEvents.h"
+#include "f4sevr/Forms.h"
+#include "f4sevr/PapyrusUtils.h"
 
-namespace f4vr {
-	void showMessagebox(const std::string& text) {
-		common::Log::info("Show messagebox: '%s'", text.c_str());
-		auto str = BSFixedString(text.c_str());
-		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Messagebox", str);
-	}
+namespace f4vr
+{
+    void showMessagebox(const std::string& text)
+    {
+        common::logger::info("Show messagebox: '{}'", text.c_str());
+        F4SEVR::execPapyrusGlobalFunction("Debug", "Messagebox", text);
+    }
 
-	void showNotification(const std::string& text) {
-		common::Log::info("Show notification: '%s'", text.c_str());
-		auto str = BSFixedString(text.c_str());
-		CallGlobalFunctionNoWait1<BSFixedString>("Debug", "Notification", str);
-	}
+    void showNotification(const std::string& text)
+    {
+        common::logger::info("Show notification: '{}'", text.c_str());
+        F4SEVR::execPapyrusGlobalFunction("Debug", "Notification", text);
+    }
 
-	/**
-	 * Set the visibility of controller wand.
-	 */
-	void setWandsVisibility(const bool show, const bool leftWand) {
-		const auto node = leftWand ? getPlayerNodes()->primaryWandNode : getPlayerNodes()->SecondaryWandNode;
-		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
-			if (const auto child = node->m_children.m_data[i]) {
-				if (const auto triShape = child->GetAsBSTriShape()) {
-					setNodeVisibility(triShape, show);
-					break;
-				}
-				if (!_stricmp(child->m_name.c_str(), "")) {
-					setNodeVisibility(child, show);
-					if (const auto grandChild = child->GetAsNiNode()->m_children.m_data[0]) {
-						setNodeVisibility(grandChild, show);
-					}
-					break;
-				}
-			}
-		}
-	}
+    /**
+     * Close the weapon favorites menu.
+     */
+    void closeFavoriteMenu()
+    {
+        if (RE::UIMessageQueue* uiQueue = RE::UIMessageQueue::GetSingleton()) {
+            uiQueue->AddMessage("FavoritesMenu", RE::UI_MESSAGE_TYPE::kHide);
+        }
+    }
 
-	/**
-	 * @return true if the equipped weapon is a melee weapon type.
-	 */
-	bool isMeleeWeaponEquipped() {
-		if (!CombatUtilities_IsActorUsingMelee(*g_player)) {
-			return false;
-		}
-		const auto* inventory = (*g_player)->inventoryList;
-		if (!inventory) {
-			return false;
-		}
-		for (UInt32 i = 0; i < inventory->items.count; i++) {
-			BGSInventoryItem item;
-			inventory->items.GetNthItem(i, item);
-			if (item.form && item.form->formType == kFormType_WEAP && item.stack->flags & 0x3) {
-				return true;
-			}
-		}
-		return false;
-	}
+    /**
+     * Set the visibility of controller wand.
+     */
+    void setWandsVisibility(const bool show, const bool leftWand)
+    {
+        const auto node = leftWand ? getPlayerNodes()->primaryWandNode : getPlayerNodes()->SecondaryWandNode;
+        for (const auto& child : node->children) {
+            if (child) {
+                if (child->IsNiTriShape()) {
+                    setNodeVisibility(child.get(), show);
+                    break;
+                }
+                if (!_stricmp(child->name.c_str(), "")) {
+                    setNodeVisibility(child.get(), show);
+                    if (const auto grandChild = child->IsNode()) {
+                        setNodeVisibility(grandChild, show);
+                    }
+                    break;
+                }
+            }
+        }
+    }
 
-	/**
-	 * Get the game name of the equipped weapon.
-	 */
-	std::string getEquippedWeaponName() {
-		const auto* equipData = (*g_player)->middleProcess->unk08->equipData;
-		return equipData ? equipData->item->GetFullName() : "";
-	}
+    /**
+     * @return true if the equipped weapon is a melee weapon type.
+     */
+    bool isMeleeWeaponEquipped()
+    {
+        const auto player = getPlayer();
+        if (!CombatUtilities_IsActorUsingMelee(player)) {
+            return false;
+        }
+        const auto* inventory = player->inventoryList;
+        if (!inventory) {
+            return false;
+        }
+        return std::ranges::any_of(inventory->data, [](const auto& item) {
+            return item.object->formType == RE::ENUM_FORM_ID::kWEAP && item.stackData->flags.any(RE::BGSInventoryItem::Stack::Flag::kSlotMask);
+        });
+    }
 
-	bool hasKeyword(const TESObjectARMO* armor, const UInt32 keywordFormId) {
-		if (armor) {
-			for (UInt32 i = 0; i < armor->keywordForm.numKeywords; i++) {
-				if (armor->keywordForm.keywords[i]) {
-					if (armor->keywordForm.keywords[i]->formID == keywordFormId) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
+    /**
+     * Get the game name of the equipped weapon.
+     */
+    std::string getEquippedWeaponName()
+    {
+        const auto* equipData = getPlayer()->middleProcess->unk08->equipData;
+        return equipData ? equipData->item->GetFullName() : "";
+    }
 
-	// Thanks Shizof and SmoothMovementVR for below code
-	bool isInPowerArmor() {
-		if ((*g_player)->equipData) {
-			if ((*g_player)->equipData->slots[0x03].item != nullptr) {
-				if (const auto equippedForm = (*g_player)->equipData->slots[0x03].item) {
-					if (equippedForm->formType == TESObjectARMO::kTypeID) {
-						if (const auto armor = DYNAMIC_CAST(equippedForm, TESForm, TESObjectARMO)) {
-							return hasKeyword(armor, KEYWORD_POWER_ARMOR) || hasKeyword(armor, KEYWORD_POWER_ARMOR_FRAME);
-						}
-					}
-				}
-			}
-		}
-		return false;
-	}
+    bool hasKeyword(const F4SEVR::TESObjectARMO* armor, const std::uint32_t keywordFormId)
+    {
+        if (!armor) {
+            return false;
+        }
+        for (std::uint32_t i = 0; i < armor->keywordForm.numKeywords; i++) {
+            if (armor->keywordForm.keywords[i]) {
+                if (armor->keywordForm.keywords[i]->formID == keywordFormId) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
-	/**
-	 * Is the player is current in an "internal cell" as inside a building, cave, etc.
-	 */
-	bool isInInternalCell() {
-		const auto cell = (*g_player)->parentCell;
-		return cell && (cell->flags & TESObjectCELL::kFlag_IsInterior) == TESObjectCELL::kFlag_IsInterior;
-	}
+    bool isJumpingOrInAir()
+    {
+        return IsInAir(getPlayer());
+    }
 
-	float getIniSettingFloat(const char* name) {
-		const auto setting = getIniSettingNative(name);
-		return setting ? setting->data.f32 : 0;
-	}
+    // Thanks Shizof and SmoothMovementVR for below code
+    bool isInPowerArmor()
+    {
+        const auto player = getPlayer();
+        if ((player)->equipData) {
+            if ((player)->equipData->slots[0x03].item != nullptr) {
+                if (const auto equippedForm = (player)->equipData->slots[0x03].item) {
+                    if (equippedForm->formType == RE::ENUM_FORM_ID::kARMO) {
+                        if (const auto armor = reinterpret_cast<const F4SEVR::TESObjectARMO*>(equippedForm)) {
+                            return hasKeyword(armor, KEYWORD_POWER_ARMOR) || hasKeyword(armor, KEYWORD_POWER_ARMOR_FRAME);
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
-	void setIniSettingBool(const BSFixedString name, bool value) {
-		auto str = BSFixedString(name.c_str());
-		CallGlobalFunctionNoWait2<BSFixedString, bool>("Utility", "SetINIBool", str, value);
-	}
+    /**
+     * Is the player is current in an "internal cell" as inside a building, cave, etc.
+     */
+    bool isInInternalCell()
+    {
+        return RE::PlayerCharacter::GetSingleton()->parentCell->IsInterior();
+    }
 
-	void setIniSettingFloat(const BSFixedString name, float value) {
-		auto str = BSFixedString(name.c_str());
-		CallGlobalFunctionNoWait2<BSFixedString, float>("Utility", "SetINIFloat", str, value);
-	}
+    /**
+     * Is the player swimming either on the surface or underwater.
+     */
+    bool isSwimming(const RE::PlayerCharacter* player)
+    {
+        return player && static_cast<int>(player->DoGetCharacterState()) == 5;
+    }
 
-	Setting* getIniSettingNative(const char* name) {
-		Setting* setting = SettingCollectionList_GetPtr(*g_iniSettings, name);
-		if (!setting) {
-			setting = SettingCollectionList_GetPtr(*g_iniPrefSettings, name);
-		}
+    /**
+     * Is the player is currently underwater as detected by underwater timer being non-zero.
+     */
+    bool isUnderwater(const RE::PlayerCharacter* player)
+    {
+        return player && player->underWaterTimer > 0;
+    }
 
-		return setting;
-	}
+    /**
+     * Check if movement from current position to target position is safe (no collisions).
+     * Uses ray casting to detect obstacles in the movement path.
+     */
+    bool isMovementSafe(RE::PlayerCharacter* player, const RE::NiPoint3& currentPos, const RE::NiPoint3& targetPos)
+    {
+        // Create a pick data structure for ray casting
+        RE::bhkPickData pickData;
 
-	/**
-	 * Find a node by the given name in the tree under the other given node recursively.
-	 */
-	NiNode* getNode(const char* name, NiNode* fromNode) {
-		if (!fromNode || !fromNode->m_name) {
-			return nullptr;
-		}
+        // Set up the ray from current position to target position
+        pickData.SetStartEnd(currentPos, targetPos);
 
-		if (_stricmp(name, fromNode->m_name.c_str()) == 0) {
-			return fromNode;
-		}
+        // Configure collision filter to use the player's collision layer
+        pickData.collisionFilter = player->GetCollisionFilter();
 
-		for (UInt16 i = 0; i < fromNode->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = fromNode->m_children.m_data[i] ? fromNode->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-				if (const auto ret = getNode(name, nextNode)) {
-					return ret;
-				}
-			}
-		}
+        // Use projectile LOS calculation for collision detection
+        // This is a reliable method used by the game for checking clear paths
+        if (const auto dataHandler = RE::TESDataHandler::GetSingleton()) {
+            // Try to get any BGSProjectile from the form arrays for LOS calculation
+            auto& projectileArray = dataHandler->GetFormArray<RE::BGSProjectile>();
+            if (!projectileArray.empty()) {
+                const auto projectile = projectileArray[0]; // Use the first available projectile
+                if (projectile && RE::CombatUtilities::CalculateProjectileLOS(player, projectile, pickData)) {
+                    // If LOS calculation succeeded, check if there was a hit
+                    if (pickData.HasHit()) {
+                        const auto hitFraction = pickData.GetHitFraction();
+                        // If hit fraction is very close to 1.0, the collision is at the target (acceptable)
+                        // If hit fraction is significantly less than 1.0, there's an obstacle in the way
+                        if (hitFraction < 0.9f) {
+                            return false;
+                        }
+                    }
+                    // No collision detected or collision is at the target, movement is safe
+                    return true;
+                }
+            }
+        }
 
-		return nullptr;
-	}
+        // Fallback: if we can't get a projectile or LOS calculation fails,
+        // allow movement but log a warning. This is safer than blocking all movement.
+        return true;
+    }
 
-	/**
-	 * Find a node by the given name in the tree under the other given node recursively.
-	 * This one handles not only NiNode but also BSTriShape.
-	 */
-	NiNode* getNode2(const char* name, NiNode* fromNode) {
-		if (!fromNode || !fromNode->m_name) {
-			return nullptr;
-		}
+    /**
+     * Get the "bLeftHandedMode:VR" setting from the INI file.
+     * Direct memory access is A LOT faster than "RE::INIPrefSettingCollection::GetSingleton()->GetSetting("bLeftHandedMode:VR")->GetBinary();"
+     */
+    bool isLeftHandedMode()
+    {
+        // not sure why RE::Relocation doesn't work here, so using raw address
+        static auto iniLeftHandedMode = reinterpret_cast<bool*>(REL::Offset(0x37d5e48).address()); // NOLINT(performance-no-int-to-ptr)
+        return *iniLeftHandedMode;
+    }
 
-		if (_stricmp(name, fromNode->m_name.c_str()) == 0) {
-			return fromNode;
-		}
+    /**
+     * Get the "bUseWandDirectionalMovement" setting from the INI file.
+     */
+    bool useWandDirectionalMovement()
+    {
+        static auto iniUseWandDirectionalMovement = reinterpret_cast<bool*>(REL::Offset(0x37D6160).address()); // NOLINT(performance-no-int-to-ptr)
+        return *iniUseWandDirectionalMovement;
+    }
 
-		if (!fromNode->m_children.m_data) {
-			return nullptr;
-		}
+    /**
+     * Get the INI setting by name.
+     */
+    RE::Setting* getIniSetting(const char* name, const bool addNew)
+    {
+        auto setting = RE::INIPrefSettingCollection::GetSingleton()->GetSetting(name);
+        if (setting) {
+            return setting;
+        }
 
-		// TODO: use better code
-		for (UInt16 i = 0; i < fromNode->m_children.m_emptyRunStart && fromNode->m_children.m_emptyRunStart < 5000; ++i) {
-			if (const auto nextNode = dynamic_cast<NiNode*>(fromNode->m_children.m_data[i])) {
-				if (const auto ret = getNode2(name, nextNode)) {
-					return ret;
-				}
-			}
-		}
+        const auto collection = RE::INISettingCollection::GetSingleton();
+        setting = collection->GetSetting(name);
+        if (setting) {
+            return setting;
+        }
 
-		return nullptr;
-	}
+        if (!addNew) {
+            common::logger::warn("Setting '{}' not found in INI settings", name);
+            return nullptr;
+        }
 
-	NiNode* getChildNode(const char* nodeName, NiNode* nde) {
-		if (!nde->m_name) {
-			return nullptr;
-		}
+        common::logger::warn("Setting '{}' not found in INI settings, adding new", name);
+        RE::Setting newSetting("", 0);
+        collection->Add(&newSetting);
+        return collection->GetSetting(name);
+    }
 
-		if (!_stricmp(nodeName, nde->m_name.c_str())) {
-			return nde;
-		}
+    /**
+     * Find a node by the given name in the tree under the other given node recursively.
+     */
+    RE::NiAVObject* findAVObject(RE::NiAVObject* node, const std::string& name, const int maxDepth)
+    {
+        if (!node || maxDepth < 0) {
+            return nullptr;
+        }
 
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-				if (const auto ret = getChildNode(nodeName, nextNode)) {
-					return ret;
-				}
-			}
-		}
+        if (_stricmp(name.c_str(), node->name.c_str()) == 0) {
+            return node;
+        }
 
-		return nullptr;
-	}
+        if (const auto niNode = node->IsNode()) {
+            for (const auto& child : niNode->children) {
+                if (child) {
+                    if (const auto result = findAVObject(child.get(), name, maxDepth - 1)) {
+                        return result;
+                    }
+                }
+            }
+        }
+        return nullptr;
+    }
 
-	NiNode* get1StChildNode(const char* nodeName, const NiNode* nde) {
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-				if (!_stricmp(nodeName, nextNode->m_name.c_str())) {
-					return nextNode;
-				}
-			}
-		}
-		return nullptr;
-	}
+    /**
+     * Find a node by the given name in the tree under the other given node recursively.
+     */
+    RE::NiNode* findNode(RE::NiAVObject* node, const char* name, const int maxDepth)
+    {
+        if (!node) {
+            return nullptr;
+        }
 
-	/**
-	 * Return true if the node is visible, false if it is hidden or null.
-	 */
-	bool isNodeVisible(const NiNode* node) {
-		return node && !(node->flags & 0x1);
-	}
+        if (_stricmp(name, node->name.c_str()) == 0) {
+            return node->IsNode();
+        }
 
-	/**
-	 * Change flags to show or hide a node
-	 */
-	void setNodeVisibility(NiAVObject* node, const bool show) {
-		if (node) {
-			node->flags = show ? node->flags & ~0x1 : node->flags | 0x1;
-		}
-	}
+        if (maxDepth < 1) {
+            return nullptr;
+        }
 
-	void setNodeVisibilityDeep(NiAVObject* node, const bool show, const bool updateSelf) {
-		if (node && updateSelf) {
-			node->flags = show ? node->flags & ~0x1 : node->flags | 0x1;
-		}
-		if (const auto niNode = node->GetAsNiNode()) {
-			for (UInt16 i = 0; i < niNode->m_children.m_emptyRunStart; ++i) {
-				setNodeVisibilityDeep(niNode->m_children.m_data[i], show, true);
-			}
-		}
-	}
+        if (const auto niNode = node->IsNode()) {
+            for (const auto& child : niNode->children) {
+                if (child) {
+                    if (const auto childNiNode = child->IsNode()) {
+                        if (const auto result = findNode(childNiNode, name, maxDepth - 1)) {
+                            return result;
+                        }
+                    }
+                }
+            }
+        }
+        return nullptr;
+    }
 
-	// TODO: check removing this in favor of setNodeVisibilityDeep
-	void toggleVis(NiNode* node, const bool hide, const bool updateSelf) {
-		if (updateSelf) {
-			node->flags = hide ? node->flags | 0x1 : node->flags & ~0x1;
-		}
+    /**
+     * Find a node by name restricted to firest level of children only.
+     */
+    RE::NiNode* find1StChildNode(RE::NiAVObject* node, const char* name)
+    {
+        return findNode(node, name, 1);
+    }
 
-		for (UInt16 i = 0; i < node->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = node->m_children.m_data[i] ? node->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-				toggleVis(nextNode, hide, true);
-			}
-		}
-	}
+    /**
+     * Return true if the node is visible, false if it is hidden or null.
+     */
+    bool isNodeVisible(const RE::NiNode* node)
+    {
+        return node && !(node->flags.flags & 0x1);
+    }
 
-	// TODO: this feels an overkill on how much it is called
-	void updateDownFromRoot() {
-		updateDown(getRootNode(), true);
-	}
+    /**
+     * Change flags to show or hide a node
+     */
+    void setNodeVisibility(RE::NiAVObject* node, const bool show)
+    {
+        if (node) {
+            node->flags.flags = show ? (node->flags.flags & ~0x1) : (node->flags.flags | 0x1);
+        }
+    }
 
-	void updateDown(NiNode* nde, const bool updateSelf, const char* ignoreNode) {
-		if (!nde) {
-			return;
-		}
+    /**
+     * Change flags to show or hide a node and ALL of its children recursively.
+     */
+    void setNodeVisibilityDeep(RE::NiAVObject* node, const bool show, const bool updateSelf)
+    {
+        if (node && updateSelf) {
+            setNodeVisibility(node, show);
+        }
+        if (const auto niNode = node->IsNode()) {
+            for (const auto& child : niNode->children) {
+                if (child) {
+                    setNodeVisibilityDeep(child.get(), show, true);
+                }
+            }
+        }
+    }
 
-		NiAVObject::NiUpdateData* ud = nullptr;
+    // TODO: this feels an overkill on how much it is called
+    void updateDownFromRoot()
+    {
+        updateDown(getRootNode(), true);
+    }
 
-		if (updateSelf) {
-			nde->UpdateWorldData(ud);
-		}
+    void updateDown(RE::NiAVObject* node, const bool updateSelf, const char* ignoreNode)
+    {
+        if (!node) {
+            return;
+        }
 
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i]) {
-				if (ignoreNode && _stricmp(nextNode->m_name.c_str(), ignoreNode) == 0) {
-					continue; // skip this node
-				}
-				if (const auto niNode = nextNode->GetAsNiNode()) {
-					updateDown(niNode, true);
-				} else if (const auto triNode = nextNode->GetAsBSGeometry()) {
-					triNode->UpdateWorldData(ud);
-				}
-			}
-		}
-	}
+        RE::NiUpdateData* ud = nullptr;
+        if (updateSelf) {
+            node->UpdateWorldData(ud);
+        }
 
-	void updateDownTo(NiNode* toNode, NiNode* fromNode, const bool updateSelf) {
-		if (!toNode || !fromNode) {
-			return;
-		}
+        if (const auto niNode = node->IsNode()) {
+            for (const auto& child : niNode->children) {
+                if (child) {
+                    if (ignoreNode && _stricmp(child->name.c_str(), ignoreNode) == 0) {
+                        continue; // skip this node
+                    }
+                    if (const auto childNiNode = child->IsNode()) {
+                        updateDown(childNiNode, true);
+                    } else if (const auto triNode = child->IsGeometry()) {
+                        triNode->UpdateWorldData(ud);
+                    }
+                }
+            }
+        }
+    }
 
-		if (updateSelf) {
-			NiAVObject::NiUpdateData* ud = nullptr;
-			fromNode->UpdateWorldData(ud);
-		}
+    void updateDownTo(RE::NiNode* toNode, RE::NiNode* fromNode, const bool updateSelf)
+    {
+        if (!toNode || !fromNode) {
+            return;
+        }
 
-		if (_stricmp(toNode->m_name.c_str(), fromNode->m_name.c_str()) == 0) {
-			return;
-		}
+        if (updateSelf) {
+            RE::NiUpdateData* ud = nullptr;
+            fromNode->UpdateWorldData(ud);
+        }
 
-		for (UInt16 i = 0; i < fromNode->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = fromNode->m_children.m_data[i]) {
-				if (const auto niNode = nextNode->GetAsNiNode()) {
-					updateDownTo(toNode, niNode, true);
-				}
-			}
-		}
-	}
+        if (_stricmp(toNode->name.c_str(), fromNode->name.c_str()) == 0) {
+            return;
+        }
 
-	void updateUpTo(NiNode* toNode, NiNode* fromNode, const bool updateSelf) {
-		if (!toNode || !fromNode) {
-			return;
-		}
+        for (const auto& child : fromNode->children) {
+            if (child) {
+                if (const auto childNiNode = child->IsNode()) {
+                    updateDownTo(toNode, childNiNode, true);
+                }
+            }
+        }
+    }
 
-		NiAVObject::NiUpdateData* ud = nullptr;
+    void updateUpTo(RE::NiNode* toNode, RE::NiNode* fromNode, const bool updateSelf)
+    {
+        if (!toNode || !fromNode) {
+            return;
+        }
 
-		if (_stricmp(toNode->m_name.c_str(), fromNode->m_name.c_str()) == 0) {
-			if (updateSelf) {
-				fromNode->UpdateWorldData(ud);
-			}
-			return;
-		}
+        RE::NiUpdateData* ud = nullptr;
 
-		fromNode->UpdateWorldData(ud);
-		if (const auto parent = fromNode->m_parent ? fromNode->m_parent->GetAsNiNode() : nullptr) {
-			updateUpTo(toNode, parent, true);
-		}
-	}
+        if (_stricmp(toNode->name.c_str(), fromNode->name.c_str()) == 0) {
+            if (updateSelf) {
+                fromNode->UpdateWorldData(ud);
+            }
+            return;
+        }
 
-	void updateTransforms(NiNode* node) {
-		if (!node->m_parent) {
-			return;
-		}
+        fromNode->UpdateWorldData(ud);
+        if (const auto parent = fromNode->parent ? fromNode->parent : nullptr) {
+            updateUpTo(toNode, parent, true);
+        }
+    }
 
-		const auto& parentTransform = node->m_parent->m_worldTransform;
-		const auto& localTransform = node->m_localTransform;
+    /**
+     * Update the world transform data (location,rotation,scale) of the given node by the local transform of the parent node.
+     */
+    void updateTransforms(RE::NiNode* node)
+    {
+        if (!node->parent) {
+            return;
+        }
 
-		// Calculate world position
-		const NiPoint3 pos = parentTransform.rot * (localTransform.pos * parentTransform.scale);
-		node->m_worldTransform.pos = parentTransform.pos + pos;
+        const auto& parentTransform = node->parent->world;
+        const auto& localTransform = node->local;
 
-		// Calculate world rotation
-		common::Matrix44 loc;
-		loc.makeTransformMatrix(localTransform.rot, NiPoint3(0, 0, 0));
-		node->m_worldTransform.rot = loc.multiply43Left(parentTransform.rot);
+        // Calculate world position
+        const RE::NiPoint3 pos = parentTransform.rotate.Transpose() * (localTransform.translate * parentTransform.scale);
+        node->world.translate = parentTransform.translate + pos;
 
-		// Calculate world scale
-		node->m_worldTransform.scale = parentTransform.scale * localTransform.scale;
-	}
+        // Calculate world rotation
+        node->world.rotate = localTransform.rotate * parentTransform.rotate;
 
-	void updateTransformsDown(NiNode* nde, const bool updateSelf) {
-		if (updateSelf) {
-			updateTransforms(nde);
-		}
+        // Calculate world scale
+        node->world.scale = parentTransform.scale * localTransform.scale;
+    }
 
-		for (UInt16 i = 0; i < nde->m_children.m_emptyRunStart; ++i) {
-			if (const auto nextNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsNiNode() : nullptr) {
-				updateTransformsDown(nextNode, true);
-			} else if (const auto triNode = nde->m_children.m_data[i] ? nde->m_children.m_data[i]->GetAsBSTriShape() : nullptr) {
-				updateTransforms(reinterpret_cast<NiNode*>(triNode));
-			}
-		}
-	}
+    void updateTransformsDown(RE::NiNode* node, const bool updateSelf)
+    {
+        if (updateSelf) {
+            updateTransforms(node);
+        }
 
-	/**
-	 * Run a callback to register papyrus native functions.
-	 * Functions that papyrus can call into this mod c++ code.
-	 */
-	void registerPapyrusNativeFunctions(const F4SEInterface* f4se, const RegisterFunctions callback) {
-		const auto papyrusInterface = static_cast<F4SEPapyrusInterface*>(f4se->QueryInterface(kInterface_Papyrus));
-		if (!papyrusInterface->Register(callback)) {
-			throw std::exception("Failed to register papyrus functions");
-		}
-	}
+        for (const auto& child : node->children) {
+            if (child) {
+                if (const auto childNiNode = child->IsNode()) {
+                    updateTransformsDown(childNiNode, true);
+                } else if (const auto childTriNode = child->IsTriShape()) {
+                    updateTransforms(reinterpret_cast<RE::NiNode*>(childTriNode));
+                }
+            }
+        }
+    }
+
+    /**
+     * Run a callback to register papyrus native functions.
+     * Functions that papyrus can call into this mod c++ code.
+     */
+    void registerPapyrusNativeFunctions(const F4SE::PapyrusInterface::RegisterFunctions callback)
+    {
+        const auto papyrusInterface = F4SE::GetPapyrusInterface();
+        if (!papyrusInterface) {
+            throw std::exception("Failed to get papyrus interface");
+        }
+
+        if (!papyrusInterface->Register(callback)) {
+            throw std::exception("Failed to register papyrus functions");
+        }
+    }
+
+    /**
+     * Load .nif file from the filesystem and return the root node.
+     */
+    RE::NiNode* loadNifFromFile(const std::string& path)
+    {
+        uint64_t flags[2] = { 0x0, 0xed };
+        uint64_t mem = 0;
+        int ret = loadNif((uint64_t)path.c_str(), (uint64_t)&mem, (uint64_t)&flags);
+        return reinterpret_cast<RE::NiNode*>(mem);
+    }
+
+    /**
+     * Get a RE::NiNode that can be used in game UI for the given .nif file.
+     * Why is just loading not enough?
+     */
+    RE::NiNode* getClonedNiNodeForNifFile(const std::string& path, const std::string& name)
+    {
+        auto& normPath = path._Starts_with("Data") ? path : "Data/Meshes/" + path;
+        const RE::NiNode* nifNode = loadNifFromFile(normPath);
+        NiCloneProcess proc;
+        proc.unk18 = reinterpret_cast<uint64_t*>(cloneAddr1.address());
+        proc.unk48 = reinterpret_cast<uint64_t*>(cloneAddr2.address());
+        const auto uiNode = cloneNode(nifNode, &proc);
+        uiNode->name = name.empty() ? path : name;
+        return uiNode;
+    }
 }

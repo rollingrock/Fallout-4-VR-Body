@@ -1,0 +1,15 @@
+{
+  "name": "f4vr-comfort-swim",
+  "version": "1",
+  "dependencies": [
+    "args",
+    "rapidcsv",
+    "rsm-mmio",
+    "spdlog",
+    "xbyak",
+    "nlohmann-json",
+    "simpleini",
+    "thomasmonkman-filewatch"
+  ],
+  "builtin-baseline": "b4a3d89125e45bc8f80fb94bef9761d4f4e14fb9"
+}

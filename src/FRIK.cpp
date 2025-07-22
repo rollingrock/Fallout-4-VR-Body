@@ -18,308 +18,344 @@
 
 using namespace common;
 
-namespace frik {
-	/**
-	 * TODO: think about it, is it the best way to handle this dependency indirection.
-	 */
-	class FrameUpdateContext : public vrui::UIModAdapter {
-	public:
-		explicit FrameUpdateContext(Skeleton* skelly)
-			: _skelly(skelly) {}
+namespace frik
+{
+    /**
+     * TODO: think about it, is it the best way to handle this dependency indirection.
+     */
+    class FrameUpdateContext : public vrui::UIModAdapter
+    {
+    public:
+        explicit FrameUpdateContext(Skeleton* skelly) :
+            _skelly(skelly) {}
 
-		virtual NiPoint3 getInteractionBoneWorldPosition() override {
-			return _skelly->getOffhandIndexFingerTipWorldPosition();
-		}
+        virtual RE::NiPoint3 getInteractionBoneWorldPosition() override
+        {
+            return _skelly->getOffhandIndexFingerTipWorldPosition();
+        }
 
-		virtual void fireInteractionHeptic() override {
-			f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
-		}
+        virtual void fireInteractionHeptic() override
+        {
+            f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
+        }
 
-		virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override {
-			setForceHandPointingPose(primaryHand, toPoint);
-		}
+        virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override
+        {
+            setForceHandPointingPose(primaryHand, toPoint);
+        }
 
-	private:
-		Skeleton* _skelly;
-	};
+    private:
+        Skeleton* _skelly;
+    };
 
-	/**
-	 * On load of FRIK plugin by F4VRSE setup messaging and papyrus handling once.
-	 */
-	void FRIK::initialize(const F4SEInterface* f4se) {
-		_pluginHandle = f4se->GetPluginHandle();
-		if (_pluginHandle == kPluginHandle_Invalid) {
-			throw std::exception("Invalid plugin handle");
-		}
+    /**
+     * On load of FRIK plugin by F4VRSE setup messaging and papyrus handling once.
+     */
+    void FRIK::initialize(const F4SE::LoadInterface* f4se)
+    {
+        _messaging = F4SE::GetMessagingInterface();
+        _messaging->RegisterListener(onF4VRSEMessage);
+    }
 
-		_messaging = static_cast<F4SEMessagingInterface*>(f4se->QueryInterface(kInterface_Messaging));
-		_messaging->RegisterListener(_pluginHandle, "F4SE", onF4VRSEMessage);
+    /**
+     * F4VRSE messages listener to handle game loaded, new game, and save loaded events.
+     */
+    void FRIK::onF4VRSEMessage(F4SE::MessagingInterface::Message* msg)
+    {
+        if (!msg) {
+            return;
+        }
 
-		Log::info("Register papyrus native functions...");
-		initPapyrusApis(f4se);
-		PapyrusGateway::init(f4se);
-		_boneSpheres.init(f4se);
-	}
+        if (msg->type == F4SE::MessagingInterface::kGameLoaded) {
+            // One time event fired after all plugins are loaded and game is full in main menu
+            logger::info("F4VRSE On Game Loaded Message...");
+            g_frik.initOnGameLoaded();
+        }
 
-	/**
-	 * F4VRSE messages listener to handle game loaded, new game, and save loaded events.
-	 */
-	void FRIK::onF4VRSEMessage(F4SEMessagingInterface::Message* msg) {
-		if (!msg) {
-			return;
-		}
+        if (msg->type == F4SE::MessagingInterface::kPostLoadGame || msg->type == F4SE::MessagingInterface::kNewGame) {
+            // If a game is loaded or a new game started re-initialize FRIK for clean slate
+            logger::info("F4VRSE On Post Load Message...");
+            g_frik.initOnGameSessionLoaded();
+        }
+    }
 
-		if (msg->type == F4SEMessagingInterface::kMessage_GameLoaded) {
-			// One time event fired after all plugins are loaded and game is full in main menu
-			Log::info("F4VRSE On Game Loaded Message...");
-			g_frik.initOnGameLoaded();
-		}
+    /**
+     * On game fully loaded initialize things that should be initialized only once.
+     */
+    void FRIK::initOnGameLoaded()
+    {
+        try {
+            logger::info("Initialize FRIK...");
+            std::srand(static_cast<unsigned int>(time(nullptr)));
 
-		if (msg->type == F4SEMessagingInterface::kMessage_PostLoadGame || msg->type == F4SEMessagingInterface::kMessage_NewGame) {
-			// If a game is loaded or a new game started re-initialize FRIK for clean slate
-			Log::info("F4VRSE On Post Load Message...");
-			g_frik.initOnGameSessionLoaded();
-		}
-	}
+            logger::info("Init config...");
+            g_config.load();
 
-	/**
-	 * On game fully loaded initialize things that should be initialized only once.
-	 */
-	void FRIK::initOnGameLoaded() {
-		Log::info("Initialize FRIK...");
-		std::srand(static_cast<unsigned int>(time(nullptr)));
+            logger::info("Register papyrus native functions...");
+            initPapyrusApis();
+            PapyrusGateway::init();
+            _boneSpheres.init();
 
-		Log::info("Init config...");
-		g_config.loadAllConfig();
+            vrui::initUIManager();
 
-		vrui::initUIManager();
+            _gameMenusHandler.init();
 
-		_gameMenusHandler.init();
+            if (isBetterScopesVRModLoaded()) {
+                logger::info("BetterScopesVR mod detected, registering for messages...");
+                _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
+                _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
+            }
+        } catch (const std::exception& ex) {
+            logger::critical("Error in initOnGameLoaded: {}", ex.what());
+            throw;
+        }
+    }
 
-		if (isBetterScopesVRModLoaded()) {
-			Log::info("BetterScopesVR mod detected, registering for messages...");
-			_messaging->Dispatch(_pluginHandle, 15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
-			_messaging->RegisterListener(_pluginHandle, BETTER_SCOPES_VR_MOD_NAME, onBetterScopesMessage);
-		}
-	}
+    /**
+     * Game session can be initialized multiple times as it is fired on new game and save loaded events.
+     * We should clear and reload as much of the game state as we can.
+     */
+    void FRIK::initOnGameSessionLoaded()
+    {
+        if (_skelly) {
+            logger::info("Resetting skeleton for new game session...");
+            releaseSkeleton();
+            logger::info("Reload config...");
+            g_config.load();
+        }
 
-	/**
-	 * Game session can be initialized multiple times as it is fired on new game and save loaded events.
-	 * We should clear and reload as much of the game state as we can.
-	 */
-	void FRIK::initOnGameSessionLoaded() {
-		if (_skelly) {
-			Log::info("Resetting skeleton for new game session...");
-			releaseSkeleton();
-			Log::info("Reload config...");
-			g_config.loadAllConfig();
-		}
+        configureGameVars();
+    }
 
-		configureGameVars();
-	}
+    /**
+     * Called on every game frame via hooks into the game engine.
+     * This is where all the magic happens by updating game state and nodes.
+     */
+    void FRIK::onFrameUpdate()
+    {
+        try {
+            if (!RE::PlayerCharacter::GetSingleton()) {
+                // game not loaded or existing
+                return;
+            }
 
-	/**
-	 * Called on every game frame via hooks into the game engine.
-	 * This is where all the magic happens by updating game state and nodes.
-	 */
-	void FRIK::onFrameUpdate() {
-		try {
-			if (!g_player || !(*g_player)->unkF0) {
-				// game not loaded or existing
-				return;
-			}
+            f4vr::VRControllers.update();
 
-			f4vr::VRControllers.update();
+            if (_skelly) {
+                if (!isRootNodeValid()) {
+                    logger::warn("Root node released, reset skelly... PowerArmorChange?({})", _inPowerArmor != f4vr::isInPowerArmor());
+                    releaseSkeleton();
+                } else if (_inPowerArmor != f4vr::isInPowerArmor()) {
+                    logger::info("Power Armor state changed, reset skeleton...");
+                    releaseSkeleton();
+                }
+            }
 
-			if (_skelly) {
-				if (!isRootNodeValid()) {
-					Log::warn("Root node released, reset skelly... PowerArmorChange?(%d)", _inPowerArmor != f4vr::isInPowerArmor());
-					releaseSkeleton();
-				} else if (_inPowerArmor != f4vr::isInPowerArmor()) {
-					Log::info("Power Armor state changed, reset skeleton...");
-					releaseSkeleton();
-				}
-			}
+            if (!_skelly) {
+                if (!isGameReadyForSkeletonInitialization()) {
+                    return;
+                }
 
-			if (!_skelly) {
-				if (!isGameReadyForSkeletonInitialization()) {
-					return;
-				}
-				initSkeleton();
-			}
+                initSkeleton();
+            }
 
-			Log::debug("Update Skeleton...");
-			_skelly->onFrameUpdate();
+            logger::trace("Update Skeleton...");
+            _skelly->onFrameUpdate();
 
-			Log::debug("Update Bone Sphere...");
-			_boneSpheres.onFrameUpdate();
+            logger::trace("Update Bone Sphere...");
+            _boneSpheres.onFrameUpdate();
 
-			Log::debug("Update Weapon Position...");
-			_weaponPosition->onFrameUpdate();
+            logger::trace("Update Weapon Position...");
+            _weaponPosition->onFrameUpdate();
 
-			Log::debug("Update Pipboy...");
-			_pipboy->onFrameUpdate();
+            logger::trace("Update Pipboy...");
+            _pipboy->onFrameUpdate();
 
-			_configurationMode->onFrameUpdate();
+            _configurationMode->onFrameUpdate();
 
-			FrameUpdateContext context(_skelly);
-			vrui::g_uiManager->onFrameUpdate(&context);
+            FrameUpdateContext context(_skelly);
+            vrui::g_uiManager->onFrameUpdate(&context);
 
-			_playerControlsHandler.onFrameUpdate(_pipboy, _weaponPosition, &_gameMenusHandler);
+            _playerControlsHandler.onFrameUpdate(_pipboy, _weaponPosition, &_gameMenusHandler);
 
-			updateWorldFinal();
+            updateWorldFinal();
 
-			checkDebugDump();
-		} catch (const std::exception& e) {
-			Log::error("Error in FRIK::onFrameUpdate: %s", e.what());
-		}
-	}
+            checkDebugDump();
+        } catch (const std::exception& e) {
+            logger::error("Error in FRIK::onFrameUpdate: {}", e.what());
+        }
+    }
 
-	void FRIK::smoothMovement() {
-		try {
-			_smoothMovement.onFrameUpdate();
-		} catch (const std::exception& e) {
-			Log::error("Error in FRIK::smoothMovement: %s", e.what());
-		}
-	}
+    void FRIK::smoothMovement()
+    {
+        try {
+            _smoothMovement.onFrameUpdate();
+        } catch (const std::exception& e) {
+            logger::error("Error in FRIK::smoothMovement: {}", e.what());
+        }
+    }
 
-	void FRIK::initSkeleton() {
-		_inPowerArmor = f4vr::isInPowerArmor();
+    void FRIK::initSkeleton()
+    {
+        _inPowerArmor = f4vr::isInPowerArmor();
 
-		Log::info("Initialize Skeleton (%s) ; Nodes: Player=%p, Data=%p, Root=%p, Skeleton=%p, Common=%p",
-			_inPowerArmor ? "PowerArmor" : "Regular", *g_player, (*g_player)->unkF0, (*g_player)->unkF0->rootNode, f4vr::getRootNode(), f4vr::getCommonNode());
+        const auto player = f4vr::getPlayer();
+        logger::info("Initialize Skeleton ({}) ; Nodes: Player={}, Data={}, Root={}, Skeleton={}, Common={}",
+            _inPowerArmor ? "PowerArmor" : "Regular",
+            static_cast<const void*>(player),
+            static_cast<const void*>(player->unkF0),
+            static_cast<const void*>(player->unkF0->rootNode),
+            static_cast<const void*>(f4vr::getRootNode()),
+            static_cast<const void*>(f4vr::getCommonNode()));
 
-		// init skeleton
-		_workingRootNode = f4vr::getRootNode();
-		_skelly = new Skeleton(f4vr::getRootNode(), _inPowerArmor);
+        // init skeleton
+        _workingRootNode = f4vr::getRootNode();
+        _skelly = new Skeleton(f4vr::getRootNode(), _inPowerArmor);
 
-		// init handlers depending on skeleton
-		_pipboy = new Pipboy(_skelly);
-		_configurationMode = new ConfigurationMode(_skelly);
-		_weaponPosition = new WeaponPositionAdjuster(_skelly);
-	}
+        // init handlers depending on skeleton
+        _pipboy = new Pipboy(_skelly);
+        _configurationMode = new ConfigurationMode(_skelly);
+        _weaponPosition = new WeaponPositionAdjuster(_skelly);
+    }
 
-	/**
-	 * Check if game all nodes exist and ready for skeleton handling flow.
-	 * Based on random crashes and the objects that were missing.
-	 * Probably not all checks are required, but it's cheap and only happens when skeleton is not initialized.
-	 */
-	bool FRIK::isGameReadyForSkeletonInitialization() {
-		if (!g_player || !(*g_player)->unkF0) {
-			Log::sample(3000, "Player global not set yet!");
-			return false;
-		}
-		if (!(*g_player)->unkF0->rootNode || !f4vr::getRootNode() || !f4vr::getWorldRootNode()) {
-			Log::info("Player root nodes not set yet!");
-			return false;
-		}
-		if (!f4vr::getCommonNode() || !f4vr::getPlayerNodes() || !f4vr::getFlattenedBoneTree()) {
-			Log::info("Common or Player nodes not set yet!");
-			return false;
-		}
-		if (!f4vr::getNode("RArm_Hand", f4vr::getFirstPersonSkeleton())) {
-			Log::info("Arm node not set yet!");
-			return false;
-		}
-		if (!f4vr::getWeaponNode()) {
-			Log::info("Weapon node not set yet!");
-			return false;
-		}
-		return true;
-	}
+    /**
+     * Check if game all nodes exist and ready for skeleton handling flow.
+     * Based on random crashes and the objects that were missing.
+     * Probably not all checks are required, but it's cheap and only happens when skeleton is not initialized.
+     */
+    bool FRIK::isGameReadyForSkeletonInitialization()
+    {
+        const auto player = f4vr::getPlayer();
+        if (!player || !player->unkF0) {
+            logger::sample(3000, "Player global not set yet!");
+            return false;
+        }
+        if (!player->unkF0->rootNode || !f4vr::getRootNode() || !f4vr::getWorldRootNode()) {
+            logger::sample("Player root nodes not set yet!");
+            return false;
+        }
+        if (!f4vr::getCommonNode() || !f4vr::getPlayerNodes() || !f4vr::getFlattenedBoneTree()) {
+            logger::sample("Common or Player nodes not set yet!");
+            return false;
+        }
+        if (!f4vr::findNode(f4vr::getFirstPersonSkeleton(), "RArm_Hand")) {
+            logger::sample("Arm node not set yet!");
+            return false;
+        }
+        if (!f4vr::getWeaponNode()) {
+            logger::sample("Weapon node not set yet!");
+            return false;
+        }
+        const auto camera = f4vr::getPlayerCamera();
+        if (!camera || !camera->cameraNode) {
+            logger::sample("Camera node not set yet!");
+            return false;
+        }
+        return true;
+    }
 
-	/**
-	 * The game can change the basic root object under us.
-	 * It doesn't happen often but when it does, we should reinitialize the skeleton.
-	 * Known root release: entering/exiting power armor, after character creation in new game.
-	 */
-	bool FRIK::isRootNodeValid() const {
-		if (!_workingRootNode)
-			return false;
-		if (_workingRootNode != f4vr::getRootNode())
-			return false;
-		if (_workingRootNode->m_parent == nullptr)
-			return false;
-		return true;
-	}
+    /**
+     * The game can change the basic root object under us.
+     * It doesn't happen often but when it does, we should reinitialize the skeleton.
+     * Known root release: entering/exiting power armor, after character creation in new game.
+     */
+    bool FRIK::isRootNodeValid() const
+    {
+        if (!_workingRootNode) {
+            return false;
+        }
+        if (_workingRootNode != f4vr::getRootNode()) {
+            return false;
+        }
+        if (_workingRootNode->parent == nullptr) {
+            return false;
+        }
+        return true;
+    }
 
-	/**
-	 * On switch from normal and power armor, reset the skelly and all dependencies with persistent data.
-	 */
-	void FRIK::releaseSkeleton() {
-		_workingRootNode = nullptr;
+    /**
+     * On switch from normal and power armor, reset the skelly and all dependencies with persistent data.
+     */
+    void FRIK::releaseSkeleton()
+    {
+        _workingRootNode = nullptr;
 
-		delete _skelly;
-		_skelly = nullptr;
+        delete _skelly;
+        _skelly = nullptr;
 
-		delete _pipboy;
-		_pipboy = nullptr;
+        delete _pipboy;
+        _pipboy = nullptr;
 
-		delete _configurationMode;
-		_configurationMode = nullptr;
+        delete _configurationMode;
+        _configurationMode = nullptr;
 
-		delete _weaponPosition;
-		_weaponPosition = nullptr;
+        delete _weaponPosition;
+        _weaponPosition = nullptr;
 
-		_inPowerArmor = false;
-		_dynamicCameraHeight = false;
-	}
+        _inPowerArmor = false;
+        _dynamicCameraHeight = false;
+    }
 
-	/**
-	 * Calling three engine-level functions to update the scene graph state for the player's root node and its children,
-	 * specifically related to geometry bounds, skeletal bone transforms, and flattened tree data.
-	 * Without it some cull geometry, Pipboy interaction, and hand fingers position may not work.
-	 */
-	void FRIK::updateWorldFinal() {
-		const auto worldRootNode = f4vr::getWorldRootNode();
-		f4vr::BSFadeNode_MergeWorldBounds(worldRootNode);
-		f4vr::BSFlattenedBoneTree_UpdateBoneArray(f4vr::getRootNode());
-		// just in case any transforms missed because they are not in the tree do a full flat bone array update
-		f4vr::BSFadeNode_UpdateGeomArray(worldRootNode, 1);
-	}
+    /**
+     * Calling three engine-level functions to update the scene graph state for the player's root node and its children,
+     * specifically related to geometry bounds, skeletal bone transforms, and flattened tree data.
+     * Without it some cull geometry, Pipboy interaction, and hand fingers position may not work.
+     */
+    void FRIK::updateWorldFinal()
+    {
+        const auto worldRootNode = f4vr::getWorldRootNode();
+        f4vr::BSFadeNode_MergeWorldBounds(worldRootNode);
+        f4vr::BSFlattenedBoneTree_UpdateBoneArray(f4vr::getRootNode());
+        // just in case any transforms missed because they are not in the tree do a full flat bone array update
+        f4vr::BSFadeNode_UpdateGeomArray(worldRootNode, 1);
+    }
 
-	void FRIK::configureGameVars() {
-		Log::info("Setting VRScale from:(%.3f) to:(%.3f)", f4vr::getIniSettingFloat("fVrScale:VR"), g_config.fVrScale);
-		f4vr::setIniSettingFloat("fVrScale:VR", g_config.fVrScale);
+    void FRIK::configureGameVars()
+    {
+        logger::info("Setting VRScale from:({:.3f}) to:({:.3f})", f4vr::getIniSetting("fVrScale:VR")->GetFloat(), g_config.fVrScale);
+        f4vr::getIniSetting("fVrScale:VR", true)->SetFloat(g_config.fVrScale);
 
-		f4vr::setIniSettingFloat("fPipboyMaxScale:VRPipboy", 3.0000);
-		f4vr::setIniSettingFloat("fPipboyMinScale:VRPipboy", 0.0100f);
-		f4vr::setIniSettingFloat("fVrPowerArmorScaleMultiplier:VR", 1.0000);
-	}
+        f4vr::getIniSetting("fPipboyMaxScale:VRPipboy", true)->SetFloat(3.0000);
+        f4vr::getIniSetting("fPipboyMinScale:VRPipboy", true)->SetFloat(0.0100f);
+        f4vr::getIniSetting("fVrPowerArmorScaleMultiplier:VR", true)->SetFloat(1.0000);
+    }
 
-	/**
-	 * Send a message to the BetterScopesVR mod.
-	 */
-	void FRIK::dispatchMessageToBetterScopesVR(const UInt32 messageType, void* data, const UInt32 dataLen) const {
-		_messaging->Dispatch(_pluginHandle, messageType, data, dataLen, BETTER_SCOPES_VR_MOD_NAME);
-	}
+    /**
+     * Send a message to the BetterScopesVR mod.
+     */
+    void FRIK::dispatchMessageToBetterScopesVR(const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const
+    {
+        _messaging->Dispatch(messageType, data, dataLen, BETTER_SCOPES_VR_MOD_NAME);
+    }
 
-	void FRIK::onBetterScopesMessage(F4SEMessagingInterface::Message* msg) {
-		if (!msg) {
-			return;
-		}
+    void FRIK::onBetterScopesMessage(F4SE::MessagingInterface::Message* msg)
+    {
+        if (!msg) {
+            return;
+        }
 
-		if (msg->type == 15) {
-			Log::info("BetterScopesVR looking through scopes: %d", msg->dataLen);
-			g_frik.setLookingThroughScope(static_cast<bool>(msg->data));
-		}
-	}
+        if (msg->type == 15) {
+            logger::info("BetterScopesVR looking through scopes: {}", msg->dataLen);
+            g_frik.setLookingThroughScope(static_cast<bool>(msg->data));
+        }
+    }
 
-	void FRIK::checkDebugDump() {
-		if (g_config.checkDebugDumpDataOnceFor("all_nodes")) {
-			printAllNodes();
-		}
-		if (g_config.checkDebugDumpDataOnceFor("world")) {
-			printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->m_parent->m_parent->m_parent->m_parent->m_parent->m_parent);
-		}
-		if (g_config.checkDebugDumpDataOnceFor("fp_skelly")) {
-			printNodes(f4vr::getFirstPersonSkeleton());
-		}
-		if (g_config.checkDebugDumpDataOnceFor("skelly")) {
-			printNodes(f4vr::getRootNode()->m_parent);
-		}
-		if (g_config.checkDebugDumpDataOnceFor("menus")) {
-			_gameMenusHandler.debugDumpAllMenus();
-		}
-	}
+    void FRIK::checkDebugDump()
+    {
+        if (g_config.checkDebugDumpDataOnceFor("all_nodes")) {
+            printAllNodes();
+        }
+        if (g_config.checkDebugDumpDataOnceFor("world")) {
+            printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->parent->parent->parent->parent->parent->parent);
+        }
+        if (g_config.checkDebugDumpDataOnceFor("fp_skelly")) {
+            printNodes(f4vr::getFirstPersonSkeleton());
+        }
+        if (g_config.checkDebugDumpDataOnceFor("skelly")) {
+            printNodes(f4vr::getRootNode()->parent);
+        }
+        if (g_config.checkDebugDumpDataOnceFor("menus")) {
+            _gameMenusHandler.debugDumpAllMenus();
+        }
+    }
 }

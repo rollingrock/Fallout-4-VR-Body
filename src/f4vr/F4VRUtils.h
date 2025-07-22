@@ -1,57 +1,57 @@
 #pragma once
-
-#include <f4se/GameTypes.h>
-#include <f4se/PluginAPI.h>
-
 #include "F4VROffsets.h"
 
-namespace f4vr {
-	static constexpr UInt32 KEYWORD_POWER_ARMOR = 0x4D8A1;
-	static constexpr UInt32 KEYWORD_POWER_ARMOR_FRAME = 0x15503F;
+namespace f4vr
+{
+    static constexpr std::uint32_t KEYWORD_POWER_ARMOR = 0x4D8A1;
+    static constexpr std::uint32_t KEYWORD_POWER_ARMOR_FRAME = 0x15503F;
 
-	// UI
-	void showMessagebox(const std::string& text);
-	void showNotification(const std::string& text);
+    // UI
+    void showMessagebox(const std::string& text);
+    void showNotification(const std::string& text);
 
-	// Controls
-	void setControlsThumbstickEnableState(bool toEnable);
+    // Controls
+    void setControlsThumbstickEnableState(bool toEnable);
+    void closeFavoriteMenu();
 
-	// Weapons/Armor/Player
-	void setWandsVisibility(bool show, bool leftWand);
-	bool isMeleeWeaponEquipped();
-	std::string getEquippedWeaponName();
-	bool hasKeyword(const TESObjectARMO* armor, UInt32 keywordFormId);
-	inline bool isJumpingOrInAir() { return IsInAir(*g_player); }
-	bool isInPowerArmor();
-	bool isInInternalCell();
+    // Weapons/Armor/Player
+    void setWandsVisibility(bool show, bool leftWand);
+    bool isMeleeWeaponEquipped();
+    std::string getEquippedWeaponName();
+    bool hasKeyword(const F4SEVR::TESObjectARMO* armor, std::uint32_t keywordFormId);
+    bool isJumpingOrInAir();
+    bool isInPowerArmor();
+    bool isInInternalCell();
+    bool isSwimming(const RE::PlayerCharacter* player = RE::PlayerCharacter::GetSingleton());
+    bool isUnderwater(const RE::PlayerCharacter* player = RE::PlayerCharacter::GetSingleton());
+    bool isMovementSafe(RE::PlayerCharacter* player, const RE::NiPoint3& currentPos, const RE::NiPoint3& targetPos);
 
-	// settings
-	inline bool isLeftHandedMode() { return *iniLeftHandedMode; }
-	float getIniSettingFloat(const char* name);
-	void setIniSettingBool(BSFixedString name, bool value);
-	void setIniSettingFloat(BSFixedString name, float value);
-	Setting* getIniSettingNative(const char* name);
+    // settings
+    bool isLeftHandedMode();
+    bool useWandDirectionalMovement();
+    RE::Setting* getIniSetting(const char* name, bool addNew = false);
 
-	// nodes
-	NiNode* getNode(const char* name, NiNode* fromNode);
-	NiNode* getNode2(const char* name, NiNode* fromNode);
-	NiNode* getChildNode(const char* nodeName, NiNode* nde);
-	NiNode* get1StChildNode(const char* nodeName, const NiNode* nde);
+    // nodes
+    RE::NiAVObject* findAVObject(RE::NiAVObject* node, const std::string& name, const int maxDepth = 999);
+    RE::NiNode* findNode(RE::NiAVObject* node, const char* name, const int maxDepth = 999);
+    RE::NiNode* find1StChildNode(RE::NiAVObject* node, const char* name);
 
-	// visibility
-	bool isNodeVisible(const NiNode* node);
-	void setNodeVisibility(NiAVObject* node, bool show = true);
-	void setNodeVisibilityDeep(NiAVObject* node, bool show, bool updateSelf);
-	void toggleVis(NiNode* node, bool hide, bool updateSelf);
+    // visibility
+    bool isNodeVisible(const RE::NiNode* node);
+    void setNodeVisibility(RE::NiAVObject* node, bool show);
+    void setNodeVisibilityDeep(RE::NiAVObject* node, bool show, bool updateSelf = true);
 
-	// updates
-	void updateDownFromRoot();
-	void updateDown(NiNode* nde, bool updateSelf, const char* ignoreNode = nullptr);
-	void updateDownTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
-	void updateUpTo(NiNode* toNode, NiNode* fromNode, bool updateSelf);
-	void updateTransforms(NiNode* node);
-	void updateTransformsDown(NiNode* nde, bool updateSelf);
+    // updates
+    void updateDownFromRoot();
+    void updateDown(RE::NiAVObject* node, bool updateSelf, const char* ignoreNode = nullptr);
+    void updateDownTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
+    void updateUpTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
+    void updateTransforms(RE::NiNode* node);
+    void updateTransformsDown(RE::NiNode* node, bool updateSelf);
 
-	typedef bool (*RegisterFunctions)(VirtualMachine* vm);
-	void registerPapyrusNativeFunctions(const F4SEInterface* f4se, RegisterFunctions callback);
+    void registerPapyrusNativeFunctions(F4SE::PapyrusInterface::RegisterFunctions callback);
+
+    // CommonLib migration
+    RE::NiNode* loadNifFromFile(const std::string& path);
+    RE::NiNode* getClonedNiNodeForNifFile(const std::string& path, const std::string& name = "");
 }
