@@ -1,57 +1,42 @@
-## Dev Setup
+## Runtime Requirements
+- [F4SE/VR](https://f4se.silverlock.org/)
+- [VR Address Library for F4SEVR Plugins](https://www.nexusmods.com/fallout4/mods/64879)
 
-Prerequisites:
+## Development Requirements
+- [CMake](https://cmake.org/)
+- [Vcpkg](https://github.com/microsoft/vcpkg)
+  - `git clone https://github.com/microsoft/vcpkg.git`
+  - run `bootstrap-vcpkg.bat`. Example: `C:\github\vcpkg\bootstrap-vcpkg.bat`
+  - Set environment variable `VCPKG_ROOT`. Example: `setx VCPKG_ROOT "C:\github\vcpkg"`
+- [Visual Studio Community 2022](https://visualstudio.microsoft.com/)
+  - Desktop development with C++
 
-- Install Visual Studio 2022 community edition
-- Let's define `\root\` to be the root folder we will use (example: `\root\` for me is `C:\Dev\Modding\`)
+## Building
+Clone repo and setup CommonLibF4 submodule:
+```
+git clone https://github.com/rollingrock/Fallout-4-VR-Body.git
+cd Fallout-4-VR-Body
+git submodule update --init --recursive
+```
 
-### Setup `f4sevr`:
+Create VS2022 solution:
+```
+cmake --preset default
+```
+- Open `.../Fallout-4-VR-Body/build/FRIK.sln` in VS2022.
+  - Build and debug in VS as usual
+  - Any project changes should be done in `CMakeLists.txt`
+- see `CMakeUserPresets.json.template` to customize presets by providing path for post-build event.
+  - Use `cmake --preset custom`
 
-1. Download [Fallout 4 Script Extender (F4SE)](https://f4se.silverlock.org/)
-2. Extract content of `f4sevr_0_6_21` folder into `\root\f4sevr`
-3. Override changed files
-   1. Git clone [`Fallout-4-VR-Body`](https://github.com/rollingrock/Fallout-4-VR-Body)
-      - Should be `\root\Fallout-4-VR-Body\` for later
-   2. Extract files in `\root\Fallout-4-VR-Body\f4se_updates_add_to_your_f4se_library\f4se_updates.zip` to `f4sevr\src\f4sevr\f4se` (overwrite)
+Build and package:
+```
+cmake --preset default
+cmake --build buildvr --config Release
+```
+- Will automatically create a 7zip package of the mod in `build/package`
 
-### Build `FRIK`:
-
-1. Git clone [`Fallout-4-VR-Body`](https://github.com/rollingrock/Fallout-4-VR-Body) (if not already from building "f4sevr")
-   - Should be `\root\Fallout-4-VR-Body\`
-2. Open `Fallout-4-VR-Body` in Visual Studio
-   1. Double click `\root\Fallout-4-VR-Body\Fallout4VR_Body.sln`
-3. Change target dropdown from "Debug" to "Release"
-4. Setup post build copy environment variable
-   1. `setx FRIK_MOD_PATH "C:\[myModsLocation]\FRIK\F4SE\Plugins"`
-   2. Restart VS2022 to load the envar
-5. Build > Build Solution
-6. Find `\root\Fallout-4-VR-Body\x64\Release\FRIK.dll`
-
-### Optional, build `f4sevr`:
-
-1. Do all the steps in [setup `f4sevr`](#setup-f4sevr)
-2. Open `f4sevr` solution in Visual Studio
-   1. Double click `C:\Stuff\github\f4sevr\src\f4sevr\f4sevr.sln`
-   2. Ignore all source control warnings
-   3. Confirm retarget project to latest
-      - Solution was configured for VS 2012 (v110), we can retarget it to latest 2022 (v143)
-3. Fix compilation error due to more strict C++
-   1. Open `PapyrusObjectReference.cpp`
-   2. Go to line 558
-   3. Add `const` to the end of the function declaration (just before the `{` bracket)
-      - `bool operator()(const std::pair<BGSMaterialSwap::MaterialSwap*,float> lhs, const std::pair<BGSMaterialSwap::MaterialSwap*,float> rhs) const {`
-4. Change target dropdown from "Debug" to "Release"
-5. Change `f4se` project output configuration to Static Library
-   1. Right click on `f4se` project; click Properties
-   2. Configuration Properties > General;
-   3. Change "Configuration Type" from "Dynamic Library (.dll)" to "Static Library (.lib)"
-   4. close
-6. Build > Build Solution
-   - Ignore 3 post build errors to copy output files
-7. Find the 3 `.lib` files
-   1. `\root\f4sevr\src\f4sevr\x64\Release\f4se_common.lib`
-   2. `\root\f4sevr\src\f4sevr\x64\Release\f4sevr_1_2_72.lib`
-   3. `\root\f4sevr\src\f4sevr\x64_vc11\Release\common_vc11.lib`
+---
 
 ## Tips
 
@@ -60,9 +45,9 @@ Prerequisites:
   - [Skyrim CommonLib - Query and Load](https://github.com/Ryan-rsm-McKenzie/CommonLibSSE/wiki/Query-and-Load)
 
 - Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`
-  - `Fallout4VRBody.log` for FRIK logs
+  - `FRIK.log` for FRIK logs
   - `crash-<date time>.log` for crash logs
-  - use `tail -f "%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE\Fallout4VRBody.log"` to tail the log
+  - use `tail -f "%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE\FRIK.log"` to tail the log
 
 - To be able to attach debugger and use breakpoint you need [Steamless](https://github.com/atom0s/Steamless)
   - Get latest [Steamless](https://github.com/atom0s/Steamless/releases)

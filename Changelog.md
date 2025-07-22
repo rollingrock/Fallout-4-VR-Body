@@ -1,4 +1,5 @@
 ## v0.75 (in-development)
+- Migrated from F4SEVR to CommonLibF4 infrastructure.
 
 ## v0.74
 - Fixed two-handed weapon rotation around the adjusted position to keep stock near primary hand pivot.
