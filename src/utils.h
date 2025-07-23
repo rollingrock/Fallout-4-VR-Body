@@ -6,6 +6,8 @@ namespace frik
 {
     void turnPlayerRadioOn(bool isActive);
 
+    void triggerShortHeptic();
+
     void turnPipBoyOn();
     void turnPipBoyOff();
     bool isAnyPipboyOpen();

@@ -43,7 +43,7 @@ namespace frik
 
         RE::NiTransform getBoneWorldTransform(const std::string& boneName);
 
-        RE::NiPoint3 getOffhandIndexFingerTipWorldPosition();
+        RE::NiPoint3 getIndexFingerTipWorldPosition(bool primaryHand);
 
         void onFrameUpdate();
 

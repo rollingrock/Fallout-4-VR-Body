@@ -4,6 +4,7 @@
 #include "f4sevr/PapyrusUtils.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/PlayerNodes.h"
+#include "f4vr/VRControllersManager.h"
 
 using namespace common;
 
@@ -12,6 +13,11 @@ namespace frik
     void turnPlayerRadioOn(bool isActive)
     {
         F4SEVR::execPapyrusGlobalFunction("Game", "TurnPlayerRadioOn", isActive);
+    }
+
+    void triggerShortHeptic()
+    {
+        f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
     }
 
     void turnPipBoyOn()

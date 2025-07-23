@@ -15,7 +15,7 @@ namespace frik
          */
         void onFrameUpdate(const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition, f4vr::GameMenusHandler* gameMenusHandler)
         {
-            if (pipboy->status()) {
+            if (pipboy->isOn()) {
                 disableFull();
                 return;
             }

@@ -31,7 +31,7 @@ namespace frik
 
         virtual RE::NiPoint3 getInteractionBoneWorldPosition() override
         {
-            return _skelly->getOffhandIndexFingerTipWorldPosition();
+            return _skelly->getIndexFingerTipWorldPosition(false);
         }
 
         virtual void fireInteractionHeptic() override
