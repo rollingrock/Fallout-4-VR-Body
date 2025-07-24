@@ -237,12 +237,12 @@ namespace frik
         }
 
         if (_offHandGripping) {
-            if (g_config.onePressGripButton && !f4vr::VRControllers.isPressHeldDown(g_config.gripButtonID, f4vr::Hand::Offhand)) {
+            if (g_config.onePressGripButton && !f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, g_config.gripButtonID)) {
                 // Mode 3 release grip when not holding the grip button
                 setOffhandGripping(false);
             }
 
-            if (g_config.enableGripButtonToLetGo && f4vr::VRControllers.isPressed(g_config.gripButtonID, f4vr::Hand::Offhand)) {
+            if (g_config.enableGripButtonToLetGo && f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, g_config.gripButtonID)) {
                 if (g_config.enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
                     // Mode 2,4 release grip on pressing the grip button again
                     setOffhandGripping(false);
@@ -276,7 +276,7 @@ namespace frik
             // Mode 1,2 grab when close to barrel
             setOffhandGripping(true);
         }
-        if (!g_frik.isPipboyOn() && f4vr::VRControllers.isPressed(g_config.gripButtonID, f4vr::Hand::Offhand)) {
+        if (!g_frik.isPipboyOn() && f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, g_config.gripButtonID)) {
             // Mode 3,4 grab when pressing grip button
             setOffhandGripping(true);
         }
@@ -461,7 +461,7 @@ namespace frik
      */
     void WeaponPositionAdjuster::handleBetterScopes(RE::NiNode* weapon) const
     {
-        if (!f4vr::VRControllers.isPressed(vr::EVRButtonId::k_EButton_A, f4vr::Hand::Offhand)) {
+        if (!f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // fast return not to make additional calculations, checking button is cheap
             return;
         }

@@ -162,7 +162,7 @@ namespace frik
      */
     void Pipboy::checkTurningOnByButton()
     {
-        if (!f4vr::VRControllers.isReleasedShort(g_config.pipBoyButtonID, f4vr::Hand::Offhand)) {
+        if (!f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonID)) {
             return;
         }
 
@@ -175,7 +175,7 @@ namespace frik
      */
     void Pipboy::checkTurningOffByButton()
     {
-        if (!_isOnStatus || !f4vr::VRControllers.isReleasedShort(g_config.pipBoyButtonOffID, f4vr::Hand::Offhand)) {
+        if (!_isOnStatus || !f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID)) {
             return;
         }
 
@@ -219,10 +219,9 @@ namespace frik
             return;
         }
 
-        const vr::VRControllerAxis_t movingStick = f4vr::VRControllers.getAxisValue(g_config.pipBoyButtonArm > 0
-            ? vr::ETrackedControllerRole::TrackedControllerRole_RightHand
-            : vr::ETrackedControllerRole::TrackedControllerRole_LeftHand, 0);
-        const auto lookingStick = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, 0);
+        const vr::VRControllerAxis_t movingStick = f4vr::VRControllers.getThumbstickValue(
+            g_config.pipBoyButtonArm > 0 ? vr::ETrackedControllerRole::TrackedControllerRole_RightHand : vr::ETrackedControllerRole::TrackedControllerRole_LeftHand);
+        const auto lookingStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
         const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway && _isOnStatus
             && !g_frik.isPipboyConfigurationModeActive()
             && isNowPassed(_lastLookingAtPip, g_config.pipBoyOffDelay);

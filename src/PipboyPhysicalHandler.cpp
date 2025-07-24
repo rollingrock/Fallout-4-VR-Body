@@ -240,9 +240,9 @@ namespace frik
             return;
         }
 
-        const auto doinantHandStick = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, 0);
-        const auto doinantTrigger = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, 1);
-        const auto secondaryTrigger = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand, 1);
+        const auto doinantHandStick = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, f4vr::Axis::Thumbstick);
+        const auto doinantTrigger = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, f4vr::Axis::Trigger);
+        const auto secondaryTrigger = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand, f4vr::Axis::Trigger);
 
         // Move Pipboy trigger mesh with controller trigger position.
         if (const auto trans = f4vr::findAVObject(arm.forearm3, "SelectRotate")) {
