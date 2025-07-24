@@ -17,7 +17,7 @@ namespace frik
     {
         STATUS = 0,
         INVENTORY,
-        UESTS,
+        DATA,
         MAP,
         RADIO,
     };
@@ -47,12 +47,7 @@ namespace frik
         static void handlePrimaryControllerOperationOnMapPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
         static void handlePrimaryControllerOperationOnRadioPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
 
-        void rightStickXSleep(int time);
-        void rightStickYSleep(int time);
-        void secondaryTriggerSleep(int time);
-
-        bool _controlSleepStickyX = false;
-        bool _controlSleepStickyY = false;
-        bool _controlSleepStickyT = false;
+        // used to prevent multiple operations when thumbstick is moved
+        uint64_t _lastControllerThumbstickOperationTime = 0;
     };
 }

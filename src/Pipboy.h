@@ -41,10 +41,7 @@ namespace frik
         void checkSwitchingFlashlightHeadHand();
 
         void storeLastPipboyPage();
-
         void dampenPipboyScreen();
-
-        void secondaryTriggerSleep(int time);
 
         Skeleton* _skelly;
 
@@ -58,13 +55,9 @@ namespace frik
         RE::NiTransform _pipboyScreenPrevFrame;
 
         // Pipboy interaction "sticky" flags
-        bool _stickyTurnOn = false;
-        bool _stickyTurnOff = false;
         bool _stickySwithLight = false;
 
         PipboyPage _lastPipboyPage = PipboyPage::STATUS;
         float lastRadioFreq = 0.0;
-
-        bool _controlSleepStickyT = false;
     };
 }

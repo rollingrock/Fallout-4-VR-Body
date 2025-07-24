@@ -2,8 +2,6 @@
 
 #include "f4vr/VRControllersManager.h"
 
-#include <thread>
-
 #include "Config.h"
 #include "FRIK.h"
 #include "utils.h"
@@ -161,8 +159,7 @@ namespace frik
 
         const auto doinantHandStick = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, 0);
         if (fEqual(doinantHandStick.x, 0, 0.1f) && fEqual(doinantHandStick.y, 0, 0.1f)) {
-            _controlSleepStickyX = false;
-            _controlSleepStickyY = false;
+            _lastControllerThumbstickOperationTime = 0;
             return; // No movement, no operation
         }
 
@@ -176,37 +173,25 @@ namespace frik
             root->Invoke("root.Menu_mc.CurrentPage.WorldMapHolder_mc.PanMap", nullptr, akArgs, 2);
             root->Invoke("root.Menu_mc.CurrentPage.LocalMapHolder_mc.PanMap", nullptr, akArgs, 2);
         } else {
+            const auto now = nowMillis();
+            if (now - _lastControllerThumbstickOperationTime < 170) {
+                return; // Prevent too frequent operations
+            }
             if (doinantHandStick.y > 0.85) {
-                if (!_controlSleepStickyY) {
-                    _controlSleepStickyY = true;
-                    moveListSelectionUpDown(root, true);
-                    std::thread t2(&PipboyOperationHandler::rightStickYSleep, this, 155);
-                    t2.detach();
-                }
+                _lastControllerThumbstickOperationTime = now;
+                moveListSelectionUpDown(root, true);
             }
             if (doinantHandStick.y < -0.85) {
-                if (!_controlSleepStickyY) {
-                    _controlSleepStickyY = true;
-                    moveListSelectionUpDown(root, false);
-                    std::thread t2(&PipboyOperationHandler::rightStickYSleep, this, 155);
-                    t2.detach();
-                }
+                _lastControllerThumbstickOperationTime = now;
+                moveListSelectionUpDown(root, false);
             }
             if (doinantHandStick.x < -0.85) {
-                if (!_controlSleepStickyX) {
-                    _controlSleepStickyX = true;
-                    gotoPrevTab(root);
-                    std::thread t3(&PipboyOperationHandler::rightStickXSleep, this, 170);
-                    t3.detach();
-                }
+                _lastControllerThumbstickOperationTime = now;
+                gotoPrevTab(root);
             }
             if (doinantHandStick.x > 0.85) {
-                if (!_controlSleepStickyX) {
-                    _controlSleepStickyX = true;
-                    gotoNextTab(root);
-                    std::thread t3(&PipboyOperationHandler::rightStickXSleep, this, 170);
-                    t3.detach();
-                }
+                _lastControllerThumbstickOperationTime = now;
+                gotoNextTab(root);
             }
         }
     }
@@ -245,20 +230,20 @@ namespace frik
         }
 
         // Specific handling by current page
-        switch (f4vr::getScaleformInt(root, "root.Menu_mc.DataObj._CurrentPage").value_or(-1)) {
-        case 0:
+        switch (getCurrentPipboyPage(root).value()) {
+        case PipboyPage::STATUS:
             handlePrimaryControllerOperationOnStatusPage(root, triggerPressed);
             break;
-        case 1:
+        case PipboyPage::INVENTORY:
             handlePrimaryControllerOperationOnInventoryPage(root, triggerPressed);
             break;
-        case 2:
+        case PipboyPage::DATA:
             handlePrimaryControllerOperationOnDataPage(root, triggerPressed);
             break;
-        case 3:
+        case PipboyPage::MAP:
             handlePrimaryControllerOperationOnMapPage(root, triggerPressed);
             break;
-        case 4:
+        case PipboyPage::RADIO:
             handlePrimaryControllerOperationOnRadioPage(root, triggerPressed);
             break;
         default: ;
@@ -398,32 +383,5 @@ namespace frik
             triggerShortHaptic();
             f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.List_mc", f4vr::ScaleformListOp::Select);
         }
-    }
-
-    /**
-     * Prevents continuous Input from Right Stick X Axis
-     */
-    void PipboyOperationHandler::rightStickXSleep(const int time)
-    {
-        Sleep(time);
-        _controlSleepStickyX = false;
-    }
-
-    /**
-     * Prevents continuous Input from Right Stick Y Axis
-     */
-    void PipboyOperationHandler::rightStickYSleep(const int time)
-    {
-        Sleep(time);
-        _controlSleepStickyY = false;
-    }
-
-    /**
-     * Used to determine if secondary trigger received a long or short press
-     */
-    void PipboyOperationHandler::secondaryTriggerSleep(const int time)
-    {
-        Sleep(time);
-        _controlSleepStickyT = false;
     }
 }

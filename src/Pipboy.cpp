@@ -1,16 +1,13 @@
 #include "Pipboy.h"
 
-#include <chrono>
-#include <thread>
+#include <utility>
 
 #include "Config.h"
 #include "FRIK.h"
-#include "HandPose.h"
 #include "utils.h"
 #include "common/Logger.h"
 #include "f4vr/VRControllersManager.h"
 
-using namespace std::chrono;
 using namespace common;
 
 namespace frik
@@ -24,14 +21,13 @@ namespace frik
             return;
         }
         _isOnStatus = setOn;
-        _stickyTurnOff = false;
         if (setOn) {
-            f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 1.0;
             turnPipBoyOn();
+            f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 1.0;
         } else {
             turnPipBoyOff();
-            g_frik.closePipboyConfigurationModeActive();
             f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 0.0;
+            g_frik.closePipboyConfigurationModeActive();
         }
     }
 
@@ -68,17 +64,17 @@ namespace frik
 
     /**
      * Executed every frame to update the Pipboy location and handle interaction with pipboy config UX.
-     * TODO: refactor into separate functions for each functionality
      */
     void Pipboy::onFrameUpdate()
     {
         replaceMeshes(false);
 
-        checkTurningOnByButton();
-        checkTurningOffByButton();
-
+        // check by looking should be first to handle closing by button not opening it again by looking at Pipboy.
         checkTurningOnByLookingAt();
         checkTurningOffByLookingAway();
+
+        checkTurningOnByButton();
+        checkTurningOffByButton();
 
         checkSwitchingFlashlightHeadHand();
 
@@ -166,31 +162,12 @@ namespace frik
      */
     void Pipboy::checkTurningOnByButton()
     {
-        // TODO: create nice function to detect release that is not after long press
-        const auto pipOnButtonPressed = (g_config.pipBoyButtonArm
-            ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
-            : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId(
-            static_cast<vr::EVRButtonId>(g_config.pipBoyButtonID));
-
-        if (pipOnButtonPressed && !_stickyTurnOff /*&& !_physicalHandler.isOperating()*/) {
-            _stickyTurnOff = true;
-            _controlSleepStickyT = true;
-            std::thread t5(&Pipboy::secondaryTriggerSleep, this, 300); // switches a bool to false after 150ms
-            t5.detach();
-        } else if (!pipOnButtonPressed) {
-            if (_controlSleepStickyT && _stickyTurnOff && (!g_config.pipboyOpenWhenLookAt || isLookingAtPipBoy())) {
-                // if bool is still set to true on control release we know it was a short press.
-                _isOnStatus = true;
-                f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 1.0;
-                turnPipBoyOn();
-                setPipboyHandPose();
-                logger::info("Enabling Pipboy with button");
-                _stickyTurnOff = false;
-            } else {
-                // guard so we don't constantly toggle the pip boy every frame
-                _stickyTurnOff = false;
-            }
+        if (!f4vr::VRControllers.isReleasedShort(g_config.pipBoyButtonID, f4vr::Hand::Offhand)) {
+            return;
         }
+
+        logger::info("Open Pipboy with button");
+        setOnOff(true);
     }
 
     /**
@@ -198,27 +175,15 @@ namespace frik
      */
     void Pipboy::checkTurningOffByButton()
     {
-        // TODO: create nice function to detect release that is not after long press
-        const auto pipOffButtonPressed = (g_config.pipBoyButtonOffArm
-            ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
-            : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed) & vr::ButtonMaskFromId(
-            static_cast<vr::EVRButtonId>(g_config.pipBoyButtonOffID));
-
-        // check off button
-        if (pipOffButtonPressed && !_stickyTurnOn) {
-            if (_isOnStatus) {
-                _isOnStatus = false;
-                turnPipBoyOff();
-                g_frik.closePipboyConfigurationModeActive();
-                disablePipboyHandPose();
-                f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 0.0;
-                logger::info("Disabling Pipboy with button");
-                _stickyTurnOn = true;
-            }
-        } else if (!pipOffButtonPressed) {
-            // guard so we don't constantly toggle the pip boy off every frame
-            _stickyTurnOn = false;
+        if (!_isOnStatus || !f4vr::VRControllers.isReleasedShort(g_config.pipBoyButtonOffID, f4vr::Hand::Offhand)) {
+            return;
         }
+
+        logger::info("Close Pipboy with button");
+        setOnOff(false);
+
+        // Prevents Pipboy from being turned on again immediately after closing it.
+        _startedLookingAtPip = nowMillis() + 10000;
     }
 
     /**
@@ -226,19 +191,16 @@ namespace frik
      */
     void Pipboy::checkTurningOnByLookingAt()
     {
-        if (_isOnStatus || !g_config.pipboyOpenWhenLookAt) {
+        if (_isOnStatus || !g_config.pipboyOpenWhenLookAt || !isLookingAtPipBoy()) {
+            _startedLookingAtPip = 0;
             return;
         }
         if (_startedLookingAtPip == 0) {
-            _startedLookingAtPip = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+            _startedLookingAtPip = nowMillis();
         } else {
-            const auto timeElapsed = static_cast<int>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _startedLookingAtPip);
-            if (timeElapsed > g_config.pipBoyOnDelay) {
-                _isOnStatus = true;
-                f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 1.0;
-                turnPipBoyOn();
-                setPipboyHandPose();
-                _startedLookingAtPip = 0;
+            if (isNowPassed(_startedLookingAtPip, g_config.pipBoyOnDelay)) {
+                logger::info("Open Pipboy by looking at");
+                setOnOff(true);
             }
         }
     }
@@ -248,34 +210,30 @@ namespace frik
      */
     void Pipboy::checkTurningOffByLookingAway()
     {
-        if (_isOnStatus) {
-            _lastLookingAtPip = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-        }
-        if (isLookingAtPipBoy()) {
+        if (!_isOnStatus) {
             return;
         }
 
-        _startedLookingAtPip = 0;
-        const vr::VRControllerAxis_t movingStick = g_config.pipBoyButtonArm > 0
-            ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0]
-            : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0];
-        const vr::VRControllerAxis_t lookingStick = f4vr::isLeftHandedMode()
-            ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
-            : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
-        const auto timeElapsed = static_cast<int>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - _lastLookingAtPip);
+        if (isLookingAtPipBoy()) {
+            _lastLookingAtPip = nowMillis();
+            return;
+        }
+
+        const vr::VRControllerAxis_t movingStick = f4vr::VRControllers.getAxisValue(g_config.pipBoyButtonArm > 0
+            ? vr::ETrackedControllerRole::TrackedControllerRole_RightHand
+            : vr::ETrackedControllerRole::TrackedControllerRole_LeftHand, 0);
+        const auto lookingStick = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, 0);
         const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway && _isOnStatus
             && !g_frik.isPipboyConfigurationModeActive()
-            && timeElapsed > g_config.pipBoyOffDelay;
+            && isNowPassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
         const bool closeLookingWayWithMovement = g_config.pipboyCloseWhenMovingWhileLookingAway && _isOnStatus
             && !g_frik.isPipboyConfigurationModeActive()
             && (fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f)
                 || fNotEqual(lookingStick.x, 0, 0.3f) || fNotEqual(lookingStick.y, 0, 0.3f));
 
         if (closeLookingWayWithDelay || closeLookingWayWithMovement) {
-            _isOnStatus = false;
-            turnPipBoyOff();
-            f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 0.0;
-            disablePipboyHandPose();
+            logger::info("Close Pipboy when looking away: byDelay({}), byMovement({})", closeLookingWayWithDelay, closeLookingWayWithMovement);
+            setOnOff(false);
         }
     }
 
@@ -407,14 +365,5 @@ namespace frik
             _pipboyScreenPrevFrame = pipboyScreen->world;
             f4vr::updateDown(pipboyScreen, false);
         }
-    }
-
-    /**
-     * Used to determine if secondary trigger received a long or short press
-     */
-    void Pipboy::secondaryTriggerSleep(const int time)
-    {
-        Sleep(time);
-        _controlSleepStickyT = false;
     }
 }
