@@ -126,20 +126,38 @@ namespace f4vr
          * Returns true if the specified button was just released
          * This will return true for ONE frame only when the button is first released.
          * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+         * @param maxHoldDurationSeconds optional: max duration in seconds that the button can be held before it is ignored for release.
          */
-        bool isReleased(const vr::EVRButtonId button, const Hand primaryHand)
+        bool isReleased(const vr::EVRButtonId button, const Hand primaryHand, const float maxHoldDurationSeconds = 99)
         {
-            return isReleased(button, getHand(primaryHand));
+            return isReleased(button, getHand(primaryHand), maxHoldDurationSeconds);
         }
 
-        bool isReleased(const int button, const Hand primaryHand)
+        bool isReleased(const int button, const Hand primaryHand, const float maxHoldDurationSeconds = 99)
         {
-            return isReleased(static_cast<vr::EVRButtonId>(button), getHand(primaryHand));
+            return isReleased(static_cast<vr::EVRButtonId>(button), getHand(primaryHand), maxHoldDurationSeconds);
         }
 
-        bool isReleased(const vr::EVRButtonId button, const vr::ETrackedControllerRole hand)
+        /**
+         * Returns true if the specified button was just released and was held for less than 0.3 seconds.
+         * This will return true for ONE frame only when the button is first released.
+         * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+         */
+        bool isReleasedShort(const vr::EVRButtonId button, const Hand primaryHand)
         {
-            return get(hand).justReleased(button, _currentTime, _debounceCooldown);
+            return isReleased(button, getHand(primaryHand), 0.3f);
+        }
+
+        bool isReleasedShort(const int button, const Hand primaryHand)
+        {
+            return isReleased(static_cast<vr::EVRButtonId>(button), getHand(primaryHand), 0.3f);
+        }
+
+        bool isReleased(const vr::EVRButtonId button, const vr::ETrackedControllerRole hand, const float maxHoldDurationSeconds = 99)
+        {
+            auto& state = get(hand);
+            const bool justReleased = state.justReleased(button, _currentTime, _debounceCooldown);
+            return justReleased && state.getHeldDurationForRelease(button, _currentTime) < maxHoldDurationSeconds;
         }
 
         /**
@@ -271,6 +289,7 @@ namespace f4vr
             vr::TrackedDevicePose_t pose{};
             bool valid = false;
             std::unordered_map<vr::EVRButtonId, float> pressStartTimes; // Track how long each button has been held
+            std::unordered_map<vr::EVRButtonId, float> pressStartTimesForRelease;
             std::unordered_map<vr::EVRButtonId, float> lastPressTime;
             std::unordered_map<vr::EVRButtonId, float> lastReleaseTime;
             std::unordered_map<vr::EVRButtonId, bool> longPressHandled; // Track if long press was handled
@@ -300,7 +319,11 @@ namespace f4vr
                     if (isNowPressed && !wasPressed) {
                         pressStartTimes[button] = now;
                     } else if (!isNowPressed && wasPressed) {
-                        pressStartTimes.erase(button);
+                        if (auto node = pressStartTimes.extract(button)) {
+                            pressStartTimesForRelease.insert(std::move(node));
+                        }
+                    } else {
+                        pressStartTimesForRelease.erase(button);
                     }
                 }
 
@@ -372,6 +395,15 @@ namespace f4vr
                 pressStartTimes.erase(button);
                 // Mark long press as handled so isReleased won't fire
                 longPressHandled[button] = true;
+            }
+
+            float getHeldDurationForRelease(const vr::EVRButtonId button, const float now) const
+            {
+                const auto it = pressStartTimesForRelease.find(button);
+                if (it == pressStartTimesForRelease.end()) {
+                    return 0.0f;
+                }
+                return now - it->second;
             }
 
             void startHaptic(const float endTime, const float intensity)
