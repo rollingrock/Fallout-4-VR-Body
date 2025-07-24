@@ -31,8 +31,6 @@ namespace frik
         void replaceMeshes(bool force);
         void onFrameUpdate();
 
-        static void execOperation(PipboyOperation operation);
-
     private:
         void replaceMeshes(const std::string& itemHide, const std::string& itemShow);
 
@@ -42,26 +40,15 @@ namespace frik
         void checkTurningOffByLookingAway();
         void checkSwitchingFlashlightHeadHand();
 
-        static void gotoPrevPage(RE::Scaleform::GFx::Movie* root);
-        static void gotoNextPage(RE::Scaleform::GFx::Movie* root);
-        static void gotoPrevTab(RE::Scaleform::GFx::Movie* root);
-        static void gotoNextTab(RE::Scaleform::GFx::Movie* root);
-        static void moveListSelectionUpDown(RE::Scaleform::GFx::Movie* root, bool moveUp);
-        static void handlePrimaryControllerOperationOnStatusPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
-        static void handlePrimaryControllerOperationOnInventoryPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
-        static void handlePrimaryControllerOperationOnDataPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
-        static void handlePrimaryControllerOperationOnMapPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
-        static void handlePrimaryControllerOperationOnRadioPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
         void storeLastPipboyPage();
-        void handlePrimaryControllerThumbstickOperation(RE::Scaleform::GFx::Movie* root);
-        static void handlePrimaryControllerButtonsOperation(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
 
         void dampenPipboyScreen();
-        void rightStickXSleep(int time);
-        void rightStickYSleep(int time);
+
         void secondaryTriggerSleep(int time);
 
         Skeleton* _skelly;
+
+        PipboyOperationHandler _operationHandler;
         PipboyPhysicalHandler _physicalHandler;
 
         bool _isOnStatus = false;
@@ -78,8 +65,6 @@ namespace frik
         PipboyPage _lastPipboyPage = PipboyPage::STATUS;
         float lastRadioFreq = 0.0;
 
-        bool _controlSleepStickyX = false;
-        bool _controlSleepStickyY = false;
         bool _controlSleepStickyT = false;
     };
 }

@@ -139,7 +139,7 @@ namespace frik
                 return;
             }
 
-            f4vr::VRControllers.update();
+            f4vr::VRControllers.update(f4vr::isLeftHandedMode());
 
             if (_skelly) {
                 if (!isRootNodeValid()) {

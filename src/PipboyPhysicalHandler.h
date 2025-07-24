@@ -19,15 +19,14 @@ namespace frik
 
         bool isOperating() const { return _isOperatingPipboy; }
 
-        void operate(PipboyPage lastPipboyPage, bool isPBMessageBoxVisible);
+        void operate(PipboyPage lastPipboyPage);
 
     private:
         void checkHandStateToOperatePipboy(RE::NiPoint3 fingerPos);
         void operatePowerButton(RE::NiPoint3 fingerPos);
         void operateLightButton(RE::NiPoint3 fingerPos);
         void operateRadioButton(RE::NiPoint3 fingerPos);
-        void updatePipboyPhysicalElements(PipboyPage lastPipboyPage, bool isPBMessageBoxVisible);
-        void pipboyManagement(RE::NiPoint3 fingerPos);
+        void updatePipboyPhysicalElements(PipboyPage lastPipboyPage);
         void operatePipboyPhysicalElement(RE::NiPoint3 fingerPos, PipboyOperation operation);
 
         Skeleton* _skelly;

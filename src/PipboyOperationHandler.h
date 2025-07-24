@@ -21,4 +21,38 @@ namespace frik
         MAP,
         RADIO,
     };
+
+    class PipboyOperationHandler
+    {
+    public:
+        static RE::Scaleform::GFx::Movie* getPipboyMenuRoot();
+        static bool isMessageHolderVisible(const RE::Scaleform::GFx::Movie* root);
+        static std::optional<PipboyPage> getCurrentPipboyPage(const RE::Scaleform::GFx::Movie* root);
+
+        static void exec(PipboyOperation operation);
+        void operate();
+
+    private:
+        void handlePrimaryControllerThumbstickOperation(RE::Scaleform::GFx::Movie* root);
+        static void handlePrimaryControllerButtonsOperation(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
+
+        static void gotoPrevPage(RE::Scaleform::GFx::Movie* root);
+        static void gotoNextPage(RE::Scaleform::GFx::Movie* root);
+        static void gotoPrevTab(RE::Scaleform::GFx::Movie* root);
+        static void gotoNextTab(RE::Scaleform::GFx::Movie* root);
+        static void moveListSelectionUpDown(RE::Scaleform::GFx::Movie* root, bool moveUp);
+        static void handlePrimaryControllerOperationOnStatusPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
+        static void handlePrimaryControllerOperationOnInventoryPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
+        static void handlePrimaryControllerOperationOnDataPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
+        static void handlePrimaryControllerOperationOnMapPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
+        static void handlePrimaryControllerOperationOnRadioPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
+
+        void rightStickXSleep(int time);
+        void rightStickYSleep(int time);
+        void secondaryTriggerSleep(int time);
+
+        bool _controlSleepStickyX = false;
+        bool _controlSleepStickyY = false;
+        bool _controlSleepStickyT = false;
+    };
 }

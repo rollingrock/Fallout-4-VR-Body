@@ -4,7 +4,6 @@
 #include <numbers>
 #include <unordered_map>
 
-#include "F4VRUtils.h"
 #include "../../external/openvr/openvr.h"
 
 namespace f4vr
@@ -33,13 +32,13 @@ namespace f4vr
         /**
          * Update controller states; must be called each frame
          */
-        void update()
+        void update(const bool isLeftHanded)
         {
             if (!vr::VRSystem()) {
                 return;
             }
 
-            _leftHanded = isLeftHandedMode();
+            _leftHanded = isLeftHanded;
 
             _left.index = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_LeftHand);
             _right.index = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_RightHand);
@@ -394,7 +393,7 @@ namespace f4vr
              */
             void triggerHapticPulse() const
             {
-                vr::VRSystem()->TriggerHapticPulse(index, 0, max(0, min(3000, static_cast<uint16_t>(hapticIntensity * 3000))));
+                vr::VRSystem()->TriggerHapticPulse(index, 0, static_cast<unsigned short>(std::clamp(static_cast<int>(hapticIntensity * 3000), 0, 3000)));
             }
 
             /**

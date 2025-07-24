@@ -13,7 +13,7 @@ namespace frik
      * Manages all aspects of virtual-physical Pipboy usage outside of turning the device / radio / torch on or off.
      * See documentation: https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Development-%E2%80%90-Pipboy-Controls
      */
-    void PipboyPhysicalHandler::operate(const PipboyPage lastPipboyPage, const bool isPBMessageBoxVisible)
+    void PipboyPhysicalHandler::operate(const PipboyPage lastPipboyPage)
     {
         // const auto fingerPos = _skelly->getIndexFingerTipWorldPosition(!g_config.leftHandedPipBoy);
         const auto fingerPos = _skelly->getBoneWorldTransform(g_config.leftHandedPipBoy ? "LArm_Finger23" : "RArm_Finger23").translate;
@@ -24,7 +24,7 @@ namespace frik
         operateLightButton(fingerPos);
         operateRadioButton(fingerPos);
 
-        updatePipboyPhysicalElements(lastPipboyPage, isPBMessageBoxVisible);
+        updatePipboyPhysicalElements(lastPipboyPage);
 
         if (!_pipboy->isOn()) {
             return;
@@ -96,7 +96,7 @@ namespace frik
         }
         if (powerTranslate->local.translate.z < -0.10 && !_stickyPower) {
             _stickyPower = true;
-            triggerShortHeptic();
+            triggerShortHaptic();
             _pipboy->setOnOff(!_pipboy->isOn());
         }
     }
@@ -127,7 +127,7 @@ namespace frik
         }
         if (lightTranslate->local.translate.z < -0.14 && !_stickyLight) {
             _stickyLight = true;
-            triggerShortHeptic();
+            triggerShortHaptic();
             if (!_pipboy->isOn()) {
                 f4vr::togglePipboyLight(f4vr::getPlayer());
             }
@@ -160,7 +160,7 @@ namespace frik
         }
         if (lightTranslate->local.translate.y < -0.12 && !_stickyRadio) {
             _stickyRadio = true;
-            triggerShortHeptic();
+            triggerShortHaptic();
             if (!_pipboy->isOn()) {
                 if (f4vr::isPlayerRadioEnabled()) {
                     turnPlayerRadioOn(false);
@@ -174,7 +174,7 @@ namespace frik
     /**
      * Update the Pipboy elements (power button, light button, radio) based on the current state of the Pipboy.
      */
-    void PipboyPhysicalHandler::updatePipboyPhysicalElements(const PipboyPage lastPipboyPage, const bool isPBMessageBoxVisible)
+    void PipboyPhysicalHandler::updatePipboyPhysicalElements(const PipboyPage lastPipboyPage)
     {
         const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
         const auto powerOn = f4vr::findAVObject(arm.forearm3, "PowerButton_mesh:2");
@@ -255,6 +255,7 @@ namespace frik
             }
         }
 
+        const bool isPBMessageBoxVisible = PipboyOperationHandler::isMessageHolderVisible(PipboyOperationHandler::getPipboyMenuRoot());
         if (lastPipboyPage != PipboyPage::MAP || isPBMessageBoxVisible) {
             const auto scrollKnob = f4vr::findAVObject(arm.forearm3, "ScrollItemsKnobRot");
             if (doinantHandStick.y > 0.85) {
@@ -321,59 +322,9 @@ namespace frik
                 }
                 if (trans->local.translate.z > transDistance && !controlSticky) {
                     controlSticky = true;
-                    Pipboy::execOperation(operation);
+                    PipboyOperationHandler::exec(operation);
                 }
             }
         }
-    }
-
-    void PipboyPhysicalHandler::pipboyManagement(const RE::NiPoint3 fingerPos)
-    {
-        // if (f4vr::isInPowerArmor()) {
-        //     _lastRadioFreq = 0.0; // Ensures Radio needle doesn't get messed up when entering and then exiting Power Armor.
-        //     // Continue to update Pipboy page info when in Power Armor.
-        //     std::string pipboyMenu("PipboyMenu");
-        //     auto menu = RE::UI::GetSingleton()->GetMenu(pipboyMenu);
-        //     if (menu != nullptr) {
-        //         auto root = menu->uiMovie.get();
-        //         storeLastPipboyPage(root);
-        //     }
-        //     return;
-        // }
-        //
-        // // Scale-form code for managing Pipboy menu controls (Virtual and Physical)
-        // if (_pipboy->isOn()) {
-        //     storeLastPipboyPage(root);
-        //
-        //     // Move Pipboy trigger mesh even if controls haven't been swapped.
-        //     if (!g_frik.isPipboyConfigurationModeActive() && !g_config.enablePrimaryControllerPipboyUse) {
-        //         const auto offHandStick = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand, 0);
-        //         const auto secondaryTrigger = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand, 1);
-        //
-        //         const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-        //         if (const auto trans = f4vr::findAVObject(arm.forearm3, "SelectRotate")) {
-        //             if (secondaryTrigger.x > 0.00) {
-        //                 trans->local.translate.z = secondaryTrigger.x / 3 * -1;
-        //             } else {
-        //                 trans->local.translate.z = 0.00;
-        //             }
-        //         }
-        //
-        //         //still move Pipboy scroll knob even if controls haven't been swapped.
-        //         // const bool isPBMessageBoxVisible = isMessageHolderVisible(root);
-        //         // if (_lastPipboyPage != 3 || isPBMessageBoxVisible) {
-        //         //     static std::string KnobNode = "ScrollItemsKnobRot";
-        //         //     RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
-        //         //         ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
-        //         //         : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
-        //         //     if (offHandStick.x > 0.85) {
-        //         //         ScrollKnob->local.rotate = ScrollKnob->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(0.4f), 0);
-        //         //     }
-        //         //     if (offHandStick.x < -0.85) {
-        //         //         ScrollKnob->local.rotate = ScrollKnob->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(-0.4f), 0);
-        //         //     }
-        //         // }
-        //     }
-        // }
     }
 }
