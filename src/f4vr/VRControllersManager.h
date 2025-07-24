@@ -24,6 +24,17 @@ namespace f4vr
     };
 
     /**
+     * The direction of the controller thumbstick input.
+     */
+    enum class Direction : std::uint8_t
+    {
+        Right,
+        Left,
+        Up,
+        Down,
+    };
+
+    /**
      * Manages VR controller input states and button interaction logic
      */
     class VRControllersManager
@@ -196,6 +207,32 @@ namespace f4vr
         }
 
         /**
+         * Is the analog axis is pressed in the specified direction.
+         * Pressed is defined as the axis value being above a certain threshold in the specified direction.
+         * There is cooldown milliseconds debounce time between consecutive positive passing checks.
+         */
+        bool isAxisPressed(const Hand primaryHand, const uint32_t axisIndex, const Direction direction, const float threshold = 0.85f, const float cooldown = 0.15f)
+        {
+            return isAxisPressed(getHand(primaryHand), axisIndex, direction, threshold, cooldown);
+        }
+
+        bool isAxisPressed(const vr::ETrackedControllerRole hand, const uint32_t axisIndex, const Direction direction, const float threshold = 0.85f, const float cooldown = 0.15f)
+        {
+            return get(hand).isAxisPressedAndClear(axisIndex, direction, _currentTime, threshold, cooldown);
+        }
+
+        std::optional<Direction> getAxisPressedDirection(const Hand primaryHand, const uint32_t axisIndex, const float threshold = 0.85f, const float cooldown = 0.15f)
+        {
+            return getAxisPressedDirection(getHand(primaryHand), axisIndex, threshold, cooldown);
+        }
+
+        std::optional<Direction> getAxisPressedDirection(const vr::ETrackedControllerRole hand, const uint32_t axisIndex, const float threshold = 0.85f,
+            const float cooldown = 0.15f)
+        {
+            return get(hand).getAxisPressedAndClear(axisIndex, _currentTime, threshold, cooldown);
+        }
+
+        /**
          * Get the heading (yaw) of the specified controller in radians [0, 2π)
          * Regular primary is right hand, but if left hand mode is on then primary is left hand.
          */
@@ -293,6 +330,7 @@ namespace f4vr
             std::unordered_map<vr::EVRButtonId, float> lastPressTime;
             std::unordered_map<vr::EVRButtonId, float> lastReleaseTime;
             std::unordered_map<vr::EVRButtonId, bool> longPressHandled; // Track if long press was handled
+            float axisLastPassedPressCheck[5] = { 0, 0, 0, 0, 0 };
             float hapticEndTime = 0;
             float hapticIntensity = 0;
 
@@ -379,6 +417,49 @@ namespace f4vr
                     return {};
                 }
                 return current.rAxis[axisIndex];
+            }
+
+            bool isAxisPressedAndClear(const uint32_t axisIndex, const Direction direction, const float now, const float threshold, const float cooldown)
+            {
+                if (!valid || now - axisLastPassedPressCheck[axisIndex] < cooldown) {
+                    return false;
+                }
+                const auto pressedDirection = getAxisPressed(axisIndex, now, threshold);
+                const bool isPressed = pressedDirection.has_value() && pressedDirection.value() == direction;
+                if (isPressed) {
+                    axisLastPassedPressCheck[axisIndex] = now;
+                }
+                return isPressed;
+            }
+
+            std::optional<Direction> getAxisPressedAndClear(const uint32_t axisIndex, const float now, const float threshold, const float cooldown)
+            {
+                if (!valid || now - axisLastPassedPressCheck[axisIndex] < cooldown) {
+                    return std::nullopt;
+                }
+                const auto pressedDirection = getAxisPressed(axisIndex, now, threshold);
+                if (pressedDirection.has_value()) {
+                    axisLastPassedPressCheck[axisIndex] = now;
+                }
+                return pressedDirection;
+            }
+
+            std::optional<Direction> getAxisPressed(const uint32_t axisIndex, const float now, const float threshold) const
+            {
+                const auto axis = getAxis(axisIndex);
+                if (axis.x > threshold) {
+                    return Direction::Right;
+                }
+                if (axis.x < -threshold) {
+                    return Direction::Left;
+                }
+                if (axis.y > threshold) {
+                    return Direction::Up;
+                }
+                if (axis.y < -threshold) {
+                    return Direction::Down;
+                }
+                return std::nullopt;
             }
 
             float getHeldDuration(const vr::EVRButtonId button, const float now) const

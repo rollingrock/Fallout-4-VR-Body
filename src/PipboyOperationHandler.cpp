@@ -159,7 +159,6 @@ namespace frik
 
         const auto doinantHandStick = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, 0);
         if (fEqual(doinantHandStick.x, 0, 0.1f) && fEqual(doinantHandStick.y, 0, 0.1f)) {
-            _lastControllerThumbstickOperationTime = 0;
             return; // No movement, no operation
         }
 
@@ -173,25 +172,23 @@ namespace frik
             root->Invoke("root.Menu_mc.CurrentPage.WorldMapHolder_mc.PanMap", nullptr, akArgs, 2);
             root->Invoke("root.Menu_mc.CurrentPage.LocalMapHolder_mc.PanMap", nullptr, akArgs, 2);
         } else {
-            const auto now = nowMillis();
-            if (now - _lastControllerThumbstickOperationTime < 170) {
-                return; // Prevent too frequent operations
-            }
-            if (doinantHandStick.y > 0.85) {
-                _lastControllerThumbstickOperationTime = now;
-                moveListSelectionUpDown(root, true);
-            }
-            if (doinantHandStick.y < -0.85) {
-                _lastControllerThumbstickOperationTime = now;
-                moveListSelectionUpDown(root, false);
-            }
-            if (doinantHandStick.x < -0.85) {
-                _lastControllerThumbstickOperationTime = now;
-                gotoPrevTab(root);
-            }
-            if (doinantHandStick.x > 0.85) {
-                _lastControllerThumbstickOperationTime = now;
-                gotoNextTab(root);
+            const auto direction = f4vr::VRControllers.getAxisPressedDirection(f4vr::Hand::Primary, 0);
+            if (direction.has_value()) {
+                switch (direction.value()) {
+                case f4vr::Direction::Right:
+                    gotoNextTab(root);
+                    break;
+                case f4vr::Direction::Left:
+                    gotoPrevTab(root);
+                    break;
+                case f4vr::Direction::Up:
+                    moveListSelectionUpDown(root, true);
+                    break;
+                case f4vr::Direction::Down:
+                    moveListSelectionUpDown(root, false);
+                    break;
+                default: ;
+                }
             }
         }
     }

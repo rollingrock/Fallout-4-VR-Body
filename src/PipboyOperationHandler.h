@@ -30,10 +30,10 @@ namespace frik
         static std::optional<PipboyPage> getCurrentPipboyPage(const RE::Scaleform::GFx::Movie* root);
 
         static void exec(PipboyOperation operation);
-        void operate();
+        static void operate();
 
     private:
-        void handlePrimaryControllerThumbstickOperation(RE::Scaleform::GFx::Movie* root);
+        static void handlePrimaryControllerThumbstickOperation(RE::Scaleform::GFx::Movie* root);
         static void handlePrimaryControllerButtonsOperation(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
 
         static void gotoPrevPage(RE::Scaleform::GFx::Movie* root);
@@ -46,8 +46,5 @@ namespace frik
         static void handlePrimaryControllerOperationOnDataPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
         static void handlePrimaryControllerOperationOnMapPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
         static void handlePrimaryControllerOperationOnRadioPage(RE::Scaleform::GFx::Movie* root, bool triggerPressed);
-
-        // used to prevent multiple operations when thumbstick is moved
-        uint64_t _lastControllerThumbstickOperationTime = 0;
     };
 }
