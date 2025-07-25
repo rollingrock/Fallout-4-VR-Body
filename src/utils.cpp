@@ -20,39 +20,6 @@ namespace frik
         f4vr::VRControllers.triggerHaptic(hand, 0.001f);
     }
 
-    void turnPipBoyOn()
-    {
-        RE::Setting* set = RE::GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
-        set->SetFloat(0.0);
-
-        set = RE::GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
-        set->SetFloat(0.0);
-
-        set = RE::GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
-        set->SetFloat(0.0);
-
-        set = RE::GetINISetting("fPipboyScaleOuterAngle:VRPipboy");
-        set->SetFloat(0.0);
-
-        set = RE::GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
-        set->SetFloat(0.0);
-    }
-
-    void turnPipBoyOff()
-    {
-        RE::Setting* set = RE::GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
-        set->SetFloat(20.0);
-
-        set = RE::GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
-        set->SetFloat(5.0);
-
-        set = RE::GetINISetting("fPipboyScaleOuterAngle:VRPipboy");
-        set->SetFloat(20.0);
-
-        set = RE::GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
-        set->SetFloat(5.0);
-    }
-
     /**
      * Check if ANY pipboy open by checking if pipboy menu can be found in the UI.
      * Returns true for wrist, in-front, and projected pipboy.

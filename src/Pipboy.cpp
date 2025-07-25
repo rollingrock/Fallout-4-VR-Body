@@ -8,29 +8,38 @@
 
 using namespace common;
 
+namespace
+{
+    void turnPipBoyOnOff(const bool open)
+    {
+        RE::GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy")->SetFloat(open ? 0.0 : 20);
+        RE::GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy")->SetFloat(open ? 0.0 : 5);
+        RE::GetINISetting("fPipboyScaleOuterAngle:VRPipboy")->SetFloat(open ? 0.0 : 20);
+        RE::GetINISetting("fPipboyScaleInnerAngle:VRPipboy")->SetFloat(open ? 0.0 : 5);
+    }
+}
+
 namespace frik
 {
     Pipboy::Pipboy(Skeleton* skelly):
         _skelly(skelly), _physicalHandler(skelly, this)
     {
-        turnPipBoyOff();
+        turnPipBoyOnOff(false);
     }
 
     /**
      * Turn Pipboy On/Off.
      */
-    void Pipboy::setOnOff(const bool setOn)
+    void Pipboy::openClose(const bool open)
     {
-        if (_isOnStatus == setOn) {
+        if (_isOpen == open) {
             return;
         }
-        _isOnStatus = setOn;
-        if (setOn) {
-            turnPipBoyOn();
-            f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 1.0;
-        } else {
-            turnPipBoyOff();
-            f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 0.0;
+        _isOpen = open;
+        turnPipBoyOnOff(open);
+        f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = open ? 1 : 0;
+        if (!open) {
+            _pipboyScreenPrevFrame = std::nullopt;
             g_frik.closePipboyConfigurationModeActive();
         }
     }
@@ -39,7 +48,7 @@ namespace frik
      * Is the player currently looking at the Pipboy screen?
      * Handle different thresholds if Pipboy is on or off as looking away is more relaxed threshold.
      */
-    bool Pipboy::isLookingAtPipBoy() const
+    bool Pipboy::isPlayerLookingAt() const
     {
         const auto pipboy = f4vr::findAVObject(f4vr::getPlayerNodes()->SecondaryWandNode, "PipboyRoot_NIF_ONLY");
         const auto screen = pipboy ? f4vr::findAVObject(pipboy, "Screen:0") : nullptr;
@@ -47,23 +56,20 @@ namespace frik
             return false;
         }
 
-        const float threshhold = _isOnStatus ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
+        const float threshhold = _isOpen ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
         return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraNode, screen, threshhold);
     }
 
     /**
-     * Run Pipboy mesh replacement if not already done (or forced) to the configured meshes either holo or screen.
-     * @param force true - run mesh replace, false - only if not previously replaced
+     * Swap the Pipboy model between screen and holo models.
      */
-    void Pipboy::replaceMeshes(const bool force)
+    void Pipboy::swapModel()
     {
-        if (force || !_meshesReplaced) {
-            if (g_config.isHoloPipboy == 0) {
-                replaceMeshes("HoloEmitter", "Screen");
-            } else if (g_config.isHoloPipboy == 1) {
-                replaceMeshes("Screen", "HoloEmitter");
-            }
-        }
+        g_config.toggleIsHoloPipboy();
+        turnPipBoyOnOff(false);
+        replaceMeshes(true);
+        f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 1.0;
+        turnPipBoyOnOff(true);
     }
 
     /**
@@ -94,23 +100,30 @@ namespace frik
             return;
         }
 
-        if (_isOnStatus) {
+        if (_isOpen) {
             PipboyOperationHandler::operate();
 
             dampenPipboyScreen();
         }
+    }
 
-        // Hide some Pipboy related meshes on exit of Power Armor if they're not hidden
-        if (const auto hideNode = f4vr::findNode(f4vr::getWorldRootNode(), g_config.isHoloPipboy ? "Screen" : "HoloEmitter")) {
-            if (fNotEqual(hideNode->local.scale, 0)) {
-                hideNode->flags.flags |= 0x1;
-                hideNode->local.scale = 0;
+    /**
+     * Run Pipboy mesh replacement if not already done (or forced) to the configured meshes either holo or screen.
+     * @param force true - run mesh replace, false - only if not previously replaced
+     */
+    void Pipboy::replaceMeshes(const bool force)
+    {
+        if (force || !_meshesReplaced) {
+            if (g_config.isHoloPipboy == 0) {
+                replaceMeshes("HoloEmitter", "Screen");
+            } else if (g_config.isHoloPipboy == 1) {
+                replaceMeshes("Screen", "HoloEmitter");
             }
-        }
 
-        // sets 3rd Person Pipboy Scale
-        if (const auto pipboy3Rd = f4vr::findNode(f4vr::getWorldRootNode(), "PipboyBone")) {
-            pipboy3Rd->local.scale = g_config.pipBoyScale;
+            // sets 3rd Person Pipboy Scale
+            if (const auto pipboy3Rd = f4vr::findNode(f4vr::getWorldRootNode(), "PipboyBone")) {
+                pipboy3Rd->local.scale = g_config.pipBoyScale;
+            }
         }
     }
 
@@ -174,7 +187,7 @@ namespace frik
         }
 
         logger::info("Open Pipboy with button");
-        setOnOff(true);
+        openClose(true);
     }
 
     /**
@@ -182,12 +195,12 @@ namespace frik
      */
     void Pipboy::checkTurningOffByButton()
     {
-        if (!_isOnStatus || !f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID)) {
+        if (!_isOpen || !f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID)) {
             return;
         }
 
         logger::info("Close Pipboy with button");
-        setOnOff(false);
+        openClose(false);
 
         // Prevents Pipboy from being turned on again immediately after closing it.
         _startedLookingAtPip = nowMillis() + 10000;
@@ -198,7 +211,7 @@ namespace frik
      */
     void Pipboy::checkTurningOnByLookingAt()
     {
-        if (_isOnStatus || !g_config.pipboyOpenWhenLookAt || !isLookingAtPipBoy()) {
+        if (_isOpen || !g_config.pipboyOpenWhenLookAt || !isPlayerLookingAt()) {
             _startedLookingAtPip = 0;
             return;
         }
@@ -207,7 +220,7 @@ namespace frik
         } else {
             if (isNowTimePassed(_startedLookingAtPip, g_config.pipBoyOnDelay)) {
                 logger::info("Open Pipboy by looking at");
-                setOnOff(true);
+                openClose(true);
             }
         }
     }
@@ -217,46 +230,50 @@ namespace frik
      */
     void Pipboy::checkTurningOffByLookingAway()
     {
-        if (!_isOnStatus) {
+        if (!_isOpen) {
             return;
         }
 
-        if (isLookingAtPipBoy()) {
+        if (isPlayerLookingAt()) {
             _lastLookingAtPip = nowMillis();
             return;
         }
 
         const auto movingStick = f4vr::VRControllers.getThumbstickValue(g_config.pipBoyButtonArm > 0 ? f4vr::Hand::Right : f4vr::Hand::Left);
         const auto lookingStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
-        const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway && _isOnStatus
+        const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway && _isOpen
             && !g_frik.isPipboyConfigurationModeActive()
             && isNowTimePassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
         const bool closeLookingWayWithMovement = g_config.pipboyCloseWhenMovingWhileLookingAway
-            && _isOnStatus
+            && _isOpen
             && !g_frik.isPipboyConfigurationModeActive()
             && (fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f)
                 || fNotEqual(lookingStick.x, 0, 0.3f) || fNotEqual(lookingStick.y, 0, 0.3f));
 
         if (closeLookingWayWithDelay || closeLookingWayWithMovement) {
             logger::info("Close Pipboy when looking away: byDelay({}), byMovement({})", closeLookingWayWithDelay, closeLookingWayWithMovement);
-            setOnOff(false);
+            openClose(false);
         }
     }
 
     /**
      * Switch between Pipboy flashlight on head or right/left hand based if player switches using button press of the hand near head.
      */
-    void Pipboy::checkSwitchingFlashlightHeadHand() const
+    void Pipboy::checkSwitchingFlashlightHeadHand()
     {
         const auto hmdPos = f4vr::getPlayerNodes()->HmdNode->world.translate;
         const auto isLeftHandCloseToHMD = vec3Len(_skelly->getBoneWorldTransform("LArm_Hand").translate - hmdPos) < 15;
         const auto isRightHandCloseToHMD = vec3Len(_skelly->getBoneWorldTransform("RArm_Hand").translate - hmdPos) < 15;
 
+        const auto now = nowMillis();
         if (isLeftHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::LeftArm)) {
-            triggerShortHaptic(f4vr::Hand::Left);
+            if (_flashlightHapticCooldown < now)
+                triggerShortHaptic(f4vr::Hand::Left);
         } else if (isRightHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::RightArm)) {
-            triggerShortHaptic(f4vr::Hand::Right);
+            if (_flashlightHapticCooldown < now)
+                triggerShortHaptic(f4vr::Hand::Right);
         } else {
+            _flashlightHapticCooldown = 0;
             return;
         }
 
@@ -267,10 +284,11 @@ namespace frik
         }
 
         if (g_config.flashlightLocation == FlashlightLocation::Head) {
+            _flashlightHapticCooldown = now + 5000;
             g_config.setFlashlightLocation(isLeftHandGrab ? FlashlightLocation::LeftArm : FlashlightLocation::RightArm);
-        } else if (g_config.flashlightLocation == FlashlightLocation::LeftArm && isLeftHandGrab) {
-            g_config.setFlashlightLocation(FlashlightLocation::Head);
-        } else if (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab) {
+        } else if ((g_config.flashlightLocation == FlashlightLocation::LeftArm && isLeftHandGrab)
+            || (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab)) {
+            _flashlightHapticCooldown = now + 5000;
             g_config.setFlashlightLocation(FlashlightLocation::Head);
         }
     }
@@ -346,6 +364,7 @@ namespace frik
             deltaPos *= g_config.dampenPipboyTranslation; // just use hands dampening value for now
             pipboyScreen->world.translate -= deltaPos;
             _pipboyScreenPrevFrame = pipboyScreen->world;
+            _dampenScreenAdjustCounter = _dampenScreenAdjustCounter > 0 ? _dampenScreenAdjustCounter - 1 : g_config.debugFlowFlag3;
             f4vr::updateDown(pipboyScreen, false);
         }
     }

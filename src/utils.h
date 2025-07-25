@@ -9,8 +9,6 @@ namespace frik
 
     void triggerShortHaptic(f4vr::Hand hand = f4vr::Hand::Primary);
 
-    void turnPipBoyOn();
-    void turnPipBoyOff();
     bool isAnyPipboyOpen();
 
     bool isCameraLookingAtObject(const RE::NiAVObject* cameraNode, const RE::NiAVObject* objectNode, float detectThresh);

@@ -16,7 +16,9 @@ namespace frik
     void PipboyPhysicalHandler::operate(const PipboyPage lastPipboyPage)
     {
         // TODO: make sure not running in Power Armor
-
+        if (f4vr::isInPowerArmor()) {
+            return;
+        }
         // const auto fingerPos = _skelly->getIndexFingerTipWorldPosition(!g_config.leftHandedPipBoy);
         const auto fingerPos = _skelly->getBoneWorldTransform(g_config.leftHandedPipBoy ? "LArm_Finger23" : "RArm_Finger23").translate;
         checkHandStateToOperatePipboy(fingerPos);
@@ -28,7 +30,7 @@ namespace frik
 
         updatePipboyPhysicalElements(lastPipboyPage);
 
-        if (!_pipboy->isOn()) {
+        if (!_pipboy->isOpen()) {
             return;
         }
 
@@ -46,20 +48,20 @@ namespace frik
     void PipboyPhysicalHandler::checkHandStateToOperatePipboy(const RE::NiPoint3 fingerPos)
     {
         const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-        if (_pipboy->isLookingAtPipBoy()) {
+        if (_pipboy->isPlayerLookingAt()) {
             const auto pipboy = f4vr::findNode(arm.shoulder, "PipboyRoot");
             const float distance = vec3Len(fingerPos - pipboy->world.translate);
-            if (distance < g_config.pipboyDetectionRange && !_isOperatingPipboy && !_pipboy->isOn()) {
+            if (distance < g_config.pipboyDetectionRange && !_isOperatingPipboy && !_pipboy->isOpen()) {
                 // Hides Weapon and poses hand for pointing
                 _isOperatingPipboy = true;
                 setPipboyHandPose();
             }
-            if (distance > g_config.pipboyDetectionRange && _isOperatingPipboy && !_pipboy->isOn()) {
+            if (distance > g_config.pipboyDetectionRange && _isOperatingPipboy && !_pipboy->isOpen()) {
                 // Restores Weapon and releases hand pose
                 _isOperatingPipboy = false;
                 disablePipboyHandPose();
             }
-        } else if (_isOperatingPipboy && !_pipboy->isOn()) {
+        } else if (_isOperatingPipboy && !_pipboy->isOpen()) {
             // Catches if you're not looking at the pipboy when your hand moves outside the control area and restores weapon / releases hand pose
             disablePipboyHandPose();
             // Remove any stuck helper orbs if Pipboy times out for any reason.
@@ -99,7 +101,7 @@ namespace frik
         if (powerTranslate->local.translate.z < -0.10 && !_stickyPower) {
             _stickyPower = true;
             triggerShortHaptic();
-            _pipboy->setOnOff(!_pipboy->isOn());
+            _pipboy->openClose(!_pipboy->isOpen());
         }
     }
 
@@ -130,7 +132,7 @@ namespace frik
         if (lightTranslate->local.translate.z < -0.14 && !_stickyLight) {
             _stickyLight = true;
             triggerShortHaptic();
-            if (!_pipboy->isOn()) {
+            if (!_pipboy->isOpen()) {
                 f4vr::togglePipboyLight(f4vr::getPlayer());
             }
         }
@@ -163,7 +165,7 @@ namespace frik
         if (lightTranslate->local.translate.y < -0.12 && !_stickyRadio) {
             _stickyRadio = true;
             triggerShortHaptic();
-            if (!_pipboy->isOn()) {
+            if (!_pipboy->isOpen()) {
                 if (f4vr::isPlayerRadioEnabled()) {
                     turnPlayerRadioOn(false);
                 } else {
@@ -207,10 +209,10 @@ namespace frik
         }
 
         // Controls Pipboy power light glow (on or off depending on Pipboy state)
-        _pipboy->isOn() ? powerOn->flags.flags &= 0xfffffffffffffffe : powerOff->flags.flags &= 0xfffffffffffffffe;
-        _pipboy->isOn() ? powerOn->local.scale = 1 : powerOff->local.scale = 1;
-        _pipboy->isOn() ? powerOff->flags.flags |= 0x1 : powerOn->flags.flags |= 0x1;
-        _pipboy->isOn() ? powerOff->local.scale = 0 : powerOn->local.scale = 0;
+        _pipboy->isOpen() ? powerOn->flags.flags &= 0xfffffffffffffffe : powerOff->flags.flags &= 0xfffffffffffffffe;
+        _pipboy->isOpen() ? powerOn->local.scale = 1 : powerOff->local.scale = 1;
+        _pipboy->isOpen() ? powerOff->flags.flags |= 0x1 : powerOn->flags.flags |= 0x1;
+        _pipboy->isOpen() ? powerOff->local.scale = 0 : powerOn->local.scale = 0;
 
         // Controls light on & off indicators
         const bool isLightOn = f4vr::isPipboyLightOn(f4vr::getPlayer());

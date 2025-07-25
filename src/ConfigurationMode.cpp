@@ -25,7 +25,7 @@ namespace frik
      */
     void ConfigurationMode::openPipboyConfigurationMode()
     {
-        g_frik.turnOnPipboy();
+        g_frik.openPipboy();
         enterPipboyConfigMode();
     }
 
@@ -591,11 +591,7 @@ namespace frik
                 }
                 if (ModelSwapButtonPressed && !_isModelSwapButtonPressed) {
                     _isModelSwapButtonPressed = true;
-                    g_config.toggleIsHoloPipboy();
-                    turnPipBoyOff();
-                    g_frik.replacePipboyMeshes(true);
-                    f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 1.0;
-                    turnPipBoyOn();
+                    g_frik.swapPipboyModel();
                 } else if (!ModelSwapButtonPressed) {
                     _isModelSwapButtonPressed = false;
                 }

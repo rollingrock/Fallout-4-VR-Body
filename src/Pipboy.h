@@ -17,22 +17,23 @@ namespace frik
     public:
         explicit Pipboy(Skeleton* skelly);
 
-        bool isOn() const { return _isOnStatus; }
-        void setOnOff(bool setOn);
+        bool isOpen() const { return _isOpen; }
+        void openClose(bool open);
         bool isOperatingPipboy() const { return _physicalHandler.isOperating(); }
+        bool isPlayerLookingAt() const;
 
-        bool isLookingAtPipBoy() const;
-        void replaceMeshes(bool force);
+        void swapModel();
         void onFrameUpdate();
 
     private:
+        void replaceMeshes(bool force);
         void replaceMeshes(const std::string& itemHide, const std::string& itemShow);
 
         void checkTurningOnByButton();
         void checkTurningOffByButton();
         void checkTurningOnByLookingAt();
         void checkTurningOffByLookingAway();
-        void checkSwitchingFlashlightHeadHand() const;
+        void checkSwitchingFlashlightHeadHand();
         void adjustFlashlightTransformToHandOrHead() const;
 
         void storeLastPipboyPage();
@@ -42,10 +43,18 @@ namespace frik
 
         PipboyPhysicalHandler _physicalHandler;
 
-        bool _isOnStatus = false;
+        bool _isOpen = false;
+
         bool _meshesReplaced = false;
+
+        // handle auto open/close
         uint64_t _startedLookingAtPip = 0;
         uint64_t _lastLookingAtPip = 0;
+
+        // cooldown to stop flashlight haptic feedback after switch
+        uint64_t _flashlightHapticCooldown = 0;
+
+        // handle dampening of pipboy screen to reduce movement
         RE::NiTransform _pipboyScreenPrevFrame;
 
         PipboyPage _lastPipboyPage = PipboyPage::STATUS;
