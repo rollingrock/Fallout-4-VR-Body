@@ -39,7 +39,7 @@ namespace frik
         turnPipBoyOnOff(open);
         f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = open ? 1 : 0;
         if (!open) {
-            _pipboyScreenPrevFrame = std::nullopt;
+            _pipboyScreenStableFrame = std::nullopt;
             g_frik.closePipboyConfigurationModeActive();
         }
     }
@@ -342,30 +342,76 @@ namespace frik
      */
     void Pipboy::dampenPipboyScreen()
     {
-        if (!g_config.dampenPipboyScreen) {
+        if (!_isOpen || !g_config.dampenPipboyScreen) {
             return;
         }
-        if (!_isOnStatus) {
-            _pipboyScreenPrevFrame = f4vr::getPlayerNodes()->ScreenNode->world;
-            return;
-        }
-        RE::NiNode* pipboyScreen = f4vr::getPlayerNodes()->ScreenNode;
 
-        if (pipboyScreen && _isOnStatus) {
-            Quaternion rq, rt;
-            // do a spherical interpolation between previous frame and current frame for the world rotation matrix
-            const auto prevFrame = _pipboyScreenPrevFrame;
-            rq.fromMatrix(prevFrame.rotate);
-            rt.fromMatrix(pipboyScreen->world.rotate);
-            rq.slerp(1 - g_config.dampenPipboyRotation, rt);
-            pipboyScreen->world.rotate = rq.getMatrix();
-            // do a linear interpolation between the position from the previous frame to current frame
-            RE::NiPoint3 deltaPos = pipboyScreen->world.translate - prevFrame.translate;
-            deltaPos *= g_config.dampenPipboyTranslation; // just use hands dampening value for now
-            pipboyScreen->world.translate -= deltaPos;
-            _pipboyScreenPrevFrame = pipboyScreen->world;
-            _dampenScreenAdjustCounter = _dampenScreenAdjustCounter > 0 ? _dampenScreenAdjustCounter - 1 : g_config.debugFlowFlag3;
-            f4vr::updateDown(pipboyScreen, false);
+        const auto pipboyScreen = f4vr::getPlayerNodes()->ScreenNode;
+        if (!pipboyScreen) {
+            return;
         }
+
+        auto lastPos = pipboyScreen->world.translate;
+        _pipboyScreenPrevFrame.emplace_back(lastPos);
+        if (_pipboyScreenPrevFrame.size() < 4) {
+            return;
+        }
+        if (_pipboyScreenPrevFrame.size() > 5) {
+            _pipboyScreenPrevFrame.pop_front();
+        }
+
+        const auto deltaPos = lastPos - _pipboyScreenPrevFrame[0];
+        const auto threshold2 = g_config.dampenPipboyLargeThreshold;
+        if (std::abs(deltaPos.x) > threshold2 || std::abs(deltaPos.y) > threshold2 || std::abs(deltaPos.z) > threshold2) {
+            // too much movement, don't dampen at all so the screen will not lag behind the pipboy
+            _pipboyScreenStableFrame = std::nullopt;
+            return;
+        }
+
+        if (!_pipboyScreenStableFrame.has_value()) {
+            _pipboyScreenStableFrame = lastPos;
+        }
+
+        if (g_config.isHoloPipboy) {
+            dampenPipboyHoloScreen(pipboyScreen);
+        } else {
+            dampenPipboyRegularScreen(pipboyScreen);
+        }
+    }
+
+    /**
+     * Small dampening of the screen movement but still always move the screen to be in the pipboy.
+     */
+    void Pipboy::dampenPipboyRegularScreen(RE::NiNode* pipboyScreen)
+    {
+        const auto prevFrame = _pipboyScreenStableFrame.value();
+        _pipboyScreenStableFrame = pipboyScreen->world.translate;
+
+        // do a linear interpolation between the position from the previous frame to current frame
+        const auto deltaPos = (pipboyScreen->world.translate - prevFrame) * g_config.dampenRegularPipboyMultiplier;
+        pipboyScreen->world.translate -= deltaPos;
+        f4vr::updateDown(pipboyScreen, false);
+    }
+
+    /**
+     * Allow the holo screen to remain stable in place while the arm moves a little.
+     * But if the arm moves more than a certain threshold, move the screen to the new position smoothly.
+     */
+    void Pipboy::dampenPipboyHoloScreen(RE::NiNode* pipboyScreen)
+    {
+        const auto prevFrame = _pipboyScreenStableFrame.value();
+
+        const auto deltaPos = pipboyScreen->world.translate - prevFrame;
+        const auto threshold = g_config.dampenHoloPipboySmallThreshold;
+        if (_dampenScreenAdjustCounter == 0 && std::abs(deltaPos.x) < threshold && std::abs(deltaPos.y) < threshold && std::abs(deltaPos.z) < threshold) {
+            // prevent any screen movement for small movements
+            pipboyScreen->world.translate = prevFrame;
+        } else {
+            // if arm moved more than threshold, move the screen to pipboy position smoothly
+            _pipboyScreenStableFrame = prevFrame + deltaPos / static_cast<float>(g_config.dampenHoloPipboyAdjustmentFrames);
+            _dampenScreenAdjustCounter = _dampenScreenAdjustCounter > 0 ? _dampenScreenAdjustCounter - 1 : g_config.dampenHoloPipboyAdjustmentFrames;
+            pipboyScreen->world.translate = _pipboyScreenStableFrame.value();
+        }
+        f4vr::updateDown(pipboyScreen, false);
     }
 }

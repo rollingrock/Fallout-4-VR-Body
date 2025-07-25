@@ -155,13 +155,17 @@ namespace frik
         // Dampen hands
         bool dampenHands = false;
         bool dampenHandsInVanillaScope = false;
-        bool dampenPipboyScreen = false;
         float dampenHandsRotation = 0;
         float dampenHandsTranslation = 0;
         float dampenHandsRotationInVanillaScope = 0;
         float dampenHandsTranslationInVanillaScope = 0;
-        float dampenPipboyRotation = 0;
-        float dampenPipboyTranslation = 0;
+
+        // Dampen Pipboy screen
+        bool dampenPipboyScreen = false;
+        float dampenPipboyLargeThreshold = 0;
+        float dampenRegularPipboyMultiplier = 0;
+        float dampenHoloPipboySmallThreshold = 0;
+        int dampenHoloPipboyAdjustmentFrames = 0;
 
         // Misc
         bool showPAHUD = false;

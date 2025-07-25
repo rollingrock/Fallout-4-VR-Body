@@ -107,8 +107,12 @@ namespace frik
         dampenHandsTranslation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", 0.7f));
         dampenHandsRotationInVanillaScope = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotationInVanillaScope", 0.2f));
         dampenHandsTranslationInVanillaScope = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslationInVanillaScope", 0.2f));
-        dampenPipboyRotation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenPipboyRotation", 0.7f));
-        dampenPipboyTranslation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenPipboyTranslation", 0.7f));
+
+        // Dampen Pipboy
+        dampenPipboyLargeThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenPipboyLargeThreshold", 1.1f));
+        dampenRegularPipboyMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenRegularPipboyMultiplier", 0.7f));
+        dampenHoloPipboySmallThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenHoloPipboySmallThreshold", 1.0f));
+        dampenHoloPipboyAdjustmentFrames = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iDampenHoloPipboyAdjustmentFrames", 20));
 
         // Misc
         showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");

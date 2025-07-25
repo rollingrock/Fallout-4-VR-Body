@@ -38,6 +38,8 @@ namespace frik
 
         void storeLastPipboyPage();
         void dampenPipboyScreen();
+        void dampenPipboyRegularScreen(RE::NiNode* pipboyScreen);
+        void dampenPipboyHoloScreen(RE::NiNode* pipboyScreen);
 
         Skeleton* _skelly;
 
@@ -55,7 +57,9 @@ namespace frik
         uint64_t _flashlightHapticCooldown = 0;
 
         // handle dampening of pipboy screen to reduce movement
-        RE::NiTransform _pipboyScreenPrevFrame;
+        std::deque<RE::NiPoint3> _pipboyScreenPrevFrame;
+        std::optional<RE::NiPoint3> _pipboyScreenStableFrame;
+        int _dampenScreenAdjustCounter = 0;
 
         PipboyPage _lastPipboyPage = PipboyPage::STATUS;
         float lastRadioFreq = 0.0;
