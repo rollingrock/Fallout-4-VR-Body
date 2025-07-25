@@ -19,8 +19,6 @@ namespace frik
 
         bool isOpen() const { return _isOpen; }
         void openClose(bool open);
-        bool isOperatingPipboy() const { return _physicalHandler.isOperating(); }
-        bool isPlayerLookingAt() const;
 
         void swapModel();
         void onFrameUpdate();
@@ -36,10 +34,11 @@ namespace frik
         void checkSwitchingFlashlightHeadHand();
         void adjustFlashlightTransformToHandOrHead() const;
 
-        void storeLastPipboyPage();
+        static void storeLastPipboyPage();
         void dampenPipboyScreen();
         void dampenPipboyRegularScreen(RE::NiNode* pipboyScreen);
         void dampenPipboyHoloScreen(RE::NiNode* pipboyScreen);
+        bool isPlayerLookingAt() const;
 
         Skeleton* _skelly;
 
@@ -61,7 +60,7 @@ namespace frik
         std::optional<RE::NiPoint3> _pipboyScreenStableFrame;
         int _dampenScreenAdjustCounter = 0;
 
-        PipboyPage _lastPipboyPage = PipboyPage::STATUS;
-        float lastRadioFreq = 0.0;
+        // static field to preserve the last pipboy page when existing PA
+        inline static PipboyPage _lastPipboyPage = PipboyPage::STATUS;
     };
 }

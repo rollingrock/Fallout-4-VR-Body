@@ -82,9 +82,10 @@ namespace frik
             saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
         }
 
-        void savePipboyScale(const float pipboyScale)
+        void savePipboyScale(const float scale)
         {
-            saveIniConfigValue(INI_SECTION_MAIN, "PipboyScale", pipboyScale);
+            pipBoyScale = scale;
+            saveIniConfigValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
         }
 
         static void openInNotepad();
@@ -132,7 +133,7 @@ namespace frik
         bool pipboyCloseWhenMovingWhileLookingAway = false;
         float pipboyLookAtThreshold = 0;
         float pipboyLookAwayThreshold = 0;
-        float pipboyDetectionRange = 0;
+        float pipboyOperationFingerDetectionRange = 0;
         int pipBoyOnDelay = 0;
         int pipBoyOffDelay = 0;
         int pipBoyButtonArm = 0;

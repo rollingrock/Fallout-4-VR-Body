@@ -39,11 +39,6 @@ namespace frik
                 return;
             }
 
-            if (pipboy->isOperatingPipboy()) {
-                disableWeaponOnly();
-                return;
-            }
-
             // nothing to disable so it should be enabled
             enable();
         }

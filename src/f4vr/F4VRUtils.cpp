@@ -53,6 +53,14 @@ namespace f4vr
     }
 
     /**
+     * @return true if the player has any weapon in the hand.
+     */
+    bool isWeaponEquipped()
+    {
+        return isNodeVisible(getWeaponNode());
+    }
+
+    /**
      * @return true if the equipped weapon is a melee weapon type.
      */
     bool isMeleeWeaponEquipped()
@@ -193,6 +201,17 @@ namespace f4vr
         // not sure why RE::Relocation doesn't work here, so using raw address
         static auto iniLeftHandedMode = reinterpret_cast<bool*>(REL::Offset(0x37d5e48).address()); // NOLINT(performance-no-int-to-ptr)
         return *iniLeftHandedMode;
+    }
+
+    /**
+     * Return true if the pipboy is on the wrist, false if it is "in-front" or projected.
+     */
+    bool isPipboyOnWrist()
+    {
+        // not sure why RE::Relocation doesn't work here, so using raw address
+        static auto iniAlwaysUseProjectedPipboy = reinterpret_cast<bool*>(REL::Offset(0x37B4280).address()); // NOLINT(performance-no-int-to-ptr)
+        static auto iniAttachPipboyToHMD = reinterpret_cast<bool*>(REL::Offset(0x37B4298).address()); // NOLINT(performance-no-int-to-ptr)
+        return !(*iniAlwaysUseProjectedPipboy || *iniAttachPipboyToHMD);
     }
 
     /**

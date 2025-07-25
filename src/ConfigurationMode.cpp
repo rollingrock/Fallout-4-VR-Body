@@ -66,6 +66,11 @@ namespace frik
             }
             disableConfigModePose();
             _isPBConfigModeActive = false;
+
+            // restore pipboy scale if it was changed
+            const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
+            const auto pipboyScale = f4vr::findAVObject(arm.forearm3, "PipboyBone");
+            pipboyScale->local.scale = g_config.pipBoyScale;
         }
     }
 
@@ -638,12 +643,10 @@ namespace frik
                 if (doinantHandStick.y > 0.10 && ModelScaleButtonPressed && _3rdPipboy) {
                     rAxisOffsetX = doinantHandStick.y / 65;
                     _3rdPipboy->local.scale += rAxisOffsetX;
-                    g_config.pipBoyScale = _3rdPipboy->local.scale;
                 }
                 if (doinantHandStick.y < -0.10 && ModelScaleButtonPressed && _3rdPipboy) {
                     rAxisOffsetX = doinantHandStick.y / 65;
                     _3rdPipboy->local.scale += rAxisOffsetX;
-                    g_config.pipBoyScale = _3rdPipboy->local.scale;
                 }
             }
         }

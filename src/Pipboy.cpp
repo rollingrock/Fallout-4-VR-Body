@@ -45,22 +45,6 @@ namespace frik
     }
 
     /**
-     * Is the player currently looking at the Pipboy screen?
-     * Handle different thresholds if Pipboy is on or off as looking away is more relaxed threshold.
-     */
-    bool Pipboy::isPlayerLookingAt() const
-    {
-        const auto pipboy = f4vr::findAVObject(f4vr::getPlayerNodes()->SecondaryWandNode, "PipboyRoot_NIF_ONLY");
-        const auto screen = pipboy ? f4vr::findAVObject(pipboy, "Screen:0") : nullptr;
-        if (screen == nullptr) {
-            return false;
-        }
-
-        const float threshhold = _isOpen ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
-        return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraNode, screen, threshhold);
-    }
-
-    /**
      * Swap the Pipboy model between screen and holo models.
      */
     void Pipboy::swapModel()
@@ -77,6 +61,24 @@ namespace frik
      */
     void Pipboy::onFrameUpdate()
     {
+        if (f4vr::isPipboyLightOn(f4vr::getPlayer())) {
+            checkSwitchingFlashlightHeadHand();
+            adjustFlashlightTransformToHandOrHead();
+        }
+
+        // store the last Pipboy page even if in PA to have the correct dail after existing PA.
+        storeLastPipboyPage();
+
+        if (f4vr::isInPowerArmor()) {
+            return;
+        }
+
+        _physicalHandler.operate(_lastPipboyPage);
+
+        if (!f4vr::isPipboyOnWrist()) {
+            return;
+        }
+
         replaceMeshes(false);
 
         // check by looking should be first to handle closing by button not opening it again by looking at Pipboy.
@@ -85,20 +87,6 @@ namespace frik
 
         checkTurningOnByButton();
         checkTurningOffByButton();
-
-        if (f4vr::isPipboyLightOn(f4vr::getPlayer())) {
-            checkSwitchingFlashlightHeadHand();
-            adjustFlashlightTransformToHandOrHead();
-        }
-
-        storeLastPipboyPage();
-
-        _physicalHandler.operate(_lastPipboyPage);
-
-        if (f4vr::isInPowerArmor()) {
-            lastRadioFreq = 0.0; // Ensures radio needle doesn't get messed up when entering and then exiting Power Armor.
-            return;
-        }
 
         if (_isOpen) {
             PipboyOperationHandler::operate();
@@ -413,5 +401,21 @@ namespace frik
             pipboyScreen->world.translate = _pipboyScreenStableFrame.value();
         }
         f4vr::updateDown(pipboyScreen, false);
+    }
+
+    /**
+     * Is the player currently looking at the Pipboy screen?
+     * Handle different thresholds if Pipboy is on or off as looking away is more relaxed threshold.
+     */
+    bool Pipboy::isPlayerLookingAt() const
+    {
+        const auto pipboy = f4vr::findAVObject(f4vr::getPlayerNodes()->SecondaryWandNode, "PipboyRoot_NIF_ONLY");
+        const auto screen = pipboy ? f4vr::findAVObject(pipboy, "Screen:0") : nullptr;
+        if (screen == nullptr) {
+            return false;
+        }
+
+        const float threshhold = _isOpen ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
+        return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraNode, screen, threshhold);
     }
 }

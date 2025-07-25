@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PipboyOperationHandler.h"
+#include "Skeleton.h"
 
 namespace frik
 {
@@ -17,17 +18,16 @@ namespace frik
         explicit PipboyPhysicalHandler(Skeleton* skelly, Pipboy* pipboy) :
             _skelly(skelly), _pipboy(pipboy) {}
 
-        bool isOperating() const { return _isOperatingPipboy; }
-
         void operate(PipboyPage lastPipboyPage);
 
     private:
-        void checkHandStateToOperatePipboy(RE::NiPoint3 fingerPos);
-        void operatePowerButton(RE::NiPoint3 fingerPos);
-        void operateLightButton(RE::NiPoint3 fingerPos);
-        void operateRadioButton(RE::NiPoint3 fingerPos);
+        void checkHandStateToOperatePipboy(RE::NiPoint3 fingerPos, const RE::NiNode* powerButton, const RE::NiNode* lightButton, const RE::NiNode* radioButton);
+        void operatePowerButton(RE::NiPoint3 fingerPos, const RE::NiNode* powerButton);
+        void operateLightButton(RE::NiPoint3 fingerPos, const RE::NiNode* lightButton);
+        void operateRadioButton(RE::NiPoint3 fingerPos, const RE::NiNode* radioButton);
         void updatePipboyPhysicalElements(PipboyPage lastPipboyPage);
         void operatePipboyPhysicalElement(RE::NiPoint3 fingerPos, PipboyOperation operation);
+        RE::NiAVObject* getPipboyArmNode() const;
 
         Skeleton* _skelly;
         Pipboy* _pipboy;

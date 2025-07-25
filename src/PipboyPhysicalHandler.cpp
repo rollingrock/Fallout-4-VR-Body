@@ -15,18 +15,30 @@ namespace frik
      */
     void PipboyPhysicalHandler::operate(const PipboyPage lastPipboyPage)
     {
-        // TODO: make sure not running in Power Armor
-        if (f4vr::isInPowerArmor()) {
+        if (f4vr::isWeaponEquipped()) {
+            // no physical Pipboy operation if the player has a weapon equipped
+            updatePipboyPhysicalElements(lastPipboyPage);
             return;
         }
-        // const auto fingerPos = _skelly->getIndexFingerTipWorldPosition(!g_config.leftHandedPipBoy);
+
         const auto fingerPos = _skelly->getBoneWorldTransform(g_config.leftHandedPipBoy ? "LArm_Finger23" : "RArm_Finger23").translate;
-        checkHandStateToOperatePipboy(fingerPos);
+
+        const auto arm = getPipboyArmNode();
+        const auto powerButton = arm ? f4vr::findNode(arm, "PowerDetect") : nullptr;
+        const auto lightButton = arm ? f4vr::findNode(arm, "LightDetect") : nullptr;
+        const auto radioButton = arm ? f4vr::findNode(arm, "RadioDetect") : nullptr;
+        if (!powerButton || !lightButton || !radioButton) {
+            return;
+        }
+
+        checkHandStateToOperatePipboy(fingerPos, powerButton, lightButton, radioButton);
 
         // operate buttons not requiring Pipboy to be on
-        operatePowerButton(fingerPos);
-        operateLightButton(fingerPos);
-        operateRadioButton(fingerPos);
+        if (f4vr::isPipboyOnWrist()) {
+            operatePowerButton(fingerPos, powerButton);
+        }
+        operateLightButton(fingerPos, lightButton);
+        operateRadioButton(fingerPos, radioButton);
 
         updatePipboyPhysicalElements(lastPipboyPage);
 
@@ -45,32 +57,32 @@ namespace frik
      * Enabling operation state by hiding the weapon and setting the hand pose for pointing.
      * Disabling operation state if the hand moves outside the control area or if the Pipboy is not looking at it.
      */
-    void PipboyPhysicalHandler::checkHandStateToOperatePipboy(const RE::NiPoint3 fingerPos)
+    void PipboyPhysicalHandler::checkHandStateToOperatePipboy(
+        const RE::NiPoint3 fingerPos, const RE::NiNode* powerButton, const RE::NiNode* lightButton, const RE::NiNode* radioButton)
     {
-        const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-        if (_pipboy->isPlayerLookingAt()) {
-            const auto pipboy = f4vr::findNode(arm.shoulder, "PipboyRoot");
-            const float distance = vec3Len(fingerPos - pipboy->world.translate);
-            if (distance < g_config.pipboyDetectionRange && !_isOperatingPipboy && !_pipboy->isOpen()) {
-                // Hides Weapon and poses hand for pointing
-                _isOperatingPipboy = true;
-                setPipboyHandPose();
-            }
-            if (distance > g_config.pipboyDetectionRange && _isOperatingPipboy && !_pipboy->isOpen()) {
-                // Restores Weapon and releases hand pose
-                _isOperatingPipboy = false;
-                disablePipboyHandPose();
-            }
-        } else if (_isOperatingPipboy && !_pipboy->isOpen()) {
-            // Catches if you're not looking at the pipboy when your hand moves outside the control area and restores weapon / releases hand pose
+        const bool wasOperating = _isOperatingPipboy;
+
+        // have a buffer zone for finger detection not to trash the hand pose
+        const float pipboyDetectionRange = g_config.pipboyOperationFingerDetectionRange + (_isOperatingPipboy ? 1.0f : -1.0f);
+        _isOperatingPipboy = vec3Len(fingerPos - powerButton->world.translate) < pipboyDetectionRange
+            || vec3Len(fingerPos - lightButton->world.translate) < pipboyDetectionRange
+            || vec3Len(fingerPos - radioButton->world.translate) < pipboyDetectionRange;
+
+        if (wasOperating == _isOperatingPipboy) {
+            return;
+        }
+
+        if (_isOperatingPipboy) {
+            setPipboyHandPose();
+        } else {
             disablePipboyHandPose();
             // Remove any stuck helper orbs if Pipboy times out for any reason.
+            const auto arm = getPipboyArmNode();
             for (const auto& orbIdx : ORBS_NAMES) {
-                if (const auto orb = f4vr::findAVObject(arm.forearm3, orbIdx)) {
+                if (const auto orb = f4vr::findAVObject(arm, orbIdx)) {
                     orb->local.scale = std::min<float>(orb->local.scale, 0);
                 }
             }
-            _isOperatingPipboy = false;
         }
     }
 
@@ -78,16 +90,11 @@ namespace frik
      * Handle the virtual power button interaction by detecting if the player's finger is near the button.
      * Handle sticky button press and toggle the Pipboy state.
      */
-    void PipboyPhysicalHandler::operatePowerButton(const RE::NiPoint3 fingerPos)
+    void PipboyPhysicalHandler::operatePowerButton(const RE::NiPoint3 fingerPos, const RE::NiNode* powerButton)
     {
-        const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-        const auto powerDetect = f4vr::findNode(arm.shoulder, "PowerDetect");
-        const auto powerTranslate = f4vr::findAVObject(arm.forearm3, "PowerTranslate");
-        if (!powerTranslate || !powerDetect) {
-            return;
-        }
+        const auto powerTranslate = f4vr::findAVObject(getPipboyArmNode(), "PowerTranslate");
 
-        const float distance = vec3Len(fingerPos - powerDetect->world.translate);
+        const float distance = vec3Len(fingerPos - powerButton->world.translate);
         if (distance > 3) {
             _stickyPower = false;
             powerTranslate->local.translate.z = 0.0;
@@ -109,16 +116,11 @@ namespace frik
      * Handle the virtual light button interaction by detecting if the player's finger is near the button.
      * Handle sticky button press and toggle the Pipboy state.
      */
-    void PipboyPhysicalHandler::operateLightButton(const RE::NiPoint3 fingerPos)
+    void PipboyPhysicalHandler::operateLightButton(const RE::NiPoint3 fingerPos, const RE::NiNode* lightButton)
     {
-        const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-        const auto lightDetect = f4vr::findNode(arm.shoulder, "LightDetect");
-        const auto lightTranslate = f4vr::findAVObject(arm.forearm3, "LightTranslate");
+        const auto lightTranslate = f4vr::findAVObject(getPipboyArmNode(), "LightTranslate");
 
-        if (!lightTranslate || !lightDetect) {
-            return;
-        }
-        const float distance = vec3Len(fingerPos - lightDetect->world.translate);
+        const float distance = vec3Len(fingerPos - lightButton->world.translate);
         if (distance > 2.0) {
             _stickyLight = false;
             lightTranslate->local.translate.z = 0.0;
@@ -142,17 +144,12 @@ namespace frik
      * Handle the virtual radio button interaction by detecting if the player's finger is near the button.
      * Handle sticky button press and toggle the Pipboy state.
      */
-    void PipboyPhysicalHandler::operateRadioButton(const RE::NiPoint3 fingerPos)
+    void PipboyPhysicalHandler::operateRadioButton(const RE::NiPoint3 fingerPos, const RE::NiNode* radioButton)
     {
-        const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-        const auto lightDetect = f4vr::findNode(arm.shoulder, "RadioDetect");
-        const auto lightTranslate = f4vr::findAVObject(arm.forearm3, "RadioTranslate");
+        const auto arm = getPipboyArmNode();
+        const auto lightTranslate = f4vr::findAVObject(arm, "RadioTranslate");
 
-        if (!lightTranslate || !lightDetect) {
-            return;
-        }
-
-        const float distance = vec3Len(fingerPos - lightDetect->world.translate);
+        const float distance = vec3Len(fingerPos - radioButton->world.translate);
         if (distance > 2.0) {
             _stickyRadio = false;
             lightTranslate->local.translate.y = 0.0;
@@ -165,12 +162,10 @@ namespace frik
         if (lightTranslate->local.translate.y < -0.12 && !_stickyRadio) {
             _stickyRadio = true;
             triggerShortHaptic();
-            if (!_pipboy->isOpen()) {
-                if (f4vr::isPlayerRadioEnabled()) {
-                    turnPlayerRadioOn(false);
-                } else {
-                    turnPlayerRadioOn(true);
-                }
+            if (f4vr::isPlayerRadioEnabled()) {
+                turnPlayerRadioOn(false);
+            } else {
+                turnPlayerRadioOn(true);
             }
         }
     }
@@ -180,39 +175,41 @@ namespace frik
      */
     void PipboyPhysicalHandler::updatePipboyPhysicalElements(const PipboyPage lastPipboyPage)
     {
-        const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-        const auto powerOn = f4vr::findAVObject(arm.forearm3, "PowerButton_mesh:2");
-        const auto powerOff = f4vr::findAVObject(arm.forearm3, "PowerButton_mesh:off");
-        const auto lightOn = f4vr::findAVObject(arm.forearm3, "LightButton_mesh:2");
-        const auto lightOff = f4vr::findAVObject(arm.forearm3, "LightButton_mesh:off");
-        const auto radioOn = f4vr::findAVObject(arm.forearm3, "RadioOn");
-        const auto radioOff = f4vr::findAVObject(arm.forearm3, "RadioOff");
-        const auto radioNeedle = f4vr::findAVObject(arm.forearm3, "RadioNeedle_mesh");
-        const auto radioKnob = f4vr::findAVObject(arm.forearm3, "ModeKnobDuplicate");
-        const auto radioKnob2 = f4vr::findAVObject(arm.forearm3, "ModeKnob02");
-        if (!powerOn || !powerOff || !lightOn || !lightOff || !radioOn || !radioOff || !radioNeedle || !radioKnob) {
+        const auto arm = getPipboyArmNode();
+        const auto pageKnob = f4vr::findAVObject(arm, "ModeKnobDuplicate");
+        const auto pageKnob2 = f4vr::findAVObject(arm, "ModeKnob02");
+        const auto powerOn = f4vr::findAVObject(arm, "PowerButton_mesh:2");
+        const auto powerOff = f4vr::findAVObject(arm, "PowerButton_mesh:off");
+        const auto lightOn = f4vr::findAVObject(arm, "LightButton_mesh:2");
+        const auto lightOff = f4vr::findAVObject(arm, "LightButton_mesh:off");
+        const auto radioOn = f4vr::findAVObject(arm, "RadioOn");
+        const auto radioOff = f4vr::findAVObject(arm, "RadioOff");
+        const auto radioNeedle = f4vr::findAVObject(arm, "RadioNeedle_mesh");
+        if (!powerOn || !powerOff || !lightOn || !lightOff || !radioOn || !radioOff || !radioNeedle || !pageKnob) {
             return;
         }
 
-        if (lastPipboyPage == PipboyPage::RADIO) {
-            // fixes broken 'Mode Knob' position when radio tab is selected
-            float rotx;
-            float roty;
-            float rotz;
-            getEulerAnglesFromMatrix(radioKnob->local.rotate, &rotx, &roty, &rotz);
-            if (rotx < 0.57) {
-                radioKnob->local.rotate = radioKnob->local.rotate * getMatrixFromEulerAngles(-0.05f, 0, 0);
+        if (f4vr::isPipboyOnWrist()) {
+            if (lastPipboyPage == PipboyPage::RADIO) {
+                // fixes broken 'Mode Knob' position when radio tab is selected
+                float rotx;
+                float roty;
+                float rotz;
+                getEulerAnglesFromMatrix(pageKnob->local.rotate, &rotx, &roty, &rotz);
+                if (rotx < 0.57) {
+                    pageKnob->local.rotate = pageKnob->local.rotate * getMatrixFromEulerAngles(-0.05f, 0, 0);
+                }
+            } else {
+                // restores control of the 'Mode Knob' to the Pipboy behaviour file
+                pageKnob->local.rotate = pageKnob2->local.rotate;
             }
-        } else {
-            // restores control of the 'Mode Knob' to the Pipboy behaviour file
-            radioKnob->local.rotate = radioKnob2->local.rotate;
-        }
 
-        // Controls Pipboy power light glow (on or off depending on Pipboy state)
-        _pipboy->isOpen() ? powerOn->flags.flags &= 0xfffffffffffffffe : powerOff->flags.flags &= 0xfffffffffffffffe;
-        _pipboy->isOpen() ? powerOn->local.scale = 1 : powerOff->local.scale = 1;
-        _pipboy->isOpen() ? powerOff->flags.flags |= 0x1 : powerOn->flags.flags |= 0x1;
-        _pipboy->isOpen() ? powerOff->local.scale = 0 : powerOn->local.scale = 0;
+            // Controls Pipboy power light glow (on or off depending on Pipboy state)
+            _pipboy->isOpen() ? powerOn->flags.flags &= 0xfffffffffffffffe : powerOff->flags.flags &= 0xfffffffffffffffe;
+            _pipboy->isOpen() ? powerOn->local.scale = 1 : powerOff->local.scale = 1;
+            _pipboy->isOpen() ? powerOff->flags.flags |= 0x1 : powerOn->flags.flags |= 0x1;
+            _pipboy->isOpen() ? powerOff->local.scale = 0 : powerOn->local.scale = 0;
+        }
 
         // Controls light on & off indicators
         const bool isLightOn = f4vr::isPipboyLightOn(f4vr::getPlayer());
@@ -240,7 +237,7 @@ namespace frik
             _lastRadioFreq = 0.0;
         }
 
-        if (g_frik.isPipboyConfigurationModeActive() || !g_config.enablePrimaryControllerPipboyUse) {
+        if (g_frik.isPipboyConfigurationModeActive() || !g_config.enablePrimaryControllerPipboyUse || !f4vr::isPipboyOnWrist()) {
             return;
         }
 
@@ -249,7 +246,7 @@ namespace frik
         const auto secondaryTrigger = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand, f4vr::Axis::Trigger);
 
         // Move Pipboy trigger mesh with controller trigger position.
-        if (const auto trans = f4vr::findAVObject(arm.forearm3, "SelectRotate")) {
+        if (const auto trans = f4vr::findAVObject(arm, "SelectRotate")) {
             if (doinantTrigger.x > 0.00 && secondaryTrigger.x == 0.0) {
                 trans->local.translate.z = doinantTrigger.x / 3 * -1;
             } else if (secondaryTrigger.x > 0.00 && doinantTrigger.x == 0.0) {
@@ -261,7 +258,7 @@ namespace frik
 
         const bool isPBMessageBoxVisible = PipboyOperationHandler::isMessageHolderVisible(PipboyOperationHandler::getPipboyMenuRoot());
         if (lastPipboyPage != PipboyPage::MAP || isPBMessageBoxVisible) {
-            const auto scrollKnob = f4vr::findAVObject(arm.forearm3, "ScrollItemsKnobRot");
+            const auto scrollKnob = f4vr::findAVObject(arm, "ScrollItemsKnobRot");
             if (doinantHandStick.y > 0.85) {
                 scrollKnob->local.rotate = scrollKnob->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(0.4f), 0);
             }
@@ -330,5 +327,10 @@ namespace frik
                 }
             }
         }
+    }
+
+    RE::NiAVObject* PipboyPhysicalHandler::getPipboyArmNode() const
+    {
+        return (g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm()).forearm3;
     }
 }

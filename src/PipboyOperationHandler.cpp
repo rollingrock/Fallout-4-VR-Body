@@ -253,11 +253,13 @@ namespace frik
 
     void PipboyOperationHandler::gotoPrevPage(GFx::Movie* root)
     {
+        triggerShortHaptic();
         root->Invoke("root.Menu_mc.gotoPrevPage", nullptr, nullptr, 0);
     }
 
     void PipboyOperationHandler::gotoNextPage(GFx::Movie* root)
     {
+        triggerShortHaptic();
         root->Invoke("root.Menu_mc.gotoNextPage", nullptr, nullptr, 0);
     }
 

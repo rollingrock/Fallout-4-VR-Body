@@ -918,14 +918,14 @@ namespace frik
         }
 
         // Changed to allow scaling of third person Pipboy --->
-        if (!g_config.hidePipboy) {
-            if (!fEqual(pipboy->local.scale, g_config.pipBoyScale)) {
-                pipboy->local.scale = g_config.pipBoyScale;
-                setNodeVisibilityDeep(pipboy, true);
+        if (g_config.hidePipboy) {
+            if (pipboy->local.scale != 0.0) {
+                pipboy->local.scale = 0.0;
+                setNodeVisibilityDeep(pipboy, false);
             }
-        } else if (pipboy->local.scale != 0.0) {
-            pipboy->local.scale = 0.0;
-            setNodeVisibilityDeep(pipboy, false);
+        } else if (fEqual(pipboy->local.scale, 0)) {
+            pipboy->local.scale = g_config.pipBoyScale;
+            setNodeVisibilityDeep(pipboy, true);
         }
     }
 
@@ -1385,7 +1385,7 @@ namespace frik
                     vr::k_EButton_SteamVR_Touchpad));
                 _closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton.at(name));
 
-                if (isWeaponVisible && !g_frik.isPipboyOn() && !g_frik.isOperatingPipboy() && !(isLeft ^ isLeftHandedMode())) {
+                if (isWeaponVisible && !g_frik.isPipboyOn() && !(isLeft ^ isLeftHandedMode())) {
                     // CylonSurfer Updated conditions to cater for Virtual Pipboy usage (Ensures Index Finger is extended when weapon is drawn)
                     this->copy1StPerson(name);
                 } else {

@@ -16,6 +16,7 @@ namespace f4vr
 
     // Weapons/Armor/Player
     void setWandsVisibility(bool show, bool leftWand);
+    bool isWeaponEquipped();
     bool isMeleeWeaponEquipped();
     std::string getEquippedWeaponName();
     bool hasKeyword(const F4SEVR::TESObjectARMO* armor, std::uint32_t keywordFormId);
@@ -28,6 +29,7 @@ namespace f4vr
 
     // settings
     bool isLeftHandedMode();
+    bool isPipboyOnWrist();
     bool useWandDirectionalMovement();
     RE::Setting* getIniSetting(const char* name, bool addNew = false);
 
