@@ -10,14 +10,14 @@ using namespace common;
 
 namespace frik
 {
-    void turnPlayerRadioOn(bool isActive)
+    void turnPlayerRadioOn(const bool isActive)
     {
         F4SEVR::execPapyrusGlobalFunction("Game", "TurnPlayerRadioOn", isActive);
     }
 
-    void triggerShortHaptic()
+    void triggerShortHaptic(const f4vr::Hand hand)
     {
-        f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.001f);
+        f4vr::VRControllers.triggerHaptic(hand, 0.001f);
     }
 
     void turnPipBoyOn()

@@ -37,6 +37,13 @@ namespace frik
         BackOfHandUI,
     };
 
+    enum class FlashlightLocation : uint8_t
+    {
+        Head = 0,
+        LeftArm,
+        RightArm
+    };
+
     /**
      * Holds all the configuration variables used in the mod.
      * Most of the configuration variables are loaded from the FRIK.ini file.
@@ -48,13 +55,13 @@ namespace frik
         explicit Config() :
             ConfigBase(FRIK_INI_PATH, IDR_FRIK_INI) {}
 
-        void load();
+        virtual void load() override;
         void save() { saveIniConfig(); }
 
-        void togglePipBoyTorchOnArm()
+        void setFlashlightLocation(const FlashlightLocation location)
         {
-            isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
-            saveIniConfigValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
+            flashlightLocation = location;
+            saveIniConfigValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
         }
 
         void toggleIsHoloPipboy()
@@ -134,8 +141,7 @@ namespace frik
         int pipBoyButtonOffID = 0;
 
         // Pipboy Torch/Flashlight
-        bool isPipBoyTorchOnArm = false;
-        bool isPipBoyTorchRightArmMode = false;
+        FlashlightLocation flashlightLocation = FlashlightLocation::Head;
         int switchTorchButton = 2;
 
         // Weapon offhand grip

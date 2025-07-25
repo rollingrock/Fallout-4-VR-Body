@@ -187,6 +187,26 @@ namespace common
         }
 
         /**
+         * Save specific key and bool value into .ini file.
+         */
+        void saveIniConfigValue(const char* section, const char* key, const int value)
+        {
+            logger::info("Config: Saving \"{} = {}\"", key, value);
+            CSimpleIniA ini;
+            SI_Error rc = ini.LoadFile(_iniFilePath.c_str());
+            if (rc < 0) {
+                logger::warn("Failed to save INI config value with code: {}", rc);
+                return;
+            }
+            ini.SetLongValue(section, key, value);
+            _ignoreNextIniFileChange.store(true);
+            rc = ini.SaveFile(_iniFilePath.c_str());
+            if (rc < 0) {
+                logger::warn("Failed to save INI config value with code: {}", rc);
+            }
+        }
+
+        /**
          * Save specific key and double value into .ini file.
          */
         void saveIniConfigValue(const char* section, const char* key, const float value)

@@ -20,7 +20,9 @@ namespace f4vr
     enum class Hand : std::uint8_t
     {
         Primary,
-        Offhand
+        Offhand,
+        Right,
+        Left,
     };
 
     /**
@@ -616,15 +618,20 @@ namespace f4vr
         }
 
         // Resolves controller hand based on primary hand and left-handed setting
-        vr::ETrackedControllerRole getHand(const Hand primaryHand) const
+        vr::ETrackedControllerRole getHand(const Hand hand) const
         {
-            return _leftHanded
-                ? primaryHand == Hand::Primary
-                ? vr::TrackedControllerRole_LeftHand
-                : vr::TrackedControllerRole_RightHand
-                : primaryHand == Hand::Primary
-                ? vr::TrackedControllerRole_RightHand
-                : vr::TrackedControllerRole_LeftHand;
+            switch (hand) {
+            case Hand::Primary:
+                return _leftHanded ? vr::TrackedControllerRole_LeftHand : vr::TrackedControllerRole_RightHand;
+            case Hand::Offhand:
+                return _leftHanded ? vr::TrackedControllerRole_RightHand : vr::TrackedControllerRole_LeftHand;
+            case Hand::Right:
+                return vr::TrackedControllerRole_RightHand;
+            case Hand::Left:
+                return vr::TrackedControllerRole_LeftHand;
+            default:
+                return vr::TrackedControllerRole_OptOut;
+            }
         }
 
         ControllerState _left;

@@ -1,12 +1,13 @@
 #pragma once
 
 #include "f4vr/MiscStructs.h"
+#include "f4vr/VRControllersManager.h"
 
 namespace frik
 {
     void turnPlayerRadioOn(bool isActive);
 
-    void triggerShortHaptic();
+    void triggerShortHaptic(f4vr::Hand hand = f4vr::Hand::Primary);
 
     void turnPipBoyOn();
     void turnPipBoyOff();

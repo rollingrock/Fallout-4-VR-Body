@@ -231,7 +231,7 @@ namespace common
      * Is the current time is after the start + duration time.
      * Handles if start time is in the past or future.
      */
-    bool isNowPassed(const uint64_t start, const int duration)
+    bool isNowTimePassed(const uint64_t start, const int duration)
     {
         const uint64_t now = nowMillis();
         return now > start && std::cmp_greater(now - start, duration);

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "PipboyPhysicalHandler.h"
-#include "utils.h"
 
 namespace frik
 {
@@ -16,12 +15,7 @@ namespace frik
     class Pipboy
     {
     public:
-        explicit Pipboy(Skeleton* skelly):
-            _skelly(skelly), _physicalHandler(skelly, this)
-        {
-            // TODO: do we need this?
-            turnPipBoyOff();
-        }
+        explicit Pipboy(Skeleton* skelly);
 
         bool isOn() const { return _isOnStatus; }
         void setOnOff(bool setOn);
@@ -38,14 +32,14 @@ namespace frik
         void checkTurningOffByButton();
         void checkTurningOnByLookingAt();
         void checkTurningOffByLookingAway();
-        void checkSwitchingFlashlightHeadHand();
+        void checkSwitchingFlashlightHeadHand() const;
+        void adjustFlashlightTransformToHandOrHead() const;
 
         void storeLastPipboyPage();
         void dampenPipboyScreen();
 
         Skeleton* _skelly;
 
-        PipboyOperationHandler _operationHandler;
         PipboyPhysicalHandler _physicalHandler;
 
         bool _isOnStatus = false;
@@ -53,9 +47,6 @@ namespace frik
         uint64_t _startedLookingAtPip = 0;
         uint64_t _lastLookingAtPip = 0;
         RE::NiTransform _pipboyScreenPrevFrame;
-
-        // Pipboy interaction "sticky" flags
-        bool _stickySwithLight = false;
 
         PipboyPage _lastPipboyPage = PipboyPage::STATUS;
         float lastRadioFreq = 0.0;

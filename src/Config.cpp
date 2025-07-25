@@ -87,9 +87,8 @@ namespace frik
         pipBoyButtonOffArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffArm", 0));
         pipBoyButtonOffID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip));
 
-        // Pipboy Torch/Flashlight
-        isPipBoyTorchOnArm = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", true);
-        isPipBoyTorchRightArmMode = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchRightArmMode", false);
+        // Torch/Flashlight
+        flashlightLocation = static_cast<FlashlightLocation>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", 0));
         switchTorchButton = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2));
 
         // Two-handed gripping
@@ -185,7 +184,7 @@ namespace frik
         ini.SetBoolValue(INI_SECTION_MAIN, "hidePipboy", hidePipboy);
         ini.SetDoubleValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
         ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
-        ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
+        ini.SetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
         ini.SetBoolValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
         ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
         ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PapyrusGateway.h"
+#include "utils.h"
 #include "WeaponPositionAdjuster.h"
 #include "f4vr/GameMenusHandler.h"
 

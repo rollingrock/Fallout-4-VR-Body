@@ -231,6 +231,18 @@ namespace f4vr
         return collection->GetSetting(name);
     }
 
+    RE::NiAVObject* getFirstChild(RE::NiAVObject* avObject)
+    {
+        if (avObject) {
+            if (const auto& node = avObject->IsNode()) {
+                if (!node->children.empty()) {
+                    return node->children[0].get();
+                }
+            }
+        }
+        return nullptr;
+    }
+
     /**
      * Find a node by the given name in the tree under the other given node recursively.
      */
@@ -411,7 +423,7 @@ namespace f4vr
     /**
      * Update the world transform data (location,rotation,scale) of the given node by the local transform of the parent node.
      */
-    void updateTransforms(RE::NiNode* node)
+    void updateTransforms(RE::NiAVObject* node)
     {
         if (!node->parent) {
             return;

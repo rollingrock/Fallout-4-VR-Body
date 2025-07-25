@@ -93,6 +93,21 @@ namespace common
         return getRotationAxisAngle(vec3Norm(rotAxis), angle) * vec;
     }
 
+    /**
+     * Calculate a relocation transform from one node to another in the world space to be applied to local space of target node.
+     * Example usage:
+     * lightNode->local = calculateRelocation(lightNode, handNode);
+     * This will move the light node to the hand node position and rotation.
+     */
+    RE::NiTransform calculateRelocation(const RE::NiAVObject* fromNode, const RE::NiAVObject* toNode)
+    {
+        RE::NiTransform out;
+        out.scale = fromNode->local.scale;
+        out.rotate = toNode->world.rotate * fromNode->world.rotate.Transpose();
+        out.translate = fromNode->world.rotate * (toNode->world.translate - fromNode->world.translate) / fromNode->world.scale;
+        return out;
+    }
+
     RE::NiMatrix3 getIdentityMatrix()
     {
         RE::NiMatrix3 iden;

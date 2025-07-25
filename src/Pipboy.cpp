@@ -1,7 +1,5 @@
 #include "Pipboy.h"
 
-#include <utility>
-
 #include "Config.h"
 #include "FRIK.h"
 #include "utils.h"
@@ -12,6 +10,12 @@ using namespace common;
 
 namespace frik
 {
+    Pipboy::Pipboy(Skeleton* skelly):
+        _skelly(skelly), _physicalHandler(skelly, this)
+    {
+        turnPipBoyOff();
+    }
+
     /**
      * Turn Pipboy On/Off.
      */
@@ -76,7 +80,10 @@ namespace frik
         checkTurningOnByButton();
         checkTurningOffByButton();
 
-        checkSwitchingFlashlightHeadHand();
+        if (f4vr::isPipboyLightOn(f4vr::getPlayer())) {
+            checkSwitchingFlashlightHeadHand();
+            adjustFlashlightTransformToHandOrHead();
+        }
 
         storeLastPipboyPage();
 
@@ -88,7 +95,7 @@ namespace frik
         }
 
         if (_isOnStatus) {
-            _operationHandler.operate();
+            PipboyOperationHandler::operate();
 
             dampenPipboyScreen();
         }
@@ -198,7 +205,7 @@ namespace frik
         if (_startedLookingAtPip == 0) {
             _startedLookingAtPip = nowMillis();
         } else {
-            if (isNowPassed(_startedLookingAtPip, g_config.pipBoyOnDelay)) {
+            if (isNowTimePassed(_startedLookingAtPip, g_config.pipBoyOnDelay)) {
                 logger::info("Open Pipboy by looking at");
                 setOnOff(true);
             }
@@ -219,13 +226,13 @@ namespace frik
             return;
         }
 
-        const vr::VRControllerAxis_t movingStick = f4vr::VRControllers.getThumbstickValue(
-            g_config.pipBoyButtonArm > 0 ? vr::ETrackedControllerRole::TrackedControllerRole_RightHand : vr::ETrackedControllerRole::TrackedControllerRole_LeftHand);
+        const auto movingStick = f4vr::VRControllers.getThumbstickValue(g_config.pipBoyButtonArm > 0 ? f4vr::Hand::Right : f4vr::Hand::Left);
         const auto lookingStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
         const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway && _isOnStatus
             && !g_frik.isPipboyConfigurationModeActive()
-            && isNowPassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
-        const bool closeLookingWayWithMovement = g_config.pipboyCloseWhenMovingWhileLookingAway && _isOnStatus
+            && isNowTimePassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
+        const bool closeLookingWayWithMovement = g_config.pipboyCloseWhenMovingWhileLookingAway
+            && _isOnStatus
             && !g_frik.isPipboyConfigurationModeActive()
             && (fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f)
                 || fNotEqual(lookingStick.x, 0, 0.3f) || fNotEqual(lookingStick.y, 0, 0.3f));
@@ -237,89 +244,66 @@ namespace frik
     }
 
     /**
-     * Switch between Pipboy flashlight on head or hand based if player switches using button press near head.
+     * Switch between Pipboy flashlight on head or right/left hand based if player switches using button press of the hand near head.
      */
-    void Pipboy::checkSwitchingFlashlightHeadHand()
+    void Pipboy::checkSwitchingFlashlightHeadHand() const
     {
-        const bool lightOn = f4vr::isPipboyLightOn(f4vr::getPlayer());
-        if (!lightOn) {
+        const auto hmdPos = f4vr::getPlayerNodes()->HmdNode->world.translate;
+        const auto isLeftHandCloseToHMD = vec3Len(_skelly->getBoneWorldTransform("LArm_Hand").translate - hmdPos) < 15;
+        const auto isRightHandCloseToHMD = vec3Len(_skelly->getBoneWorldTransform("RArm_Hand").translate - hmdPos) < 15;
+
+        if (isLeftHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::LeftArm)) {
+            triggerShortHaptic(f4vr::Hand::Left);
+        } else if (isRightHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::RightArm)) {
+            triggerShortHaptic(f4vr::Hand::Right);
+        } else {
             return;
         }
 
-        const bool helmetHeadLamp = isArmorHasHeadLamp();
-        if (!helmetHeadLamp) {
-            const auto head = f4vr::findNode(f4vr::getPlayer()->GetActorRootNode(false), "Head");
-            if (!head) {
-                return;
-            }
-            const bool useRightHand = g_config.leftHandedPipBoy || g_config.isPipBoyTorchRightArmMode;
-            const auto hand = _skelly->getBoneWorldTransform(useRightHand ? "RArm_Hand" : "LArm_Hand").translate;
-            const float distance = vec3Len(hand - head->world.translate);
-            if (distance < 15.0) {
-                uint64_t pipboyHand = f4vr::VRControllers.getControllerState_DEPRECATED(useRightHand ? f4vr::TrackerType::Right : f4vr::TrackerType::Left).ulButtonPressed;
-                const auto SwitchLightButton = pipboyHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(g_config.switchTorchButton));
-                f4vr::VRControllers.triggerHaptic(useRightHand ? vr::TrackedControllerRole_RightHand : vr::TrackedControllerRole_LeftHand, 0.1f, 0.1f);
-                // Control switching between hand and head based Pipboy light
-                if (SwitchLightButton && !_stickySwithLight) {
-                    _stickySwithLight = true;
-                    f4vr::VRControllers.triggerHaptic(useRightHand ? vr::TrackedControllerRole_RightHand : vr::TrackedControllerRole_LeftHand, 0.1f);
-                    auto LGHT_ATTACH = useRightHand
-                        ? f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand")
-                        : f4vr::findNode(_skelly->getLeftArm().shoulder, "LArm_Hand");
-                    RE::NiNode* lght = g_config.isPipBoyTorchOnArm
-                        ? f4vr::find1StChildNode(LGHT_ATTACH, "HeadLightParent")
-                        : f4vr::getPlayerNodes()->HeadLightParentNode;
-                    if (lght) {
-                        auto parentnode = g_config.isPipBoyTorchOnArm ? lght->parent->name : f4vr::getPlayerNodes()->HeadLightParentNode->parent->name;
-                        float rotz = g_config.isPipBoyTorchOnArm ? -90 : 90;
-                        lght->local.rotate = lght->local.rotate * getMatrixFromEulerAngles(0, 0, degreesToRads(rotz));
-                        lght->local.translate.y = g_config.isPipBoyTorchOnArm ? 0 : 4;
-                        g_config.isPipBoyTorchOnArm
-                            ? lght->parent->DetachChild(lght)
-                            : f4vr::getPlayerNodes()->HeadLightParentNode->parent->DetachChild(lght);
-                        g_config.isPipBoyTorchOnArm
-                            ? f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true)
-                            : LGHT_ATTACH->AttachChild(lght, true);
-                        g_config.togglePipBoyTorchOnArm();
-                    }
-                }
-                if (!SwitchLightButton) {
-                    _stickySwithLight = false;
-                }
-            } else if (distance > 10) {
-                _stickySwithLight = false;
-            }
+        const bool isLeftHandGrab = isLeftHandCloseToHMD && f4vr::VRControllers.isReleasedShort(f4vr::Hand::Left, g_config.switchTorchButton);
+        const bool isRightHandGrab = isRightHandCloseToHMD && f4vr::VRControllers.isReleasedShort(f4vr::Hand::Right, g_config.switchTorchButton);
+        if (!isLeftHandGrab && !isRightHandGrab) {
+            return;
         }
 
-        //Attach light to hand
-        if (g_config.isPipBoyTorchOnArm) {
-            auto LGHT_ATTACH = g_config.leftHandedPipBoy || g_config.isPipBoyTorchRightArmMode
-                ? f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand")
-                : f4vr::findNode(_skelly->getLeftArm().shoulder, "LArm_Hand");
-            if (LGHT_ATTACH) {
-                if (lightOn && !helmetHeadLamp) {
-                    RE::NiNode* lght = f4vr::getPlayerNodes()->HeadLightParentNode;
-                    auto parentnode = f4vr::getPlayerNodes()->HeadLightParentNode->parent->name;
-                    if (parentnode == "HMDNode") {
-                        f4vr::getPlayerNodes()->HeadLightParentNode->parent->DetachChild(lght);
-                        lght->local.rotate = lght->local.rotate * getMatrixFromEulerAngles(0, 0, degreesToRads(90));
-                        lght->local.translate.y = 4;
-                        LGHT_ATTACH->AttachChild(lght, true);
-                    }
-                }
-                //Restore HeadLight to correct node when light is powered off (to avoid any crashes)
-                else if (!lightOn || helmetHeadLamp) {
-                    if (auto lght = f4vr::find1StChildNode(LGHT_ATTACH, "HeadLightParent")) {
-                        auto parentnode = lght->parent->name;
-                        if (parentnode != "HMDNode") {
-                            lght->local.rotate = lght->local.rotate * getMatrixFromEulerAngles(0, 0, degreesToRads(-90));
-                            lght->local.translate.y = 0;
-                            lght->parent->DetachChild(lght);
-                            f4vr::getPlayerNodes()->HmdNode->AttachChild(lght, true);
-                        }
-                    }
-                }
-            }
+        if (g_config.flashlightLocation == FlashlightLocation::Head) {
+            g_config.setFlashlightLocation(isLeftHandGrab ? FlashlightLocation::LeftArm : FlashlightLocation::RightArm);
+        } else if (g_config.flashlightLocation == FlashlightLocation::LeftArm && isLeftHandGrab) {
+            g_config.setFlashlightLocation(FlashlightLocation::Head);
+        } else if (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab) {
+            g_config.setFlashlightLocation(FlashlightLocation::Head);
+        }
+    }
+
+    /**
+     * Adjust the position of the light node to the hand that is holding it or revert to head position.
+     * It is safer than moving the node as that can result in game crash.
+     */
+    void Pipboy::adjustFlashlightTransformToHandOrHead() const
+    {
+        const auto lightNode = f4vr::getFirstChild(f4vr::getPlayerNodes()->HeadLightParentNode);
+        if (!lightNode) {
+            return;
+        }
+
+        // revert to original transform
+        lightNode->local.rotate = getIdentityMatrix();
+        lightNode->local.translate = RE::NiPoint3(0, 0, 0);
+
+        if (g_config.flashlightLocation != FlashlightLocation::Head) {
+            // update world transforms after reverting to original
+            f4vr::updateTransforms(lightNode);
+
+            // use the right arm node
+            const auto armNode = g_config.flashlightLocation == FlashlightLocation::LeftArm
+                ? f4vr::findNode(_skelly->getLeftArm().shoulder, "LArm_Hand")
+                : f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand");
+
+            // calculate relocation transform and set to local
+            lightNode->local = calculateRelocation(lightNode, armNode);
+
+            // small adjustment to prevent light on the fingers
+            lightNode->local.translate += RE::NiPoint3(4, 0, 2);
         }
     }
 

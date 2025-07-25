@@ -32,8 +32,9 @@ namespace f4vr
     RE::Setting* getIniSetting(const char* name, bool addNew = false);
 
     // nodes
-    RE::NiAVObject* findAVObject(RE::NiAVObject* node, const std::string& name, const int maxDepth = 999);
-    RE::NiNode* findNode(RE::NiAVObject* node, const char* name, const int maxDepth = 999);
+    RE::NiAVObject* getFirstChild(RE::NiAVObject* avObject);
+    RE::NiAVObject* findAVObject(RE::NiAVObject* node, const std::string& name, int maxDepth = 999);
+    RE::NiNode* findNode(RE::NiAVObject* node, const char* name, int maxDepth = 999);
     RE::NiNode* find1StChildNode(RE::NiAVObject* node, const char* name);
 
     // visibility
@@ -46,7 +47,7 @@ namespace f4vr
     void updateDown(RE::NiAVObject* node, bool updateSelf, const char* ignoreNode = nullptr);
     void updateDownTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
     void updateUpTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
-    void updateTransforms(RE::NiNode* node);
+    void updateTransforms(RE::NiAVObject* node);
     void updateTransformsDown(RE::NiNode* node, bool updateSelf);
 
     void registerPapyrusNativeFunctions(F4SE::PapyrusInterface::RegisterFunctions callback);

@@ -15,6 +15,8 @@ namespace frik
      */
     void PipboyPhysicalHandler::operate(const PipboyPage lastPipboyPage)
     {
+        // TODO: make sure not running in Power Armor
+
         // const auto fingerPos = _skelly->getIndexFingerTipWorldPosition(!g_config.leftHandedPipBoy);
         const auto fingerPos = _skelly->getBoneWorldTransform(g_config.leftHandedPipBoy ? "LArm_Finger23" : "RArm_Finger23").translate;
         checkHandStateToOperatePipboy(fingerPos);

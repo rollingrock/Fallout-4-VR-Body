@@ -5,6 +5,7 @@
 #include "FRIK.h"
 #include "HandPose.h"
 #include "Skeleton.h"
+#include "utils.h"
 #include "common/Logger.h"
 #include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
