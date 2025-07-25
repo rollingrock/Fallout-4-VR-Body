@@ -67,10 +67,7 @@ namespace frik
         void handleLeftHandedWeaponNodesSwitch();
         void setArms(bool isLeft);
         void dampenHand(RE::NiNode* node, bool isLeft);
-        void leftHandedModePipboy() const;
         void hide3rdPersonWeapon() const;
-        void positionPipboy() const;
-        void hidePipboy() const;
         void hideFistHelpers() const;
         void showHidePAHud() const;
         void selfieSkelly() const;

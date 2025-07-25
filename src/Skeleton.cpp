@@ -193,14 +193,11 @@ namespace frik
         handleLeftHandedWeaponNodesSwitch();
         setArms(false);
         setArms(true);
-        leftHandedModePipboy();
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
-        // Misc stuff to show/hide things and also set up the wrist pipboy
+        // Misc stuff to show/hide things
         logger::trace("Pipboy and Weapons...");
         hide3rdPersonWeapon();
-        positionPipboy();
-        hidePipboy();
         hideFistHelpers();
         showHidePAHud();
 
@@ -775,63 +772,6 @@ namespace frik
         }
     }
 
-    void Skeleton::positionPipboy() const
-    {
-        RE::NiAVObject* wandPip = findAVObject(_playerNodes->SecondaryWandNode, "PipboyRoot_NIF_ONLY");
-
-        if (wandPip == nullptr) {
-            return;
-        }
-
-        RE::NiAVObject* pipboyBone;
-        if (g_config.leftHandedPipBoy) {
-            pipboyBone = findAVObject(_rightArm.forearm1, "PipboyBone");
-        } else {
-            pipboyBone = findAVObject(_leftArm.forearm1, "PipboyBone");
-        }
-
-        if (pipboyBone == nullptr) {
-            return;
-        }
-
-        auto locPos = RE::NiPoint3(0, 0, 0);
-
-        locPos = pipboyBone->world.rotate.Transpose() * ((locPos * pipboyBone->world.scale));
-
-        const RE::NiPoint3 wandWP = pipboyBone->world.translate + locPos;
-
-        const RE::NiPoint3 delta = wandWP - wandPip->parent->world.translate;
-
-        wandPip->local.translate = wandPip->parent->world.rotate * ((delta / wandPip->parent->world.scale));
-
-        // Slr = LHwr' * RHwr * Slr
-
-        const RE::NiMatrix3 wandWROT = getMatrixFromEulerAngles(degreesToRads(30), 0, 0) * pipboyBone->world.rotate;
-
-        wandPip->local.rotate = wandWROT * wandPip->parent->world.rotate.Transpose();
-    }
-
-    void Skeleton::leftHandedModePipboy() const
-    {
-        if (g_config.leftHandedPipBoy) {
-            auto pipbone = findNode(_rightArm.forearm1, "PipboyBone");
-
-            if (!pipbone) {
-                pipbone = findNode(_leftArm.forearm1, "PipboyBone");
-
-                if (!pipbone) {
-                    return;
-                }
-
-                pipbone->parent->DetachChild(pipbone);
-                _rightArm.forearm3->IsNode()->AttachChild(pipbone, true);
-            }
-
-            pipbone->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(180.0), 0) * pipbone->local.rotate;
-            pipbone->local.translate *= -1.5;
-        }
-    }
-
     void Skeleton::hideFistHelpers() const
     {
         if (!isLeftHandedMode()) {
@@ -898,34 +838,6 @@ namespace frik
 
         if (const auto uiNode = findNode(_playerNodes->SecondaryWandNode, "Point002")) {
             uiNode->local.scale = 0.0;
-        }
-    }
-
-    void Skeleton::hidePipboy() const
-    {
-        RE::NiAVObject* pipboy = nullptr;
-
-        if (!g_config.leftHandedPipBoy) {
-            if (_leftArm.forearm3) {
-                pipboy = findAVObject(_leftArm.forearm3, "PipboyBone");
-            }
-        } else {
-            pipboy = findAVObject(_rightArm.forearm3, "PipboyBone");
-        }
-
-        if (!pipboy) {
-            return;
-        }
-
-        // Changed to allow scaling of third person Pipboy --->
-        if (g_config.hidePipboy) {
-            if (pipboy->local.scale != 0.0) {
-                pipboy->local.scale = 0.0;
-                setNodeVisibilityDeep(pipboy, false);
-            }
-        } else if (fEqual(pipboy->local.scale, 0)) {
-            pipboy->local.scale = g_config.pipBoyScale;
-            setNodeVisibilityDeep(pipboy, true);
         }
     }
 

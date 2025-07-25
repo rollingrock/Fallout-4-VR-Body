@@ -26,13 +26,18 @@ namespace frik
         void setLookingThroughScope(const bool isLookingThroughScope) { _isLookingThroughScope = isLookingThroughScope; }
 
         bool isPipboyOn() const { return _pipboy && _pipboy->isOpen(); }
-        void openPipboy() const { if (_pipboy) { _pipboy->openClose(true); } }
         void swapPipboyModel() const { if (_pipboy) { _pipboy->swapModel(); } }
 
         bool isMainConfigurationModeActive() const { return _configurationMode && _configurationMode->isCalibrateModeActive(); }
         bool isPipboyConfigurationModeActive() const { return _configurationMode && _configurationMode->isPipBoyConfigModeActive(); }
         void openMainConfigurationModeActive() const { if (_configurationMode) { _configurationMode->enterConfigurationMode(); } }
-        void openPipboyConfigurationModeActive() const { if (_configurationMode) { _configurationMode->openPipboyConfigurationMode(); } }
+
+        void openPipboyConfigurationModeActive() const
+        {
+            if (_pipboy) { _pipboy->openClose(true); }
+            if (_configurationMode) { _configurationMode->openPipboyConfigurationMode(); }
+        }
+
         void closePipboyConfigurationModeActive() const { if (_configurationMode) { _configurationMode->exitPBConfig(); } }
 
         bool inWeaponRepositionMode() const { return _weaponPosition && _weaponPosition->inWeaponRepositionMode(); }

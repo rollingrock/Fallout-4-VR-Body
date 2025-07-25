@@ -25,7 +25,6 @@ namespace frik
      */
     void ConfigurationMode::openPipboyConfigurationMode()
     {
-        g_frik.openPipboy();
         enterPipboyConfigMode();
     }
 
