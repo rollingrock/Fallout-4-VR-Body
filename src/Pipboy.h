@@ -25,6 +25,7 @@ namespace frik
         void onFrameUpdate();
 
     private:
+        void exitPowerArmorBugFixHack(bool set);
         void hideShowPipboyOnArm() const;
         static void restoreDefaultPipboyModelIfNeeded();
         void positionPipboyModelToPipboyOnArm() const;
@@ -51,6 +52,9 @@ namespace frik
         PipboyPhysicalHandler _physicalHandler;
 
         bool _isOpen = false;
+
+        // see exitPowerArmorBugFixHack method
+        bool _exitPowerArmorFixFirstFrame = true;
 
         // handle auto open/close
         uint64_t _startedLookingAtPip = 0;

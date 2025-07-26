@@ -10,6 +10,10 @@ using namespace common;
 
 namespace
 {
+    /**
+     * This is the actual thing that causes the game to turn Pipboy functionality on/off.
+     * Not sure what it does exactly...
+     */
     void turnPipBoyOnOff(const bool open)
     {
         RE::GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy")->SetFloat(open ? 0.0 : 20);
@@ -21,10 +25,14 @@ namespace
 
 namespace frik
 {
+    /**
+     * First frame PA fix:
+     *
+     */
     Pipboy::Pipboy(Skeleton* skelly):
         _skelly(skelly), _physicalHandler(skelly, this)
     {
-        turnPipBoyOnOff(false);
+        exitPowerArmorBugFixHack(true);
     }
 
     /**
@@ -61,6 +69,8 @@ namespace frik
      */
     void Pipboy::onFrameUpdate()
     {
+        exitPowerArmorBugFixHack(false);
+
         if (f4vr::isPipboyLightOn(f4vr::getPlayer())) {
             checkSwitchingFlashlightHeadHand();
             adjustFlashlightTransformToHandOrHead();
@@ -101,6 +111,30 @@ namespace frik
             PipboyOperationHandler::operate();
 
             dampenPipboyScreen();
+        }
+    }
+
+    /**
+     * There is a bug that when existing Power Armor you can't open the main menu.
+     * But it only happens if the Pipboy is on-wrist setting (others are fine).
+     * A fix is to open and close the Pipboy.
+     * The hack here is to open the Pipboy in the ctor and close it ASAP in the first frame.
+     */
+    void Pipboy::exitPowerArmorBugFixHack(const bool set)
+    {
+        if (set) {
+            // set Pipboy to open
+            if (f4vr::isPipboyOnWrist()) {
+                turnPipBoyOnOff(true);
+                _exitPowerArmorFixFirstFrame = true;
+            }
+        } else {
+            // Close the Pipboy on first frame if existed PA
+            if (_exitPowerArmorFixFirstFrame) {
+                if (f4vr::isPipboyOnWrist() && !f4vr::isInPowerArmor())
+                    turnPipBoyOnOff(false);
+                _exitPowerArmorFixFirstFrame = false;
+            }
         }
     }
 
