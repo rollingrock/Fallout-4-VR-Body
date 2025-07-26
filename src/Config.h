@@ -142,6 +142,7 @@ namespace frik
         int pipBoyButtonOffID = 0;
 
         // Pipboy Torch/Flashlight
+        bool removeFlashlight = false;
         FlashlightLocation flashlightLocation = FlashlightLocation::Head;
         int switchTorchButton = 2;
 

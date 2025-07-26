@@ -100,6 +100,8 @@ namespace frik
 
             _gameMenusHandler.init();
 
+            removeEmbeddedFlashlight();
+
             if (isBetterScopesVRModLoaded()) {
                 logger::info("BetterScopesVR mod detected, registering for messages...");
                 _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
@@ -318,6 +320,32 @@ namespace frik
         f4vr::getIniSetting("fPipboyMaxScale:VRPipboy", true)->SetFloat(3.0000);
         f4vr::getIniSetting("fPipboyMinScale:VRPipboy", true)->SetFloat(0.0100f);
         f4vr::getIniSetting("fVrPowerArmorScaleMultiplier:VR", true)->SetFloat(1.0000);
+    }
+
+    /**
+     * If to remove the embedded FRIK flashlight from the game.
+     * Useful for players to be able to install other flashlight mods.
+     */
+    void FRIK::removeEmbeddedFlashlight()
+    {
+        if (!g_config.removeFlashlight) {
+            return;
+        }
+        for (const auto& item : RE::TESDataHandler::GetSingleton()->GetFormArray<RE::TESObjectARMO>()) {
+            if (item->formID == 0x21B3B) {
+                for (std::uint32_t idx{}; idx < item->numKeywords; idx++) {
+                    const auto frmKey = item->keywords[idx];
+                    if (frmKey && frmKey->formID == 0xB34A6) {
+                        logger::info("Removing embedded FRIK flashlight from: '{}', keyword: 0x{:x}", item->GetFullName(), frmKey->formID);
+                        item->RemoveKeyword(frmKey);
+                        return;
+                    }
+                }
+                logger::warn("Failed to remove embedded FRIK flashlight, keyword not found in '{}'", item->GetFullName());
+                return;
+            }
+        }
+        logger::warn("Failed to remove embedded FRIK flashlight, armor not found");
     }
 
     /**

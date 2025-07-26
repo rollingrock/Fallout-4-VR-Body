@@ -59,6 +59,7 @@ namespace frik
         static bool isGameReadyForSkeletonInitialization();
         bool isRootNodeValid() const;
         static void onF4VRSEMessage(F4SE::MessagingInterface::Message* msg);
+        static void removeEmbeddedFlashlight();
         static void onBetterScopesMessage(F4SE::MessagingInterface::Message* msg);
         void checkDebugDump();
 

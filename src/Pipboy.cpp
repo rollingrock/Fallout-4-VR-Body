@@ -71,7 +71,7 @@ namespace frik
     {
         exitPowerArmorBugFixHack(false);
 
-        if (f4vr::isPipboyLightOn(f4vr::getPlayer())) {
+        if (!g_config.removeFlashlight && f4vr::isPipboyLightOn(f4vr::getPlayer())) {
             checkSwitchingFlashlightHeadHand();
             adjustFlashlightTransformToHandOrHead();
         }
