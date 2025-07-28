@@ -13,6 +13,44 @@
 
 using namespace common;
 
+namespace
+{
+    std::string_view getGripStockName(RE::NiNode* weapon)
+    {
+        if (const auto gripNode = f4vr::getFirstChild(f4vr::findNode(weapon, "P-Grip"))) {
+            return gripNode->name;
+        }
+        return "";
+    }
+
+    /**
+     * Get the game name of the equipped weapon extending weapon that can be both pistol and rifle to include rifle suffix.
+     * It's not critical but a nice to have a better hand grip for the weapons.
+     */
+    std::string getEquippedWeaponNameExtended(RE::NiNode* weapon)
+    {
+        const auto& weaponName = f4vr::getEquippedWeaponName();
+        if (weaponName == "Plasma") {
+            const auto stockName = getGripStockName(weapon);
+            if (stockName.starts_with("RiotGrip") || stockName.starts_with("Sniper") || stockName.find("Rifle") != std::string_view::npos) {
+                return weaponName + " Rifle";
+            }
+        } else if (weaponName == "Pipe" || weaponName == "Pipe Bolt-Action") {
+            const auto stockName = getGripStockName(weapon);
+            if (stockName.starts_with("HandmadePaddedStock") || stockName.starts_with("SpringStock") || stockName.starts_with("PipeStock")) {
+                return weaponName + " Rifle";
+            }
+        } else if (weaponName == "Laser" || weaponName == "Institute") {
+            const auto stockName = getGripStockName(weapon);
+            if (stockName.find("Rifle") != std::string_view::npos) {
+                return weaponName + " Rifle";
+            }
+        }
+
+        return weaponName;
+    }
+}
+
 namespace frik
 {
     // use as weapon name when no weapon in equipped. specifically for default back of hand UI offset.
@@ -86,7 +124,7 @@ namespace frik
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
             }
-            checkEquippedWeaponChanged(true);
+            checkEquippedWeaponChanged(weapon, true);
             backOfHand->local = _backOfHandUIOffsetTransform;
             return;
         }
@@ -95,7 +133,7 @@ namespace frik
         _weaponOriginalTransform = weapon->local;
         _weaponOriginalWorldTransform = weapon->world;
 
-        checkEquippedWeaponChanged(false);
+        checkEquippedWeaponChanged(weapon, false);
 
         // override the back-of-hand UI transform
         backOfHand->local = _backOfHandUIOffsetTransform;
@@ -129,9 +167,9 @@ namespace frik
     /**
      * If equipped weapon changed set offsets to stored if exists.
      */
-    void WeaponPositionAdjuster::checkEquippedWeaponChanged(const bool emptyHand)
+    void WeaponPositionAdjuster::checkEquippedWeaponChanged(RE::NiNode* weapon, const bool emptyHand)
     {
-        const auto& weaponName = emptyHand ? EMPTY_HAND : f4vr::getEquippedWeaponName();
+        const auto& weaponName = emptyHand ? EMPTY_HAND : getEquippedWeaponNameExtended(weapon);
         const bool inPA = f4vr::isInPowerArmor();
         if (weaponName == _currentWeapon && inPA == _currentlyInPA) {
             // no weapon change

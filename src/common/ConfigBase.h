@@ -421,7 +421,7 @@ namespace common
 
             // backup the old ini file before overwriting
             auto nameStr = std::string(_iniFilePath);
-            nameStr = nameStr.replace(nameStr.length() - 4, 4, "_bkp_v" + std::to_string(_iniConfigVersion) + ".ini");
+            nameStr = nameStr.replace(nameStr.length() - 4, 4, "_backup_v" + std::to_string(_iniConfigVersion) + ".ini");
             res = std::rename(_iniFilePath.c_str(), nameStr.c_str());
             if (res != 0) {
                 logger::warn("Failed to backup old .ini file to '{}'. Error: {}", nameStr.c_str(), res);

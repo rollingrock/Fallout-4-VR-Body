@@ -34,7 +34,7 @@ namespace frik
     private:
         void handleThrowableWeapon();
         void handlePrimaryWeapon();
-        void checkEquippedWeaponChanged(bool emptyHand);
+        void checkEquippedWeaponChanged(RE::NiNode* weapon, bool emptyHand);
         void handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const;
         void checkIfOffhandIsGripping(const RE::NiNode* weapon);
         void setOffhandGripping(bool isGripping);
