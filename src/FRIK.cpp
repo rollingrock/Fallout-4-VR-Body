@@ -385,5 +385,11 @@ namespace frik
         if (g_config.checkDebugDumpDataOnceFor("menus")) {
             _gameMenusHandler.debugDumpAllMenus();
         }
+        if (g_config.checkDebugDumpDataOnceFor("weapon_muzzle")) {
+            if (const auto muzzle = getMuzzleFlashNodes()) {
+                printNodes(muzzle->fireNode);
+                printNodes(muzzle->projectileNode);
+            }
+        }
     }
 }

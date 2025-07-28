@@ -319,6 +319,36 @@ namespace f4vr
     }
 
     /**
+     * Find a node by the given name prefix in the tree under the other given node recursively.
+     * Returns the first node found that starts with the given name.
+     */
+    RE::NiNode* findNodeStartsWith(RE::NiAVObject* node, const char* name, const int maxDepth)
+    {
+        if (!node) {
+            return nullptr;
+        }
+
+        if (_strnicmp(name, node->name.c_str(), std::strlen(name)) == 0) {
+            return node->IsNode();
+        }
+
+        if (maxDepth < 1) {
+            return nullptr;
+        }
+
+        if (const auto niNode = node->IsNode()) {
+            for (const auto& child : niNode->children) {
+                if (child) {
+                    if (const auto result = findNodeStartsWith(child.get(), name, maxDepth - 1)) {
+                        return result;
+                    }
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    /**
      * Find a node by name restricted to firest level of children only.
      */
     RE::NiNode* find1StChildNode(RE::NiAVObject* node, const char* name)

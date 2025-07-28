@@ -37,6 +37,7 @@ namespace f4vr
     RE::NiAVObject* getFirstChild(RE::NiAVObject* avObject);
     RE::NiAVObject* findAVObject(RE::NiAVObject* node, const std::string& name, int maxDepth = 999);
     RE::NiNode* findNode(RE::NiAVObject* node, const char* name, int maxDepth = 999);
+    RE::NiNode* findNodeStartsWith(RE::NiAVObject* node, const char* name, int maxDepth = 999);
     RE::NiNode* find1StChildNode(RE::NiAVObject* node, const char* name);
 
     // visibility

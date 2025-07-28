@@ -40,6 +40,8 @@ namespace common
         float debugFlowFlag1 = 0;
         float debugFlowFlag2 = 0;
         float debugFlowFlag3 = 0;
+        std::string debugFlowText1 = "";
+        std::string debugFlowText2 = "";
 
         /**
          * Check if debug data dump is requested for the given name.
@@ -132,6 +134,8 @@ namespace common
             debugFlowFlag1 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "fDebugFlowFlag1", 0));
             debugFlowFlag2 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "fDebugFlowFlag2", 0));
             debugFlowFlag3 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "fDebugFlowFlag3", 0));
+            debugFlowText1 = ini.GetValue(INI_SECTION_DEBUG, "sDebugFlowText1", "");
+            debugFlowText2 = ini.GetValue(INI_SECTION_DEBUG, "sDebugFlowText2", "");
             _debugDumpDataOnceNames = ini.GetValue(INI_SECTION_DEBUG, "sDebugDumpDataOnceNames", "");
 
             // set log after loading from config
