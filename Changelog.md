@@ -1,12 +1,14 @@
 ## v0.75 (in-development)
 - Migrated from F4SEVR to CommonLibF4 infrastructure!!!
-- Support moving flashlight to either left or right arm depending on the hand used to "grab" the flashlight from the head.
+- Support moving flashlight to either left or right arm/hand depending on the hand used to "grab" the flashlight from the head.
 - Support removing embedded FRIK flashlight using FRIK.ini to easily use other flashlight mods.
+- Support separate pistol/rifle weapon offsets for Pipe, Laser, and Plasma weapons.
 - Improve Pipboy dampening (reduce lagging, fix screen fly in on open, more stable holo screen)
 - Improve Pipboy physical operation by requiring free hand (no weapon) and not forcing looking directly at the Pipboy.
-- Stop running a bunch of code for non-on-wrist pipboy setting.
-- Fixes not being able to open main menu after exiting power armor only with on-wrist Pipboy.
-- Fixes in-front pipboy was invisible if switched from on-wrist or projected in game.
+- Stop running a bunch of code for non-on-wrist Pipboy setting.
+- Fixed Laser Musket "loaded" beam not aligned correctly with the weapon.
+- Fixed not being able to open main menu after exiting power armor only with on-wrist Pipboy.
+- Fixed in-front pipboy was invisible if switched from on-wrist or projected in game.
 - Fixed in-front pipboy double paging and operating with controller issues.
 - Fixed rare Pipboy flashlight game crash.
 

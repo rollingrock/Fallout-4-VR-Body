@@ -14,7 +14,13 @@ If you just want to see the head in selfie set `selfieIgnoreHideFlags` to true.
 
 ## How do I Operate the Flashlight
 Long press on secondary hand trigger activates the flashlight.  
-To move the flashlight from hand to head: move the Pipboy hand to the head, should feel haptic, press grip.  
+To move the flashlight from hand to head: move the left or right hand to the forehead, should feel haptic, press grip.  
+
+## What are the different grip modes?
+* Mode 1: Hand automatically snap to the barrel when in range, move hand quickly to let go.
+* Mode 2: Hand automatically snap to the barrel when in range, press grip button to let go.
+* Mode 3: Holding grip button to snap to the barrel, release to let go.
+* Mode 4: Press grip button to snap to the barrel, press again to let go.
 
 ## Reporting Crash Log
 [Buffout 4 NG](https://www.nexusmods.com/fallout4/mods/64880) required for crash log.  
