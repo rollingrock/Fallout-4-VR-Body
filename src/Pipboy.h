@@ -20,7 +20,7 @@ namespace frik
         bool isOpen() const { return _isOpen; }
         void openClose(bool open);
 
-        void swapModel() const;
+        void swapModel();
 
         void onFrameUpdate();
 
@@ -29,8 +29,8 @@ namespace frik
         void hideShowPipboyOnArm() const;
         static void restoreDefaultPipboyModelIfNeeded();
         void positionPipboyModelToPipboyOnArm() const;
-        void replaceMeshes(bool force) const;
-        bool replaceMeshes(const std::string& itemHide, const std::string& itemShow) const;
+        void replaceMeshes(bool force);
+        void replaceMeshes(bool force, const std::string& itemHide, const std::string& itemShow);
 
         void checkTurningOnByButton();
         void checkTurningOffByButton();
@@ -41,7 +41,7 @@ namespace frik
 
         static void storeLastPipboyPage();
         void dampenPipboyScreen();
-        void dampenPipboyRegularScreen(RE::NiNode* pipboyScreen);
+        void dampenPipboyScreen(RE::NiNode* pipboyScreen);
         void dampenPipboyHoloScreen(RE::NiNode* pipboyScreen);
         bool isPlayerLookingAt() const;
         void leftHandedModePipboy() const;
@@ -52,6 +52,8 @@ namespace frik
         PipboyPhysicalHandler _physicalHandler;
 
         bool _isOpen = false;
+
+        bool _meshReplaced = false;
 
         // see exitPowerArmorBugFixHack method
         bool _exitPowerArmorFixFirstFrame = true;
@@ -65,16 +67,14 @@ namespace frik
 
         // handle dampening of pipboy screen to reduce movement
         std::deque<RE::NiPoint3> _pipboyScreenPrevFrame;
-        std::optional<RE::NiPoint3> _pipboyScreenStableFrame;
+        RE::NiTransform _pipboyScreenStableFrame;
         int _dampenScreenAdjustCounter = 0;
 
         // static field to preserve the last pipboy page when existing PA
         inline static PipboyPage _lastPipboyPage = PipboyPage::STATUS;
 
-        // used to prevent constant mesh replacing to the same meshes
-        inline static bool _lastMeshReplaceIsHoloPipboy = false;
-
         // used to restore the original Pipboy if settings change from on-wrist Pipboy to other
         inline static RE::NiNode* _originalPipboyRootNifOnlyNode = nullptr;
+        inline static RE::NiNode* _newPipboyRootNifOnlyNode = nullptr;
     };
 }

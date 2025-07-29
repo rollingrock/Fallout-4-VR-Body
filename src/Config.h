@@ -164,10 +164,8 @@ namespace frik
 
         // Dampen Pipboy screen
         bool dampenPipboyScreen = false;
-        float dampenPipboyLargeThreshold = 0;
-        float dampenRegularPipboyMultiplier = 0;
-        float dampenHoloPipboySmallThreshold = 0;
-        int dampenHoloPipboyAdjustmentFrames = 0;
+        float dampenPipboyThreshold = 0;
+        float dampenPipboyMultiplier = 0;
 
         // Misc
         bool showPAHUD = false;

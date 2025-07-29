@@ -47,7 +47,7 @@ namespace frik
         turnPipBoyOnOff(open);
         f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = open ? 1 : 0;
         if (!open) {
-            _pipboyScreenStableFrame = std::nullopt;
+            _pipboyScreenPrevFrame.clear();
             g_frik.closePipboyConfigurationModeActive();
         }
     }
@@ -55,7 +55,7 @@ namespace frik
     /**
      * Swap the Pipboy model between screen and holo models.
      */
-    void Pipboy::swapModel() const
+    void Pipboy::swapModel()
     {
         g_config.toggleIsHoloPipboy();
         turnPipBoyOnOff(false);
@@ -199,14 +199,13 @@ namespace frik
      * Run Pipboy mesh replacement if not already done (or forced) to the configured meshes either holo or screen.
      * @param force true - run mesh replace, false - only if not previously replaced
      */
-    void Pipboy::replaceMeshes(const bool force) const
+    void Pipboy::replaceMeshes(const bool force)
     {
-        if (force || !_originalPipboyRootNifOnlyNode || _lastMeshReplaceIsHoloPipboy != g_config.isHoloPipboy) {
-            const bool success = g_config.isHoloPipboy
-                ? replaceMeshes("Screen", "HoloEmitter")
-                : replaceMeshes("HoloEmitter", "Screen");
-            if (success) {
-                _lastMeshReplaceIsHoloPipboy = g_config.isHoloPipboy;
+        if ((force || !_meshReplaced) && !f4vr::isInPowerArmor()) {
+            if (g_config.isHoloPipboy) {
+                replaceMeshes(force, "Screen", "HoloEmitter");
+            } else {
+                replaceMeshes(force, "HoloEmitter", "Screen");
             }
         }
     }
@@ -214,39 +213,40 @@ namespace frik
     /**
      * Handle replacing of Pipboy meshes on the arm with either screen or holo emitter.
      */
-    bool Pipboy::replaceMeshes(const std::string& itemHide, const std::string& itemShow) const
+    void Pipboy::replaceMeshes(const bool force, const std::string& itemHide, const std::string& itemShow)
     {
         const auto pn = f4vr::getPlayerNodes();
         if (!pn->PipboyParentNode || !pn->PipboyRoot_nif_only_node) {
-            return false;
+            return;
         }
 
-        if (!_originalPipboyRootNifOnlyNode) {
+        if (force || !_originalPipboyRootNifOnlyNode || _newPipboyRootNifOnlyNode != pn->PipboyRoot_nif_only_node) {
             // save the original to restore it later if needed.
             _originalPipboyRootNifOnlyNode = pn->PipboyRoot_nif_only_node;
+
+            _newPipboyRootNifOnlyNode = f4vr::loadNifFromFile(g_config.isHoloPipboy ? "FRIK/HoloPipboyVR.nif" : "FRIK/PipboyVR.nif");
+            const auto newScreen = f4vr::findAVObject(_newPipboyRootNifOnlyNode, "Screen:0")->parent;
+            if (!newScreen) {
+                return;
+            }
+
+            // replace the game Pipboy nif with ours
+            pn->PipboyParentNode->DetachChild(pn->PipboyRoot_nif_only_node);
+            pn->PipboyParentNode->AttachChild(_newPipboyRootNifOnlyNode, true);
+            pn->PipboyRoot_nif_only_node = _newPipboyRootNifOnlyNode;
+            pn->PipboyRoot_nif_only_node->local.scale = 0.0; // hide until opened
+
+            pn->ScreenNode = newScreen;
+            logger::info("Pipboy root nif replaced!");
+
+            // No idea why this was done, but I removed it and nothing is broken. Leaving as comment if I'm wrong.
+            // pn->ScreenNode->DetachChildAt(0);
+            // // using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
+            // f4vr::addNode(reinterpret_cast<uint64_t>(&pn->ScreenNode), newScreen);
         }
-
-        const auto pipboyReplacetNode = f4vr::loadNifFromFile(g_config.isHoloPipboy ? "FRIK/HoloPipboyVR.nif" : "FRIK/PipboyVR.nif");
-        const auto newScreen = f4vr::findAVObject(pipboyReplacetNode, "Screen:0")->parent;
-        if (!newScreen) {
-            return false;
-        }
-
-        // replace the game Pipboy nif with ours
-        pn->PipboyParentNode->DetachChild(pn->PipboyRoot_nif_only_node);
-        pn->PipboyParentNode->AttachChild(pipboyReplacetNode, true);
-        pn->PipboyRoot_nif_only_node = pipboyReplacetNode;
-        pn->PipboyRoot_nif_only_node->local.scale = 0.0; // hide until opened
-
-        pn->ScreenNode = newScreen;
-
-        // No fucking idea why this was done, but I removed it and nothing is broken. Leaving as comment if I'm wrong.
-        // pn->ScreenNode->DetachChildAt(0);
-        // // using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
-        // f4vr::addNode(reinterpret_cast<uint64_t>(&pn->ScreenNode), newScreen);
 
         // load Pipboy screen adjusted position config
-        if (const auto pbRoot = f4vr::getFirstChild(pipboyReplacetNode)) {
+        if (const auto pbRoot = f4vr::getFirstChild(pn->PipboyRoot_nif_only_node)) {
             pbRoot->local = g_config.getPipboyOffset();
         }
 
@@ -264,8 +264,8 @@ namespace frik
             }
         }
 
+        _meshReplaced = true;
         logger::info("Pipboy Meshes replaced! Hide: {}, Show: {}", itemHide.c_str(), itemShow.c_str());
-        return true;
     }
 
     /**
@@ -279,6 +279,9 @@ namespace frik
 
         logger::info("Open Pipboy with button");
         openClose(true);
+
+        // prevent immediate closing of Pipboy
+        _lastLookingAtPip = nowMillis();
     }
 
     /**
@@ -447,62 +450,42 @@ namespace frik
         if (_pipboyScreenPrevFrame.size() < 4) {
             return;
         }
-        if (_pipboyScreenPrevFrame.size() > 5) {
+        if (_pipboyScreenPrevFrame.size() > 4) {
             _pipboyScreenPrevFrame.pop_front();
         }
 
         const auto deltaPos = lastPos - _pipboyScreenPrevFrame[0];
-        const auto threshold2 = g_config.dampenPipboyLargeThreshold;
-        if (std::abs(deltaPos.x) > threshold2 || std::abs(deltaPos.y) > threshold2 || std::abs(deltaPos.z) > threshold2) {
+        const auto threshold = g_config.dampenPipboyThreshold;
+        if (std::abs(deltaPos.x) > threshold || std::abs(deltaPos.y) > threshold || std::abs(deltaPos.z) > threshold) {
             // too much movement, don't dampen at all so the screen will not lag behind the pipboy
-            _pipboyScreenStableFrame = std::nullopt;
+            _pipboyScreenStableFrame = pipboyScreen->world;
             return;
         }
 
-        if (!_pipboyScreenStableFrame.has_value()) {
-            _pipboyScreenStableFrame = lastPos;
-        }
-
-        if (g_config.isHoloPipboy) {
-            dampenPipboyHoloScreen(pipboyScreen);
-        } else {
-            dampenPipboyRegularScreen(pipboyScreen);
-        }
+        dampenPipboyScreen(pipboyScreen);
     }
 
     /**
      * Small dampening of the screen movement but still always move the screen to be in the pipboy.
      */
-    void Pipboy::dampenPipboyRegularScreen(RE::NiNode* pipboyScreen)
+    void Pipboy::dampenPipboyScreen(RE::NiNode* pipboyScreen)
     {
-        const auto prevFrame = _pipboyScreenStableFrame.value();
-        _pipboyScreenStableFrame = pipboyScreen->world.translate;
+        const auto prevFrame = _pipboyScreenStableFrame;
+
+        // do a spherical interpolation between previous frame and current frame for the world rotation matrix
+        Quaternion rq, rt;
+        rq.fromMatrix(prevFrame.rotate);
+        rt.fromMatrix(pipboyScreen->world.rotate);
+        rq.slerp(1 - g_config.dampenPipboyMultiplier, rt);
+        pipboyScreen->world.rotate = rq.getMatrix();
 
         // do a linear interpolation between the position from the previous frame to current frame
-        const auto deltaPos = (pipboyScreen->world.translate - prevFrame) * g_config.dampenRegularPipboyMultiplier;
-        pipboyScreen->world.translate -= deltaPos;
-        f4vr::updateDown(pipboyScreen, false);
-    }
+        const auto dampeningDelta = (pipboyScreen->world.translate - prevFrame.translate) * g_config.dampenPipboyMultiplier;
+        pipboyScreen->world.translate -= dampeningDelta;
 
-    /**
-     * Allow the holo screen to remain stable in place while the arm moves a little.
-     * But if the arm moves more than a certain threshold, move the screen to the new position smoothly.
-     */
-    void Pipboy::dampenPipboyHoloScreen(RE::NiNode* pipboyScreen)
-    {
-        const auto prevFrame = _pipboyScreenStableFrame.value();
+        _pipboyScreenStableFrame = pipboyScreen->world;
+        _pipboyScreenStableFrame.translate += dampeningDelta * (1 - g_config.dampenPipboyMultiplier);
 
-        const auto deltaPos = pipboyScreen->world.translate - prevFrame;
-        const auto threshold = g_config.dampenHoloPipboySmallThreshold;
-        if (_dampenScreenAdjustCounter == 0 && std::abs(deltaPos.x) < threshold && std::abs(deltaPos.y) < threshold && std::abs(deltaPos.z) < threshold) {
-            // prevent any screen movement for small movements
-            pipboyScreen->world.translate = prevFrame;
-        } else {
-            // if arm moved more than threshold, move the screen to pipboy position smoothly
-            _pipboyScreenStableFrame = prevFrame + deltaPos / static_cast<float>(g_config.dampenHoloPipboyAdjustmentFrames);
-            _dampenScreenAdjustCounter = _dampenScreenAdjustCounter > 0 ? _dampenScreenAdjustCounter - 1 : g_config.dampenHoloPipboyAdjustmentFrames;
-            pipboyScreen->world.translate = _pipboyScreenStableFrame.value();
-        }
         f4vr::updateDown(pipboyScreen, false);
     }
 

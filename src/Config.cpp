@@ -110,10 +110,8 @@ namespace frik
         dampenHandsTranslationInVanillaScope = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslationInVanillaScope", 0.2f));
 
         // Dampen Pipboy
-        dampenPipboyLargeThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenPipboyLargeThreshold", 1.1f));
-        dampenRegularPipboyMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenRegularPipboyMultiplier", 0.7f));
-        dampenHoloPipboySmallThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenHoloPipboySmallThreshold", 1.0f));
-        dampenHoloPipboyAdjustmentFrames = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iDampenHoloPipboyAdjustmentFrames", 20));
+        dampenPipboyThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenPipboyThreshold", 1.1f));
+        dampenPipboyMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenPipboyMultiplier", 0.7f));
 
         // Misc
         showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
