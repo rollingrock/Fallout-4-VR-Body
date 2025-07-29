@@ -40,9 +40,9 @@ namespace frik
         void adjustFlashlightTransformToHandOrHead() const;
 
         static void storeLastPipboyPage();
+        void holdPipboyScreenInPlace(RE::NiNode* pipboyScreen);
         void dampenPipboyScreen();
-        void dampenPipboyScreen(RE::NiNode* pipboyScreen);
-        void dampenPipboyHoloScreen(RE::NiNode* pipboyScreen);
+        void dampenPipboyScreenMovement(RE::NiNode* pipboyScreen);
         bool isPlayerLookingAt() const;
         void leftHandedModePipboy() const;
         RE::NiAVObject* getPipboyNode() const;
@@ -68,7 +68,6 @@ namespace frik
         // handle dampening of pipboy screen to reduce movement
         std::deque<RE::NiPoint3> _pipboyScreenPrevFrame;
         RE::NiTransform _pipboyScreenStableFrame;
-        int _dampenScreenAdjustCounter = 0;
 
         // static field to preserve the last pipboy page when existing PA
         inline static PipboyPage _lastPipboyPage = PipboyPage::STATUS;

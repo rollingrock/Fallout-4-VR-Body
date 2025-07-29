@@ -46,6 +46,9 @@ namespace frik
         _isOpen = open;
         turnPipBoyOnOff(open);
         f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = open ? 1 : 0;
+        if (const auto pipboyScreen = f4vr::getPlayerNodes()->ScreenNode) {
+            f4vr::setNodeVisibility(pipboyScreen, open);
+        }
         if (!open) {
             _pipboyScreenPrevFrame.clear();
             g_frik.closePipboyConfigurationModeActive();
@@ -61,6 +64,7 @@ namespace frik
         turnPipBoyOnOff(false);
         replaceMeshes(true);
         f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 1;
+        _pipboyScreenPrevFrame.clear();
         turnPipBoyOnOff(true);
     }
 
@@ -324,7 +328,7 @@ namespace frik
      */
     void Pipboy::checkTurningOffByLookingAway()
     {
-        if (!_isOpen) {
+        if (!_isOpen || g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::HoldInPlace) {
             return;
         }
 
@@ -335,14 +339,10 @@ namespace frik
 
         const auto movingStick = f4vr::VRControllers.getThumbstickValue(g_config.pipBoyButtonArm > 0 ? f4vr::Hand::Right : f4vr::Hand::Left);
         const auto lookingStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
-        const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway && _isOpen
-            && !g_frik.isPipboyConfigurationModeActive()
-            && isNowTimePassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
-        const bool closeLookingWayWithMovement = g_config.pipboyCloseWhenMovingWhileLookingAway
-            && _isOpen
-            && !g_frik.isPipboyConfigurationModeActive()
-            && (fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f)
-                || fNotEqual(lookingStick.x, 0, 0.3f) || fNotEqual(lookingStick.y, 0, 0.3f));
+        const bool closeLookingWayWithDelay =
+            g_config.pipboyCloseWhenLookAway && !g_frik.isPipboyConfigurationModeActive() && isNowTimePassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
+        const bool closeLookingWayWithMovement = g_config.pipboyCloseWhenMovingWhileLookingAway && !g_frik.isPipboyConfigurationModeActive() &&
+            (fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f) || fNotEqual(lookingStick.x, 0, 0.3f) || fNotEqual(lookingStick.y, 0, 0.3f));
 
         if (closeLookingWayWithDelay || closeLookingWayWithMovement) {
             logger::info("Close Pipboy when looking away: byDelay({}), byMovement({})", closeLookingWayWithDelay, closeLookingWayWithMovement);
@@ -380,8 +380,8 @@ namespace frik
         if (g_config.flashlightLocation == FlashlightLocation::Head) {
             _flashlightHapticCooldown = now + 5000;
             g_config.setFlashlightLocation(isLeftHandGrab ? FlashlightLocation::LeftArm : FlashlightLocation::RightArm);
-        } else if ((g_config.flashlightLocation == FlashlightLocation::LeftArm && isLeftHandGrab)
-            || (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab)) {
+        } else if ((g_config.flashlightLocation == FlashlightLocation::LeftArm && isLeftHandGrab) ||
+            (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab)) {
             _flashlightHapticCooldown = now + 5000;
             g_config.setFlashlightLocation(FlashlightLocation::Head);
         }
@@ -436,7 +436,7 @@ namespace frik
      */
     void Pipboy::dampenPipboyScreen()
     {
-        if (!_isOpen || !g_config.dampenPipboyScreen) {
+        if (!_isOpen || g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::None) {
             return;
         }
 
@@ -445,31 +445,51 @@ namespace frik
             return;
         }
 
-        auto lastPos = pipboyScreen->world.translate;
-        _pipboyScreenPrevFrame.emplace_back(lastPos);
-        if (_pipboyScreenPrevFrame.size() < 4) {
+        // for HoldInPlace the frame count is used to stabilize the Pipboy opening, I saw Pipboy not becoming visible if only 4 frames is used, use 12 to be safe
+        const int maxFrames = g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::HoldInPlace ? 12 : 4;
+
+        _pipboyScreenPrevFrame.emplace_back(pipboyScreen->world.translate);
+        if (_pipboyScreenPrevFrame.size() < maxFrames) {
+            _pipboyScreenStableFrame = pipboyScreen->world;
             return;
         }
-        if (_pipboyScreenPrevFrame.size() > 4) {
+        if (_pipboyScreenPrevFrame.size() > maxFrames) {
             _pipboyScreenPrevFrame.pop_front();
         }
 
-        const auto deltaPos = lastPos - _pipboyScreenPrevFrame[0];
+        if (g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::HoldInPlace) {
+            holdPipboyScreenInPlace(pipboyScreen);
+        } else {
+            dampenPipboyScreenMovement(pipboyScreen);
+        }
+    }
+
+    /**
+     * Keep the Pipboy screen in place where it was opened unless offhand grip button is pressed to move it.
+     */
+    void Pipboy::holdPipboyScreenInPlace(RE::NiNode* const pipboyScreen)
+    {
+        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID, 0.3f)) {
+            _pipboyScreenStableFrame = pipboyScreen->world;
+        } else {
+            pipboyScreen->world = _pipboyScreenStableFrame;
+            f4vr::updateDown(pipboyScreen, false);
+        }
+    }
+
+    /**
+     * Small dampening of the screen movement but still always move the screen to be in the pipboy.
+     */
+    void Pipboy::dampenPipboyScreenMovement(RE::NiNode* pipboyScreen)
+    {
         const auto threshold = g_config.dampenPipboyThreshold;
+        const auto deltaPos = _pipboyScreenStableFrame.translate - _pipboyScreenPrevFrame[0];
         if (std::abs(deltaPos.x) > threshold || std::abs(deltaPos.y) > threshold || std::abs(deltaPos.z) > threshold) {
             // too much movement, don't dampen at all so the screen will not lag behind the pipboy
             _pipboyScreenStableFrame = pipboyScreen->world;
             return;
         }
 
-        dampenPipboyScreen(pipboyScreen);
-    }
-
-    /**
-     * Small dampening of the screen movement but still always move the screen to be in the pipboy.
-     */
-    void Pipboy::dampenPipboyScreen(RE::NiNode* pipboyScreen)
-    {
         const auto prevFrame = _pipboyScreenStableFrame;
 
         // do a spherical interpolation between previous frame and current frame for the world rotation matrix

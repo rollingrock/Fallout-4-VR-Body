@@ -131,20 +131,22 @@ namespace f4vr
          * Returns true if the button is currently held down
          * This will return true for EVERY frame while the button is pressed.
          * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+         * @param minHoldDurationSeconds optional: minimum duration in seconds that the button must be held down to return true.
          */
-        bool isPressHeldDown(const Hand hand, const vr::EVRButtonId button) const
+        bool isPressHeldDown(const Hand hand, const vr::EVRButtonId button, const float minHoldDurationSeconds = 0) const
         {
-            return isPressHeldDown(getHand(hand), button);
+            return isPressHeldDown(getHand(hand), button, minHoldDurationSeconds);
         }
 
-        bool isPressHeldDown(const Hand hand, const int button) const
+        bool isPressHeldDown(const Hand hand, const int button, const float minHoldDurationSeconds = 0) const
         {
-            return isPressHeldDown(getHand(hand), static_cast<vr::EVRButtonId>(button));
+            return isPressHeldDown(getHand(hand), static_cast<vr::EVRButtonId>(button), minHoldDurationSeconds);
         }
 
-        bool isPressHeldDown(const vr::ETrackedControllerRole hand, const vr::EVRButtonId button) const
+        bool isPressHeldDown(const vr::ETrackedControllerRole hand, const vr::EVRButtonId button, const float minHoldDurationSeconds = 0) const
         {
-            return get(hand).isPressed(button);
+            auto& state = get(hand);
+            return state.isPressed(button) && state.getHeldDuration(button, _currentTime) >= minHoldDurationSeconds;
         }
 
         /**

@@ -44,6 +44,13 @@ namespace frik
         RightArm
     };
 
+    enum class DampenPipboyScreenMode : uint8_t
+    {
+        None = 0,
+        Movement,
+        HoldInPlace
+    };
+
     /**
      * Holds all the configuration variables used in the mod.
      * Most of the configuration variables are loaded from the FRIK.ini file.
@@ -72,8 +79,8 @@ namespace frik
 
         void toggleDampenPipboyScreen()
         {
-            dampenPipboyScreen = !dampenPipboyScreen;
-            saveIniConfigValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
+            dampenPipboyScreenMode = static_cast<DampenPipboyScreenMode>((static_cast<uint8_t>(dampenPipboyScreenMode) + 1) % 3);
+            saveIniConfigValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
         }
 
         void togglePipBoyOpenWhenLookAt()
@@ -163,7 +170,7 @@ namespace frik
         float dampenHandsTranslationInVanillaScope = 0;
 
         // Dampen Pipboy screen
-        bool dampenPipboyScreen = false;
+        DampenPipboyScreenMode dampenPipboyScreenMode = DampenPipboyScreenMode::None;
         float dampenPipboyThreshold = 0;
         float dampenPipboyMultiplier = 0;
 

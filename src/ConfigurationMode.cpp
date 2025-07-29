@@ -552,16 +552,15 @@ namespace frik
                                         }
                                     }
                                     if (i == 11) {
-                                        if (!g_config.dampenPipboyScreen) {
-                                            auto UIMarker = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBDampenMarker");
-                                            if (!UIMarker) {
+                                        const auto uiMarker = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBDampenMarker");
+                                        if (g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::None) {
+                                            if (!uiMarker) {
                                                 RE::NiNode* UI = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigMarker.nif", "PBDampenMarker");
                                                 TouchMesh->AttachChild(UI, true);
                                             }
-                                        } else if (g_config.dampenPipboyScreen) {
-                                            auto UIMarker = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBDampenMarker");
-                                            if (UIMarker) {
-                                                UIMarker->parent->DetachChild(UIMarker);
+                                        } else if (g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::HoldInPlace) {
+                                            if (uiMarker) {
+                                                uiMarker->parent->DetachChild(uiMarker);
                                             }
                                         }
                                     }
@@ -587,6 +586,11 @@ namespace frik
                 if (DampenScreenButtonPressed && !_isDampenScreenButtonPressed) {
                     _isDampenScreenButtonPressed = true;
                     g_config.toggleDampenPipboyScreen();
+                    if (g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::Movement) {
+                        f4vr::showNotification("Dampen Pipboy screen by smoothing the movement");
+                    } else if (g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::HoldInPlace) {
+                        f4vr::showNotification("Dampen Pipboy screen by holding it in place where opened.\nHold Pipboy hand grip to move the screen with the arm.");
+                    }
                 } else if (!DampenScreenButtonPressed) {
                     _isDampenScreenButtonPressed = false;
                 }
@@ -684,7 +688,7 @@ namespace frik
                 RE::NiNode* UI3 = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigMarker.nif", "PBGlanceMarker");
                 UI->AttachChild(UI3, true);
             }
-            if (i == 11 && g_config.dampenPipboyScreen) {
+            if (i == 11 && g_config.dampenPipboyScreenMode != DampenPipboyScreenMode::None) {
                 RE::NiNode* UI3 = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigMarker.nif", "PBDampenMarker");
                 UI->AttachChild(UI3, true);
             }
