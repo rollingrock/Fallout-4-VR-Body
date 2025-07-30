@@ -6,61 +6,61 @@
 namespace F4SEVR
 {
     template <>
-    void PackValue<void>(VMValue* dst, void* src, VirtualMachine* vm)
+    void PackValue<void>(VMValue* dst, void*, VirtualMachine*)
     {
         dst->SetNone();
     }
 
     template <>
-    void PackValue<UInt32>(VMValue* dst, UInt32* src, VirtualMachine* vm)
+    void PackValue<UInt32>(VMValue* dst, UInt32* src, VirtualMachine*)
     {
         dst->SetInt(*src);
     }
 
     template <>
-    void PackValue<SInt32>(VMValue* dst, SInt32* src, VirtualMachine* vm)
+    void PackValue<SInt32>(VMValue* dst, SInt32* src, VirtualMachine*)
     {
         dst->SetInt(*src);
     }
 
     template <>
-    void PackValue<float>(VMValue* dst, float* src, VirtualMachine* vm)
+    void PackValue<float>(VMValue* dst, float* src, VirtualMachine*)
     {
         dst->SetFloat(*src);
     }
 
     template <>
-    void PackValue<bool>(VMValue* dst, bool* src, VirtualMachine* vm)
+    void PackValue<bool>(VMValue* dst, bool* src, VirtualMachine*)
     {
         dst->SetBool(*src);
     }
 
     template <>
-    void PackValue<BSFixedString>(VMValue* dst, BSFixedString* src, VirtualMachine* vm)
+    void PackValue<BSFixedString>(VMValue* dst, BSFixedString* src, VirtualMachine*)
     {
         dst->SetString(src->c_str());
     }
 
     template <>
-    void PackValue<VMVariable>(VMValue* dst, VMVariable* src, VirtualMachine* vm)
+    void PackValue<VMVariable>(VMValue* dst, VMVariable* src, VirtualMachine*)
     {
         src->PackVariable(dst);
     }
 
     template <>
-    void PackValue<VMObject>(VMValue* dst, VMObject* src, VirtualMachine* vm)
+    void PackValue<VMObject>(VMValue* dst, VMObject* src, VirtualMachine*)
     {
         src->PackObject(dst);
     }
 
     template <>
-    void PackValue<VMRefOrInventoryObj>(VMValue* dst, VMRefOrInventoryObj* src, VirtualMachine* vm)
+    void PackValue<VMRefOrInventoryObj>(VMValue* dst, VMRefOrInventoryObj* src, VirtualMachine*)
     {
         src->PackObject(dst);
     }
 
     template <>
-    void PackValue<VMRefOrInventoryObj>(VMValue* dst, VMRefOrInventoryObj** src, VirtualMachine* vm)
+    void PackValue<VMRefOrInventoryObj>(VMValue* dst, VMRefOrInventoryObj** src, VirtualMachine*)
     {
         (*src)->PackObject(dst);
     }
@@ -92,8 +92,8 @@ namespace F4SEVR
         if (!typeInfo)
             return false;
 
-        IObjectHandlePolicy* handlePolicy = vm->GetHandlePolicy();
-        VMIdentifier* identifier = NULL;
+        // IObjectHandlePolicy* handlePolicy = vm->GetHandlePolicy();
+        VMIdentifier* identifier = nullptr;
 
         // find existing identifier
         if (vm->GetObjectIdentifier(handle, typeInfo->m_typeName, 0, &identifier, 0)) {
@@ -184,7 +184,7 @@ namespace F4SEVR
     {
         switch (src->type.value) {
         case VMValue::kType_Int:
-            *dst = src->data.i;
+            *dst = static_cast<float>(src->data.i);
             break;
 
         case VMValue::kType_Float:
@@ -192,7 +192,7 @@ namespace F4SEVR
             break;
 
         case VMValue::kType_Bool:
-            *dst = src->data.b;
+            *dst = static_cast<float>(src->data.b);
             break;
 
         default:
@@ -210,7 +210,7 @@ namespace F4SEVR
             break;
 
         case VMValue::kType_Float:
-            *dst = src->data.f;
+            *dst = static_cast<uint32_t>(src->data.f);
             break;
 
         case VMValue::kType_Bool:
@@ -228,15 +228,15 @@ namespace F4SEVR
     {
         switch (src->type.value) {
         case VMValue::kType_Int:
-            *dst = src->data.u;
+            *dst = static_cast<SInt32>(src->data.u);
             break;
 
         case VMValue::kType_Float:
-            *dst = src->data.f;
+            *dst = static_cast<SInt32>(src->data.f);
             break;
 
         case VMValue::kType_Bool:
-            *dst = src->data.b;
+            *dst = static_cast<SInt32>(src->data.b);
             break;
 
         default:
@@ -394,19 +394,19 @@ namespace F4SEVR
     }
 
     template <>
-    UInt64 GetTypeID<void>(VirtualMachine* vm)
+    UInt64 GetTypeID<void>(VirtualMachine*)
     {
         return VMValue::kType_None;
     }
 
     template <>
-    UInt64 GetTypeID<UInt32>(VirtualMachine* vm)
+    UInt64 GetTypeID<UInt32>(VirtualMachine*)
     {
         return VMValue::kType_Int;
     }
 
     template <>
-    UInt64 GetTypeID<SInt32>(VirtualMachine* vm)
+    UInt64 GetTypeID<SInt32>(VirtualMachine*)
     {
         return VMValue::kType_Int;
     }
@@ -418,37 +418,37 @@ namespace F4SEVR
     // }
 
     template <>
-    UInt64 GetTypeID<float>(VirtualMachine* vm)
+    UInt64 GetTypeID<float>(VirtualMachine*)
     {
         return VMValue::kType_Float;
     }
 
     template <>
-    UInt64 GetTypeID<bool>(VirtualMachine* vm)
+    UInt64 GetTypeID<bool>(VirtualMachine*)
     {
         return VMValue::kType_Bool;
     }
 
     template <>
-    UInt64 GetTypeID<BSFixedString>(VirtualMachine* vm)
+    UInt64 GetTypeID<BSFixedString>(VirtualMachine*)
     {
         return VMValue::kType_String;
     }
 
     template <>
-    UInt64 GetTypeID<VMVariable>(VirtualMachine* vm)
+    UInt64 GetTypeID<VMVariable>(VirtualMachine*)
     {
         return VMValue::kType_Variable;
     }
 
     template <>
-    UInt64 GetTypeID<VMArray<UInt32>>(VirtualMachine* vm)
+    UInt64 GetTypeID<VMArray<UInt32>>(VirtualMachine*)
     {
         return VMValue::kType_IntArray;
     }
 
     template <>
-    UInt64 GetTypeID<VMArray<SInt32>>(VirtualMachine* vm)
+    UInt64 GetTypeID<VMArray<SInt32>>(VirtualMachine*)
     {
         return VMValue::kType_IntArray;
     }
@@ -460,25 +460,25 @@ namespace F4SEVR
     // }
 
     template <>
-    UInt64 GetTypeID<VMArray<float>>(VirtualMachine* vm)
+    UInt64 GetTypeID<VMArray<float>>(VirtualMachine*)
     {
         return VMValue::kType_FloatArray;
     }
 
     template <>
-    UInt64 GetTypeID<VMArray<bool>>(VirtualMachine* vm)
+    UInt64 GetTypeID<VMArray<bool>>(VirtualMachine*)
     {
         return VMValue::kType_BoolArray;
     }
 
     template <>
-    UInt64 GetTypeID<VMArray<BSFixedString>>(VirtualMachine* vm)
+    UInt64 GetTypeID<VMArray<BSFixedString>>(VirtualMachine*)
     {
         return VMValue::kType_StringArray;
     }
 
     template <>
-    UInt64 GetTypeID<VMArray<VMVariable>>(VirtualMachine* vm)
+    UInt64 GetTypeID<VMArray<VMVariable>>(VirtualMachine*)
     {
         return VMValue::kType_VariableArray;
     }
@@ -486,13 +486,13 @@ namespace F4SEVR
     template <>
     UInt64 GetTypeID<VMObject>(VirtualMachine* vm)
     {
-        return GetTypeIDFromFormTypeID(VMObject::kTypeID, vm);
+        return GetTypeIDFromFormTypeID(static_cast<UInt32>(VMObject::kTypeID), vm);
     }
 
     template <>
     UInt64 GetTypeID<VMArray<VMObject>>(VirtualMachine* vm)
     {
-        return GetTypeIDFromFormTypeID(VMObject::kTypeID, vm) | VMValue::kType_Identifier;
+        return GetTypeIDFromFormTypeID(static_cast<UInt32>(VMObject::kTypeID), vm) | VMValue::kType_Identifier;
     }
 
     template <>
@@ -536,7 +536,7 @@ namespace F4SEVR
 
     TESObjectREFR* VMRefOrInventoryObj::GetOwner() { return m_refData.owner; }
 
-    bool VMRefOrInventoryObj::GetExtraData(TESForm** baseForm, RE::ExtraDataList** extraData)
+    bool VMRefOrInventoryObj::GetExtraData(TESForm**, RE::ExtraDataList**)
     {
         return false;
         // TESObjectREFR* refr = m_refData.refr;

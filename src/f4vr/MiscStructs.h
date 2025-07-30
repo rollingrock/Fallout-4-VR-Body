@@ -25,9 +25,9 @@ namespace f4vr
         RE::TBO_InstanceData* instanceData; // 08
 
     private:
-        BGSObjectInstance* ctor(RE::TESForm* object, RE::TBO_InstanceData* instanceData)
+        BGSObjectInstance* ctor(RE::TESForm* aObject, RE::TBO_InstanceData* aInstanceData)
         {
-            return static_cast<BGSObjectInstance*>(BGSObjectInstance_CTOR(static_cast<void*>(this), object, instanceData));
+            return static_cast<BGSObjectInstance*>(BGSObjectInstance_CTOR(static_cast<void*>(this), aObject, aInstanceData));
         }
     };
 

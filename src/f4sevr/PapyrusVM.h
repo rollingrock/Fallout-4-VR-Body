@@ -192,7 +192,7 @@ namespace F4SEVR
                 virtual bool Visit(VMIdentifier* obj) = 0;
             };
 
-            inline VMIdentifier* GetScriptObject(VMIdentifier* identifier) { return reinterpret_cast<VMIdentifier*>(reinterpret_cast<uintptr_t>(identifier) & ~1LL); }
+            inline VMIdentifier* GetScriptObject(VMIdentifier* aIdentifier) { return reinterpret_cast<VMIdentifier*>(reinterpret_cast<uintptr_t>(aIdentifier) & ~1LL); }
 
             void ForEachScript(IScriptVisitor* visitor)
             {
@@ -224,7 +224,7 @@ namespace F4SEVR
                 class DumpVisitor : public IScriptVisitor
                 {
                 public:
-                    virtual bool Visit(VMIdentifier* obj)
+                    virtual bool Visit(VMIdentifier*)
                     {
                         // _MESSAGE("\t\t\t%s", obj->m_typeInfo->m_typeName.c_str());
                         return true;

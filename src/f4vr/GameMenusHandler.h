@@ -80,7 +80,7 @@ namespace f4vr
             }
         }
 
-        virtual RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent& a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>* a_source) override
+        virtual RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent& a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
         {
             if (!a_event.menuName.c_str()) {
                 common::logger::warn("ProcessEvent: menuName is null");

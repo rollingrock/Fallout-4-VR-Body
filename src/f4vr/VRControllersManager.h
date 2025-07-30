@@ -488,7 +488,7 @@ namespace f4vr
                 if (!valid || now - axisLastPassedPressCheck[axisIndex] < cooldown) {
                     return false;
                 }
-                const auto pressedDirection = getAxisPressed(axisIndex, now, threshold);
+                const auto pressedDirection = getAxisPressed(axisIndex, threshold);
                 const bool isPressed = pressedDirection.has_value() && pressedDirection.value() == direction;
                 if (isPressed) {
                     axisLastPassedPressCheck[axisIndex] = now;
@@ -501,14 +501,14 @@ namespace f4vr
                 if (!valid || now - axisLastPassedPressCheck[axisIndex] < cooldown) {
                     return std::nullopt;
                 }
-                const auto pressedDirection = getAxisPressed(axisIndex, now, threshold);
+                const auto pressedDirection = getAxisPressed(axisIndex, threshold);
                 if (pressedDirection.has_value()) {
                     axisLastPassedPressCheck[axisIndex] = now;
                 }
                 return pressedDirection;
             }
 
-            std::optional<Direction> getAxisPressed(const uint32_t axisIndex, const float now, const float threshold) const
+            std::optional<Direction> getAxisPressed(const uint32_t axisIndex, const float threshold) const
             {
                 const auto axis = getAxis(axisIndex);
                 if (axis.x > threshold) {

@@ -162,7 +162,7 @@ namespace frik
      */
     void dumpPlayerGeometry(RE::BSFadeNode* rn)
     {
-        for (auto i = 0; i < rn->geomArray.size(); ++i) {
+        for (std::uint32_t i = 0; i < rn->geomArray.size(); ++i) {
             const auto& geometry = rn->geomArray[i].geometry;
             logger::info("Geometry[{}] = '{}' ({})", i, geometry->name.c_str(), geometry->flags.flags & 0x1 ? "Hidden" : "Visible");
         }
@@ -174,7 +174,7 @@ namespace frik
 
         //Offsets::ForceGamePause(*g_menuControls);
 
-        auto rn = static_cast<RE::BSFadeNode*>(f4vr::getRootNode()->parent);
+        // auto rn = static_cast<RE::BSFadeNode*>(f4vr::getRootNode()->parent);
         //logger::info("newrun");
 
         //for (int i = 0; i < 44; i++) {

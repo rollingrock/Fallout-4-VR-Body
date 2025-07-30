@@ -425,16 +425,16 @@ namespace frik
     {
         _weaponModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_weapon.nif");
         _weaponModeButton->setToggleState(true);
-        _weaponModeButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Weapon; });
+        _weaponModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Weapon; });
 
         _offhandModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
-        _offhandModeButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Offhand; });
+        _offhandModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Offhand; });
 
         _throwableUIButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_throwable.nif");
-        _throwableUIButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Throwable; });
+        _throwableUIButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Throwable; });
 
         const auto backOfHandUIButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_back_of_hand_ui.nif");
-        backOfHandUIButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BackOfHandUI; });
+        backOfHandUIButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::BackOfHandUI; });
 
         const auto firstRowContainerInner = std::make_shared<UIToggleGroupContainer>(UIContainerLayout::HorizontalCenter, 0.15f);
         firstRowContainerInner->addElement(_weaponModeButton);
@@ -444,7 +444,7 @@ namespace frik
 
         if (isBetterScopesVRModLoaded()) {
             _betterScopesModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_better_scopes_vr.nif");
-            _betterScopesModeButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BetterScopes; });
+            _betterScopesModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::BetterScopes; });
             firstRowContainerInner->addElement(_betterScopesModeButton);
         }
 
@@ -456,13 +456,13 @@ namespace frik
         firstRowContainer->addElement(firstRowContainerInner);
 
         _saveButton = std::make_shared<UIButton>("FRIK/ui_common_btn_save.nif");
-        _saveButton->setOnPressHandler([this](UIWidget* widget) { saveConfig(); });
+        _saveButton->setOnPressHandler([this](UIWidget*) { saveConfig(); });
 
         _resetButton = std::make_shared<UIButton>("FRIK/ui_common_btn_reset.nif");
-        _resetButton->setOnPressHandler([this](UIWidget* widget) { resetConfig(); });
+        _resetButton->setOnPressHandler([this](UIWidget*) { resetConfig(); });
 
         const auto exitButton = std::make_shared<UIButton>("FRIK/ui_common_btn_exit.nif");
-        exitButton->setOnPressHandler([this](UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
+        exitButton->setOnPressHandler([this](UIWidget*) { _adjuster->toggleWeaponRepositionMode(); });
 
         _throwableNotEquippedMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_throwable_box.nif");
         _throwableNotEquippedMessageBox->setSize(3.6f, 2.2f);

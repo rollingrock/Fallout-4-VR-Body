@@ -30,14 +30,14 @@ namespace f4vr
 
         int GetBoneIndex(const std::string& a_name)
         {
-            auto name = new RE::BSFixedString(a_name.c_str());
-            return BSFlattenedBoneTree_GetBoneIndex(this, name);
+            auto nameStr = new RE::BSFixedString(a_name.c_str());
+            return BSFlattenedBoneTree_GetBoneIndex(this, nameStr);
         }
 
         RE::NiNode* GetBoneNode(const std::string& a_name)
         {
-            auto name = new RE::BSFixedString(a_name.c_str());
-            return BSFlattenedBoneTree_GetBoneNode(this, name);
+            auto nameStr = new RE::BSFixedString(a_name.c_str());
+            return BSFlattenedBoneTree_GetBoneNode(this, nameStr);
         }
 
         RE::NiNode* GetBoneNode(const int a_pos)

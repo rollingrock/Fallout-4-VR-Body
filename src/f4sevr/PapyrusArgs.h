@@ -68,7 +68,7 @@ namespace F4SEVR
             return *this;
         }
 
-        UInt32 Length() const { return m_data.size(); }
+        UInt32 Length() const { return static_cast<UInt32>(m_data.size()); }
         void Get(T* dst, const UInt32 idx) { UnpackValue(dst, &m_data[idx]); }
 
         void Set(T* src, const UInt32 idx, bool bReference = true)
@@ -116,16 +116,16 @@ namespace F4SEVR
             dst->SetNone();
             dst->type.value = GetTypeID<VMArray<T>>(vm); // Always set the type
 
-            if (m_data.size() > 0 && !m_none) {
+            if (!m_data.empty() && !m_none) {
                 VMValue::ArrayData* data = nullptr;
                 // Request the VM allocate a new array
-                vm->CreateArray(dst, m_data.size(), &data);
+                vm->CreateArray(dst, static_cast<UInt32>(m_data.size()), &data);
                 if (data) {
                     // Set the appropriate TypeID and assign the new data array
                     dst->data.arr = data;
 
                     // Copy from vector
-                    for (int i = 0; i < data->arr.count; ++i) {
+                    for (UInt32 i = 0; i < data->arr.count; ++i) {
                         data->arr.entries[i] = m_data[i];
                     }
                 }
@@ -148,7 +148,7 @@ namespace F4SEVR
             m_arr = arrData;
 
             m_data.resize(arrData->arr.count);
-            for (int i = 0; i < arrData->arr.count; ++i) {
+            for (UInt32 i = 0; i < arrData->arr.count; ++i) {
                 // Copy into vector
                 m_data[i] = arrData->arr.entries[i];
             }
@@ -422,7 +422,7 @@ namespace F4SEVR
     }
 
     template <typename T>
-    void DestroyValue(T** dst)
+    void DestroyValue(T**)
     {
         // Dummy implementation, used by VMObject to destroy the temp pointer
     }
@@ -525,20 +525,20 @@ namespace F4SEVR
     {
         UInt64 result = 0; // Initialize to 0 to prevent undefined behavior
 
-        if (IsArrayType<T>::value) {
+        if constexpr (IsArrayType<T>::value) {
             typedef IsArrayType<T>::TypedArg BaseType;
             if (IsStructType<BaseType>::value) {
                 result = GetTypeIDFromStructName(IsStructType<BaseType>::name(), vm) | VMValue::kType_Identifier;
             } else if (std::is_pointer<BaseType>::value) {
                 typedef std::remove_pointer<BaseType>::type ObjectType;
-                result = GetTypeIDFromFormTypeID(ObjectType::kTypeID, vm) | VMValue::kType_Identifier;
+                result = GetTypeIDFromFormTypeID(static_cast<UInt32>(ObjectType::kTypeID), vm) | VMValue::kType_Identifier;
             }
             // For arrays, if the element type is not a struct or pointer, the result will remain 0
         } else if (IsStructType<T>::value) {
             result = GetTypeIDFromStructName(IsStructType<T>::name(), vm);
         } else if (std::is_pointer<T>::value) {
             typedef std::remove_pointer<T>::type ObjectType;
-            result = GetTypeIDFromFormTypeID(ObjectType::kTypeID, vm);
+            result = GetTypeIDFromFormTypeID(static_cast<UInt32>(ObjectType::kTypeID), vm);
         }
         // If T is not an array, struct, or pointer, result will remain 0
 

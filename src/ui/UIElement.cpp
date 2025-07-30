@@ -26,7 +26,7 @@ namespace vrui
         _attachNode.reset(attachNode);
     }
 
-    void UIElement::detachFromAttachedNode(bool releaseSafe)
+    void UIElement::detachFromAttachedNode(bool)
     {
         if (!_attachNode) {
             throw std::runtime_error("Attempt to detach NOT attached widget");

@@ -52,7 +52,7 @@ namespace vrui
         virtual std::string toString() const;
 
         // Internal:
-        virtual void onLayoutUpdate(UIFrameUpdateContext* context) {}
+        virtual void onLayoutUpdate(UIFrameUpdateContext*) {}
 
         // Internal: Handle UI interaction code on each frame of the game.
         virtual void onFrameUpdate(UIFrameUpdateContext* context) = 0;
@@ -71,7 +71,7 @@ namespace vrui
 
     protected:
         virtual RE::NiTransform calculateTransform() const;
-        virtual void onPressEventFired(UIElement* element, UIFrameUpdateContext* context) {}
+        virtual void onPressEventFired(UIElement*, UIFrameUpdateContext*) {}
         void onPressEventFiredPropagate(UIElement* element, UIFrameUpdateContext* context);
         virtual void onStateChanged(UIElement* element);
 

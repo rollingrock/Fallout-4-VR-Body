@@ -55,7 +55,7 @@ namespace vrui
     {
         uint64_t flags[2] = { 0x0, 0xed };
         uint64_t mem = 0;
-        int ret = f4vr::loadNif((uint64_t)path, (uint64_t)&mem, (uint64_t)&flags);
+        f4vr::loadNif((uint64_t)path, (uint64_t)&mem, (uint64_t)&flags);
         return reinterpret_cast<RE::NiNode*>(mem);
     }
 
@@ -84,7 +84,7 @@ namespace vrui
         return nullptr;
     }
 
-    static void getNodeWidthHeight(RE::NiNode* node)
+    inline void getNodeWidthHeight(RE::NiNode*)
     {
         // const auto shape = node->GetAsBSTriShape();
         // auto bla = shape->geometryData->vertexData->vertexBlock[0];

@@ -72,7 +72,7 @@ namespace common
         /**
          * Override to save your config values
          */
-        virtual void saveIniConfigInternal(CSimpleIniA& ini) {}
+        virtual void saveIniConfigInternal(CSimpleIniA&) {}
 
         /**
          * Load all INI config values.

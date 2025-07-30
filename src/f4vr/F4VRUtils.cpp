@@ -513,7 +513,7 @@ namespace f4vr
      * Run a callback to register papyrus native functions.
      * Functions that papyrus can call into this mod c++ code.
      */
-    void registerPapyrusNativeFunctions(const F4SE::PapyrusInterface::RegisterFunctions callback)
+    void registerPapyrusNativeFunctions(F4SE::PapyrusInterface::RegisterFunctions callback)
     {
         const auto papyrusInterface = F4SE::GetPapyrusInterface();
         if (!papyrusInterface) {
@@ -533,7 +533,7 @@ namespace f4vr
         uint64_t flags[2] = { 0x0, 0xed };
         uint64_t mem = 0;
         auto& normPath = path._Starts_with("Data") ? path : "Data/Meshes/" + path;
-        int ret = loadNif((uint64_t)path.c_str(), (uint64_t)&mem, (uint64_t)&flags);
+        loadNif((uint64_t)normPath.c_str(), (uint64_t)&mem, (uint64_t)&flags);
         return reinterpret_cast<RE::NiNode*>(mem);
     }
 

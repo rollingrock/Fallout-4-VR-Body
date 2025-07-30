@@ -51,7 +51,7 @@ namespace frik
     /**
      * On load of FRIK plugin by F4VRSE setup messaging and papyrus handling once.
      */
-    void FRIK::initialize(const F4SE::LoadInterface* f4se)
+    void FRIK::initialize(const F4SE::LoadInterface*)
     {
         _messaging = F4SE::GetMessagingInterface();
         _messaging->RegisterListener(onF4VRSEMessage);

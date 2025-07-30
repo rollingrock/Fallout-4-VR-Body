@@ -117,10 +117,10 @@ namespace F4SEVR
             UInt32 typeId = typeInfo->GetType();
             if (IsArrayType())
                 typeId += kType_ArrayOffset;
-            return typeId;
+            return static_cast<UInt8>(typeId);
         }
 
-        return type.value;
+        return static_cast<UInt8>(type.value);
     }
 
     UInt64 VMIdentifier::GetHandle(void)
@@ -152,8 +152,8 @@ namespace F4SEVR
                 }
             } else {
                 unsigned long long volatile lock = m_lock;
-                const bool cond = InterlockedCompareExchange(&lock, lockValue | kLockBit, lockValue) == lockValue;
-                m_lock = lock;
+                const bool cond = InterlockedCompareExchange(&lock, lockValue | kLockBit, lockValue) == static_cast<unsigned long long>(lockValue);
+                m_lock = static_cast<SInt32>(lock);
                 // try to take the lock
                 if (cond)
                     break;
@@ -183,8 +183,8 @@ namespace F4SEVR
             } else {
                 if (lockValue == 1) {
                     unsigned long long volatile lock = m_lock;
-                    bool cond = InterlockedCompareExchange(&lock, lockValue | kLockBit, lockValue) == lockValue;
-                    m_lock = lock;
+                    const bool cond = InterlockedCompareExchange(&lock, lockValue | kLockBit, lockValue) == static_cast<unsigned long long>(lockValue);
+                    m_lock = static_cast<SInt32>(lock);
                     if (cond) {
                         getObjectHandlePolicy()->AddRef(m_handle);
                         m_lock = 2;
@@ -192,8 +192,8 @@ namespace F4SEVR
                     }
                 } else {
                     unsigned long long volatile lock = m_lock;
-                    bool cond = InterlockedCompareExchange(&lock, lockValue + 1, lockValue) == lockValue;
-                    m_lock = lock;
+                    const bool cond = InterlockedCompareExchange(&lock, lockValue + 1, lockValue) == static_cast<unsigned long long>(lockValue);
+                    m_lock = static_cast<SInt32>(lock);
                     if (cond)
                         break;
                 }
@@ -219,8 +219,8 @@ namespace F4SEVR
             } else {
                 if (lockValue == 2) {
                     unsigned long long volatile lock = m_lock;
-                    bool cond = InterlockedCompareExchange(&lock, lockValue | kLockBit, lockValue) == lockValue;
-                    m_lock = lock;
+                    bool cond = InterlockedCompareExchange(&lock, lockValue | kLockBit, lockValue) == static_cast<unsigned long long>(lockValue);
+                    m_lock = static_cast<SInt32>(lock);
                     if (cond) {
                         getObjectHandlePolicy()->Release(m_handle);
                         m_lock = 1;
@@ -228,8 +228,8 @@ namespace F4SEVR
                     }
                 } else {
                     unsigned long long volatile lock = m_lock;
-                    bool cond = InterlockedCompareExchange(&lock, lockValue - 1, lockValue) == lockValue;
-                    m_lock = lock;
+                    bool cond = InterlockedCompareExchange(&lock, lockValue - 1, lockValue) == static_cast<unsigned long long>(lockValue);
+                    m_lock = static_cast<SInt32>(lock);
                     if (cond)
                         return lockValue - 1;
                 }

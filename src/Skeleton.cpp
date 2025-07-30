@@ -5,10 +5,9 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "HandPose.h"
-#include "common/CommonUtils.h"
 #include "common/Logger.h"
-#include "common/Quaternion.h"
 #include "common/MatrixUtils.h"
+#include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
@@ -457,7 +456,6 @@ namespace frik
 
         //float delta = findNode("LArm_Collarbone", _root)->world.translate.z - _root->world.translate.z;
         const float delta = findNode(_root, "LArm_UpperArm")->world.translate.z - _root->world.translate.z;
-        float delta2 = findNode(_root, "RArm_UpperArm")->world.translate.z - _root->world.translate.z;
         if (lPauldron) {
             lPauldron->local.translate.z = delta - 15.0f;
         }
@@ -499,12 +497,12 @@ namespace frik
 
         RE::NiPoint3 dir = curPos - lastPos;
 
-        float curSpeed = std::clamp(abs(vec3Len(dir)) / _frameTime, 0.0, 350.0);
-        if (_prevSpeed > 20.0) {
-            curSpeed = (curSpeed + _prevSpeed) / 2;
+        float curSpeed = std::clamp(abs(vec3Len(dir)) / _frameTime, 0.0f, 350.0f);
+        if (_prevSpeed > 20.0f) {
+            curSpeed = (curSpeed + _prevSpeed) / 2.0f;
         }
 
-        const float stepTime = std::clamp(cos(curSpeed / 140.0), 0.28, 0.50);
+        const float stepTime = std::clamp(cos(curSpeed / 140.0f), 0.28f, 0.50f);
         dir = vec3Norm(dir);
 
         // if decelerating reset target
@@ -595,7 +593,7 @@ namespace frik
         if (_walkingState == 1) {
             RE::NiPoint3 dirOffset = dir - _stepDir;
             const float dot = vec3Dot(dir, _stepDir);
-            const float scale = (std::min)(curSpeed * stepTime * 1.5, 140.0);
+            const float scale = (std::min)(curSpeed * stepTime * 1.5f, 140.0f);
             dirOffset = dirOffset * scale;
 
             int sign = 1;
@@ -603,7 +601,7 @@ namespace frik
             _currentStepTime += _frameTime;
 
             const float frameStep = _frameTime / _stepTimeinStep;
-            const float interp = std::clamp(frameStep * (_currentStepTime / _frameTime), 0.0, 1.0);
+            const float interp = std::clamp(frameStep * (_currentStepTime / _frameTime), 0.0f, 1.0f);
 
             if (_footStepping == 1) {
                 sign = -1;
@@ -621,12 +619,12 @@ namespace frik
                 _rightFootTarget.z = _root->world.translate.z;
                 _rightFootStart.z = _root->world.translate.z;
                 _rightFootPos = _rightFootStart + (_rightFootTarget - _rightFootStart) * interp;
-                const float stepAmount = std::clamp(vec3Len(_rightFootTarget - _rightFootStart) / 150.0, 0.0, 1.0);
-                const float stepHeight = (std::max)(stepAmount * 9.0, 1.0);
+                const float stepAmount = std::clamp(vec3Len(_rightFootTarget - _rightFootStart) / 150.0f, 0.0f, 1.0f);
+                const float stepHeight = (std::max)(stepAmount * 9.0f, 1.0f);
                 const float up = sinf(interp * std::numbers::pi_v<float>) * stepHeight;
                 _rightFootPos.z += up;
             } else {
-                if (dot < 0.9) {
+                if (dot < 0.9f) {
                     if (!_delayFrame) {
                         _leftFootTarget += dirOffset;
                         _stepDir = dir;
@@ -640,15 +638,15 @@ namespace frik
                 _leftFootTarget.z = _root->world.translate.z;
                 _leftFootStart.z = _root->world.translate.z;
                 _leftFootPos = _leftFootStart + (_leftFootTarget - _leftFootStart) * interp;
-                const float stepAmount = std::clamp(vec3Len(_leftFootTarget - _leftFootStart) / 150.0, 0.0, 1.0);
-                const float stepHeight = (std::max)(stepAmount * 9.0, 1.0);
+                const float stepAmount = std::clamp(vec3Len(_leftFootTarget - _leftFootStart) / 150.0f, 0.0f, 1.0f);
+                const float stepHeight = (std::max)(stepAmount * 9.0f, 1.0f);
                 const float up = sinf(interp * std::numbers::pi_v<float>) * stepHeight;
                 _leftFootPos.z += up;
             }
 
             spineAngle = sign * sinf(interp * std::numbers::pi_v<float>) * 3.0f;
 
-            _spine->local.rotate = getMatrixFromEulerAngles(degreesToRads(spineAngle), 0.0, 0.0) * _spine->local.rotate;
+            _spine->local.rotate = getMatrixFromEulerAngles(degreesToRads(spineAngle), 0.0f, 0.0f) * _spine->local.rotate;
 
             if (_currentStepTime > stepTime) {
                 _currentStepTime = 0.0;
@@ -690,7 +688,7 @@ namespace frik
         auto rotV = RE::NiPoint3(0, 1, 0);
         if (_inPowerArmor) {
             rotV.y = 0;
-            rotV.z = isLeft ? 1 : -1;
+            rotV.z = isLeft ? 1.0f : -1.0f;
         }
         const RE::NiPoint3 hipDir = hipNode->world.rotate.Transpose() * (rotV);
         const RE::NiPoint3 xDir = vec3Norm(footToHip);
@@ -914,7 +912,7 @@ namespace frik
         if (handleOffhand) {
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local = _playerNodes->primaryWeaponOffsetNOde->local;
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate =
-                _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(180), 0);
+                _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(180.0f), 0);
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.translate = RE::NiPoint3(-2, -9, 2);
             updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
@@ -924,7 +922,7 @@ namespace frik
             : getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
 
         if (handleOffhand) {
-            weaponNode->local.rotate = weaponNode->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(isLeft ? 45 : -45), 0);
+            weaponNode->local.rotate = weaponNode->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(isLeft ? 45.0f : -45.0f), 0);
         }
 
         weaponNode->local.translate = isLeftHandedMode()
@@ -983,7 +981,7 @@ namespace frik
         // Law of cosines: Wrist angle A = acos( (b^2 + c^2 - a^2) / (2*b*c) )
         // The wrist angle is used to calculate x and y, which are used to position the elbow
 
-        float negLeft = isLeft ? -1 : 1;
+        float negLeft = isLeft ? -1.0f : 1.0f;
 
         float originalUpperLen = vec3Len(arm.forearm1->local.translate);
         float originalForearmLen;
@@ -1225,7 +1223,7 @@ namespace frik
     void Skeleton::calculateHandPose(const std::string& bone, const float gripProx, const bool thumbUp, const bool isLeft)
     {
         Quaternion qc, qt;
-        const float sign = isLeft ? -1 : 1;
+        const float sign = isLeft ? -1.0f : 1.0f;
 
         // if a mod is using the papyrus interface to manually set finger poses
         if (handPapyrusHasControl[bone]) {
@@ -1243,7 +1241,7 @@ namespace frik
                 qt.fromMatrix(wr);
             } else if (bone.find("Finger13") != std::string::npos) {
                 RE::NiMatrix3 wr = handOpen[bone].rotate;
-                wr = getMatrixFromEulerAngles(0, 0, degreesToRads(-35.0)) * wr;
+                wr = getMatrixFromEulerAngles(0, 0, degreesToRads(-35.0f)) * wr;
                 qt.fromMatrix(wr);
             }
         } else if (_closedHand[bone]) {
@@ -1259,7 +1257,7 @@ namespace frik
         }
 
         qc.fromMatrix(_handBones[bone].rotate);
-        const float blend = std::clamp(_frameTime * 7, 0.0, 1.0);
+        const float blend = std::clamp(_frameTime * 7, 0.0f, 1.0f);
         qc.slerp(blend, qt);
         _handBones[bone].rotate = qc.getMatrix();
     }
