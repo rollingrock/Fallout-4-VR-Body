@@ -277,7 +277,7 @@ namespace frik
      */
     void Pipboy::checkTurningOnByButton()
     {
-        if (!f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonID)) {
+        if (g_frik.isMainConfigurationModeActive() || !f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonID)) {
             return;
         }
 
@@ -446,7 +446,7 @@ namespace frik
         }
 
         // for HoldInPlace the frame count is used to stabilize the Pipboy opening, I saw Pipboy not becoming visible if only 4 frames is used, use 12 to be safe
-        const int maxFrames = g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::HoldInPlace ? 12 : 4;
+        const unsigned maxFrames = g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::HoldInPlace ? 12 : 4;
 
         _pipboyScreenPrevFrame.emplace_back(pipboyScreen->world.translate);
         if (_pipboyScreenPrevFrame.size() < maxFrames) {

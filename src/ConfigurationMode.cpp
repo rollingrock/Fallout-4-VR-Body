@@ -47,6 +47,7 @@ namespace frik
             }
             disableConfigModePose();
             _calibrateModeActive = false;
+            f4vr::VRControllers.reset();
         }
     }
 
@@ -373,8 +374,8 @@ namespace frik
             const uint64_t offHand = f4vr::isLeftHandedMode()
                 ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed
                 : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed;
-            const auto ExitandSave = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33));
-            const auto ExitnoSave = offHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(33));
+            const auto ExitandSave = f4vr::VRControllers.isReleasedShort(f4vr::Hand::Primary, vr::k_EButton_SteamVR_Trigger);
+            const auto ExitnoSave = f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, vr::k_EButton_SteamVR_Trigger);
             const auto SelfieButton = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(1));
             const auto HeightButton = offHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(1));
             if (ExitandSave && !_exitAndSavePressed) {

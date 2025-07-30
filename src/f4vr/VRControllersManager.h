@@ -77,6 +77,20 @@ namespace f4vr
         }
 
         /**
+         * Resets the controllers state to clear any tracked button presses, release, long presses, etc.
+         * Useful when knowing the game is changing state that the global VR controllers manager is unaware of.
+         * Examples:
+         * - Closing of a message box
+         * - Loading of a game
+         */
+        void reset()
+        {
+            _left.reset();
+            _right.reset();
+            _currentTime = getCurrentTimeSeconds();
+        }
+
+        /**
          * Sets the debounce cooldown time (in seconds) between consecutive presses
          */
         void setDebounceCooldown(const float seconds)
@@ -433,6 +447,23 @@ namespace f4vr
                 if (now < hapticEndTime) {
                     vr::VRSystem()->TriggerHapticPulse(index, 0, static_cast<uint16_t>(hapticIntensity * 3000));
                 }
+            }
+
+            void reset()
+            {
+                index = vr::k_unTrackedDeviceIndexInvalid;
+                current = {};
+                previous = {};
+                pose = {};
+                valid = false;
+                pressStartTimes.clear();
+                pressStartTimesForRelease.clear();
+                lastPressTime.clear();
+                lastReleaseTime.clear();
+                longPressHandled.clear();
+                for (auto& t : axisLastPassedPressCheck) t = 0.0f;
+                hapticEndTime = 0.0f;
+                hapticIntensity = 0.0f;
             }
 
             bool isPressed(const vr::EVRButtonId button) const

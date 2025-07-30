@@ -127,6 +127,8 @@ namespace frik
         }
 
         configureGameVars();
+
+        f4vr::VRControllers.reset();
     }
 
     /**
