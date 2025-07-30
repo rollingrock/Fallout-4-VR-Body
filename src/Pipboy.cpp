@@ -96,6 +96,7 @@ namespace frik
         _physicalHandler.operate(_lastPipboyPage);
 
         if (!f4vr::isPipboyOnWrist()) {
+            _meshReplaced = false;
             restoreDefaultPipboyModelIfNeeded();
             return;
         }
@@ -355,9 +356,10 @@ namespace frik
      */
     void Pipboy::checkSwitchingFlashlightHeadHand()
     {
-        const auto hmdPos = f4vr::getPlayerNodes()->HmdNode->world.translate;
-        const auto isLeftHandCloseToHMD = vec3Len(_skelly->getBoneWorldTransform("LArm_Hand").translate - hmdPos) < 15;
-        const auto isRightHandCloseToHMD = vec3Len(_skelly->getBoneWorldTransform("RArm_Hand").translate - hmdPos) < 15;
+        // check a bit higher than the HMD to allow hand close to the lower part of the face
+        const auto hmdPos = f4vr::getPlayerNodes()->HmdNode->world.translate + RE::NiPoint3(0, 0, 4);
+        const auto isLeftHandCloseToHMD = vec3Len(_skelly->getBoneWorldTransform("LArm_Hand").translate - hmdPos) < 12;
+        const auto isRightHandCloseToHMD = vec3Len(_skelly->getBoneWorldTransform("RArm_Hand").translate - hmdPos) < 12;
 
         const auto now = nowMillis();
         if (isLeftHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::LeftArm)) {
