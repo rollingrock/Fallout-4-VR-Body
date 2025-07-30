@@ -53,6 +53,14 @@ namespace f4vr
     }
 
     /**
+     * @return true if the player has any weapon in the hand.
+     */
+    bool isWeaponEquipped()
+    {
+        return isNodeVisible(getWeaponNode());
+    }
+
+    /**
      * @return true if the equipped weapon is a melee weapon type.
      */
     bool isMeleeWeaponEquipped()
@@ -196,6 +204,17 @@ namespace f4vr
     }
 
     /**
+     * Return true if the pipboy is on the wrist, false if it is "in-front" or projected.
+     */
+    bool isPipboyOnWrist()
+    {
+        // not sure why RE::Relocation doesn't work here, so using raw address
+        static auto iniAlwaysUseProjectedPipboy = reinterpret_cast<bool*>(REL::Offset(0x37B4280).address()); // NOLINT(performance-no-int-to-ptr)
+        static auto iniAttachPipboyToHMD = reinterpret_cast<bool*>(REL::Offset(0x37B4298).address()); // NOLINT(performance-no-int-to-ptr)
+        return !(*iniAlwaysUseProjectedPipboy || *iniAttachPipboyToHMD);
+    }
+
+    /**
      * Get the "bUseWandDirectionalMovement" setting from the INI file.
      */
     bool useWandDirectionalMovement()
@@ -229,6 +248,18 @@ namespace f4vr
         RE::Setting newSetting("", 0);
         collection->Add(&newSetting);
         return collection->GetSetting(name);
+    }
+
+    RE::NiAVObject* getFirstChild(RE::NiAVObject* avObject)
+    {
+        if (avObject) {
+            if (const auto& node = avObject->IsNode()) {
+                if (!node->children.empty()) {
+                    return node->children[0].get();
+                }
+            }
+        }
+        return nullptr;
     }
 
     /**
@@ -280,6 +311,36 @@ namespace f4vr
                         if (const auto result = findNode(childNiNode, name, maxDepth - 1)) {
                             return result;
                         }
+                    }
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    /**
+     * Find a node by the given name prefix in the tree under the other given node recursively.
+     * Returns the first node found that starts with the given name.
+     */
+    RE::NiNode* findNodeStartsWith(RE::NiAVObject* node, const char* name, const int maxDepth)
+    {
+        if (!node) {
+            return nullptr;
+        }
+
+        if (_strnicmp(name, node->name.c_str(), std::strlen(name)) == 0) {
+            return node->IsNode();
+        }
+
+        if (maxDepth < 1) {
+            return nullptr;
+        }
+
+        if (const auto niNode = node->IsNode()) {
+            for (const auto& child : niNode->children) {
+                if (child) {
+                    if (const auto result = findNodeStartsWith(child.get(), name, maxDepth - 1)) {
+                        return result;
                     }
                 }
             }
@@ -411,7 +472,7 @@ namespace f4vr
     /**
      * Update the world transform data (location,rotation,scale) of the given node by the local transform of the parent node.
      */
-    void updateTransforms(RE::NiNode* node)
+    void updateTransforms(RE::NiAVObject* node)
     {
         if (!node->parent) {
             return;
@@ -452,7 +513,7 @@ namespace f4vr
      * Run a callback to register papyrus native functions.
      * Functions that papyrus can call into this mod c++ code.
      */
-    void registerPapyrusNativeFunctions(const F4SE::PapyrusInterface::RegisterFunctions callback)
+    void registerPapyrusNativeFunctions(F4SE::PapyrusInterface::RegisterFunctions callback)
     {
         const auto papyrusInterface = F4SE::GetPapyrusInterface();
         if (!papyrusInterface) {
@@ -471,7 +532,8 @@ namespace f4vr
     {
         uint64_t flags[2] = { 0x0, 0xed };
         uint64_t mem = 0;
-        int ret = loadNif((uint64_t)path.c_str(), (uint64_t)&mem, (uint64_t)&flags);
+        auto& normPath = path._Starts_with("Data") ? path : "Data/Meshes/" + path;
+        loadNif((uint64_t)normPath.c_str(), (uint64_t)&mem, (uint64_t)&flags);
         return reinterpret_cast<RE::NiNode*>(mem);
     }
 
@@ -481,8 +543,7 @@ namespace f4vr
      */
     RE::NiNode* getClonedNiNodeForNifFile(const std::string& path, const std::string& name)
     {
-        auto& normPath = path._Starts_with("Data") ? path : "Data/Meshes/" + path;
-        const RE::NiNode* nifNode = loadNifFromFile(normPath);
+        const RE::NiNode* nifNode = loadNifFromFile(path);
         NiCloneProcess proc;
         proc.unk18 = reinterpret_cast<uint64_t*>(cloneAddr1.address());
         proc.unk48 = reinterpret_cast<uint64_t*>(cloneAddr2.address());

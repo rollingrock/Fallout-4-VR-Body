@@ -43,7 +43,7 @@ namespace frik
 
         RE::NiTransform getBoneWorldTransform(const std::string& boneName);
 
-        RE::NiPoint3 getOffhandIndexFingerTipWorldPosition();
+        RE::NiPoint3 getIndexFingerTipWorldPosition(bool primaryHand);
 
         void onFrameUpdate();
 
@@ -67,10 +67,7 @@ namespace frik
         void handleLeftHandedWeaponNodesSwitch();
         void setArms(bool isLeft);
         void dampenHand(RE::NiNode* node, bool isLeft);
-        void leftHandedModePipboy() const;
         void hide3rdPersonWeapon() const;
-        void positionPipboy() const;
-        void hidePipboy() const;
         void hideFistHelpers() const;
         void showHidePAHud() const;
         void selfieSkelly() const;
@@ -97,7 +94,7 @@ namespace frik
         LARGE_INTEGER _freqCounter;
         LARGE_INTEGER _timer;
         LARGE_INTEGER _prevTime;
-        double _frameTime;
+        float _frameTime;
 
         // handle switch of hands for left-handed mode
         bool _lastLeftHandedModeSwitch = false;
@@ -132,7 +129,7 @@ namespace frik
 
         // legs walking stuff
         int _walkingState;
-        double _currentStepTime;
+        float _currentStepTime;
         RE::NiPoint3 _leftFootPos;
         RE::NiPoint3 _rightFootPos;
         RE::NiPoint3 _rightFootTarget;
@@ -145,8 +142,8 @@ namespace frik
         RE::NiPoint3 _rightKneePos;
         int _footStepping;
         RE::NiPoint3 _stepDir;
-        double _prevSpeed;
-        double _stepTimeinStep;
+        float _prevSpeed;
+        float _stepTimeinStep;
         int _delayFrame;
 
         std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator> _handBones;

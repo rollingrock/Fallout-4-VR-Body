@@ -5,10 +5,9 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "HandPose.h"
-#include "common/CommonUtils.h"
 #include "common/Logger.h"
-#include "common/Quaternion.h"
 #include "common/MatrixUtils.h"
+#include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
@@ -28,10 +27,10 @@ namespace frik
      * Make small adjustment as the finger bone position is the center of the finger.
      * Would be nice to know how long the bone is instead of magic numbers, didn't find a way so far.
      */
-    RE::NiPoint3 Skeleton::getOffhandIndexFingerTipWorldPosition()
+    RE::NiPoint3 Skeleton::getIndexFingerTipWorldPosition(const bool primaryHand)
     {
-        const auto offhandIndexFinger = isLeftHandedMode() ? "RArm_Finger23" : "LArm_Finger23";
-        const auto boneTransform = getBoneWorldTransform(offhandIndexFinger);
+        const auto indexFinger = primaryHand == isLeftHandedMode() ? "LArm_Finger23" : "RArm_Finger23";
+        const auto boneTransform = getBoneWorldTransform(indexFinger);
         const auto forward = boneTransform.rotate.Transpose() * (RE::NiPoint3(1, 0, 0));
         return boneTransform.translate + forward * (_inPowerArmor ? 3 : 1.8f);
     }
@@ -193,14 +192,11 @@ namespace frik
         handleLeftHandedWeaponNodesSwitch();
         setArms(false);
         setArms(true);
-        leftHandedModePipboy();
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
-        // Misc stuff to show/hide things and also set up the wrist pipboy
+        // Misc stuff to show/hide things
         logger::trace("Pipboy and Weapons...");
         hide3rdPersonWeapon();
-        positionPipboy();
-        hidePipboy();
         hideFistHelpers();
         showHidePAHud();
 
@@ -460,7 +456,6 @@ namespace frik
 
         //float delta = findNode("LArm_Collarbone", _root)->world.translate.z - _root->world.translate.z;
         const float delta = findNode(_root, "LArm_UpperArm")->world.translate.z - _root->world.translate.z;
-        float delta2 = findNode(_root, "RArm_UpperArm")->world.translate.z - _root->world.translate.z;
         if (lPauldron) {
             lPauldron->local.translate.z = delta - 15.0f;
         }
@@ -502,12 +497,12 @@ namespace frik
 
         RE::NiPoint3 dir = curPos - lastPos;
 
-        float curSpeed = std::clamp(abs(vec3Len(dir)) / _frameTime, 0.0, 350.0);
-        if (_prevSpeed > 20.0) {
-            curSpeed = (curSpeed + _prevSpeed) / 2;
+        float curSpeed = std::clamp(abs(vec3Len(dir)) / _frameTime, 0.0f, 350.0f);
+        if (_prevSpeed > 20.0f) {
+            curSpeed = (curSpeed + _prevSpeed) / 2.0f;
         }
 
-        const float stepTime = std::clamp(cos(curSpeed / 140.0), 0.28, 0.50);
+        const float stepTime = std::clamp(cos(curSpeed / 140.0f), 0.28f, 0.50f);
         dir = vec3Norm(dir);
 
         // if decelerating reset target
@@ -598,7 +593,7 @@ namespace frik
         if (_walkingState == 1) {
             RE::NiPoint3 dirOffset = dir - _stepDir;
             const float dot = vec3Dot(dir, _stepDir);
-            const float scale = (std::min)(curSpeed * stepTime * 1.5, 140.0);
+            const float scale = (std::min)(curSpeed * stepTime * 1.5f, 140.0f);
             dirOffset = dirOffset * scale;
 
             int sign = 1;
@@ -606,7 +601,7 @@ namespace frik
             _currentStepTime += _frameTime;
 
             const float frameStep = _frameTime / _stepTimeinStep;
-            const float interp = std::clamp(frameStep * (_currentStepTime / _frameTime), 0.0, 1.0);
+            const float interp = std::clamp(frameStep * (_currentStepTime / _frameTime), 0.0f, 1.0f);
 
             if (_footStepping == 1) {
                 sign = -1;
@@ -624,12 +619,12 @@ namespace frik
                 _rightFootTarget.z = _root->world.translate.z;
                 _rightFootStart.z = _root->world.translate.z;
                 _rightFootPos = _rightFootStart + (_rightFootTarget - _rightFootStart) * interp;
-                const float stepAmount = std::clamp(vec3Len(_rightFootTarget - _rightFootStart) / 150.0, 0.0, 1.0);
-                const float stepHeight = (std::max)(stepAmount * 9.0, 1.0);
+                const float stepAmount = std::clamp(vec3Len(_rightFootTarget - _rightFootStart) / 150.0f, 0.0f, 1.0f);
+                const float stepHeight = (std::max)(stepAmount * 9.0f, 1.0f);
                 const float up = sinf(interp * std::numbers::pi_v<float>) * stepHeight;
                 _rightFootPos.z += up;
             } else {
-                if (dot < 0.9) {
+                if (dot < 0.9f) {
                     if (!_delayFrame) {
                         _leftFootTarget += dirOffset;
                         _stepDir = dir;
@@ -643,15 +638,15 @@ namespace frik
                 _leftFootTarget.z = _root->world.translate.z;
                 _leftFootStart.z = _root->world.translate.z;
                 _leftFootPos = _leftFootStart + (_leftFootTarget - _leftFootStart) * interp;
-                const float stepAmount = std::clamp(vec3Len(_leftFootTarget - _leftFootStart) / 150.0, 0.0, 1.0);
-                const float stepHeight = (std::max)(stepAmount * 9.0, 1.0);
+                const float stepAmount = std::clamp(vec3Len(_leftFootTarget - _leftFootStart) / 150.0f, 0.0f, 1.0f);
+                const float stepHeight = (std::max)(stepAmount * 9.0f, 1.0f);
                 const float up = sinf(interp * std::numbers::pi_v<float>) * stepHeight;
                 _leftFootPos.z += up;
             }
 
             spineAngle = sign * sinf(interp * std::numbers::pi_v<float>) * 3.0f;
 
-            _spine->local.rotate = getMatrixFromEulerAngles(degreesToRads(spineAngle), 0.0, 0.0) * _spine->local.rotate;
+            _spine->local.rotate = getMatrixFromEulerAngles(degreesToRads(spineAngle), 0.0f, 0.0f) * _spine->local.rotate;
 
             if (_currentStepTime > stepTime) {
                 _currentStepTime = 0.0;
@@ -693,7 +688,7 @@ namespace frik
         auto rotV = RE::NiPoint3(0, 1, 0);
         if (_inPowerArmor) {
             rotV.y = 0;
-            rotV.z = isLeft ? 1 : -1;
+            rotV.z = isLeft ? 1.0f : -1.0f;
         }
         const RE::NiPoint3 hipDir = hipNode->world.rotate.Transpose() * (rotV);
         const RE::NiPoint3 xDir = vec3Norm(footToHip);
@@ -775,63 +770,6 @@ namespace frik
         }
     }
 
-    void Skeleton::positionPipboy() const
-    {
-        RE::NiAVObject* wandPip = findAVObject(_playerNodes->SecondaryWandNode, "PipboyRoot_NIF_ONLY");
-
-        if (wandPip == nullptr) {
-            return;
-        }
-
-        RE::NiAVObject* pipboyBone;
-        if (g_config.leftHandedPipBoy) {
-            pipboyBone = findAVObject(_rightArm.forearm1, "PipboyBone");
-        } else {
-            pipboyBone = findAVObject(_leftArm.forearm1, "PipboyBone");
-        }
-
-        if (pipboyBone == nullptr) {
-            return;
-        }
-
-        auto locPos = RE::NiPoint3(0, 0, 0);
-
-        locPos = pipboyBone->world.rotate.Transpose() * ((locPos * pipboyBone->world.scale));
-
-        const RE::NiPoint3 wandWP = pipboyBone->world.translate + locPos;
-
-        const RE::NiPoint3 delta = wandWP - wandPip->parent->world.translate;
-
-        wandPip->local.translate = wandPip->parent->world.rotate * ((delta / wandPip->parent->world.scale));
-
-        // Slr = LHwr' * RHwr * Slr
-
-        const RE::NiMatrix3 wandWROT = getMatrixFromEulerAngles(degreesToRads(30), 0, 0) * pipboyBone->world.rotate;
-
-        wandPip->local.rotate = wandWROT * wandPip->parent->world.rotate.Transpose();
-    }
-
-    void Skeleton::leftHandedModePipboy() const
-    {
-        if (g_config.leftHandedPipBoy) {
-            auto pipbone = findNode(_rightArm.forearm1, "PipboyBone");
-
-            if (!pipbone) {
-                pipbone = findNode(_leftArm.forearm1, "PipboyBone");
-
-                if (!pipbone) {
-                    return;
-                }
-
-                pipbone->parent->DetachChild(pipbone);
-                _rightArm.forearm3->IsNode()->AttachChild(pipbone, true);
-            }
-
-            pipbone->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(180.0), 0) * pipbone->local.rotate;
-            pipbone->local.translate *= -1.5;
-        }
-    }
-
     void Skeleton::hideFistHelpers() const
     {
         if (!isLeftHandedMode()) {
@@ -898,34 +836,6 @@ namespace frik
 
         if (const auto uiNode = findNode(_playerNodes->SecondaryWandNode, "Point002")) {
             uiNode->local.scale = 0.0;
-        }
-    }
-
-    void Skeleton::hidePipboy() const
-    {
-        RE::NiAVObject* pipboy = nullptr;
-
-        if (!g_config.leftHandedPipBoy) {
-            if (_leftArm.forearm3) {
-                pipboy = findAVObject(_leftArm.forearm3, "PipboyBone");
-            }
-        } else {
-            pipboy = findAVObject(_rightArm.forearm3, "PipboyBone");
-        }
-
-        if (!pipboy) {
-            return;
-        }
-
-        // Changed to allow scaling of third person Pipboy --->
-        if (!g_config.hidePipboy) {
-            if (!fEqual(pipboy->local.scale, g_config.pipBoyScale)) {
-                pipboy->local.scale = g_config.pipBoyScale;
-                setNodeVisibilityDeep(pipboy, true);
-            }
-        } else if (pipboy->local.scale != 0.0) {
-            pipboy->local.scale = 0.0;
-            setNodeVisibilityDeep(pipboy, false);
         }
     }
 
@@ -1002,7 +912,7 @@ namespace frik
         if (handleOffhand) {
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local = _playerNodes->primaryWeaponOffsetNOde->local;
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate =
-                _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(180), 0);
+                _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(180.0f), 0);
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.translate = RE::NiPoint3(-2, -9, 2);
             updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
@@ -1012,7 +922,7 @@ namespace frik
             : getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
 
         if (handleOffhand) {
-            weaponNode->local.rotate = weaponNode->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(isLeft ? 45 : -45), 0);
+            weaponNode->local.rotate = weaponNode->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(isLeft ? 45.0f : -45.0f), 0);
         }
 
         weaponNode->local.translate = isLeftHandedMode()
@@ -1071,7 +981,7 @@ namespace frik
         // Law of cosines: Wrist angle A = acos( (b^2 + c^2 - a^2) / (2*b*c) )
         // The wrist angle is used to calculate x and y, which are used to position the elbow
 
-        float negLeft = isLeft ? -1 : 1;
+        float negLeft = isLeft ? -1.0f : 1.0f;
 
         float originalUpperLen = vec3Len(arm.forearm1->local.translate);
         float originalForearmLen;
@@ -1313,7 +1223,7 @@ namespace frik
     void Skeleton::calculateHandPose(const std::string& bone, const float gripProx, const bool thumbUp, const bool isLeft)
     {
         Quaternion qc, qt;
-        const float sign = isLeft ? -1 : 1;
+        const float sign = isLeft ? -1.0f : 1.0f;
 
         // if a mod is using the papyrus interface to manually set finger poses
         if (handPapyrusHasControl[bone]) {
@@ -1331,7 +1241,7 @@ namespace frik
                 qt.fromMatrix(wr);
             } else if (bone.find("Finger13") != std::string::npos) {
                 RE::NiMatrix3 wr = handOpen[bone].rotate;
-                wr = getMatrixFromEulerAngles(0, 0, degreesToRads(-35.0)) * wr;
+                wr = getMatrixFromEulerAngles(0, 0, degreesToRads(-35.0f)) * wr;
                 qt.fromMatrix(wr);
             }
         } else if (_closedHand[bone]) {
@@ -1347,7 +1257,7 @@ namespace frik
         }
 
         qc.fromMatrix(_handBones[bone].rotate);
-        const float blend = std::clamp(_frameTime * 7, 0.0, 1.0);
+        const float blend = std::clamp(_frameTime * 7, 0.0f, 1.0f);
         qc.slerp(blend, qt);
         _handBones[bone].rotate = qc.getMatrix();
     }
@@ -1385,7 +1295,7 @@ namespace frik
                     vr::k_EButton_SteamVR_Touchpad));
                 _closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton.at(name));
 
-                if (isWeaponVisible && !g_frik.isPipboyOn() && !g_frik.isOperatingPipboy() && !(isLeft ^ isLeftHandedMode())) {
+                if (isWeaponVisible && !g_frik.isPipboyOn() && !(isLeft ^ isLeftHandedMode())) {
                     // CylonSurfer Updated conditions to cater for Virtual Pipboy usage (Ensures Index Finger is extended when weapon is drawn)
                     this->copy1StPerson(name);
                 } else {

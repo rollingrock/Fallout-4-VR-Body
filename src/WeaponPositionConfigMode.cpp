@@ -111,12 +111,12 @@ namespace frik
         handleReposition(weapon, throwable);
 
         // reset
-        if (f4vr::VRControllers.isLongPressed(vr::k_EButton_ApplicationMenu, f4vr::Hand::Primary) && _repositionTarget != RepositionTarget::Throwable) {
+        if (f4vr::VRControllers.isLongPressed(f4vr::Hand::Primary, vr::k_EButton_ApplicationMenu) && _repositionTarget != RepositionTarget::Throwable) {
             f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, .6f, .5f);
             resetConfig();
         }
         // save
-        if (f4vr::VRControllers.isLongPressed(vr::EVRButtonId::k_EButton_A, f4vr::Hand::Primary)) {
+        if (f4vr::VRControllers.isLongPressed(f4vr::Hand::Primary, vr::EVRButtonId::k_EButton_A)) {
             f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, .6f, .5f);
             saveConfig();
         }
@@ -179,8 +179,8 @@ namespace frik
      */
     void WeaponPositionConfigMode::handleWeaponReposition(RE::NiNode* weapon) const
     {
-        const auto [primAxisX, primAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
-        const auto [secAxisX, secAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand);
+        const auto [primAxisX, primAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
+        const auto [secAxisX, secAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Offhand);
         if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
             return;
         }
@@ -190,7 +190,7 @@ namespace frik
 
         // Update the weapon transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
-        if (f4vr::VRControllers.isPressHeldDown(vr::EVRButtonId::k_EButton_Grip, f4vr::Hand::Offhand)) {
+        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
             const auto rot = getMatrixFromEulerAngles(-degreesToRads(primAxisY / 5), -degreesToRads(secAxisX / 3), degreesToRads(primAxisX / 5));
             transform.rotate = rot * transform.rotate;
@@ -212,7 +212,7 @@ namespace frik
     void WeaponPositionConfigMode::handleOffhandReposition() const
     {
         // Update the offset position by player thumbstick.
-        const auto [axisX, axisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
+        const auto [axisX, axisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
             const auto rot = getMatrixFromEulerAngles(-degreesToRads(axisY / 5), 0, degreesToRads(axisX / 5));
             _adjuster->_offhandOffsetRot = rot * _adjuster->_offhandOffsetRot;
@@ -229,8 +229,8 @@ namespace frik
             return;
         }
 
-        const auto [primAxisX, primAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
-        const auto [secAxisX, secAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand);
+        const auto [primAxisX, primAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
+        const auto [secAxisX, secAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Offhand);
         if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
             return;
         }
@@ -240,7 +240,7 @@ namespace frik
 
         // Update the transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
-        if (f4vr::VRControllers.isPressHeldDown(vr::EVRButtonId::k_EButton_Grip, f4vr::Hand::Offhand)) {
+        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
             const auto rot = getMatrixFromEulerAngles(degreesToRads(secAxisY / 6), degreesToRads(secAxisX / 6), degreesToRads(primAxisX / 6));
             transform.rotate = rot * transform.rotate;
@@ -261,8 +261,8 @@ namespace frik
      */
     void WeaponPositionConfigMode::handleBackOfHandUIReposition() const
     {
-        const auto [primAxisX, primAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
-        const auto [secAxisX, secAxisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand);
+        const auto [primAxisX, primAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
+        const auto [secAxisX, secAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Offhand);
         if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
             return;
         }
@@ -272,7 +272,7 @@ namespace frik
 
         // Update the transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
-        if (f4vr::VRControllers.isPressHeldDown(vr::EVRButtonId::k_EButton_Grip, f4vr::Hand::Offhand)) {
+        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
             const auto rot = getMatrixFromEulerAngles(-degreesToRads(secAxisY / 6), -degreesToRads(primAxisX / 6), -degreesToRads(primAxisY / 6));
             transform.rotate = rot * transform.rotate;
@@ -293,7 +293,7 @@ namespace frik
      */
     void WeaponPositionConfigMode::handleBetterScopesReposition()
     {
-        const auto [axisX, axisY] = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary);
+        const auto [axisX, axisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
             // Axis_state y is up and down, which corresponds to reticule z axis
             RE::NiPoint3 msgData(axisX / 10, 0.f, axisY / 10);
@@ -425,16 +425,16 @@ namespace frik
     {
         _weaponModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_weapon.nif");
         _weaponModeButton->setToggleState(true);
-        _weaponModeButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Weapon; });
+        _weaponModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Weapon; });
 
         _offhandModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
-        _offhandModeButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Offhand; });
+        _offhandModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Offhand; });
 
         _throwableUIButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_throwable.nif");
-        _throwableUIButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::Throwable; });
+        _throwableUIButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Throwable; });
 
         const auto backOfHandUIButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_back_of_hand_ui.nif");
-        backOfHandUIButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BackOfHandUI; });
+        backOfHandUIButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::BackOfHandUI; });
 
         const auto firstRowContainerInner = std::make_shared<UIToggleGroupContainer>(UIContainerLayout::HorizontalCenter, 0.15f);
         firstRowContainerInner->addElement(_weaponModeButton);
@@ -444,7 +444,7 @@ namespace frik
 
         if (isBetterScopesVRModLoaded()) {
             _betterScopesModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_better_scopes_vr.nif");
-            _betterScopesModeButton->setOnToggleHandler([this](UIWidget* widget, bool state) { _repositionTarget = RepositionTarget::BetterScopes; });
+            _betterScopesModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::BetterScopes; });
             firstRowContainerInner->addElement(_betterScopesModeButton);
         }
 
@@ -456,13 +456,13 @@ namespace frik
         firstRowContainer->addElement(firstRowContainerInner);
 
         _saveButton = std::make_shared<UIButton>("FRIK/ui_common_btn_save.nif");
-        _saveButton->setOnPressHandler([this](UIWidget* widget) { saveConfig(); });
+        _saveButton->setOnPressHandler([this](UIWidget*) { saveConfig(); });
 
         _resetButton = std::make_shared<UIButton>("FRIK/ui_common_btn_reset.nif");
-        _resetButton->setOnPressHandler([this](UIWidget* widget) { resetConfig(); });
+        _resetButton->setOnPressHandler([this](UIWidget*) { resetConfig(); });
 
         const auto exitButton = std::make_shared<UIButton>("FRIK/ui_common_btn_exit.nif");
-        exitButton->setOnPressHandler([this](UIWidget* widget) { _adjuster->toggleWeaponRepositionMode(); });
+        exitButton->setOnPressHandler([this](UIWidget*) { _adjuster->toggleWeaponRepositionMode(); });
 
         _throwableNotEquippedMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_throwable_box.nif");
         _throwableNotEquippedMessageBox->setSize(3.6f, 2.2f);

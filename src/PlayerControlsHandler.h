@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PapyrusGateway.h"
+#include "utils.h"
 #include "WeaponPositionAdjuster.h"
 #include "f4vr/GameMenusHandler.h"
 
@@ -15,7 +16,7 @@ namespace frik
          */
         void onFrameUpdate(const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition, f4vr::GameMenusHandler* gameMenusHandler)
         {
-            if (pipboy->status()) {
+            if (pipboy->isOpen()) {
                 disableFull();
                 return;
             }
@@ -35,11 +36,6 @@ namespace frik
                     // double tap in-case we only enabled the thumbstick controllers above
                     setControlsThumbstickEnableState(false);
                 }
-                return;
-            }
-
-            if (pipboy->isOperatingPipboy()) {
-                disableWeaponOnly();
                 return;
             }
 

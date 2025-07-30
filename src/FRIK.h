@@ -25,15 +25,19 @@ namespace frik
         bool isLookingThroughScope() const { return _isLookingThroughScope; }
         void setLookingThroughScope(const bool isLookingThroughScope) { _isLookingThroughScope = isLookingThroughScope; }
 
-        bool isPipboyOn() const { return _pipboy && _pipboy->status(); }
-        bool isOperatingPipboy() const { return _pipboy && _pipboy->isOperatingPipboy(); }
-        void turnOnPipboy() const { if (_pipboy) { _pipboy->turnOn(); } }
-        void replacePipboyMeshes(const bool force) const { if (_pipboy) { _pipboy->replaceMeshes(force); } }
+        bool isPipboyOn() const { return _pipboy && _pipboy->isOpen(); }
+        void swapPipboyModel() const { if (_pipboy) { _pipboy->swapModel(); } }
 
         bool isMainConfigurationModeActive() const { return _configurationMode && _configurationMode->isCalibrateModeActive(); }
         bool isPipboyConfigurationModeActive() const { return _configurationMode && _configurationMode->isPipBoyConfigModeActive(); }
         void openMainConfigurationModeActive() const { if (_configurationMode) { _configurationMode->enterConfigurationMode(); } }
-        void openPipboyConfigurationModeActive() const { if (_configurationMode) { _configurationMode->openPipboyConfigurationMode(); } }
+
+        void openPipboyConfigurationModeActive() const
+        {
+            if (_pipboy) { _pipboy->openClose(true); }
+            if (_configurationMode) { _configurationMode->openPipboyConfigurationMode(); }
+        }
+
         void closePipboyConfigurationModeActive() const { if (_configurationMode) { _configurationMode->exitPBConfig(); } }
 
         bool inWeaponRepositionMode() const { return _weaponPosition && _weaponPosition->inWeaponRepositionMode(); }
@@ -55,6 +59,7 @@ namespace frik
         static bool isGameReadyForSkeletonInitialization();
         bool isRootNodeValid() const;
         static void onF4VRSEMessage(F4SE::MessagingInterface::Message* msg);
+        static void removeEmbeddedFlashlight();
         static void onBetterScopesMessage(F4SE::MessagingInterface::Message* msg);
         void checkDebugDump();
 

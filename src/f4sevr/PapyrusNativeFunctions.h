@@ -120,7 +120,7 @@ namespace F4SEVR
 
         virtual BSFixedString* GetSourceFile() { return CALL_MEMBER_FN(this, Impl_GetSourceFile)(); }
 
-        virtual bool Unk_11(UInt32 arg0, UInt32* arg1)
+        virtual bool Unk_11(UInt32, UInt32* arg1)
         {
             *arg1 = 0;
             return false;

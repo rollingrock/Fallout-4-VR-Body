@@ -4,7 +4,6 @@
 #include <numbers>
 #include <unordered_map>
 
-#include "F4VRUtils.h"
 #include "../../external/openvr/openvr.h"
 
 namespace f4vr
@@ -21,7 +20,32 @@ namespace f4vr
     enum class Hand : std::uint8_t
     {
         Primary,
-        Offhand
+        Offhand,
+        Right,
+        Left,
+    };
+
+    /**
+     * The direction of the controller thumbstick input.
+     */
+    enum class Direction : std::uint8_t
+    {
+        Right,
+        Left,
+        Up,
+        Down,
+    };
+
+    /**
+     * The analog axis of the controller.
+     */
+    enum class Axis : std::uint8_t
+    {
+        Thumbstick = 0,
+        Trigger,
+        Unknown1,
+        Unknown2,
+        Unknown3,
     };
 
     /**
@@ -33,13 +57,13 @@ namespace f4vr
         /**
          * Update controller states; must be called each frame
          */
-        void update()
+        void update(const bool isLeftHanded)
         {
             if (!vr::VRSystem()) {
                 return;
             }
 
-            _leftHanded = isLeftHandedMode();
+            _leftHanded = isLeftHanded;
 
             _left.index = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_LeftHand);
             _right.index = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_RightHand);
@@ -50,6 +74,20 @@ namespace f4vr
             _right.update(_right.index, now);
 
             _currentTime = now;
+        }
+
+        /**
+         * Resets the controllers state to clear any tracked button presses, release, long presses, etc.
+         * Useful when knowing the game is changing state that the global VR controllers manager is unaware of.
+         * Examples:
+         * - Closing of a message box
+         * - Loading of a game
+         */
+        void reset()
+        {
+            _left.reset();
+            _right.reset();
+            _currentTime = getCurrentTimeSeconds();
         }
 
         /**
@@ -69,17 +107,17 @@ namespace f4vr
          * Returns true if the specified button is being touched on the given hand
          * Regular primary is right hand, but if left hand mode is on then primary is left hand.
          */
-        bool isTouching(const vr::EVRButtonId button, const Hand primaryHand) const
+        bool isTouching(const Hand hand, const vr::EVRButtonId button) const
         {
-            return isTouching(button, getHand(primaryHand));
+            return isTouching(getHand(hand), button);
         }
 
-        bool isTouching(const int button, const Hand primaryHand) const
+        bool isTouching(const Hand hand, const int button) const
         {
-            return isTouching(static_cast<vr::EVRButtonId>(button), getHand(primaryHand));
+            return isTouching(getHand(hand), static_cast<vr::EVRButtonId>(button));
         }
 
-        bool isTouching(const vr::EVRButtonId button, const vr::ETrackedControllerRole hand) const
+        bool isTouching(const vr::ETrackedControllerRole hand, const vr::EVRButtonId button) const
         {
             return get(hand).isTouching(button);
         }
@@ -88,17 +126,17 @@ namespace f4vr
          * Returns true if the button was just pressed, factoring in debounce
          * Regular primary is right hand, but if left hand mode is on then primary is left hand.
          */
-        bool isPressed(const vr::EVRButtonId button, const Hand primaryHand)
+        bool isPressed(const Hand hand, const vr::EVRButtonId button)
         {
-            return isPressed(button, getHand(primaryHand));
+            return isPressed(getHand(hand), button);
         }
 
-        bool isPressed(const int button, const Hand primaryHand)
+        bool isPressed(const Hand hand, const int button)
         {
-            return isPressed(static_cast<vr::EVRButtonId>(button), getHand(primaryHand));
+            return isPressed(getHand(hand), static_cast<vr::EVRButtonId>(button));
         }
 
-        bool isPressed(const vr::EVRButtonId button, const vr::ETrackedControllerRole hand)
+        bool isPressed(const vr::ETrackedControllerRole hand, const vr::EVRButtonId button)
         {
             return get(hand).justPressed(button, _currentTime, _debounceCooldown);
         }
@@ -107,40 +145,60 @@ namespace f4vr
          * Returns true if the button is currently held down
          * This will return true for EVERY frame while the button is pressed.
          * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+         * @param minHoldDurationSeconds optional: minimum duration in seconds that the button must be held down to return true.
          */
-        bool isPressHeldDown(const vr::EVRButtonId button, const Hand primaryHand) const
+        bool isPressHeldDown(const Hand hand, const vr::EVRButtonId button, const float minHoldDurationSeconds = 0) const
         {
-            return isPressHeldDown(button, getHand(primaryHand));
+            return isPressHeldDown(getHand(hand), button, minHoldDurationSeconds);
         }
 
-        bool isPressHeldDown(const int button, const Hand primaryHand) const
+        bool isPressHeldDown(const Hand hand, const int button, const float minHoldDurationSeconds = 0) const
         {
-            return isPressHeldDown(static_cast<vr::EVRButtonId>(button), getHand(primaryHand));
+            return isPressHeldDown(getHand(hand), static_cast<vr::EVRButtonId>(button), minHoldDurationSeconds);
         }
 
-        bool isPressHeldDown(const vr::EVRButtonId button, const vr::ETrackedControllerRole hand) const
+        bool isPressHeldDown(const vr::ETrackedControllerRole hand, const vr::EVRButtonId button, const float minHoldDurationSeconds = 0) const
         {
-            return get(hand).isPressed(button);
+            auto& state = get(hand);
+            return state.isPressed(button) && state.getHeldDuration(button, _currentTime) >= minHoldDurationSeconds;
         }
 
         /**
          * Returns true if the specified button was just released
          * This will return true for ONE frame only when the button is first released.
          * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+         * @param maxHoldDurationSeconds optional: max duration in seconds that the button can be held before it is ignored for release.
          */
-        bool isReleased(const vr::EVRButtonId button, const Hand primaryHand)
+        bool isReleased(const Hand hand, const vr::EVRButtonId button, const float maxHoldDurationSeconds = 99)
         {
-            return isReleased(button, getHand(primaryHand));
+            return isReleased(getHand(hand), button, maxHoldDurationSeconds);
         }
 
-        bool isReleased(const int button, const Hand primaryHand)
+        bool isReleased(const Hand hand, const int button, const float maxHoldDurationSeconds = 99)
         {
-            return isReleased(static_cast<vr::EVRButtonId>(button), getHand(primaryHand));
+            return isReleased(getHand(hand), static_cast<vr::EVRButtonId>(button), maxHoldDurationSeconds);
         }
 
-        bool isReleased(const vr::EVRButtonId button, const vr::ETrackedControllerRole hand)
+        /**
+         * Returns true if the specified button was just released and was held for less than 0.3 seconds.
+         * This will return true for ONE frame only when the button is first released.
+         * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+         */
+        bool isReleasedShort(const Hand hand, const vr::EVRButtonId button)
         {
-            return get(hand).justReleased(button, _currentTime, _debounceCooldown);
+            return isReleased(getHand(hand), button, 0.3f);
+        }
+
+        bool isReleasedShort(const Hand hand, const int button)
+        {
+            return isReleased(getHand(hand), static_cast<vr::EVRButtonId>(button), 0.3f);
+        }
+
+        bool isReleased(const vr::ETrackedControllerRole hand, const vr::EVRButtonId button, const float maxHoldDurationSeconds = 99)
+        {
+            auto& state = get(hand);
+            const bool justReleased = state.justReleased(button, _currentTime, _debounceCooldown);
+            return justReleased && state.getHeldDurationForRelease(button, _currentTime) < maxHoldDurationSeconds;
         }
 
         /**
@@ -149,12 +207,12 @@ namespace f4vr
          * If <clear> false: will return true for EVERY frame when the button is pressed for longer then <durationSeconds>.
          * If <clear> true: will return true for ONE frame when the button is pressed for longer then <durationSeconds>.
          */
-        bool isLongPressed(const vr::EVRButtonId button, const Hand primaryHand, const float durationSeconds = 0.6f, const bool clear = true)
+        bool isLongPressed(const Hand hand, const vr::EVRButtonId button, const float durationSeconds = 0.6f, const bool clear = true)
         {
-            return isLongPressed(button, getHand(primaryHand), durationSeconds, clear);
+            return isLongPressed(getHand(hand), button, durationSeconds, clear);
         }
 
-        bool isLongPressed(const vr::EVRButtonId button, const vr::ETrackedControllerRole hand, const float durationSeconds = 0.6f, const bool clear = true)
+        bool isLongPressed(const vr::ETrackedControllerRole hand, const vr::EVRButtonId button, const float durationSeconds = 0.6f, const bool clear = true)
         {
             auto& state = get(hand);
             const bool isLongPressed = state.isPressed(button) && state.getHeldDuration(button, _currentTime) >= durationSeconds;
@@ -168,14 +226,88 @@ namespace f4vr
          * Retrieves analog axis value for the specified controller.
          * Regular primary is right hand, but if left hand mode is on then primary is left hand.
          */
-        vr::VRControllerAxis_t getAxisValue(const Hand primaryHand, const uint32_t axisIndex = 0) const
+        vr::VRControllerAxis_t getAxisValue(const Hand primaryHand, const Axis axis) const
         {
-            return getAxisValue(getHand(primaryHand), axisIndex);
+            return getAxisValue(getHand(primaryHand), axis);
         }
 
-        vr::VRControllerAxis_t getAxisValue(const vr::ETrackedControllerRole hand, const uint32_t axisIndex = 0) const
+        vr::VRControllerAxis_t getAxisValue(const vr::ETrackedControllerRole hand, const Axis axis) const
         {
-            return get(hand).getAxis(axisIndex);
+            return get(hand).getAxis(static_cast<uint32_t>(axis));
+        }
+
+        /**
+         * Is the analog axis is pressed in the specified direction.
+         * Pressed is defined as the axis value being above a certain threshold in the specified direction.
+         * There is cooldown milliseconds debounce time between consecutive positive passing checks.
+         */
+        bool isAxisPressed(const Hand primaryHand, const Axis axis, const Direction direction, const float threshold = 0.85f, const float cooldown = 0.15f)
+        {
+            return isAxisPressed(getHand(primaryHand), axis, direction, threshold, cooldown);
+        }
+
+        bool isAxisPressed(const vr::ETrackedControllerRole hand, const Axis axis, const Direction direction, const float threshold = 0.85f, const float cooldown = 0.15f)
+        {
+            return get(hand).isAxisPressedAndClear(static_cast<uint32_t>(axis), direction, _currentTime, threshold, cooldown);
+        }
+
+        /**
+         * Get the direction of analog axis if it is pressed.
+         * Pressed is defined as the axis value being above a certain threshold in the specified direction.
+         * There is cooldown milliseconds debounce time between consecutive positive passing checks.
+         */
+        std::optional<Direction> getAxisPressedDirection(const Hand primaryHand, const Axis axis, const float threshold = 0.85f, const float cooldown = 0.15f)
+        {
+            return getAxisPressedDirection(getHand(primaryHand), axis, threshold, cooldown);
+        }
+
+        std::optional<Direction> getAxisPressedDirection(const vr::ETrackedControllerRole hand, const Axis axis, const float threshold = 0.85f, const float cooldown = 0.15f)
+        {
+            return get(hand).getAxisPressedAndClear(static_cast<uint32_t>(axis), _currentTime, threshold, cooldown);
+        }
+
+        /**
+         * Retrieves analog thumbstick value for the specified controller.
+         * Regular primary is right hand, but if left hand mode is on then primary is left hand.
+         */
+        vr::VRControllerAxis_t getThumbstickValue(const Hand primaryHand) const
+        {
+            return getThumbstickValue(getHand(primaryHand));
+        }
+
+        vr::VRControllerAxis_t getThumbstickValue(const vr::ETrackedControllerRole hand) const
+        {
+            return get(hand).getAxis(static_cast<uint32_t>(Axis::Thumbstick));
+        }
+
+        /**
+         * Is the analog thumbstick is pressed in the specified direction.
+         * Pressed is defined as the axis value being above a certain threshold in the specified direction.
+         * There is cooldown milliseconds debounce time between consecutive positive passing checks.
+         */
+        bool isThumbstickPressed(const Hand primaryHand, const Direction direction, const float threshold = 0.85f, const float cooldown = 0.15f)
+        {
+            return isThumbstickPressed(getHand(primaryHand), direction, threshold, cooldown);
+        }
+
+        bool isThumbstickPressed(const vr::ETrackedControllerRole hand, const Direction direction, const float threshold = 0.85f, const float cooldown = 0.15f)
+        {
+            return get(hand).isAxisPressedAndClear(static_cast<uint32_t>(Axis::Thumbstick), direction, _currentTime, threshold, cooldown);
+        }
+
+        /**
+         * Get the direction of analog thumbstick if it is pressed.
+         * Pressed is defined as the axis value being above a certain threshold in the specified direction.
+         * There is cooldown milliseconds debounce time between consecutive positive passing checks.
+         */
+        std::optional<Direction> getThumbstickPressedDirection(const Hand primaryHand, const float threshold = 0.85f, const float cooldown = 0.15f)
+        {
+            return getThumbstickPressedDirection(getHand(primaryHand), threshold, cooldown);
+        }
+
+        std::optional<Direction> getThumbstickPressedDirection(const vr::ETrackedControllerRole hand, const float threshold = 0.85f, const float cooldown = 0.15f)
+        {
+            return get(hand).getAxisPressedAndClear(static_cast<uint32_t>(Axis::Thumbstick), _currentTime, threshold, cooldown);
         }
 
         /**
@@ -272,9 +404,11 @@ namespace f4vr
             vr::TrackedDevicePose_t pose{};
             bool valid = false;
             std::unordered_map<vr::EVRButtonId, float> pressStartTimes; // Track how long each button has been held
+            std::unordered_map<vr::EVRButtonId, float> pressStartTimesForRelease;
             std::unordered_map<vr::EVRButtonId, float> lastPressTime;
             std::unordered_map<vr::EVRButtonId, float> lastReleaseTime;
             std::unordered_map<vr::EVRButtonId, bool> longPressHandled; // Track if long press was handled
+            float axisLastPassedPressCheck[5] = { 0, 0, 0, 0, 0 };
             float hapticEndTime = 0;
             float hapticIntensity = 0;
 
@@ -301,7 +435,11 @@ namespace f4vr
                     if (isNowPressed && !wasPressed) {
                         pressStartTimes[button] = now;
                     } else if (!isNowPressed && wasPressed) {
-                        pressStartTimes.erase(button);
+                        if (auto node = pressStartTimes.extract(button)) {
+                            pressStartTimesForRelease.insert(std::move(node));
+                        }
+                    } else {
+                        pressStartTimesForRelease.erase(button);
                     }
                 }
 
@@ -309,6 +447,23 @@ namespace f4vr
                 if (now < hapticEndTime) {
                     vr::VRSystem()->TriggerHapticPulse(index, 0, static_cast<uint16_t>(hapticIntensity * 3000));
                 }
+            }
+
+            void reset()
+            {
+                index = vr::k_unTrackedDeviceIndexInvalid;
+                current = {};
+                previous = {};
+                pose = {};
+                valid = false;
+                pressStartTimes.clear();
+                pressStartTimesForRelease.clear();
+                lastPressTime.clear();
+                lastReleaseTime.clear();
+                longPressHandled.clear();
+                for (auto& t : axisLastPassedPressCheck) t = 0.0f;
+                hapticEndTime = 0.0f;
+                hapticIntensity = 0.0f;
             }
 
             bool isPressed(const vr::EVRButtonId button) const
@@ -359,6 +514,49 @@ namespace f4vr
                 return current.rAxis[axisIndex];
             }
 
+            bool isAxisPressedAndClear(const uint32_t axisIndex, const Direction direction, const float now, const float threshold, const float cooldown)
+            {
+                if (!valid || now - axisLastPassedPressCheck[axisIndex] < cooldown) {
+                    return false;
+                }
+                const auto pressedDirection = getAxisPressed(axisIndex, threshold);
+                const bool isPressed = pressedDirection.has_value() && pressedDirection.value() == direction;
+                if (isPressed) {
+                    axisLastPassedPressCheck[axisIndex] = now;
+                }
+                return isPressed;
+            }
+
+            std::optional<Direction> getAxisPressedAndClear(const uint32_t axisIndex, const float now, const float threshold, const float cooldown)
+            {
+                if (!valid || now - axisLastPassedPressCheck[axisIndex] < cooldown) {
+                    return std::nullopt;
+                }
+                const auto pressedDirection = getAxisPressed(axisIndex, threshold);
+                if (pressedDirection.has_value()) {
+                    axisLastPassedPressCheck[axisIndex] = now;
+                }
+                return pressedDirection;
+            }
+
+            std::optional<Direction> getAxisPressed(const uint32_t axisIndex, const float threshold) const
+            {
+                const auto axis = getAxis(axisIndex);
+                if (axis.x > threshold) {
+                    return Direction::Right;
+                }
+                if (axis.x < -threshold) {
+                    return Direction::Left;
+                }
+                if (axis.y > threshold) {
+                    return Direction::Up;
+                }
+                if (axis.y < -threshold) {
+                    return Direction::Down;
+                }
+                return std::nullopt;
+            }
+
             float getHeldDuration(const vr::EVRButtonId button, const float now) const
             {
                 const auto it = pressStartTimes.find(button);
@@ -373,6 +571,15 @@ namespace f4vr
                 pressStartTimes.erase(button);
                 // Mark long press as handled so isReleased won't fire
                 longPressHandled[button] = true;
+            }
+
+            float getHeldDurationForRelease(const vr::EVRButtonId button, const float now) const
+            {
+                const auto it = pressStartTimesForRelease.find(button);
+                if (it == pressStartTimesForRelease.end()) {
+                    return 0.0f;
+                }
+                return now - it->second;
             }
 
             void startHaptic(const float endTime, const float intensity)
@@ -394,7 +601,7 @@ namespace f4vr
              */
             void triggerHapticPulse() const
             {
-                vr::VRSystem()->TriggerHapticPulse(index, 0, max(0, min(3000, static_cast<uint16_t>(hapticIntensity * 3000))));
+                vr::VRSystem()->TriggerHapticPulse(index, 0, static_cast<unsigned short>(std::clamp(static_cast<int>(hapticIntensity * 3000), 0, 3000)));
             }
 
             /**
@@ -444,15 +651,20 @@ namespace f4vr
         }
 
         // Resolves controller hand based on primary hand and left-handed setting
-        vr::ETrackedControllerRole getHand(const Hand primaryHand) const
+        vr::ETrackedControllerRole getHand(const Hand hand) const
         {
-            return _leftHanded
-                ? primaryHand == Hand::Primary
-                ? vr::TrackedControllerRole_LeftHand
-                : vr::TrackedControllerRole_RightHand
-                : primaryHand == Hand::Primary
-                ? vr::TrackedControllerRole_RightHand
-                : vr::TrackedControllerRole_LeftHand;
+            switch (hand) {
+            case Hand::Primary:
+                return _leftHanded ? vr::TrackedControllerRole_LeftHand : vr::TrackedControllerRole_RightHand;
+            case Hand::Offhand:
+                return _leftHanded ? vr::TrackedControllerRole_RightHand : vr::TrackedControllerRole_LeftHand;
+            case Hand::Right:
+                return vr::TrackedControllerRole_RightHand;
+            case Hand::Left:
+                return vr::TrackedControllerRole_LeftHand;
+            default:
+                return vr::TrackedControllerRole_OptOut;
+            }
         }
 
         ControllerState _left;

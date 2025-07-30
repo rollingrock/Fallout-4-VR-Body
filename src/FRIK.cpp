@@ -31,7 +31,7 @@ namespace frik
 
         virtual RE::NiPoint3 getInteractionBoneWorldPosition() override
         {
-            return _skelly->getOffhandIndexFingerTipWorldPosition();
+            return _skelly->getIndexFingerTipWorldPosition(false);
         }
 
         virtual void fireInteractionHeptic() override
@@ -51,7 +51,7 @@ namespace frik
     /**
      * On load of FRIK plugin by F4VRSE setup messaging and papyrus handling once.
      */
-    void FRIK::initialize(const F4SE::LoadInterface* f4se)
+    void FRIK::initialize(const F4SE::LoadInterface*)
     {
         _messaging = F4SE::GetMessagingInterface();
         _messaging->RegisterListener(onF4VRSEMessage);
@@ -100,6 +100,8 @@ namespace frik
 
             _gameMenusHandler.init();
 
+            removeEmbeddedFlashlight();
+
             if (isBetterScopesVRModLoaded()) {
                 logger::info("BetterScopesVR mod detected, registering for messages...");
                 _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
@@ -125,6 +127,8 @@ namespace frik
         }
 
         configureGameVars();
+
+        f4vr::VRControllers.reset();
     }
 
     /**
@@ -139,7 +143,7 @@ namespace frik
                 return;
             }
 
-            f4vr::VRControllers.update();
+            f4vr::VRControllers.update(f4vr::isLeftHandedMode());
 
             if (_skelly) {
                 if (!isRootNodeValid()) {
@@ -321,6 +325,32 @@ namespace frik
     }
 
     /**
+     * If to remove the embedded FRIK flashlight from the game.
+     * Useful for players to be able to install other flashlight mods.
+     */
+    void FRIK::removeEmbeddedFlashlight()
+    {
+        if (!g_config.removeFlashlight) {
+            return;
+        }
+        for (const auto& item : RE::TESDataHandler::GetSingleton()->GetFormArray<RE::TESObjectARMO>()) {
+            if (item->formID == 0x21B3B) {
+                for (std::uint32_t idx{}; idx < item->numKeywords; idx++) {
+                    const auto frmKey = item->keywords[idx];
+                    if (frmKey && frmKey->formID == 0xB34A6) {
+                        logger::info("Removing embedded FRIK flashlight from: '{}', keyword: 0x{:x}", item->GetFullName(), frmKey->formID);
+                        item->RemoveKeyword(frmKey);
+                        return;
+                    }
+                }
+                logger::warn("Failed to remove embedded FRIK flashlight, keyword not found in '{}'", item->GetFullName());
+                return;
+            }
+        }
+        logger::warn("Failed to remove embedded FRIK flashlight, armor not found");
+    }
+
+    /**
      * Send a message to the BetterScopesVR mod.
      */
     void FRIK::dispatchMessageToBetterScopesVR(const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const
@@ -356,6 +386,12 @@ namespace frik
         }
         if (g_config.checkDebugDumpDataOnceFor("menus")) {
             _gameMenusHandler.debugDumpAllMenus();
+        }
+        if (g_config.checkDebugDumpDataOnceFor("weapon_muzzle")) {
+            if (const auto muzzle = getMuzzleFlashNodes()) {
+                printNodes(muzzle->fireNode);
+                printNodes(muzzle->projectileNode);
+            }
         }
     }
 }

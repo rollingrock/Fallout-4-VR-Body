@@ -37,6 +37,20 @@ namespace frik
         BackOfHandUI,
     };
 
+    enum class FlashlightLocation : uint8_t
+    {
+        Head = 0,
+        LeftArm,
+        RightArm
+    };
+
+    enum class DampenPipboyScreenMode : uint8_t
+    {
+        None = 0,
+        Movement,
+        HoldInPlace
+    };
+
     /**
      * Holds all the configuration variables used in the mod.
      * Most of the configuration variables are loaded from the FRIK.ini file.
@@ -48,13 +62,13 @@ namespace frik
         explicit Config() :
             ConfigBase(FRIK_INI_PATH, IDR_FRIK_INI) {}
 
-        void load();
+        virtual void load() override;
         void save() { saveIniConfig(); }
 
-        void togglePipBoyTorchOnArm()
+        void setFlashlightLocation(const FlashlightLocation location)
         {
-            isPipBoyTorchOnArm = !isPipBoyTorchOnArm;
-            saveIniConfigValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
+            flashlightLocation = location;
+            saveIniConfigValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
         }
 
         void toggleIsHoloPipboy()
@@ -65,8 +79,8 @@ namespace frik
 
         void toggleDampenPipboyScreen()
         {
-            dampenPipboyScreen = !dampenPipboyScreen;
-            saveIniConfigValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
+            dampenPipboyScreenMode = static_cast<DampenPipboyScreenMode>((static_cast<uint8_t>(dampenPipboyScreenMode) + 1) % 3);
+            saveIniConfigValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
         }
 
         void togglePipBoyOpenWhenLookAt()
@@ -75,9 +89,10 @@ namespace frik
             saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
         }
 
-        void savePipboyScale(const float pipboyScale)
+        void savePipboyScale(const float scale)
         {
-            saveIniConfigValue(INI_SECTION_MAIN, "PipboyScale", pipboyScale);
+            pipBoyScale = scale;
+            saveIniConfigValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
         }
 
         static void openInNotepad();
@@ -125,7 +140,7 @@ namespace frik
         bool pipboyCloseWhenMovingWhileLookingAway = false;
         float pipboyLookAtThreshold = 0;
         float pipboyLookAwayThreshold = 0;
-        float pipboyDetectionRange = 0;
+        float pipboyOperationFingerDetectionRange = 0;
         int pipBoyOnDelay = 0;
         int pipBoyOffDelay = 0;
         int pipBoyButtonArm = 0;
@@ -134,8 +149,8 @@ namespace frik
         int pipBoyButtonOffID = 0;
 
         // Pipboy Torch/Flashlight
-        bool isPipBoyTorchOnArm = false;
-        bool isPipBoyTorchRightArmMode = false;
+        bool removeFlashlight = false;
+        FlashlightLocation flashlightLocation = FlashlightLocation::Head;
         int switchTorchButton = 2;
 
         // Weapon offhand grip
@@ -149,13 +164,15 @@ namespace frik
         // Dampen hands
         bool dampenHands = false;
         bool dampenHandsInVanillaScope = false;
-        bool dampenPipboyScreen = false;
         float dampenHandsRotation = 0;
         float dampenHandsTranslation = 0;
         float dampenHandsRotationInVanillaScope = 0;
         float dampenHandsTranslationInVanillaScope = 0;
-        float dampenPipboyRotation = 0;
-        float dampenPipboyTranslation = 0;
+
+        // Dampen Pipboy screen
+        DampenPipboyScreenMode dampenPipboyScreenMode = DampenPipboyScreenMode::None;
+        float dampenPipboyThreshold = 0;
+        float dampenPipboyMultiplier = 0;
 
         // Misc
         bool showPAHUD = false;

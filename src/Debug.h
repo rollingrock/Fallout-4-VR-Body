@@ -6,8 +6,7 @@ namespace frik
     void positionDiff();
     void printAllNodes();
     void printNodes(RE::NiAVObject* node, bool printAncestors = true);
-    void printNodes(RE::NiAVObject* node, long long curTime);
-    void printNodesTransform(RE::NiAVObject* node, std::string padding = "");
+    void printNodesTransform(RE::NiAVObject* node, bool printAncestors = true);
     void printTransform(const std::string& name, const RE::NiTransform& transform, bool sample = false);
     void printPosition(const std::string& name, const RE::NiPoint3& pos, bool sample);
     void dumpPlayerGeometry(RE::BSFadeNode* rn);

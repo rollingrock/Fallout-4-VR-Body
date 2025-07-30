@@ -5,12 +5,51 @@
 #include "FRIK.h"
 #include "HandPose.h"
 #include "Skeleton.h"
+#include "utils.h"
 #include "common/Logger.h"
 #include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 
 using namespace common;
+
+namespace
+{
+    std::string_view getGripStockName(RE::NiNode* weapon)
+    {
+        if (const auto gripNode = f4vr::getFirstChild(f4vr::findNode(weapon, "P-Grip"))) {
+            return gripNode->name;
+        }
+        return "";
+    }
+
+    /**
+     * Get the game name of the equipped weapon extending weapon that can be both pistol and rifle to include rifle suffix.
+     * It's not critical but a nice to have a better hand grip for the weapons.
+     */
+    std::string getEquippedWeaponNameExtended(RE::NiNode* weapon)
+    {
+        const auto& weaponName = f4vr::getEquippedWeaponName();
+        if (weaponName == "Plasma") {
+            const auto stockName = getGripStockName(weapon);
+            if (stockName.starts_with("RiotGrip") || stockName.starts_with("Sniper") || stockName.find("Rifle") != std::string_view::npos) {
+                return weaponName + " Rifle";
+            }
+        } else if (weaponName == "Pipe" || weaponName == "Pipe Bolt-Action") {
+            const auto stockName = getGripStockName(weapon);
+            if (stockName.starts_with("HandmadePaddedStock") || stockName.starts_with("SpringStock") || stockName.starts_with("PipeStock")) {
+                return weaponName + " Rifle";
+            }
+        } else if (weaponName == "Laser" || weaponName == "Institute") {
+            const auto stockName = getGripStockName(weapon);
+            if (stockName.find("Rifle") != std::string_view::npos) {
+                return weaponName + " Rifle";
+            }
+        }
+
+        return weaponName;
+    }
+}
 
 namespace frik
 {
@@ -85,7 +124,7 @@ namespace frik
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
             }
-            checkEquippedWeaponChanged(true);
+            checkEquippedWeaponChanged(weapon, true);
             backOfHand->local = _backOfHandUIOffsetTransform;
             return;
         }
@@ -94,7 +133,7 @@ namespace frik
         _weaponOriginalTransform = weapon->local;
         _weaponOriginalWorldTransform = weapon->world;
 
-        checkEquippedWeaponChanged(false);
+        checkEquippedWeaponChanged(weapon, false);
 
         // override the back-of-hand UI transform
         backOfHand->local = _backOfHandUIOffsetTransform;
@@ -114,6 +153,8 @@ namespace frik
 
         handleScopeCameraAdjustmentByWeaponOffset(weapon);
 
+        handleSpecialWeaponFix(weapon);
+
         handleBetterScopes(weapon);
 
         f4vr::updateDown(weapon, true);
@@ -126,9 +167,9 @@ namespace frik
     /**
      * If equipped weapon changed set offsets to stored if exists.
      */
-    void WeaponPositionAdjuster::checkEquippedWeaponChanged(const bool emptyHand)
+    void WeaponPositionAdjuster::checkEquippedWeaponChanged(RE::NiNode* weapon, const bool emptyHand)
     {
-        const auto& weaponName = emptyHand ? EMPTY_HAND : f4vr::getEquippedWeaponName();
+        const auto& weaponName = emptyHand ? EMPTY_HAND : getEquippedWeaponNameExtended(weapon);
         const bool inPA = f4vr::isInPowerArmor();
         if (weaponName == _currentWeapon && inPA == _currentlyInPA) {
             // no weapon change
@@ -237,12 +278,12 @@ namespace frik
         }
 
         if (_offHandGripping) {
-            if (g_config.onePressGripButton && !f4vr::VRControllers.isPressHeldDown(g_config.gripButtonID, f4vr::Hand::Offhand)) {
+            if (g_config.onePressGripButton && !f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, g_config.gripButtonID)) {
                 // Mode 3 release grip when not holding the grip button
                 setOffhandGripping(false);
             }
 
-            if (g_config.enableGripButtonToLetGo && f4vr::VRControllers.isPressed(g_config.gripButtonID, f4vr::Hand::Offhand)) {
+            if (g_config.enableGripButtonToLetGo && f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, g_config.gripButtonID)) {
                 if (g_config.enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
                     // Mode 2,4 release grip on pressing the grip button again
                     setOffhandGripping(false);
@@ -276,7 +317,7 @@ namespace frik
             // Mode 1,2 grab when close to barrel
             setOffhandGripping(true);
         }
-        if (!g_frik.isPipboyOn() && f4vr::VRControllers.isPressed(g_config.gripButtonID, f4vr::Hand::Offhand)) {
+        if (!g_frik.isPipboyOn() && f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, g_config.gripButtonID)) {
             // Mode 3,4 grab when pressing grip button
             setOffhandGripping(true);
         }
@@ -456,12 +497,27 @@ namespace frik
     }
 
     /**
+     * Special handling for the "Laser Musket" weapon as it's "loaded" state beam doesn't follow the parent weapon rotation.
+     * Fix by forcing the rotation on it from calculating the diff from original to the current after all other calculation including offhand gripping.
+     * Also works on Automatic laser specific modification that has laser beam in it.
+     * The BeamMesh can have different suffixes so using starts with to find it.
+     */
+    void WeaponPositionAdjuster::handleSpecialWeaponFix(RE::NiNode* weapon) const
+    {
+        if (_currentWeapon.starts_with("Laser")) {
+            if (const auto beamNode = f4vr::findNodeStartsWith(f4vr::findNode(weapon, "P-Barrel"), "BeamMesh")) {
+                beamNode->local.rotate = getIdentityMatrix() * (weapon->local.rotate * _weaponOriginalTransform.rotate);
+            }
+        }
+    }
+
+    /**
      * Handle toggling of scope zoom for BetterScopesVR mod.
      * Toggle only when player presses offhand X/A button and the hand is close to the weapon scope.
      */
     void WeaponPositionAdjuster::handleBetterScopes(RE::NiNode* weapon) const
     {
-        if (!f4vr::VRControllers.isPressed(vr::EVRButtonId::k_EButton_A, f4vr::Hand::Offhand)) {
+        if (!f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // fast return not to make additional calculations, checking button is cheap
             return;
         }

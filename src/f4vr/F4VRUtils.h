@@ -16,6 +16,7 @@ namespace f4vr
 
     // Weapons/Armor/Player
     void setWandsVisibility(bool show, bool leftWand);
+    bool isWeaponEquipped();
     bool isMeleeWeaponEquipped();
     std::string getEquippedWeaponName();
     bool hasKeyword(const F4SEVR::TESObjectARMO* armor, std::uint32_t keywordFormId);
@@ -28,12 +29,15 @@ namespace f4vr
 
     // settings
     bool isLeftHandedMode();
+    bool isPipboyOnWrist();
     bool useWandDirectionalMovement();
     RE::Setting* getIniSetting(const char* name, bool addNew = false);
 
     // nodes
-    RE::NiAVObject* findAVObject(RE::NiAVObject* node, const std::string& name, const int maxDepth = 999);
-    RE::NiNode* findNode(RE::NiAVObject* node, const char* name, const int maxDepth = 999);
+    RE::NiAVObject* getFirstChild(RE::NiAVObject* avObject);
+    RE::NiAVObject* findAVObject(RE::NiAVObject* node, const std::string& name, int maxDepth = 999);
+    RE::NiNode* findNode(RE::NiAVObject* node, const char* name, int maxDepth = 999);
+    RE::NiNode* findNodeStartsWith(RE::NiAVObject* node, const char* name, int maxDepth = 999);
     RE::NiNode* find1StChildNode(RE::NiAVObject* node, const char* name);
 
     // visibility
@@ -46,7 +50,7 @@ namespace f4vr
     void updateDown(RE::NiAVObject* node, bool updateSelf, const char* ignoreNode = nullptr);
     void updateDownTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
     void updateUpTo(RE::NiNode* toNode, RE::NiNode* fromNode, bool updateSelf);
-    void updateTransforms(RE::NiNode* node);
+    void updateTransforms(RE::NiAVObject* node);
     void updateTransformsDown(RE::NiNode* node, bool updateSelf);
 
     void registerPapyrusNativeFunctions(F4SE::PapyrusInterface::RegisterFunctions callback);

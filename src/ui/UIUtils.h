@@ -5,10 +5,10 @@
 
 namespace vrui
 {
-    static std::string getDebugSphereNifName() { return "FRIK/1x1Sphere.nif"; }
-    static std::string getToggleButtonFrameNifName() { return "FRIK/ui_common_btn_border.nif"; }
+    inline std::string getDebugSphereNifName() { return "FRIK/1x1Sphere.nif"; }
+    inline std::string getToggleButtonFrameNifName() { return "FRIK/ui_common_btn_border.nif"; }
 
-    static UISize getButtonDefaultSize() { return { 2.2f, 2.2f }; }
+    inline UISize getButtonDefaultSize() { return { 2.2f, 2.2f }; }
 
     f4vr::PlayerNodes* getPlayerNodes();
     void setNodeVisibility(RE::NiNode* node, bool visible, float originalScale);

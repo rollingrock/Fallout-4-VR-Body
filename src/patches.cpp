@@ -154,26 +154,26 @@ namespace patches
     REL::Offset DropAddOnPatch2(0x03e9cd3);
     REL::Offset DropAddOnPatch3(0x3e9df5);
 
-    static void patchDropAddOn3DReplacement()
-    {
-        int bytesToNOP = 0x6;
-
-        for (int i = 0; i < bytesToNOP; ++i) {
-            REL::safe_write(DropAddOnPatch1.address() + i, 0x90);
-        }
-
-        bytesToNOP = 0x5;
-
-        for (int i = 0; i < bytesToNOP; ++i) {
-            REL::safe_write(DropAddOnPatch2.address() + i, 0x90);
-        }
-
-        bytesToNOP = 0x7;
-
-        for (int i = 0; i < bytesToNOP; ++i) {
-            REL::safe_write(DropAddOnPatch3.address() + i, 0x90);
-        }
-    }
+    // static void patchDropAddOn3DReplacement()
+    // {
+    //     int bytesToNOP = 0x6;
+    //
+    //     for (int i = 0; i < bytesToNOP; ++i) {
+    //         REL::safe_write(DropAddOnPatch1.address() + i, 0x90);
+    //     }
+    //
+    //     bytesToNOP = 0x5;
+    //
+    //     for (int i = 0; i < bytesToNOP; ++i) {
+    //         REL::safe_write(DropAddOnPatch2.address() + i, 0x90);
+    //     }
+    //
+    //     bytesToNOP = 0x7;
+    //
+    //     for (int i = 0; i < bytesToNOP; ++i) {
+    //         REL::safe_write(DropAddOnPatch3.address() + i, 0x90);
+    //     }
+    // }
 
     static void patchBody()
     {

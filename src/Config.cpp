@@ -79,7 +79,7 @@ namespace frik
         pipboyCloseWhenMovingWhileLookingAway = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true);
         pipboyLookAtThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.75f));
         pipboyLookAwayThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAwayThreshold", 0.3f));
-        pipboyDetectionRange = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "pipboyDetectionRange", 14.0));
+        pipboyOperationFingerDetectionRange = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPipboyOperationFingerDetectionRange", 12.0));
         pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 400));
         pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 1000));
         pipBoyButtonArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonArm", 0));
@@ -87,9 +87,9 @@ namespace frik
         pipBoyButtonOffArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffArm", 0));
         pipBoyButtonOffID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip));
 
-        // Pipboy Torch/Flashlight
-        isPipBoyTorchOnArm = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", true);
-        isPipBoyTorchRightArmMode = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyTorchRightArmMode", false);
+        // Torch/Flashlight
+        removeFlashlight = ini.GetBoolValue(INI_SECTION_MAIN, "bRemoveFlashlight", false);
+        flashlightLocation = static_cast<FlashlightLocation>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", 0));
         switchTorchButton = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2));
 
         // Two-handed gripping
@@ -103,13 +103,15 @@ namespace frik
         // Dampen hands
         dampenHands = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHands", true);
         dampenHandsInVanillaScope = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHandsInVanillaScope", true);
-        dampenPipboyScreen = ini.GetBoolValue(INI_SECTION_MAIN, "DampenPipboyScreen", true);
         dampenHandsRotation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", 0.7f));
         dampenHandsTranslation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", 0.7f));
         dampenHandsRotationInVanillaScope = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotationInVanillaScope", 0.2f));
         dampenHandsTranslationInVanillaScope = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslationInVanillaScope", 0.2f));
-        dampenPipboyRotation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenPipboyRotation", 0.7f));
-        dampenPipboyTranslation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenPipboyTranslation", 0.7f));
+
+        // Dampen Pipboy
+        dampenPipboyScreenMode = static_cast<DampenPipboyScreenMode>(ini.GetLongValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", 1));
+        dampenPipboyThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenPipboyThreshold", 1.1f));
+        dampenPipboyMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenPipboyMultiplier", 0.7f));
 
         // Misc
         showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
@@ -185,8 +187,8 @@ namespace frik
         ini.SetBoolValue(INI_SECTION_MAIN, "hidePipboy", hidePipboy);
         ini.SetDoubleValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
         ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
-        ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyTorchOnArm", isPipBoyTorchOnArm);
-        ini.SetBoolValue(INI_SECTION_MAIN, "DampenPipboyScreen", dampenPipboyScreen);
+        ini.SetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
+        ini.SetLongValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
         ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
         ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);
         ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", dampenHandsRotation);

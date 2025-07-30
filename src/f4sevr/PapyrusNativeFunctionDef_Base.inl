@@ -138,7 +138,7 @@ public:
 
 		InitParams(vm);
 	}
-	
+
 	void InitParams(VirtualMachine * vm)
 	{
 #if NUM_PARAMS >= 1
@@ -185,15 +185,19 @@ public:
 
 	virtual ~CLASS_NAME()	{ }
 
-	virtual bool	Run(VMValue * baseValue, VirtualMachine * vm, UInt32 stackId, VMValue * resultValue, VMState * state)
+	virtual bool Run(VMValue * baseValue, VirtualMachine* vm, UInt32 stackId, VMValue * resultValue, VMState * state)
 	{
+		if (!vm || stackId > INT32_MAX) {
+            return false;
+		}
+
 		// get argument list
 		UInt32	argOffset = CALL_MEMBER_FN(state->argList, GetOffset)(state);
 
-		T_Base	* base = NULL;
+		T_Base	* base = nullptr;
 
 		// extract base object pointer for non-static types
-		if (! IsStaticType <T_Base>::value)
+		if constexpr (!IsStaticType<T_Base>::value)
 		{
 			UnpackValue(&base, baseValue);
 			if (!base) return false;
@@ -293,7 +297,7 @@ public:
 #else
 		PackValue(resultValue, &result, vm);
 #endif
-		if (! IsStaticType <T_Base>::value)
+		if constexpr (!IsStaticType<T_Base>::value)
 		{
 			DestroyValue(&base);
 		}

@@ -31,7 +31,7 @@ namespace vrui
     // Not a fan of globals but it may be easiest to refactor code right now
     extern UIManager* g_uiManager;
 
-    static void initUIManager()
+    inline void initUIManager()
     {
         if (g_uiManager) {
             throw std::exception("UI manager already initialized");

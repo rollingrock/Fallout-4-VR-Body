@@ -1,6 +1,5 @@
 #include "Debug.h"
 
-#include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "f4vr/PlayerNodes.h"
 
@@ -42,6 +41,37 @@ namespace
     {
         while (node) {
             printNode(node, padding);
+            padding += "..";
+            node = node->parent;
+        }
+    }
+
+    void printNodeTransform(const RE::NiAVObject* node, std::string padding)
+    {
+        const auto niNode = node->IsNode();
+        logger::info("{}{} : children({}), hidden({}), Pos:({:.2f}, {:.2f}, {:.2f}), Rot:[[{:.2f}, {:.2f}, {:.2f}][{:.2f}, {:.2f}, {:.2f}][{:.2f}, {:.2f}, {:.2f}]]", padding,
+            node->name.c_str(), niNode ? niNode->children.size() : 0, node->flags.flags & 0x1, node->local.translate.x, node->local.translate.y,
+            node->local.translate.z, node->local.rotate.entry[0][0], node->local.rotate.entry[1][0], node->local.rotate.entry[2][0], node->local.rotate.entry[0][1],
+            node->local.rotate.entry[1][1], node->local.rotate.entry[2][1], node->local.rotate.entry[0][2], node->local.rotate.entry[1][2], node->local.rotate.entry[2][2]);
+    }
+
+    void printNodesTransformChildren(RE::NiAVObject* node, std::string padding)
+    {
+        printNodeTransform(node, padding);
+        if (const auto niNode = node->IsNode()) {
+            padding += "..";
+            for (const auto& child : niNode->children) {
+                if (child) {
+                    printNodesTransformChildren(child.get(), padding);
+                }
+            }
+        }
+    }
+
+    void printNodesTransformAncestors(const RE::NiAVObject* node, std::string padding)
+    {
+        while (node) {
+            printNodeTransform(node, padding);
             padding += "..";
             node = node->parent;
         }
@@ -90,41 +120,16 @@ namespace frik
         }
     }
 
-    void printNodes(RE::NiAVObject* node, const long long curTime)
-    {
-        const auto niNode = node->IsNode();
-        logger::info("{} {} : children = {} {}: local {} {} {} {} {} {} {} {} {} ({} {} {})", curTime, node->name.c_str(), niNode ? niNode->children.size() : 0,
-            node->flags.flags & 0x1, node->local.rotate.entry[0][0], node->local.rotate.entry[1][0], node->local.rotate.entry[2][0], node->local.rotate.entry[0][1],
-            node->local.rotate.entry[1][1], node->local.rotate.entry[2][1], node->local.rotate.entry[0][2], node->local.rotate.entry[1][2], node->local.rotate.entry[2][2],
-            node->local.translate.x, node->local.translate.y, node->local.translate.z);
-
-        if (niNode) {
-            for (const auto& child : niNode->children) {
-                if (child) {
-                    printNodes(child.get(), curTime);
-                }
-            }
-        }
-    }
-
     /**
      * Print the local transform data of nodes tree.
      */
-    void printNodesTransform(RE::NiAVObject* node, std::string padding)
+    void printNodesTransform(RE::NiAVObject* node, const bool printAncestors)
     {
-        const auto niNode = node->IsNode();
-        logger::info("{}{} child={}, {}, Pos:({:2.3f}, {:2.3f}, {:2.3f}), Rot:[[{:2.4f}, {:2.4f}, {:2.4f}][{:2.4f}, {:2.4f}, {:2.4f}][{:2.4f}, {:2.4f}, {:2.4f}]]", padding,
-            node->name.c_str(), niNode ? niNode->children.size() : 0, node->flags.flags & 0x1 ? "hidden" : "visible", node->local.translate.x, node->local.translate.y,
-            node->local.translate.z, node->local.rotate.entry[0][0], node->local.rotate.entry[1][0], node->local.rotate.entry[2][0], node->local.rotate.entry[0][1],
-            node->local.rotate.entry[1][1], node->local.rotate.entry[2][1], node->local.rotate.entry[0][2], node->local.rotate.entry[1][2], node->local.rotate.entry[2][2]);
-
-        if (niNode) {
-            padding += "..";
-            for (const auto& child : niNode->children) {
-                if (child) {
-                    printNodesTransform(child.get(), padding);
-                }
-            }
+        logger::info("Children of '{}':", node->name.c_str());
+        printNodesTransformChildren(node, "");
+        if (printAncestors) {
+            logger::info("Ancestors of '{}':", node->name.c_str());
+            printNodesTransformAncestors(node, "");
         }
     }
 
@@ -157,7 +162,7 @@ namespace frik
      */
     void dumpPlayerGeometry(RE::BSFadeNode* rn)
     {
-        for (auto i = 0; i < rn->geomArray.size(); ++i) {
+        for (std::uint32_t i = 0; i < rn->geomArray.size(); ++i) {
             const auto& geometry = rn->geomArray[i].geometry;
             logger::info("Geometry[{}] = '{}' ({})", i, geometry->name.c_str(), geometry->flags.flags & 0x1 ? "Hidden" : "Visible");
         }
@@ -169,7 +174,7 @@ namespace frik
 
         //Offsets::ForceGamePause(*g_menuControls);
 
-        auto rn = static_cast<RE::BSFadeNode*>(f4vr::getRootNode()->parent);
+        // auto rn = static_cast<RE::BSFadeNode*>(f4vr::getRootNode()->parent);
         //logger::info("newrun");
 
         //for (int i = 0; i < 44; i++) {

@@ -73,7 +73,7 @@ namespace common
             z /= mag;
         }
 
-        double dot(const Quaternion& q) const
+        float dot(const Quaternion& q) const
         {
             return w * q.w + x * q.x + y * q.y + z * q.z;
         }
@@ -131,9 +131,9 @@ namespace common
             q.z = sqrtf(std::max<float>(0.0f, 1 - rot.entry[0][0] - rot.entry[1][1] + rot.entry[2][2])) / 2;
 
             w = q.w;
-            x = _copysign(q.x, rot.entry[2][1] - rot.entry[1][2]);
-            y = _copysign(q.y, rot.entry[0][2] - rot.entry[2][0]);
-            z = _copysign(q.z, rot.entry[1][0] - rot.entry[0][1]);
+            x = _copysignf(q.x, rot.entry[2][1] - rot.entry[1][2]);
+            y = _copysignf(q.y, rot.entry[0][2] - rot.entry[2][0]);
+            z = _copysignf(q.z, rot.entry[1][0] - rot.entry[0][1]);
         }
 
         // slerp function adapted from VRIK - credit prog for math
@@ -142,7 +142,7 @@ namespace common
         {
             const Quaternion save = this->get();
 
-            double dotp = this->dot(target);
+            float dotp = this->dot(target);
 
             if (dotp < 0.0f) {
                 w = -w;
@@ -193,7 +193,7 @@ namespace common
                 return;
             }
 
-            w = sqrt(pow(vec3Len(v1), 2) * pow(vec3Len(v2), 2)) + dotP;
+            w = sqrtf(powf(vec3Len(v1), 2) * powf(vec3Len(v2), 2)) + dotP;
             x = cross.x;
             y = cross.y;
             z = cross.z;
@@ -248,12 +248,14 @@ namespace common
             return *this;
         }
 
-        void operator=(const Quaternion& q)
+        Quaternion& operator=(const Quaternion& q)
         {
             w = q.w;
             x = q.x;
             y = q.y;
             z = q.z;
+
+            return *this;
         }
 
         float w;

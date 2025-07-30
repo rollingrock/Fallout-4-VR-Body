@@ -24,7 +24,7 @@ namespace F4SEVR
 #define DEFINE_STATIC_HEAP(staticAllocate, staticFree)                                                  \
     static void* operator new(std::size_t size) { return staticAllocate(size); }                        \
     static void* operator new(std::size_t size, const std::nothrow_t&) { return staticAllocate(size); } \
-    static void* operator new(std::size_t size, void* ptr) { return ptr; }                              \
+    static void* operator new(std::size_t, void* ptr) { return ptr; }                              \
     static void operator delete(void* ptr) { staticFree(ptr); }                                         \
     static void operator delete(void* ptr, const std::nothrow_t&) { staticFree(ptr); }                  \
     static void operator delete(void*, void*) {}

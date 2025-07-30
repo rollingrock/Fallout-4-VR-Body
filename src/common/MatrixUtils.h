@@ -14,6 +14,7 @@ namespace common
     float radsToDegrees(float rad);
     RE::NiPoint3 rotateXY(RE::NiPoint3 vec, float angle);
     RE::NiPoint3 pitchVec(RE::NiPoint3 vec, float angle);
+    RE::NiTransform calculateRelocation(const RE::NiAVObject* fromNode, const RE::NiAVObject* toNode);
 
     // matrix
     RE::NiMatrix3 getIdentityMatrix();

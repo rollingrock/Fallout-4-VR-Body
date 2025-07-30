@@ -40,7 +40,7 @@ namespace f4vr
         /**
          * On receiving a papyrus script registration call, we store the script handle and name for later to call scripts in it.
          */
-        static void onRegisterGatewayScript(F4SEVR::StaticFunctionTag* base, F4SEVR::VMObject* scriptObj)
+        static void onRegisterGatewayScript(F4SEVR::StaticFunctionTag*, F4SEVR::VMObject* scriptObj)
         {
             if (scriptObj && _instance) {
                 const auto scriptName = scriptObj->GetObjectType();

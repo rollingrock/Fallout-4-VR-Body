@@ -40,6 +40,8 @@ namespace common
         float debugFlowFlag1 = 0;
         float debugFlowFlag2 = 0;
         float debugFlowFlag3 = 0;
+        std::string debugFlowText1 = "";
+        std::string debugFlowText2 = "";
 
         /**
          * Check if debug data dump is requested for the given name.
@@ -70,7 +72,7 @@ namespace common
         /**
          * Override to save your config values
          */
-        virtual void saveIniConfigInternal(CSimpleIniA& ini) {}
+        virtual void saveIniConfigInternal(CSimpleIniA&) {}
 
         /**
          * Load all INI config values.
@@ -132,6 +134,8 @@ namespace common
             debugFlowFlag1 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "fDebugFlowFlag1", 0));
             debugFlowFlag2 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "fDebugFlowFlag2", 0));
             debugFlowFlag3 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_DEBUG, "fDebugFlowFlag3", 0));
+            debugFlowText1 = ini.GetValue(INI_SECTION_DEBUG, "sDebugFlowText1", "");
+            debugFlowText2 = ini.GetValue(INI_SECTION_DEBUG, "sDebugFlowText2", "");
             _debugDumpDataOnceNames = ini.GetValue(INI_SECTION_DEBUG, "sDebugDumpDataOnceNames", "");
 
             // set log after loading from config
@@ -179,6 +183,26 @@ namespace common
                 return;
             }
             ini.SetBoolValue(section, key, value);
+            _ignoreNextIniFileChange.store(true);
+            rc = ini.SaveFile(_iniFilePath.c_str());
+            if (rc < 0) {
+                logger::warn("Failed to save INI config value with code: {}", rc);
+            }
+        }
+
+        /**
+         * Save specific key and bool value into .ini file.
+         */
+        void saveIniConfigValue(const char* section, const char* key, const int value)
+        {
+            logger::info("Config: Saving \"{} = {}\"", key, value);
+            CSimpleIniA ini;
+            SI_Error rc = ini.LoadFile(_iniFilePath.c_str());
+            if (rc < 0) {
+                logger::warn("Failed to save INI config value with code: {}", rc);
+                return;
+            }
+            ini.SetLongValue(section, key, value);
             _ignoreNextIniFileChange.store(true);
             rc = ini.SaveFile(_iniFilePath.c_str());
             if (rc < 0) {
@@ -397,7 +421,7 @@ namespace common
 
             // backup the old ini file before overwriting
             auto nameStr = std::string(_iniFilePath);
-            nameStr = nameStr.replace(nameStr.length() - 4, 4, "_bkp_v" + std::to_string(_iniConfigVersion) + ".ini");
+            nameStr = nameStr.replace(nameStr.length() - 4, 4, "_backup_v" + std::to_string(_iniConfigVersion) + ".ini");
             res = std::rename(_iniFilePath.c_str(), nameStr.c_str());
             if (res != 0) {
                 logger::warn("Failed to backup old .ini file to '{}'. Error: {}", nameStr.c_str(), res);

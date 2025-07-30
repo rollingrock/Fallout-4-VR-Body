@@ -4,47 +4,20 @@
 #include "f4sevr/PapyrusUtils.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/PlayerNodes.h"
+#include "f4vr/VRControllersManager.h"
 
 using namespace common;
 
 namespace frik
 {
-    void turnPlayerRadioOn(bool isActive)
+    void turnPlayerRadioOn(const bool isActive)
     {
         F4SEVR::execPapyrusGlobalFunction("Game", "TurnPlayerRadioOn", isActive);
     }
 
-    void turnPipBoyOn()
+    void triggerShortHaptic(const f4vr::Hand hand)
     {
-        RE::Setting* set = RE::GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
-        set->SetFloat(0.0);
-
-        set = RE::GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
-        set->SetFloat(0.0);
-
-        set = RE::GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
-        set->SetFloat(0.0);
-
-        set = RE::GetINISetting("fPipboyScaleOuterAngle:VRPipboy");
-        set->SetFloat(0.0);
-
-        set = RE::GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
-        set->SetFloat(0.0);
-    }
-
-    void turnPipBoyOff()
-    {
-        RE::Setting* set = RE::GetINISetting("fHMDToPipboyScaleOuterAngle:VRPipboy");
-        set->SetFloat(20.0);
-
-        set = RE::GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy");
-        set->SetFloat(5.0);
-
-        set = RE::GetINISetting("fPipboyScaleOuterAngle:VRPipboy");
-        set->SetFloat(20.0);
-
-        set = RE::GetINISetting("fPipboyScaleInnerAngle:VRPipboy");
-        set->SetFloat(5.0);
+        f4vr::VRControllers.triggerHaptic(hand, 0.001f);
     }
 
     /**

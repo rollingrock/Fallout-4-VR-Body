@@ -24,7 +24,7 @@ namespace frik
         const auto now = std::time(nullptr);
         if (now - _lastPreProcessTime < 2) {
             // check that the geometries array didn't change by verifying the last hidden geometry is the same we expect
-            if (_lastHiddenGeometryIdx >= 0 && _lastHiddenGeometryIdx < rn->geomArray.size()) {
+            if (_lastHiddenGeometryIdx >= 0 && _lastHiddenGeometryIdx < static_cast<int>(rn->geomArray.size())) {
                 const auto gemName = std::string(rn->geomArray[_lastHiddenGeometryIdx].geometry->name.c_str());
                 if (_lastHiddenGeometryName == gemName) {
                     return;
