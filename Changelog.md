@@ -1,9 +1,12 @@
-## v0.75 (in-development)
+## v0.76 (TBD)
+
+## v0.75
 - Migrated from F4SEVR to CommonLibF4 infrastructure!!!
 - Support moving flashlight to either left or right arm/hand depending on the hand used to "grab" the flashlight from the head.
 - Support removing embedded FRIK flashlight using FRIK.ini to easily use other flashlight mods.
 - Support separate pistol/rifle weapon offsets for Pipe, Laser, and Plasma weapons.
-- Improve Pipboy dampening (reduce lagging, fix screen fly in on open, more stable holo screen)
+- Support new Pipboy dampening Hold-In-Place mode where the screen remains where it was opened and moved only if grip is held.
+- Improve Pipboy dampening: reduce lagging on big swings and fix screen fly in on opening.
 - Improve Pipboy physical operation by requiring free hand (no weapon) and not forcing looking directly at the Pipboy.
 - Stop running a bunch of code for non-on-wrist Pipboy setting.
 - Fixed Laser Musket "loaded" beam not aligned correctly with the weapon.
