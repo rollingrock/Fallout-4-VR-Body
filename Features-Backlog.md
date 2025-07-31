@@ -4,14 +4,17 @@
 - ???
 
 ### P2
-- There is no distinct weapon adjustment for pistol and rifle for Laser and pipe weapons even though the grip is very different.
-- When exiting the Pipboy, if you have a weapon equipped but not drawn it will be drawn out.
+- ???
 
 ### Backlog
-- Fix ["known issues"](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Known-Issues)
+- Head *may* not being part of the hitbox if hidden, need to verify and fix.
+- Better hand pose for different weapons and throwables.
+- Changing player height using thumbstick for continuous crouch ability.
+- Sitting body position when the character is sitting.
+- Config for sitting gameplay.
+- Fix hand pose for left-handed weapon.
 - Fix Pipboy on right arm not working.
-- Allow flashlight direction to change in game to point like you hold a lamp or along the gun in 2-handed grip.
-- Allow disabling built-in flashlight so players can use custom flashlight mods (maybe via holotape somehow?)
+- When exiting the Pipboy, if you have a weapon equipped but not drawn it will be drawn out.
 
 ## Requested
 Please put your feature requests here to be triaged.  

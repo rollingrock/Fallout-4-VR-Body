@@ -1,42 +1,63 @@
 ## What changed in the last release?
 Check the [Changelog](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Changelog).
 
-## Any Known Issues?
-[Yes, a few](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Known-Issues).
 
-## How Do I configure?
+## How Do I Configure?
 See [In‐Game-Configuration-Guide](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/In%E2%80%90Game-Configuration-Guide-(v69)).
 
+
 ## I don't see my head!
-The head hiding is all in FRIK.ini config.  
+The head hiding is all in `FRIK.ini` config.  
 Set `HideHead` and `HideEquipment` to false if you want full head to be rendered but it may obscure/clip your vision.  
 If you just want to see the head in selfie set `selfieIgnoreHideFlags` to true.
 
+
 ## How do I Operate the Flashlight
 Long press on secondary hand trigger activates the flashlight.  
-To move the flashlight from hand to head: move the left or right hand to the forehead, should feel haptic, press grip.  
+To move the flashlight from head to hand: move the left or right hand to the forehead, should feel haptic, press grip.  
 
-## What are the different grip modes?
+
+## What are the Different Grip Modes?
+Grip modes affect how to grip the weapon with the offhand:  
 * Mode 1: Hand automatically snap to the barrel when in range, move hand quickly to let go.
 * Mode 2: Hand automatically snap to the barrel when in range, press grip button to let go.
 * Mode 3: Holding grip button to snap to the barrel, release to let go.
 * Mode 4: Press grip button to snap to the barrel, press again to let go.
 
-## Reporting Crash Log
-[Buffout 4 NG](https://www.nexusmods.com/fallout4/mods/64880) required for crash log.  
-Please attach the crash log file and FRIK main log file.  
-Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`  
-- `crash-<date time>.log` for crash logs
-- `FRIK.log` for FRIK logs
 
-**Bonus points** if you set `LogLevel = 5` in FRIK.ini before reproducing the crash for more debug logs.
+## GAME CRASHED!
+It happens, it could be related to FRIK it could be related to conflict between FRIK and other mods.  
 
-## Why is the Config in "Documents\My Games\Fallout4VR\FRIK_Config"
-[See this](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Development#frik-config-folder).
+### Reporting Crash Information
+If I, the developer, can reproduce the crash in 95% of the times I can fix it. Help me do so:
+1. Describe in as much details as possible what led to the crash.
+2. Identify what combination of mods are causing the crash.
+3. Add crash log and FRIK log in the report.
 
-## When I launch the game, I do not see a body!!
+### Getting Logs
+- For collecting F4VR crash log you need [Buffout 4 NG](https://www.nexusmods.com/fallout4/mods/64880) mod.  
+- Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`  
+  - `crash-<date time>.log` for crash logs
+  - `FRIK.log` for FRIK logs
+- **Bonus points** if you set `iLogLevel = 5` in FRIK.ini before reproducing the crash for more debug logs.
 
-Most commonly caused by not launching your game with `f4sevr_loader.exe`. Make sure you have your F4SEVR install up to date and that you're launching it correctly with your mod manager.
+### Known Crashes
+- "Amazing Follower Tweaks" mod is known to conflict with FRIK in the past.
+- Anything that messes directly with the **skeleton** can cause a crash (body, heels, etc.).
+- New Game reported in the past as problematic, I don't believe it still is, but:
+  - Disabling before starting a game and re-enabling just after or after exiting the vault would probably be good enough.
+  - The last confirmed new game conflict was for a combination of 3 mods with skeleton change ([#107](https://github.com/rollingrock/Fallout-4-VR-Body/issues/107)).
+
+
+
+## When I launch the game, I do not see a body!
+It means FRIK was not loaded into your game.
+- Most commonly caused by not launching your game with `f4sevr_loader.exe`. Make sure you have your F4SEVR install up to date and that you're launching it correctly with your mod manager.
+- Possible FRIK was not installed correctly, common with manual install.
+- Recommended to use MO2 as the best manager for complex mods like FRIK.
+
+### MO2
+Watch this guide: [YouTube - MO2 F4SE Setup](https://www.youtube.com/watch?v=-rFwk4tb6Ew)
 
 ### Vortex
 It's the **same** way you set up F4SE to launch with NMM:
@@ -50,40 +71,29 @@ Now, whenever you start the game with Vortex, it will launch `F4SE_Launcher`.
 
 **Source:** [Nexus Mods Forum](https://forums.nexusmods.com/index.php?/topic/7064136-launching-fallout-4-with-f4se/)
 
-### MO2
-Watch this guide: [YouTube - MO2 F4SE Setup](https://www.youtube.com/watch?v=-rFwk4tb6Ew)
-
----
-
-## My game crashes on New Game
-
-It is possible of a conflict with other mods as game start flow is fragile. The last confirmed new game conflict was for a combination of 3 mods ([#107](https://github.com/rollingrock/Fallout-4-VR-Body/issues/107)).  
-Disabling before starting a game and re-enabling just after would probably be good enough.
-
-## My game crashes!!
-
-- The most common cause of crashes is follower mods like **Amazing Follower Tweaks**. 
-  - I still don’t know exactly what causes this. Once I do, I’ll work on compatibility.
-- Anything that messes directly with the **skeleton** can cause a crash.
-- Sometimes loading into a save can crash. Often this can be fixed by:
-  - Completely exiting the game
-  - Reloading from the **main menu**
-
-If you find a **reproducible crash**, please post mod and crash logs!
 
 ## Armor / Power Armor obstructs my view!
-
-Honestly, this is somewhat intentional—you’re wearing **bulky armor**, and some line of sight issues are expected based on Bethesda’s mesh design.  
+Honestly, this is somewhat intentional—you’re wearing **bulky armor**, and some line-of-sight issues are expected based on Bethesda’s mesh design.  
 Tip: Use configuration to move the body downwards or camera upwards a little if needed.
 
-## Can I have Holsters for my weapons?
 
+## Can I have Holsters for my weapons?
 Check out **CylonSurfer's** excellent mod:  [Virtual Holsters](https://www.nexusmods.com/fallout4/mods/51224)
 
-## I don't like the built-in torch, how to remove it?
-1. Open xEdit (F4VREdit)
-2. Click on FRIK.esp
-3. Select "Pipboy" under Armor
-4. Find and Remove "PowerArmorHelmetLightOverride"
 
-![image](https://github.com/user-attachments/assets/fec4c7d4-2c2d-4f80-9b7a-1d177ebdfb5d)
+## I don't like the built-in flashlight, how to remove it?
+Set `bRemoveFlashlight = true` in `FRIK.ini`  
+It will remove the FRIK built-in flashlight.
+
+
+## Two Handed Weapon Aiming doesn't work in Vanilla V.A.T.S.
+If you're using fully vanilla VATS please use one-handed aiming.
+
+
+## Pipboy on the Right Hand is Broken
+It needs A LOT of work.
+
+
+## Why is the Config in "Documents\My Games\Fallout4VR\FRIK_Config"
+[See this](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Development#frik-config-folder).
+

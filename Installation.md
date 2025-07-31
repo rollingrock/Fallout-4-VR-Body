@@ -1,13 +1,16 @@
 **Requirements:**  
-* [F4SEVR](https://f4se.silverlock.org/), 
-* REQUIRES STEAMVR CONTROLLER BINDINGS FOR FINGER TRACKING TO WORK!!!! LOOK FOR FRIK BINDINGS PUBLISHED ON STEAM WORKSHOP
+- [F4SE VR](https://f4se.silverlock.org/)
+- [VR Address Library](https://www.nexusmods.com/fallout4/mods/64879)
 
 **Instructions:**  
 
 * Install as normal through your mod manager and enable the esp
 * Load order is not important
 
-Legacy, I'm not sure it's really needed...
+Legacy, I'm not sure it's really needed...  
+But keeping it here for now, let me know if it's useful
+
+REQUIRES STEAMVR CONTROLLER BINDINGS FOR FINGER TRACKING TO WORK!!!! LOOK FOR FRIK BINDINGS PUBLISHED ON STEAM WORKSHOP
 
 * You need to edit your Fallout4Custom.ini to add or amend the following lines to look like this (thanks u/JAPH):
 
@@ -21,11 +24,5 @@ Legacy, I'm not sure it's really needed...
   ```
 
 **Recommendations:**  
-* On-wrist based Pipboy with the following scale settings in Fallout4Prefs.ini: (set the maxscale to taste)
-  ```
-  [VRPipboy]
-  fPipboyMaxScale=3.0000
-  fPipboyMinScale = 0.0100
-  ```
 * If anyone's using HUIDE_VR previously alongside Idle Hands, make sure to reinstall HUIDE_VR after disabling Idle Hands and choose Vanilla in the installer instead. Kept crashing until I did. ( thanks u/Zebrazilla !!)
 * Note that pipboy touch operation requires you to be looking at the screen and the screen to be facing your face to work.   

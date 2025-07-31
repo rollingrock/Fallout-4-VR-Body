@@ -6,8 +6,8 @@
 - [Weapon Adjustment Guide](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Weapon-Adjustment-Guide-(v73))
 
 ## Requirements
-- [F4SE/VR](https://f4se.silverlock.org/)
-- [VR Address Library for F4SEVR Plugins](https://www.nexusmods.com/fallout4/mods/64879)
+- [F4SE VR](https://f4se.silverlock.org/)
+- [VR Address Library](https://www.nexusmods.com/fallout4/mods/64879)
 
 ### Shortcuts
 - Open Main Configuration - Press & hold both thumbsticks ('Sprint' & 'Favorites' buttons).
