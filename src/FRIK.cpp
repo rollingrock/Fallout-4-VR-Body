@@ -4,8 +4,10 @@
 #include "ConfigurationMode.h"
 #include "Debug.h"
 #include "HandPose.h"
+#include "hook.h"
 #include "PapyrusApi.h"
 #include "PapyrusGateway.h"
+#include "patches.h"
 #include "Pipboy.h"
 #include "Skeleton.h"
 #include "SmoothMovementVR.h"
@@ -53,8 +55,28 @@ namespace frik
      */
     void FRIK::initialize(const F4SE::LoadInterface*)
     {
-        _messaging = F4SE::GetMessagingInterface();
-        _messaging->RegisterListener(onF4VRSEMessage);
+        try {
+            logger::info("Initialize FRIK...");
+            std::srand(static_cast<unsigned int>(time(nullptr)));
+
+            logger::info("Init config...");
+            g_config.load();
+
+            // allocate enough space for patches and hooks
+            F4SE::AllocTrampoline(4096);
+
+            logger::info("Run patches...");
+            patches::patchAll();
+
+            logger::info("Hook main...");
+            hookMain();
+
+            _messaging = F4SE::GetMessagingInterface();
+            _messaging->RegisterListener(onF4VRSEMessage);
+        } catch (const std::exception& ex) {
+            logger::critical("Error in initialize: {}", ex.what());
+            throw;
+        }
     }
 
     /**
@@ -85,12 +107,6 @@ namespace frik
     void FRIK::initOnGameLoaded()
     {
         try {
-            logger::info("Initialize FRIK...");
-            std::srand(static_cast<unsigned int>(time(nullptr)));
-
-            logger::info("Init config...");
-            g_config.load();
-
             logger::info("Register papyrus native functions...");
             initPapyrusApis();
             PapyrusGateway::init();

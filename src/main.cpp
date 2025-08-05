@@ -1,8 +1,6 @@
 #include <Version.h>
 
 #include "FRIK.h"
-#include "hook.h"
-#include "patches.h"
 #include "common/Logger.h"
 
 using namespace common;
@@ -45,15 +43,6 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface* a_f
         logPluginGameStart();
 
         F4SE::Init(a_f4se, false);
-
-        // allocate enough space for patches and hooks
-        F4SE::AllocTrampoline(4096);
-
-        logger::info("Run patches...");
-        patches::patchAll();
-
-        logger::info("Hook main...");
-        hookMain();
 
         logger::info("FRIK plugin loaded...");
         frik::g_frik.initialize(a_f4se);
