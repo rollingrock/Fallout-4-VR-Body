@@ -194,7 +194,7 @@ namespace frik
         }
 
         const auto delta = pipboyBone->world.translate - wandPip->parent->world.translate;
-        wandPip->local.translate = wandPip->parent->world.rotate * ((delta / wandPip->parent->world.scale));
+        wandPip->local.translate = wandPip->parent->world.rotate * (delta / wandPip->parent->world.scale);
 
         const auto wandWROT = getMatrixFromEulerAngles(degreesToRads(30), 0, 0) * pipboyBone->world.rotate;
         wandPip->local.rotate = wandWROT * wandPip->parent->world.rotate.Transpose();
@@ -416,8 +416,9 @@ namespace frik
             // calculate relocation transform and set to local
             lightNode->local = calculateRelocation(lightNode, armNode);
 
-            // small adjustment to prevent light on the fingers
-            lightNode->local.translate += RE::NiPoint3(4, 0, 2);
+            // small adjustment to prevent light on the fingers and shadows from them
+            const float offset = f4vr::isInPowerArmor() ? 14.0f : 9.0f;
+            lightNode->local.translate += RE::NiPoint3(offset, 0, 2);
         }
     }
 
