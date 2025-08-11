@@ -53,9 +53,6 @@ namespace
 
 namespace frik
 {
-    // use as weapon name when no weapon in equipped. specifically for default back of hand UI offset.
-    constexpr auto EMPTY_HAND = "EmptyHand";
-
     /**
      * Enable/Disable reposition configuration mode.
      */

@@ -10,6 +10,9 @@ namespace frik
         // To simplify changing offsets during configuration
         friend class WeaponPositionConfigMode;
 
+        // use as weapon name when no weapon in equipped. specifically for default back of hand UI offset.
+        static constexpr auto EMPTY_HAND = "EmptyHand";
+
     public:
         explicit WeaponPositionAdjuster(Skeleton* skelly)
         {
@@ -24,6 +27,7 @@ namespace frik
             _twoHandedPrimaryHandManualAdjustment = common::getMatrixFromEulerAngles(0, common::degreesToRads(-6), common::degreesToRads(7));
         }
 
+        bool isWeaponDrawn() const { return _currentWeapon != EMPTY_HAND; }
         bool inWeaponRepositionMode() const { return _configMode != nullptr; }
 
         void toggleWeaponRepositionMode();
