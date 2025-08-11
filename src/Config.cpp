@@ -200,6 +200,14 @@ namespace frik
         ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", onePressGripButton);
     }
 
+    void Config::updateIniConfigToLatestVersionCustom(const int currentVersion, const int, const CSimpleIniA&, CSimpleIniA& newIni) const
+    {
+        // fix bad log pattern in old ini version
+        if (currentVersion == 8) {
+            newIni.SetValue(INI_SECTION_DEBUG, "sLogPattern", "%H:%M:%S.%e %L: %v");
+        }
+    }
+
     /**
      * Get the Pipboy offset of the currently used Pipboy type.
      */

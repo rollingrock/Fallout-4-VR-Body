@@ -89,7 +89,7 @@ namespace common
             const auto iniConfigLatestVersion = loadEmbeddedResourceIniConfigVersion();
             if (_iniConfigVersion < iniConfigLatestVersion) {
                 logger::info("Updating INI config version {} -> {}", _iniConfigVersion, iniConfigLatestVersion);
-                updateIniConfigToLatestVersion(iniConfigLatestVersion);
+                updateIniConfigToLatestVersion(_iniConfigVersion, iniConfigLatestVersion);
 
                 // reload the config after update
                 loadIniConfigValues();
@@ -374,7 +374,7 @@ namespace common
          * This preserves the user changed values, including new values and comments, and remove old values completely.
          * A backup of the previous file is created with the version number for safety.
          */
-        void updateIniConfigToLatestVersion(const int iniConfigLatestVersion) const
+        void updateIniConfigToLatestVersion(const int currentVersion, const int latestVersion) const
         {
             CSimpleIniA oldIni;
             SI_Error rc = oldIni.LoadFile(_iniFilePath.c_str());
@@ -417,7 +417,9 @@ namespace common
             }
 
             // set the version to latest
-            newIni.SetLongValue(INI_SECTION_DEBUG, "iVersion", iniConfigLatestVersion);
+            newIni.SetLongValue(INI_SECTION_DEBUG, "iVersion", latestVersion);
+
+            updateIniConfigToLatestVersionCustom(currentVersion, latestVersion, oldIni, newIni);
 
             // backup the old ini file before overwriting
             auto nameStr = std::string(_iniFilePath);
@@ -435,6 +437,12 @@ namespace common
 
             logger::info(".ini updated successfully");
         }
+
+        /**
+         * Custom code to migrate the INI config to the latest version.
+         * Can be used is special handling is required for the specific config.
+         */
+        virtual void updateIniConfigToLatestVersionCustom(int /*currentVersion*/, int /*latestVersion*/, const CSimpleIniA& /*oldIni*/, CSimpleIniA& /*newIni*/) const {}
 
         /**
          * Setup filesystem watch on INI config file to reload config when changes are detected.
