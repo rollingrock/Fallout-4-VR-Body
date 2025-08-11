@@ -114,7 +114,11 @@ namespace frik
 
             vrui::initUIManager();
 
-            _gameMenusHandler.init();
+            _gameMenusHandler.init([this](const std::string&, const bool isOpened) {
+                if (isOpened) {
+                    onGameMenuOpened();
+                }
+            });
 
             removeEmbeddedFlashlight();
 
@@ -291,6 +295,18 @@ namespace frik
             return false;
         }
         return true;
+    }
+
+    /**
+     * On game menu open check is loading menu is open and reset skelly if it does.
+     * We want to reinit skeleton after player moves to a new location by fast travel or other.
+     */
+    void FRIK::onGameMenuOpened()
+    {
+        if (_skelly && _gameMenusHandler.isLoadingMenuOpen()) {
+            logger::info("Loading menu is open, reset skeleton...");
+            releaseSkeleton();
+        }
     }
 
     /**

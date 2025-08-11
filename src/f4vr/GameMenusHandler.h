@@ -17,8 +17,10 @@ namespace f4vr
             RE::UI::GetSingleton()->UnregisterSink(this);
         }
 
-        void init()
+        void init(std::function<void(const std::string& menu, bool isOpened)> onMenuOpenedClosedCallback = nullptr)
         {
+            _onMenuOpenedClosedCallback = std::move(onMenuOpenedClosedCallback);
+
             const auto ui = RE::UI::GetSingleton();
             if (!ui) {
                 common::logger::error("Failed to init GameMenusHandler: UI is not initialized!");
@@ -42,6 +44,11 @@ namespace f4vr
         bool isFavoritesMenuOpen()
         {
             return _gameMenuState["FavoritesMenu"] == true;
+        }
+
+        bool isLoadingMenuOpen()
+        {
+            return _gameMenuState["LoadingMenu"] == true;
         }
 
         bool isPauseMenuOpen()
@@ -95,8 +102,15 @@ namespace f4vr
                 common::logger::debug("Game menu '{}' closed", menuName);
                 _gameMenuState.insert_or_assign(menuName, false);
             }
+
+            if (_onMenuOpenedClosedCallback) {
+                _onMenuOpenedClosedCallback(menuName, a_event.opening);
+            }
+
             return RE::BSEventNotifyControl::kContinue;
         }
+
+        std::function<void(const std::string& menu, bool isOpened)> _onMenuOpenedClosedCallback = nullptr;
 
         // each menu and whatever it is open (true) or closed (false)
         std::unordered_map<std::string, bool> _gameMenuState;
