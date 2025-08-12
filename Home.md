@@ -1,4 +1,4 @@
-### Quick Links
+## Quick Links
 - [Installation](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Installation)
 - [Changelog](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Changelog)
 - [Frequently Asked Questions (FAQ)](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/FAQ)

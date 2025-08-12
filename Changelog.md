@@ -8,11 +8,14 @@
 - Support new Pipboy dampening Hold-In-Place mode where the screen remains where it was opened and moved only if grip is held.
 - Improve Pipboy dampening: reduce lagging on big swings and fix screen fly in on opening.
 - Improve Pipboy physical operation by requiring free hand (no weapon) and not forcing looking directly at the Pipboy.
+- Make holo Pipboy background darker for easier use (optional darker and lighter texture available).
 - Stop running a bunch of code for non-on-wrist Pipboy setting.
 - Fixed Laser Musket "loaded" beam not aligned correctly with the weapon.
 - Fixed not being able to open main menu after exiting power armor only with on-wrist Pipboy.
 - Fixed in-front pipboy was invisible if switched from on-wrist or projected in game.
 - Fixed in-front pipboy double paging and operating with controller issues.
+- Fixed always drawing weapon when closing the Pipboy.
+- Fixed Pipboy stays open after fast travel.
 - Fixed rare Pipboy flashlight game crash.
 
 ## v0.74
