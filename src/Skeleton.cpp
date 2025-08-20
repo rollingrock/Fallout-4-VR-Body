@@ -1295,7 +1295,7 @@ namespace frik
                     vr::k_EButton_SteamVR_Touchpad));
                 _closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton.at(name));
 
-                if (isWeaponVisible && !g_frik.isPipboyOn() && !(isLeft ^ isLeftHandedMode())) {
+                if ((isWeaponVisible || getPlayer()->actorState.IsWeaponDrawn()) && !g_frik.isPipboyOn() && !(isLeft ^ isLeftHandedMode())) {
                     // CylonSurfer Updated conditions to cater for Virtual Pipboy usage (Ensures Index Finger is extended when weapon is drawn)
                     this->copy1StPerson(name);
                 } else {
