@@ -407,6 +407,9 @@ namespace frik
         if (g_config.checkDebugDumpDataOnceFor("all_nodes")) {
             printAllNodes();
         }
+        if (g_config.checkDebugDumpDataOnceFor("pipboy")) {
+            printNodes(f4vr::getPlayerNodes()->PipboyRoot_nif_only_node);
+        }
         if (g_config.checkDebugDumpDataOnceFor("world")) {
             printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->parent->parent->parent->parent->parent->parent);
         }

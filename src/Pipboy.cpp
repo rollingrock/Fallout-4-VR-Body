@@ -32,6 +32,11 @@ namespace frik
     Pipboy::Pipboy(Skeleton* skelly):
         _skelly(skelly), _physicalHandler(skelly, this)
     {
+        if (f4vr::isPipboyOnWrist()) {
+            // force hide if was open before like when fast traveling
+            f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 0.0f;
+        }
+
         exitPowerArmorBugFixHack(true);
     }
 
@@ -46,7 +51,7 @@ namespace frik
         _isOpen = open;
         turnPipBoyOnOff(open);
         f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = open ? 1.0f : 0.0f;
-        if (const auto pipboyScreen = f4vr::getPlayerNodes()->ScreenNode) {
+        if (const auto pipboyScreen = getPipboyScreenNode()) {
             f4vr::setNodeVisibility(pipboyScreen, open);
         }
         if (!open) {
@@ -105,7 +110,6 @@ namespace frik
 
         // check by looking should be first to handle closing by button not opening it again by looking at Pipboy.
         checkTurningOnByLookingAt();
-        checkTurningOffByLookingAway();
 
         checkTurningOnByButton();
         checkTurningOffByButton();
@@ -116,6 +120,9 @@ namespace frik
             PipboyOperationHandler::operate();
 
             dampenPipboyScreen();
+
+            // post screen position adjustments
+            checkTurningOffByLookingAway();
         }
     }
 
@@ -149,7 +156,7 @@ namespace frik
      */
     void Pipboy::hideShowPipboyOnArm() const
     {
-        const auto pipboy = getPipboyNode();
+        const auto pipboy = getPipboyModelOnArmNode();
         if (!pipboy) {
             return;
         }
@@ -175,6 +182,7 @@ namespace frik
             return;
         }
 
+        logger::info("Restoring original Pipboy model...");
         const auto pn = f4vr::getPlayerNodes();
         pn->PipboyParentNode->DetachChild(pn->PipboyRoot_nif_only_node);
         pn->PipboyParentNode->AttachChild(_originalPipboyRootNifOnlyNode, true);
@@ -187,7 +195,7 @@ namespace frik
      */
     void Pipboy::positionPipboyModelToPipboyOnArm() const
     {
-        const auto pipboyBone = getPipboyNode();
+        const auto pipboyBone = getPipboyModelOnArmNode();
         const auto wandPip = f4vr::getPlayerNodes()->PipboyRoot_nif_only_node;
         if (!pipboyBone || !wandPip) {
             return;
@@ -232,6 +240,7 @@ namespace frik
             _newPipboyRootNifOnlyNode = f4vr::loadNifFromFile(g_config.isHoloPipboy ? "FRIK/HoloPipboyVR.nif" : "FRIK/PipboyVR.nif");
             const auto newScreen = f4vr::findAVObject(_newPipboyRootNifOnlyNode, "Screen:0")->parent;
             if (!newScreen) {
+                logger::error("Failed to find Pipboy screen node in the loaded nif!");
                 return;
             }
 
@@ -241,13 +250,12 @@ namespace frik
             pn->PipboyRoot_nif_only_node = _newPipboyRootNifOnlyNode;
             pn->PipboyRoot_nif_only_node->local.scale = 0.0; // hide until opened
 
-            pn->ScreenNode = newScreen;
-            logger::info("Pipboy root nif replaced!");
+            // using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
+            pn->ScreenNode->DetachChildAt(0);
+            f4vr::addNode(reinterpret_cast<uint64_t>(&pn->ScreenNode), newScreen);
 
-            // No idea why this was done, but I removed it and nothing is broken. Leaving as comment if I'm wrong.
-            // pn->ScreenNode->DetachChildAt(0);
-            // // using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
-            // f4vr::addNode(reinterpret_cast<uint64_t>(&pn->ScreenNode), newScreen);
+            // pn->ScreenNode = newScreen;
+            logger::info("Pipboy root nif replaced!");
         }
 
         // load Pipboy screen adjusted position config
@@ -256,7 +264,7 @@ namespace frik
         }
 
         // sets 3rd Person Pipboy (on the arm) scale and correct UI
-        if (const auto pipboy3Rd = getPipboyNode()) {
+        if (const auto pipboy3Rd = getPipboyModelOnArmNode()) {
             pipboy3Rd->local.scale = g_config.pipBoyScale;
 
             if (const auto hideNode = f4vr::findNode(pipboy3Rd, itemHide.c_str())) {
@@ -310,7 +318,7 @@ namespace frik
      */
     void Pipboy::checkTurningOnByLookingAt()
     {
-        if (_isOpen || !g_config.pipboyOpenWhenLookAt || !isPlayerLookingAt()) {
+        if (_isOpen || !g_config.pipboyOpenWhenLookAt || !isPlayerLookingAtPipboy()) {
             _startedLookingAtPip = 0;
             return;
         }
@@ -329,21 +337,29 @@ namespace frik
      */
     void Pipboy::checkTurningOffByLookingAway()
     {
-        if (!_isOpen || g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::HoldInPlace) {
+        if (!_isOpen) {
             return;
         }
 
-        if (isPlayerLookingAt()) {
+        if (!g_config.pipboyCloseWhenLookAway && !g_config.pipboyCloseWhenMovingWhileLookingAway) {
+            return;
+        }
+
+        if (isPlayerLookingAtPipboy()) {
             _lastLookingAtPip = nowMillis();
             return;
         }
 
         const auto movingStick = f4vr::VRControllers.getThumbstickValue(g_config.pipBoyButtonArm > 0 ? f4vr::Hand::Right : f4vr::Hand::Left);
         const auto lookingStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
-        const bool closeLookingWayWithDelay =
-            g_config.pipboyCloseWhenLookAway && !g_frik.isPipboyConfigurationModeActive() && isNowTimePassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
-        const bool closeLookingWayWithMovement = g_config.pipboyCloseWhenMovingWhileLookingAway && !g_frik.isPipboyConfigurationModeActive() &&
-            (fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f) || fNotEqual(lookingStick.x, 0, 0.3f) || fNotEqual(lookingStick.y, 0, 0.3f));
+
+        const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway
+            && !g_frik.isPipboyConfigurationModeActive()
+            && isNowTimePassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
+
+        const bool closeLookingWayWithMovement = g_config.pipboyCloseWhenMovingWhileLookingAway
+            && !g_frik.isPipboyConfigurationModeActive()
+            && (fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f) || fNotEqual(lookingStick.x, 0, 0.3f) || fNotEqual(lookingStick.y, 0, 0.3f));
 
         if (closeLookingWayWithDelay || closeLookingWayWithMovement) {
             logger::info("Close Pipboy when looking away: byDelay({}), byMovement({})", closeLookingWayWithDelay, closeLookingWayWithMovement);
@@ -443,7 +459,7 @@ namespace frik
             return;
         }
 
-        const auto pipboyScreen = f4vr::getPlayerNodes()->ScreenNode;
+        const auto pipboyScreen = getPipboyScreenNode();
         if (!pipboyScreen) {
             return;
         }
@@ -470,7 +486,7 @@ namespace frik
     /**
      * Keep the Pipboy screen in place where it was opened unless offhand grip button is pressed to move it.
      */
-    void Pipboy::holdPipboyScreenInPlace(RE::NiNode* const pipboyScreen)
+    void Pipboy::holdPipboyScreenInPlace(RE::NiAVObject* const pipboyScreen)
     {
         if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID, 0.3f)) {
             _pipboyScreenStableFrame = pipboyScreen->world;
@@ -483,7 +499,7 @@ namespace frik
     /**
      * Small dampening of the screen movement but still always move the screen to be in the pipboy.
      */
-    void Pipboy::dampenPipboyScreenMovement(RE::NiNode* pipboyScreen)
+    void Pipboy::dampenPipboyScreenMovement(RE::NiAVObject* pipboyScreen)
     {
         const auto threshold = g_config.dampenPipboyThreshold;
         const auto deltaPos = _pipboyScreenStableFrame.translate - _pipboyScreenPrevFrame[0];
@@ -516,10 +532,9 @@ namespace frik
      * Is the player currently looking at the Pipboy screen?
      * Handle different thresholds if Pipboy is on or off as looking away is more relaxed threshold.
      */
-    bool Pipboy::isPlayerLookingAt() const
+    bool Pipboy::isPlayerLookingAtPipboy() const
     {
-        const auto pipboy = f4vr::getPlayerNodes()->PipboyRoot_nif_only_node;
-        const auto screen = pipboy ? f4vr::findAVObject(pipboy, "Screen:0") : nullptr;
+        const auto screen = getPipboyScreenNode();
         if (screen == nullptr) {
             return false;
         }
@@ -553,7 +568,20 @@ namespace frik
         }
     }
 
-    RE::NiAVObject* Pipboy::getPipboyNode() const
+    /**
+     * Get the Pipboy screen node.
+     */
+    RE::NiAVObject* Pipboy::getPipboyScreenNode()
+    {
+        const auto pipboy = f4vr::getPlayerNodes()->PipboyRoot_nif_only_node;
+        const auto screenNode = pipboy ? f4vr::findAVObject(pipboy, "Screen") : nullptr;
+        if (!screenNode) {
+            logger::sample("Failed to find Pipboy screen node");
+        }
+        return screenNode;
+    }
+
+    RE::NiAVObject* Pipboy::getPipboyModelOnArmNode() const
     {
         const auto arm = (g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm()).forearm3;
         return arm ? f4vr::findAVObject(arm, "PipboyBone") : nullptr;
