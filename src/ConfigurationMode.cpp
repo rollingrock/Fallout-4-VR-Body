@@ -520,8 +520,7 @@ namespace frik
                                         _PBTouchbuttons[j] = false;
                                     }
                                 }
-                                auto UIMarker = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBCONFIGMarker");
-                                if (UIMarker) {
+                                if (auto UIMarker = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBCONFIGMarker")) {
                                     UIMarker->parent->DetachChild(UIMarker);
                                 }
                                 if (i != 1 && i != 3 && i != 10 && i != 11) {
@@ -538,7 +537,7 @@ namespace frik
                                             }
                                         } else if (g_config.pipboyOpenWhenLookAt) {
                                             if (const auto UIMarkerMark = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBGlanceMarker")) {
-                                                UIMarkerMark->parent->DetachChild(UIMarker);
+                                                UIMarkerMark->parent->DetachChild(UIMarkerMark);
                                             }
                                         }
                                     }

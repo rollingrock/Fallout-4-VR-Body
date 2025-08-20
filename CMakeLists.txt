@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.23)
 # >>> Project
 set(NAME "FRIK")
 set(FRIENDLY_NAME "FRIK")
-set(VERSION 0.75.1)
+set(VERSION 0.75.3)
 
 
 # >>> Folders
@@ -257,16 +257,22 @@ string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}
 # >>> Post build command to copy plugins
 if(POST_BUILD_COPY_PLUGIN)
 	if(DEFINED COPY_PLUGIN_BASE_PATH)
-		message(">>> Create post build command: copy targets to '${COPY_PLUGIN_BASE_PATH}/F4SE/Plugins/'")
-		add_custom_command(
-			TARGET ${PROJECT_NAME}
-			POST_BUILD
-			COMMENT "Copying ${PROJECT_NAME}.dll and .pdb to plugins folder: '${COPY_PLUGIN_BASE_PATH}/F4SE/Plugins/'"
-			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${COPY_PLUGIN_BASE_PATH}/F4SE/Plugins/
-			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${COPY_PLUGIN_BASE_PATH}/F4SE/Plugins/
-		)
+		# Split paths by ";" into a list
+		string(REPLACE ";" ";" COPY_PLUGIN_PATH_LIST "${COPY_PLUGIN_BASE_PATH}")
+
+		message(">>> Create post build command: copy targets to:")
+		foreach(copy_path IN LISTS COPY_PLUGIN_PATH_LIST)
+			message("    ${copy_path}/F4SE/Plugins/")
+			add_custom_command(
+				TARGET ${PROJECT_NAME}
+				POST_BUILD
+				COMMENT "Copying ${PROJECT_NAME}.dll and .pdb to plugins folder: '${copy_path}/F4SE/Plugins/'"
+				COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${copy_path}/F4SE/Plugins/
+				COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${copy_path}/F4SE/Plugins/
+			)
+		endforeach()
 	else()
-		message(FATAL_ERROR	"Variable 'COPY_PLUGIN_BASE_PATH' is not defined but 'POST_BUILD_COPY_PLUGIN' is true!")
+		message(FATAL_ERROR "Variable 'COPY_PLUGIN_BASE_PATH' is not defined but 'POST_BUILD_COPY_PLUGIN' is true!")
 	endif()
 else()
 	message(">>> No post build copy")

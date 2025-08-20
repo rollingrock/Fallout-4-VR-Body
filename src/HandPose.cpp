@@ -220,7 +220,7 @@ namespace frik
     void setFingerPositionScalar(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
         const auto* const fingersArray = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
-        for (auto i = 0; i < fingersArray->size(); i++) {
+        for (auto i = 0; i < FINGERS_COUNT; i++) {
             handPapyrusHasControl[fingersArray[i]] = true;
         }
 
@@ -262,7 +262,7 @@ namespace frik
     void restoreFingerPoseControl(const bool isLeft)
     {
         const auto* const fingersArray = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
-        for (auto i = 0; i < fingersArray->size(); i++) {
+        for (auto i = 0; i < FINGERS_COUNT; i++) {
             handPapyrusHasControl[fingersArray[i]] = false;
         }
     }

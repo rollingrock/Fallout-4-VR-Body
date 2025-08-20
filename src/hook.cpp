@@ -176,16 +176,13 @@ void hook2(const uint64_t rcx, const uint64_t rdx, const uint64_t r8, const uint
 void hook5(const uint64_t rcx)
 {
     frik::g_frik.onFrameUpdate();
-
     someRandomFunc(rcx);
 
-    const RE::BSFixedString name("ScopeMenu");
-
-    const std::uint64_t renderer = RendererGetByName(name);
-
-    if (renderer) {
-        //		RendererEnable(renderer, false);
-    }
+    // const RE::BSFixedString name("ScopeMenu");
+    // const std::uint64_t renderer = RendererGetByName(name);
+    // if (renderer) {
+    //     //		RendererEnable(renderer, false);
+    // }
 }
 
 void hook3(const double param1, const double param2, const double param3)
@@ -211,9 +208,8 @@ void hook_main_update_player(const uint64_t rcx, const uint64_t rdx)
     const auto player = f4vr::getPlayer();
     const auto playerCamera = f4vr::getPlayerCamera();
     if (player && playerCamera && playerCamera->cameraNode && player->unkF0 && player->unkF0->rootNode) {
-        RE::NiNode* body = player->unkF0->rootNode;
-
-        const auto cameraPos = playerCamera->cameraNode->world.translate;
+        const auto body = player->unkF0->rootNode;
+        const auto& cameraPos = playerCamera->cameraNode->world.translate;
         body->local.translate.x = cameraPos.x;
         body->local.translate.y = cameraPos.y;
         body->world.translate.x = cameraPos.x;
@@ -267,7 +263,8 @@ void hookMain()
 
     trampoline.write_call<5>(hookActor_ReEquipAllExit.address(), &fixPA3D);
     trampoline.write_call<5>(hookExtraData_SetMultiBoundRef.address(), &fixPA3DEnter);
-    trampoline.write_call<5>(hookActor_GetCurrentWeaponForGunReload.address(), &gunReloadInit);
+
+    // trampoline.write_call<5>(hookActor_GetCurrentWeaponForGunReload.address(), &gunReloadInit);
 
     // gun reload animation hook
     // trampoline.write_call<5>(hookActor_SetupAnimationUpdateDataForRefernce.address(), &updatePlayerAnimationHook);

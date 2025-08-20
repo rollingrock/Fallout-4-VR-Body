@@ -17,7 +17,7 @@ namespace frik
         void onFrameUpdate(const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition, f4vr::GameMenusHandler* gameMenusHandler)
         {
             if (pipboy->isOpen()) {
-                disableFull();
+                disableFull(weaponPosition->isWeaponDrawn());
                 return;
             }
 
@@ -46,14 +46,14 @@ namespace frik
     private:
         /**
          * Enable all player controls.
-         * @param drawWeapon if true will draw the equipped weapon (useful if disableWeapon was used)
          */
-        void enable(const bool drawWeapon = true)
+        void enable()
         {
             if (_state != State::ENABLED) {
                 _state = State::ENABLED;
                 common::logger::info("Player controls - enabled");
-                PapyrusGateway::instance()->enablePlayerControls(drawWeapon);
+                PapyrusGateway::instance()->enablePlayerControls(_weaponWasDrawn);
+                _weaponWasDrawn = false;
                 setControlsThumbstickEnableState(true);
             }
         }
@@ -61,9 +61,13 @@ namespace frik
         /**
          * Disable all player controls. no movement, no rotation, no weapon use, no VATS, no favorite.
          */
-        void disableFull()
+        void disableFull(const bool isWeaponDrawn)
         {
             if (_state != State::DISABLED_FULL) {
+                if (_state != State::DISABLED_WEAPON_ONLY) {
+                    // not already disabled by weapon only
+                    _weaponWasDrawn = isWeaponDrawn;
+                }
                 _state = State::DISABLED_FULL;
                 common::logger::info("Player controls - disabled full");
                 PapyrusGateway::instance()->disablePlayerControls(true, true);
@@ -73,9 +77,13 @@ namespace frik
         /**
          * Disable only the use of weapons.
          */
-        void disableWeaponOnly()
+        void disableWeaponOnly(const bool isWeaponDrawn)
         {
             if (_state != State::DISABLED_WEAPON_ONLY) {
+                if (_state != State::DISABLED_FULL) {
+                    // not already disabled by full
+                    _weaponWasDrawn = isWeaponDrawn;
+                }
                 _state = State::DISABLED_WEAPON_ONLY;
                 common::logger::info("Player controls - disabled weapon");
                 PapyrusGateway::instance()->enableDisableFighting(false, false);
@@ -137,5 +145,8 @@ namespace frik
         bool _controlsThumbstickEnableState = true;
         float _controlsThumbstickOriginalDeadzone = 0.25f;
         float _controlsThumbstickOriginalDeadzoneMax = 0.94f;
+
+        // if we need to draw the weapon after enabling
+        bool _weaponWasDrawn = false;
     };
 }

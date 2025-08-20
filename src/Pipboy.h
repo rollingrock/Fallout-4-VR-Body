@@ -40,12 +40,13 @@ namespace frik
         void adjustFlashlightTransformToHandOrHead() const;
 
         static void storeLastPipboyPage();
-        void holdPipboyScreenInPlace(RE::NiNode* pipboyScreen);
+        void holdPipboyScreenInPlace(RE::NiAVObject* pipboyScreen);
         void dampenPipboyScreen();
-        void dampenPipboyScreenMovement(RE::NiNode* pipboyScreen);
-        bool isPlayerLookingAt() const;
+        void dampenPipboyScreenMovement(RE::NiAVObject* pipboyScreen);
+        bool isPlayerLookingAtPipboy() const;
         void leftHandedModePipboy() const;
-        RE::NiAVObject* getPipboyNode() const;
+        static RE::NiAVObject* getPipboyScreenNode();
+        RE::NiAVObject* getPipboyModelOnArmNode() const;
 
         Skeleton* _skelly;
 

@@ -1,5 +1,6 @@
 // Template for custom CMake user presets.
 // Set "COPY_PLUGIN_BASE_PATH" to your mod folder in MO2 or your Fallout 4 VR Data folder.
+// Support multiple paths separated by semicolons (i.e. "<path1>;<path2>").
 // Rename the file to 'CMakeUserPresets.json' (it is in .gitignore to keep it local to you).
 // Remove this comment block.
 // Run:
