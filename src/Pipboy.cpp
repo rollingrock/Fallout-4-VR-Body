@@ -32,10 +32,8 @@ namespace frik
     Pipboy::Pipboy(Skeleton* skelly):
         _skelly(skelly), _physicalHandler(skelly, this)
     {
-        if (f4vr::isPipboyOnWrist()) {
-            // force hide if was open before like when fast traveling
-            f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 0.0f;
-        }
+        // force hide if was open before like when fast traveling (force show if not wrist to allow changing mid-game)
+        f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = f4vr::isPipboyOnWrist() ? 0.0f : 1.0f;
 
         exitPowerArmorBugFixHack(true);
     }
