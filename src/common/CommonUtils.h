@@ -29,6 +29,7 @@ namespace common
     // Miscellaneous functions
     void waitForDebugger();
     uint64_t nowMillis();
+    uint64_t nowNanosec();
     bool isNowTimePassed(uint64_t start, int duration);
     std::string toStringWithPrecision(double value, int precision = 2);
     std::string toDateTimeString(std::filesystem::file_time_type time, const std::string& format = "%Y-%m-%d %H:%M:%S");

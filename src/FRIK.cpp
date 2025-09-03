@@ -1,5 +1,7 @@
 #include "FRIK.h"
 
+#include <cpptrace/from_current.hpp>
+
 #include "Config.h"
 #include "ConfigurationMode.h"
 #include "Debug.h"
@@ -55,26 +57,29 @@ namespace frik
      */
     void FRIK::initialize(const F4SE::LoadInterface*)
     {
-        try {
-            logger::info("Initialize FRIK...");
-            std::srand(static_cast<unsigned int>(time(nullptr)));
+        CPPTRACE_TRY
+            {
+                logger::info("Initialize FRIK...");
+                std::srand(static_cast<unsigned int>(time(nullptr)));
 
-            logger::info("Init config...");
-            g_config.load();
+                logger::info("Init config...");
+                g_config.load();
 
-            // allocate enough space for patches and hooks
-            F4SE::AllocTrampoline(4096);
+                // allocate enough space for patches and hooks
+                F4SE::AllocTrampoline(4096);
 
-            logger::info("Run patches...");
-            patches::patchAll();
+                logger::info("Run patches...");
+                patches::patchAll();
 
-            logger::info("Hook main...");
-            hookMain();
+                logger::info("Hook main...");
+                hookMain();
 
-            _messaging = F4SE::GetMessagingInterface();
-            _messaging->RegisterListener(onF4VRSEMessage);
-        } catch (const std::exception& ex) {
-            logger::critical("Error in initialize: {}", ex.what());
+                _messaging = F4SE::GetMessagingInterface();
+                _messaging->RegisterListener(onF4VRSEMessage);
+            }
+        CPPTRACE_CATCH(const std::exception& ex) {
+            const auto stacktrace = cpptrace::from_current_exception().to_string();
+            logger::critical("Error in initialize: {}\n{}", ex.what(), stacktrace);
             throw;
         }
     }
@@ -106,29 +111,32 @@ namespace frik
      */
     void FRIK::initOnGameLoaded()
     {
-        try {
-            logger::info("Register papyrus native functions...");
-            initPapyrusApis();
-            PapyrusGateway::init();
-            _boneSpheres.init();
+        CPPTRACE_TRY
+            {
+                logger::info("Register papyrus native functions...");
+                initPapyrusApis();
+                PapyrusGateway::init();
+                _boneSpheres.init();
 
-            vrui::initUIManager();
+                vrui::initUIManager();
 
-            _gameMenusHandler.init([this](const std::string&, const bool isOpened) {
-                if (isOpened) {
-                    onGameMenuOpened();
+                _gameMenusHandler.init([this](const std::string&, const bool isOpened) {
+                    if (isOpened) {
+                        onGameMenuOpened();
+                    }
+                });
+
+                removeEmbeddedFlashlight();
+
+                if (isBetterScopesVRModLoaded()) {
+                    logger::info("BetterScopesVR mod detected, registering for messages...");
+                    _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
+                    _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
                 }
-            });
-
-            removeEmbeddedFlashlight();
-
-            if (isBetterScopesVRModLoaded()) {
-                logger::info("BetterScopesVR mod detected, registering for messages...");
-                _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
-                _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
             }
-        } catch (const std::exception& ex) {
-            logger::critical("Error in initOnGameLoaded: {}", ex.what());
+        CPPTRACE_CATCH(const std::exception& ex) {
+            const auto stacktrace = cpptrace::from_current_exception().to_string();
+            logger::critical("Error in initOnGameLoaded: {}\n{}", ex.what(), stacktrace);
             throw;
         }
     }
@@ -157,57 +165,65 @@ namespace frik
      */
     void FRIK::onFrameUpdate()
     {
-        try {
-            if (!RE::PlayerCharacter::GetSingleton()) {
-                // game not loaded or existing
+        CPPTRACE_TRY
+            {
+                onFrameUpdateInner();
+            }
+        CPPTRACE_CATCH(const std::exception& e) {
+            const auto stacktrace = cpptrace::from_current_exception().to_string();
+            logger::error("Error in FRIK::onFrameUpdate: {}\n{}", e.what(), stacktrace);
+        }
+    }
+
+    void FRIK::onFrameUpdateInner()
+    {
+        if (!RE::PlayerCharacter::GetSingleton()) {
+            // game not loaded or existing
+            return;
+        }
+
+        f4vr::VRControllers.update(f4vr::isLeftHandedMode());
+
+        if (_skelly) {
+            if (!isRootNodeValid()) {
+                logger::warn("Root node released, reset skelly... PowerArmorChange?({})", _inPowerArmor != f4vr::isInPowerArmor());
+                releaseSkeleton();
+            } else if (_inPowerArmor != f4vr::isInPowerArmor()) {
+                logger::info("Power Armor state changed, reset skeleton...");
+                releaseSkeleton();
+            }
+        }
+
+        if (!_skelly) {
+            if (!isGameReadyForSkeletonInitialization()) {
                 return;
             }
 
-            f4vr::VRControllers.update(f4vr::isLeftHandedMode());
-
-            if (_skelly) {
-                if (!isRootNodeValid()) {
-                    logger::warn("Root node released, reset skelly... PowerArmorChange?({})", _inPowerArmor != f4vr::isInPowerArmor());
-                    releaseSkeleton();
-                } else if (_inPowerArmor != f4vr::isInPowerArmor()) {
-                    logger::info("Power Armor state changed, reset skeleton...");
-                    releaseSkeleton();
-                }
-            }
-
-            if (!_skelly) {
-                if (!isGameReadyForSkeletonInitialization()) {
-                    return;
-                }
-
-                initSkeleton();
-            }
-
-            logger::trace("Update Skeleton...");
-            _skelly->onFrameUpdate();
-
-            logger::trace("Update Bone Sphere...");
-            _boneSpheres.onFrameUpdate();
-
-            logger::trace("Update Weapon Position...");
-            _weaponPosition->onFrameUpdate();
-
-            logger::trace("Update Pipboy...");
-            _pipboy->onFrameUpdate();
-
-            _configurationMode->onFrameUpdate();
-
-            FrameUpdateContext context(_skelly);
-            vrui::g_uiManager->onFrameUpdate(&context);
-
-            _playerControlsHandler.onFrameUpdate(_pipboy, _weaponPosition, &_gameMenusHandler);
-
-            updateWorldFinal();
-
-            checkDebugDump();
-        } catch (const std::exception& e) {
-            logger::error("Error in FRIK::onFrameUpdate: {}", e.what());
+            initSkeleton();
         }
+
+        logger::trace("Update Skeleton...");
+        _skelly->onFrameUpdate();
+
+        logger::trace("Update Bone Sphere...");
+        _boneSpheres.onFrameUpdate();
+
+        logger::trace("Update Weapon Position...");
+        _weaponPosition->onFrameUpdate();
+
+        logger::trace("Update Pipboy...");
+        _pipboy->onFrameUpdate();
+
+        _configurationMode->onFrameUpdate();
+
+        FrameUpdateContext context(_skelly);
+        vrui::g_uiManager->onFrameUpdate(&context);
+
+        _playerControlsHandler.onFrameUpdate(_pipboy, _weaponPosition, &_gameMenusHandler);
+
+        updateWorldFinal();
+
+        checkDebugDump();
     }
 
     void FRIK::smoothMovement()

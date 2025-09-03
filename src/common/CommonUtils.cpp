@@ -228,6 +228,17 @@ namespace common
     }
 
     /**
+     * Get the current time in nanoseconds.
+     */
+    uint64_t nowNanosec()
+    {
+        const auto now = std::chrono::system_clock::now();
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(
+            now.time_since_epoch()
+            ).count();
+    }
+
+    /**
      * Is the current time is after the start + duration time.
      * Handles if start time is in the past or future.
      */

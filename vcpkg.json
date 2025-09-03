@@ -1,5 +1,5 @@
 {
-  "name": "f4vr-comfort-swim",
+  "name": "frik",
   "version": "1",
   "dependencies": [
     "args",
@@ -9,7 +9,14 @@
     "xbyak",
     "nlohmann-json",
     "simpleini",
-    "thomasmonkman-filewatch"
+    "thomasmonkman-filewatch",
+    "cpptrace"
   ],
-  "builtin-baseline": "b4a3d89125e45bc8f80fb94bef9761d4f4e14fb9"
+  "builtin-baseline": "b4a3d89125e45bc8f80fb94bef9761d4f4e14fb9",
+  "overrides": [
+    {
+      "name": "cpptrace",
+      "version": "1.0.0"
+    }
+  ]
 }

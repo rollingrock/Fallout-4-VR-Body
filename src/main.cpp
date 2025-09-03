@@ -1,5 +1,7 @@
 #include <Version.h>
 
+#include <cpptrace/from_current.hpp>
+
 #include "FRIK.h"
 #include "common/Logger.h"
 
@@ -38,19 +40,23 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* a
 
 extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface* a_f4se)
 {
-    try {
-        logger::init(Version::PROJECT);
-        logPluginGameStart();
+    bool success = false;
+    CPPTRACE_TRY
+        {
+            logger::init(Version::PROJECT);
+            logPluginGameStart();
 
-        F4SE::Init(a_f4se, false);
+            F4SE::Init(a_f4se, false);
 
-        logger::info("FRIK plugin loaded...");
-        frik::g_frik.initialize(a_f4se);
+            logger::info("FRIK plugin loaded...");
+            frik::g_frik.initialize(a_f4se);
 
-        logger::info("FRIK Loaded successfully");
-        return true;
-    } catch (const std::exception& ex) {
-        logger::error("Unhandled exception: {}", ex.what());
-        return false;
+            logger::info("FRIK Loaded successfully");
+            success = true;
+        }
+    CPPTRACE_CATCH(const std::exception& ex) {
+        const auto stacktrace = cpptrace::from_current_exception().to_string();
+        logger::error("Unhandled exception: {}\n{}", ex.what(), stacktrace);
     }
+    return success;
 }

@@ -181,6 +181,8 @@ target_link_libraries(
 	CommonLibF4::CommonLibF4
 	${ROOT_DIR}/external/openvr/openvr_api.lib
 )
+find_package(cpptrace CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE cpptrace::cpptrace)
 # Add precompiled header (PCH.h)
 target_precompile_headers(
 	${PROJECT_NAME}
