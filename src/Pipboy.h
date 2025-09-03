@@ -17,7 +17,10 @@ namespace frik
     public:
         explicit Pipboy(Skeleton* skelly);
 
+        static bool isPlayerLookingAtPipboy(bool isPipboyOpen);
+
         bool isOpen() const { return _isOpen; }
+        bool isOperatingWithFinger() const { return _physicalHandler.isOperating(); }
         void openClose(bool open);
 
         void swapModel();

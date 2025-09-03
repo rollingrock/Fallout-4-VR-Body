@@ -39,6 +39,21 @@ namespace frik
     }
 
     /**
+     * Check if the player looking at the Pipboy on arm and the Pipboy is facing the player.
+     * @param isPipboyOpen True to check look away threshold, false to check look at threshold.
+     */
+    bool Pipboy::isPlayerLookingAtPipboy(const bool isPipboyOpen)
+    {
+        const auto screen = getPipboyScreenNode();
+        if (screen == nullptr) {
+            return false;
+        }
+
+        const float threshhold = isPipboyOpen ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
+        return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraNode, screen, threshhold);
+    }
+
+    /**
      * Turn Pipboy On/Off.
      */
     void Pipboy::openClose(const bool open)
@@ -532,13 +547,7 @@ namespace frik
      */
     bool Pipboy::isPlayerLookingAtPipboy() const
     {
-        const auto screen = getPipboyScreenNode();
-        if (screen == nullptr) {
-            return false;
-        }
-
-        const float threshhold = _isOpen ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
-        return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraNode, screen, threshhold);
+        return isPlayerLookingAtPipboy(_isOpen);
     }
 
     /**

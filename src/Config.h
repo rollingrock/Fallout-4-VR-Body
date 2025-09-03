@@ -138,6 +138,7 @@ namespace frik
         bool pipboyOpenWhenLookAt = false;
         bool pipboyCloseWhenLookAway = false;
         bool pipboyCloseWhenMovingWhileLookingAway = false;
+        bool pipboyHolsterWeaponForOperation = false;
         float pipboyLookAtThreshold = 0;
         float pipboyLookAwayThreshold = 0;
         float pipboyOperationFingerDetectionRange = 0;
