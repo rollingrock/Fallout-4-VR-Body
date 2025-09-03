@@ -87,10 +87,17 @@ namespace frik
      */
     std::optional<PipboyPage> PipboyOperationHandler::getCurrentPipboyPage(const GFx::Movie* root)
     {
+        if (!root) {
+            return std::nullopt;
+        }
+
         GFx::Value PBCurrentPage;
-        if (root && root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage") && PBCurrentPage.GetType() != GFx::Value::ValueType::kUndefined) {
+        const bool getVariableSuccessful = root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage");
+        if (getVariableSuccessful && PBCurrentPage.GetType() != GFx::Value::ValueType::kUndefined) {
             return static_cast<PipboyPage>(PBCurrentPage.GetUInt());
         }
+        logger::debug("Failed to get current Pipboy page! getVariableSuccessful?({}) Type?({})",
+            getVariableSuccessful, getVariableSuccessful ? static_cast<int>(PBCurrentPage.GetType()) : -1);
         return std::nullopt;
     }
 
@@ -227,23 +234,26 @@ namespace frik
         }
 
         // Specific handling by current page
-        switch (getCurrentPipboyPage(root).value()) {
-        case PipboyPage::STATUS:
-            handlePrimaryControllerOperationOnStatusPage(root, triggerPressed);
-            break;
-        case PipboyPage::INVENTORY:
-            handlePrimaryControllerOperationOnInventoryPage(root, triggerPressed);
-            break;
-        case PipboyPage::DATA:
-            handlePrimaryControllerOperationOnDataPage(root, triggerPressed);
-            break;
-        case PipboyPage::MAP:
-            handlePrimaryControllerOperationOnMapPage(root, triggerPressed);
-            break;
-        case PipboyPage::RADIO:
-            handlePrimaryControllerOperationOnRadioPage(root, triggerPressed);
-            break;
-        default: ;
+        const auto pipboyPage = getCurrentPipboyPage(root);
+        if (pipboyPage.has_value()) {
+            switch (pipboyPage.value()) {
+            case PipboyPage::STATUS:
+                handlePrimaryControllerOperationOnStatusPage(root, triggerPressed);
+                break;
+            case PipboyPage::INVENTORY:
+                handlePrimaryControllerOperationOnInventoryPage(root, triggerPressed);
+                break;
+            case PipboyPage::DATA:
+                handlePrimaryControllerOperationOnDataPage(root, triggerPressed);
+                break;
+            case PipboyPage::MAP:
+                handlePrimaryControllerOperationOnMapPage(root, triggerPressed);
+                break;
+            case PipboyPage::RADIO:
+                handlePrimaryControllerOperationOnRadioPage(root, triggerPressed);
+                break;
+            default: ;
+            }
         }
 
         if (f4vr::VRControllers.isPressed(f4vr::Hand::Primary, vr::EVRButtonId::k_EButton_Axis0)) {

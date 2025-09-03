@@ -230,7 +230,6 @@ namespace frik
      * Get weapon offsets for given weapon name and mode.
      * Use non-PA mode if PA mode offsets not found.
      */
-    /// <returns></returns>
     std::optional<RE::NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const
     {
         const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode()));
