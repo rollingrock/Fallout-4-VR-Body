@@ -53,6 +53,7 @@ namespace frik
         void initOnGameLoaded();
         void initOnGameSessionLoaded();
         void initSkeleton();
+        void onFrameUpdateInner();
         void onGameMenuOpened();
         void releaseSkeleton();
         static void updateWorldFinal();
