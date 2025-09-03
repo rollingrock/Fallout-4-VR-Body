@@ -261,6 +261,7 @@ namespace frik
 
     void restoreFingerPoseControl(const bool isLeft)
     {
+        logger::debug("Hand pose: Restore control for {} hand", isLeft ? "Left" : "Right");
         const auto* const fingersArray = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
         for (auto i = 0; i < FINGERS_COUNT; i++) {
             handPapyrusHasControl[fingersArray[i]] = false;
@@ -304,7 +305,7 @@ namespace frik
         if (_handPointingPoseSet[rightHand] == override) {
             return;
         }
-        logger::debug("Set force pointing pose for '{}' hand: {})", rightHand ? "Right" : "Left", override ? "Pointing" : "Release");
+        logger::debug("Hand pose: Set force pointing pose for '{}' hand: {})", rightHand ? "Right" : "Left", override ? "Pointing" : "Release");
         _handPointingPoseSet[rightHand] = override;
         const auto* const fingers = rightHand ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
         for (auto i = 0; i < FINGERS_COUNT; i++) {
@@ -329,7 +330,7 @@ namespace frik
         if (_offHandGripPose == override) {
             return;
         }
-        logger::debug("Set offhand grip pose override: {})", override ? "Set" : "Release");
+        logger::debug("Hand pose: Set offhand grip pose override: {})", override ? "Set" : "Release");
         _offHandGripPose = override;
         const auto* const fingers = f4vr::isLeftHandedMode() ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
         for (auto i = 0; i < FINGERS_COUNT; i++) {

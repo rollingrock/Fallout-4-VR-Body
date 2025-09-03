@@ -18,6 +18,7 @@ namespace frik
         explicit PipboyPhysicalHandler(Skeleton* skelly, Pipboy* pipboy) :
             _skelly(skelly), _pipboy(pipboy) {}
 
+        bool isOperating() const { return _isOperatingPipboy; }
         void operate(PipboyPage lastPipboyPage);
 
     private:

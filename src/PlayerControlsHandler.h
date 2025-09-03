@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Config.h"
 #include "PapyrusGateway.h"
 #include "utils.h"
 #include "WeaponPositionAdjuster.h"
@@ -21,7 +22,7 @@ namespace frik
                 return;
             }
 
-            if (_state == State::DISABLED_FULL) {
+            if (_state == State::DISABLED_FULL && (!g_config.pipboyHolsterWeaponForOperation || !pipboy->isOperatingWithFinger())) {
                 // safer to re-enable if was fully disabled and then apply whatever other states (handle draw weapon after opening pip-boy during reposition)
                 enable();
                 return;
@@ -35,6 +36,14 @@ namespace frik
                     disableWithoutWeapon();
                     // double tap in-case we only enabled the thumbstick controllers above
                     setControlsThumbstickEnableState(false);
+                }
+                return;
+            }
+
+            if (g_config.pipboyHolsterWeaponForOperation && pipboy->isOperatingWithFinger()) {
+                // disable the weapon if specifically configured to holster weapon when interacting with Pipboy physically
+                if (weaponPosition->isWeaponDrawn()) {
+                    disableWeaponOnly(weaponPosition->isWeaponDrawn());
                 }
                 return;
             }

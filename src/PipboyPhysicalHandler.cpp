@@ -15,10 +15,19 @@ namespace frik
      */
     void PipboyPhysicalHandler::operate(const PipboyPage lastPipboyPage)
     {
-        if (f4vr::isWeaponEquipped()) {
-            // no physical Pipboy operation if the player has a weapon equipped
-            updatePipboyPhysicalElements(lastPipboyPage);
-            return;
+        if (g_config.pipboyHolsterWeaponForOperation) {
+            if (!Pipboy::isPlayerLookingAtPipboy(false)) {
+                // no physical Pipboy operation if the player is not looking at it when weapon holstering is enabled
+                _isOperatingPipboy = false;
+                updatePipboyPhysicalElements(lastPipboyPage);
+                return;
+            }
+        } else {
+            if (f4vr::isWeaponEquipped()) {
+                // no physical Pipboy operation if the player has a weapon equipped
+                updatePipboyPhysicalElements(lastPipboyPage);
+                return;
+            }
         }
 
         const auto fingerPos = _skelly->getBoneWorldTransform(g_config.leftHandedPipBoy ? "LArm_Finger23" : "RArm_Finger23").translate;

@@ -26,6 +26,7 @@ namespace frik
         void setLookingThroughScope(const bool isLookingThroughScope) { _isLookingThroughScope = isLookingThroughScope; }
 
         bool isPipboyOn() const { return _pipboy && _pipboy->isOpen(); }
+        bool isPipboyOperatingWithFinger() const { return _pipboy && _pipboy->isOperatingWithFinger(); }
         void swapPipboyModel() const { if (_pipboy) { _pipboy->swapModel(); } }
 
         bool isMainConfigurationModeActive() const { return _configurationMode && _configurationMode->isCalibrateModeActive(); }
