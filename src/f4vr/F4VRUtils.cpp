@@ -53,11 +53,11 @@ namespace f4vr
     }
 
     /**
-     * @return true if the player has any weapon in the hand.
+     * @return true if the player has any weapon in the hand (including fists).
      */
-    bool isWeaponEquipped()
+    bool IsWeaponDrawn()
     {
-        return isNodeVisible(getWeaponNode());
+        return getPlayer()->actorState.IsWeaponDrawn();
     }
 
     /**

@@ -1278,7 +1278,6 @@ namespace frik
 
     void Skeleton::setHandPose()
     {
-        const bool isWeaponVisible = isNodeVisible(getWeaponNode());
         const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
         for (auto pos = 0; pos < rt->numTransforms; pos++) {
             std::string name = _boneTreeVec[pos];
@@ -1295,8 +1294,8 @@ namespace frik
                     vr::k_EButton_SteamVR_Touchpad));
                 _closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton.at(name));
 
-                if (getPlayer()->actorState.IsWeaponDrawn()
-                    && !g_frik.isPipboyOn() && !g_frik.isPipboyOperatingWithFinger()
+                if (IsWeaponDrawn()
+                    && (isLeftHandedMode() || (!g_frik.isPipboyOn() && !g_frik.isPipboyOperatingWithFinger())) // left-handed has pipboy on the hand with the weapon
                     && !(isLeft ^ isLeftHandedMode())) {
                     // use the game hand position for the weapon in hand
                     this->copy1StPerson(name);

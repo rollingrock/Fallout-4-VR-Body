@@ -16,7 +16,7 @@ namespace f4vr
 
     // Weapons/Armor/Player
     void setWandsVisibility(bool show, bool leftWand);
-    bool isWeaponEquipped();
+    bool IsWeaponDrawn();
     bool isMeleeWeaponEquipped();
     std::string getEquippedWeaponName();
     bool hasKeyword(const F4SEVR::TESObjectARMO* armor, std::uint32_t keywordFormId);
