@@ -61,13 +61,17 @@ namespace frik
         if (_isOpen == open) {
             return;
         }
+        logger::info("Turning Pipboy {}", open ? "ON" : "OFF");
         _isOpen = open;
         turnPipBoyOnOff(open);
         f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = open ? 1.0f : 0.0f;
         if (const auto pipboyScreen = getPipboyScreenNode()) {
             f4vr::setNodeVisibility(pipboyScreen, open);
         }
-        if (!open) {
+        if (open) {
+            // prevent immediate closing of Pipboy
+            _lastLookingAtPip = nowMillis();
+        } else {
             _pipboyScreenPrevFrame.clear();
             g_frik.closePipboyConfigurationModeActive();
         }
@@ -305,9 +309,6 @@ namespace frik
 
         logger::info("Open Pipboy with button");
         openClose(true);
-
-        // prevent immediate closing of Pipboy
-        _lastLookingAtPip = nowMillis();
     }
 
     /**
@@ -363,7 +364,7 @@ namespace frik
             return;
         }
 
-        const auto movingStick = f4vr::VRControllers.getThumbstickValue(g_config.pipBoyButtonArm > 0 ? f4vr::Hand::Right : f4vr::Hand::Left);
+        const auto movingStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Offhand);
         const auto lookingStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
 
         const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway

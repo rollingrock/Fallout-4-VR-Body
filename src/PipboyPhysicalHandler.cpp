@@ -23,7 +23,7 @@ namespace frik
                 return;
             }
         } else {
-            if (f4vr::isWeaponEquipped()) {
+            if (f4vr::IsWeaponDrawn() && !f4vr::isLeftHandedMode()) {
                 // no physical Pipboy operation if the player has a weapon equipped
                 updatePipboyPhysicalElements(lastPipboyPage);
                 return;
@@ -115,8 +115,9 @@ namespace frik
             powerTranslate->local.translate.z = fz;
         }
         if (powerTranslate->local.translate.z < -0.10 && !_stickyPower) {
+            logger::info("Pipboy power button pressed");
             _stickyPower = true;
-            triggerShortHaptic();
+            triggerShortHaptic(f4vr::Hand::Right);
             _pipboy->openClose(!_pipboy->isOpen());
         }
     }
@@ -141,8 +142,9 @@ namespace frik
             lightTranslate->local.translate.z = fz;
         }
         if (lightTranslate->local.translate.z < -0.14 && !_stickyLight) {
+            logger::info("Light button pressed");
             _stickyLight = true;
-            triggerShortHaptic();
+            triggerShortHaptic(f4vr::Hand::Right);
             if (!_pipboy->isOpen()) {
                 f4vr::togglePipboyLight(f4vr::getPlayer());
             }
@@ -169,8 +171,9 @@ namespace frik
             lightTranslate->local.translate.y = fz;
         }
         if (lightTranslate->local.translate.y < -0.12 && !_stickyRadio) {
+            logger::info("Radio button pressed");
             _stickyRadio = true;
-            triggerShortHaptic();
+            triggerShortHaptic(f4vr::Hand::Right);
             if (f4vr::isPlayerRadioEnabled()) {
                 turnPlayerRadioOn(false);
             } else {
