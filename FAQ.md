@@ -52,15 +52,21 @@ If I, the developer, can reproduce the crash in 95% of the times I can fix it. H
 
 
 ## When I launch the game, I do not see a body!
-It means FRIK was not loaded into your game.
+
+It means FRIK was not loaded into your game (even if you see the holotape).
+
 - Most commonly caused by not launching your game with `f4sevr_loader.exe`. Make sure you have your F4SEVR install up to date and that you're launching it correctly with your mod manager.
 - Possible FRIK was not installed correctly, common with manual install.
-- Recommended to use MO2 as the best manager for complex mods like FRIK.
+- **Recommended to use MO2** as the best manager for complex mods like FRIK.
+  - [Example of a player issue](https://www.reddit.com/r/fo4vr/comments/1n97xs8/frik_doesnt_work_but_every_other_mod_does/) that was only solved by using MO2!
 
 ### MO2
 Watch this guide: [YouTube - MO2 F4SE Setup](https://www.youtube.com/watch?v=-rFwk4tb6Ew)
 
 ### Vortex
+
+**WARNING:** Many players had weird issues with Vortex, using MO2 is highly recommended!
+
 It's the **same** way you set up F4SE to launch with NMM:
 1. Click on **Dashboard**
 2. Click **Add Tool**
