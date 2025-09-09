@@ -2,8 +2,8 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "HandPose.h"
 #include "f4vr/VRControllersManager.h"
+#include "skeleton/HandPose.h"
 
 using namespace common;
 

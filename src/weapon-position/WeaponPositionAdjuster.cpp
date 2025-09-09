@@ -3,13 +3,13 @@
 #include "Config.h"
 #include "Debug.h"
 #include "FRIK.h"
-#include "HandPose.h"
-#include "Skeleton.h"
 #include "utils.h"
 #include "common/Logger.h"
 #include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
+#include "skeleton/HandPose.h"
+#include "skeleton/Skeleton.h"
 
 using namespace common;
 

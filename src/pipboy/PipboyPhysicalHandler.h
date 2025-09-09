@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PipboyOperationHandler.h"
-#include "Skeleton.h"
+#include "skeleton/Skeleton.h"
 
 namespace frik
 {

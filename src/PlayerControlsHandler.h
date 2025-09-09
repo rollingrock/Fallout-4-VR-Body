@@ -3,8 +3,9 @@
 #include "Config.h"
 #include "PapyrusGateway.h"
 #include "utils.h"
-#include "WeaponPositionAdjuster.h"
 #include "f4vr/GameMenusHandler.h"
+#include "pipboy/Pipboy.h"
+#include "weapon-position/WeaponPositionAdjuster.h"
 
 namespace frik
 {

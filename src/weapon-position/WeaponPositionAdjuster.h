@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Skeleton.h"
 #include "WeaponPositionConfigMode.h"
+#include "skeleton/Skeleton.h"
 
 namespace frik
 {

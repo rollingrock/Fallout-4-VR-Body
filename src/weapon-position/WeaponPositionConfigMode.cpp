@@ -2,11 +2,11 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "Skeleton.h"
 #include "utils.h"
 #include "common/Logger.h"
 #include "common/MatrixUtils.h"
 #include "f4vr/VRControllersManager.h"
+#include "skeleton/Skeleton.h"
 #include "ui/UIButton.h"
 #include "ui/UIContainer.h"
 #include "ui/UIManager.h"
