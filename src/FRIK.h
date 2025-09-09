@@ -1,12 +1,12 @@
 #pragma once
 
-#include "BoneSpheresHandler.h"
-#include "ConfigurationMode.h"
-#include "Pipboy.h"
 #include "PlayerControlsHandler.h"
-#include "SmoothMovementVR.h"
-#include "WeaponPositionAdjuster.h"
+#include "config-mode/ConfigurationMode.h"
 #include "f4vr/GameMenusHandler.h"
+#include "pipboy/Pipboy.h"
+#include "skeleton/BoneSpheresHandler.h"
+#include "smooth-movement/SmoothMovementVR.h"
+#include "weapon-position/WeaponPositionAdjuster.h"
 
 namespace frik
 {

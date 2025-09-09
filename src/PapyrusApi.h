@@ -2,8 +2,8 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "HandPose.h"
 #include "common/Logger.h"
+#include "skeleton/HandPose.h"
 
 namespace frik
 {

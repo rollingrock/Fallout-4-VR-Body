@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Skeleton.h"
+#include "skeleton/Skeleton.h"
 
 namespace frik
 {
