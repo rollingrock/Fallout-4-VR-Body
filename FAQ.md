@@ -26,14 +26,14 @@ Grip modes affect how to grip the weapon with the offhand:
 
 
 ## GAME CRASHED!
-It happens, it could be related to FRIK it could be related to conflict between FRIK and other mods.  
+It happens, it could be related to FRIK, it could be related to conflict between FRIK and other mods, and it could be unrelated to FRIK.  
 
 ### Reporting Crash Information
 If I, the developer, can reproduce the crash in 95% of the times I can fix it. Help me do so:
-1. Describe in as much details as possible what led to the crash.
-  - Are you using MO2? Is fallout game folder outside program files? 
-2. Identify what combination of mods are causing the crash.
-  - Does it crash when disabling FRIK? What other mods do you have?
+1. Describe in as much details as possible what led to the crash.  
+  Are you using MO2? Is fallout game folder outside program files? 
+2. Identify what combination of mods are causing the crash.  
+  Does it crash when disabling FRIK? What other mods do you have?
 3. Add crash log and FRIK log in the report.
 
 ### Getting Logs
@@ -41,6 +41,7 @@ If I, the developer, can reproduce the crash in 95% of the times I can fix it. H
 - Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`  
   - `crash-<date time>.log` for crash logs
   - `FRIK.log` for FRIK logs
+- Share the logs via [pastebin.com](https://pastebin.com)
 - **Bonus points** if you set `iLogLevel = 0` in FRIK.ini before reproducing the crash for more debug logs.
 
 ### Known Crashes
