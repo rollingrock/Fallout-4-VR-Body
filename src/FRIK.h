@@ -1,5 +1,8 @@
 #pragma once
 
+#include <Version.h>
+
+#include "ModBase.h"
 #include "PlayerControlsHandler.h"
 #include "config-mode/ConfigurationMode.h"
 #include "f4vr/GameMenusHandler.h"
@@ -12,9 +15,12 @@ namespace frik
 {
     constexpr auto BETTER_SCOPES_VR_MOD_NAME = "FO4VRBETTERSCOPES";
 
-    class FRIK
+    class FRIK : public f4cf::ModBase
     {
     public:
+        FRIK() :
+            ModBase("F4VRBody", Version::PROJECT, Version::MAJOR, &g_config) {}
+
         bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
         bool isFavoritesMenuOpen() { return _gameMenusHandler.isFavoritesMenuOpen(); }
 
@@ -46,13 +52,15 @@ namespace frik
 
         void dispatchMessageToBetterScopesVR(std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
 
-        void initialize(const F4SE::LoadInterface* f4se);
         void onFrameUpdate();
         void smoothMovement();
 
+    protected:
+        virtual void onModLoaded(const F4SE::LoadInterface* f4SE) override;
+        virtual void onGameLoaded() override;
+        virtual void onGameSessionLoaded() override;
+
     private:
-        void initOnGameLoaded();
-        void initOnGameSessionLoaded();
         void initSkeleton();
         void onFrameUpdateInner();
         void onGameMenuOpened();
@@ -61,7 +69,6 @@ namespace frik
         static void configureGameVars();
         static bool isGameReadyForSkeletonInitialization();
         bool isRootNodeValid() const;
-        static void onF4VRSEMessage(F4SE::MessagingInterface::Message* msg);
         static void removeEmbeddedFlashlight();
         static void onBetterScopesMessage(F4SE::MessagingInterface::Message* msg);
         void checkDebugDump();
@@ -90,8 +97,6 @@ namespace frik
 
         // handler to enable/disable player movement and other controls
         PlayerControlsHandler _playerControlsHandler;
-
-        const F4SE::MessagingInterface* _messaging = nullptr;
     };
 
     // The ONE global to rule them ALL

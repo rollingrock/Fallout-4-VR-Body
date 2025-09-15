@@ -3,11 +3,11 @@
 #include "Config.h"
 
 #include <filesystem>
-#include <openvr.h>
 
 #include "common/CommonUtils.h"
 #include "common/Logger.h"
 #include "f4vr/F4VRUtils.h"
+#include "f4vr/VRControllersManager.h"
 
 using namespace common;
 
@@ -84,9 +84,9 @@ namespace frik
         pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 400));
         pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 1000));
         pipBoyButtonArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonArm", 0));
-        pipBoyButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonID", vr::EVRButtonId::k_EButton_SteamVR_Trigger));
+        pipBoyButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonID", f4vr::VRButtonId::k_EButton_SteamVR_Trigger));
         pipBoyButtonOffArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffArm", 0));
-        pipBoyButtonOffID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", vr::EVRButtonId::k_EButton_Grip));
+        pipBoyButtonOffID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", f4vr::VRButtonId::k_EButton_Grip));
 
         // Torch/Flashlight
         removeFlashlight = ini.GetBoolValue(INI_SECTION_MAIN, "bRemoveFlashlight", false);
