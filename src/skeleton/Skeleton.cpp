@@ -1248,7 +1248,7 @@ namespace frik
             qt.fromMatrix(handClosed[bone].rotate);
         } else {
             qt.fromMatrix(handOpen[bone].rotate);
-            if (_handBonesButton.at(bone) == vr::k_EButton_Grip) {
+            if (_handBonesButton.at(bone) == k_EButton_Grip) {
                 Quaternion qo;
                 qo.fromMatrix(handClosed[bone].rotate);
                 qo.slerp(1.0f - gripProx, qt);
@@ -1290,9 +1290,10 @@ namespace frik
                 const float gripProx = isLeft
                     ? VRControllers.getControllerState_DEPRECATED(TrackerType::Left).rAxis[2].x
                     : VRControllers.getControllerState_DEPRECATED(TrackerType::Right).rAxis[2].x;
-                const bool thumbUp = reg & vr::ButtonMaskFromId(vr::k_EButton_Grip) && reg & vr::ButtonMaskFromId(vr::k_EButton_SteamVR_Trigger) && !(reg & vr::ButtonMaskFromId(
-                    vr::k_EButton_SteamVR_Touchpad));
-                _closedHand[name] = reg & vr::ButtonMaskFromId(_handBonesButton.at(name));
+                const bool thumbUp = reg & ButtonMaskFromId(k_EButton_Grip)
+                    && reg & ButtonMaskFromId(k_EButton_SteamVR_Trigger)
+                    && !(reg & ButtonMaskFromId(k_EButton_SteamVR_Touchpad));
+                _closedHand[name] = reg & ButtonMaskFromId(_handBonesButton.at(name));
 
                 if (IsWeaponDrawn()
                     && (isLeftHandedMode() || (!g_frik.isPipboyOn() && !g_frik.isPipboyOperatingWithFinger())) // left-handed has pipboy on the hand with the weapon
@@ -1492,39 +1493,39 @@ namespace frik
     /**
      * setup hand bones to openvr button mapping
      */
-    std::unordered_map<std::string, vr::EVRButtonId> Skeleton::getHandBonesButtonMap()
+    std::unordered_map<std::string, VRButtonId> Skeleton::getHandBonesButtonMap()
     {
-        return std::unordered_map<std::string, vr::EVRButtonId>{
-            { "LArm_Finger11", vr::k_EButton_SteamVR_Touchpad },
-            { "LArm_Finger12", vr::k_EButton_SteamVR_Touchpad },
-            { "LArm_Finger13", vr::k_EButton_SteamVR_Touchpad },
-            { "LArm_Finger21", vr::k_EButton_SteamVR_Trigger },
-            { "LArm_Finger22", vr::k_EButton_SteamVR_Trigger },
-            { "LArm_Finger23", vr::k_EButton_SteamVR_Trigger },
-            { "LArm_Finger31", vr::k_EButton_Grip },
-            { "LArm_Finger32", vr::k_EButton_Grip },
-            { "LArm_Finger33", vr::k_EButton_Grip },
-            { "LArm_Finger41", vr::k_EButton_Grip },
-            { "LArm_Finger42", vr::k_EButton_Grip },
-            { "LArm_Finger43", vr::k_EButton_Grip },
-            { "LArm_Finger51", vr::k_EButton_Grip },
-            { "LArm_Finger52", vr::k_EButton_Grip },
-            { "LArm_Finger53", vr::k_EButton_Grip },
-            { "RArm_Finger11", vr::k_EButton_SteamVR_Touchpad },
-            { "RArm_Finger12", vr::k_EButton_SteamVR_Touchpad },
-            { "RArm_Finger13", vr::k_EButton_SteamVR_Touchpad },
-            { "RArm_Finger21", vr::k_EButton_SteamVR_Trigger },
-            { "RArm_Finger22", vr::k_EButton_SteamVR_Trigger },
-            { "RArm_Finger23", vr::k_EButton_SteamVR_Trigger },
-            { "RArm_Finger31", vr::k_EButton_Grip },
-            { "RArm_Finger32", vr::k_EButton_Grip },
-            { "RArm_Finger33", vr::k_EButton_Grip },
-            { "RArm_Finger41", vr::k_EButton_Grip },
-            { "RArm_Finger42", vr::k_EButton_Grip },
-            { "RArm_Finger43", vr::k_EButton_Grip },
-            { "RArm_Finger51", vr::k_EButton_Grip },
-            { "RArm_Finger52", vr::k_EButton_Grip },
-            { "RArm_Finger53", vr::k_EButton_Grip }
+        return std::unordered_map<std::string, VRButtonId>{
+            { "LArm_Finger11", k_EButton_SteamVR_Touchpad },
+            { "LArm_Finger12", k_EButton_SteamVR_Touchpad },
+            { "LArm_Finger13", k_EButton_SteamVR_Touchpad },
+            { "LArm_Finger21", k_EButton_SteamVR_Trigger },
+            { "LArm_Finger22", k_EButton_SteamVR_Trigger },
+            { "LArm_Finger23", k_EButton_SteamVR_Trigger },
+            { "LArm_Finger31", k_EButton_Grip },
+            { "LArm_Finger32", k_EButton_Grip },
+            { "LArm_Finger33", k_EButton_Grip },
+            { "LArm_Finger41", k_EButton_Grip },
+            { "LArm_Finger42", k_EButton_Grip },
+            { "LArm_Finger43", k_EButton_Grip },
+            { "LArm_Finger51", k_EButton_Grip },
+            { "LArm_Finger52", k_EButton_Grip },
+            { "LArm_Finger53", k_EButton_Grip },
+            { "RArm_Finger11", k_EButton_SteamVR_Touchpad },
+            { "RArm_Finger12", k_EButton_SteamVR_Touchpad },
+            { "RArm_Finger13", k_EButton_SteamVR_Touchpad },
+            { "RArm_Finger21", k_EButton_SteamVR_Trigger },
+            { "RArm_Finger22", k_EButton_SteamVR_Trigger },
+            { "RArm_Finger23", k_EButton_SteamVR_Trigger },
+            { "RArm_Finger31", k_EButton_Grip },
+            { "RArm_Finger32", k_EButton_Grip },
+            { "RArm_Finger33", k_EButton_Grip },
+            { "RArm_Finger41", k_EButton_Grip },
+            { "RArm_Finger42", k_EButton_Grip },
+            { "RArm_Finger43", k_EButton_Grip },
+            { "RArm_Finger51", k_EButton_Grip },
+            { "RArm_Finger52", k_EButton_Grip },
+            { "RArm_Finger53", k_EButton_Grip }
         };
     }
 }

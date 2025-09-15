@@ -22,6 +22,18 @@
 
 using namespace common;
 
+// This is the entry point to the mod.
+extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* a_skse, F4SE::PluginInfo* a_info)
+{
+    return frik::g_frik.onF4SEPluginQuery(a_skse, a_info);
+}
+
+// This is the entry point to the mod.
+extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface* a_f4se)
+{
+    return frik::g_frik.onF4SEPluginLoad(a_f4se);
+}
+
 namespace frik
 {
     /**
@@ -53,91 +65,41 @@ namespace frik
     };
 
     /**
-     * On load of FRIK plugin by F4VRSE setup messaging and papyrus handling once.
+     * On mod loaded by F4SE.
      */
-    void FRIK::initialize(const F4SE::LoadInterface*)
+    void FRIK::onModLoaded(const F4SE::LoadInterface*)
     {
-        CPPTRACE_TRY
-            {
-                logger::info("Initialize FRIK...");
-                std::srand(static_cast<unsigned int>(time(nullptr)));
+        std::srand(static_cast<unsigned int>(time(nullptr)));
 
-                logger::info("Init config...");
-                g_config.load();
+        logger::info("Run patches...");
+        patches::patchAll();
 
-                // allocate enough space for patches and hooks
-                F4SE::AllocTrampoline(4096);
-
-                logger::info("Run patches...");
-                patches::patchAll();
-
-                logger::info("Hook main...");
-                hookMain();
-
-                _messaging = F4SE::GetMessagingInterface();
-                _messaging->RegisterListener(onF4VRSEMessage);
-            }
-        CPPTRACE_CATCH(const std::exception& ex) {
-            const auto stacktrace = cpptrace::from_current_exception().to_string();
-            logger::critical("Error in initialize: {}\n{}", ex.what(), stacktrace);
-            throw;
-        }
-    }
-
-    /**
-     * F4VRSE messages listener to handle game loaded, new game, and save loaded events.
-     */
-    void FRIK::onF4VRSEMessage(F4SE::MessagingInterface::Message* msg)
-    {
-        if (!msg) {
-            return;
-        }
-
-        if (msg->type == F4SE::MessagingInterface::kGameLoaded) {
-            // One time event fired after all plugins are loaded and game is full in main menu
-            logger::info("F4VRSE On Game Loaded Message...");
-            g_frik.initOnGameLoaded();
-        }
-
-        if (msg->type == F4SE::MessagingInterface::kPostLoadGame || msg->type == F4SE::MessagingInterface::kNewGame) {
-            // If a game is loaded or a new game started re-initialize FRIK for clean slate
-            logger::info("F4VRSE On Post Load Message...");
-            g_frik.initOnGameSessionLoaded();
-        }
+        logger::info("Hook main...");
+        hookMain();
     }
 
     /**
      * On game fully loaded initialize things that should be initialized only once.
      */
-    void FRIK::initOnGameLoaded()
+    void FRIK::onGameLoaded()
     {
-        CPPTRACE_TRY
-            {
-                logger::info("Register papyrus native functions...");
-                initPapyrusApis();
-                PapyrusGateway::init();
-                _boneSpheres.init();
+        logger::info("Register papyrus native functions...");
+        initPapyrusApis();
+        PapyrusGateway::init();
+        _boneSpheres.init();
 
-                vrui::initUIManager();
-
-                _gameMenusHandler.init([this](const std::string&, const bool isOpened) {
-                    if (isOpened) {
-                        onGameMenuOpened();
-                    }
-                });
-
-                removeEmbeddedFlashlight();
-
-                if (isBetterScopesVRModLoaded()) {
-                    logger::info("BetterScopesVR mod detected, registering for messages...");
-                    _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
-                    _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
-                }
+        _gameMenusHandler.init([this](const std::string&, const bool isOpened) {
+            if (isOpened) {
+                onGameMenuOpened();
             }
-        CPPTRACE_CATCH(const std::exception& ex) {
-            const auto stacktrace = cpptrace::from_current_exception().to_string();
-            logger::critical("Error in initOnGameLoaded: {}\n{}", ex.what(), stacktrace);
-            throw;
+        });
+
+        removeEmbeddedFlashlight();
+
+        if (isBetterScopesVRModLoaded()) {
+            logger::info("BetterScopesVR mod detected, registering for messages...");
+            _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
+            _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
         }
     }
 
@@ -145,7 +107,7 @@ namespace frik
      * Game session can be initialized multiple times as it is fired on new game and save loaded events.
      * We should clear and reload as much of the game state as we can.
      */
-    void FRIK::initOnGameSessionLoaded()
+    void FRIK::onGameSessionLoaded()
     {
         if (_skelly) {
             logger::info("Resetting skeleton for new game session...");
@@ -155,8 +117,6 @@ namespace frik
         }
 
         configureGameVars();
-
-        f4vr::VRControllers.reset();
     }
 
     /**
