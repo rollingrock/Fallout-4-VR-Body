@@ -577,11 +577,11 @@ namespace frik
         }
 
         logger::info("Weapon: {}, InPA: {}", _currentWeapon.c_str(), _currentlyInPA);
-        printTransform("Weapon Original: ", _weaponOriginalTransform);
-        printTransform("Weapon Offset  : ", _weaponOffsetTransform);
-        printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);
-        printTransform("Scope Offset   : ", f4vr::getPlayerNodes()->primaryWeaponScopeCamera->local);
-        printNodes(weapon);
-        printNodesTransform(weapon);
+        f4cf::dump::printTransform("Weapon Original: ", _weaponOriginalTransform);
+        f4cf::dump::printTransform("Weapon Offset  : ", _weaponOffsetTransform);
+        f4cf::dump::printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);
+        f4cf::dump::printTransform("Scope Offset   : ", f4vr::getPlayerNodes()->primaryWeaponScopeCamera->local);
+        f4cf::dump::printNodes(weapon);
+        f4cf::dump::printNodesTransform(weapon);
     }
 }

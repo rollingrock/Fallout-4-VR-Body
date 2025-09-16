@@ -1,7 +1,6 @@
 #include "CullGeometryHandler.h"
 
 #include "Config.h"
-#include "Debug.h"
 #include "FRIK.h"
 #include "common/CommonUtils.h"
 
@@ -99,10 +98,6 @@ namespace frik
             for (const auto slot : g_config.hideEquipSlotIndexes()) {
                 setEquipmentSlotByIndexVisibility(slot, true);
             }
-        }
-
-        if (g_config.checkDebugDumpDataOnceFor("geometry")) {
-            dumpPlayerGeometry(rn);
         }
     }
 

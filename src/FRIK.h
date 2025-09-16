@@ -66,6 +66,7 @@ namespace frik
         virtual void onGameLoaded() override;
         virtual void onGameSessionLoaded() override;
         virtual void onFrameUpdate() override;
+        virtual void checkDebugDump() const override;
 
     private:
         void initSkeleton();
@@ -77,7 +78,6 @@ namespace frik
         bool isRootNodeValid() const;
         static void removeEmbeddedFlashlight();
         static void onBetterScopesMessage(F4SE::MessagingInterface::Message* msg);
-        void checkDebugDump();
 
         bool _inPowerArmor = false;
         bool _isLookingThroughScope = false;
