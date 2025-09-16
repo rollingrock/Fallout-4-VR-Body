@@ -1,7 +1,5 @@
 #include "FRIK.h"
 
-#include <cpptrace/from_current.hpp>
-
 #include "Config.h"
 #include "Debug.h"
 #include "hook.h"
@@ -125,24 +123,10 @@ namespace frik
      */
     void FRIK::onFrameUpdate()
     {
-        CPPTRACE_TRY
-            {
-                onFrameUpdateInner();
-            }
-        CPPTRACE_CATCH(const std::exception& e) {
-            const auto stacktrace = cpptrace::from_current_exception().to_string();
-            logger::error("Error in FRIK::onFrameUpdate: {}\n{}", e.what(), stacktrace);
-        }
-    }
-
-    void FRIK::onFrameUpdateInner()
-    {
         if (!RE::PlayerCharacter::GetSingleton()) {
             // game not loaded or existing
             return;
         }
-
-        f4vr::VRControllers.update(f4vr::isLeftHandedMode());
 
         if (_skelly) {
             if (!isRootNodeValid()) {

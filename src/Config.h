@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <Version.h>
 
 #include "resources.h"
 #include "common/CommonUtils.h"
@@ -60,7 +61,7 @@ namespace frik
     {
     public:
         explicit Config() :
-            ConfigBase(FRIK_INI_PATH, IDR_FRIK_INI) {}
+            ConfigBase(Version::PROJECT, FRIK_INI_PATH, IDR_FRIK_INI) {}
 
         virtual void load() override;
         void save() { saveIniConfig(); }

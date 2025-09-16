@@ -19,7 +19,7 @@ namespace frik
     {
     public:
         FRIK() :
-            ModBase("F4VRBody", Version::PROJECT, Version::MAJOR, &g_config) {}
+            ModBase("F4VRBody", Version::NAME, &g_config, 512) {}
 
         bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
         bool isFavoritesMenuOpen() { return _gameMenusHandler.isFavoritesMenuOpen(); }
@@ -52,17 +52,18 @@ namespace frik
 
         void dispatchMessageToBetterScopesVR(std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
 
-        void onFrameUpdate();
         void smoothMovement();
+
+        virtual void onFrameUpdate() override;
 
     protected:
         virtual void onModLoaded(const F4SE::LoadInterface* f4SE) override;
         virtual void onGameLoaded() override;
         virtual void onGameSessionLoaded() override;
+        virtual std::string_view getLogFileName() const override { return "FRIK"; }
 
     private:
         void initSkeleton();
-        void onFrameUpdateInner();
         void onGameMenuOpened();
         void releaseSkeleton();
         static void updateWorldFinal();
