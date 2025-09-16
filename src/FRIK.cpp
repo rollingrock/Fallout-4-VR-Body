@@ -2,10 +2,9 @@
 
 #include "Config.h"
 #include "Debug.h"
-#include "hook.h"
+#include "GameHooks.h"
 #include "PapyrusApi.h"
 #include "PapyrusGateway.h"
-#include "patches.h"
 #include "utils.h"
 #include "common/Logger.h"
 #include "config-mode/ConfigurationMode.h"
@@ -70,10 +69,10 @@ namespace frik
         std::srand(static_cast<unsigned int>(time(nullptr)));
 
         logger::info("Run patches...");
-        patches::patchAll();
+        hook::patchAll();
 
         logger::info("Hook main...");
-        hookMain();
+        hook::hookMain();
     }
 
     /**
