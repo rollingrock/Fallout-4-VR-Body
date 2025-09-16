@@ -256,7 +256,7 @@ void hookMain()
 
     auto& trampoline = F4SE::GetTrampoline();
 
-    trampoline.write_call<5>(hookSomeRandomFunc.address(), &hook5);
+    // trampoline.write_call<5>(hookSomeRandomFunc.address(), &hook5);
 
     trampoline.write_call<5>(hookMainUpdatePlayer.address(), &hook_main_update_player);
     trampoline.write_call<5>(hook_smoothMovementHook.address(), &hookSmoothMovement);

@@ -137,13 +137,13 @@ namespace frik
      */
     void Config::loadHideMeshes()
     {
-        createFileFromResourceIfNotExists(MESH_HIDE_FACE_INI_PATH, IDR_MESH_HIDE_FACE, true);
+        createFileFromResourceIfNotExists(MESH_HIDE_FACE_INI_PATH, _module, IDR_MESH_HIDE_FACE, true);
         _faceGeometry = loadListFromFile(MESH_HIDE_FACE_INI_PATH);
 
-        createFileFromResourceIfNotExists(MESH_HIDE_SKINS_INI_PATH, IDR_MESH_HIDE_SKINS, true);
+        createFileFromResourceIfNotExists(MESH_HIDE_SKINS_INI_PATH, _module, IDR_MESH_HIDE_SKINS, true);
         _skinGeometry = loadListFromFile(MESH_HIDE_SKINS_INI_PATH);
 
-        createFileFromResourceIfNotExists(MESH_HIDE_SLOTS_INI_PATH, IDR_MESH_HIDE_SLOTS, true);
+        createFileFromResourceIfNotExists(MESH_HIDE_SLOTS_INI_PATH, _module, IDR_MESH_HIDE_SLOTS, true);
         loadHideEquipmentSlots();
     }
 
@@ -274,8 +274,8 @@ namespace frik
      */
     void Config::loadPipboyOffsets()
     {
-        createFileFromResourceIfNotExists(PIPBOY_HOLO_OFFSETS_PATH, IDR_PIPBOY_HOLO_OFFSETS, false);
-        createFileFromResourceIfNotExists(PIPBOY_SCREEN_OFFSETS_PATH, IDR_PIPBOY_SCREEN_OFFSETS, false);
+        createFileFromResourceIfNotExists(PIPBOY_HOLO_OFFSETS_PATH, _module, IDR_PIPBOY_HOLO_OFFSETS, false);
+        createFileFromResourceIfNotExists(PIPBOY_SCREEN_OFFSETS_PATH, _module, IDR_PIPBOY_SCREEN_OFFSETS, false);
         _pipboyOffsets.clear();
         loadOffsetJsonFile(PIPBOY_HOLO_OFFSETS_PATH, _pipboyOffsets);
         loadOffsetJsonFile(PIPBOY_SCREEN_OFFSETS_PATH, _pipboyOffsets);
