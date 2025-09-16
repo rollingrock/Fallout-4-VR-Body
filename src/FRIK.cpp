@@ -165,8 +165,6 @@ namespace frik
         _playerControlsHandler.onFrameUpdate(_pipboy, _weaponPosition, &_gameMenusHandler);
 
         updateWorldFinal();
-
-        checkDebugDump();
     }
 
     void FRIK::smoothMovement()
@@ -361,30 +359,20 @@ namespace frik
         }
     }
 
-    void FRIK::checkDebugDump()
+    /**
+     * Dump game data if requested in "sDebugDumpDataOnceNames" flag in INI config.
+     */
+    void FRIK::checkDebugDump() const
     {
-        if (g_config.checkDebugDumpDataOnceFor("all_nodes")) {
-            printAllNodes();
-        }
-        if (g_config.checkDebugDumpDataOnceFor("pipboy")) {
-            printNodes(f4vr::getPlayerNodes()->PipboyRoot_nif_only_node);
-        }
-        if (g_config.checkDebugDumpDataOnceFor("world")) {
-            printNodes(f4vr::getPlayerNodes()->primaryWeaponScopeCamera->parent->parent->parent->parent->parent->parent);
-        }
-        if (g_config.checkDebugDumpDataOnceFor("fp_skelly")) {
-            printNodes(f4vr::getFirstPersonSkeleton());
-        }
-        if (g_config.checkDebugDumpDataOnceFor("skelly")) {
-            printNodes(f4vr::getRootNode()->parent);
-        }
+        ModBase::checkDebugDump();
+
         if (g_config.checkDebugDumpDataOnceFor("menus")) {
             _gameMenusHandler.debugDumpAllMenus();
         }
         if (g_config.checkDebugDumpDataOnceFor("weapon_muzzle")) {
             if (const auto muzzle = getMuzzleFlashNodes()) {
-                printNodes(muzzle->fireNode);
-                printNodes(muzzle->projectileNode);
+                f4cf::dump::printNodes(muzzle->fireNode);
+                f4cf::dump::printNodes(muzzle->projectileNode);
             }
         }
     }
