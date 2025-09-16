@@ -26,6 +26,10 @@ namespace frik
             if (f4vr::IsWeaponDrawn() && !f4vr::isLeftHandedMode()) {
                 // no physical Pipboy operation if the player has a weapon equipped
                 updatePipboyPhysicalElements(lastPipboyPage);
+                if (_isOperatingPipboy) {
+                    _isOperatingPipboy = false;
+                    disablePipboyHandPose();
+                }
                 return;
             }
         }
