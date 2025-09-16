@@ -19,7 +19,14 @@ namespace frik
     {
     public:
         FRIK() :
-            ModBase("F4VRBody", Version::NAME, &g_config, 512) {}
+            ModBase(Settings(
+                    "F4VRBody",
+                    Version::NAME,
+                    &g_config,
+                    "FRIK",
+                    512,
+                    true)
+                ) {}
 
         bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
         bool isFavoritesMenuOpen() { return _gameMenusHandler.isFavoritesMenuOpen(); }
@@ -59,7 +66,6 @@ namespace frik
         virtual void onGameLoaded() override;
         virtual void onGameSessionLoaded() override;
         virtual void onFrameUpdate() override;
-        virtual std::string_view getLogFileName() const override { return "FRIK"; }
 
     private:
         void initSkeleton();
