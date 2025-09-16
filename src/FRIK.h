@@ -54,12 +54,11 @@ namespace frik
 
         void smoothMovement();
 
-        virtual void onFrameUpdate() override;
-
     protected:
         virtual void onModLoaded(const F4SE::LoadInterface* f4SE) override;
         virtual void onGameLoaded() override;
         virtual void onGameSessionLoaded() override;
+        virtual void onFrameUpdate() override;
         virtual std::string_view getLogFileName() const override { return "FRIK"; }
 
     private:
