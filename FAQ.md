@@ -26,7 +26,7 @@ Grip modes affect how to grip the weapon with the offhand:
 
 
 ## GAME CRASHED!
-It happens, it could be related to FRIK, it could be related to conflict between FRIK and other mods, and it could be unrelated to FRIK.  
+It happens, it could be bad install (see [installation wiki](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Installation)), could be related to FRIK, related to conflict between FRIK and other mods, and it could be unrelated to FRIK.  
 
 ### Reporting Crash Information
 If I, the developer, can reproduce the crash in 95% of the times I can fix it. Help me do so:
@@ -41,10 +41,12 @@ If I, the developer, can reproduce the crash in 95% of the times I can fix it. H
 - Logs are found in `%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE`  
   - `crash-<date time>.log` for crash logs
   - `FRIK.log` for FRIK logs
+  - `f4sevr.log` and `f4sevr_loader.log` for mod loading failures.
 - Share the logs via [pastebin.com](https://pastebin.com)
-- **Bonus points** if you set `iLogLevel = 0` in FRIK.ini before reproducing the crash for more debug logs.
+- **Bonus points** if you set `iLogLevel = 0` in FRIK.ini before reproducing the crash for more debug logs (performance expensive).
 
 ### Known Crashes
+- Not updating `Fallout4Custom.ini` during manual install, see [installation](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Installation) wiki page.
 - "Amazing Follower Tweaks" mod is known to conflict with FRIK in the past.
 - Anything that messes directly with the **skeleton** can cause a crash (body, heels, etc.).
 - New Game reported in the past as problematic, I don't believe it still is, but:

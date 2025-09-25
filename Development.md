@@ -49,7 +49,7 @@ cmake --build buildvr --config Release
   - `crash-<date time>.log` for crash logs
   - use `tail -f "%USERPROFILE%\Documents\My Games\Fallout4VR\F4SE\FRIK.log"` to tail the log
 
-- To be able to attach debugger and use breakpoint you need [Steamless](https://github.com/atom0s/Steamless)
+- To be able to attach debugger and use breakpoint see [Modding Tip: Attaching a Debugger to a Steam Game](https://theartofdev.com/2025/08/04/modding-tip-attaching-a-debugger-to-a-steam-game/)
   - Get latest [Steamless](https://github.com/atom0s/Steamless/releases)
   - Unpack `Fallout4VR.exe` (use default settings)
   - Rename `Fallout4VR.exe.unpacked.exe` to `Fallout4VR.exe`
