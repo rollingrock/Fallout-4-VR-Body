@@ -4,7 +4,7 @@
 - ???
 
 ### P2
-- ???
+- Bug: two-handed scope in comfort sneak alignment issue ([Nexus post](https://www.nexusmods.com/fallout4/mods/53464?tab=posts&comment_id=159843574&BH=0))
 
 ### Backlog
 - Head *may* not being part of the hitbox if hidden, need to verify and fix.
