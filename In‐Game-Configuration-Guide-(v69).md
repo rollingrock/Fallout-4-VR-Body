@@ -2,7 +2,7 @@
 Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 
 ## Main Configuration Mode
-- **Activation**: Press and hold both sticks down  
+- **Activation**: Press and hold both the 'sprint' & 'favorites' buttons until the UI is shown.  
 - **Exit & Save**: Press right trigger  
 - **Exit & Restore**: Press left trigger
 
@@ -20,7 +20,7 @@ Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 - Mode 4: Press grip button to snap to the barrel, press again to let go.
 
 ## Pipboy Configuration Mode
-- **Activation**: Press and hold right stick with the Pipboy open  
+- **Activation**: Press and hold the 'favorites' button with the Pipboy open  
 - **To Cancel Changes**: Exit Pipboy without using the UI  
 - **To Save Changes**: Use the UI save button
 
