@@ -58,8 +58,7 @@ namespace frik
             for (int i = 0; i <= 11; i++) {
                 _PBTouchbuttons[i] = false;
             }
-            RE::NiAVObject* PBConfigUI = f4vr::findAVObject(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBCONFIGHUD");
-            if (PBConfigUI) {
+            if (auto PBConfigUI = f4vr::findAVObject(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBCONFIGHUD")) {
                 PBConfigUI->flags.flags |= 0x1;
                 PBConfigUI->local.scale = 0;
                 PBConfigUI->parent->DetachChild(PBConfigUI);
@@ -69,8 +68,9 @@ namespace frik
 
             // restore pipboy scale if it was changed
             const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-            const auto pipboyScale = f4vr::findAVObject(arm.forearm3, "PipboyBone");
-            pipboyScale->local.scale = g_config.pipBoyScale;
+            if (const auto pipboyScale = f4vr::findAVObject(arm.forearm3, "PipboyBone")) {
+                pipboyScale->local.scale = g_config.pipBoyScale;
+            }
         }
     }
 
@@ -563,7 +563,10 @@ namespace frik
                 if (SaveButtonPressed && !_isSaveButtonPressed) {
                     _isSaveButtonPressed = true;
                     g_config.savePipboyOffset(pbRoot->local);
-                    g_config.savePipboyScale(_3rdPipboy->local.scale);
+                    if (_3rdPipboy) {
+                        // 3rd person Pipboy is null for Fallout London as there is no Pipboy on the arm
+                        g_config.savePipboyScale(_3rdPipboy->local.scale);
+                    }
                 } else if (!SaveButtonPressed) {
                     _isSaveButtonPressed = false;
                 }
