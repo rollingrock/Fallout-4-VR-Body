@@ -121,6 +121,7 @@ Check out **CylonSurfer's** excellent mod:  [Virtual Holsters](https://www.nexus
 Set `bRemoveFlashlight = true` in `FRIK.ini`  
 It will remove the FRIK built-in flashlight.
 
+If I don't want to remove FRIK flashlight, only change how it looks: see this [reddit comment](https://www.reddit.com/r/fo4vr/comments/1o54ejq/comment/nj9thh9/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button).
 
 ## Two Handed Weapon Aiming doesn't work in Vanilla V.A.T.S.
 If you're using fully vanilla VATS please use one-handed aiming.
