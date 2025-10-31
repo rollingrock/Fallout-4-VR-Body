@@ -5,6 +5,7 @@
 
 ### P2
 - Bug: two-handed scope in comfort sneak alignment issue ([Nexus post](https://www.nexusmods.com/fallout4/mods/53464?tab=posts&comment_id=159843574&BH=0))
+- For left-handed players, pipboy doesn't turn on by looking.
 
 ### Backlog
 - Head *may* not being part of the hitbox if hidden, need to verify and fix.
@@ -14,7 +15,8 @@
 - Better hand pose for different weapons and throwables.
 - Changing player height using thumbstick for continuous crouch ability.
 - Config for sitting gameplay.
-- Fix hand pose for left-handed weapon.
+- For left-handed players, fix primary hand fingers pose on weapon.
+- For left-handed players, fix two-handed use causing primary hand to be dislodged.
 - Fix Pipboy on right arm not working.
 
 ## Requested
