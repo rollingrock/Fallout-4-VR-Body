@@ -29,11 +29,14 @@ namespace frik
      * First frame PA fix:
      *
      */
-    Pipboy::Pipboy(Skeleton* skelly):
+    Pipboy::Pipboy(Skeleton* skelly) :
         _skelly(skelly), _physicalHandler(skelly, this)
     {
         // force hide if was open before like when fast traveling (force show if not wrist to allow changing mid-game)
         f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = f4vr::isPipboyOnWrist() ? 0.0f : 1.0f;
+
+        // if skeleton changed we need to re-attach the pipboy root nif
+        detachReplacedPipboyRootNif();
 
         exitPowerArmorBugFixHack(true);
     }
@@ -65,9 +68,6 @@ namespace frik
         _isOpen = open;
         turnPipBoyOnOff(open);
         f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = open ? 1.0f : 0.0f;
-        if (const auto pipboyScreen = getPipboyScreenNode()) {
-            f4vr::setNodeVisibility(pipboyScreen, open);
-        }
         if (open) {
             // prevent immediate closing of Pipboy
             _lastLookingAtPip = nowMillis();
@@ -84,7 +84,8 @@ namespace frik
     {
         g_config.toggleIsHoloPipboy();
         turnPipBoyOnOff(false);
-        replaceMeshes(true);
+        detachReplacedPipboyRootNif();
+        updateSetupPipboyNodes();
         f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 1;
         _pipboyScreenPrevFrame.clear();
         turnPipBoyOnOff(true);
@@ -118,12 +119,11 @@ namespace frik
         _physicalHandler.operate(_lastPipboyPage);
 
         if (!f4vr::isPipboyOnWrist()) {
-            _meshReplaced = false;
             restoreDefaultPipboyModelIfNeeded();
             return;
         }
 
-        replaceMeshes(false);
+        updateSetupPipboyNodes();
 
         // check by looking should be first to handle closing by button not opening it again by looking at Pipboy.
         checkTurningOnByLookingAt();
@@ -132,8 +132,6 @@ namespace frik
         checkTurningOffByButton();
 
         if (_isOpen) {
-            positionPipboyModelToPipboyOnArm();
-
             PipboyOperationHandler::operate();
 
             dampenPipboyScreen();
@@ -195,92 +193,91 @@ namespace frik
      */
     void Pipboy::restoreDefaultPipboyModelIfNeeded()
     {
-        if (!_originalPipboyRootNifOnlyNode || !f4vr::getPlayerNodes()->PipboyRoot_nif_only_node) {
+        detachReplacedPipboyRootNif();
+
+        const auto pn = f4vr::getPlayerNodes();
+        if (!_originalPipboyRootNifOnlyNode) {
             return;
         }
 
         logger::info("Restoring original Pipboy model...");
-        const auto pn = f4vr::getPlayerNodes();
-        pn->PipboyParentNode->DetachChild(pn->PipboyRoot_nif_only_node);
-        pn->PipboyParentNode->AttachChild(_originalPipboyRootNifOnlyNode, true);
+        _originalPipboyRootNifOnlyNode->local.scale = 1;
         pn->PipboyRoot_nif_only_node = _originalPipboyRootNifOnlyNode;
+        if (const auto screenNode = f4vr::findNode(_originalPipboyRootNifOnlyNode, "Screen")) {
+            pn->ScreenNode = screenNode;
+        } else {
+            logger::error("Failed to find Pipboy screen node in original nif!");
+        }
         _originalPipboyRootNifOnlyNode = nullptr;
     }
 
     /**
-     * Position the Pipboy model to match the Pipboy on arm position.
+     * Set up the replaced Pipboy root nif if run first time.
+     * Or update Pipboy screen location to make sure it's in the correct place.
      */
-    void Pipboy::positionPipboyModelToPipboyOnArm() const
+    void Pipboy::updateSetupPipboyNodes() const
     {
-        const auto pipboyBone = getPipboyModelOnArmNode();
-        const auto wandPip = f4vr::getPlayerNodes()->PipboyRoot_nif_only_node;
-        if (!pipboyBone || !wandPip) {
+        if (f4vr::isInPowerArmor()) {
             return;
         }
 
-        const auto delta = pipboyBone->world.translate - wandPip->parent->world.translate;
-        wandPip->local.translate = wandPip->parent->world.rotate * (delta / wandPip->parent->world.scale);
-
-        const auto wandWROT = getMatrixFromEulerAngles(degreesToRads(30), 0, 0) * pipboyBone->world.rotate;
-        wandPip->local.rotate = wandWROT * wandPip->parent->world.rotate.Transpose();
-    }
-
-    /**
-     * Run Pipboy mesh replacement if not already done (or forced) to the configured meshes either holo or screen.
-     * @param force true - run mesh replace, false - only if not previously replaced
-     */
-    void Pipboy::replaceMeshes(const bool force)
-    {
-        if ((force || !_meshReplaced) && !f4vr::isInPowerArmor()) {
+        if (!_newPipboyRootNifOnlyNode) {
+            setupPipboyRootNif();
             if (g_config.isHoloPipboy) {
-                replaceMeshes(force, "Screen", "HoloEmitter");
+                showHideCorrectPipboyMesh("Screen", "HoloEmitter");
             } else {
-                replaceMeshes(force, "HoloEmitter", "Screen");
+                showHideCorrectPipboyMesh("HoloEmitter", "Screen");
             }
+        }
+
+        if (!g_frik.isPipboyConfigurationModeActive()) {
+            // load Pipboy screen adjusted position config
+            f4vr::getPlayerNodes()->ScreenNode->local = g_config.getPipboyOffset();
         }
     }
 
     /**
-     * Handle replacing of Pipboy meshes on the arm with either screen or holo emitter.
+     * Setup FRIK special root nif node to control the screen location and hide Pipboy frame
      */
-    void Pipboy::replaceMeshes(const bool force, const std::string& itemHide, const std::string& itemShow)
+    void Pipboy::setupPipboyRootNif() const
     {
         const auto pn = f4vr::getPlayerNodes();
         if (!pn->PipboyParentNode || !pn->PipboyRoot_nif_only_node) {
+            logger::warn("No pipboy parent or root nif nodes found!");
             return;
         }
 
-        if (force || !_originalPipboyRootNifOnlyNode || _newPipboyRootNifOnlyNode != pn->PipboyRoot_nif_only_node) {
+        if (!_originalPipboyRootNifOnlyNode) {
             // save the original to restore it later if needed.
+            logger::info("Store original pipboy root nif node");
             _originalPipboyRootNifOnlyNode = pn->PipboyRoot_nif_only_node;
-
-            _newPipboyRootNifOnlyNode = f4vr::loadNifFromFile(g_config.isHoloPipboy ? "FRIK/HoloPipboyVR.nif" : "FRIK/PipboyVR.nif");
-            const auto newScreen = f4vr::findAVObject(_newPipboyRootNifOnlyNode, "Screen:0")->parent;
-            if (!newScreen) {
-                logger::error("Failed to find Pipboy screen node in the loaded nif!");
-                return;
-            }
-
-            // replace the game Pipboy nif with ours
-            pn->PipboyParentNode->DetachChild(pn->PipboyRoot_nif_only_node);
-            pn->PipboyParentNode->AttachChild(_newPipboyRootNifOnlyNode, true);
-            pn->PipboyRoot_nif_only_node = _newPipboyRootNifOnlyNode;
-            pn->PipboyRoot_nif_only_node->local.scale = 0.0; // hide until opened
-
-            // using native function here to attach the new screen as too lazy to fully reverse what it's doing and it works fine.
-            pn->ScreenNode->DetachChildAt(0);
-            f4vr::addNode(reinterpret_cast<uint64_t>(&pn->ScreenNode), newScreen);
-
-            // pn->ScreenNode = newScreen;
-            logger::info("Pipboy root nif replaced!");
+            _originalPipboyRootNifOnlyNode->local.scale = 0;
         }
 
-        // load Pipboy screen adjusted position config
-        if (const auto pbRoot = f4vr::getFirstChild(pn->PipboyRoot_nif_only_node)) {
-            pbRoot->local = g_config.getPipboyOffset();
+        const auto newPipboyRootNifOnlyNode = f4vr::loadNifFromFile(g_config.isHoloPipboy ? "FRIK/HoloPipboyVR.nif" : "FRIK/PipboyVR.nif");
+        const auto newScreen = f4vr::findNode(newPipboyRootNifOnlyNode, "Screen");
+        if (!newScreen) {
+            logger::error("Failed to find Pipboy screen node in the loaded nif!");
+            return;
         }
 
-        // sets 3rd Person Pipboy (on the arm) scale and correct UI
+        // replace the game Pipboy nif with ours
+        pn->PipboyRoot_nif_only_node = newPipboyRootNifOnlyNode;
+        pn->PipboyRoot_nif_only_node->local.scale = 0.0; // hide until opened
+        pn->ScreenNode = newScreen;
+
+        // attach where the 3rd-person Pipboy is on the arm
+        getPipboyModelOnArmNode()->AttachChild(newPipboyRootNifOnlyNode, false);
+
+        _newPipboyRootNifOnlyNode = newPipboyRootNifOnlyNode;
+        logger::info("Pipboy root nif replaced!");
+    }
+
+    /**
+     * Show and hide the correct 3rd-person Pipboy on the arm mesh for either regular or holo screen type.
+     */
+    void Pipboy::showHideCorrectPipboyMesh(const std::string& itemHide, const std::string& itemShow) const
+    {
         if (const auto pipboy3Rd = getPipboyModelOnArmNode()) {
             pipboy3Rd->local.scale = g_config.pipBoyScale;
 
@@ -292,10 +289,21 @@ namespace frik
                 f4vr::setNodeVisibility(showNode, true);
                 showNode->local.scale = 1;
             }
+            logger::info("Pipboy Meshes replaced! Hide: {}, Show: {}", itemHide.c_str(), itemShow.c_str());
         }
+    }
 
-        _meshReplaced = true;
-        logger::info("Pipboy Meshes replaced! Hide: {}, Show: {}", itemHide.c_str(), itemShow.c_str());
+    /**
+     * If we created a Pipboy root nif we should detach and release it if no longer needed.
+     * Like if changing out of wrist Pipboy mode or if switching the Pipboy model (regular/holo)
+     */
+    void Pipboy::detachReplacedPipboyRootNif()
+    {
+        if (_newPipboyRootNifOnlyNode) {
+            logger::info("Detach current replaced pipboy root nif node");
+            _newPipboyRootNifOnlyNode->parent->DetachChild(_newPipboyRootNifOnlyNode);
+            _newPipboyRootNifOnlyNode = nullptr;
+        }
     }
 
     /**
@@ -589,9 +597,13 @@ namespace frik
         return screenNode;
     }
 
-    RE::NiAVObject* Pipboy::getPipboyModelOnArmNode() const
+    RE::NiNode* Pipboy::getPipboyModelOnArmNode() const
     {
+        if (f4vr::isInPowerArmor()) {
+            return nullptr;
+        }
         const auto arm = (g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm()).forearm3;
-        return arm ? f4vr::findAVObject(arm, "PipboyBone") : nullptr;
+        const auto boneNode = arm ? f4vr::findAVObject(arm, "PipboyBone") : nullptr;
+        return arm ? boneNode->IsNode() : nullptr;
     }
 }

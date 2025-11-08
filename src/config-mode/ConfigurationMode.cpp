@@ -467,10 +467,6 @@ namespace frik
             bool ExitButtonPressed = _PBTouchbuttons[9];
             bool GlanceButtonPressed = _PBTouchbuttons[10];
             bool DampenScreenButtonPressed = _PBTouchbuttons[11];
-            RE::NiAVObject* pbRoot = f4vr::findAVObject(f4vr::getPlayerNodes()->SecondaryWandNode, "PipboyRoot");
-            if (!pbRoot) {
-                return;
-            }
             RE::NiAVObject* _3rdPipboy = nullptr;
             if (!g_config.leftHandedPipBoy) {
                 if (_skelly->getLeftArm().forearm3) {
@@ -562,7 +558,7 @@ namespace frik
                 }
                 if (SaveButtonPressed && !_isSaveButtonPressed) {
                     _isSaveButtonPressed = true;
-                    g_config.savePipboyOffset(pbRoot->local);
+                    g_config.savePipboyOffset(f4vr::getPlayerNodes()->ScreenNode->local);
                     if (_3rdPipboy) {
                         // 3rd person Pipboy is null for Fallout London as there is no Pipboy on the arm
                         g_config.savePipboyScale(_3rdPipboy->local.scale);
@@ -596,6 +592,7 @@ namespace frik
                 } else if (!ModelSwapButtonPressed) {
                     _isModelSwapButtonPressed = false;
                 }
+                const auto pbRoot = f4vr::getPlayerNodes()->ScreenNode;
                 if ((doinantHandStick.y > 0.10 || doinantHandStick.y < -0.10) && RotateButtonPressed) {
                     rAxisOffsetX = doinantHandStick.y / 10;
                     if (rAxisOffsetX < 0) {
