@@ -86,7 +86,9 @@ namespace frik
         turnPipBoyOnOff(false);
         detachReplacedPipboyRootNif();
         updateSetupPipboyNodes();
-        f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = 1;
+        const auto pn = f4vr::getPlayerNodes();
+        pn->PipboyRoot_nif_only_node->local.scale = 1;
+        pn->ScreenNode->local = g_config.getPipboyOffset();
         _pipboyScreenPrevFrame.clear();
         turnPipBoyOnOff(true);
     }
