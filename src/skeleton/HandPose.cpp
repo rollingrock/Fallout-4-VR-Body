@@ -9,12 +9,6 @@ using namespace common;
 // TODO: this code is terrible, primary it doesn't handle multiple code paths set hand pose, release will release all of them
 namespace frik
 {
-    std::map<std::string, RE::NiTransform, CaseInsensitiveComparator> handClosed;
-    std::map<std::string, RE::NiTransform, CaseInsensitiveComparator> handOpen;
-
-    std::map<std::string, float> handPapyrusPose;
-    std::map<std::string, bool> handPapyrusHasControl;
-
     constexpr int FINGERS_COUNT = 15;
 
     static const std::string LEFT_HAND_FINGERS[] = {
@@ -25,11 +19,31 @@ namespace frik
         "RArm_Finger11", "RArm_Finger12", "RArm_Finger13", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33", "RArm_Finger41",
         "RArm_Finger42", "RArm_Finger43", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53"
     };
-    static constexpr float HAND_FINGERS_POINTING_POSE[] = { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+    std::map<std::string, RE::NiTransform, CaseInsensitiveComparator> handClosed;
+    std::map<std::string, RE::NiTransform, CaseInsensitiveComparator> handOpen;
+
+    std::map<std::string, int> boneToIndexMap;
+
+    std::map<std::string, float> handPapyrusPose;
+    std::map<std::string, bool> handPapyrusHasControl;
+
+    static constexpr float HAND_FINGERS_HOLDING_GUN_POSE[] = { 0.7f, 0.4f, 0.5f, 0.9f, 0.6f, 0.5f, 0.3f, 0.5f, 0.5f, 0.1f, 0.5f, 0.5f, 0.0f, 0.5f, 0.7f };
+    static constexpr float HAND_FINGERS_HOLDING_MELEE_POSE[] = { 0.7f, 0.5f, 0.8f, 0.4f, 0.3f, 0.9f, 0.1f, 0.5f, 0.9f, 0.0f, 0.5f, 0.9f, 0.0f, 0.4f, 0.9f };
+    static constexpr float HAND_FINGERS_POINTING_POSE[] = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     static bool _handPointingPoseSet[2] = { false, false };
 
     static bool _offHandGripPose = false;
     static constexpr float OFFHAND_FINGERS_GRIP_POSE[] = { 1.0f, 1.0f, 0.9f, 0.6f, 0.6f, 0.6f, 0.5f, 0.6f, 0.55f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
+
+    /**
+     * Get the pose value for the given bone either for melee or gun holding hand pose.
+     */
+    float getHandBonePose(const std::string& bone, const bool melee)
+    {
+        const auto handPose = melee ? HAND_FINGERS_HOLDING_MELEE_POSE : HAND_FINGERS_HOLDING_GUN_POSE;
+        return handPose[boneToIndexMap[bone]];
+    }
 
     static void copyDataIntoHand(const std::vector<float>& fingerData, std::map<std::string, RE::NiTransform, CaseInsensitiveComparator>& hand, const char* finger)
     {
@@ -79,6 +93,13 @@ namespace frik
 
     void initHandPoses(const bool inPowerArmor)
     {
+        if (boneToIndexMap.empty()) {
+            for (auto i = 0; i < FINGERS_COUNT; i++) {
+                boneToIndexMap[LEFT_HAND_FINGERS[i]] = i;
+                boneToIndexMap[RIGHT_HAND_FINGERS[i]] = i;
+            }
+        }
+
         std::vector<std::vector<float>> data;
 
         // pulled from the game engine while running idle animations

@@ -12,6 +12,8 @@ namespace frik
 
     void initHandPoses(bool inPowerArmor);
 
+    float getHandBonePose(const std::string& bone, const bool melee);
+
     void setFingerPositionScalar(bool isLeft, float thumb, float index, float middle, float ring, float pinky);
     void restoreFingerPoseControl(bool isLeft);
 

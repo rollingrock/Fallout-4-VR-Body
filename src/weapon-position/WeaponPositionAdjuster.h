@@ -28,6 +28,7 @@ namespace frik
         }
 
         bool isWeaponDrawn() const { return _currentWeapon != EMPTY_HAND; }
+        bool isMeleeWeaponDrawn() const { return _isCurrentWeaponMelee; }
         bool inWeaponRepositionMode() const { return _configMode != nullptr; }
 
         void toggleWeaponRepositionMode();
@@ -65,6 +66,7 @@ namespace frik
         // used to know if weapon changed to load saved offsets
         std::string _currentWeapon;
         bool _currentlyInPA = false;
+        bool _isCurrentWeaponMelee = false;
 
         // is offhand (secondary hand) gripping the weapon barrel
         bool _offHandGripping = false;

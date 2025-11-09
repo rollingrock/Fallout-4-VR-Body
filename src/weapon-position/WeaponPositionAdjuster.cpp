@@ -175,6 +175,7 @@ namespace frik
 
         _currentWeapon = weaponName;
         _currentlyInPA = inPA;
+        _isCurrentWeaponMelee = f4vr::isMeleeWeaponEquipped();
 
         // reset state
         _offHandGripping = false;
@@ -193,7 +194,7 @@ namespace frik
             _weaponOffsetTransform = weaponOffsetLookup.value();
         } else {
             // No stored offset, use original weapon transform
-            _weaponOffsetTransform = f4vr::isMeleeWeaponEquipped() ? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_weaponOriginalTransform) : _weaponOriginalTransform;
+            _weaponOffsetTransform = _isCurrentWeaponMelee ? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_weaponOriginalTransform) : _weaponOriginalTransform;
         }
 
         // Load stored offsets for offhand for the new weapon
