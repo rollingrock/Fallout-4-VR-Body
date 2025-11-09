@@ -110,11 +110,6 @@ namespace frik
         // reposition
         handleReposition(weapon, throwable);
 
-        // reset
-        if (f4vr::VRControllers.isLongPressed(f4vr::Hand::Primary, vr::k_EButton_ApplicationMenu) && _repositionTarget != RepositionTarget::Throwable) {
-            f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, .6f, .5f);
-            resetConfig();
-        }
         // save
         if (f4vr::VRControllers.isLongPressed(f4vr::Hand::Primary, vr::EVRButtonId::k_EButton_A)) {
             f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, .6f, .5f);
@@ -190,7 +185,11 @@ namespace frik
 
         // Update the weapon transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
-        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
+
+        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
+            // adjust the scale of the weapon
+            transform.scale = std::fmax(0.1f, transform.scale + primAxisY / 100);
+        } else if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
             const auto rot = getMatrixFromEulerAngles(-degreesToRads(primAxisY / 5), -degreesToRads(secAxisX / 3), degreesToRads(primAxisX / 5));
             transform.rotate = rot * transform.rotate;
@@ -240,7 +239,10 @@ namespace frik
 
         // Update the transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
-        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
+        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
+            // adjust the scale of the weapon
+            transform.scale = std::fmax(0.1f, transform.scale + primAxisY / 100);
+        } else if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
             const auto rot = getMatrixFromEulerAngles(degreesToRads(secAxisY / 6), degreesToRads(secAxisX / 6), degreesToRads(primAxisX / 6));
             transform.rotate = rot * transform.rotate;
@@ -272,7 +274,10 @@ namespace frik
 
         // Update the transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
-        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
+        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
+            // adjust the scale of the weapon
+            transform.scale = std::fmax(0.1f, transform.scale + primAxisY / 100);
+        } else if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
             const auto rot = getMatrixFromEulerAngles(-degreesToRads(secAxisY / 6), -degreesToRads(primAxisX / 6), -degreesToRads(primAxisY / 6));
             transform.rotate = rot * transform.rotate;
