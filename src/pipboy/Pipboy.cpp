@@ -47,7 +47,7 @@ namespace frik
      */
     bool Pipboy::isPlayerLookingAtPipboy(const bool isPipboyOpen)
     {
-        const auto screen = getPipboyScreenNode();
+        const auto screen = f4vr::getPlayerNodes()->ScreenNode;
         if (screen == nullptr) {
             return false;
         }
@@ -66,12 +66,16 @@ namespace frik
         }
         logger::info("Turning Pipboy {}", open ? "ON" : "OFF");
         _isOpen = open;
+        const auto pn = f4vr::getPlayerNodes();
+        f4vr::setNodeVisibility(pn->ScreenNode, open);
+        pn->PipboyRoot_nif_only_node->local.scale = open ? 1.0f : 0.0f;
         turnPipBoyOnOff(open);
-        f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = open ? 1.0f : 0.0f;
         if (open) {
             // prevent immediate closing of Pipboy
             _lastLookingAtPip = nowMillis();
         } else {
+            // Prevents Pipboy from being turned on again immediately after closing it.
+            _startedLookingAtPip = nowMillis() + 10000;
             _pipboyScreenPrevFrame.clear();
             g_frik.closePipboyConfigurationModeActive();
         }
@@ -126,6 +130,11 @@ namespace frik
         }
 
         updateSetupPipboyNodes();
+
+        if (g_frik.isPauseMenuOpen() || g_frik.isInScopeMenu()) {
+            // prevent interacting with Pipboy when we shouldn't
+            return;
+        }
 
         // check by looking should be first to handle closing by button not opening it again by looking at Pipboy.
         checkTurningOnByLookingAt();
@@ -332,9 +341,6 @@ namespace frik
 
         logger::info("Close Pipboy with button");
         openClose(false);
-
-        // Prevents Pipboy from being turned on again immediately after closing it.
-        _startedLookingAtPip = nowMillis() + 10000;
     }
 
     /**
@@ -483,7 +489,7 @@ namespace frik
             return;
         }
 
-        const auto pipboyScreen = getPipboyScreenNode();
+        const auto pipboyScreen = f4vr::getPlayerNodes()->ScreenNode;
         if (!pipboyScreen) {
             return;
         }
@@ -584,19 +590,6 @@ namespace frik
             pipbone->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(180.0), 0) * pipbone->local.rotate;
             pipbone->local.translate *= -1.5;
         }
-    }
-
-    /**
-     * Get the Pipboy screen node.
-     */
-    RE::NiAVObject* Pipboy::getPipboyScreenNode()
-    {
-        const auto pipboy = f4vr::getPlayerNodes()->PipboyRoot_nif_only_node;
-        const auto screenNode = pipboy ? f4vr::findAVObject(pipboy, "Screen") : nullptr;
-        if (!screenNode) {
-            logger::sample("Failed to find Pipboy screen node");
-        }
-        return screenNode;
     }
 
     RE::NiNode* Pipboy::getPipboyModelOnArmNode() const

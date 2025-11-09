@@ -49,7 +49,6 @@ namespace frik
         void dampenPipboyScreenMovement(RE::NiAVObject* pipboyScreen);
         bool isPlayerLookingAtPipboy() const;
         void leftHandedModePipboy() const;
-        static RE::NiAVObject* getPipboyScreenNode();
         RE::NiNode* getPipboyModelOnArmNode() const;
 
         Skeleton* _skelly;

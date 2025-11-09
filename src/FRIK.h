@@ -29,6 +29,7 @@ namespace frik
                 ) {}
 
         bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
+        bool isPauseMenuOpen() { return _gameMenusHandler.isPauseMenuOpen(); }
         bool isFavoritesMenuOpen() { return _gameMenusHandler.isFavoritesMenuOpen(); }
 
         bool getSelfieMode() const { return _selfieMode; }
