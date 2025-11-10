@@ -449,9 +449,6 @@ namespace frik
     void ConfigurationMode::pipboyConfigurationMode()
     {
         if (g_frik.isPipboyOn()) {
-            const auto doinantHandStick = f4vr::isLeftHandedMode()
-                ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).rAxis[0]
-                : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).rAxis[0];
             const uint64_t dominantHand = f4vr::isLeftHandedMode()
                 ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
                 : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
@@ -467,10 +464,6 @@ namespace frik
             bool ExitButtonPressed = _PBTouchbuttons[9];
             bool GlanceButtonPressed = _PBTouchbuttons[10];
             bool DampenScreenButtonPressed = _PBTouchbuttons[11];
-            RE::NiAVObject* pbRoot = f4vr::findAVObject(f4vr::getPlayerNodes()->SecondaryWandNode, "PipboyRoot");
-            if (!pbRoot) {
-                return;
-            }
             RE::NiAVObject* _3rdPipboy = nullptr;
             if (!g_config.leftHandedPipBoy) {
                 if (_skelly->getLeftArm().forearm3) {
@@ -490,13 +483,9 @@ namespace frik
                 _PBConfigModeEnterCounter = 0;
             }
             if (_isPBConfigModeActive) {
-                float rAxisOffsetX;
                 setConfigModeHandPose();
 
-                RE::NiPoint3 finger;
-                f4vr::isLeftHandedMode()
-                    ? finger = _skelly->getBoneWorldTransform("RArm_Finger23").translate
-                    : finger = _skelly->getBoneWorldTransform("LArm_Finger23").translate;
+                const auto finger = _skelly->getBoneWorldTransform(f4vr::isLeftHandedMode() ? "RArm_Finger23" : "LArm_Finger23").translate;
                 for (int i = 1; i <= 11; i++) {
                     auto TouchMesh = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, meshName2[i]);
                     auto TransMesh = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, meshName[i]);
@@ -562,7 +551,7 @@ namespace frik
                 }
                 if (SaveButtonPressed && !_isSaveButtonPressed) {
                     _isSaveButtonPressed = true;
-                    g_config.savePipboyOffset(pbRoot->local);
+                    g_config.savePipboyOffset(f4vr::getPlayerNodes()->ScreenNode->local);
                     if (_3rdPipboy) {
                         // 3rd person Pipboy is null for Fallout London as there is no Pipboy on the arm
                         g_config.savePipboyScale(_3rdPipboy->local.scale);
@@ -596,53 +585,66 @@ namespace frik
                 } else if (!ModelSwapButtonPressed) {
                     _isModelSwapButtonPressed = false;
                 }
-                if ((doinantHandStick.y > 0.10 || doinantHandStick.y < -0.10) && RotateButtonPressed) {
-                    rAxisOffsetX = doinantHandStick.y / 10;
-                    if (rAxisOffsetX < 0) {
-                        rAxisOffsetX = rAxisOffsetX * -1;
-                    } else {
-                        rAxisOffsetX = 0 - rAxisOffsetX;
+
+                // Handle Pipboy screen location adjustment logic
+                const auto rightHandStick = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, f4vr::Axis::Thumbstick);
+                const auto pbScreenNode = f4vr::getPlayerNodes()->ScreenNode;
+                if (RotateButtonPressed) {
+                    if (rightHandStick.y > 0.10 || rightHandStick.y < -0.10) {
+                        auto rAxisOffsetY = rightHandStick.y / 5;
+                        if (rAxisOffsetY < 0) {
+                            rAxisOffsetY = rAxisOffsetY * -1;
+                        } else {
+                            rAxisOffsetY = 0 - rAxisOffsetY;
+                        }
+                        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Primary, vr::k_EButton_Grip)) {
+                            pbScreenNode->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(rAxisOffsetY), 0) * pbScreenNode->local.rotate;
+                        } else {
+                            pbScreenNode->local.rotate = getMatrixFromEulerAngles(degreesToRads(rAxisOffsetY), 0, 0) * pbScreenNode->local.rotate;
+                        }
                     }
-                    pbRoot->local.rotate = getMatrixFromEulerAngles(degreesToRads(rAxisOffsetX), 0, 0) * pbRoot->local.rotate;
+                    if (rightHandStick.x > 0.10 || rightHandStick.x < -0.10) {
+                        auto rAxisOffsetX = rightHandStick.x / 5;
+                        if (rAxisOffsetX < 0) {
+                            rAxisOffsetX = rAxisOffsetX * -1;
+                        } else {
+                            rAxisOffsetX = 0 - rAxisOffsetX;
+                        }
+                        if (!f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Primary, vr::k_EButton_Grip)) {
+                            pbScreenNode->local.rotate = getMatrixFromEulerAngles(0, 0, degreesToRads(rAxisOffsetX)) * pbScreenNode->local.rotate;
+                        }
+                    }
                 }
-                if (doinantHandStick.y > 0.10 && ScaleButtonPressed) {
-                    pbRoot->local.scale = pbRoot->local.scale + 0.001f;
+                if (rightHandStick.y > 0.10 && ScaleButtonPressed) {
+                    pbScreenNode->local.scale = pbScreenNode->local.scale + 0.01f;
                 }
-                if (doinantHandStick.y < -0.10 && ScaleButtonPressed) {
-                    pbRoot->local.scale = pbRoot->local.scale - 0.001f;
+                if (rightHandStick.y < -0.10 && ScaleButtonPressed) {
+                    pbScreenNode->local.scale = pbScreenNode->local.scale - 0.01f;
                 }
-                if (doinantHandStick.y > 0.10 && MoveXButtonPressed) {
-                    rAxisOffsetX = doinantHandStick.y / 50;
-                    pbRoot->local.translate.x = pbRoot->local.translate.x + rAxisOffsetX;
+                if (rightHandStick.y > 0.10 && MoveXButtonPressed) {
+                    pbScreenNode->local.translate.x = pbScreenNode->local.translate.x + rightHandStick.y / 20;
                 }
-                if (doinantHandStick.y < -0.10 && MoveXButtonPressed) {
-                    rAxisOffsetX = doinantHandStick.y / 50;
-                    pbRoot->local.translate.x = pbRoot->local.translate.x + rAxisOffsetX;
+                if (rightHandStick.y < -0.10 && MoveXButtonPressed) {
+                    pbScreenNode->local.translate.x = pbScreenNode->local.translate.x + rightHandStick.y / 20;
                 }
-                if (doinantHandStick.y > 0.10 && MoveYButtonPressed) {
-                    rAxisOffsetX = doinantHandStick.y / 20;
-                    pbRoot->local.translate.y = pbRoot->local.translate.y + rAxisOffsetX;
+                if (rightHandStick.y > 0.10 && MoveYButtonPressed) {
+                    pbScreenNode->local.translate.y = pbScreenNode->local.translate.y - rightHandStick.y / 20;
                 }
-                if (doinantHandStick.y < -0.10 && MoveYButtonPressed) {
-                    rAxisOffsetX = doinantHandStick.y / 20;
-                    pbRoot->local.translate.y = pbRoot->local.translate.y + rAxisOffsetX;
+                if (rightHandStick.y < -0.10 && MoveYButtonPressed) {
+                    pbScreenNode->local.translate.y = pbScreenNode->local.translate.y - rightHandStick.y / 20;
                 }
-                if (doinantHandStick.y > 0.10 && MoveZButtonPressed) {
-                    rAxisOffsetX = doinantHandStick.y / 20;
-                    pbRoot->local.translate.z = pbRoot->local.translate.z - rAxisOffsetX;
+                if (rightHandStick.y > 0.10 && MoveZButtonPressed) {
+                    pbScreenNode->local.translate.z = pbScreenNode->local.translate.z - rightHandStick.y / 20;
                 }
-                if (doinantHandStick.y < -0.10 && MoveZButtonPressed) {
-                    rAxisOffsetX = doinantHandStick.y / 20;
-                    pbRoot->local.translate.z = pbRoot->local.translate.z - rAxisOffsetX;
+                if (rightHandStick.y < -0.10 && MoveZButtonPressed) {
+                    pbScreenNode->local.translate.z = pbScreenNode->local.translate.z - rightHandStick.y / 20;
                 }
 
-                if (doinantHandStick.y > 0.10 && ModelScaleButtonPressed && _3rdPipboy) {
-                    rAxisOffsetX = doinantHandStick.y / 65;
-                    _3rdPipboy->local.scale += rAxisOffsetX;
+                if (rightHandStick.y > 0.10 && ModelScaleButtonPressed && _3rdPipboy) {
+                    _3rdPipboy->local.scale += rightHandStick.y / 65;
                 }
-                if (doinantHandStick.y < -0.10 && ModelScaleButtonPressed && _3rdPipboy) {
-                    rAxisOffsetX = doinantHandStick.y / 65;
-                    _3rdPipboy->local.scale += rAxisOffsetX;
+                if (rightHandStick.y < -0.10 && ModelScaleButtonPressed && _3rdPipboy) {
+                    _3rdPipboy->local.scale += rightHandStick.y / 65;
                 }
             }
         }
@@ -654,25 +656,29 @@ namespace frik
             f4vr::closeFavoriteMenu();
         }
         f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
-        RE::NiNode* HUD = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigHUD.nif", "PBCONFIGHUD");
-        // TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
-        auto UIATTACH = f4vr::isLeftHandedMode()
-            ? f4vr::getPlayerNodes()->primaryUIAttachNode
-            : f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "world_primaryWand.nif");
-        UIATTACH->AttachChild(HUD, true);
-        const char* MainHud[12] = {
-            "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif",
-            "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif",
-            "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile09.nif", "Data/Meshes/FRIK/UI-Tile10.nif", "Data/Meshes/FRIK/UI-Tile11.nif"
-        };
-        const char* MainHud2[12] = {
-            "Data/Meshes/FRIK/PB-MainTitle.nif", "Data/Meshes/FRIK/PB-Tile07.nif", "Data/Meshes/FRIK/PB-Tile03.nif", "Data/Meshes/FRIK/PB-Tile08.nif",
-            "Data/Meshes/FRIK/PB-Tile02.nif", "Data/Meshes/FRIK/PB-Tile01.nif", "Data/Meshes/FRIK/PB-Tile04.nif", "Data/Meshes/FRIK/PB-Tile05.nif",
-            "Data/Meshes/FRIK/PB-Tile06.nif", "Data/Meshes/FRIK/PB-Tile09.nif", "Data/Meshes/FRIK/PB-Tile10.nif", "Data/Meshes/FRIK/PB-Tile11.nif"
-        };
+        const auto pipboyConfigUI = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigHUD.nif", "PBCONFIGHUD");
+        if (f4vr::isLeftHandedMode() && !g_config.leftHandedPipBoy) {
+            // rotate the UI so left-handed with Pipboy on it have the UI in convenient position
+            pipboyConfigUI->local.translate = RE::NiPoint3(-12, 10, -3);
+            pipboyConfigUI->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(20), degreesToRads(-40)) * getMatrixFromEulerAngles(0, degreesToRads(90), degreesToRads(30));
+        } else {
+            pipboyConfigUI->local.translate = RE::NiPoint3(0, 0, 10);
+        }
+        f4vr::getPlayerNodes()->primaryUIAttachNode->AttachChild(pipboyConfigUI, true);
         for (int i = 0; i <= 11; i++) {
+            static const char* MainHud[12] = {
+                "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif",
+                "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif",
+                "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile09.nif", "Data/Meshes/FRIK/UI-Tile10.nif", "Data/Meshes/FRIK/UI-Tile11.nif"
+            };
+            static const char* MainHud2[12] = {
+                "Data/Meshes/FRIK/PB-MainTitle.nif", "Data/Meshes/FRIK/PB-Tile07.nif", "Data/Meshes/FRIK/PB-Tile03.nif", "Data/Meshes/FRIK/PB-Tile08.nif",
+                "Data/Meshes/FRIK/PB-Tile02.nif", "Data/Meshes/FRIK/PB-Tile01.nif", "Data/Meshes/FRIK/PB-Tile04.nif", "Data/Meshes/FRIK/PB-Tile05.nif",
+                "Data/Meshes/FRIK/PB-Tile06.nif", "Data/Meshes/FRIK/PB-Tile09.nif", "Data/Meshes/FRIK/PB-Tile10.nif", "Data/Meshes/FRIK/PB-Tile11.nif"
+            };
+
             RE::NiNode* UI = f4vr::getClonedNiNodeForNifFile(MainHud[i], meshName2[i]);
-            HUD->AttachChild(UI, true);
+            pipboyConfigUI->AttachChild(UI, true);
 
             RE::NiNode* UI2 = f4vr::getClonedNiNodeForNifFile(MainHud2[i], meshName[i]);
             UI->AttachChild(UI2, true);

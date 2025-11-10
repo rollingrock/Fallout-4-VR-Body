@@ -29,6 +29,7 @@ namespace frik
                 ) {}
 
         bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
+        bool isPauseMenuOpen() { return _gameMenusHandler.isPauseMenuOpen(); }
         bool isFavoritesMenuOpen() { return _gameMenusHandler.isFavoritesMenuOpen(); }
 
         bool getSelfieMode() const { return _selfieMode; }
@@ -53,6 +54,8 @@ namespace frik
         }
 
         void closePipboyConfigurationModeActive() const { if (_configurationMode) { _configurationMode->exitPBConfig(); } }
+
+        bool isMeleeWeaponDrawn() const { return _weaponPosition && _weaponPosition->isMeleeWeaponDrawn(); }
 
         bool inWeaponRepositionMode() const { return _weaponPosition && _weaponPosition->inWeaponRepositionMode(); }
         void toggleWeaponRepositionMode() const { if (_weaponPosition) { _weaponPosition->toggleWeaponRepositionMode(); } }

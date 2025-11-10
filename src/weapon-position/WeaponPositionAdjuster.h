@@ -24,10 +24,12 @@ namespace frik
             _scopeCameraBaseMatrix.entry[1][2] = 1.0; // new Z = old Y
 
             // the angle was calculated by looking at the weapon in hand, seems to work for all weapons
-            _twoHandedPrimaryHandManualAdjustment = common::getMatrixFromEulerAngles(0, common::degreesToRads(-6), common::degreesToRads(7));
+            const float sign = f4vr::isLeftHandedMode() ? -1.0f : 1.0f;
+            _twoHandedPrimaryHandManualAdjustment = common::getMatrixFromEulerAngles(0, common::degreesToRads(-6 * sign), common::degreesToRads(7 * sign));
         }
 
         bool isWeaponDrawn() const { return _currentWeapon != EMPTY_HAND; }
+        bool isMeleeWeaponDrawn() const { return _isCurrentWeaponMelee; }
         bool inWeaponRepositionMode() const { return _configMode != nullptr; }
 
         void toggleWeaponRepositionMode();
@@ -65,6 +67,7 @@ namespace frik
         // used to know if weapon changed to load saved offsets
         std::string _currentWeapon;
         bool _currentlyInPA = false;
+        bool _isCurrentWeaponMelee = false;
 
         // is offhand (secondary hand) gripping the weapon barrel
         bool _offHandGripping = false;

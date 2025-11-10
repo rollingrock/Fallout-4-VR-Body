@@ -1262,7 +1262,10 @@ namespace frik
         _handBones[bone].rotate = qc.getMatrix();
     }
 
-    // TODO: this may be the place to fix left-handed fingers on weapon
+    /**
+     * Copy the 1st-person bone position for the given hand bone.
+     * Useful for different weapons holding hand poses.
+     */
     void Skeleton::copy1StPerson(const std::string& bone)
     {
         const auto fpTree = getFirstPersonBoneTree();
@@ -1274,6 +1277,19 @@ namespace frik
                 _handBones[bone] = fpTree->transforms[pos].local;
             }
         }
+    }
+
+    /**
+     * In left-handed mode the 1st-person skeleton is not using the correct hand so we can't use "copy1StPerson" method.
+     * Instead, we just force a specific hand pose that makes sense.
+     */
+    void Skeleton::setPredefinedHandPose(const std::string& bone)
+    {
+        Quaternion qo, qt;
+        qt.fromMatrix(handOpen[bone].rotate);
+        qo.fromMatrix(handClosed[bone].rotate);
+        qo.slerp(std::clamp(getHandBonePose(bone, g_frik.isMeleeWeaponDrawn()), 0.0f, 1.0f), qt);
+        _handBones[bone].rotate = qo.getMatrix();
     }
 
     void Skeleton::setHandPose()
@@ -1298,8 +1314,12 @@ namespace frik
                 if (IsWeaponDrawn()
                     && (isLeftHandedMode() || (!g_frik.isPipboyOn() && !g_frik.isPipboyOperatingWithFinger())) // left-handed has pipboy on the hand with the weapon
                     && !(isLeft ^ isLeftHandedMode())) {
-                    // use the game hand position for the weapon in hand
-                    this->copy1StPerson(name);
+                    if (isLeftHandedMode()) {
+                        setPredefinedHandPose(name);
+                    } else {
+                        // use the game hand position for the weapon in hand
+                        copy1StPerson(name);
+                    }
                 } else {
                     // use the forced hand position
                     calculateHandPose(name, gripProx, thumbUp, isLeft);

@@ -31,9 +31,10 @@ namespace frik
         void exitPowerArmorBugFixHack(bool set);
         void hideShowPipboyOnArm() const;
         static void restoreDefaultPipboyModelIfNeeded();
-        void positionPipboyModelToPipboyOnArm() const;
-        void replaceMeshes(bool force);
-        void replaceMeshes(bool force, const std::string& itemHide, const std::string& itemShow);
+        void updateSetupPipboyNodes() const;
+        void showHideCorrectPipboyMesh(const std::string& itemHide, const std::string& itemShow) const;
+        void setupPipboyRootNif() const;
+        static void detachReplacedPipboyRootNif();
 
         void checkTurningOnByButton();
         void checkTurningOffByButton();
@@ -48,16 +49,13 @@ namespace frik
         void dampenPipboyScreenMovement(RE::NiAVObject* pipboyScreen);
         bool isPlayerLookingAtPipboy() const;
         void leftHandedModePipboy() const;
-        static RE::NiAVObject* getPipboyScreenNode();
-        RE::NiAVObject* getPipboyModelOnArmNode() const;
+        RE::NiNode* getPipboyModelOnArmNode() const;
 
         Skeleton* _skelly;
 
         PipboyPhysicalHandler _physicalHandler;
 
         bool _isOpen = false;
-
-        bool _meshReplaced = false;
 
         // see exitPowerArmorBugFixHack method
         bool _exitPowerArmorFixFirstFrame = true;
