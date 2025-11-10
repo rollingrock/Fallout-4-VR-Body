@@ -209,12 +209,28 @@ namespace frik
         }
     }
 
+    std::string Config::getPipboyOffsetKey() const
+    {
+        if (isFalloutLondonVR) {
+            return "AttaboyPosition";
+        }
+        return isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
+    }
+
+    std::string Config::getPipboyOffsetPath() const
+    {
+        if (isFalloutLondonVR) {
+            return PIPBOY_ATTABOY_OFFSETS_PATH;
+        }
+        return isHoloPipboy ? PIPBOY_HOLO_OFFSETS_PATH : PIPBOY_SCREEN_OFFSETS_PATH;
+    }
+
     /**
      * Get the Pipboy offset of the currently used Pipboy type.
      */
     RE::NiTransform Config::getPipboyOffset()
     {
-        return _pipboyOffsets[isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition"];
+        return _pipboyOffsets[getPipboyOffsetKey()];
     }
 
     /**
@@ -222,9 +238,9 @@ namespace frik
      */
     void Config::savePipboyOffset(const RE::NiTransform& transform)
     {
-        const auto type = isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
-        _pipboyOffsets[type] = transform;
-        saveOffsetsToJsonFile(type, transform, isHoloPipboy ? PIPBOY_HOLO_OFFSETS_PATH : PIPBOY_SCREEN_OFFSETS_PATH);
+        const auto key = getPipboyOffsetKey();
+        _pipboyOffsets[key] = transform;
+        saveOffsetsToJsonFile(key, transform, getPipboyOffsetPath());
     }
 
     /**
@@ -276,9 +292,11 @@ namespace frik
     {
         createFileFromResourceIfNotExists(PIPBOY_HOLO_OFFSETS_PATH, _module, IDR_PIPBOY_HOLO_OFFSETS, false);
         createFileFromResourceIfNotExists(PIPBOY_SCREEN_OFFSETS_PATH, _module, IDR_PIPBOY_SCREEN_OFFSETS, false);
+        createFileFromResourceIfNotExists(PIPBOY_ATTABOY_OFFSETS_PATH, _module, IDR_PIPBOY_ATTABOY_OFFSETS, false);
         _pipboyOffsets.clear();
         loadOffsetJsonFile(PIPBOY_HOLO_OFFSETS_PATH, _pipboyOffsets);
         loadOffsetJsonFile(PIPBOY_SCREEN_OFFSETS_PATH, _pipboyOffsets);
+        loadOffsetJsonFile(PIPBOY_ATTABOY_OFFSETS_PATH, _pipboyOffsets);
     }
 
     /**

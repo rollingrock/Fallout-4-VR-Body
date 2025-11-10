@@ -599,6 +599,6 @@ namespace frik
         }
         const auto arm = (g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm()).forearm3;
         const auto boneNode = arm ? f4vr::findAVObject(arm, "PipboyBone") : nullptr;
-        return arm ? boneNode->IsNode() : nullptr;
+        return boneNode ? boneNode->IsNode() : _skelly->getLeftArm().hand->IsNode();
     }
 }

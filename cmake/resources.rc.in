@@ -6,6 +6,7 @@ IDR_MESH_HIDE_SKINS			RCDATA "@ROOT_DIR@/data/config/mesh_hide_skins.ini"
 IDR_MESH_HIDE_SLOTS			RCDATA "@ROOT_DIR@/data/config/mesh_hide_slots.ini"
 IDR_PIPBOY_HOLO_OFFSETS		RCDATA "@ROOT_DIR@/data/config/pipboy_holo_offsets.json"
 IDR_PIPBOY_SCREEN_OFFSETS	RCDATA "@ROOT_DIR@/data/config/pipboy_screen_offsets.json"
+IDR_PIPBOY_ATTABOY_OFFSETS	RCDATA "@ROOT_DIR@/data/config/pipboy_attaboy_offsets.json"
 
 IDR_WO_44_LEFTHANDED RCDATA "@ROOT_DIR@/data/config/weapons_offsets/.44-leftHanded.json"
 IDR_WO_44_POWERARMOR RCDATA "@ROOT_DIR@/data/config/weapons_offsets/.44-PowerArmor.json"

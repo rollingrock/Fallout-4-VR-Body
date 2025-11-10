@@ -19,6 +19,7 @@ namespace frik
     static const auto MESH_HIDE_SLOTS_INI_PATH = BASE_PATH + R"(\Mesh_Hide\slots.ini)";
     static const auto PIPBOY_HOLO_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\HoloPipboyPosition_v2.json)";
     static const auto PIPBOY_SCREEN_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\PipboyPosition_v2.json)";
+    static const auto PIPBOY_ATTABOY_OFFSETS_PATH = BASE_PATH + R"(\Pipboy_Offsets\AttaboyPosition_v2.json)";
     static const auto WEAPONS_OFFSETS_PATH = BASE_PATH + R"(\Weapons_Offsets)";
 
     constexpr float DEFAULT_CAMERA_HEIGHT = 120.4828f;
@@ -193,6 +194,9 @@ namespace frik
         int disableInteriorSmoothing = 0;
         int disableInteriorSmoothingHorizontal = 0;
 
+        // is the game is a Fallout London VR modded version
+        bool isFalloutLondonVR = false;
+
     protected:
         virtual void loadIniConfigInternal(const CSimpleIniA& ini) override;
         virtual void saveIniConfigInternal(CSimpleIniA& ini) override;
@@ -206,6 +210,8 @@ namespace frik
         static void setupFolders();
         static void migrateConfigFilesIfNeeded();
         static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool leftHanded);
+        std::string getPipboyOffsetKey() const;
+        std::string getPipboyOffsetPath() const;
 
         // hide meshes
         std::vector<std::string> _faceGeometry;

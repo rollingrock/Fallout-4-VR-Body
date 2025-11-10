@@ -4,6 +4,7 @@
 #define IDR_MESH_HIDE_SLOTS                104
 #define IDR_PIPBOY_HOLO_OFFSETS            105
 #define IDR_PIPBOY_SCREEN_OFFSETS          106
+#define IDR_PIPBOY_ATTABOY_OFFSETS         107
 
 // Embedded weapon offsets JSON files
 // Created via script, must be sequentially numbered

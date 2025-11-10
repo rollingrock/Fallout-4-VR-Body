@@ -59,6 +59,16 @@ namespace frik
     }
 
     /**
+     * @return true if Fallout London VR mod is loaded in the game, false otherwise.
+     */
+    bool isFalloutLondonVRModLoaded()
+    {
+        auto* dataHandler = RE::TESDataHandler::GetSingleton();
+        const auto mod = dataHandler ? dataHandler->LookupModByName("Fallout London VR.esp") : nullptr;
+        return mod != nullptr;
+    }
+
+    /**
      * @return muzzle flash class only if it's fully loaded with fire and projectile nodes.
      */
     f4vr::MuzzleFlash* getMuzzleFlashNodes()
