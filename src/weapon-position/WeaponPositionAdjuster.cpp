@@ -327,7 +327,7 @@ namespace frik
     void WeaponPositionAdjuster::setOffhandGripping(const bool isGripping)
     {
         _offHandGripping = isGripping;
-        setOffhandGripHandPoseOverride(isGripping);
+        setOffhandGripHandPose(isGripping);
     }
 
     /**

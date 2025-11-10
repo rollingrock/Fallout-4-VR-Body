@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "common/Logger.h"
 #include "f4vr/VRControllersManager.h"
+#include "skeleton/HandPose.h"
 
 using namespace common;
 
@@ -70,6 +71,9 @@ namespace frik
         f4vr::setNodeVisibility(pn->ScreenNode, open);
         pn->PipboyRoot_nif_only_node->local.scale = open ? 1.0f : 0.0f;
         turnPipBoyOnOff(open);
+        if (g_config.isFalloutLondonVR) {
+            setAttaboyHandPose(open);
+        }
         if (open) {
             // prevent immediate closing of Pipboy
             _lastLookingAtPip = nowMillis();
