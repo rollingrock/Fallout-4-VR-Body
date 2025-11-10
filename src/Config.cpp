@@ -287,7 +287,7 @@ namespace frik
     void Config::loadWeaponsOffsets()
     {
         _weaponsOffsets.clear();
-        _weaponsEmbeddedOffsets = loadEmbeddedOffsets(200, 400);
+        _weaponsEmbeddedOffsets = loadEmbeddedOffsets(200, 600);
         _weaponsOffsets.insert(_weaponsEmbeddedOffsets.begin(), _weaponsEmbeddedOffsets.end());
 
         const auto weaponCustomOffsets = loadOffsetsFromFilesystem(WEAPONS_OFFSETS_PATH);
