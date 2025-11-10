@@ -1,4 +1,19 @@
-## v0.76 (TBD)
+## v0.76 (WIP)
+
+- Improved Pipboy screen position configuration by adjust the screen itself.
+- Added support all 3 degrees (heading, roll, attitude) for Pipboy screen rotation.
+- Added support for adjusting weapon scale (size) in weapon adjustment config.
+- Fixed issues with switching Pipboy game setting to "In Front" from "Wrist".
+- Fixed Pipboy auto-opens/closes if opened/closed with power button.
+- Fixed Pipboy can be opened when game pause menu is open.
+- Left-handed: Fixed hand pose for weapon holding with wither gun or melee holding pose (good but not perfect).
+- Left-handed: Fixed Pipboy config UI position.
+- Left-handed: Fixed look at screen activation not working.
+- Left-handed: Fixed Pipboy screen shaking when moving right hand.
+- Left-handed: Fixed Pipboy operating with right hand finger and haptic.
+- Left-handed: Fixed fast auto-closing Pipboy when not looking at and trying to move.
+- Left-handed: Allow operating Pipboy with finger while holding weapon.
+- Reintroduce support for automatic weapon holstering to operate Pipboy with a finger (behind `bHolsterWeaponForOperation` ini config flag)
 
 ## v0.75
 - Migrated from F4SEVR to CommonLibF4 infrastructure!!!
