@@ -22,6 +22,18 @@ namespace
         RE::GetINISetting("fPipboyScaleOuterAngle:VRPipboy")->SetFloat(open ? 0.0f : 20.0f);
         RE::GetINISetting("fPipboyScaleInnerAngle:VRPipboy")->SetFloat(open ? 0.0f : 5.0f);
     }
+
+    /**
+     * Get the correct Pipboy root nif to use as a replacement for the on-wrist Pipboy.
+     * Special handling for Fallout London VR mod.
+     */
+    const char* getPipboyReplacmentNifPath()
+    {
+        if (frik::g_config.isFalloutLondonVR) {
+            return "FRIK/AttaboyVR.nif";
+        }
+        return frik::g_config.isHoloPipboy ? "FRIK/HoloPipboyVR.nif" : "FRIK/PipboyVR.nif";
+    }
 }
 
 namespace frik
@@ -269,7 +281,7 @@ namespace frik
             _originalPipboyRootNifOnlyNode->local.scale = 0;
         }
 
-        const auto newPipboyRootNifOnlyNode = f4vr::loadNifFromFile(g_config.isHoloPipboy ? "FRIK/HoloPipboyVR.nif" : "FRIK/PipboyVR.nif");
+        const auto newPipboyRootNifOnlyNode = f4vr::loadNifFromFile(getPipboyReplacmentNifPath());
         const auto newScreen = f4vr::findNode(newPipboyRootNifOnlyNode, "Screen");
         if (!newScreen) {
             logger::error("Failed to find Pipboy screen node in the loaded nif!");
@@ -601,8 +613,11 @@ namespace frik
         if (f4vr::isInPowerArmor()) {
             return nullptr;
         }
-        const auto arm = (g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm()).forearm3;
-        const auto boneNode = arm ? f4vr::findAVObject(arm, "PipboyBone") : nullptr;
-        return boneNode ? boneNode->IsNode() : _skelly->getLeftArm().hand->IsNode();
+        const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
+        if (g_config.isFalloutLondonVR) {
+            return arm.hand->IsNode();
+        }
+        const auto boneNode = arm.forearm3 ? f4vr::findAVObject(arm.forearm3, "PipboyBone") : nullptr;
+        return boneNode ? boneNode->IsNode() : arm.forearm3->IsNode();
     }
 }

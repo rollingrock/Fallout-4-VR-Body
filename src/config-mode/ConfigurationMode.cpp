@@ -581,7 +581,9 @@ namespace frik
                 }
                 if (ModelSwapButtonPressed && !_isModelSwapButtonPressed) {
                     _isModelSwapButtonPressed = true;
-                    g_frik.swapPipboyModel();
+                    if (!g_config.isFalloutLondonVR) {
+                        g_frik.swapPipboyModel();
+                    }
                 } else if (!ModelSwapButtonPressed) {
                     _isModelSwapButtonPressed = false;
                 }
