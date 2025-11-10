@@ -92,11 +92,11 @@ namespace frik
         }
 
         GFx::Value PBCurrentPage;
-        const bool getVariableSuccessful = root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage");
+        const bool getVariableSuccessful = root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj.CurrentPage");
         if (getVariableSuccessful && PBCurrentPage.GetType() != GFx::Value::ValueType::kUndefined) {
             return static_cast<PipboyPage>(PBCurrentPage.GetUInt());
         }
-        logger::debug("Failed to get current Pipboy page! getVariableSuccessful?({}) Type?({})",
+        logger::sample("Failed to get current Pipboy page! getVariableSuccessful?({}) Type?({})",
             getVariableSuccessful, getVariableSuccessful ? static_cast<int>(PBCurrentPage.GetType()) : -1);
         return std::nullopt;
     }
