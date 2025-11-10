@@ -16,6 +16,25 @@
 using namespace vrui;
 using namespace common;
 
+namespace
+{
+    /**
+     * Get adjustment value from the thumbstick but correct it with respect to deadzone and sensitivity.
+     * Deadzone is used to prevent small changes in an axis the player is not changing.
+     * For example: moving the weapon right should not move it forward even if the player has small forward
+     * on the thumbstick.
+     */
+    float correctAdjustmentValue(const float value, const float sensitivityFactor)
+    {
+        const float adjValue = value / sensitivityFactor;
+        const float deadZone = 0.5f / sensitivityFactor;
+        if (std::fabs(adjValue) < deadZone) {
+            return 0;
+        }
+        return adjValue > 0 ? adjValue - deadZone : adjValue + deadZone;
+    }
+}
+
 namespace frik
 {
     /**
@@ -188,17 +207,20 @@ namespace frik
 
         if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // adjust the scale of the weapon
-            transform.scale = std::fmax(0.1f, transform.scale + primAxisY / 100);
+            transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
         } else if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = getMatrixFromEulerAngles(-degreesToRads(primAxisY / 5), -degreesToRads(secAxisX / 3), degreesToRads(primAxisX / 5));
+            const auto rot = getMatrixFromEulerAngles(
+                -degreesToRads(correctAdjustmentValue(primAxisY, 5)),
+                -degreesToRads(correctAdjustmentValue(secAxisX, 3)),
+                degreesToRads(correctAdjustmentValue(primAxisX, 5)));
             transform.rotate = rot * transform.rotate;
         } else {
             // adjust horizontal (y - right/left, x - forward/backward) by primary stick
-            transform.translate.y += leftHandedMult * primAxisX / 12;
-            transform.translate.x += primAxisY / 12;
+            transform.translate.y += correctAdjustmentValue(leftHandedMult * primAxisX, 12);
+            transform.translate.x += correctAdjustmentValue(primAxisY, 12);
             // adjust vertical (z - up/down) by secondary stick
-            transform.translate.z -= leftHandedMult * secAxisY / 12;
+            transform.translate.z -= correctAdjustmentValue(leftHandedMult * secAxisY, 12);
         }
 
         // update the weapon with the offset change
@@ -213,7 +235,7 @@ namespace frik
         // Update the offset position by player thumbstick.
         const auto [axisX, axisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
-            const auto rot = getMatrixFromEulerAngles(-degreesToRads(axisY / 5), 0, degreesToRads(axisX / 5));
+            const auto rot = getMatrixFromEulerAngles(-degreesToRads(correctAdjustmentValue(axisY, 5)), 0, degreesToRads(correctAdjustmentValue(axisX, 5)));
             _adjuster->_offhandOffsetRot = rot * _adjuster->_offhandOffsetRot;
         }
     }
@@ -241,17 +263,20 @@ namespace frik
         // Depending on buttons pressed can horizontal/vertical position or rotation.
         if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // adjust the scale of the weapon
-            transform.scale = std::fmax(0.1f, transform.scale + primAxisY / 100);
+            transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
         } else if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = getMatrixFromEulerAngles(degreesToRads(secAxisY / 6), degreesToRads(secAxisX / 6), degreesToRads(primAxisX / 6));
+            const auto rot = getMatrixFromEulerAngles(
+                degreesToRads(correctAdjustmentValue(secAxisY, 6)),
+                degreesToRads(correctAdjustmentValue(secAxisX, 6)),
+                degreesToRads(correctAdjustmentValue(primAxisX, 6)));
             transform.rotate = rot * transform.rotate;
         } else {
             // adjust horizontal (x - right/left, z - forward/backward) by primary stick
-            transform.translate.z += -leftHandedMult * primAxisX / 14 - leftHandedMult * secAxisX / 14;
-            transform.translate.x += -primAxisY / 14;
+            transform.translate.z += correctAdjustmentValue(-leftHandedMult * primAxisX, 14) - correctAdjustmentValue(leftHandedMult * secAxisX, 14);
+            transform.translate.x += correctAdjustmentValue(-primAxisY, 14);
             // adjust vertical (y - up/down) by secondary stick
-            transform.translate.y += leftHandedMult * secAxisY / 14;
+            transform.translate.y += correctAdjustmentValue(leftHandedMult * secAxisY, 14);
         }
 
         throwable->local = transform;
@@ -276,17 +301,20 @@ namespace frik
         // Depending on buttons pressed can horizontal/vertical position or rotation.
         if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // adjust the scale of the weapon
-            transform.scale = std::fmax(0.1f, transform.scale + primAxisY / 100);
+            transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
         } else if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = getMatrixFromEulerAngles(-degreesToRads(secAxisY / 6), -degreesToRads(primAxisX / 6), -degreesToRads(primAxisY / 6));
+            const auto rot = getMatrixFromEulerAngles(
+                -degreesToRads(correctAdjustmentValue(secAxisY, 6)),
+                -degreesToRads(correctAdjustmentValue(primAxisX, 6)),
+                -degreesToRads(correctAdjustmentValue(primAxisY, 6)));
             transform.rotate = rot * transform.rotate;
         } else {
             // adjust horizontal (z - right/left, y - forward/backward) by primary stick
-            transform.translate.z -= leftHandedMult * primAxisX / 14;
-            transform.translate.y += primAxisY / 14;
+            transform.translate.z -= correctAdjustmentValue(leftHandedMult * primAxisX, 14);
+            transform.translate.y += correctAdjustmentValue(primAxisY, 14);
             // adjust vertical (x - up/down) by secondary stick
-            transform.translate.x += leftHandedMult * secAxisY / 14;
+            transform.translate.x += correctAdjustmentValue(leftHandedMult * secAxisY, 14);
         }
 
         // update the weapon with the offset change
