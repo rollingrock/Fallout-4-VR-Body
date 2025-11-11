@@ -100,13 +100,10 @@ namespace frik
             g_frik.closePipboyConfigurationModeActive();
         }
 
-        // if (_attaboyOnBeltNode) {
-        //     // show/hide the Attaboy on belt model depending if it's on as it's grabbed by the player
-        //     f4vr::setNodeVisibility(_attaboyOnBeltNode->parent, !open);
-        //     if (g_config.debugFlowFlag1 == 1) {
-        //         _attaboyOnBeltNode->parent->local.scale = open ? 0.0f : 1.0f;
-        //     }
-        // }
+        if (_attaboyOnBeltNode) {
+            // show/hide the Attaboy on belt model depending if it's on as it's grabbed by the player
+            f4vr::setNodeVisibilityDeep(_attaboyOnBeltNode->parent->parent, !open);
+        }
     }
 
     /**
