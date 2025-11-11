@@ -341,21 +341,11 @@ namespace frik
         // migrate pre v72 and v72 config files to v73 location
         logger::info("Migrate configs if exists in old locations...");
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK.ini)", FRIK_INI_PATH);
+        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_FOLVR.ini)", FRIK_FOLVR_INI_PATH);
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\slots.ini)", MESH_HIDE_SLOTS_INI_PATH);
-        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets\HoloPipboyPosition.json)", PIPBOY_HOLO_OFFSETS_PATH);
-        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets\PipboyPosition.json)", PIPBOY_SCREEN_OFFSETS_PATH);
         moveAllFilesInFolderSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets)", WEAPONS_OFFSETS_PATH);
-
-        // migrate v72 config files to v73 location
-        moveFileSafe(R"(.\Data\FRIK_Config\FRIK.ini)", FRIK_INI_PATH);
-        moveFileSafe(R"(.\Data\FRIK_Config\Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
-        moveFileSafe(R"(.\Data\FRIK_Config\Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);
-        moveFileSafe(R"(.\Data\FRIK_Config\Mesh_Hide\slots.ini)", MESH_HIDE_SLOTS_INI_PATH);
-        moveFileSafe(R"(.\Data\FRIK_Config\Pipboy_Offsets\HoloPipboyPosition.json)", PIPBOY_HOLO_OFFSETS_PATH);
-        moveFileSafe(R"(.\Data\FRIK_Config\Pipboy_Offsets\PipboyPosition.json)", PIPBOY_SCREEN_OFFSETS_PATH);
-        moveAllFilesInFolderSafe(R"(.\Data\FRIK_Config\Weapons_Offsets)", WEAPONS_OFFSETS_PATH);
     }
 
     /**

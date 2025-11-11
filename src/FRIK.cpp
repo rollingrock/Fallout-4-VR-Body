@@ -83,6 +83,7 @@ namespace frik
         g_config.isFalloutLondonVR = isFalloutLondonVRModLoaded();
         if (g_config.isFalloutLondonVR) {
             logger::info("Fallout London VR mod detected, enabling compatibility mode...");
+            g_config.reloadForFalloutLondonVR();
         }
 
         logger::info("Register papyrus native functions...");

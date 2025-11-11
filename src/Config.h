@@ -14,6 +14,7 @@ namespace frik
 
     static const auto BASE_PATH = common::getRelativePathInDocuments(R"(\My Games\Fallout4VR\FRIK_Config)");
     static const auto FRIK_INI_PATH = BASE_PATH + R"(\FRIK.ini)";
+    static const auto FRIK_FOLVR_INI_PATH = BASE_PATH + R"(\FRIK_FOLVR.ini)";
     static const auto MESH_HIDE_FACE_INI_PATH = BASE_PATH + R"(\Mesh_Hide\face.ini)";
     static const auto MESH_HIDE_SKINS_INI_PATH = BASE_PATH + R"(\Mesh_Hide\skins.ini)";
     static const auto MESH_HIDE_SLOTS_INI_PATH = BASE_PATH + R"(\Mesh_Hide\slots.ini)";
@@ -66,6 +67,17 @@ namespace frik
 
         virtual void load() override;
         void save() { saveIniConfig(); }
+
+        /**
+         * Reloads the config for Fallout London VR mod.
+         * Using different config file as the mod changes a lot of the game.
+         */
+        void reloadForFalloutLondonVR()
+        {
+            stopIniConfigFileWatch();
+            _iniFilePath = FRIK_FOLVR_INI_PATH;
+            load();
+        }
 
         void setFlashlightLocation(const FlashlightLocation location)
         {
