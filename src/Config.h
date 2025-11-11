@@ -156,6 +156,10 @@ namespace frik
         FlashlightLocation flashlightLocation = FlashlightLocation::Head;
         int switchTorchButton = 2;
 
+        // Fallout London VR support
+        int attabotGrabButtonId = 0;
+        float attabotGrabActivationDistance = 0;
+
         // Weapon offhand grip
         bool enableOffHandGripping = false;
         bool enableGripButtonToGrap = false;
