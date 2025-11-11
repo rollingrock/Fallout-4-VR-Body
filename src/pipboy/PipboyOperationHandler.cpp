@@ -35,6 +35,11 @@ namespace
         return f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Primary, vr::k_EButton_Grip);
     }
 
+    bool isPrimaryThumbstickPressed()
+    {
+        return f4vr::VRControllers.isPressed(f4vr::Hand::Primary, vr::k_EButton_Axis0);
+    }
+
     bool isWorldMapVisible(const GFx::Movie* root)
     {
         return f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.WorldMapHolder_mc");
@@ -183,10 +188,14 @@ namespace frik
             if (direction.has_value()) {
                 switch (direction.value()) {
                 case f4vr::Direction::Right:
-                    gotoNextTab(root);
+                    if (!isMessageHolderVisible(root)) {
+                        gotoNextTab(root);
+                    }
                     break;
                 case f4vr::Direction::Left:
-                    gotoPrevTab(root);
+                    if (!isMessageHolderVisible(root)) {
+                        gotoPrevTab(root);
+                    }
                     break;
                 case f4vr::Direction::Up:
                     moveListSelectionUpDown(root, true);
@@ -338,6 +347,16 @@ namespace frik
         if (triggerPressed) {
             triggerShortHaptic();
             f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.List_mc", f4vr::ScaleformListOp::Select);
+        } else if (isPrimaryThumbstickPressed()) {
+            GFx::Value currentTab;
+            if (root->GetVariable(&currentTab, "root.Menu_mc.DataObj.CurrentTab")) {
+                // open context submenu
+                triggerShortHaptic();
+                GFx::Value args[1];
+                args[0] = currentTab.GetUInt();
+                root->Invoke("root.Menu_mc.CurrentPage.CloseMessage", nullptr, nullptr, 0);
+                root->Invoke("root.Menu_mc.CurrentPage.OnOpenSubmenu", nullptr, args, 1);
+            }
         }
     }
 
@@ -353,6 +372,14 @@ namespace frik
             } else {
                 // open quest in map
                 f4vr::invokeScaleformProcessUserEvent(root, "root.Menu_mc.CurrentPage.WorkshopsTab_mc", "XButton");
+            }
+        } else if (isPrimaryThumbstickPressed()) {
+            // open context submenu
+            triggerShortHaptic();
+            if (isQuestTabVisibleOnDataPage(root)) {
+                root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.OnOpenSubmenu", nullptr, nullptr, 0);
+            } else {
+                root->Invoke("root.Menu_mc.CurrentPage.WorkshopsTab_mc.OnOpenSubmenu", nullptr, nullptr, 0);
             }
         }
     }
@@ -383,6 +410,10 @@ namespace frik
             // handle fast travel, custom marker
             const char* eventName = f4vr::getScaleformBool(root, getCurrentMapPath(root, ".bCanFastTravel").c_str()) ? "MapHolder:activate_marker" : "MapHolder:set_custom_marker";
             f4vr::invokeScaleformDispatchEvent(root, getCurrentMapPath(root), eventName);
+        } else if (isPrimaryThumbstickPressed()) {
+            // open context submenu
+            triggerShortHaptic();
+            root->Invoke("root.Menu_mc.CurrentPage.OnOpenSubmenu", nullptr, nullptr, 0);
         }
     }
 
