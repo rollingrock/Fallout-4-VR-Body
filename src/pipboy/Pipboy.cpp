@@ -479,8 +479,9 @@ namespace frik
             lightNode->local = calculateRelocation(lightNode, armNode);
 
             // small adjustment to prevent light on the fingers and shadows from them
-            const float offset = f4vr::isInPowerArmor() ? 14.0f : 9.0f;
-            lightNode->local.translate += RE::NiPoint3(offset, 0, 2);
+            const float offsetX = f4vr::isInPowerArmor() ? 16.0f : 12.0f;
+            const float offsetY = g_config.flashlightLocation == FlashlightLocation::LeftArm ? -5 : 5;
+            lightNode->local.translate += RE::NiPoint3(offsetX, offsetY, 5);
         }
     }
 
