@@ -13,7 +13,6 @@
 - Better skeleton position when using comfort sneak to work well with Virtual Holsters mod.
 - Changing player height using thumbstick for continuous crouch ability.
 - Config for sitting gameplay.
-- For left-handed players, fix two-handed use causing primary hand to be dislodged.
 - Better hand pose for different weapons and throwables.
 - Fix Pipboy on right arm not working.
 

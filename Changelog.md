@@ -1,12 +1,17 @@
 ## v0.76 (WIP)
 
+- Support Fallout London VR Attaboy replacement of Pipboy.
 - Improved Pipboy screen position configuration by adjust the screen itself.
 - Added support all 3 degrees (heading, roll, attitude) for Pipboy screen rotation.
 - Added support for adjusting weapon scale (size) in weapon adjustment config.
+- Added support for primary wand thumbstick to open Pipboy submenus.
+- Fixed Pipboy operation by primary wand not working for some players.
 - Fixed issues with switching Pipboy game setting to "In Front" from "Wrist".
 - Fixed Pipboy auto-opens/closes if opened/closed with power button.
 - Fixed Pipboy can be opened when game pause menu is open.
 - Left-handed: Fixed hand pose for weapon holding with wither gun or melee holding pose (good but not perfect).
+- Left-handed: Fixed 15 more weapons offsets to match new hand pose.
+- Left-handed: Fixed primary hand is off the gun stock when doing 2-handed handling.
 - Left-handed: Fixed Pipboy config UI position.
 - Left-handed: Fixed look at screen activation not working.
 - Left-handed: Fixed Pipboy screen shaking when moving right hand.
