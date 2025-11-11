@@ -360,14 +360,15 @@ namespace frik
             return;
         }
 
-        if (g_config.isFalloutLondonVR) {
-            if (checkAttaboyActivation()) {
-                logger::info("Open Attaboy with button");
-                openClose(true);
-            }
-        } else if (f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonID)) {
+        bool open;
+        if (_attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0) {
+            open = checkAttaboyActivation();
+        } else {
+            open = f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonID);
+        }
+        if (open) {
             logger::info("Open Pipboy with button");
-            openClose(true);
+            openClose(open);
         }
     }
 
@@ -380,12 +381,13 @@ namespace frik
             return;
         }
 
-        if (g_config.isFalloutLondonVR) {
-            if (checkAttaboyActivation()) {
-                logger::info("Close Attaboy with button");
-                openClose(false);
-            }
-        } else if (f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID)) {
+        bool close;
+        if (_attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0) {
+            close = checkAttaboyActivation();
+        } else {
+            close = f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID);
+        }
+        if (close) {
             logger::info("Close Pipboy with button");
             openClose(false);
         }
@@ -397,21 +399,17 @@ namespace frik
      */
     bool Pipboy::checkAttaboyActivation()
     {
-        if (_attaboyOnBeltNode && g_config.attabotGrabActivationDistance > 0) {
-            const float dist = vec3Len(_skelly->getLeftArm().hand->world.translate - _attaboyOnBeltNode->world.translate);
-            if (dist < g_config.attabotGrabActivationDistance) {
-                if (isNowTimePassed(_lastAttaboyGrabTime, 1000)) {
-                    triggerShortHaptic(f4vr::Hand::Left);
-                }
-                if (f4vr::VRControllers.isReleasedShort(f4vr::Hand::Left, g_config.attabotGrabButtonId)) {
-                    _lastAttaboyGrabTime = nowMillis();
-                    return true;
-                }
-            } else {
-                _lastAttaboyGrabTime = 0;
+        const float dist = vec3Len(_skelly->getLeftArm().hand->world.translate - _attaboyOnBeltNode->world.translate);
+        if (dist < g_config.attaboyGrabActivationDistance) {
+            if (isNowTimePassed(_lastAttaboyGrabTime, 1000)) {
+                triggerShortHaptic(f4vr::Hand::Left);
+            }
+            if (f4vr::VRControllers.isReleasedShort(f4vr::Hand::Left, g_config.attaboyGrabButtonId)) {
+                _lastAttaboyGrabTime = nowMillis();
+                return true;
             }
         } else {
-            return f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.attabotGrabButtonId);
+            _lastAttaboyGrabTime = 0;
         }
         return false;
     }

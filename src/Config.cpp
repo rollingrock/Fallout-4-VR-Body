@@ -94,8 +94,8 @@ namespace frik
         switchTorchButton = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2));
 
         // Fallout London VR support
-        attabotGrabButtonId = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iAttabotGrabButtonId", f4vr::VRButtonId::k_EButton_Grip));
-        attabotGrabActivationDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fAttabotGrabActivationDistance", 10.0));
+        attaboyGrabButtonId = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iAttaboyGrabButtonId", f4vr::VRButtonId::k_EButton_Grip));
+        attaboyGrabActivationDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fAttaboyGrabActivationDistance", 15.0));
 
         // Two-handed gripping
         enableOffHandGripping = ini.GetBoolValue(INI_SECTION_MAIN, "EnableOffHandGripping", true);

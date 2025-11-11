@@ -157,8 +157,8 @@ namespace frik
         int switchTorchButton = 2;
 
         // Fallout London VR support
-        int attabotGrabButtonId = 0;
-        float attabotGrabActivationDistance = 0;
+        int attaboyGrabButtonId = 0;
+        float attaboyGrabActivationDistance = 0;
 
         // Weapon offhand grip
         bool enableOffHandGripping = false;
