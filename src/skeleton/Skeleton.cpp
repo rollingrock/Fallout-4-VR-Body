@@ -1230,7 +1230,7 @@ namespace frik
             qt.fromMatrix(handOpen[bone].rotate);
             Quaternion qo;
             qo.fromMatrix(handClosed[bone].rotate);
-            qo.slerp(std::clamp(handPapyrusPose[bone], 0.0f, 1.0f), qt);
+            qo.slerp(std::clamp(handPapyrusPose[bone], -1.0f, 2.0f), qt);
             qt = qo;
         }
         // thumbUp pose
@@ -1257,7 +1257,7 @@ namespace frik
         }
 
         qc.fromMatrix(_handBones[bone].rotate);
-        const float blend = std::clamp(_frameTime * 7, 0.0f, 1.0f);
+        const float blend = std::clamp(_frameTime * 7, -1.0f, 2.0f);
         qc.slerp(blend, qt);
         _handBones[bone].rotate = qc.getMatrix();
     }
@@ -1288,7 +1288,7 @@ namespace frik
         Quaternion qo, qt;
         qt.fromMatrix(handOpen[bone].rotate);
         qo.fromMatrix(handClosed[bone].rotate);
-        qo.slerp(std::clamp(getHandBonePose(bone, g_frik.isMeleeWeaponDrawn()), 0.0f, 1.0f), qt);
+        qo.slerp(std::clamp(getHandBonePose(bone, g_frik.isMeleeWeaponDrawn()), -1.0f, 2.0f), qt);
         _handBones[bone].rotate = qo.getMatrix();
     }
 

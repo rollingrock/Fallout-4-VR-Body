@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "common/Logger.h"
 #include "f4vr/VRControllersManager.h"
+#include "skeleton/HandPose.h"
 
 using namespace common;
 
@@ -20,6 +21,18 @@ namespace
         RE::GetINISetting("fHMDToPipboyScaleInnerAngle:VRPipboy")->SetFloat(open ? 0.0f : 5.0f);
         RE::GetINISetting("fPipboyScaleOuterAngle:VRPipboy")->SetFloat(open ? 0.0f : 20.0f);
         RE::GetINISetting("fPipboyScaleInnerAngle:VRPipboy")->SetFloat(open ? 0.0f : 5.0f);
+    }
+
+    /**
+     * Get the correct Pipboy root nif to use as a replacement for the on-wrist Pipboy.
+     * Special handling for Fallout London VR mod.
+     */
+    const char* getPipboyReplacmentNifPath()
+    {
+        if (frik::g_config.isFalloutLondonVR) {
+            return "FRIK/AttaboyVR.nif";
+        }
+        return frik::g_config.isHoloPipboy ? "FRIK/HoloPipboyVR.nif" : "FRIK/PipboyVR.nif";
     }
 }
 
@@ -64,12 +77,19 @@ namespace frik
         if (_isOpen == open) {
             return;
         }
+
         logger::info("Turning Pipboy {}", open ? "ON" : "OFF");
         _isOpen = open;
+
         const auto pn = f4vr::getPlayerNodes();
         f4vr::setNodeVisibility(pn->ScreenNode, open);
         pn->PipboyRoot_nif_only_node->local.scale = open ? 1.0f : 0.0f;
         turnPipBoyOnOff(open);
+
+        if (g_config.isFalloutLondonVR) {
+            setAttaboyHandPose(open);
+        }
+
         if (open) {
             // prevent immediate closing of Pipboy
             _lastLookingAtPip = nowMillis();
@@ -78,6 +98,11 @@ namespace frik
             _startedLookingAtPip = nowMillis() + 10000;
             _pipboyScreenPrevFrame.clear();
             g_frik.closePipboyConfigurationModeActive();
+        }
+
+        if (_attaboyOnBeltNode) {
+            // show/hide the Attaboy on belt model depending if it's on as it's grabbed by the player
+            f4vr::setNodeVisibilityDeep(_attaboyOnBeltNode->parent->parent, !open);
         }
     }
 
@@ -226,7 +251,7 @@ namespace frik
      * Set up the replaced Pipboy root nif if run first time.
      * Or update Pipboy screen location to make sure it's in the correct place.
      */
-    void Pipboy::updateSetupPipboyNodes() const
+    void Pipboy::updateSetupPipboyNodes()
     {
         if (f4vr::isInPowerArmor()) {
             return;
@@ -250,7 +275,7 @@ namespace frik
     /**
      * Setup FRIK special root nif node to control the screen location and hide Pipboy frame
      */
-    void Pipboy::setupPipboyRootNif() const
+    void Pipboy::setupPipboyRootNif()
     {
         const auto pn = f4vr::getPlayerNodes();
         if (!pn->PipboyParentNode || !pn->PipboyRoot_nif_only_node) {
@@ -265,7 +290,7 @@ namespace frik
             _originalPipboyRootNifOnlyNode->local.scale = 0;
         }
 
-        const auto newPipboyRootNifOnlyNode = f4vr::loadNifFromFile(g_config.isHoloPipboy ? "FRIK/HoloPipboyVR.nif" : "FRIK/PipboyVR.nif");
+        const auto newPipboyRootNifOnlyNode = f4vr::loadNifFromFile(getPipboyReplacmentNifPath());
         const auto newScreen = f4vr::findNode(newPipboyRootNifOnlyNode, "Screen");
         if (!newScreen) {
             logger::error("Failed to find Pipboy screen node in the loaded nif!");
@@ -281,6 +306,12 @@ namespace frik
         getPipboyModelOnArmNode()->AttachChild(newPipboyRootNifOnlyNode, false);
 
         _newPipboyRootNifOnlyNode = newPipboyRootNifOnlyNode;
+
+        if (g_config.isFalloutLondonVR) {
+            const auto node = f4vr::findNode(f4vr::getCommonNode(), "PipboyBody", 5);
+            _attaboyOnBeltNode = node ? node->IsNode() : nullptr;
+        }
+
         logger::info("Pipboy root nif replaced!");
     }
 
@@ -322,12 +353,20 @@ namespace frik
      */
     void Pipboy::checkTurningOnByButton()
     {
-        if (g_frik.isMainConfigurationModeActive() || !f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonID)) {
+        if (_isOpen || g_frik.isMainConfigurationModeActive()) {
             return;
         }
 
-        logger::info("Open Pipboy with button");
-        openClose(true);
+        bool open;
+        if (_attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0) {
+            open = checkAttaboyActivation();
+        } else {
+            open = f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonID);
+        }
+        if (open) {
+            logger::info("Open Pipboy with button");
+            openClose(open);
+        }
     }
 
     /**
@@ -335,12 +374,41 @@ namespace frik
      */
     void Pipboy::checkTurningOffByButton()
     {
-        if (!_isOpen || !f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID)) {
+        if (!_isOpen) {
             return;
         }
 
-        logger::info("Close Pipboy with button");
-        openClose(false);
+        bool close;
+        if (_attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0) {
+            close = checkAttaboyActivation();
+        } else {
+            close = f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID);
+        }
+        if (close) {
+            logger::info("Close Pipboy with button");
+            openClose(false);
+        }
+    }
+
+    /**
+     * Check if Fallout London Attaboy activation is triggered.
+     * If configured, check that the left hand is close enough to the Attaboy on belt.
+     */
+    bool Pipboy::checkAttaboyActivation()
+    {
+        const float dist = vec3Len(_skelly->getLeftArm().hand->world.translate - _attaboyOnBeltNode->world.translate);
+        if (dist < g_config.attaboyGrabActivationDistance) {
+            if (isNowTimePassed(_lastAttaboyGrabTime, 1000)) {
+                triggerShortHaptic(f4vr::Hand::Left);
+            }
+            if (f4vr::VRControllers.isReleasedShort(f4vr::Hand::Left, g_config.attaboyGrabButtonId)) {
+                _lastAttaboyGrabTime = nowMillis();
+                return true;
+            }
+        } else {
+            _lastAttaboyGrabTime = 0;
+        }
+        return false;
     }
 
     /**
@@ -404,8 +472,8 @@ namespace frik
     {
         // check a bit higher than the HMD to allow hand close to the lower part of the face
         const auto hmdPos = f4vr::getPlayerNodes()->HmdNode->world.translate + RE::NiPoint3(0, 0, 4);
-        const auto isLeftHandCloseToHMD = vec3Len(_skelly->getBoneWorldTransform("LArm_Hand").translate - hmdPos) < 12;
-        const auto isRightHandCloseToHMD = vec3Len(_skelly->getBoneWorldTransform("RArm_Hand").translate - hmdPos) < 12;
+        const auto isLeftHandCloseToHMD = vec3Len(_skelly->getLeftArm().hand->world.translate - hmdPos) < 12;
+        const auto isRightHandCloseToHMD = vec3Len(_skelly->getRightArm().hand->world.translate - hmdPos) < 12;
 
         const auto now = nowMillis();
         if (isLeftHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::LeftArm)) {
@@ -463,8 +531,9 @@ namespace frik
             lightNode->local = calculateRelocation(lightNode, armNode);
 
             // small adjustment to prevent light on the fingers and shadows from them
-            const float offset = f4vr::isInPowerArmor() ? 14.0f : 9.0f;
-            lightNode->local.translate += RE::NiPoint3(offset, 0, 2);
+            const float offsetX = f4vr::isInPowerArmor() ? 16.0f : 12.0f;
+            const float offsetY = g_config.flashlightLocation == FlashlightLocation::LeftArm ? -5.0f : 5.0f;
+            lightNode->local.translate += RE::NiPoint3(offsetX, offsetY, 5);
         }
     }
 
@@ -597,8 +666,11 @@ namespace frik
         if (f4vr::isInPowerArmor()) {
             return nullptr;
         }
-        const auto arm = (g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm()).forearm3;
-        const auto boneNode = arm ? f4vr::findAVObject(arm, "PipboyBone") : nullptr;
-        return arm ? boneNode->IsNode() : nullptr;
+        const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
+        if (g_config.isFalloutLondonVR) {
+            return arm.hand->IsNode();
+        }
+        const auto boneNode = arm.forearm3 ? f4vr::findAVObject(arm.forearm3, "PipboyBone") : nullptr;
+        return boneNode ? boneNode->IsNode() : arm.forearm3->IsNode();
     }
 }

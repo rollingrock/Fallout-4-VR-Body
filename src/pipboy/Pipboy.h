@@ -31,12 +31,13 @@ namespace frik
         void exitPowerArmorBugFixHack(bool set);
         void hideShowPipboyOnArm() const;
         static void restoreDefaultPipboyModelIfNeeded();
-        void updateSetupPipboyNodes() const;
+        void updateSetupPipboyNodes();
         void showHideCorrectPipboyMesh(const std::string& itemHide, const std::string& itemShow) const;
-        void setupPipboyRootNif() const;
+        void setupPipboyRootNif();
         static void detachReplacedPipboyRootNif();
 
         void checkTurningOnByButton();
+        bool checkAttaboyActivation();
         void checkTurningOffByButton();
         void checkTurningOnByLookingAt();
         void checkTurningOffByLookingAway();
@@ -56,6 +57,7 @@ namespace frik
         PipboyPhysicalHandler _physicalHandler;
 
         bool _isOpen = false;
+        uint64_t _lastAttaboyGrabTime = 0;
 
         // see exitPowerArmorBugFixHack method
         bool _exitPowerArmorFixFirstFrame = true;
@@ -70,6 +72,9 @@ namespace frik
         // handle dampening of pipboy screen to reduce movement
         std::deque<RE::NiPoint3> _pipboyScreenPrevFrame;
         RE::NiTransform _pipboyScreenStableFrame;
+
+        // Fallout London VR Attaboy handling of grabbing from the belt
+        RE::NiNode* _attaboyOnBeltNode;
 
         // static field to preserve the last pipboy page when existing PA
         inline static PipboyPage _lastPipboyPage = PipboyPage::STATUS;

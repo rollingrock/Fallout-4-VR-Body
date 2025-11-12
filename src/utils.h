@@ -15,6 +15,7 @@ namespace frik
     bool isArmorHasHeadLamp();
 
     bool isBetterScopesVRModLoaded();
+    bool isFalloutLondonVRModLoaded();
 
     f4vr::MuzzleFlash* getMuzzleFlashNodes();
 }

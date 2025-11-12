@@ -73,7 +73,7 @@ namespace frik
 
     private:
         void initSkeleton();
-        void onGameMenuOpened();
+        void onGameMenuOpened(const std::string& name, bool isOpened);
         void releaseSkeleton();
         static void updateWorldFinal();
         static void configureGameVars();

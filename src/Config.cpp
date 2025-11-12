@@ -93,6 +93,10 @@ namespace frik
         flashlightLocation = static_cast<FlashlightLocation>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", 0));
         switchTorchButton = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2));
 
+        // Fallout London VR support
+        attaboyGrabButtonId = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iAttaboyGrabButtonId", f4vr::VRButtonId::k_EButton_Grip));
+        attaboyGrabActivationDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fAttaboyGrabActivationDistance", 15.0));
+
         // Two-handed gripping
         enableOffHandGripping = ini.GetBoolValue(INI_SECTION_MAIN, "EnableOffHandGripping", true);
         enableGripButtonToGrap = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButton", true);
@@ -209,12 +213,28 @@ namespace frik
         }
     }
 
+    std::string Config::getPipboyOffsetKey() const
+    {
+        if (isFalloutLondonVR) {
+            return "AttaboyPosition";
+        }
+        return isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
+    }
+
+    std::string Config::getPipboyOffsetPath() const
+    {
+        if (isFalloutLondonVR) {
+            return PIPBOY_ATTABOY_OFFSETS_PATH;
+        }
+        return isHoloPipboy ? PIPBOY_HOLO_OFFSETS_PATH : PIPBOY_SCREEN_OFFSETS_PATH;
+    }
+
     /**
      * Get the Pipboy offset of the currently used Pipboy type.
      */
     RE::NiTransform Config::getPipboyOffset()
     {
-        return _pipboyOffsets[isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition"];
+        return _pipboyOffsets[getPipboyOffsetKey()];
     }
 
     /**
@@ -222,9 +242,9 @@ namespace frik
      */
     void Config::savePipboyOffset(const RE::NiTransform& transform)
     {
-        const auto type = isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
-        _pipboyOffsets[type] = transform;
-        saveOffsetsToJsonFile(type, transform, isHoloPipboy ? PIPBOY_HOLO_OFFSETS_PATH : PIPBOY_SCREEN_OFFSETS_PATH);
+        const auto key = getPipboyOffsetKey();
+        _pipboyOffsets[key] = transform;
+        saveOffsetsToJsonFile(key, transform, getPipboyOffsetPath());
     }
 
     /**
@@ -276,9 +296,11 @@ namespace frik
     {
         createFileFromResourceIfNotExists(PIPBOY_HOLO_OFFSETS_PATH, _module, IDR_PIPBOY_HOLO_OFFSETS, false);
         createFileFromResourceIfNotExists(PIPBOY_SCREEN_OFFSETS_PATH, _module, IDR_PIPBOY_SCREEN_OFFSETS, false);
+        createFileFromResourceIfNotExists(PIPBOY_ATTABOY_OFFSETS_PATH, _module, IDR_PIPBOY_ATTABOY_OFFSETS, false);
         _pipboyOffsets.clear();
         loadOffsetJsonFile(PIPBOY_HOLO_OFFSETS_PATH, _pipboyOffsets);
         loadOffsetJsonFile(PIPBOY_SCREEN_OFFSETS_PATH, _pipboyOffsets);
+        loadOffsetJsonFile(PIPBOY_ATTABOY_OFFSETS_PATH, _pipboyOffsets);
     }
 
     /**
@@ -319,21 +341,11 @@ namespace frik
         // migrate pre v72 and v72 config files to v73 location
         logger::info("Migrate configs if exists in old locations...");
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK.ini)", FRIK_INI_PATH);
+        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_FOLVR.ini)", FRIK_FOLVR_INI_PATH);
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\slots.ini)", MESH_HIDE_SLOTS_INI_PATH);
-        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets\HoloPipboyPosition.json)", PIPBOY_HOLO_OFFSETS_PATH);
-        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets\PipboyPosition.json)", PIPBOY_SCREEN_OFFSETS_PATH);
         moveAllFilesInFolderSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets)", WEAPONS_OFFSETS_PATH);
-
-        // migrate v72 config files to v73 location
-        moveFileSafe(R"(.\Data\FRIK_Config\FRIK.ini)", FRIK_INI_PATH);
-        moveFileSafe(R"(.\Data\FRIK_Config\Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
-        moveFileSafe(R"(.\Data\FRIK_Config\Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);
-        moveFileSafe(R"(.\Data\FRIK_Config\Mesh_Hide\slots.ini)", MESH_HIDE_SLOTS_INI_PATH);
-        moveFileSafe(R"(.\Data\FRIK_Config\Pipboy_Offsets\HoloPipboyPosition.json)", PIPBOY_HOLO_OFFSETS_PATH);
-        moveFileSafe(R"(.\Data\FRIK_Config\Pipboy_Offsets\PipboyPosition.json)", PIPBOY_SCREEN_OFFSETS_PATH);
-        moveAllFilesInFolderSafe(R"(.\Data\FRIK_Config\Weapons_Offsets)", WEAPONS_OFFSETS_PATH);
     }
 
     /**
@@ -343,6 +355,7 @@ namespace frik
     std::string Config::getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool leftHanded)
     {
         static const std::string POWER_ARMOR_SUFFIX{ "-PowerArmor" };
+        static const std::string PRIM_HAND_SUFFIX{ "-primHand" };
         static const std::string OFF_HAND_SUFFIX{ "-offHand" };
         static const std::string THROWABLE_SUFFIX{ "-throwable" };
         static const std::string BACK_OF_HAND_SUFFIX{ "-backOfHand" };
@@ -350,6 +363,8 @@ namespace frik
         switch (mode) {
         case WeaponOffsetsMode::Weapon:
             return name + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
+        case WeaponOffsetsMode::PrimaryHand:
+            return name + PRIM_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
         case WeaponOffsetsMode::OffHand:
             return name + OFF_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
         case WeaponOffsetsMode::Throwable:

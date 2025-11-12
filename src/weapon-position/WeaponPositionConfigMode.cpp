@@ -144,6 +144,7 @@ namespace frik
     {
         // Show/Hide UI that should be visible only when weapon is equipped
         _weaponModeButton->setVisibility(weaponEquipped && !throwableEquipped);
+        _primaryHandModeButton->setVisibility(weaponEquipped && !throwableEquipped);
         _offhandModeButton->setVisibility(weaponEquipped && !throwableEquipped);
         if (_betterScopesModeButton) {
             _betterScopesModeButton->setVisibility(weaponEquipped && !throwableEquipped);
@@ -171,6 +172,9 @@ namespace frik
         switch (_repositionTarget) {
         case RepositionTarget::Weapon:
             handleWeaponReposition(weapon);
+            break;
+        case RepositionTarget::PrimaryHand:
+            handlePrimaryHandReposition();
             break;
         case RepositionTarget::Offhand:
             handleOffhandReposition();
@@ -225,6 +229,22 @@ namespace frik
 
         // update the weapon with the offset change
         weapon->local = _adjuster->_weaponOffsetTransform;
+    }
+
+    /**
+     * In primary hand reposition mode...
+     */
+    void WeaponPositionConfigMode::handlePrimaryHandReposition() const
+    {
+        // Update the offset position by player thumbstick.
+        const auto [axisX, axisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
+        if (axisX != 0.f || axisY != 0.f) {
+            const auto rot = f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)
+                ? getMatrixFromEulerAngles(-degreesToRads(correctAdjustmentValue(axisY, 2)), 0, 0)
+                : getMatrixFromEulerAngles(0, -degreesToRads(correctAdjustmentValue(axisY, 2)), -degreesToRads(correctAdjustmentValue(axisX, 3)));
+            _adjuster->_primaryHandOffsetRot = rot * _adjuster->_primaryHandOffsetRot;
+            _adjuster->_hasPrimaryHandOffset = true;
+        }
     }
 
     /**
@@ -341,6 +361,9 @@ namespace frik
         case RepositionTarget::Weapon:
             resetWeaponConfig();
             break;
+        case RepositionTarget::PrimaryHand:
+            resetPrimaryHandConfig();
+            break;
         case RepositionTarget::Offhand:
             resetOffhandConfig();
             break;
@@ -362,6 +385,9 @@ namespace frik
         switch (_repositionTarget) {
         case RepositionTarget::Weapon:
             saveWeaponConfig();
+            break;
+        case RepositionTarget::PrimaryHand:
+            savePrimaryHandConfig();
             break;
         case RepositionTarget::Offhand:
             saveOffhandConfig();
@@ -391,6 +417,23 @@ namespace frik
     {
         f4vr::showNotification("Saving Weapon Position");
         g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
+    }
+
+    void WeaponPositionConfigMode::resetPrimaryHandConfig() const
+    {
+        f4vr::showNotification("Reset Primary Hand Position to Default");
+        _adjuster->_primaryHandOffsetRot = getIdentityMatrix();
+        g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::PrimaryHand, _adjuster->_currentlyInPA, true);
+    }
+
+    void WeaponPositionConfigMode::savePrimaryHandConfig() const
+    {
+        f4vr::showNotification("Saving Primary Hand Position");
+        RE::NiTransform transform;
+        transform.scale = 1;
+        transform.translate = RE::NiPoint3(0, 0, 0);
+        transform.rotate = _adjuster->_primaryHandOffsetRot;
+        g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::PrimaryHand, _adjuster->_currentlyInPA);
     }
 
     void WeaponPositionConfigMode::resetOffhandConfig() const
@@ -460,6 +503,9 @@ namespace frik
         _weaponModeButton->setToggleState(true);
         _weaponModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Weapon; });
 
+        _primaryHandModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_primary_hand.nif");
+        _primaryHandModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::PrimaryHand; });
+
         _offhandModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
         _offhandModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Offhand; });
 
@@ -471,6 +517,7 @@ namespace frik
 
         const auto firstRowContainerInner = std::make_shared<UIToggleGroupContainer>(UIContainerLayout::HorizontalCenter, 0.15f);
         firstRowContainerInner->addElement(_weaponModeButton);
+        firstRowContainerInner->addElement(_primaryHandModeButton);
         firstRowContainerInner->addElement(_offhandModeButton);
         firstRowContainerInner->addElement(_throwableUIButton);
         firstRowContainerInner->addElement(backOfHandUIButton);

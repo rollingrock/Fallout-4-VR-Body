@@ -44,6 +44,7 @@ namespace frik
         void handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const;
         void checkIfOffhandIsGripping(const RE::NiNode* weapon);
         void setOffhandGripping(bool isGripping);
+        void handlePrimaryHandGripOffsetAdjustment(const RE::NiNode* weapon) const;
         void handleWeaponGrippingRotationAdjustment(RE::NiNode* weapon) const;
         void handleWeaponScopeCameraGrippingRotationAdjustment(const RE::NiNode* weapon, common::Quaternion rotAdjust, RE::NiPoint3 adjustedWeaponVec) const;
         bool isOffhandCloseToBarrel(const RE::NiNode* weapon) const;
@@ -78,6 +79,10 @@ namespace frik
 
         // custom weapon transform to update
         RE::NiTransform _weaponOffsetTransform = RE::NiTransform();
+
+        // custom primary hand rotation offsets matrix
+        RE::NiMatrix3 _primaryHandOffsetRot = RE::NiMatrix3();
+        bool _hasPrimaryHandOffset = false;
 
         // custom offhand rotation offsets matrix
         RE::NiMatrix3 _offhandOffsetRot = RE::NiMatrix3();

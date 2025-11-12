@@ -23,9 +23,8 @@ namespace frik
     void disableConfigModePose();
 
     void setForceHandPointingPose(bool primaryHand, bool forcePointing);
-    void setForceHandPointingPoseExplicitHand(bool rightHand, bool override);
 
-    void setOffhandGripHandPose();
-    void releaseOffhandGripHandPose();
-    void setOffhandGripHandPoseOverride(bool override);
+    void setOffhandGripHandPose(bool toSet);
+    void setAttaboyHandPose(bool toSet);
+    void setHandPoseOverride(bool override, bool rightHand, const float* handPose);
 }

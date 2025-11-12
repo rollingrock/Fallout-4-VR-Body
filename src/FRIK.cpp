@@ -80,14 +80,20 @@ namespace frik
      */
     void FRIK::onGameLoaded()
     {
+        g_config.isFalloutLondonVR = isFalloutLondonVRModLoaded();
+        if (g_config.isFalloutLondonVR) {
+            logger::info("Fallout London VR mod detected, enabling compatibility mode...");
+            g_config.reloadForFalloutLondonVR();
+        }
+
         logger::info("Register papyrus native functions...");
         initPapyrusApis();
         PapyrusGateway::init();
         _boneSpheres.init();
 
-        _gameMenusHandler.init([this](const std::string&, const bool isOpened) {
+        _gameMenusHandler.init([this](const std::string& name, const bool isOpened) {
             if (isOpened) {
-                onGameMenuOpened();
+                onGameMenuOpened(name, isOpened);
             }
         });
 
@@ -258,11 +264,15 @@ namespace frik
      * On game menu open check is loading menu is open and reset skelly if it does.
      * We want to reinit skeleton after player moves to a new location by fast travel or other.
      */
-    void FRIK::onGameMenuOpened()
+    void FRIK::onGameMenuOpened(const std::string& name, const bool isOpened)
     {
-        if (_skelly && _gameMenusHandler.isLoadingMenuOpen()) {
+        if (isOpened && _skelly && _gameMenusHandler.isLoadingMenuOpen()) {
             logger::info("Loading menu is open, reset skeleton...");
             releaseSkeleton();
+        }
+        if (isOpened && _pipboy && _pipboy->isOpen() && name == "TerminalMenu") {
+            logger::info("Close Pipboy due to terminal open...");
+            _pipboy->openClose(false);
         }
     }
 

@@ -31,9 +31,9 @@ namespace frik
     static constexpr float HAND_FINGERS_HOLDING_GUN_POSE[] = { 0.7f, 0.4f, 0.5f, 0.9f, 0.6f, 0.5f, 0.3f, 0.5f, 0.5f, 0.1f, 0.5f, 0.5f, 0.0f, 0.5f, 0.7f };
     static constexpr float HAND_FINGERS_HOLDING_MELEE_POSE[] = { 0.7f, 0.5f, 0.8f, 0.4f, 0.3f, 0.9f, 0.1f, 0.5f, 0.9f, 0.0f, 0.5f, 0.9f, 0.0f, 0.4f, 0.9f };
     static constexpr float HAND_FINGERS_POINTING_POSE[] = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-    static bool _handPointingPoseSet[2] = { false, false };
+    static constexpr float HAND_FINGERS_ATTABOY_HOLDING_POSE[] = { 0.7f, 1.2f, 1.3f, 1.1f, 1.1f, 1.2f, 0.8f, 0.6f, 1.0f, 0.4f, 0.8f, 1.0f, 0.1f, 1.0f, 1.4f };
 
-    static bool _offHandGripPose = false;
+    static bool _handPoseSet[2] = { false, false };
     static constexpr float OFFHAND_FINGERS_GRIP_POSE[] = { 1.0f, 1.0f, 0.9f, 0.6f, 0.6f, 0.6f, 0.5f, 0.6f, 0.55f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
 
     /**
@@ -291,12 +291,12 @@ namespace frik
 
     void setPipboyHandPose()
     {
-        setForceHandPointingPoseExplicitHand(!g_config.leftHandedPipBoy, true);
+        setHandPoseOverride(true, !g_config.leftHandedPipBoy, HAND_FINGERS_POINTING_POSE);
     }
 
     void disablePipboyHandPose()
     {
-        setForceHandPointingPoseExplicitHand(!g_config.leftHandedPipBoy, false);
+        setHandPoseOverride(false, !g_config.leftHandedPipBoy, HAND_FINGERS_POINTING_POSE);
     }
 
     void setConfigModeHandPose()
@@ -315,49 +315,34 @@ namespace frik
      */
     void setForceHandPointingPose(const bool primaryHand, const bool forcePointing)
     {
-        setForceHandPointingPoseExplicitHand(primaryHand ^ f4vr::isLeftHandedMode(), forcePointing);
+        setHandPoseOverride(forcePointing, primaryHand ^ f4vr::isLeftHandedMode(), HAND_FINGERS_POINTING_POSE);
+    }
+
+    void setOffhandGripHandPose(const bool toSet)
+    {
+        setHandPoseOverride(toSet, f4vr::isLeftHandedMode(), OFFHAND_FINGERS_GRIP_POSE);
+    }
+
+    void setAttaboyHandPose(const bool toSet)
+    {
+        setHandPoseOverride(toSet, false, HAND_FINGERS_ATTABOY_HOLDING_POSE);
     }
 
     /**
-     * Set/Release hand to/from pointing pose for explicitly right or left hand.
+     * Set/Release hand to/from specific pose for explicitly right or left hand.
      */
-    void setForceHandPointingPoseExplicitHand(const bool rightHand, const bool override)
+    void setHandPoseOverride(const bool override, const bool rightHand, const float* handPose)
     {
-        if (_handPointingPoseSet[rightHand] == override) {
+        if (_handPoseSet[rightHand] == override) {
             return;
         }
-        logger::debug("Hand pose: Set force pointing pose for '{}' hand: {})", rightHand ? "Right" : "Left", override ? "Pointing" : "Release");
-        _handPointingPoseSet[rightHand] = override;
+        logger::debug("Hand pose: Set force hand pose for '{}' hand: {})", rightHand ? "Right" : "Left", override ? "Set" : "Release");
+        _handPoseSet[rightHand] = override;
         const auto* const fingers = rightHand ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
         for (auto i = 0; i < FINGERS_COUNT; i++) {
             const std::string finger = fingers[i];
             handPapyrusHasControl[finger.c_str()] = override;
-            handPapyrusPose[finger.c_str()] = HAND_FINGERS_POINTING_POSE[i];
-        }
-    }
-
-    void setOffhandGripHandPose()
-    {
-        setOffhandGripHandPoseOverride(true);
-    }
-
-    void releaseOffhandGripHandPose()
-    {
-        setOffhandGripHandPoseOverride(false);
-    }
-
-    void setOffhandGripHandPoseOverride(const bool override)
-    {
-        if (_offHandGripPose == override) {
-            return;
-        }
-        logger::debug("Hand pose: Set offhand grip pose override: {})", override ? "Set" : "Release");
-        _offHandGripPose = override;
-        const auto* const fingers = f4vr::isLeftHandedMode() ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
-        for (auto i = 0; i < FINGERS_COUNT; i++) {
-            const std::string finger = fingers[i];
-            handPapyrusHasControl[finger.c_str()] = override;
-            handPapyrusPose[finger.c_str()] = OFFHAND_FINGERS_GRIP_POSE[i];
+            handPapyrusPose[finger.c_str()] = handPose[i];
         }
     }
 }
