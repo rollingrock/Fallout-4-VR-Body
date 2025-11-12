@@ -32,9 +32,11 @@ namespace frik
     {
         // The weapon offset in the primary hand.
         Weapon = 0,
-        // The secondary hand gripping position offset.
+        // The primary hand holding the stock.
+        PrimaryHand,
+        // The secondary hand gripping on the weapon.
         OffHand,
-        // The secondary hand gripping position offset.
+        // The throwable weapon offset in the primary hand.
         Throwable,
         // Back of hand UI (HP,Ammo,etc.) offset on hand.
         BackOfHandUI,

@@ -14,6 +14,7 @@ namespace frik
     enum class RepositionTarget : uint8_t
     {
         Weapon = 0,
+        PrimaryHand,
         Offhand,
         Throwable,
         BackOfHandUI,
@@ -46,6 +47,7 @@ namespace frik
     private:
         void handleReposition(RE::NiNode* weapon, RE::NiNode* throwable) const;
         void handleWeaponReposition(RE::NiNode* weapon) const;
+        void handlePrimaryHandReposition() const;
         void handleOffhandReposition() const;
         void handleThrowableReposition(RE::NiNode* throwable) const;
         void handleBackOfHandUIReposition() const;
@@ -54,6 +56,8 @@ namespace frik
         void saveConfig() const;
         void resetWeaponConfig() const;
         void saveWeaponConfig() const;
+        void resetPrimaryHandConfig() const;
+        void savePrimaryHandConfig() const;
         void resetOffhandConfig() const;
         void saveOffhandConfig() const;
         void resetThrowableConfig() const;
@@ -76,6 +80,7 @@ namespace frik
         std::shared_ptr<vrui::UIWidget> _throwableAdjustFooter;
         std::shared_ptr<vrui::UIWidget> _simpleAdjustFooter;
         std::shared_ptr<vrui::UIToggleButton> _weaponModeButton;
+        std::shared_ptr<vrui::UIToggleButton> _primaryHandModeButton;
         std::shared_ptr<vrui::UIToggleButton> _offhandModeButton;
         std::shared_ptr<vrui::UIToggleButton> _throwableUIButton;
         std::shared_ptr<vrui::UIWidget> _emptyHandsMessageBox;

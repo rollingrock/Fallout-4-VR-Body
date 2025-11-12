@@ -148,6 +148,8 @@ namespace frik
 
         handleWeaponGrippingRotationAdjustment(weapon);
 
+        handlePrimaryHandGripOffsetAdjustment(weapon);
+
         handleScopeCameraAdjustmentByWeaponOffset(weapon);
 
         handleSpecialWeaponFix(weapon);
@@ -197,12 +199,22 @@ namespace frik
             _weaponOffsetTransform = _isCurrentWeaponMelee ? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_weaponOriginalTransform) : _weaponOriginalTransform;
         }
 
+        // Load stored offsets for primary hand for the new weapon
+        const auto primaryHandOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::PrimaryHand, _currentlyInPA);
+        _hasPrimaryHandOffset = primaryHandOffsetLookup.has_value();
+        if (primaryHandOffsetLookup.has_value()) {
+            _primaryHandOffsetRot = primaryHandOffsetLookup.value().rotate;
+        } else {
+            // No stored offset, use identity for no change
+            _primaryHandOffsetRot = getIdentityMatrix();
+        }
+
         // Load stored offsets for offhand for the new weapon
         const auto offhandOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::OffHand, _currentlyInPA);
         if (offhandOffsetLookup.has_value()) {
             _offhandOffsetRot = offhandOffsetLookup.value().rotate;
         } else {
-            // No stored offset for offhand, use identity for no change
+            // No stored offset, use identity for no change
             _offhandOffsetRot = getIdentityMatrix();
         }
 
@@ -221,8 +233,9 @@ namespace frik
             _backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->local, _currentlyInPA);
         }
 
-        logger::info("Equipped Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
-            _currentWeapon, _currentlyInPA, weaponOffsetLookup.has_value(), offhandOffsetLookup.has_value(), backOfHandOffsetLookup.has_value());
+        logger::info("Equipped Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}, HasPrimaryHandOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
+            _currentWeapon, _currentlyInPA,
+            weaponOffsetLookup.has_value(), primaryHandOffsetLookup.has_value(), offhandOffsetLookup.has_value(), backOfHandOffsetLookup.has_value());
     }
 
     /**
@@ -328,6 +341,21 @@ namespace frik
     {
         _offHandGripping = isGripping;
         setOffhandGripHandPose(isGripping);
+    }
+
+    /**
+     * Rotate the primary hand if there is a primary hand offset defined for the weapon.
+     * Useful for rifle type weapons where the stock grip angle may differ than regular pistol.
+     * Better result to move the hand and not the weapon as moving the weapon causes issues with holding comfort
+     * and scope rotation when entering scoped mode.
+     */
+    void WeaponPositionAdjuster::handlePrimaryHandGripOffsetAdjustment(const RE::NiNode* weapon) const
+    {
+        if (_hasPrimaryHandOffset) {
+            const auto primaryHand = f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
+            primaryHand->local.rotate = _primaryHandOffsetRot * primaryHand->local.rotate;
+            f4vr::updateDown(primaryHand, true, weapon->name.c_str());
+        }
     }
 
     /**

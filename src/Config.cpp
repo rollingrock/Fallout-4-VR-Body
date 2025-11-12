@@ -355,6 +355,7 @@ namespace frik
     std::string Config::getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool leftHanded)
     {
         static const std::string POWER_ARMOR_SUFFIX{ "-PowerArmor" };
+        static const std::string PRIM_HAND_SUFFIX{ "-primHand" };
         static const std::string OFF_HAND_SUFFIX{ "-offHand" };
         static const std::string THROWABLE_SUFFIX{ "-throwable" };
         static const std::string BACK_OF_HAND_SUFFIX{ "-backOfHand" };
@@ -362,6 +363,8 @@ namespace frik
         switch (mode) {
         case WeaponOffsetsMode::Weapon:
             return name + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
+        case WeaponOffsetsMode::PrimaryHand:
+            return name + PRIM_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
         case WeaponOffsetsMode::OffHand:
             return name + OFF_HAND_SUFFIX + (inPA ? POWER_ARMOR_SUFFIX : "") + (leftHanded ? LEFT_HANDED_SUFFIX : "");
         case WeaponOffsetsMode::Throwable:
