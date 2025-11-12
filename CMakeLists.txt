@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.23)
 # >>> Project
 set(NAME "FRIK")
 set(FRIENDLY_NAME "FRIK")
-set(VERSION 0.76.3)
+set(VERSION 0.76.4)
 
 
 # >>> Folders
