@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/375d4a7b-c98b-4b13-9a0a-834096dfb234)
+![Weapon Adjustment Config](https://github.com/user-attachments/assets/54e395af-b4f3-4ccc-ab92-cf390793c9eb)
 
 ## Defaults
 FRIK ships with 160+ embedded pre-created offset files covering vanilla weapons (including throwables) in right-handed mode.  

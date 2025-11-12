@@ -4,7 +4,7 @@
 
 ![a342](https://github.com/user-attachments/assets/3593b0f1-8115-4d38-98a4-b0f1e253b21a)
 
-![a6545](https://github.com/user-attachments/assets/9690d842-5fa7-4633-ae52-726651699c72)
+![Weapon Adjustment Config](https://github.com/user-attachments/assets/54e395af-b4f3-4ccc-ab92-cf390793c9eb)
 
 ![a7653](https://github.com/user-attachments/assets/d4867224-33a6-4231-a789-2677d7cc2f9b)
 
