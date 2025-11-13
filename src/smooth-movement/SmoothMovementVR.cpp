@@ -63,10 +63,7 @@ namespace frik
         // logger::sample("[SmoothMovement] curPos:({:.2f}, {:.2f}, {:.2f}), newPos:({:.2f}, {:.2f}, {:.2f}), appliedPos:({:.2f}, {:.2f}, {:.2f})",
         // 	curPos.x, curPos.y, curPos.z, newPos.x, newPos.y, newPos.z, playerLocalTransformPos.x, playerLocalTransformPos.y, playerLocalTransformPos.z);
 
-        const float cameraHeightOffset = f4vr::isInPowerArmor()
-            ? g_config.PACameraHeight + g_config.cameraHeight + g_frik.getDynamicCameraHeight()
-            : g_config.cameraHeight + g_frik.getDynamicCameraHeight();
-        playerLocalTransformPos.z += cameraHeightOffset;
+        playerLocalTransformPos.z += Skeleton::getAdjustedPlayerCameraOffset();
     }
 
     /**

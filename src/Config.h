@@ -136,14 +136,15 @@ namespace frik
         const std::vector<int>& hideEquipSlotIndexes() const { return _hideEquipSlotIndexes; }
 
         // Camera and Body offsets
-        float rootOffset = 0;
-        float PARootOffset = 0;
-        float cameraHeight = 0;
-        float PACameraHeight = 0;
-        float playerOffset_forward = 0;
-        float playerOffset_up = 0;
-        float powerArmor_forward = 0;
-        float powerArmor_up = 0;
+        float playerRootOffset = 0;
+        float playerOffsetUp = 0;
+        float playerOffsetForward = 0;
+        float playerCameraHeightOffset = 0;
+
+        float playerRootOffsetInPA = 0;
+        float playerOffsetUpInPA = 0;
+        float playerOffsetForwardInPA = 0;
+        float playerCameraHeightOffsetInPA = 0;
 
         // Pipboy
         float pipBoyScale = 0;

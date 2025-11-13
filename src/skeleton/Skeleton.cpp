@@ -17,6 +17,9 @@ using namespace f4vr;
 
 namespace frik
 {
+    constexpr float COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT = 0.7f;
+    constexpr float COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT = 0.5f;
+
     RE::NiTransform Skeleton::getBoneWorldTransform(const std::string& boneName)
     {
         return getFlattenedBoneTree()->transforms[_boneTreeMap[boneName]].world;
@@ -33,6 +36,22 @@ namespace frik
         const auto boneTransform = getBoneWorldTransform(indexFinger);
         const auto forward = boneTransform.rotate.Transpose() * (RE::NiPoint3(1, 0, 0));
         return boneTransform.translate + forward * (_inPowerArmor ? 3 : 1.8f);
+    }
+
+    /**
+     * Get the player camera height offset adjusted for power armor, sneaking, and dynamic height from external API.
+     * The height needs to be adjusted for comfort sneaking because the player physical height doesn't change but
+     * the player avatar does. So the camera offset has to be reduced by the same amount as the game changes the height
+     * which is 70% of the normal height.
+     */
+    float Skeleton::getAdjustedPlayerCameraOffset()
+    {
+        auto offset = isInPowerArmor() ? g_config.playerCameraHeightOffsetInPA : g_config.playerCameraHeightOffset;
+        offset += g_frik.getDynamicCameraHeight();
+        if (isComfortSneakMode() && isPlayerSneaking()) {
+            offset *= COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT;
+        }
+        return offset;
     }
 
     /**
@@ -342,9 +361,7 @@ namespace frik
     void Skeleton::setBodyUnderHMD()
     {
         if (g_config.disableSmoothMovement) {
-            _playerNodes->playerworldnode->local.translate.z = _inPowerArmor
-                ? g_config.PACameraHeight + g_frik.getDynamicCameraHeight()
-                : g_config.cameraHeight + g_frik.getDynamicCameraHeight();
+            _playerNodes->playerworldnode->local.translate.z = getAdjustedPlayerCameraOffset();
             updateDown(_playerNodes->playerworldnode, true);
         }
 
@@ -377,13 +394,12 @@ namespace frik
         _root->local.translate = body->world.translate - _curentPosition;
         _root->local.translate.z = z;
         //_root->local.translate *= 0.0f;
-        //_root->local.translate.y = g_config.playerOffset_forward - 6.0f;
+        //_root->local.translate.y = g_config.playerOffsetForward - 6.0f;
         _root->local.scale = g_config.playerHeight / DEFAULT_CAMERA_HEIGHT; // set scale based off specified user height
     }
 
     void Skeleton::setBodyPosture()
     {
-        const float neckPitch = getNeckPitch();
         const float bodyPitch = _inPowerArmor ? getBodyPitch() : getBodyPitch() / 1.2f;
 
         RE::NiNode* com = findNode(_root, "COM");
@@ -396,9 +412,14 @@ namespace frik
         com->local.translate.x = 0.0;
         com->local.translate.y = 0.0;
 
-        const float z_adjust = (_inPowerArmor ? g_config.powerArmor_up : g_config.playerOffset_up) - cosf(neckPitch) * (5.0f * _root->local.scale);
-        //float z_adjust = g_config.playerOffset_up - cosf(neckPitch) * (5.0 * _root->local.scale);
-        const auto neckAdjust = RE::NiPoint3(-_forwardDir.x * g_config.playerOffset_forward / 2, -_forwardDir.y * g_config.playerOffset_forward / 2, z_adjust);
+        // comfort sneak changes the height of the avatar without the player changing height in the real world, need to adjust for it
+        const float comfortSneakAdjustZ = isComfortSneakMode() && isPlayerSneaking() ? COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT : 1.0f;
+
+        // small offset to not change height when player looking up/down as the HMD elevation changes with it
+        const float offsetByNeckPitch = cosf(getNeckPitch()) * (5.0f * _root->local.scale);
+        const float playerAdjustZ = (_inPowerArmor ? g_config.playerOffsetUpInPA : g_config.playerOffsetUp) * comfortSneakAdjustZ - offsetByNeckPitch;
+
+        const auto neckAdjust = RE::NiPoint3(-_forwardDir.x * g_config.playerOffsetForward / 2, -_forwardDir.y * g_config.playerOffsetForward / 2, playerAdjustZ);
         const RE::NiPoint3 neckPos = getCameraPosition() + neckAdjust;
 
         _torsoLen = vec3Len(neck->world.translate - com->world.translate);
@@ -414,12 +435,12 @@ namespace frik
         const RE::NiPoint3 newHipPos = neckPos + hmdToNewHip * (_torsoLen / vec3Len(hmdToNewHip));
 
         const RE::NiPoint3 newPos = com->local.translate + _root->world.rotate * ((newHipPos - com->world.translate));
-        const float offsetFwd = _inPowerArmor ? g_config.powerArmor_forward : g_config.playerOffset_forward;
+        const float offsetFwd = _inPowerArmor ? g_config.playerOffsetForwardInPA : g_config.playerOffsetForward;
         com->local.translate.y += newPos.y + offsetFwd;
         com->local.translate.z = _inPowerArmor ? newPos.z / 1.7f : newPos.z / 1.5f;
-        //com->local.translate.z -= _inPowerArmor ? g_config.powerArmor_up + g_config.PACameraHeight : 0.0f;
-        RE::NiNode* body = _root->parent;
-        body->world.translate.z -= _inPowerArmor ? g_config.PACameraHeight + g_config.PARootOffset : g_config.cameraHeight + g_config.rootOffset;
+        //com->local.translate.z -= _inPowerArmor ? g_config.playerOffsetUpInPA + g_config.playerCameraHeightOffsetInPA : 0.0f;
+        const auto body = _root->parent;
+        body->world.translate.z -= _inPowerArmor ? g_config.playerRootOffsetInPA : g_config.playerRootOffset + getAdjustedPlayerCameraOffset();
 
         const RE::NiMatrix3 mat = getMatrixFromRotateVectorVec(neckPos - tmpHipPos, hmdToHip) * spine->parent->world.rotate.Transpose();
         spine->local.rotate = spine->world.rotate * mat;

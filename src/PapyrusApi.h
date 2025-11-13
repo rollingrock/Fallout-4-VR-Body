@@ -60,13 +60,13 @@ namespace frik
     static void moveForward(std::monostate)
     {
         common::logger::info("Papyrus: Move Forward");
-        g_config.playerOffset_forward += 1.0f;
+        g_config.playerOffsetForward += 1.0f;
     }
 
     static void moveBackward(std::monostate)
     {
         common::logger::info("Papyrus: Move Backward");
-        g_config.playerOffset_forward -= 1.0f;
+        g_config.playerOffsetForward -= 1.0f;
     }
 
     static void setDynamicCameraHeight(std::monostate, const float dynamicCameraHeight)

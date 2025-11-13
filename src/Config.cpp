@@ -59,14 +59,14 @@ namespace frik
         hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "HideSkin");
 
         // Camera and Body offsets
-        rootOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "RootOffset", 0.0));
-        PARootOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", 0.0));
-        cameraHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", 0.0));
-        PACameraHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", 0.0));
-        playerOffset_forward = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", -4.0));
-        playerOffset_up = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", -2.0));
-        powerArmor_forward = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", 0.0));
-        powerArmor_up = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_up", 0.0));
+        playerRootOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "RootOffset", 0.0));
+        playerRootOffsetInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", 0.0));
+        playerCameraHeightOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", 0.0));
+        playerCameraHeightOffsetInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", 0.0));
+        playerOffsetForward = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", -4.0));
+        playerOffsetUp = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", -2.0));
+        playerOffsetForwardInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", 0.0));
+        playerOffsetUpInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_up", 0.0));
 
         // Pipboy
         pipBoyScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipboyScale", 1.0));
@@ -181,13 +181,13 @@ namespace frik
     void Config::saveIniConfigInternal(CSimpleIniA& ini)
     {
         ini.SetDoubleValue(INI_SECTION_MAIN, "fVrScale", fVrScale);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", playerOffset_forward);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", playerOffset_up);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", powerArmor_forward);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_up", powerArmor_up);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", playerOffsetForward);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_up", playerOffsetUp);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", playerOffsetForwardInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_up", playerOffsetUpInPA);
         ini.SetDoubleValue(INI_SECTION_MAIN, "armLength", armLength);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", cameraHeight);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", PACameraHeight);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", playerCameraHeightOffset);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", playerCameraHeightOffsetInPA);
         ini.SetBoolValue(INI_SECTION_MAIN, "showPAHUD", showPAHUD);
         ini.SetBoolValue(INI_SECTION_MAIN, "hidePipboy", hidePipboy);
         ini.SetDoubleValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
@@ -198,8 +198,8 @@ namespace frik
         ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);
         ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", dampenHandsRotation);
         ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", dampenHandsTranslation);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", PARootOffset);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "RootOffset", rootOffset);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", playerRootOffsetInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "RootOffset", playerRootOffset);
         ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButton", enableGripButtonToGrap);
         ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", enableGripButtonToLetGo);
         ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", onePressGripButton);
