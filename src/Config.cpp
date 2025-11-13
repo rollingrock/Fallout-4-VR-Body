@@ -13,6 +13,81 @@ using namespace common;
 
 namespace frik
 {
+    float Config::getplayerHMDOffsetUp() const
+    {
+        if (isPlayingSitting) {
+            return f4vr::isInPowerArmor() ? playerHMDOffsetUpSittingInPA : playerHMDOffsetUpSitting;
+        }
+        return f4vr::isInPowerArmor() ? playerHMDOffsetUpStandingInPA : playerHMDOffsetUpStanding;
+    }
+
+    void Config::setplayerHMDOffsetUp(const float value)
+    {
+        if (isPlayingSitting) {
+            if (f4vr::isInPowerArmor()) {
+                playerHMDOffsetUpSittingInPA = value;
+            } else {
+                playerHMDOffsetUpSitting = value;
+            }
+        } else {
+            if (f4vr::isInPowerArmor()) {
+                playerHMDOffsetUpStandingInPA = value;
+            } else {
+                playerHMDOffsetUpStanding = value;
+            }
+        }
+    }
+
+    float Config::getPlayerBodyOffsetUp() const
+    {
+        if (isPlayingSitting) {
+            return f4vr::isInPowerArmor() ? playerBodyOffsetUpSittingInPA : playerBodyOffsetUpSitting;
+        }
+        return f4vr::isInPowerArmor() ? playerBodyOffsetUpStandingInPA : playerBodyOffsetUpStanding;
+    }
+
+    void Config::setPlayerBodyOffsetUp(const float value)
+    {
+        if (isPlayingSitting) {
+            if (f4vr::isInPowerArmor()) {
+                playerBodyOffsetUpSittingInPA = value;
+            } else {
+                playerBodyOffsetUpSitting = value;
+            }
+        } else {
+            if (f4vr::isInPowerArmor()) {
+                playerBodyOffsetUpStandingInPA = value;
+            } else {
+                playerBodyOffsetUpStanding = value;
+            }
+        }
+    }
+
+    float Config::getPlayerBodyOffsetForward() const
+    {
+        if (isPlayingSitting) {
+            return f4vr::isInPowerArmor() ? playerBodyOffsetForwardSittingInPA : playerBodyOffsetForwardSitting;
+        }
+        return f4vr::isInPowerArmor() ? playerBodyOffsetForwardStandingInPA : playerBodyOffsetForwardStanding;
+    }
+
+    void Config::setPlayerBodyOffsetForward(const float value)
+    {
+        if (isPlayingSitting) {
+            if (f4vr::isInPowerArmor()) {
+                playerBodyOffsetForwardSittingInPA = value;
+            } else {
+                playerBodyOffsetForwardSitting = value;
+            }
+        } else {
+            if (f4vr::isInPowerArmor()) {
+                playerBodyOffsetForwardStandingInPA = value;
+            } else {
+                playerBodyOffsetForwardStanding = value;
+            }
+        }
+    }
+
     /**
      * Open the FRIK.ini file in Notepad for editing.
      */
@@ -58,13 +133,23 @@ namespace frik
         hideEquipment = ini.GetBoolValue(INI_SECTION_MAIN, "HideEquipment");
         hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "HideSkin");
 
+        // is the player playing standing or sitting
+        isPlayingSitting = ini.GetBoolValue(INI_SECTION_MAIN, "bIsPlayingSitting", false);
+
         // Camera and Body offsets
-        playerBodyOffsetUp = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "RootOffset", 0.0));
-        playerBodyOffsetUpInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", 0.0));
-        playerCameraOffsetUp = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", 0.0));
-        playerCameraOffsetUpInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", 0.0));
-        playerBodyOffsetForward = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", -4.0));
-        playerBodyOffsetForwardInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", 0.0));
+        playerHMDOffsetUpStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStanding", 0.0));
+        playerBodyOffsetUpStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStanding", 0.0));
+        playerBodyOffsetForwardStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStanding", 0.0));
+        playerHMDOffsetUpSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSitting", 0.0));
+        playerBodyOffsetUpSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSitting", 0.0));
+        playerBodyOffsetForwardSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSitting", 0.0));
+
+        playerHMDOffsetUpStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStandingInPA", 0.0));
+        playerBodyOffsetUpStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStandingInPA", 0.0));
+        playerBodyOffsetForwardStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStandingInPA", 0.0));
+        playerHMDOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSittingInPA", 0.0));
+        playerBodyOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", 0.0));
+        playerBodyOffsetForwardSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", 0.0));
 
         // Pipboy
         pipBoyScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipboyScale", 1.0));
@@ -178,12 +263,24 @@ namespace frik
 
     void Config::saveIniConfigInternal(CSimpleIniA& ini)
     {
+        ini.SetBoolValue(INI_SECTION_MAIN, "bIsPlayingSitting", isPlayingSitting);
+
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStanding", playerBodyOffsetUpStanding);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStanding", playerBodyOffsetForwardStanding);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStanding", playerHMDOffsetUpStanding);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSitting", playerBodyOffsetUpSitting);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSitting", playerBodyOffsetForwardSitting);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSitting", playerHMDOffsetUpSitting);
+
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStandingInPA", playerBodyOffsetUpStandingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStandingInPA", playerBodyOffsetForwardStandingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStandingInPA", playerHMDOffsetUpStandingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", playerBodyOffsetUpSittingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", playerBodyOffsetForwardSittingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSittingInPA", playerHMDOffsetUpSittingInPA);
+
         ini.SetDoubleValue(INI_SECTION_MAIN, "fVrScale", fVrScale);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "playerOffset_forward", playerBodyOffsetForward);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_forward", playerBodyOffsetForwardInPA);
         ini.SetDoubleValue(INI_SECTION_MAIN, "armLength", armLength);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "cameraHeightOffset", playerCameraOffsetUp);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_cameraHeightOffset", playerCameraOffsetUpInPA);
         ini.SetBoolValue(INI_SECTION_MAIN, "showPAHUD", showPAHUD);
         ini.SetBoolValue(INI_SECTION_MAIN, "hidePipboy", hidePipboy);
         ini.SetDoubleValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
@@ -194,8 +291,6 @@ namespace frik
         ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);
         ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", dampenHandsRotation);
         ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", dampenHandsTranslation);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "powerArmor_RootOffset", playerBodyOffsetUpInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "RootOffset", playerBodyOffsetUp);
         ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButton", enableGripButtonToGrap);
         ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", enableGripButtonToLetGo);
         ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", onePressGripButton);

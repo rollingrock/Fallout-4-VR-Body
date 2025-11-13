@@ -111,6 +111,13 @@ namespace frik
             saveIniConfigValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
         }
 
+        float getPlayerBodyOffsetUp() const;
+        void setPlayerBodyOffsetUp(float value);
+        float getPlayerBodyOffsetForward() const;
+        void setPlayerBodyOffsetForward(float value);
+        float getplayerHMDOffsetUp() const;
+        void setplayerHMDOffsetUp(float value);
+
         static void openInNotepad();
         RE::NiTransform getPipboyOffset();
         void savePipboyOffset(const RE::NiTransform& transform);
@@ -135,14 +142,23 @@ namespace frik
         const std::vector<std::string>& skinGeometry() const { return _skinGeometry; }
         const std::vector<int>& hideEquipSlotIndexes() const { return _hideEquipSlotIndexes; }
 
-        // Camera and Body offsets
-        float playerBodyOffsetUp = 0;
-        float playerBodyOffsetForward = 0;
-        float playerCameraOffsetUp = 0;
+        // is the player playing standing or sitting
+        bool isPlayingSitting = false;
 
-        float playerBodyOffsetUpInPA = 0;
-        float playerBodyOffsetForwardInPA = 0;
-        float playerCameraOffsetUpInPA = 0;
+        // Camera and Body offsets for standing/sitting and in/out of Power Armor
+        float playerHMDOffsetUpStanding = 0;
+        float playerBodyOffsetUpStanding = 0;
+        float playerBodyOffsetForwardStanding = 0;
+        float playerHMDOffsetUpSitting = 0;
+        float playerBodyOffsetUpSitting = 0;
+        float playerBodyOffsetForwardSitting = 0;
+
+        float playerHMDOffsetUpStandingInPA = 0;
+        float playerBodyOffsetUpStandingInPA = 0;
+        float playerBodyOffsetForwardStandingInPA = 0;
+        float playerHMDOffsetUpSittingInPA = 0;
+        float playerBodyOffsetUpSittingInPA = 0;
+        float playerBodyOffsetForwardSittingInPA = 0;
 
         // Pipboy
         float pipBoyScale = 0;

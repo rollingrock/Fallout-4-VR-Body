@@ -74,15 +74,21 @@ namespace frik
         bool _isDampenScreenButtonPressed = false;
         int _PBConfigModeEnterCounter = 0;
 
-        // backup and resture if erxist config without saving
+        // backup and restore if exiting config without saving
         float _armLength_bkup = 0;
-        float _rootOffset_bkup = 0;
-        float _PARootOffset_bkup = 0;
         float _fVrScale_bkup = 0;
-        float _playerOffset_forward_bkup = 0;
-        float _powerArmor_forward_bkup = 0;
-        float _cameraHeight_bkup = 0;
-        float _PACameraHeight_bkup = 0;
+        float _playerBodyOffsetUpStanding_bkup = 0;
+        float _playerBodyOffsetForwardStanding_bkup = 0;
+        float _playerBodyOffsetUpSitting_bkup = 0;
+        float _playerBodyOffsetForwardSitting_bkup = 0;
+        float _playerHMDOffsetUpSitting_bkup = 0;
+        float _playerHMDOffsetUpStanding_bkup = 0;
+        float _playerBodyOffsetUpStandingInPA_bkup = 0;
+        float _playerBodyOffsetForwardStandingInPA_bkup = 0;
+        float _playerHMDOffsetUpStandingInPA_bkup = 0;
+        float _playerBodyOffsetUpSittingInPA_bkup = 0;
+        float _playerBodyOffsetForwardSittingInPA_bkup = 0;
+        float _playerHMDOffsetUpSittingInPA_bkup = 0;
         bool enableGripButtonToGrap_bkup = false;
         bool onePressGripButton_bkup = false;
         bool enableGripButtonToLetGo_bkup = false;

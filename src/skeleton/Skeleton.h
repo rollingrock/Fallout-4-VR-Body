@@ -45,7 +45,7 @@ namespace frik
 
         RE::NiPoint3 getIndexFingerTipWorldPosition(bool primaryHand);
 
-        static float getAdjustedPlayerCameraOffset();
+        static float getAdjustedplayerHMDOffset();
 
         void onFrameUpdate();
 
