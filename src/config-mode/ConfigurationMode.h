@@ -76,8 +76,6 @@ namespace frik
 
         // backup and resture if erxist config without saving
         float _armLength_bkup = 0;
-        float _powerArmor_up_bkup = 0;
-        float _playerOffset_up_bkup = 0;
         float _rootOffset_bkup = 0;
         float _PARootOffset_bkup = 0;
         float _fVrScale_bkup = 0;

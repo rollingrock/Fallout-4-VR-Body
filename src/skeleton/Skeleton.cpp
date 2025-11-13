@@ -46,7 +46,7 @@ namespace frik
      */
     float Skeleton::getAdjustedPlayerCameraOffset()
     {
-        auto offset = isInPowerArmor() ? g_config.playerCameraHeightOffsetInPA : g_config.playerCameraHeightOffset;
+        auto offset = isInPowerArmor() ? g_config.playerCameraOffsetUpInPA : g_config.playerCameraOffsetUp;
         offset += g_frik.getDynamicCameraHeight();
         if (isComfortSneakMode() && isPlayerSneaking()) {
             offset *= COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT;
@@ -394,7 +394,7 @@ namespace frik
         _root->local.translate = body->world.translate - _curentPosition;
         _root->local.translate.z = z;
         //_root->local.translate *= 0.0f;
-        //_root->local.translate.y = g_config.playerOffsetForward - 6.0f;
+        //_root->local.translate.y = g_config.playerBodyOffsetForward - 6.0f;
         _root->local.scale = g_config.playerHeight / DEFAULT_CAMERA_HEIGHT; // set scale based off specified user height
     }
 
@@ -412,14 +412,19 @@ namespace frik
         com->local.translate.x = 0.0;
         com->local.translate.y = 0.0;
 
+        // calculate the player body vertical offsets as a diff of camera and body from the ground offset
+        const float playerVerticalOffset = _inPowerArmor ? g_config.playerBodyOffsetUpInPA : g_config.playerBodyOffsetUp;
+        const float playerCameraVerticalOffset = isInPowerArmor() ? g_config.playerCameraOffsetUpInPA : g_config.playerCameraOffsetUp;
+        // if people complain about body posture we can add manual adjustment here later
+
         // comfort sneak changes the height of the avatar without the player changing height in the real world, need to adjust for it
         const float comfortSneakAdjustZ = isComfortSneakMode() && isPlayerSneaking() ? COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT : 1.0f;
 
         // small offset to not change height when player looking up/down as the HMD elevation changes with it
         const float offsetByNeckPitch = cosf(getNeckPitch()) * (5.0f * _root->local.scale);
-        const float playerAdjustZ = (_inPowerArmor ? g_config.playerOffsetUpInPA : g_config.playerOffsetUp) * comfortSneakAdjustZ - offsetByNeckPitch;
+        const float playerAdjustZ = (4 * playerVerticalOffset - playerCameraVerticalOffset) * comfortSneakAdjustZ - offsetByNeckPitch;
 
-        const auto neckAdjust = RE::NiPoint3(-_forwardDir.x * g_config.playerOffsetForward / 2, -_forwardDir.y * g_config.playerOffsetForward / 2, playerAdjustZ);
+        const auto neckAdjust = RE::NiPoint3(-_forwardDir.x * g_config.playerBodyOffsetForward / 2, -_forwardDir.y * g_config.playerBodyOffsetForward / 2, -playerAdjustZ);
         const RE::NiPoint3 neckPos = getCameraPosition() + neckAdjust;
 
         _torsoLen = vec3Len(neck->world.translate - com->world.translate);
@@ -435,12 +440,12 @@ namespace frik
         const RE::NiPoint3 newHipPos = neckPos + hmdToNewHip * (_torsoLen / vec3Len(hmdToNewHip));
 
         const RE::NiPoint3 newPos = com->local.translate + _root->world.rotate * ((newHipPos - com->world.translate));
-        const float offsetFwd = _inPowerArmor ? g_config.playerOffsetForwardInPA : g_config.playerOffsetForward;
+        const float offsetFwd = _inPowerArmor ? g_config.playerBodyOffsetForwardInPA : g_config.playerBodyOffsetForward;
         com->local.translate.y += newPos.y + offsetFwd;
         com->local.translate.z = _inPowerArmor ? newPos.z / 1.7f : newPos.z / 1.5f;
-        //com->local.translate.z -= _inPowerArmor ? g_config.playerOffsetUpInPA + g_config.playerCameraHeightOffsetInPA : 0.0f;
+        //com->local.translate.z -= _inPowerArmor ? g_config.playerOffsetUpInPA + g_config.playerCameraOffsetUpInPA : 0.0f;
         const auto body = _root->parent;
-        body->world.translate.z -= _inPowerArmor ? g_config.playerRootOffsetInPA : g_config.playerRootOffset + getAdjustedPlayerCameraOffset();
+        body->world.translate.z -= playerVerticalOffset + getAdjustedPlayerCameraOffset();
 
         const RE::NiMatrix3 mat = getMatrixFromRotateVectorVec(neckPos - tmpHipPos, hmdToHip) * spine->parent->world.rotate.Transpose();
         spine->local.rotate = spine->world.rotate * mat;

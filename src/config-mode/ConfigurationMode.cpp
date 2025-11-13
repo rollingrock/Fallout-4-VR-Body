@@ -141,15 +141,13 @@ namespace frik
             }
             _calibrationModeUIActive = true;
             _armLength_bkup = g_config.armLength;
-            _powerArmor_up_bkup = g_config.playerOffsetUpInPA;
-            _playerOffset_up_bkup = g_config.playerOffsetUp;
-            _rootOffset_bkup = g_config.playerRootOffset;
-            _PARootOffset_bkup = g_config.playerRootOffsetInPA;
+            _rootOffset_bkup = g_config.playerBodyOffsetUp;
+            _PARootOffset_bkup = g_config.playerBodyOffsetUpInPA;
             _fVrScale_bkup = g_config.fVrScale;
-            _playerOffset_forward_bkup = g_config.playerOffsetForward;
-            _powerArmor_forward_bkup = g_config.playerOffsetForwardInPA;
-            _cameraHeight_bkup = g_config.playerCameraHeightOffset;
-            _PACameraHeight_bkup = g_config.playerCameraHeightOffsetInPA;
+            _playerOffset_forward_bkup = g_config.playerBodyOffsetForward;
+            _powerArmor_forward_bkup = g_config.playerBodyOffsetForwardInPA;
+            _cameraHeight_bkup = g_config.playerCameraOffsetUp;
+            _PACameraHeight_bkup = g_config.playerCameraOffsetUpInPA;
             enableGripButtonToGrap_bkup = g_config.enableGripButtonToGrap;
             onePressGripButton_bkup = g_config.onePressGripButton;
             enableGripButtonToLetGo_bkup = g_config.enableGripButtonToLetGo;
@@ -306,19 +304,19 @@ namespace frik
             }
             if (doinantHandStick.y > 0.10 && CamZButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 4;
-                isInPA ? g_config.playerCameraHeightOffsetInPA += rAxisOffsetY : g_config.playerCameraHeightOffset += rAxisOffsetY;
+                isInPA ? g_config.playerCameraOffsetUpInPA += rAxisOffsetY : g_config.playerCameraOffsetUp += rAxisOffsetY;
             }
             if (doinantHandStick.y < -0.10 && CamZButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 4;
-                isInPA ? g_config.playerCameraHeightOffsetInPA += rAxisOffsetY : g_config.playerCameraHeightOffset += rAxisOffsetY;
+                isInPA ? g_config.playerCameraOffsetUpInPA += rAxisOffsetY : g_config.playerCameraOffsetUp += rAxisOffsetY;
             }
             if (doinantHandStick.y > 0.10 && CamYButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 10;
-                isInPA ? g_config.playerOffsetForwardInPA += rAxisOffsetY : g_config.playerOffsetForward -= rAxisOffsetY;
+                isInPA ? g_config.playerBodyOffsetForwardInPA += rAxisOffsetY : g_config.playerBodyOffsetForward -= rAxisOffsetY;
             }
             if (doinantHandStick.y < -0.10 && CamYButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 10;
-                isInPA ? g_config.playerOffsetForwardInPA += rAxisOffsetY : g_config.playerOffsetForward -= rAxisOffsetY;
+                isInPA ? g_config.playerBodyOffsetForwardInPA += rAxisOffsetY : g_config.playerBodyOffsetForward -= rAxisOffsetY;
             }
             if (doinantHandStick.y > 0.10 && ScaleButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 4;
@@ -334,19 +332,19 @@ namespace frik
             }
             if (doinantHandStick.y > 0.10 && BodyZButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 4;
-                isInPA ? g_config.playerRootOffsetInPA += rAxisOffsetY : g_config.playerRootOffset += rAxisOffsetY;
+                isInPA ? g_config.playerBodyOffsetUpInPA += rAxisOffsetY : g_config.playerBodyOffsetUp += rAxisOffsetY;
             }
             if (doinantHandStick.y < -0.10 && BodyZButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 4;
-                isInPA ? g_config.playerRootOffsetInPA += rAxisOffsetY : g_config.playerRootOffset += rAxisOffsetY;
+                isInPA ? g_config.playerBodyOffsetUpInPA += rAxisOffsetY : g_config.playerBodyOffsetUp += rAxisOffsetY;
             }
             if (doinantHandStick.y > 0.10 && BodyPoseButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 4;
-                isInPA ? g_config.playerOffsetUpInPA += rAxisOffsetY : g_config.playerOffsetUp += rAxisOffsetY;
+                // isInPA ? g_config.playerOffsetUpInPA += rAxisOffsetY : g_config.playerBodyOffsetUp += rAxisOffsetY;
             }
             if (doinantHandStick.y < -0.10 && BodyPoseButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 4;
-                isInPA ? g_config.playerOffsetUpInPA += rAxisOffsetY : g_config.playerOffsetUp += rAxisOffsetY;
+                // isInPA ? g_config.playerOffsetUpInPA += rAxisOffsetY : g_config.playerBodyOffsetUp += rAxisOffsetY;
             }
             if (doinantHandStick.y > 0.10 && ArmsButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 4;
@@ -390,15 +388,13 @@ namespace frik
                 _exitWithoutSavePressed = true;
                 configModeExit();
                 g_config.armLength = _armLength_bkup;
-                g_config.playerOffsetUpInPA = _powerArmor_up_bkup;
-                g_config.playerOffsetUp = _playerOffset_up_bkup;
-                g_config.playerRootOffset = _rootOffset_bkup;
-                g_config.playerRootOffsetInPA = _PARootOffset_bkup;
+                g_config.playerBodyOffsetUp = _rootOffset_bkup;
+                g_config.playerBodyOffsetUpInPA = _PARootOffset_bkup;
                 g_config.fVrScale = _fVrScale_bkup;
-                g_config.playerOffsetForward = _playerOffset_forward_bkup;
-                g_config.playerOffsetForwardInPA = _powerArmor_forward_bkup;
-                g_config.playerCameraHeightOffset = _cameraHeight_bkup;
-                g_config.playerCameraHeightOffsetInPA = _PACameraHeight_bkup;
+                g_config.playerBodyOffsetForward = _playerOffset_forward_bkup;
+                g_config.playerBodyOffsetForwardInPA = _powerArmor_forward_bkup;
+                g_config.playerCameraOffsetUp = _cameraHeight_bkup;
+                g_config.playerCameraOffsetUpInPA = _PACameraHeight_bkup;
                 g_config.enableGripButtonToGrap = enableGripButtonToGrap_bkup;
                 g_config.onePressGripButton = onePressGripButton_bkup;
                 g_config.enableGripButtonToLetGo = enableGripButtonToLetGo_bkup;
