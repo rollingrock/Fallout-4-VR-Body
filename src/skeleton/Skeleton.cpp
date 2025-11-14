@@ -414,14 +414,18 @@ namespace frik
         // comfort sneak changes the height of the avatar without the player changing height in the real world, need to adjust for it
         const float comfortSneakAdjustZ = isComfortSneakMode() && isPlayerSneaking() ? COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT : 1.0f;
 
-        // small offset to not change height when player looking up/down as the HMD elevation changes with it
-        const float offsetByNeckPitch = cosf(getNeckPitch()) * (5.0f * _root->local.scale);
-        const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getplayerHMDOffsetUp()) * comfortSneakAdjustZ - offsetByNeckPitch;
+        // small offset to (1) not change player height when looking up/down and (2) move the body back, especially when looking down
+        const float neckPitch = getNeckPitch();
+        const float xOffsetByNeckPitch = 6.0f * neckPitch * neckPitch * _root->local.scale;
+        const float zOffsetByNeckPitch = 6.0f * neckPitch * _root->local.scale;
+
+        const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getplayerHMDOffsetUp()) * comfortSneakAdjustZ + zOffsetByNeckPitch;
         // if people complain about body posture we can add manual adjustment here later
 
-        const auto neckAdjust =
-            RE::NiPoint3(-_forwardDir.x * g_config.getPlayerBodyOffsetForward() / 2, -_forwardDir.y * g_config.getPlayerBodyOffsetForward() / 2, -playerAdjustZ);
-        const RE::NiPoint3 neckPos = getCameraPosition() + neckAdjust;
+        const auto neckPos = getCameraPosition() + RE::NiPoint3(
+            -_forwardDir.x * (g_config.getPlayerBodyOffsetForward() / 2 + xOffsetByNeckPitch),
+            -_forwardDir.y * (g_config.getPlayerBodyOffsetForward() / 2 + xOffsetByNeckPitch),
+            -playerAdjustZ);
 
         _torsoLen = vec3Len(neck->world.translate - com->world.translate);
 
@@ -435,12 +439,12 @@ namespace frik
         const RE::NiPoint3 hmdToNewHip = tmpHipPos - neckPos;
         const RE::NiPoint3 newHipPos = neckPos + hmdToNewHip * (_torsoLen / vec3Len(hmdToNewHip));
 
-        const RE::NiPoint3 newPos = com->local.translate + _root->world.rotate * ((newHipPos - com->world.translate));
-        com->local.translate.y += newPos.y + g_config.getPlayerBodyOffsetForward();
+        const RE::NiPoint3 newPos = com->local.translate + _root->world.rotate * (newHipPos - com->world.translate);
+        com->local.translate.y += newPos.y + g_config.getPlayerBodyOffsetForward() - xOffsetByNeckPitch;
         com->local.translate.z = _inPowerArmor ? newPos.z / 1.7f : newPos.z / 1.5f;
-        //com->local.translate.z -= _inPowerArmor ? g_config.playerOffsetUpInPA + g_config.playerHMDOffsetUpStandingInPA : 0.0f;
-        const auto body = _root->parent;
-        body->world.translate.z -= g_config.getPlayerBodyOffsetUp() + getAdjustedplayerHMDOffset();
+
+        // ???
+        _root->parent->world.translate.z -= g_config.getPlayerBodyOffsetUp() + getAdjustedplayerHMDOffset();
 
         const RE::NiMatrix3 mat = getMatrixFromRotateVectorVec(neckPos - tmpHipPos, hmdToHip) * spine->parent->world.rotate.Transpose();
         spine->local.rotate = spine->world.rotate * mat;
@@ -448,8 +452,8 @@ namespace frik
 
     void Skeleton::setKneePos()
     {
-        auto lKnee = findNode(_root, "LLeg_Calf");
-        auto rKnee = findNode(_root, "RLeg_Calf");
+        const auto lKnee = findNode(_root, "LLeg_Calf");
+        const auto rKnee = findNode(_root, "RLeg_Calf");
 
         if (!lKnee || !rKnee) {
             return;
@@ -541,7 +545,7 @@ namespace frik
             case 0: {
                 if (curSpeed >= 35.0) {
                     _walkingState = 1; // start walking
-                    _footStepping = std::rand() % 2 + 1; // pick a random foot to take a step
+                    _footStepping = std::rand() % 2 + 1; // pick a random foot to take a step  // NOLINT(concurrency-mt-unsafe)
                     _stepDir = dir;
                     _stepTimeinStep = stepTime;
                     _delayFrame = 2;
@@ -617,7 +621,7 @@ namespace frik
             const float scale = (std::min)(curSpeed * stepTime * 1.5f, 140.0f);
             dirOffset = dirOffset * scale;
 
-            int sign = 1;
+            float sign = 1.0f;
 
             _currentStepTime += _frameTime;
 
@@ -625,7 +629,7 @@ namespace frik
             const float interp = std::clamp(frameStep * (_currentStepTime / _frameTime), 0.0f, 1.0f);
 
             if (_footStepping == 1) {
-                sign = -1;
+                sign = -1.0f;
                 if (dot < 0.9) {
                     if (!_delayFrame) {
                         _rightFootTarget += dirOffset;
