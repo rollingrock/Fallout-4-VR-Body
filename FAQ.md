@@ -123,6 +123,12 @@ It will remove the FRIK built-in flashlight.
 
 If I don't want to remove FRIK flashlight, only change how it looks: see this [reddit comment](https://www.reddit.com/r/fo4vr/comments/1o54ejq/comment/nj9thh9/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button).
 
+
+## Is hiding the head prevents getting hit in the head?
+AFAIK, no!
+I tested it by hiding all body parts and making the entire player invisible. Yet in combat, every body part was still hit by bullets, causing damage and even crippling limbs. This behaves differently from the now-removed “ArmsOnlyMode,” where enemies definitely could not hit hidden body parts.
+
+
 ## Two Handed Weapon Aiming doesn't work in Vanilla V.A.T.S.
 If you're using fully vanilla VATS please use one-handed aiming.
 
