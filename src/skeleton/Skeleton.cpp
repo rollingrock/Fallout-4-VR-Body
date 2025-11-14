@@ -15,6 +15,19 @@
 using namespace common;
 using namespace f4vr;
 
+namespace
+{
+    /**
+     * Hack to handle comfort sneak affecting the height of the player without real-world body change.
+     * By setting static body pitch the body position doesn't change, making it easier to handle skeleton
+     * related things like Virtual Holsters.
+     */
+    bool isComfortSneakHackEnabled()
+    {
+        return frik::g_config.comfortSneakHackStaticBodyPitchAngle > 0 && isComfortSneakMode() && isPlayerSneaking();
+    }
+}
+
 namespace frik
 {
     constexpr float COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT = 0.7f;
@@ -343,6 +356,10 @@ namespace frik
 
     float Skeleton::getBodyPitch() const
     {
+        if (isComfortSneakHackEnabled()) {
+            return degreesToRads(g_config.comfortSneakHackStaticBodyPitchAngle);
+        }
+
         constexpr float basePitch = 105.3f;
         constexpr float weight = 0.1f;
 
@@ -416,7 +433,7 @@ namespace frik
 
         // small offset to (1) not change player height when looking up/down and (2) move the body back, especially when looking down
         const float neckPitch = getNeckPitch();
-        const float xOffsetByNeckPitch = 6.0f * neckPitch * neckPitch * _root->local.scale;
+        const float xOffsetByNeckPitch = isComfortSneakHackEnabled() ? -5.0f : 6.0f * neckPitch * neckPitch * _root->local.scale;
         const float zOffsetByNeckPitch = 6.0f * neckPitch * _root->local.scale;
 
         const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getplayerHMDOffsetUp()) * comfortSneakAdjustZ + zOffsetByNeckPitch;

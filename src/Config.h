@@ -144,6 +144,7 @@ namespace frik
 
         // is the player playing standing or sitting
         bool isPlayingSitting = false;
+        float comfortSneakHackStaticBodyPitchAngle = 0;
 
         // Camera and Body offsets for standing/sitting and in/out of Power Armor
         float playerHMDOffsetUpStanding = 0;

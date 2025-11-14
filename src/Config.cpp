@@ -151,6 +151,8 @@ namespace frik
         playerBodyOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", 0.0));
         playerBodyOffsetForwardSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", 0.0));
 
+        comfortSneakHackStaticBodyPitchAngle = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fComfortSneakHackStaticBodyPitchAngle", 0.0));
+
         // Pipboy
         pipBoyScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipboyScale", 1.0));
         hidePipboy = ini.GetBoolValue(INI_SECTION_MAIN, "hidePipboy");
