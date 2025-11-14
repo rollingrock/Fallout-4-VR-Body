@@ -207,9 +207,7 @@ namespace frik
         setKneePos();
 
         logger::trace("Set walk...");
-        if (!g_config.armsOnly) {
-            walk();
-        }
+        walk();
 
         logger::trace("Set legs...");
         setSingleLeg(false);
@@ -238,10 +236,6 @@ namespace frik
         logger::trace("Selfie Time");
         selfieSkelly();
         updateDownFromRoot();
-
-        if (g_config.armsOnly) {
-            showOnlyArms();
-        }
 
         logger::trace("Operate hands...");
         setHandPose();
@@ -1227,29 +1221,6 @@ namespace frik
             arm.forearm3->local.translate *= forearmRatio;
         }
         arm.hand->local.translate *= forearmRatio;
-    }
-
-    void Skeleton::showOnlyArms() const
-    {
-        const RE::NiPoint3 rwp = _rightArm.shoulder->world.translate;
-        const RE::NiPoint3 lwp = _leftArm.shoulder->world.translate;
-        _root->local.scale = 0.00001f;
-        updateTransforms(_root);
-        _root->world.translate += _forwardDir * -10.0f;
-        _root->world.translate.z = rwp.z;
-        updateDown(_root, false);
-
-        _rightArm.shoulder->local.scale = 100000;
-        _leftArm.shoulder->local.scale = 100000;
-
-        updateTransforms(reinterpret_cast<RE::NiNode*>(_rightArm.shoulder));
-        updateTransforms(reinterpret_cast<RE::NiNode*>(_leftArm.shoulder));
-
-        _rightArm.shoulder->world.translate = rwp;
-        _leftArm.shoulder->world.translate = lwp;
-
-        updateDown(reinterpret_cast<RE::NiNode*>(_rightArm.shoulder), false);
-        updateDown(reinterpret_cast<RE::NiNode*>(_leftArm.shoulder), false);
     }
 
     void Skeleton::hideHands() const

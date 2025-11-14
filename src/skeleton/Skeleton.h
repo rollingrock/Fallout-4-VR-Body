@@ -73,7 +73,6 @@ namespace frik
         void hideFistHelpers() const;
         void showHidePAHud() const;
         void selfieSkelly() const;
-        void showOnlyArms() const;
         void setHandPose();
         void hideHands() const;
         void fixArmor() const;

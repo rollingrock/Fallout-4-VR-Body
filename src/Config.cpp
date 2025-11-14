@@ -126,7 +126,6 @@ namespace frik
         fVrScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fVrScale", 70.0));
         playerHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f));
         armLength = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "armLength", 36.74f));
-        armsOnly = ini.GetBoolValue(INI_SECTION_MAIN, "EnableArmsOnlyMode");
 
         // Head Geometry Hide
         hideHead = ini.GetBoolValue(INI_SECTION_MAIN, "HideHead");

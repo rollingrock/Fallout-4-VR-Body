@@ -132,7 +132,6 @@ namespace frik
         float fVrScale = 0;
         float playerHeight = 0;
         float armLength = 0;
-        bool armsOnly = false;
 
         // Head Geometry Hide
         bool hideHead = false;
