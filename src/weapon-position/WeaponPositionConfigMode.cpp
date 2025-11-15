@@ -528,10 +528,10 @@ namespace frik
             firstRowContainerInner->addElement(_betterScopesModeButton);
         }
 
-        _emptyHandsMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_empty_hands_box.nif");
+        _emptyHandsMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_empty_hands.nif");
         _emptyHandsMessageBox->setSize(3.6f, 2.2f);
 
-        const auto firstRowContainer = std::make_shared<UIContainer>(UIContainerLayout::HorizontalCenter, 0.15f);
+        const auto firstRowContainer = std::make_shared<UIContainer>(UIContainerLayout::HorizontalCenter);
         firstRowContainer->addElement(_emptyHandsMessageBox);
         firstRowContainer->addElement(firstRowContainerInner);
 
@@ -544,8 +544,8 @@ namespace frik
         const auto exitButton = std::make_shared<UIButton>("FRIK/ui_common_btn_exit.nif");
         exitButton->setOnPressHandler([this](UIWidget*) { _adjuster->toggleWeaponRepositionMode(); });
 
-        _throwableNotEquippedMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_throwable_box.nif");
-        _throwableNotEquippedMessageBox->setSize(3.6f, 2.2f);
+        _throwableNotEquippedMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_throwable_empty_hands.nif");
+        _throwableNotEquippedMessageBox->setSize(6.0f, 2.2f);
 
         const auto secondRowContainer = std::make_shared<UIContainer>(UIContainerLayout::HorizontalCenter, 0.2f);
         secondRowContainer->addElement(_saveButton);
@@ -553,13 +553,13 @@ namespace frik
         secondRowContainer->addElement(_throwableNotEquippedMessageBox);
         secondRowContainer->addElement(exitButton);
 
-        const auto header = std::make_shared<UIWidget>("FRIK/ui_weapconf_header.nif", 0.7f);
+        const auto header = std::make_shared<UIWidget>("FRIK/ui_weapconf_title.nif", 0.5f);
         header->setSize(8, 1);
-        _complexAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_footer.nif", 0.7f);
+        _complexAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_footer.nif", 0.7f);
         _complexAdjustFooter->setSize(7, 2.2f);
-        _throwableAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_footer_throwable.nif", 0.7f);
+        _throwableAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_footer_throwable.nif", 0.7f);
         _throwableAdjustFooter->setSize(7, 2.2f);
-        _simpleAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_footer_2.nif", 0.7f);
+        _simpleAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_footer_simple.nif", 0.7f);
         _simpleAdjustFooter->setSize(5, 2.2f);
         _simpleAdjustFooter->setVisibility(false);
 
@@ -570,13 +570,13 @@ namespace frik
         mainContainer->addElement(_throwableAdjustFooter);
         mainContainer->addElement(_simpleAdjustFooter);
 
-        _configUI = std::make_shared<UIContainer>(UIContainerLayout::VerticalDown, 0.3f, 1.7f);
+        _configUI = std::make_shared<UIContainer>(UIContainerLayout::VerticalDown, 0.4f, 1.5f);
         _configUI->addElement(header);
         _configUI->addElement(mainContainer);
 
         // start hidden by default (will be set visible in frame update if it should be)
         _configUI->setVisibility(false);
 
-        g_uiManager->attachPresetToPrimaryWandLeft(_configUI, f4vr::isLeftHandedMode(), { 0, -4, 0 });
+        g_uiManager->attachPresetToPrimaryWandLeft(_configUI, f4vr::isLeftHandedMode(), { 0, 4, 0 });
     }
 }
