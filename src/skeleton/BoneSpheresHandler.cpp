@@ -287,7 +287,7 @@ namespace frik
             RE::NiNode* sphere = val->debugSphere;
 
             if (val->turnOnDebugSpheres && !val->debugSphere) {
-                sphere = vrui::getClonedNiNodeForNifFile("Data/Meshes/FRIK/1x1Sphere.nif");
+                sphere = f4vr::getClonedNiNodeForNifFileSetName("Data/Meshes/FRIK/1x1Sphere.nif");
                 if (sphere) {
                     sphere->name = RE::BSFixedString("Sphere01");
 

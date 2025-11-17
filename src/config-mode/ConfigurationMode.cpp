@@ -104,7 +104,7 @@ namespace frik
                 f4vr::closeFavoriteMenu();
                 f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
             }
-            RE::NiNode* HUD = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigHUD.nif", "MCCONFIGHUD");
+            RE::NiNode* HUD = f4vr::getClonedNiNodeForNifFileSetName("FRIK/UI-ConfigHUD.nif", "MCCONFIGHUD");
             // TODO: this should just use "primaryUIAttachNode" but it needs offset corrections, better just change to UI framework
             auto UIATTACH = f4vr::isLeftHandedMode()
                 ? f4vr::getPlayerNodes()->primaryUIAttachNode
@@ -124,17 +124,17 @@ namespace frik
                 "Data/Meshes/FRIK/MC-Tile09a.nif", "Data/Meshes/FRIK/MC-Tile09b.nif", "Data/Meshes/FRIK/MC-Tile09c.nif", "Data/Meshes/FRIK/MC-Tile09d.nif"
             };
             for (int i = 0; i <= 9; i++) {
-                RE::NiNode* UI = f4vr::getClonedNiNodeForNifFile(MainHud[i], meshName2_local[i]);
+                RE::NiNode* UI = f4vr::getClonedNiNodeForNifFileSetName(MainHud[i], meshName2_local[i]);
                 HUD->AttachChild(UI, true);
-                RE::NiNode* UI2 = f4vr::getClonedNiNodeForNifFile(MainHud2[i], meshName_local[i]);
+                RE::NiNode* UI2 = f4vr::getClonedNiNodeForNifFileSetName(MainHud2[i], meshName_local[i]);
                 UI->AttachChild(UI2, true);
                 if (i == 7 || i == 8) {
-                    RE::NiNode* UI3 = f4vr::getClonedNiNodeForNifFile("FRIK/UI-StickyMarker.nif", meshName3_local[i]);
+                    RE::NiNode* UI3 = f4vr::getClonedNiNodeForNifFileSetName("FRIK/UI-StickyMarker.nif", meshName3_local[i]);
                     UI2->AttachChild(UI3, true);
                 }
                 if (i == 9) {
                     for (int x = 0; x < 4; x++) {
-                        RE::NiNode* UI3 = f4vr::getClonedNiNodeForNifFile(MainHud3[x], meshName4_local[x]);
+                        RE::NiNode* UI3 = f4vr::getClonedNiNodeForNifFileSetName(MainHud3[x], meshName4_local[x]);
                         UI2->AttachChild(UI3, true);
                     }
                 }
@@ -247,7 +247,7 @@ namespace frik
                                 UIMarker->parent->DetachChild(UIMarker);
                             }
                             if (i < 7) {
-                                RE::NiNode* UI = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigMarker.nif", "MCCONFIGMarker");
+                                RE::NiNode* UI = f4vr::getClonedNiNodeForNifFileSetName("FRIK/UI-ConfigMarker.nif", "MCCONFIGMarker");
                                 TouchMesh->AttachChild(UI, true);
                             }
                             _MCTouchbuttons[i] = true;
@@ -528,7 +528,7 @@ namespace frik
                                     UIMarker->parent->DetachChild(UIMarker);
                                 }
                                 if (i != 1 && i != 3 && i != 10 && i != 11) {
-                                    RE::NiNode* UI = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigMarker.nif", "PBCONFIGMarker");
+                                    RE::NiNode* UI = f4vr::getClonedNiNodeForNifFileSetName("FRIK/UI-ConfigMarker.nif", "PBCONFIGMarker");
                                     TouchMesh->AttachChild(UI, true);
                                 }
                                 if (i == 10 || i == 11) {
@@ -536,7 +536,7 @@ namespace frik
                                         if (!g_config.pipboyOpenWhenLookAt) {
                                             const auto UIMarkerMark = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBGlanceMarker");
                                             if (!UIMarkerMark) {
-                                                RE::NiNode* UI = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigMarker.nif", "PBGlanceMarker");
+                                                RE::NiNode* UI = f4vr::getClonedNiNodeForNifFileSetName("FRIK/UI-ConfigMarker.nif", "PBGlanceMarker");
                                                 TouchMesh->AttachChild(UI, true);
                                             }
                                         } else if (g_config.pipboyOpenWhenLookAt) {
@@ -549,7 +549,7 @@ namespace frik
                                         const auto uiMarker = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, "PBDampenMarker");
                                         if (g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::None) {
                                             if (!uiMarker) {
-                                                RE::NiNode* UI = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigMarker.nif", "PBDampenMarker");
+                                                RE::NiNode* UI = f4vr::getClonedNiNodeForNifFileSetName("FRIK/UI-ConfigMarker.nif", "PBDampenMarker");
                                                 TouchMesh->AttachChild(UI, true);
                                             }
                                         } else if (g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::HoldInPlace) {
@@ -673,7 +673,7 @@ namespace frik
             f4vr::closeFavoriteMenu();
         }
         f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
-        const auto pipboyConfigUI = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigHUD.nif", "PBCONFIGHUD");
+        const auto pipboyConfigUI = f4vr::getClonedNiNodeForNifFileSetName("FRIK/UI-ConfigHUD.nif", "PBCONFIGHUD");
         if (f4vr::isLeftHandedMode() && !g_config.leftHandedPipBoy) {
             // rotate the UI so left-handed with Pipboy on it have the UI in convenient position
             pipboyConfigUI->local.translate = RE::NiPoint3(-12, 10, -3);
@@ -694,18 +694,18 @@ namespace frik
                 "Data/Meshes/FRIK/PB-Tile06.nif", "Data/Meshes/FRIK/PB-Tile09.nif", "Data/Meshes/FRIK/PB-Tile10.nif", "Data/Meshes/FRIK/PB-Tile11.nif"
             };
 
-            RE::NiNode* UI = f4vr::getClonedNiNodeForNifFile(MainHud[i], meshName2[i]);
+            RE::NiNode* UI = f4vr::getClonedNiNodeForNifFileSetName(MainHud[i], meshName2[i]);
             pipboyConfigUI->AttachChild(UI, true);
 
-            RE::NiNode* UI2 = f4vr::getClonedNiNodeForNifFile(MainHud2[i], meshName[i]);
+            RE::NiNode* UI2 = f4vr::getClonedNiNodeForNifFileSetName(MainHud2[i], meshName[i]);
             UI->AttachChild(UI2, true);
 
             if (i == 10 && g_config.pipboyOpenWhenLookAt) {
-                RE::NiNode* UI3 = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigMarker.nif", "PBGlanceMarker");
+                RE::NiNode* UI3 = f4vr::getClonedNiNodeForNifFileSetName("FRIK/UI-ConfigMarker.nif", "PBGlanceMarker");
                 UI->AttachChild(UI3, true);
             }
             if (i == 11 && g_config.dampenPipboyScreenMode != DampenPipboyScreenMode::None) {
-                RE::NiNode* UI3 = f4vr::getClonedNiNodeForNifFile("FRIK/UI-ConfigMarker.nif", "PBDampenMarker");
+                RE::NiNode* UI3 = f4vr::getClonedNiNodeForNifFileSetName("FRIK/UI-ConfigMarker.nif", "PBDampenMarker");
                 UI->AttachChild(UI3, true);
             }
         }
