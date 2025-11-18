@@ -68,7 +68,6 @@ namespace frik
             ConfigBase(Version::PROJECT, FRIK_INI_PATH, IDR_FRIK_INI) {}
 
         virtual void load() override;
-        void save() { saveIniConfig(); }
 
         /**
          * Reloads the config for Fallout London VR mod.
@@ -233,7 +232,6 @@ namespace frik
     protected:
         virtual void loadIniConfigInternal(const CSimpleIniA& ini) override;
         virtual void saveIniConfigInternal(CSimpleIniA& ini) override;
-        virtual void updateIniConfigToLatestVersionCustom(int currentVersion, int latestVersion, const CSimpleIniA& oldIni, CSimpleIniA& newIni) const override;
 
     private:
         void loadHideMeshes();

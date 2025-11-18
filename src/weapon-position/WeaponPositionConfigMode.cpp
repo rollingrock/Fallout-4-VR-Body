@@ -515,7 +515,7 @@ namespace frik
         const auto backOfHandUIButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_back_of_hand_ui.nif");
         backOfHandUIButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::BackOfHandUI; });
 
-        const auto firstRowContainerInner = std::make_shared<UIToggleGroupContainer>(UIContainerLayout::HorizontalCenter, 0.15f);
+        const auto firstRowContainerInner = std::make_shared<UIToggleGroupContainer>("Row1Inner", UIContainerLayout::HorizontalCenter, 0.3f);
         firstRowContainerInner->addElement(_weaponModeButton);
         firstRowContainerInner->addElement(_primaryHandModeButton);
         firstRowContainerInner->addElement(_offhandModeButton);
@@ -530,7 +530,7 @@ namespace frik
 
         _emptyHandsMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_empty_hands.nif");
 
-        const auto firstRowContainer = std::make_shared<UIContainer>(UIContainerLayout::HorizontalCenter);
+        const auto firstRowContainer = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.3f);
         firstRowContainer->addElement(_emptyHandsMessageBox);
         firstRowContainer->addElement(firstRowContainerInner);
 
@@ -545,7 +545,7 @@ namespace frik
 
         _throwableNotEquippedMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_throwable_empty_hands.nif");
 
-        const auto secondRowContainer = std::make_shared<UIContainer>(UIContainerLayout::HorizontalCenter, 0.2f);
+        const auto secondRowContainer = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
         secondRowContainer->addElement(_saveButton);
         secondRowContainer->addElement(_resetButton);
         secondRowContainer->addElement(_throwableNotEquippedMessageBox);
@@ -557,20 +557,20 @@ namespace frik
         _simpleAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_footer_simple.nif", 0.7f);
         _simpleAdjustFooter->setVisibility(false);
 
-        const auto mainContainer = std::make_shared<UIContainer>(UIContainerLayout::VerticalCenter, 0.2f);
+        const auto mainContainer = std::make_shared<UIContainer>("Main", UIContainerLayout::VerticalCenter, 0.3f);
         mainContainer->addElement(firstRowContainer);
         mainContainer->addElement(secondRowContainer);
         mainContainer->addElement(_complexAdjustFooter);
         mainContainer->addElement(_throwableAdjustFooter);
         mainContainer->addElement(_simpleAdjustFooter);
 
-        _configUI = std::make_shared<UIContainer>(UIContainerLayout::VerticalDown, 0.4f, 1.5f);
+        _configUI = std::make_shared<UIContainer>("WeaponConfig", UIContainerLayout::VerticalDown, 0.4f, 1.5f);
         _configUI->addElement(header);
         _configUI->addElement(mainContainer);
 
         // start hidden by default (will be set visible in frame update if it should be)
         _configUI->setVisibility(false);
 
-        g_uiManager->attachPresetToPrimaryWandLeft(_configUI, f4vr::isLeftHandedMode(), { 0, 4, 0 });
+        g_uiManager->attachPresetToPrimaryWandLeft(_configUI, { -1, 4, 0 });
     }
 }

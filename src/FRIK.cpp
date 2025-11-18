@@ -47,11 +47,6 @@ namespace frik
             return _skelly->getIndexFingerTipWorldPosition(false);
         }
 
-        virtual void fireInteractionHeptic() override
-        {
-            f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
-        }
-
         virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override
         {
             setForceHandPointingPose(primaryHand, toPoint);
