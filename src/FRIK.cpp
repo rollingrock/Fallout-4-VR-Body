@@ -110,8 +110,6 @@ namespace frik
         if (_skelly) {
             logger::info("Resetting skeleton for new game session...");
             releaseSkeleton();
-            logger::info("Reload config...");
-            g_config.load();
         }
 
         configureGameVars();
@@ -165,7 +163,7 @@ namespace frik
         FrameUpdateContext context(_skelly);
         vrui::g_uiManager->onFrameUpdate(&context);
 
-        _playerControlsHandler.onFrameUpdate(_pipboy, _weaponPosition, &_gameMenusHandler);
+        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition, &_gameMenusHandler);
 
         updateWorldFinal();
     }

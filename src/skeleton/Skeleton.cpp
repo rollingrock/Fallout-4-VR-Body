@@ -59,7 +59,7 @@ namespace frik
      */
     float Skeleton::getAdjustedplayerHMDOffset()
     {
-        auto offset = g_config.getplayerHMDOffsetUp() + g_frik.getDynamicCameraHeight();
+        auto offset = g_config.getPlayerHMDOffsetUp() + g_frik.getDynamicCameraHeight();
         if (isComfortSneakMode() && isPlayerSneaking()) {
             offset *= COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT;
         }
@@ -423,7 +423,7 @@ namespace frik
         const float xOffsetByNeckPitch = isComfortSneakHackEnabled() ? -5.0f : 6.0f * neckPitch * neckPitch * _root->local.scale;
         const float zOffsetByNeckPitch = 6.0f * neckPitch * _root->local.scale;
 
-        const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getplayerHMDOffsetUp()) * comfortSneakAdjustZ + zOffsetByNeckPitch;
+        const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getPlayerHMDOffsetUp()) * comfortSneakAdjustZ + zOffsetByNeckPitch;
         // if people complain about body posture we can add manual adjustment here later
 
         const auto neckPos = getCameraPosition() + RE::NiPoint3(

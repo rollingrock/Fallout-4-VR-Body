@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BodyAdjustmentSubConfigMode.h"
+#include "pipboy/Pipboy.h"
 #include "ui/UIContainer.h"
 
 namespace frik
@@ -18,11 +20,11 @@ namespace frik
         int isOpen() const;
         void openConfigMode();
         void onFrameUpdate();
+        bool isBodyAdjustOpen() const;
 
     private:
-        void openMainConfigUI();
-        void openBodyConfigUI();
-        static void setDampenHands(bool enabled);
+        void createMainConfigUI();
+        void openBodyAdjustmentSubConfigUI();
         static TwoHandedGripMode getTwoHandedGripMode();
         static void updateTwoHandedGripMode(TwoHandedGripMode mode);
         void openPipboyConfigUI();
@@ -31,5 +33,7 @@ namespace frik
 
         // configuration UI
         std::shared_ptr<vrui::UIContainer> _configUI;
+
+        std::shared_ptr<BodyAdjustmentSubConfigMode> _bodyAdjustmentSubConfig;
     };
 }

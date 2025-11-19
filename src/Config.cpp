@@ -13,7 +13,7 @@ using namespace common;
 
 namespace frik
 {
-    float Config::getplayerHMDOffsetUp() const
+    float Config::getPlayerHMDOffsetUp() const
     {
         if (isPlayingSitting) {
             return f4vr::isInPowerArmor() ? playerHMDOffsetUpSittingInPA : playerHMDOffsetUpSitting;
@@ -21,7 +21,7 @@ namespace frik
         return f4vr::isInPowerArmor() ? playerHMDOffsetUpStandingInPA : playerHMDOffsetUpStanding;
     }
 
-    void Config::setplayerHMDOffsetUp(const float value)
+    void Config::setPlayerHMDOffsetUp(const float value)
     {
         if (isPlayingSitting) {
             if (f4vr::isInPowerArmor()) {
@@ -117,6 +117,15 @@ namespace frik
 
         logger::info("Load weapon offsets...");
         loadWeaponsOffsets();
+    }
+
+    /**
+     * Load only the FRIK.ini config from the file and override in-memory values.
+     */
+    void Config::loadIniOnly()
+    {
+        logger::info("Load ini config only...");
+        loadIniConfig();
     }
 
     void Config::loadIniConfigInternal(const CSimpleIniA& ini)

@@ -74,6 +74,11 @@ namespace frik
      */
     void Pipboy::openClose(const bool open)
     {
+        // ignore if Pipboy is not on wrist game config
+        if (!f4vr::isPipboyOnWrist()) {
+            return;
+        }
+
         if (_isOpen == open) {
             return;
         }

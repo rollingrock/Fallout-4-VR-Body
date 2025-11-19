@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "PapyrusGateway.h"
 #include "utils.h"
+#include "config-mode/MainConfigMode.h"
 #include "f4vr/GameMenusHandler.h"
 #include "pipboy/Pipboy.h"
 #include "weapon-position/WeaponPositionAdjuster.h"
@@ -16,9 +17,9 @@ namespace frik
          * It's just easier to have single place that controls if player controls are enabled or not.
          * The enable/disable functions have to be idempotent to avoid issues and simplify logic on when we enable/disable player controls.
          */
-        void onFrameUpdate(const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition, f4vr::GameMenusHandler* gameMenusHandler)
+        void onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition, f4vr::GameMenusHandler* gameMenusHandler)
         {
-            if (pipboy->isOpen()) {
+            if (pipboy->isOpen() || mainConfigMode.isBodyAdjustOpen()) {
                 disableFull(weaponPosition->isWeaponDrawn());
                 return;
             }

@@ -18,30 +18,78 @@ namespace frik
     void MainConfigMode::openConfigMode()
     {
         logger::info("Open main config by call...");
-        openMainConfigUI();
+        createMainConfigUI();
     }
 
+    /**
+     * Handle main config on every frame update.
+     */
     void MainConfigMode::onFrameUpdate()
     {
+        // open main config on both thumbsticks long-pressed shortcut
         if (!isOpen()
-            && f4vr::VRControllers.isLongPressed(f4vr::Hand::Primary, vr::k_EButton_Axis0)
-            && f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::k_EButton_Axis0)) {
+            && f4vr::VRControllers.isLongPressed(f4vr::Hand::Primary, vr::k_EButton_Axis0, 1.0f, false)
+            && f4vr::VRControllers.isLongPressed(f4vr::Hand::Offhand, vr::k_EButton_Axis0, 1.0f, false)) {
             logger::info("Open main config by shortcut...");
             if (g_frik.isFavoritesMenuOpen()) {
                 f4vr::closeFavoriteMenu();
             }
-            openMainConfigUI();
+            f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, .6f, .5f);
+            createMainConfigUI();
         }
+
+        if (!isOpen()) {
+            return;
+        }
+
+        // toggle selfie if Pipboy is not open as it uses the same button
+        if (!g_frik.isPipboyOn() && f4vr::VRControllers.isReleasedShort(f4vr::Hand::Primary, vr::k_EButton_ApplicationMenu)) {
+            logger::info("Toggle selfie mode in main config... On:{}", !g_frik.getSelfieMode());
+            g_frik.setSelfieMode(!g_frik.getSelfieMode());
+        }
+
+        // if body adjustment sub-config is open pass control to it
+        if (_bodyAdjustmentSubConfig) {
+            _configUI->setVisibility(false);
+            _bodyAdjustmentSubConfig->onFrameUpdate();
+            return;
+        }
+
+        // hide main config if Pipboy or weapon adjustment config is open
+        if (g_frik.isPipboyConfigurationModeActive() || g_frik.inWeaponRepositionMode()) {
+            _configUI->setVisibility(false);
+            return;
+        }
+
+        _configUI->setVisibility(true);
     }
 
-    void MainConfigMode::openMainConfigUI()
+    /**
+     * Check if the body adjustment sub-configuration mode is open.
+     */
+    bool MainConfigMode::isBodyAdjustOpen() const
     {
-        const auto openBodyConfigBtn = std::make_shared<UIButton>("FRIK/ui_main_conf_btn_body_pos.nif");
-        openBodyConfigBtn->setOnPressHandler([this](UIWidget*) { openBodyConfigUI(); });
+        return _bodyAdjustmentSubConfig != nullptr;
+    }
+
+    /**
+     * Create all the main config UI elements.
+     */
+    void MainConfigMode::createMainConfigUI()
+    {
+        const auto playSeattedBtn = std::make_shared<UIToggleButton>("FRIK/ui_main_conf_btn_play_sitting.nif");
+        playSeattedBtn->setToggleState(g_config.isPlayingSitting);
+        playSeattedBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+            g_config.isPlayingSitting = enabled;
+            g_config.save();
+        });
 
         const auto dampenHandsBtn = std::make_shared<UIToggleButton>("FRIK/ui_main_conf_btn_dampen_hands.nif");
         dampenHandsBtn->setToggleState(g_config.dampenHands);
-        dampenHandsBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { setDampenHands(enabled); });
+        dampenHandsBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+            g_config.dampenHands = enabled;
+            g_config.save();
+        });
 
         const auto gripModesMap = std::map<TwoHandedGripMode, std::string>{
             { TwoHandedGripMode::Mode1, "FRIK/ui_main_conf_btn_grip_mode_1.nif" },
@@ -54,9 +102,12 @@ namespace frik
         twoHandedGripModeBtn->setOnStateChangedHandler([this](UIWidget*, const TwoHandedGripMode mode) { updateTwoHandedGripMode(mode); });
 
         const auto row1Container = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.3f);
-        row1Container->addElement(openBodyConfigBtn);
+        row1Container->addElement(playSeattedBtn);
         row1Container->addElement(dampenHandsBtn);
         row1Container->addElement(twoHandedGripModeBtn);
+
+        const auto openBodyConfigBtn = std::make_shared<UIButton>("FRIK/ui_main_conf_btn_body_vertical.nif");
+        openBodyConfigBtn->setOnPressHandler([this](UIWidget*) { openBodyAdjustmentSubConfigUI(); });
 
         const auto openPipboyConfigBtn = std::make_shared<UIButton>("FRIK/ui_main_conf_btn_pipboy_config.nif");
         openPipboyConfigBtn->setOnPressHandler([this](UIWidget*) { openPipboyConfigUI(); });
@@ -68,89 +119,34 @@ namespace frik
         exitBtn->setOnPressHandler([this](UIWidget*) { closeMainConfigMode(); });
 
         const auto row2Container = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
+        row2Container->addElement(openBodyConfigBtn);
         row2Container->addElement(openPipboyConfigBtn);
         row2Container->addElement(openWeaponAdjustConfigBtn);
         row2Container->addElement(exitBtn);
 
-        // _primaryHandModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_primary_hand.nif");
-        // _primaryHandModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::PrimaryHand; });
-        //
-        // _offhandModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
-        // _offhandModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Offhand; });
-        //
-        // _throwableUIButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_throwable.nif");
-        // _throwableUIButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Throwable; });
-        //
-        // const auto backOfHandUIButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_back_of_hand_ui.nif");
-        // backOfHandUIButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::BackOfHandUI; });
-        //
-
-        // firstRowContainerInner->addElement(_primaryHandModeButton);
-        // firstRowContainerInner->addElement(_offhandModeButton);
-        // firstRowContainerInner->addElement(_throwableUIButton);
-        // firstRowContainerInner->addElement(backOfHandUIButton);
-        //
-        // if (isBetterScopesVRModLoaded()) {
-        //     _betterScopesModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_better_scopes_vr.nif");
-        //     _betterScopesModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::BetterScopes; });
-        //     firstRowContainerInner->addElement(_betterScopesModeButton);
-        // }
-        //
-        // _emptyHandsMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_empty_hands.nif");
-        //
-        // const auto firstRowContainer = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.3f);
-        // firstRowContainer->addElement(_emptyHandsMessageBox);
-        // firstRowContainer->addElement(firstRowContainerInner);
-        //
-        // _saveButton = std::make_shared<UIButton>("FRIK/ui_common_btn_save.nif");
-        // _saveButton->setOnPressHandler([this](UIWidget*) { saveConfig(); });
-        //
-        // _resetButton = std::make_shared<UIButton>("FRIK/ui_common_btn_reset.nif");
-        // _resetButton->setOnPressHandler([this](UIWidget*) { resetConfig(); });
-        //
-
-        //
-        // _throwableNotEquippedMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_throwable_empty_hands.nif");
-        //
-        // const auto secondRowContainer = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
-        // secondRowContainer->addElement(_saveButton);
-        // secondRowContainer->addElement(_resetButton);
-        // secondRowContainer->addElement(_throwableNotEquippedMessageBox);
-        // secondRowContainer->addElement(exitButton);
-        //
         const auto header = std::make_shared<UIWidget>("FRIK/ui_main_conf_title.nif", 0.4f);
-        // _complexAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_footer.nif", 0.7f);
-        // _throwableAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_footer_throwable.nif", 0.7f);
-        // _simpleAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_msg_footer_simple.nif", 0.7f);
-        // _simpleAdjustFooter->setVisibility(false);
-        //
-        // const auto mainContainer = std::make_shared<UIContainer>("Main", UIContainerLayout::VerticalCenter, 0.3f);
-        // mainContainer->addElement(firstRowContainer);
-        // mainContainer->addElement(secondRowContainer);
-        // mainContainer->addElement(_complexAdjustFooter);
-        // mainContainer->addElement(_throwableAdjustFooter);
-        // mainContainer->addElement(_simpleAdjustFooter);
 
         _configUI = std::make_shared<UIContainer>("MainConfig", UIContainerLayout::VerticalDown, 0.4f, 1.8f);
         _configUI->addElement(header);
         _configUI->addElement(row1Container);
         _configUI->addElement(row2Container);
 
-        // start hidden by default (will be set visible in frame update if it should be)
-        // _configUI->setVisibility(false);
-
         g_uiManager->attachPresetToPrimaryWandLeft(_configUI, { -1, 4, 0 });
+
+        g_uiManager->enableDevLayoutViaConfig();
     }
 
-    void MainConfigMode::openBodyConfigUI() {}
-
     /**
-     * Set the dampen hands value and save the config.
+     * Open the sub-config. visibility is handled on frame update.
      */
-    void MainConfigMode::setDampenHands(const bool enabled)
+    void MainConfigMode::openBodyAdjustmentSubConfigUI()
     {
-        g_config.dampenHands = enabled;
-        g_config.save();
+        if (!_bodyAdjustmentSubConfig) {
+            logger::error("Body adjust config class is already initialized");
+        }
+        _bodyAdjustmentSubConfig = std::make_shared<BodyAdjustmentSubConfigMode>([this]() {
+            _bodyAdjustmentSubConfig.reset();
+        });
     }
 
     /**

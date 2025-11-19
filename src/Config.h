@@ -68,6 +68,7 @@ namespace frik
             ConfigBase(Version::PROJECT, FRIK_INI_PATH, IDR_FRIK_INI) {}
 
         virtual void load() override;
+        void loadIniOnly();
 
         /**
          * Reloads the config for Fallout London VR mod.
@@ -77,7 +78,7 @@ namespace frik
         {
             stopIniConfigFileWatch();
             _iniFilePath = FRIK_FOLVR_INI_PATH;
-            load();
+            loadIniOnly();
         }
 
         void setFlashlightLocation(const FlashlightLocation location)
@@ -114,8 +115,8 @@ namespace frik
         void setPlayerBodyOffsetUp(float value);
         float getPlayerBodyOffsetForward() const;
         void setPlayerBodyOffsetForward(float value);
-        float getplayerHMDOffsetUp() const;
-        void setplayerHMDOffsetUp(float value);
+        float getPlayerHMDOffsetUp() const;
+        void setPlayerHMDOffsetUp(float value);
 
         static void openInNotepad();
         RE::NiTransform getPipboyOffset();

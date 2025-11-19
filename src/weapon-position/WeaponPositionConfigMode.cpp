@@ -16,25 +16,6 @@
 using namespace vrui;
 using namespace common;
 
-namespace
-{
-    /**
-     * Get adjustment value from the thumbstick but correct it with respect to deadzone and sensitivity.
-     * Deadzone is used to prevent small changes in an axis the player is not changing.
-     * For example: moving the weapon right should not move it forward even if the player has small forward
-     * on the thumbstick.
-     */
-    float correctAdjustmentValue(const float value, const float sensitivityFactor)
-    {
-        const float adjValue = value / sensitivityFactor;
-        const float deadZone = 0.5f / sensitivityFactor;
-        if (std::fabs(adjValue) < deadZone) {
-            return 0;
-        }
-        return adjValue > 0 ? adjValue - deadZone : adjValue + deadZone;
-    }
-}
-
 namespace frik
 {
     /**

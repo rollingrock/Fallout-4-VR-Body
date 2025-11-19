@@ -317,13 +317,13 @@ namespace frik
             }
             if (doinantHandStick.y > 0.10 && CamZButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 4;
-                g_config.setplayerHMDOffsetUp(g_config.getplayerHMDOffsetUp() + rAxisOffsetY);
+                g_config.setPlayerHMDOffsetUp(g_config.getPlayerHMDOffsetUp() + rAxisOffsetY);
                 // adjust the body offset to move with the camera
                 g_config.setPlayerBodyOffsetUp(g_config.getPlayerBodyOffsetUp() - 0.125f * rAxisOffsetY);
             }
             if (doinantHandStick.y < -0.10 && CamZButtonPressed) {
                 rAxisOffsetY = doinantHandStick.y / 4;
-                g_config.setplayerHMDOffsetUp(g_config.getplayerHMDOffsetUp() + rAxisOffsetY);
+                g_config.setPlayerHMDOffsetUp(g_config.getPlayerHMDOffsetUp() + rAxisOffsetY);
                 // adjust the body offset to move with the camera
                 g_config.setPlayerBodyOffsetUp(g_config.getPlayerBodyOffsetUp() - 0.125f * rAxisOffsetY);
             }
