@@ -117,7 +117,7 @@ namespace frik
     {
         const auto weapon = f4vr::getWeaponNode();
         const auto backOfHand = getBackOfHandUINode();
-        if (!f4vr::isNodeVisible(weapon) || g_frik.isMainConfigurationModeActive()) {
+        if (!f4vr::isNodeVisible(weapon)) {
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
             }

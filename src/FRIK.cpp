@@ -158,6 +158,8 @@ namespace frik
         logger::trace("Update Pipboy...");
         _pipboy->onFrameUpdate();
 
+        _mainConfigMode.onFrameUpdate();
+
         _configurationMode->onFrameUpdate();
 
         FrameUpdateContext context(_skelly);

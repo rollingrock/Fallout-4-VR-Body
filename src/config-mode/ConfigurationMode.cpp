@@ -445,7 +445,7 @@ namespace frik
                 _configModeTimer += 1;
                 if (_configModeTimer > 200 && _configModeTimer2 > 200) {
                     _dampenHandsButtonPressed = true;
-                    _calibrateModeActive = true;
+                    // _calibrateModeActive = true;
                 }
             } else if (!dHTouch && !_calibrateModeActive && _configModeTimer > 0) {
                 _configModeTimer = 0;

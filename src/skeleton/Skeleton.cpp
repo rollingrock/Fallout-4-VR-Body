@@ -1377,6 +1377,14 @@ namespace frik
     void Skeleton::dampenHand(RE::NiNode* node, const bool isLeft)
     {
         if (!g_config.dampenHands) {
+            if (g_frik.isMainConfigurationModeActive()) {
+                // small hack to prevent jarring effect when dampen is enabled for the first time via main config
+                if (isLeft) {
+                    _leftHandPrevFrame = node->world;
+                } else {
+                    _rightHandPrevFrame = node->world;
+                }
+            }
             return;
         }
 
