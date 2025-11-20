@@ -10,9 +10,14 @@ namespace frik
         void cullPlayerGeometry();
 
     private:
-        static void restoreGeometry();
+        void restoreGeometry();
+        void restoreEquipment();
         void preProcessHideGeometryIndexes(RE::BSFadeNode* rn);
         static void setEquipmentSlotByIndexVisibility(int slotId, bool toHide);
+
+        // used to handle update to hide flags to know to restore culled geometries
+        bool _isGeometryCulled = false;
+        bool _isEquipmentCulled = false;
 
         time_t _lastPreProcessTime = 0;
         int _lastHiddenGeometryIdx = -1;

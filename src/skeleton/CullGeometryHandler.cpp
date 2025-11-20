@@ -1,5 +1,7 @@
 #include "CullGeometryHandler.h"
 
+#include <utility>
+
 #include "Config.h"
 #include "FRIK.h"
 #include "common/CommonUtils.h"
@@ -23,7 +25,7 @@ namespace frik
         const auto now = std::time(nullptr);
         if (now - _lastPreProcessTime < 2) {
             // check that the geometries array didn't change by verifying the last hidden geometry is the same we expect
-            if (_lastHiddenGeometryIdx >= 0 && _lastHiddenGeometryIdx < static_cast<int>(rn->geomArray.size())) {
+            if (_lastHiddenGeometryIdx >= 0 && std::cmp_less(_lastHiddenGeometryIdx, rn->geomArray.size())) {
                 const auto gemName = std::string(rn->geomArray[_lastHiddenGeometryIdx].geometry->name.c_str());
                 if (_lastHiddenGeometryName == gemName) {
                     return;
@@ -77,6 +79,7 @@ namespace frik
     {
         if (g_frik.getSelfieMode() && g_config.selfieIgnoreHideFlags) {
             restoreGeometry();
+            restoreEquipment();
             return;
         }
 
@@ -87,17 +90,23 @@ namespace frik
 
         // check for selfie mode to handle an edge-case where all hide setting are set to false but the geometries are not restored
         // preProcessHideGeometryIndexes will restore them (even equipment) so it's a hacky fix
-        if (g_config.hideHead || g_config.hideSkin || g_frik.getSelfieMode()) {
+        if (g_config.hideHead || g_config.hideSkin) {
+            _isGeometryCulled = true;
             preProcessHideGeometryIndexes(rn);
-            for (const int idx : _hideFaceSkinGeometryIndexes) {
+            for (const uint32_t idx : _hideFaceSkinGeometryIndexes) {
                 f4vr::setNodeVisibility(rn->geomArray[idx].geometry.get(), false);
             }
+        } else {
+            restoreGeometry();
         }
 
         if (g_config.hideEquipment) {
+            _isEquipmentCulled = true;
             for (const auto slot : g_config.hideEquipSlotIndexes()) {
                 setEquipmentSlotByIndexVisibility(slot, true);
             }
+        } else {
+            restoreEquipment();
         }
     }
 
@@ -106,14 +115,31 @@ namespace frik
     /// </summary>
     void CullGeometryHandler::restoreGeometry()
     {
+        if (!_isGeometryCulled) {
+            // no need to restore anything
+            return;
+        }
+        _isGeometryCulled = false;
+
         //Face and Skin
         if (const auto rn = reinterpret_cast<RE::BSFadeNode*>(f4vr::getWorldRootNode())) {
-            for (UINT32 i = 0; i < rn->geomArray.size(); ++i) {
-                f4vr::setNodeVisibility(rn->geomArray[i].geometry.get(), true);
+            for (auto& i : rn->geomArray) {
+                f4vr::setNodeVisibility(i.geometry.get(), true);
             }
         }
+    }
 
-        //Equipment
+    /// <summary>
+    /// Show all player geometries and equipment slots.
+    /// </summary>
+    void CullGeometryHandler::restoreEquipment()
+    {
+        if (!_isEquipmentCulled) {
+            // no need to restore anything
+            return;
+        }
+        _isEquipmentCulled = false;
+
         setEquipmentSlotByIndexVisibility(0, false);
         setEquipmentSlotByIndexVisibility(1, false);
         setEquipmentSlotByIndexVisibility(2, false);
