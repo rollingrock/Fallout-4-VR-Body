@@ -76,18 +76,18 @@ namespace frik
      */
     void MainConfigMode::createMainConfigUI()
     {
-        const auto openBodyConfigBtn = std::make_shared<UIButton>("FRIK/ui_main_conf_btn_body_config.nif");
+        const auto openBodyConfigBtn = std::make_shared<UIButton>("FRIK\\UI_Main_Config\\btn_body_config.nif");
         openBodyConfigBtn->setOnPressHandler([this](UIWidget*) { openBodyAdjustmentSubConfigUI(); });
 
-        const auto dampenHandsBtn = std::make_shared<UIToggleButton>("FRIK/ui_main_conf_btn_dampen_hands.nif");
+        const auto dampenHandsBtn = std::make_shared<UIToggleButton>("FRIK\\UI_Main_Config\\btn_dampen_hands.nif");
         dampenHandsBtn->setToggleState(g_config.dampenHands);
         dampenHandsBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { g_config.saveDampenHands(enabled); });
 
         const auto gripModesMap = std::map<TwoHandedGripMode, std::string>{
-            { TwoHandedGripMode::Mode1, "FRIK/ui_main_conf_btn_grip_mode_1.nif" },
-            { TwoHandedGripMode::Mode2, "FRIK/ui_main_conf_btn_grip_mode_2.nif" },
-            { TwoHandedGripMode::Mode3, "FRIK/ui_main_conf_btn_grip_mode_3.nif" },
-            { TwoHandedGripMode::Mode4, "FRIK/ui_main_conf_btn_grip_mode_4.nif" }
+            { TwoHandedGripMode::Mode1, "FRIK\\UI_Main_Config\\btn_grip_mode_1.nif" },
+            { TwoHandedGripMode::Mode2, "FRIK\\UI_Main_Config\\btn_grip_mode_2.nif" },
+            { TwoHandedGripMode::Mode3, "FRIK\\UI_Main_Config\\btn_grip_mode_3.nif" },
+            { TwoHandedGripMode::Mode4, "FRIK\\UI_Main_Config\\btn_grip_mode_4.nif" }
         };
         const auto twoHandedGripModeBtn = std::make_shared<UIMultiStateToggleButton<TwoHandedGripMode>>(gripModesMap);
         twoHandedGripModeBtn->setState(getTwoHandedGripMode());
@@ -98,13 +98,13 @@ namespace frik
         row1Container->addElement(dampenHandsBtn);
         row1Container->addElement(twoHandedGripModeBtn);
 
-        const auto openPipboyConfigBtn = std::make_shared<UIButton>("FRIK/ui_main_conf_btn_pipboy_config.nif");
+        const auto openPipboyConfigBtn = std::make_shared<UIButton>("FRIK\\UI_Main_Config\\btn_pipboy_config.nif");
         openPipboyConfigBtn->setOnPressHandler([this](UIWidget*) { openPipboyConfigUI(); });
 
-        const auto openWeaponAdjustConfigBtn = std::make_shared<UIButton>("FRIK/ui_main_conf_btn_weapon_adjust.nif");
+        const auto openWeaponAdjustConfigBtn = std::make_shared<UIButton>("FRIK\\UI_Main_Config\\btn_weapon_adjust.nif");
         openWeaponAdjustConfigBtn->setOnPressHandler([this](UIWidget*) { openWeaponAdjustConfigUI(); });
 
-        const auto exitBtn = std::make_shared<UIButton>("FRIK/ui_common_btn_exit.nif");
+        const auto exitBtn = std::make_shared<UIButton>("FRIK\\UI_Common\\btn_exit.nif");
         exitBtn->setOnPressHandler([this](UIWidget*) { closeMainConfigMode(); });
 
         const auto row2Container = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
@@ -112,14 +112,14 @@ namespace frik
         row2Container->addElement(openWeaponAdjustConfigBtn);
         row2Container->addElement(exitBtn);
 
-        const auto mainMsg = std::make_shared<UIWidget>("FRIK/ui_main_conf_msg_main.nif");
-        const auto toggleSelfieMsg = std::make_shared<UIWidget>("FRIK/ui_main_conf_msg_toggle_selfie.nif");
+        const auto mainMsg = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\msg_main.nif");
+        const auto toggleSelfieMsg = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\msg_toggle_selfie.nif");
 
         const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f, 0.7f);
         row3Container->addElement(mainMsg);
         row3Container->addElement(toggleSelfieMsg);
 
-        const auto header = std::make_shared<UIWidget>("FRIK/ui_main_conf_title.nif", 0.45f);
+        const auto header = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\title_main.nif", 0.45f);
 
         _configUI = std::make_shared<UIContainer>("MainConfig", UIContainerLayout::VerticalDown, 0.4f, 1.8f);
         _configUI->addElement(header);
