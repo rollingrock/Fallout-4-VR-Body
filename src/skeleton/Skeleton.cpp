@@ -15,8 +15,24 @@
 using namespace common;
 using namespace f4vr;
 
+namespace
+{
+    /**
+     * Hack to handle comfort sneak affecting the height of the player without real-world body change.
+     * By setting static body pitch the body position doesn't change, making it easier to handle skeleton
+     * related things like Virtual Holsters.
+     */
+    bool isComfortSneakHackEnabled()
+    {
+        return frik::g_config.comfortSneakHackStaticBodyPitchAngle > 0 && isComfortSneakMode() && isPlayerSneaking();
+    }
+}
+
 namespace frik
 {
+    constexpr float COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT = 0.7f;
+    constexpr float COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT = 0.5f;
+
     RE::NiTransform Skeleton::getBoneWorldTransform(const std::string& boneName)
     {
         return getFlattenedBoneTree()->transforms[_boneTreeMap[boneName]].world;
@@ -33,6 +49,21 @@ namespace frik
         const auto boneTransform = getBoneWorldTransform(indexFinger);
         const auto forward = boneTransform.rotate.Transpose() * (RE::NiPoint3(1, 0, 0));
         return boneTransform.translate + forward * (_inPowerArmor ? 3 : 1.8f);
+    }
+
+    /**
+     * Get the player camera height offset adjusted for power armor, sneaking, and dynamic height from external API.
+     * The height needs to be adjusted for comfort sneaking because the player physical height doesn't change but
+     * the player avatar does. So the camera offset has to be reduced by the same amount as the game changes the height
+     * which is 70% of the normal height.
+     */
+    float Skeleton::getAdjustedplayerHMDOffset()
+    {
+        auto offset = g_config.getPlayerHMDOffsetUp() + g_frik.getDynamicCameraHeight();
+        if (isComfortSneakMode() && isPlayerSneaking()) {
+            offset *= COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT;
+        }
+        return offset;
     }
 
     /**
@@ -158,27 +189,28 @@ namespace frik
         restoreNodesToDefault();
         updateDownFromRoot();
 
-        if (!g_config.hideHead) {
+        const float neckYaw = getNeckYaw();
+        const float neckPitch = getNeckPitch();
+
+        if (!g_config.hideHead || (g_frik.getSelfieMode() && g_config.selfieIgnoreHideFlags)) {
             logger::trace("Setup Head");
-            setupHead();
+            setupHead(neckYaw, neckPitch);
         }
 
         logger::trace("Set body under HMD");
-        setBodyUnderHMD();
+        setBodyUnderHMD(neckYaw, neckPitch);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
         // Now Set up body Posture and hook up the legs
         logger::trace("Set body posture...");
-        setBodyPosture();
+        setBodyPosture(neckPitch);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
 
         logger::trace("Set knee posture...");
         setKneePos();
 
         logger::trace("Set walk...");
-        if (!g_config.armsOnly) {
-            walk();
-        }
+        walk();
 
         logger::trace("Set legs...");
         setSingleLeg(false);
@@ -207,10 +239,6 @@ namespace frik
         logger::trace("Selfie Time");
         selfieSkelly();
         updateDownFromRoot();
-
-        if (g_config.armsOnly) {
-            showOnlyArms();
-        }
 
         logger::trace("Operate hands...");
         setHandPose();
@@ -244,21 +272,15 @@ namespace frik
     }
 
     /**
-     * Moves head up and back out of the player view.
-     * Doing this instead of hiding with a small scale setting since it preserves neck shape
+     * Moves head up and back out of the player view and handle head movement.
+     * It's still not good enough to prevent seeing hats and stuff but it's a step farward in case
+     * someone wants to tockle it further.
      */
-    void Skeleton::setupHead() const
+    void Skeleton::setupHead(const float neckYaw, const float neckPitch) const
     {
-        _head->local.rotate.entry[0][0] = 0.967f;
-        _head->local.rotate.entry[0][1] = -0.251f;
-        _head->local.rotate.entry[0][2] = 0.047f;
-        _head->local.rotate.entry[1][0] = 0.249f;
-        _head->local.rotate.entry[1][1] = 0.967f;
-        _head->local.rotate.entry[1][2] = 0.051f;
-        _head->local.rotate.entry[2][0] = -0.058f;
-        _head->local.rotate.entry[2][1] = -0.037f;
-        _head->local.rotate.entry[2][2] = 0.998f;
-
+        const float headBackAdj = neckPitch > 0 ? 2 * neckPitch : 0;
+        _head->local.translate -= RE::NiPoint3(2 + headBackAdj, 3 + headBackAdj, 0);
+        _head->local.rotate = _head->local.rotate * getMatrixFromEulerAngles(neckYaw, 0, degreesToRads(g_config.isPlayingSeated ? 25.0f : 10.0f) + neckPitch);
         RE::NiUpdateData* ud = nullptr;
         _head->UpdateWorldData(ud);
     }
@@ -323,15 +345,19 @@ namespace frik
         return atan2f(lookDir.y, lookDir.z);
     }
 
-    float Skeleton::getBodyPitch() const
+    float Skeleton::getBodyPitch(const float neckPitch) const
     {
+        if (isComfortSneakHackEnabled()) {
+            return degreesToRads(g_config.comfortSneakHackStaticBodyPitchAngle);
+        }
+
         constexpr float basePitch = 105.3f;
         constexpr float weight = 0.1f;
 
         const float curHeight = g_config.playerHeight;
         const float heightCalc = std::abs((curHeight - _playerNodes->UprightHmdNode->local.translate.z) / curHeight);
 
-        const float angle = heightCalc * (basePitch + weight * radsToDegrees(getNeckPitch()));
+        const float angle = heightCalc * (basePitch + weight * radsToDegrees(neckPitch));
 
         return degreesToRads(angle);
     }
@@ -339,12 +365,10 @@ namespace frik
     /**
      * set up the body underneath the headset in a proper scale and orientation
      */
-    void Skeleton::setBodyUnderHMD()
+    void Skeleton::setBodyUnderHMD(const float neckYaw, const float neckPitch)
     {
         if (g_config.disableSmoothMovement) {
-            _playerNodes->playerworldnode->local.translate.z = _inPowerArmor
-                ? g_config.PACameraHeight + g_frik.getDynamicCameraHeight()
-                : g_config.cameraHeight + g_frik.getDynamicCameraHeight();
+            _playerNodes->playerworldnode->local.translate.z = getAdjustedplayerHMDOffset();
             updateDown(_playerNodes->playerworldnode, true);
         }
 
@@ -352,9 +376,6 @@ namespace frik
         //	float x    = (*g_playerCamera)->cameraNode->world.rotate.data[1][0];  //  Later will use this vector as the basis for the rest of the IK
         const float z = _root->local.translate.z;
         //	float z = groundHeight;
-
-        const float neckYaw = getNeckYaw();
-        const float neckPitch = getNeckPitch();
 
         Quaternion qa;
         qa.setAngleAxis(-neckPitch, RE::NiPoint3(-1, 0, 0));
@@ -377,14 +398,13 @@ namespace frik
         _root->local.translate = body->world.translate - _curentPosition;
         _root->local.translate.z = z;
         //_root->local.translate *= 0.0f;
-        //_root->local.translate.y = g_config.playerOffset_forward - 6.0f;
+        //_root->local.translate.y = g_config.playerBodyOffsetForwardStanding - 6.0f;
         _root->local.scale = g_config.playerHeight / DEFAULT_CAMERA_HEIGHT; // set scale based off specified user height
     }
 
-    void Skeleton::setBodyPosture()
+    void Skeleton::setBodyPosture(const float neckPitch)
     {
-        const float neckPitch = getNeckPitch();
-        const float bodyPitch = _inPowerArmor ? getBodyPitch() : getBodyPitch() / 1.2f;
+        const float bodyPitch = _inPowerArmor ? getBodyPitch(neckPitch) : getBodyPitch(neckPitch) / 1.2f;
 
         RE::NiNode* com = findNode(_root, "COM");
         const RE::NiNode* neck = findNode(_root, "Neck");
@@ -396,10 +416,20 @@ namespace frik
         com->local.translate.x = 0.0;
         com->local.translate.y = 0.0;
 
-        const float z_adjust = (_inPowerArmor ? g_config.powerArmor_up : g_config.playerOffset_up) - cosf(neckPitch) * (5.0f * _root->local.scale);
-        //float z_adjust = g_config.playerOffset_up - cosf(neckPitch) * (5.0 * _root->local.scale);
-        const auto neckAdjust = RE::NiPoint3(-_forwardDir.x * g_config.playerOffset_forward / 2, -_forwardDir.y * g_config.playerOffset_forward / 2, z_adjust);
-        const RE::NiPoint3 neckPos = getCameraPosition() + neckAdjust;
+        // comfort sneak changes the height of the avatar without the player changing height in the real world, need to adjust for it
+        const float comfortSneakAdjustZ = isComfortSneakMode() && isPlayerSneaking() ? COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT : 1.0f;
+
+        // small offset to (1) not change player height when looking up/down and (2) move the body back, especially when looking down
+        const float xOffsetByNeckPitch = isComfortSneakHackEnabled() ? -5.0f : 6.0f * neckPitch * neckPitch * _root->local.scale;
+        const float zOffsetByNeckPitch = 6.0f * neckPitch * _root->local.scale;
+
+        const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getPlayerHMDOffsetUp()) * comfortSneakAdjustZ + zOffsetByNeckPitch;
+        // if people complain about body posture we can add manual adjustment here later
+
+        const auto neckPos = getCameraPosition() + RE::NiPoint3(
+            -_forwardDir.x * (g_config.getPlayerBodyOffsetForward() / 2 + xOffsetByNeckPitch),
+            -_forwardDir.y * (g_config.getPlayerBodyOffsetForward() / 2 + xOffsetByNeckPitch),
+            -playerAdjustZ);
 
         _torsoLen = vec3Len(neck->world.translate - com->world.translate);
 
@@ -413,13 +443,12 @@ namespace frik
         const RE::NiPoint3 hmdToNewHip = tmpHipPos - neckPos;
         const RE::NiPoint3 newHipPos = neckPos + hmdToNewHip * (_torsoLen / vec3Len(hmdToNewHip));
 
-        const RE::NiPoint3 newPos = com->local.translate + _root->world.rotate * ((newHipPos - com->world.translate));
-        const float offsetFwd = _inPowerArmor ? g_config.powerArmor_forward : g_config.playerOffset_forward;
-        com->local.translate.y += newPos.y + offsetFwd;
+        const RE::NiPoint3 newPos = com->local.translate + _root->world.rotate * (newHipPos - com->world.translate);
+        com->local.translate.y += newPos.y + g_config.getPlayerBodyOffsetForward() - xOffsetByNeckPitch;
         com->local.translate.z = _inPowerArmor ? newPos.z / 1.7f : newPos.z / 1.5f;
-        //com->local.translate.z -= _inPowerArmor ? g_config.powerArmor_up + g_config.PACameraHeight : 0.0f;
-        RE::NiNode* body = _root->parent;
-        body->world.translate.z -= _inPowerArmor ? g_config.PACameraHeight + g_config.PARootOffset : g_config.cameraHeight + g_config.rootOffset;
+
+        // ???
+        _root->parent->world.translate.z -= g_config.getPlayerBodyOffsetUp() + getAdjustedplayerHMDOffset();
 
         const RE::NiMatrix3 mat = getMatrixFromRotateVectorVec(neckPos - tmpHipPos, hmdToHip) * spine->parent->world.rotate.Transpose();
         spine->local.rotate = spine->world.rotate * mat;
@@ -427,8 +456,8 @@ namespace frik
 
     void Skeleton::setKneePos()
     {
-        auto lKnee = findNode(_root, "LLeg_Calf");
-        auto rKnee = findNode(_root, "RLeg_Calf");
+        const auto lKnee = findNode(_root, "LLeg_Calf");
+        const auto rKnee = findNode(_root, "RLeg_Calf");
 
         if (!lKnee || !rKnee) {
             return;
@@ -520,7 +549,7 @@ namespace frik
             case 0: {
                 if (curSpeed >= 35.0) {
                     _walkingState = 1; // start walking
-                    _footStepping = std::rand() % 2 + 1; // pick a random foot to take a step
+                    _footStepping = std::rand() % 2 + 1; // pick a random foot to take a step  // NOLINT(concurrency-mt-unsafe)
                     _stepDir = dir;
                     _stepTimeinStep = stepTime;
                     _delayFrame = 2;
@@ -596,7 +625,7 @@ namespace frik
             const float scale = (std::min)(curSpeed * stepTime * 1.5f, 140.0f);
             dirOffset = dirOffset * scale;
 
-            int sign = 1;
+            float sign = 1.0f;
 
             _currentStepTime += _frameTime;
 
@@ -604,7 +633,7 @@ namespace frik
             const float interp = std::clamp(frameStep * (_currentStepTime / _frameTime), 0.0f, 1.0f);
 
             if (_footStepping == 1) {
-                sign = -1;
+                sign = -1.0f;
                 if (dot < 0.9) {
                     if (!_delayFrame) {
                         _rightFootTarget += dirOffset;
@@ -1187,29 +1216,6 @@ namespace frik
         arm.hand->local.translate *= forearmRatio;
     }
 
-    void Skeleton::showOnlyArms() const
-    {
-        const RE::NiPoint3 rwp = _rightArm.shoulder->world.translate;
-        const RE::NiPoint3 lwp = _leftArm.shoulder->world.translate;
-        _root->local.scale = 0.00001f;
-        updateTransforms(_root);
-        _root->world.translate += _forwardDir * -10.0f;
-        _root->world.translate.z = rwp.z;
-        updateDown(_root, false);
-
-        _rightArm.shoulder->local.scale = 100000;
-        _leftArm.shoulder->local.scale = 100000;
-
-        updateTransforms(reinterpret_cast<RE::NiNode*>(_rightArm.shoulder));
-        updateTransforms(reinterpret_cast<RE::NiNode*>(_leftArm.shoulder));
-
-        _rightArm.shoulder->world.translate = rwp;
-        _leftArm.shoulder->world.translate = lwp;
-
-        updateDown(reinterpret_cast<RE::NiNode*>(_rightArm.shoulder), false);
-        updateDown(reinterpret_cast<RE::NiNode*>(_leftArm.shoulder), false);
-    }
-
     void Skeleton::hideHands() const
     {
         const RE::NiPoint3 rwp = _rightArm.shoulder->world.translate;
@@ -1371,6 +1377,14 @@ namespace frik
     void Skeleton::dampenHand(RE::NiNode* node, const bool isLeft)
     {
         if (!g_config.dampenHands) {
+            if (g_frik.isMainConfigurationModeActive()) {
+                // small hack to prevent jarring effect when dampen is enabled for the first time via main config
+                if (isLeft) {
+                    _leftHandPrevFrame = node->world;
+                } else {
+                    _rightHandPrevFrame = node->world;
+                }
+            }
             return;
         }
 

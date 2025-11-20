@@ -16,25 +16,6 @@
 using namespace vrui;
 using namespace common;
 
-namespace
-{
-    /**
-     * Get adjustment value from the thumbstick but correct it with respect to deadzone and sensitivity.
-     * Deadzone is used to prevent small changes in an axis the player is not changing.
-     * For example: moving the weapon right should not move it forward even if the player has small forward
-     * on the thumbstick.
-     */
-    float correctAdjustmentValue(const float value, const float sensitivityFactor)
-    {
-        const float adjValue = value / sensitivityFactor;
-        const float deadZone = 0.5f / sensitivityFactor;
-        if (std::fabs(adjValue) < deadZone) {
-            return 0;
-        }
-        return adjValue > 0 ? adjValue - deadZone : adjValue + deadZone;
-    }
-}
-
 namespace frik
 {
     /**
@@ -499,23 +480,23 @@ namespace frik
      */
     void WeaponPositionConfigMode::createConfigUI()
     {
-        _weaponModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_weapon.nif");
+        _weaponModeButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_weapon.nif");
         _weaponModeButton->setToggleState(true);
         _weaponModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Weapon; });
 
-        _primaryHandModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_primary_hand.nif");
+        _primaryHandModeButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_primary_hand.nif");
         _primaryHandModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::PrimaryHand; });
 
-        _offhandModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_offhand.nif");
+        _offhandModeButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_offhand.nif");
         _offhandModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Offhand; });
 
-        _throwableUIButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_throwable.nif");
+        _throwableUIButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_throwable.nif");
         _throwableUIButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Throwable; });
 
-        const auto backOfHandUIButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_back_of_hand_ui.nif");
+        const auto backOfHandUIButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_back_of_hand_ui.nif");
         backOfHandUIButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::BackOfHandUI; });
 
-        const auto firstRowContainerInner = std::make_shared<UIToggleGroupContainer>(UIContainerLayout::HorizontalCenter, 0.15f);
+        const auto firstRowContainerInner = std::make_shared<UIToggleGroupContainer>("Row1Inner", UIContainerLayout::HorizontalCenter, 0.3f);
         firstRowContainerInner->addElement(_weaponModeButton);
         firstRowContainerInner->addElement(_primaryHandModeButton);
         firstRowContainerInner->addElement(_offhandModeButton);
@@ -523,60 +504,54 @@ namespace frik
         firstRowContainerInner->addElement(backOfHandUIButton);
 
         if (isBetterScopesVRModLoaded()) {
-            _betterScopesModeButton = std::make_shared<UIToggleButton>("FRIK/ui_weapconf_btn_better_scopes_vr.nif");
+            _betterScopesModeButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_better_scopes_vr.nif");
             _betterScopesModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::BetterScopes; });
             firstRowContainerInner->addElement(_betterScopesModeButton);
         }
 
-        _emptyHandsMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_empty_hands_box.nif");
-        _emptyHandsMessageBox->setSize(3.6f, 2.2f);
+        _emptyHandsMessageBox = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\msg_empty_hands.nif");
 
-        const auto firstRowContainer = std::make_shared<UIContainer>(UIContainerLayout::HorizontalCenter, 0.15f);
+        const auto firstRowContainer = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.3f);
         firstRowContainer->addElement(_emptyHandsMessageBox);
         firstRowContainer->addElement(firstRowContainerInner);
 
-        _saveButton = std::make_shared<UIButton>("FRIK/ui_common_btn_save.nif");
+        _saveButton = std::make_shared<UIButton>("FRIK\\UI_Common\\btn_save.nif");
         _saveButton->setOnPressHandler([this](UIWidget*) { saveConfig(); });
 
-        _resetButton = std::make_shared<UIButton>("FRIK/ui_common_btn_reset.nif");
+        _resetButton = std::make_shared<UIButton>("FRIK\\UI_Common\\btn_reset.nif");
         _resetButton->setOnPressHandler([this](UIWidget*) { resetConfig(); });
 
-        const auto exitButton = std::make_shared<UIButton>("FRIK/ui_common_btn_exit.nif");
+        const auto exitButton = std::make_shared<UIButton>("FRIK\\UI_Common\\btn_exit.nif");
         exitButton->setOnPressHandler([this](UIWidget*) { _adjuster->toggleWeaponRepositionMode(); });
 
-        _throwableNotEquippedMessageBox = std::make_shared<UIWidget>("FRIK/ui_weapconf_throwable_box.nif");
-        _throwableNotEquippedMessageBox->setSize(3.6f, 2.2f);
+        _throwableNotEquippedMessageBox = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\msg_throwable_empty_hands.nif");
 
-        const auto secondRowContainer = std::make_shared<UIContainer>(UIContainerLayout::HorizontalCenter, 0.2f);
+        const auto secondRowContainer = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
         secondRowContainer->addElement(_saveButton);
         secondRowContainer->addElement(_resetButton);
         secondRowContainer->addElement(_throwableNotEquippedMessageBox);
         secondRowContainer->addElement(exitButton);
 
-        const auto header = std::make_shared<UIWidget>("FRIK/ui_weapconf_header.nif", 0.7f);
-        header->setSize(8, 1);
-        _complexAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_footer.nif", 0.7f);
-        _complexAdjustFooter->setSize(7, 2.2f);
-        _throwableAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_footer_throwable.nif", 0.7f);
-        _throwableAdjustFooter->setSize(7, 2.2f);
-        _simpleAdjustFooter = std::make_shared<UIWidget>("FRIK/ui_weapconf_footer_2.nif", 0.7f);
-        _simpleAdjustFooter->setSize(5, 2.2f);
+        const auto header = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\title.nif", 0.5f);
+        _complexAdjustFooter = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\msg_footer.nif", 0.7f);
+        _throwableAdjustFooter = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\msg_footer_throwable.nif", 0.7f);
+        _simpleAdjustFooter = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\msg_footer_simple.nif", 0.7f);
         _simpleAdjustFooter->setVisibility(false);
 
-        const auto mainContainer = std::make_shared<UIContainer>(UIContainerLayout::VerticalCenter, 0.2f);
+        const auto mainContainer = std::make_shared<UIContainer>("Main", UIContainerLayout::VerticalCenter, 0.3f);
         mainContainer->addElement(firstRowContainer);
         mainContainer->addElement(secondRowContainer);
         mainContainer->addElement(_complexAdjustFooter);
         mainContainer->addElement(_throwableAdjustFooter);
         mainContainer->addElement(_simpleAdjustFooter);
 
-        _configUI = std::make_shared<UIContainer>(UIContainerLayout::VerticalDown, 0.3f, 1.7f);
+        _configUI = std::make_shared<UIContainer>("WeaponConfig", UIContainerLayout::VerticalDown, 0.4f, 1.5f);
         _configUI->addElement(header);
         _configUI->addElement(mainContainer);
 
         // start hidden by default (will be set visible in frame update if it should be)
         _configUI->setVisibility(false);
 
-        g_uiManager->attachPresetToPrimaryWandLeft(_configUI, f4vr::isLeftHandedMode(), { 0, -4, 0 });
+        g_uiManager->attachPresetToPrimaryWandLeft(_configUI, { -16, 4, -5 });
     }
 }

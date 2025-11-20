@@ -18,4 +18,6 @@ namespace frik
     bool isFalloutLondonVRModLoaded();
 
     f4vr::MuzzleFlash* getMuzzleFlashNodes();
+
+    float correctAdjustmentValue(float value, float sensitivityFactor);
 }

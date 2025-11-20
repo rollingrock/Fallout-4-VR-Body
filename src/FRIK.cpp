@@ -47,11 +47,6 @@ namespace frik
             return _skelly->getIndexFingerTipWorldPosition(false);
         }
 
-        virtual void fireInteractionHeptic() override
-        {
-            f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
-        }
-
         virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override
         {
             setForceHandPointingPose(primaryHand, toPoint);
@@ -115,8 +110,6 @@ namespace frik
         if (_skelly) {
             logger::info("Resetting skeleton for new game session...");
             releaseSkeleton();
-            logger::info("Reload config...");
-            g_config.load();
         }
 
         configureGameVars();
@@ -163,12 +156,14 @@ namespace frik
         logger::trace("Update Pipboy...");
         _pipboy->onFrameUpdate();
 
+        _mainConfigMode.onFrameUpdate();
+
         _configurationMode->onFrameUpdate();
 
         FrameUpdateContext context(_skelly);
         vrui::g_uiManager->onFrameUpdate(&context);
 
-        _playerControlsHandler.onFrameUpdate(_pipboy, _weaponPosition, &_gameMenusHandler);
+        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition, &_gameMenusHandler);
 
         updateWorldFinal();
     }

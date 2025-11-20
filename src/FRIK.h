@@ -5,6 +5,7 @@
 #include "ModBase.h"
 #include "PlayerControlsHandler.h"
 #include "config-mode/ConfigurationMode.h"
+#include "config-mode/MainConfigMode.h"
 #include "f4vr/GameMenusHandler.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/BoneSpheresHandler.h"
@@ -43,9 +44,9 @@ namespace frik
         bool isPipboyOperatingWithFinger() const { return _pipboy && _pipboy->isOperatingWithFinger(); }
         void swapPipboyModel() const { if (_pipboy) { _pipboy->swapModel(); } }
 
-        bool isMainConfigurationModeActive() const { return _configurationMode && _configurationMode->isCalibrateModeActive(); }
+        bool isMainConfigurationModeActive() const { return _mainConfigMode.isOpen(); }
         bool isPipboyConfigurationModeActive() const { return _configurationMode && _configurationMode->isPipBoyConfigModeActive(); }
-        void openMainConfigurationModeActive() const { if (_configurationMode) { _configurationMode->enterConfigurationMode(); } }
+        void openMainConfigurationModeActive() { _mainConfigMode.openConfigMode(); }
 
         void openPipboyConfigurationModeActive() const
         {
@@ -92,6 +93,7 @@ namespace frik
 
         Skeleton* _skelly = nullptr;
         Pipboy* _pipboy = nullptr;
+        MainConfigMode _mainConfigMode;
         ConfigurationMode* _configurationMode = nullptr;
         WeaponPositionAdjuster* _weaponPosition = nullptr;
 

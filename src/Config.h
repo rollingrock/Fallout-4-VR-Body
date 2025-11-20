@@ -68,48 +68,24 @@ namespace frik
             ConfigBase(Version::PROJECT, FRIK_INI_PATH, IDR_FRIK_INI) {}
 
         virtual void load() override;
-        void save() { saveIniConfig(); }
+        void loadIniOnly();
 
-        /**
-         * Reloads the config for Fallout London VR mod.
-         * Using different config file as the mod changes a lot of the game.
-         */
-        void reloadForFalloutLondonVR()
-        {
-            stopIniConfigFileWatch();
-            _iniFilePath = FRIK_FOLVR_INI_PATH;
-            load();
-        }
+        void reloadForFalloutLondonVR();
+        void setFlashlightLocation(FlashlightLocation location);
+        void toggleIsHoloPipboy();
+        void toggleDampenPipboyScreen();
+        void togglePipBoyOpenWhenLookAt();
+        void savePipboyScale(float scale);
+        void saveIsPlayingSeated(bool iIsPlayingSeated);
+        void saveHideHeadAndEquipment(bool hide);
+        void saveDampenHands(bool iDampenHands);
 
-        void setFlashlightLocation(const FlashlightLocation location)
-        {
-            flashlightLocation = location;
-            saveIniConfigValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
-        }
-
-        void toggleIsHoloPipboy()
-        {
-            isHoloPipboy = !isHoloPipboy;
-            saveIniConfigValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
-        }
-
-        void toggleDampenPipboyScreen()
-        {
-            dampenPipboyScreenMode = static_cast<DampenPipboyScreenMode>((static_cast<uint8_t>(dampenPipboyScreenMode) + 1) % 3);
-            saveIniConfigValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
-        }
-
-        void togglePipBoyOpenWhenLookAt()
-        {
-            pipboyOpenWhenLookAt = !pipboyOpenWhenLookAt;
-            saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
-        }
-
-        void savePipboyScale(const float scale)
-        {
-            pipBoyScale = scale;
-            saveIniConfigValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
-        }
+        float getPlayerBodyOffsetUp() const;
+        void setPlayerBodyOffsetUp(float value);
+        float getPlayerBodyOffsetForward() const;
+        void setPlayerBodyOffsetForward(float value);
+        float getPlayerHMDOffsetUp() const;
+        void setPlayerHMDOffsetUp(float value);
 
         static void openInNotepad();
         RE::NiTransform getPipboyOffset();
@@ -125,7 +101,6 @@ namespace frik
         float fVrScale = 0;
         float playerHeight = 0;
         float armLength = 0;
-        bool armsOnly = false;
 
         // Head Geometry Hide
         bool hideHead = false;
@@ -135,15 +110,24 @@ namespace frik
         const std::vector<std::string>& skinGeometry() const { return _skinGeometry; }
         const std::vector<int>& hideEquipSlotIndexes() const { return _hideEquipSlotIndexes; }
 
-        // Camera and Body offsets
-        float rootOffset = 0;
-        float PARootOffset = 0;
-        float cameraHeight = 0;
-        float PACameraHeight = 0;
-        float playerOffset_forward = 0;
-        float playerOffset_up = 0;
-        float powerArmor_forward = 0;
-        float powerArmor_up = 0;
+        // is the player playing standing or sitting
+        bool isPlayingSeated = false;
+        float comfortSneakHackStaticBodyPitchAngle = 0;
+
+        // Camera and Body offsets for standing/sitting and in/out of Power Armor
+        float playerHMDOffsetUpStanding = 0;
+        float playerBodyOffsetUpStanding = 0;
+        float playerBodyOffsetForwardStanding = 0;
+        float playerHMDOffsetUpSitting = 0;
+        float playerBodyOffsetUpSitting = 0;
+        float playerBodyOffsetForwardSitting = 0;
+
+        float playerHMDOffsetUpStandingInPA = 0;
+        float playerBodyOffsetUpStandingInPA = 0;
+        float playerBodyOffsetForwardStandingInPA = 0;
+        float playerHMDOffsetUpSittingInPA = 0;
+        float playerBodyOffsetUpSittingInPA = 0;
+        float playerBodyOffsetForwardSittingInPA = 0;
 
         // Pipboy
         float pipBoyScale = 0;
@@ -218,7 +202,6 @@ namespace frik
     protected:
         virtual void loadIniConfigInternal(const CSimpleIniA& ini) override;
         virtual void saveIniConfigInternal(CSimpleIniA& ini) override;
-        virtual void updateIniConfigToLatestVersionCustom(int currentVersion, int latestVersion, const CSimpleIniA& oldIni, CSimpleIniA& newIni) const override;
 
     private:
         void loadHideMeshes();
@@ -243,5 +226,5 @@ namespace frik
     };
 
     // Global singleton for easy access
-    inline Config g_config;
+    inline Config g_config; // NOLINT(clang-diagnostic-unique-object-duplication)
 }

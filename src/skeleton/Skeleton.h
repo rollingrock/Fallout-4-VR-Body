@@ -45,6 +45,8 @@ namespace frik
 
         RE::NiPoint3 getIndexFingerTipWorldPosition(bool primaryHand);
 
+        static float getAdjustedplayerHMDOffset();
+
         void onFrameUpdate();
 
     private:
@@ -58,9 +60,9 @@ namespace frik
         // on frame update - skeleton update
         void setTime();
         void restoreNodesToDefault();
-        void setupHead() const;
-        void setBodyUnderHMD();
-        void setBodyPosture();
+        void setupHead(float neckYaw, float neckPitch) const;
+        void setBodyUnderHMD(float neckYaw, float neckPitch);
+        void setBodyPosture(float neckPitch);
         void setKneePos();
         void walk();
         void setSingleLeg(bool isLeft) const;
@@ -71,7 +73,6 @@ namespace frik
         void hideFistHelpers() const;
         void showHidePAHud() const;
         void selfieSkelly() const;
-        void showOnlyArms() const;
         void setHandPose();
         void hideHands() const;
         void fixArmor() const;
@@ -84,7 +85,7 @@ namespace frik
         // Utils - Body Positioning
         float getNeckYaw() const;
         float getNeckPitch() const;
-        float getBodyPitch() const;
+        float getBodyPitch(float neckPitch) const;
         void rotateLeg(uint32_t pos, float angle) const;
 
         // root node and is in power armor define the Skeleton instance
