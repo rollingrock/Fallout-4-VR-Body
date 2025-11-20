@@ -280,7 +280,7 @@ namespace frik
     {
         const float headBackAdj = neckPitch > 0 ? 2 * neckPitch : 0;
         _head->local.translate -= RE::NiPoint3(2 + headBackAdj, 3 + headBackAdj, 0);
-        _head->local.rotate = _head->local.rotate * getMatrixFromEulerAngles(neckYaw, 0, degreesToRads(g_config.isPlayingSitting ? 25.0f : 10.0f) + neckPitch);
+        _head->local.rotate = _head->local.rotate * getMatrixFromEulerAngles(neckYaw, 0, degreesToRads(g_config.isPlayingSeated ? 25.0f : 10.0f) + neckPitch);
         RE::NiUpdateData* ud = nullptr;
         _head->UpdateWorldData(ud);
     }

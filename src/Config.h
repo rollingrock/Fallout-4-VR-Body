@@ -70,46 +70,15 @@ namespace frik
         virtual void load() override;
         void loadIniOnly();
 
-        /**
-         * Reloads the config for Fallout London VR mod.
-         * Using different config file as the mod changes a lot of the game.
-         */
-        void reloadForFalloutLondonVR()
-        {
-            stopIniConfigFileWatch();
-            _iniFilePath = FRIK_FOLVR_INI_PATH;
-            loadIniOnly();
-        }
-
-        void setFlashlightLocation(const FlashlightLocation location)
-        {
-            flashlightLocation = location;
-            saveIniConfigValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
-        }
-
-        void toggleIsHoloPipboy()
-        {
-            isHoloPipboy = !isHoloPipboy;
-            saveIniConfigValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
-        }
-
-        void toggleDampenPipboyScreen()
-        {
-            dampenPipboyScreenMode = static_cast<DampenPipboyScreenMode>((static_cast<uint8_t>(dampenPipboyScreenMode) + 1) % 3);
-            saveIniConfigValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
-        }
-
-        void togglePipBoyOpenWhenLookAt()
-        {
-            pipboyOpenWhenLookAt = !pipboyOpenWhenLookAt;
-            saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
-        }
-
-        void savePipboyScale(const float scale)
-        {
-            pipBoyScale = scale;
-            saveIniConfigValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
-        }
+        void reloadForFalloutLondonVR();
+        void setFlashlightLocation(FlashlightLocation location);
+        void toggleIsHoloPipboy();
+        void toggleDampenPipboyScreen();
+        void togglePipBoyOpenWhenLookAt();
+        void savePipboyScale(float scale);
+        void saveIsPlayingSeated(bool iIsPlayingSeated);
+        void saveHideHeadAndEquipment(bool hide);
+        void saveDampenHands(bool iDampenHands);
 
         float getPlayerBodyOffsetUp() const;
         void setPlayerBodyOffsetUp(float value);
@@ -142,7 +111,7 @@ namespace frik
         const std::vector<int>& hideEquipSlotIndexes() const { return _hideEquipSlotIndexes; }
 
         // is the player playing standing or sitting
-        bool isPlayingSitting = false;
+        bool isPlayingSeated = false;
         float comfortSneakHackStaticBodyPitchAngle = 0;
 
         // Camera and Body offsets for standing/sitting and in/out of Power Armor
@@ -257,5 +226,5 @@ namespace frik
     };
 
     // Global singleton for easy access
-    inline Config g_config;
+    inline Config g_config; // NOLINT(clang-diagnostic-unique-object-duplication)
 }

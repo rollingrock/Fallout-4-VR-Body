@@ -13,89 +13,6 @@ using namespace common;
 
 namespace frik
 {
-    float Config::getPlayerHMDOffsetUp() const
-    {
-        if (isPlayingSitting) {
-            return f4vr::isInPowerArmor() ? playerHMDOffsetUpSittingInPA : playerHMDOffsetUpSitting;
-        }
-        return f4vr::isInPowerArmor() ? playerHMDOffsetUpStandingInPA : playerHMDOffsetUpStanding;
-    }
-
-    void Config::setPlayerHMDOffsetUp(const float value)
-    {
-        if (isPlayingSitting) {
-            if (f4vr::isInPowerArmor()) {
-                playerHMDOffsetUpSittingInPA = value;
-            } else {
-                playerHMDOffsetUpSitting = value;
-            }
-        } else {
-            if (f4vr::isInPowerArmor()) {
-                playerHMDOffsetUpStandingInPA = value;
-            } else {
-                playerHMDOffsetUpStanding = value;
-            }
-        }
-    }
-
-    float Config::getPlayerBodyOffsetUp() const
-    {
-        if (isPlayingSitting) {
-            return f4vr::isInPowerArmor() ? playerBodyOffsetUpSittingInPA : playerBodyOffsetUpSitting;
-        }
-        return f4vr::isInPowerArmor() ? playerBodyOffsetUpStandingInPA : playerBodyOffsetUpStanding;
-    }
-
-    void Config::setPlayerBodyOffsetUp(const float value)
-    {
-        if (isPlayingSitting) {
-            if (f4vr::isInPowerArmor()) {
-                playerBodyOffsetUpSittingInPA = value;
-            } else {
-                playerBodyOffsetUpSitting = value;
-            }
-        } else {
-            if (f4vr::isInPowerArmor()) {
-                playerBodyOffsetUpStandingInPA = value;
-            } else {
-                playerBodyOffsetUpStanding = value;
-            }
-        }
-    }
-
-    float Config::getPlayerBodyOffsetForward() const
-    {
-        if (isPlayingSitting) {
-            return f4vr::isInPowerArmor() ? playerBodyOffsetForwardSittingInPA : playerBodyOffsetForwardSitting;
-        }
-        return f4vr::isInPowerArmor() ? playerBodyOffsetForwardStandingInPA : playerBodyOffsetForwardStanding;
-    }
-
-    void Config::setPlayerBodyOffsetForward(const float value)
-    {
-        if (isPlayingSitting) {
-            if (f4vr::isInPowerArmor()) {
-                playerBodyOffsetForwardSittingInPA = value;
-            } else {
-                playerBodyOffsetForwardSitting = value;
-            }
-        } else {
-            if (f4vr::isInPowerArmor()) {
-                playerBodyOffsetForwardStandingInPA = value;
-            } else {
-                playerBodyOffsetForwardStanding = value;
-            }
-        }
-    }
-
-    /**
-     * Open the FRIK.ini file in Notepad for editing.
-     */
-    void Config::openInNotepad()
-    {
-        ShellExecuteA(nullptr, "open", "notepad.exe", FRIK_INI_PATH.c_str(), nullptr, SW_SHOWNORMAL);
-    }
-
     /**
      * Load the FRIK.ini config, hide meshes, and weapon offsets.
      * Handle creating the FRIK.ini file if it doesn't exist.
@@ -128,6 +45,210 @@ namespace frik
         loadIniConfig();
     }
 
+    /**
+     * Reloads the config for Fallout London VR mod.
+     * Using different config file as the mod changes a lot of the game.
+     */
+    void Config::reloadForFalloutLondonVR()
+    {
+        stopIniConfigFileWatch();
+        _iniFilePath = FRIK_FOLVR_INI_PATH;
+        loadIniOnly();
+    }
+
+    void Config::setFlashlightLocation(const FlashlightLocation location)
+    {
+        flashlightLocation = location;
+        saveIniConfigValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
+    }
+
+    void Config::toggleIsHoloPipboy()
+    {
+        isHoloPipboy = !isHoloPipboy;
+        saveIniConfigValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
+    }
+
+    void Config::toggleDampenPipboyScreen()
+    {
+        dampenPipboyScreenMode = static_cast<DampenPipboyScreenMode>((static_cast<uint8_t>(dampenPipboyScreenMode) + 1) % 3);
+        saveIniConfigValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
+    }
+
+    void Config::togglePipBoyOpenWhenLookAt()
+    {
+        pipboyOpenWhenLookAt = !pipboyOpenWhenLookAt;
+        saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
+    }
+
+    void Config::savePipboyScale(const float scale)
+    {
+        pipBoyScale = scale;
+        saveIniConfigValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
+    }
+
+    void Config::saveIsPlayingSeated(const bool iIsPlayingSeated)
+    {
+        this->isPlayingSeated = iIsPlayingSeated;
+        saveIniConfigValue(INI_SECTION_MAIN, "bIsPlayingSeated", iIsPlayingSeated);
+    }
+
+    void Config::saveHideHeadAndEquipment(const bool hide)
+    {
+        hideHead = hide;
+        hideEquipment = hide;
+        saveIniConfigValue(INI_SECTION_MAIN, "HideHead", hide);
+        saveIniConfigValue(INI_SECTION_MAIN, "HideEquipment", hide);
+    }
+
+    void Config::saveDampenHands(const bool iDampenHands)
+    {
+        this->dampenHands = iDampenHands;
+        saveIniConfigValue(INI_SECTION_MAIN, "DampenHands", iDampenHands);
+    }
+
+    float Config::getPlayerBodyOffsetUp() const
+    {
+        if (isPlayingSeated) {
+            return f4vr::isInPowerArmor() ? playerBodyOffsetUpSittingInPA : playerBodyOffsetUpSitting;
+        }
+        return f4vr::isInPowerArmor() ? playerBodyOffsetUpStandingInPA : playerBodyOffsetUpStanding;
+    }
+
+    void Config::setPlayerBodyOffsetUp(const float value)
+    {
+        if (isPlayingSeated) {
+            if (f4vr::isInPowerArmor()) {
+                playerBodyOffsetUpSittingInPA = value;
+            } else {
+                playerBodyOffsetUpSitting = value;
+            }
+        } else {
+            if (f4vr::isInPowerArmor()) {
+                playerBodyOffsetUpStandingInPA = value;
+            } else {
+                playerBodyOffsetUpStanding = value;
+            }
+        }
+    }
+
+    float Config::getPlayerBodyOffsetForward() const
+    {
+        if (isPlayingSeated) {
+            return f4vr::isInPowerArmor() ? playerBodyOffsetForwardSittingInPA : playerBodyOffsetForwardSitting;
+        }
+        return f4vr::isInPowerArmor() ? playerBodyOffsetForwardStandingInPA : playerBodyOffsetForwardStanding;
+    }
+
+    void Config::setPlayerBodyOffsetForward(const float value)
+    {
+        if (isPlayingSeated) {
+            if (f4vr::isInPowerArmor()) {
+                playerBodyOffsetForwardSittingInPA = value;
+            } else {
+                playerBodyOffsetForwardSitting = value;
+            }
+        } else {
+            if (f4vr::isInPowerArmor()) {
+                playerBodyOffsetForwardStandingInPA = value;
+            } else {
+                playerBodyOffsetForwardStanding = value;
+            }
+        }
+    }
+
+    float Config::getPlayerHMDOffsetUp() const
+    {
+        if (isPlayingSeated) {
+            return f4vr::isInPowerArmor() ? playerHMDOffsetUpSittingInPA : playerHMDOffsetUpSitting;
+        }
+        return f4vr::isInPowerArmor() ? playerHMDOffsetUpStandingInPA : playerHMDOffsetUpStanding;
+    }
+
+    void Config::setPlayerHMDOffsetUp(const float value)
+    {
+        if (isPlayingSeated) {
+            if (f4vr::isInPowerArmor()) {
+                playerHMDOffsetUpSittingInPA = value;
+            } else {
+                playerHMDOffsetUpSitting = value;
+            }
+        } else {
+            if (f4vr::isInPowerArmor()) {
+                playerHMDOffsetUpStandingInPA = value;
+            } else {
+                playerHMDOffsetUpStanding = value;
+            }
+        }
+    }
+
+    /**
+     * Open the FRIK.ini file in Notepad for editing.
+     */
+    void Config::openInNotepad()
+    {
+        ShellExecuteA(nullptr, "open", "notepad.exe", FRIK_INI_PATH.c_str(), nullptr, SW_SHOWNORMAL);
+    }
+
+    /**
+     * Get the Pipboy offset of the currently used Pipboy type.
+     */
+    RE::NiTransform Config::getPipboyOffset()
+    {
+        return _pipboyOffsets[getPipboyOffsetKey()];
+    }
+
+    /**
+     * Save the Pipboy offset to the offsets map.
+     */
+    void Config::savePipboyOffset(const RE::NiTransform& transform)
+    {
+        const auto key = getPipboyOffsetKey();
+        _pipboyOffsets[key] = transform;
+        saveOffsetsToJsonFile(key, transform, getPipboyOffsetPath());
+    }
+
+    /**
+     * Get weapon offsets for given weapon name and mode.
+     * Use non-PA mode if PA mode offsets not found.
+     */
+    std::optional<RE::NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const
+    {
+        const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode()));
+        if (it != _weaponsOffsets.end()) {
+            return it->second;
+        }
+        // Check without PA (historic)
+        return inPA ? getWeaponOffsets(name, mode, false) : std::nullopt;
+    }
+
+    /**
+     * Save the weapon offset to config and filesystem.
+     */
+    void Config::saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA)
+    {
+        const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
+        _weaponsOffsets[fullName] = transform;
+        saveOffsetsToJsonFile(fullName, transform, WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json");
+    }
+
+    /**
+     * Remove the weapon offset from the config and filesystem.
+     */
+    void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool replaceWithEmbedded)
+    {
+        const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
+        _weaponsOffsets.erase(fullName);
+        if (replaceWithEmbedded && _weaponsEmbeddedOffsets.contains(fullName)) {
+            _weaponsOffsets[fullName] = _weaponsEmbeddedOffsets[fullName];
+        }
+
+        const auto path = WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json";
+        logger::info("Removing weapon offsets '{}', file: '{}'", fullName.c_str(), path.c_str());
+        if (!std::filesystem::remove(WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json")) {
+            logger::warn("Failed to remove weapon offset file: {}", fullName.c_str());
+        }
+    }
+
     void Config::loadIniConfigInternal(const CSimpleIniA& ini)
     {
         // Player/Skeleton
@@ -142,24 +263,24 @@ namespace frik
         hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "HideSkin");
 
         // is the player playing standing or sitting
-        isPlayingSitting = ini.GetBoolValue(INI_SECTION_MAIN, "bIsPlayingSitting", false);
+        isPlayingSeated = ini.GetBoolValue(INI_SECTION_MAIN, "bIsPlayingSeated", false);
 
         // Camera and Body offsets
-        playerHMDOffsetUpStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStanding", 0.0));
-        playerBodyOffsetUpStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStanding", 0.0));
-        playerBodyOffsetForwardStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStanding", 0.0));
-        playerHMDOffsetUpSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSitting", 0.0));
-        playerBodyOffsetUpSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSitting", 0.0));
-        playerBodyOffsetForwardSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSitting", 0.0));
+        playerHMDOffsetUpStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStanding", 8.0f));
+        playerBodyOffsetUpStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStanding", -3.0f));
+        playerBodyOffsetForwardStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStanding", -3.0f));
+        playerHMDOffsetUpSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSitting", 31.0f));
+        playerBodyOffsetUpSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSitting", -4.0f));
+        playerBodyOffsetForwardSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSitting", 2.0f));
 
-        playerHMDOffsetUpStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStandingInPA", 0.0));
-        playerBodyOffsetUpStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStandingInPA", 0.0));
-        playerBodyOffsetForwardStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStandingInPA", 0.0));
-        playerHMDOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSittingInPA", 0.0));
-        playerBodyOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", 0.0));
-        playerBodyOffsetForwardSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", 0.0));
+        playerHMDOffsetUpStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStandingInPA", 23.0f));
+        playerBodyOffsetUpStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStandingInPA", -8.0f));
+        playerBodyOffsetForwardStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStandingInPA", -15.0f));
+        playerHMDOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSittingInPA", 53.0f));
+        playerBodyOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", -7.0f));
+        playerBodyOffsetForwardSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", -9.0f));
 
-        comfortSneakHackStaticBodyPitchAngle = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fComfortSneakHackStaticBodyPitchAngle", 0.0));
+        comfortSneakHackStaticBodyPitchAngle = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fComfortSneakHackStaticBodyPitchAngle", 30.0f));
 
         // Pipboy
         pipBoyScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipboyScale", 1.0));
@@ -229,6 +350,41 @@ namespace frik
         disableInteriorSmoothingHorizontal = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothingHorizontal", true);
     }
 
+    void Config::saveIniConfigInternal(CSimpleIniA& ini)
+    {
+        ini.SetBoolValue(INI_SECTION_MAIN, "bIsPlayingSeated", isPlayingSeated);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fVrScale", fVrScale);
+        ini.SetBoolValue(INI_SECTION_MAIN, "HideHead", hideHead);
+        ini.SetBoolValue(INI_SECTION_MAIN, "HideEquipment", hideEquipment);
+
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStanding", playerBodyOffsetUpStanding);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStanding", playerBodyOffsetForwardStanding);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStanding", playerHMDOffsetUpStanding);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSitting", playerBodyOffsetUpSitting);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSitting", playerBodyOffsetForwardSitting);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSitting", playerHMDOffsetUpSitting);
+
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStandingInPA", playerBodyOffsetUpStandingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStandingInPA", playerBodyOffsetForwardStandingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStandingInPA", playerHMDOffsetUpStandingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", playerBodyOffsetUpSittingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", playerBodyOffsetForwardSittingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSittingInPA", playerHMDOffsetUpSittingInPA);
+
+        ini.SetDoubleValue(INI_SECTION_MAIN, "armLength", armLength);
+        ini.SetBoolValue(INI_SECTION_MAIN, "hidePipboy", hidePipboy);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
+        ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
+        ini.SetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
+        ini.SetLongValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
+        ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
+        ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);
+
+        ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButton", enableGripButtonToGrap);
+        ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", enableGripButtonToLetGo);
+        ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", onePressGripButton);
+    }
+
     /**
      * Load hide meshes from config ini files. Creating if it doesn't exist on the disk.
      */
@@ -268,117 +424,6 @@ namespace frik
             if (slotToIndexMap.contains(geometry)) {
                 _hideEquipSlotIndexes.push_back(slotToIndexMap[geometry]);
             }
-        }
-    }
-
-    void Config::saveIniConfigInternal(CSimpleIniA& ini)
-    {
-        ini.SetBoolValue(INI_SECTION_MAIN, "bIsPlayingSitting", isPlayingSitting);
-
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStanding", playerBodyOffsetUpStanding);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStanding", playerBodyOffsetForwardStanding);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStanding", playerHMDOffsetUpStanding);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSitting", playerBodyOffsetUpSitting);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSitting", playerBodyOffsetForwardSitting);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSitting", playerHMDOffsetUpSitting);
-
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStandingInPA", playerBodyOffsetUpStandingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStandingInPA", playerBodyOffsetForwardStandingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStandingInPA", playerHMDOffsetUpStandingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", playerBodyOffsetUpSittingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", playerBodyOffsetForwardSittingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSittingInPA", playerHMDOffsetUpSittingInPA);
-
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fVrScale", fVrScale);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "armLength", armLength);
-        ini.SetBoolValue(INI_SECTION_MAIN, "showPAHUD", showPAHUD);
-        ini.SetBoolValue(INI_SECTION_MAIN, "hidePipboy", hidePipboy);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
-        ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
-        ini.SetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
-        ini.SetLongValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
-        ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
-        ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", dampenHandsRotation);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", dampenHandsTranslation);
-        ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButton", enableGripButtonToGrap);
-        ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", enableGripButtonToLetGo);
-        ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", onePressGripButton);
-    }
-
-    std::string Config::getPipboyOffsetKey() const
-    {
-        if (isFalloutLondonVR) {
-            return "AttaboyPosition";
-        }
-        return isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
-    }
-
-    std::string Config::getPipboyOffsetPath() const
-    {
-        if (isFalloutLondonVR) {
-            return PIPBOY_ATTABOY_OFFSETS_PATH;
-        }
-        return isHoloPipboy ? PIPBOY_HOLO_OFFSETS_PATH : PIPBOY_SCREEN_OFFSETS_PATH;
-    }
-
-    /**
-     * Get the Pipboy offset of the currently used Pipboy type.
-     */
-    RE::NiTransform Config::getPipboyOffset()
-    {
-        return _pipboyOffsets[getPipboyOffsetKey()];
-    }
-
-    /**
-     * Save the Pipboy offset to the offsets map.
-     */
-    void Config::savePipboyOffset(const RE::NiTransform& transform)
-    {
-        const auto key = getPipboyOffsetKey();
-        _pipboyOffsets[key] = transform;
-        saveOffsetsToJsonFile(key, transform, getPipboyOffsetPath());
-    }
-
-    /**
-     * Get weapon offsets for given weapon name and mode.
-     * Use non-PA mode if PA mode offsets not found.
-     */
-    std::optional<RE::NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const
-    {
-        const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode()));
-        if (it != _weaponsOffsets.end()) {
-            return it->second;
-        }
-        // Check without PA (historic)
-        return inPA ? getWeaponOffsets(name, mode, false) : std::nullopt;
-    }
-
-    /**
-     * Save the weapon offset to config and filesystem.
-     */
-    void Config::saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA)
-    {
-        const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
-        _weaponsOffsets[fullName] = transform;
-        saveOffsetsToJsonFile(fullName, transform, WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json");
-    }
-
-    /**
-     * Remove the weapon offset from the config and filesystem.
-     */
-    void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool replaceWithEmbedded)
-    {
-        const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
-        _weaponsOffsets.erase(fullName);
-        if (replaceWithEmbedded && _weaponsEmbeddedOffsets.contains(fullName)) {
-            _weaponsOffsets[fullName] = _weaponsEmbeddedOffsets[fullName];
-        }
-
-        const auto path = WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json";
-        logger::info("Removing weapon offsets '{}', file: '{}'", fullName.c_str(), path.c_str());
-        if (!std::filesystem::remove(WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json")) {
-            logger::warn("Failed to remove weapon offset file: {}", fullName.c_str());
         }
     }
 
@@ -467,5 +512,21 @@ namespace frik
         default:
             throw std::invalid_argument("Invalid weapon offset mode");
         }
+    }
+
+    std::string Config::getPipboyOffsetKey() const
+    {
+        if (isFalloutLondonVR) {
+            return "AttaboyPosition";
+        }
+        return isHoloPipboy ? "HoloPipboyPosition" : "PipboyPosition";
+    }
+
+    std::string Config::getPipboyOffsetPath() const
+    {
+        if (isFalloutLondonVR) {
+            return PIPBOY_ATTABOY_OFFSETS_PATH;
+        }
+        return isHoloPipboy ? PIPBOY_HOLO_OFFSETS_PATH : PIPBOY_SCREEN_OFFSETS_PATH;
     }
 }

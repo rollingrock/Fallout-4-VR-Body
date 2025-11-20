@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/UIContainer.h"
+#include "ui/UIToggleGroupContainer.h"
 
 namespace frik
 {
@@ -9,7 +10,8 @@ namespace frik
      */
     enum class BodyAdjustmentConfigTarget : uint8_t
     {
-        BodyHeight = 0,
+        None = 0,
+        BodyHeight,
         BodyForwardOffset,
         BodyArmsLength,
         VRScale,
@@ -24,7 +26,10 @@ namespace frik
 
     private:
         void createConfigUI();
+        void togglePlayingSeated(bool seated);
+        void toggleHideHead(bool hide);
         void closeConfig();
+        static void saveHideHeadAndEquipment(bool enabled);
         void handleAdjustment() const;
         static void handleHeightAdjustment();
         static void handleForwardAdjustment();
@@ -35,9 +40,16 @@ namespace frik
 
         std::function<void()> _onClose;
 
-        BodyAdjustmentConfigTarget _configTarget = BodyAdjustmentConfigTarget::BodyHeight;
+        BodyAdjustmentConfigTarget _configTarget = BodyAdjustmentConfigTarget::None;
 
         // configuration UI
         std::shared_ptr<vrui::UIContainer> _configUI;
+
+        std::shared_ptr<vrui::UIToggleGroupContainer> _row2Container;
+        std::shared_ptr<vrui::UIWidget> _noneMsg;
+        std::shared_ptr<vrui::UIWidget> _heightMsg;
+        std::shared_ptr<vrui::UIWidget> _forwardMsg;
+        std::shared_ptr<vrui::UIWidget> _armsLengthMsg;
+        std::shared_ptr<vrui::UIWidget> _vrScaleMsg;
     };
 }

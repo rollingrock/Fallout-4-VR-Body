@@ -30,13 +30,13 @@ namespace frik
 
     void BodyAdjustmentSubConfigMode::onFrameUpdate() const
     {
-        handleAdjustment();
+        _noneMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::None);
+        _heightMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::BodyHeight);
+        _forwardMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::BodyForwardOffset);
+        _armsLengthMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::BodyArmsLength);
+        _vrScaleMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::VRScale);
 
-        // save
-        if (f4vr::VRControllers.isLongPressed(f4vr::Hand::Primary, vr::EVRButtonId::k_EButton_A)) {
-            f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, .6f, .5f);
-            saveConfig();
-        }
+        handleAdjustment();
     }
 
     /**
@@ -44,8 +44,19 @@ namespace frik
      */
     void BodyAdjustmentSubConfigMode::createConfigUI()
     {
+        const auto playSeattedBtn = std::make_shared<UIToggleButton>("FRIK/ui_main_conf_btn_play_seated.nif");
+        playSeattedBtn->setToggleState(g_config.isPlayingSeated);
+        playSeattedBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { togglePlayingSeated(enabled); });
+
+        const auto hideHeadBtn = std::make_shared<UIToggleButton>("FRIK/ui_main_conf_btn_hide_head.nif");
+        hideHeadBtn->setToggleState(g_config.hideHead);
+        hideHeadBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { toggleHideHead(enabled); });
+
+        const auto row1Container = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.5f);
+        row1Container->addElement(playSeattedBtn);
+        row1Container->addElement(hideHeadBtn);
+
         const auto heightToggleBtn = std::make_shared<UIToggleButton>("FRIK/ui_main_conf_btn_body_vertical.nif");
-        heightToggleBtn->setToggleState(true);
         heightToggleBtn->setOnToggleHandler([this](UIWidget*, bool) { _configTarget = BodyAdjustmentConfigTarget::BodyHeight; });
 
         const auto forwardToggleBtn = std::make_shared<UIToggleButton>("FRIK/ui_main_conf_btn_body_forward.nif");
@@ -57,11 +68,11 @@ namespace frik
         const auto vrScaleToggleBtn = std::make_shared<UIToggleButton>("FRIK/ui_main_conf_btn_vr_scale.nif");
         vrScaleToggleBtn->setOnToggleHandler([this](UIWidget*, bool) { _configTarget = BodyAdjustmentConfigTarget::VRScale; });
 
-        const auto row1Container = std::make_shared<UIToggleGroupContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.3f);
-        row1Container->addElement(heightToggleBtn);
-        row1Container->addElement(forwardToggleBtn);
-        row1Container->addElement(armsLengthToggleBtn);
-        row1Container->addElement(vrScaleToggleBtn);
+        _row2Container = std::make_shared<UIToggleGroupContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
+        _row2Container->addElement(heightToggleBtn);
+        _row2Container->addElement(forwardToggleBtn);
+        _row2Container->addElement(armsLengthToggleBtn);
+        _row2Container->addElement(vrScaleToggleBtn);
 
         const auto saveBtn = std::make_shared<UIButton>("FRIK/ui_common_btn_save.nif");
         saveBtn->setOnPressHandler([this](UIWidget*) { saveConfig(); });
@@ -72,19 +83,63 @@ namespace frik
         const auto exitBtn = std::make_shared<UIButton>("FRIK/ui_common_btn_back.nif");
         exitBtn->setOnPressHandler([this](UIWidget*) { closeConfig(); });
 
-        const auto row2Container = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
-        row2Container->addElement(saveBtn);
-        row2Container->addElement(resetBtn);
-        row2Container->addElement(exitBtn);
+        const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
+        row3Container->addElement(saveBtn);
+        row3Container->addElement(resetBtn);
+        row3Container->addElement(exitBtn);
 
-        const auto header = std::make_shared<UIWidget>("FRIK/ui_main_conf_title_body_adjust.nif", 0.4f);
+        _noneMsg = std::make_shared<UIWidget>("FRIK/ui_main_conf_msg_node_selected.nif");
+        _heightMsg = std::make_shared<UIWidget>("FRIK/ui_main_conf_msg_body_vertical.nif");
+        _forwardMsg = std::make_shared<UIWidget>("FRIK/ui_main_conf_msg_body_forward.nif");
+        _armsLengthMsg = std::make_shared<UIWidget>("FRIK/ui_main_conf_msg_arms_length.nif");
+        _vrScaleMsg = std::make_shared<UIWidget>("FRIK/ui_main_conf_msg_vr_scale.nif");
+        const auto toggleSelfieMsg = std::make_shared<UIWidget>("FRIK/ui_main_conf_msg_toggle_selfie.nif");
 
-        _configUI = std::make_shared<UIContainer>("BodyAdjustConfig", UIContainerLayout::VerticalDown, 0.4f, 1.8f);
+        const auto row4Container = std::make_shared<UIContainer>("Row4", UIContainerLayout::HorizontalCenter, 0.3f, 0.7f);
+        row4Container->addElement(_noneMsg);
+        row4Container->addElement(_heightMsg);
+        row4Container->addElement(_forwardMsg);
+        row4Container->addElement(_armsLengthMsg);
+        row4Container->addElement(_vrScaleMsg);
+        row4Container->addElement(toggleSelfieMsg);
+
+        const auto header = std::make_shared<UIWidget>("FRIK/ui_main_conf_title_body_adjust.nif", 0.5f);
+
+        _configUI = std::make_shared<UIContainer>("BodyAdjustConfig", UIContainerLayout::VerticalDown, 0.35f, 1.8f);
         _configUI->addElement(header);
         _configUI->addElement(row1Container);
-        _configUI->addElement(row2Container);
+        _configUI->addElement(_row2Container);
+        _configUI->addElement(row3Container);
+        _configUI->addElement(row4Container);
 
-        g_uiManager->attachPresetToPrimaryWandLeft(_configUI, { -1, 4, 0 });
+        g_uiManager->attachPresetToPrimaryWandTop(_configUI, { 0, 0, 20 });
+    }
+
+    /**
+     * Toggle seated play.
+     */
+    void BodyAdjustmentSubConfigMode::togglePlayingSeated(const bool seated)
+    {
+        g_config.saveIsPlayingSeated(seated);
+        _configTarget = BodyAdjustmentConfigTarget::None;
+    }
+
+    /**
+     * Toggle head hiding on\off.
+     * Show notification regarding not hiding in selfie mode for player not to be confused.
+     */
+    void BodyAdjustmentSubConfigMode::toggleHideHead(const bool hide)
+    {
+        saveHideHeadAndEquipment(hide);
+        _row2Container->clearToggleState();
+        _configTarget = BodyAdjustmentConfigTarget::None;
+        if (hide) {
+            std::string msg = "Player head and head equipment are hidden";
+            if (g_config.selfieIgnoreHideFlags) {
+                msg = msg + "\nNote: The head is NOT hidden in selfie mode!";
+            }
+            f4vr::showNotification(msg);
+        }
     }
 
     /**
@@ -107,6 +162,15 @@ namespace frik
     }
 
     /**
+     * Set if to hide the player head and equipment (helmet, glasses, etc.)
+     * Set together to simplify for the player, if they want specific they can edit the ini.
+     */
+    void BodyAdjustmentSubConfigMode::saveHideHeadAndEquipment(const bool enabled)
+    {
+        g_config.saveHideHeadAndEquipment(enabled);
+    }
+
+    /**
      * Delegate adjustment to the right target.
      * Read the thumbstick value and change the taget values accordingly.
      */
@@ -125,6 +189,8 @@ namespace frik
         case BodyAdjustmentConfigTarget::VRScale:
             handleVRScaleAdjustment();
             break;
+        case BodyAdjustmentConfigTarget::None:
+            break;
         }
     }
 
@@ -132,6 +198,7 @@ namespace frik
     {
         const auto primAxisY = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary).y;
         g_config.setPlayerHMDOffsetUp(g_config.getPlayerHMDOffsetUp() + correctAdjustmentValue(primAxisY, 4));
+        g_config.setPlayerBodyOffsetUp(g_config.getPlayerBodyOffsetUp() - 0.125f * correctAdjustmentValue(primAxisY, 4));
 
         const auto offAxisY = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Offhand).y;
         g_config.setPlayerBodyOffsetUp(g_config.getPlayerBodyOffsetUp() - correctAdjustmentValue(offAxisY, 4));
@@ -170,6 +237,7 @@ namespace frik
     {
         Config defaultConfig;
         defaultConfig.loadEmbeddedDefaultOnly();
+        defaultConfig.isPlayingSeated = g_config.isPlayingSeated;
 
         switch (_configTarget) {
         case BodyAdjustmentConfigTarget::BodyHeight:
@@ -187,8 +255,11 @@ namespace frik
             break;
         case BodyAdjustmentConfigTarget::VRScale:
             f4vr::showNotification("Reset VR Scale body adjustment config");
-            g_config.fVrScale += defaultConfig.fVrScale;
+            g_config.fVrScale = defaultConfig.fVrScale;
             updateVRScaleGameConfig();
+            break;
+        case BodyAdjustmentConfigTarget::None:
+            f4vr::showNotification("Please select body adjustment to reset");
             break;
         }
     }

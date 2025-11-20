@@ -25,6 +25,7 @@ namespace frik
     private:
         void createMainConfigUI();
         void openBodyAdjustmentSubConfigUI();
+        static void toggleSelfieMode();
         static TwoHandedGripMode getTwoHandedGripMode();
         static void updateTwoHandedGripMode(TwoHandedGripMode mode);
         void openPipboyConfigUI();

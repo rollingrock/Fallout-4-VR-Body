@@ -552,6 +552,6 @@ namespace frik
         // start hidden by default (will be set visible in frame update if it should be)
         _configUI->setVisibility(false);
 
-        g_uiManager->attachPresetToPrimaryWandLeft(_configUI, { -1, 4, 0 });
+        g_uiManager->attachPresetToPrimaryWandLeft(_configUI, { -16, 4, -5 });
     }
 }
