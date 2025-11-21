@@ -15,6 +15,11 @@ namespace frik
      */
     void PipboyPhysicalHandler::operate(const PipboyPage lastPipboyPage)
     {
+        if (g_config.isFalloutLondonVR) {
+            // FOLVR is not currently supported
+            return;
+        }
+
         if (g_config.pipboyHolsterWeaponForOperation) {
             if (!Pipboy::isPlayerLookingAtPipboy(false)) {
                 // no physical Pipboy operation if the player is not looking at it when weapon holstering is enabled

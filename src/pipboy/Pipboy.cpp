@@ -27,7 +27,7 @@ namespace
      * Get the correct Pipboy root nif to use as a replacement for the on-wrist Pipboy.
      * Special handling for Fallout London VR mod.
      */
-    const char* getPipboyReplacmentNifPath()
+    const char* getPipboyReplacementNifPath()
     {
         if (frik::g_config.isFalloutLondonVR) {
             return "FRIK/AttaboyVR.nif";
@@ -217,7 +217,7 @@ namespace frik
             return;
         }
 
-        if (g_config.hidePipboy) {
+        if (g_config.hidePipboy || g_config.isFalloutLondonVR) {
             if (pipboy->local.scale != 0.0) {
                 pipboy->local.scale = 0.0;
                 f4vr::setNodeVisibilityDeep(pipboy, false);
@@ -295,7 +295,9 @@ namespace frik
             _originalPipboyRootNifOnlyNode->local.scale = 0;
         }
 
-        const auto newPipboyRootNifOnlyNode = f4vr::loadNifFromFile(getPipboyReplacmentNifPath());
+        const auto pipboyReplacementNifPath = getPipboyReplacementNifPath();
+        logger::info("Loading pipboy replacement nif '{}'", pipboyReplacementNifPath);
+        const auto newPipboyRootNifOnlyNode = f4vr::loadNifFromFile(pipboyReplacementNifPath);
         const auto newScreen = f4vr::findNode(newPipboyRootNifOnlyNode, "Screen");
         if (!newScreen) {
             logger::error("Failed to find Pipboy screen node in the loaded nif!");
@@ -308,7 +310,8 @@ namespace frik
         pn->ScreenNode = newScreen;
 
         // attach where the 3rd-person Pipboy is on the arm
-        getPipboyModelOnArmNode()->AttachChild(newPipboyRootNifOnlyNode, false);
+        const auto pipboyAttachNode = g_config.isFalloutLondonVR ? _skelly->getLeftArm().hand->IsNode() : getPipboyModelOnArmNode();
+        pipboyAttachNode->AttachChild(newPipboyRootNifOnlyNode, false);
 
         _newPipboyRootNifOnlyNode = newPipboyRootNifOnlyNode;
 
@@ -325,6 +328,9 @@ namespace frik
      */
     void Pipboy::showHideCorrectPipboyMesh(const std::string& itemHide, const std::string& itemShow) const
     {
+        if (g_config.isFalloutLondonVR) {
+            return;
+        }
         if (const auto pipboy3Rd = getPipboyModelOnArmNode()) {
             pipboy3Rd->local.scale = g_config.pipBoyScale;
 
@@ -421,7 +427,7 @@ namespace frik
      */
     void Pipboy::checkTurningOnByLookingAt()
     {
-        if (_isOpen || !g_config.pipboyOpenWhenLookAt || !isPlayerLookingAtPipboy()) {
+        if (_isOpen || !g_config.pipboyOpenWhenLookAt || !isPlayerLookingAtPipboy() || g_config.isFalloutLondonVR) {
             _startedLookingAtPip = 0;
             return;
         }
@@ -440,7 +446,7 @@ namespace frik
      */
     void Pipboy::checkTurningOffByLookingAway()
     {
-        if (!_isOpen) {
+        if (!_isOpen || g_config.isFalloutLondonVR) {
             return;
         }
 
@@ -672,9 +678,6 @@ namespace frik
             return nullptr;
         }
         const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-        if (g_config.isFalloutLondonVR) {
-            return arm.hand->IsNode();
-        }
         const auto boneNode = arm.forearm3 ? f4vr::findAVObject(arm.forearm3, "PipboyBone") : nullptr;
         return boneNode ? boneNode->IsNode() : arm.forearm3->IsNode();
     }
