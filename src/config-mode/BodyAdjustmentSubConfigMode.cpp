@@ -3,10 +3,10 @@
 #include "Config.h"
 #include "utils.h"
 #include "skeleton/HandPose.h"
-#include "ui/UIButton.h"
-#include "ui/UIManager.h"
-#include "ui/UIToggleGroupContainer.h"
-#include "ui/UIWidget.h"
+#include "vrui/UIButton.h"
+#include "vrui/UIManager.h"
+#include "vrui/UIToggleGroupContainer.h"
+#include "vrui/UIWidget.h"
 
 using namespace vrui;
 using namespace common;

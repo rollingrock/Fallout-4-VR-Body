@@ -6,11 +6,11 @@
 #include "common/MatrixUtils.h"
 #include "f4vr/VRControllersManager.h"
 #include "skeleton/Skeleton.h"
-#include "ui/UIButton.h"
-#include "ui/UIContainer.h"
-#include "ui/UIManager.h"
-#include "ui/UIToggleButton.h"
-#include "ui/UIToggleGroupContainer.h"
+#include "vrui/UIButton.h"
+#include "vrui/UIContainer.h"
+#include "vrui/UIManager.h"
+#include "vrui/UIToggleButton.h"
+#include "vrui/UIToggleGroupContainer.h"
 
 using namespace vrui;
 using namespace common;

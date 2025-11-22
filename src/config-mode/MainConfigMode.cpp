@@ -1,9 +1,9 @@
 #include "MainConfigMode.h"
 
 #include "FRIK.h"
-#include "ui/UIManager.h"
-#include "ui/UIMultiStateToggleButton.h"
-#include "ui/UIToggleGroupContainer.h"
+#include "vrui/UIManager.h"
+#include "vrui/UIMultiStateToggleButton.h"
+#include "vrui/UIToggleGroupContainer.h"
 
 using namespace vrui;
 using namespace common;

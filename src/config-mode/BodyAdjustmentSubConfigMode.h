@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ui/UIContainer.h"
-#include "ui/UIToggleGroupContainer.h"
+#include "vrui/UIContainer.h"
+#include "vrui/UIToggleGroupContainer.h"
 
 namespace frik
 {

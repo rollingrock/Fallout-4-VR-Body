@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ui/UIButton.h"
-#include "ui/UIContainer.h"
-#include "ui/UIToggleButton.h"
+#include "vrui/UIButton.h"
+#include "vrui/UIContainer.h"
+#include "vrui/UIToggleButton.h"
 
 namespace frik
 {

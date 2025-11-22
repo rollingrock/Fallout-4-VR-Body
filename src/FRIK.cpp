@@ -13,8 +13,8 @@
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
 #include "smooth-movement/SmoothMovementVR.h"
-#include "ui/UIManager.h"
-#include "ui/UIModAdapter.h"
+#include "vrui/UIManager.h"
+#include "vrui/UIModAdapter.h"
 
 using namespace common;
 
