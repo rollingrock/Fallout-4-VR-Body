@@ -6,7 +6,6 @@
 #include "PapyrusApi.h"
 #include "PapyrusGateway.h"
 #include "utils.h"
-#include "common/Logger.h"
 #include "config-mode/ConfigurationMode.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"

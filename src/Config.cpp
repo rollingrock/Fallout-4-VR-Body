@@ -5,7 +5,6 @@
 #include <filesystem>
 
 #include "common/CommonUtils.h"
-#include "common/Logger.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/VRControllersManager.h"
 

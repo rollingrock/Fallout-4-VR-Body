@@ -5,7 +5,6 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "HandPose.h"
-#include "common/Logger.h"
 #include "common/MatrixUtils.h"
 #include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"

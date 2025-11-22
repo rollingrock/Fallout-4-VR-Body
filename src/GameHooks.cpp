@@ -3,7 +3,6 @@
 #include "xbyak/xbyak.h"
 
 #include "FRIK.h"
-#include "common/Logger.h"
 
 namespace
 {
@@ -125,7 +124,7 @@ namespace
 
         // Patch original code to jump to our patch
         F4SE::GetTrampoline().write_branch<6>(invJumpFrom.address(), std::uintptr_t(code.getCode()));
-        common::logger::debug("Patched InventoryInfBug at 0x{:X}, size:{}", lockForRead_branch.address(), code.getSize());
+        logger::debug("Patched InventoryInfBug at 0x{:X}, size:{}", lockForRead_branch.address(), code.getSize());
     }
 
     void patchLockForReadMask()
@@ -151,7 +150,7 @@ namespace
 
         // Patch original code to jump to our patch
         F4SE::GetTrampoline().write_branch<5>(lockForRead_branch.address(), std::uintptr_t(code.getCode()));
-        common::logger::debug("Patched LockForReadMask at 0x{:X}, size:{}", lockForRead_branch.address(), code.getSize());
+        logger::debug("Patched LockForReadMask at 0x{:X}, size:{}", lockForRead_branch.address(), code.getSize());
     }
 
     void patchPipeGunScopeCrash()
@@ -187,7 +186,7 @@ namespace
 
         // Patch original code to jump to our patch
         F4SE::GetTrampoline().write_branch<5>(shaderEffectPatch.address(), std::uintptr_t(code.getCode()));
-        common::logger::debug("Patched PipeGunScopeCrash at 0x{:X}, size:{}", lockForRead_branch.address(), code.getSize());
+        logger::debug("Patched PipeGunScopeCrash at 0x{:X}, size:{}", lockForRead_branch.address(), code.getSize());
     }
 
     void patchBody()
@@ -200,7 +199,7 @@ namespace
         const auto patchAddress2 = REL::Offset(0xf29ac8).address();
         REL::safe_write(patchAddress2, 0x9090D231); // This was movzx EDX,R14B.   Want to just zero out EDX with an xor instead
 
-        common::logger::info("Patched Body at 0x{:X} and 0x{:X}", patchAddress, patchAddress2);
+        logger::info("Patched Body at 0x{:X} and 0x{:X}", patchAddress, patchAddress2);
     }
 }
 

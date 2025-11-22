@@ -3,7 +3,6 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "utils.h"
-#include "common/Logger.h"
 #include "f4vr/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 

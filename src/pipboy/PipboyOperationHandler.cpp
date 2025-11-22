@@ -6,7 +6,6 @@
 #include "FRIK.h"
 #include "utils.h"
 #include "common/CommonUtils.h"
-#include "common/Logger.h"
 #include "f4vr/scaleformUtils.h"
 
 using namespace RE::Scaleform;
@@ -113,7 +112,7 @@ namespace frik
     {
         const auto root = getPipboyMenuRoot();
         if (!root) {
-            common::logger::warn<>("Pipboy operation failed, root is null");
+            logger::warn<>("Pipboy operation failed, root is null");
             return;
         }
 

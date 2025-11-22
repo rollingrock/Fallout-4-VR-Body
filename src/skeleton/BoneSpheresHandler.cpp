@@ -3,8 +3,6 @@
 #include <ranges>
 
 #include "FRIK.h"
-#include "common/CommonUtils.h"
-#include "common/Logger.h"
 #include "f4sevr/PapyrusNativeFunctions.h"
 
 using namespace common;
