@@ -32,8 +32,9 @@ namespace frik
         void hideShowPipboyOnArm() const;
         static void restoreDefaultPipboyModelIfNeeded();
         void updateSetupPipboyNodes();
+        void updateSetupAttaboyNodes();
         void showHideCorrectPipboyMesh(const std::string& itemHide, const std::string& itemShow) const;
-        void setupPipboyRootNif();
+        void setupPipboyRootNif() const;
         static void detachReplacedPipboyRootNif();
 
         void checkTurningOnByButton();
