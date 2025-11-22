@@ -6,9 +6,9 @@
 #include "utils.h"
 #include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
-#include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
+#include "vrcf/VRControllersManager.h"
 
 using namespace common;
 
