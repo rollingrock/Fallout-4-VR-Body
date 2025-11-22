@@ -409,15 +409,16 @@ namespace frik
     {
         const float dist = vec3Len(_skelly->getLeftArm().hand->world.translate - _attaboyOnBeltNode->world.translate);
         if (dist < g_config.attaboyGrabActivationDistance) {
-            if (isNowTimePassed(_lastAttaboyGrabTime, 1000)) {
-                triggerShortHaptic(f4vr::Hand::Left);
+            if (!_attaboyGrabHapticActivated) {
+                _attaboyGrabHapticActivated = true;
+                f4vr::VRControllers.triggerHaptic(f4vr::Hand::Left, 0.05f, 0.5f);
             }
             if (f4vr::VRControllers.isReleasedShort(f4vr::Hand::Left, g_config.attaboyGrabButtonId)) {
-                _lastAttaboyGrabTime = nowMillis();
+                triggerShortHaptic(f4vr::Hand::Left);
                 return true;
             }
         } else {
-            _lastAttaboyGrabTime = 0;
+            _attaboyGrabHapticActivated = false; // move hand away for activation area
         }
         return false;
     }

@@ -57,7 +57,7 @@ namespace frik
         PipboyPhysicalHandler _physicalHandler;
 
         bool _isOpen = false;
-        uint64_t _lastAttaboyGrabTime = 0;
+        bool _attaboyGrabHapticActivated = 0;
 
         // see exitPowerArmorBugFixHack method
         bool _exitPowerArmorFixFirstFrame = true;
