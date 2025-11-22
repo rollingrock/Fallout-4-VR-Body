@@ -77,7 +77,7 @@ namespace frik
         void togglePipBoyOpenWhenLookAt();
         void savePipboyScale(float scale);
         void saveIsPlayingSeated(bool iIsPlayingSeated);
-        void saveHideHeadAndEquipment(bool hide);
+        void saveHideHeadEquipment(bool hide);
         void saveDampenHands(bool iDampenHands);
 
         float getPlayerBodyOffsetUp() const;
@@ -104,7 +104,7 @@ namespace frik
 
         // Head Geometry Hide
         bool hideHead = false;
-        bool hideEquipment = false;
+        bool hideHeadEquipment = false;
         bool hideSkin = false;
         const std::vector<std::string>& faceGeometry() const { return _faceGeometry; }
         const std::vector<std::string>& skinGeometry() const { return _skinGeometry; }
@@ -128,6 +128,8 @@ namespace frik
         float playerHMDOffsetUpSittingInPA = 0;
         float playerBodyOffsetUpSittingInPA = 0;
         float playerBodyOffsetForwardSittingInPA = 0;
+
+        float headBackPositionOffset = 0;
 
         // Pipboy
         float pipBoyScale = 0;

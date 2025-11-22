@@ -92,12 +92,10 @@ namespace frik
         saveIniConfigValue(INI_SECTION_MAIN, "bIsPlayingSeated", iIsPlayingSeated);
     }
 
-    void Config::saveHideHeadAndEquipment(const bool hide)
+    void Config::saveHideHeadEquipment(const bool hide)
     {
-        hideHead = hide;
-        hideEquipment = hide;
-        saveIniConfigValue(INI_SECTION_MAIN, "HideHead", hide);
-        saveIniConfigValue(INI_SECTION_MAIN, "HideEquipment", hide);
+        hideHeadEquipment = hide;
+        saveIniConfigValue(INI_SECTION_MAIN, "bHidePlayerHeadEquipment", hide);
     }
 
     void Config::saveDampenHands(const bool iDampenHands)
@@ -258,9 +256,9 @@ namespace frik
         armLength = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "armLength", 36.74f));
 
         // Head Geometry Hide
-        hideHead = ini.GetBoolValue(INI_SECTION_MAIN, "HideHead");
-        hideEquipment = ini.GetBoolValue(INI_SECTION_MAIN, "HideEquipment");
-        hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "HideSkin");
+        hideHead = ini.GetBoolValue(INI_SECTION_MAIN, "bHidePlayerHead");
+        hideHeadEquipment = ini.GetBoolValue(INI_SECTION_MAIN, "bHidePlayerHeadEquipment");
+        hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "bHidePlayerSkin");
 
         // is the player playing standing or sitting
         isPlayingSeated = ini.GetBoolValue(INI_SECTION_MAIN, "bIsPlayingSeated", false);
@@ -279,6 +277,8 @@ namespace frik
         playerHMDOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSittingInPA", 53.0f));
         playerBodyOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", -7.0f));
         playerBodyOffsetForwardSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", -9.0f));
+
+        headBackPositionOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fHeadBackPositionOffset", 4));
 
         comfortSneakHackStaticBodyPitchAngle = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fComfortSneakHackStaticBodyPitchAngle", 30.0f));
 
@@ -354,8 +354,8 @@ namespace frik
     {
         ini.SetBoolValue(INI_SECTION_MAIN, "bIsPlayingSeated", isPlayingSeated);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fVrScale", fVrScale);
-        ini.SetBoolValue(INI_SECTION_MAIN, "HideHead", hideHead);
-        ini.SetBoolValue(INI_SECTION_MAIN, "HideEquipment", hideEquipment);
+        ini.SetBoolValue(INI_SECTION_MAIN, "bHidePlayerHead", hideHead);
+        ini.SetBoolValue(INI_SECTION_MAIN, "bHidePlayerHeadEquipment", hideHeadEquipment);
 
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStanding", playerBodyOffsetUpStanding);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStanding", playerBodyOffsetForwardStanding);

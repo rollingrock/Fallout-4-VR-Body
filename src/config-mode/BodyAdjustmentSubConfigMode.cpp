@@ -49,8 +49,8 @@ namespace frik
         playSeattedBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { togglePlayingSeated(enabled); });
 
         const auto hideHeadBtn = std::make_shared<UIToggleButton>("FRIK\\UI_Main_Config\\btn_hide_head.nif");
-        hideHeadBtn->setToggleState(g_config.hideHead);
-        hideHeadBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { toggleHideHead(enabled); });
+        hideHeadBtn->setToggleState(g_config.hideHeadEquipment);
+        hideHeadBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { toggleHideHeadEquipment(enabled); });
 
         const auto row1Container = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.5f);
         row1Container->addElement(playSeattedBtn);
@@ -128,15 +128,15 @@ namespace frik
      * Toggle head hiding on\off.
      * Show notification regarding not hiding in selfie mode for player not to be confused.
      */
-    void BodyAdjustmentSubConfigMode::toggleHideHead(const bool hide)
+    void BodyAdjustmentSubConfigMode::toggleHideHeadEquipment(const bool hide)
     {
-        saveHideHeadAndEquipment(hide);
+        g_config.saveHideHeadEquipment(hide);
         _row2Container->clearToggleState();
         _configTarget = BodyAdjustmentConfigTarget::None;
         if (hide) {
-            std::string msg = "Player head and head equipment are hidden";
+            std::string msg = "Player head equipment is now hidden";
             if (g_config.selfieIgnoreHideFlags) {
-                msg = msg + "\nNote: The head is NOT hidden in selfie mode!";
+                msg = msg + "\nNote: The head equipment is NOT hidden in selfie mode!";
             }
             f4vr::showNotification(msg);
         }
@@ -159,15 +159,6 @@ namespace frik
 
         // notify parent
         _onClose();
-    }
-
-    /**
-     * Set if to hide the player head and equipment (helmet, glasses, etc.)
-     * Set together to simplify for the player, if they want specific they can edit the ini.
-     */
-    void BodyAdjustmentSubConfigMode::saveHideHeadAndEquipment(const bool enabled)
-    {
-        g_config.saveHideHeadAndEquipment(enabled);
     }
 
     /**

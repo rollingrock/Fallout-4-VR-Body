@@ -27,9 +27,8 @@ namespace frik
     private:
         void createConfigUI();
         void togglePlayingSeated(bool seated);
-        void toggleHideHead(bool hide);
+        void toggleHideHeadEquipment(bool hide);
         void closeConfig();
-        static void saveHideHeadAndEquipment(bool enabled);
         void handleAdjustment() const;
         static void handleHeightAdjustment();
         static void handleForwardAdjustment();
