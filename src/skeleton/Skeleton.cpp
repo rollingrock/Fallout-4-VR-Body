@@ -420,15 +420,15 @@ namespace frik
         const float comfortSneakAdjustZ = isComfortSneakMode() && isPlayerSneaking() ? COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT : 1.0f;
 
         // small offset to (1) not change player height when looking up/down and (2) move the body back, especially when looking down
-        const float xOffsetByNeckPitch = isComfortSneakHackEnabled() ? -5.0f : 6.0f * neckPitch * neckPitch * _root->local.scale;
+        const float xOffsetByNeckPitch = fmaxf(0, 4 * fabs(neckPitch) * _root->local.scale);
         const float zOffsetByNeckPitch = 6.0f * neckPitch * _root->local.scale;
 
         const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getPlayerHMDOffsetUp()) * comfortSneakAdjustZ + zOffsetByNeckPitch;
         // if people complain about body posture we can add manual adjustment here later
 
         const auto neckPos = getCameraPosition() + RE::NiPoint3(
-            -_forwardDir.x * (g_config.getPlayerBodyOffsetForward() / 2 + xOffsetByNeckPitch),
-            -_forwardDir.y * (g_config.getPlayerBodyOffsetForward() / 2 + xOffsetByNeckPitch),
+            -_forwardDir.x * (g_config.getPlayerBodyOffsetForward() / 2 - xOffsetByNeckPitch),
+            -_forwardDir.y * (g_config.getPlayerBodyOffsetForward() / 2 - xOffsetByNeckPitch),
             -playerAdjustZ);
 
         _torsoLen = vec3Len(neck->world.translate - com->world.translate);
@@ -444,7 +444,7 @@ namespace frik
         const RE::NiPoint3 newHipPos = neckPos + hmdToNewHip * (_torsoLen / vec3Len(hmdToNewHip));
 
         const RE::NiPoint3 newPos = com->local.translate + _root->world.rotate * (newHipPos - com->world.translate);
-        com->local.translate.y += newPos.y + g_config.getPlayerBodyOffsetForward() - xOffsetByNeckPitch;
+        com->local.translate.y += newPos.y + g_config.getPlayerBodyOffsetForward() - 2 * xOffsetByNeckPitch;
         com->local.translate.z = _inPowerArmor ? newPos.z / 1.7f : newPos.z / 1.5f;
 
         // ???
