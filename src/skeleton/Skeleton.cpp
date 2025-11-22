@@ -57,7 +57,7 @@ namespace frik
      * the player avatar does. So the camera offset has to be reduced by the same amount as the game changes the height
      * which is 70% of the normal height.
      */
-    float Skeleton::getAdjustedplayerHMDOffset()
+    float Skeleton::getAdjustedPlayerHMDOffset()
     {
         auto offset = g_config.getPlayerHMDOffsetUp() + g_frik.getDynamicCameraHeight();
         if (isComfortSneakMode() && isPlayerSneaking()) {
@@ -280,7 +280,7 @@ namespace frik
     {
         const float headBackAdj = g_frik.getSelfieMode() && g_config.selfieIgnoreHideFlags ? 0 : g_config.headBackPositionOffset + (neckPitch > 0 ? 2 * neckPitch : 0);
         _head->local.translate -= RE::NiPoint3(headBackAdj, 2 * headBackAdj, 0);
-        _head->local.rotate = _head->local.rotate * getMatrixFromEulerAngles(neckYaw, 0, degreesToRads(g_config.isPlayingSeated ? 25.0f : 10.0f) + neckPitch);
+        _head->local.rotate = _head->local.rotate * getMatrixFromEulerAngles(neckYaw, 0, neckPitch);
         RE::NiUpdateData* ud = nullptr;
         _head->UpdateWorldData(ud);
     }
@@ -355,10 +355,8 @@ namespace frik
         constexpr float weight = 0.1f;
 
         const float curHeight = g_config.playerHeight;
-        const float heightCalc = std::abs((curHeight - _playerNodes->UprightHmdNode->local.translate.z) / curHeight);
-
+        const float heightCalc = std::abs((curHeight - (_playerNodes->UprightHmdNode->local.translate.z + getAdjustedPlayerHMDOffset())) / curHeight);
         const float angle = heightCalc * (basePitch + weight * radsToDegrees(neckPitch));
-
         return degreesToRads(angle);
     }
 
@@ -368,7 +366,7 @@ namespace frik
     void Skeleton::setBodyUnderHMD(const float neckYaw, const float neckPitch)
     {
         if (g_config.disableSmoothMovement) {
-            _playerNodes->playerworldnode->local.translate.z = getAdjustedplayerHMDOffset();
+            _playerNodes->playerworldnode->local.translate.z = getAdjustedPlayerHMDOffset();
             updateDown(_playerNodes->playerworldnode, true);
         }
 
@@ -420,7 +418,7 @@ namespace frik
         const float comfortSneakAdjustZ = isComfortSneakMode() && isPlayerSneaking() ? COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT : 1.0f;
 
         // small offset to (1) not change player height when looking up/down and (2) move the body back, especially when looking down
-        const float xOffsetByNeckPitch = fmaxf(0, 4 * fabs(neckPitch) * _root->local.scale);
+        const float xOffsetByNeckPitch = fmaxf(0, (isComfortSneakHackEnabled() ? 2.0f : 5.0f) * fabs(neckPitch) * _root->local.scale);
         const float zOffsetByNeckPitch = 6.0f * neckPitch * _root->local.scale;
 
         const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getPlayerHMDOffsetUp()) * comfortSneakAdjustZ + zOffsetByNeckPitch;
@@ -448,7 +446,7 @@ namespace frik
         com->local.translate.z = _inPowerArmor ? newPos.z / 1.7f : newPos.z / 1.5f;
 
         // ???
-        _root->parent->world.translate.z -= g_config.getPlayerBodyOffsetUp() + getAdjustedplayerHMDOffset();
+        _root->parent->world.translate.z -= g_config.getPlayerBodyOffsetUp() + getAdjustedPlayerHMDOffset();
 
         const RE::NiMatrix3 mat = getMatrixFromRotateVectorVec(neckPos - tmpHipPos, hmdToHip) * spine->parent->world.rotate.Transpose();
         spine->local.rotate = spine->world.rotate * mat;
