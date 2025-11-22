@@ -6,7 +6,7 @@
 #include "utils.h"
 #include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
 
@@ -288,18 +288,18 @@ namespace frik
         }
 
         if (_offHandGripping) {
-            if (g_config.onePressGripButton && !f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, g_config.gripButtonID)) {
+            if (g_config.onePressGripButton && !vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, g_config.gripButtonID)) {
                 // Mode 3 release grip when not holding the grip button
                 setOffhandGripping(false);
             }
 
-            if (g_config.enableGripButtonToLetGo && f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, g_config.gripButtonID)) {
+            if (g_config.enableGripButtonToLetGo && vrcf::VRControllers.isPressed(vrcf::Hand::Offhand, g_config.gripButtonID)) {
                 if (g_config.enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
                     // Mode 2,4 release grip on pressing the grip button again
                     setOffhandGripping(false);
                 } else {
                     // Mode 2 but close to barrel, so ignore un-grip as it will grip on next frame
-                    f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
+                    vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
                 }
             }
 
@@ -327,7 +327,7 @@ namespace frik
             // Mode 1,2 grab when close to barrel
             setOffhandGripping(true);
         }
-        if (!g_frik.isPipboyOn() && f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, g_config.gripButtonID)) {
+        if (!g_frik.isPipboyOn() && vrcf::VRControllers.isPressed(vrcf::Hand::Offhand, g_config.gripButtonID)) {
             // Mode 3,4 grab when pressing grip button
             setOffhandGripping(true);
         }
@@ -542,7 +542,7 @@ namespace frik
      */
     void WeaponPositionAdjuster::handleBetterScopes(RE::NiNode* weapon) const
     {
-        if (!f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
+        if (!vrcf::VRControllers.isPressed(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // fast return not to make additional calculations, checking button is cheap
             return;
         }
@@ -560,7 +560,7 @@ namespace frik
             // Zoom toggling
             logger::info("Zoom Toggle pressed; sending message to switch zoom state");
             g_frik.dispatchMessageToBetterScopesVR(16, nullptr, 0);
-            f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
+            vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
         }
     }
 

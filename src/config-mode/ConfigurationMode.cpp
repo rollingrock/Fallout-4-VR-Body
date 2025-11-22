@@ -3,7 +3,7 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "f4vr/F4VRUtils.h"
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
 
@@ -63,8 +63,8 @@ namespace frik
     {
         if (g_frik.isPipboyOn()) {
             const uint64_t dominantHand = f4vr::isLeftHandedMode()
-                ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
-                : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
+                ? vrcf::VRControllers.getControllerState_DEPRECATED(vrcf::TrackerType::Left).ulButtonPressed
+                : vrcf::VRControllers.getControllerState_DEPRECATED(vrcf::TrackerType::Right).ulButtonPressed;
             const auto PBConfigButtonPressed = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
             bool ModelSwapButtonPressed = _PBTouchbuttons[1];
             bool RotateButtonPressed = _PBTouchbuttons[2];
@@ -116,7 +116,7 @@ namespace frik
                             }
                             if (TransMesh->local.translate.y > 1.0 && !_PBTouchbuttons[i]) {
                                 //_PBConfigSticky = true;
-                                f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
+                                vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
                                 for (int j = 1; j <= 11; j++) {
                                     if (j != 1 && j != 3) {
                                         _PBTouchbuttons[j] = false;
@@ -202,7 +202,7 @@ namespace frik
                 }
 
                 // Handle Pipboy screen location adjustment logic
-                const auto rightHandStick = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, f4vr::Axis::Thumbstick);
+                const auto rightHandStick = vrcf::VRControllers.getAxisValue(vrcf::Hand::Primary, vrcf::Axis::Thumbstick);
                 const auto pbScreenNode = f4vr::getPlayerNodes()->ScreenNode;
                 if (RotateButtonPressed) {
                     if (rightHandStick.y > 0.10 || rightHandStick.y < -0.10) {
@@ -212,7 +212,7 @@ namespace frik
                         } else {
                             rAxisOffsetY = 0 - rAxisOffsetY;
                         }
-                        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Primary, vr::k_EButton_Grip)) {
+                        if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Primary, vr::k_EButton_Grip)) {
                             pbScreenNode->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(rAxisOffsetY), 0) * pbScreenNode->local.rotate;
                         } else {
                             pbScreenNode->local.rotate = getMatrixFromEulerAngles(degreesToRads(rAxisOffsetY), 0, 0) * pbScreenNode->local.rotate;
@@ -225,7 +225,7 @@ namespace frik
                         } else {
                             rAxisOffsetX = 0 - rAxisOffsetX;
                         }
-                        if (!f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Primary, vr::k_EButton_Grip)) {
+                        if (!vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Primary, vr::k_EButton_Grip)) {
                             pbScreenNode->local.rotate = getMatrixFromEulerAngles(0, 0, degreesToRads(rAxisOffsetX)) * pbScreenNode->local.rotate;
                         }
                     }
@@ -270,7 +270,7 @@ namespace frik
         if (g_frik.isFavoritesMenuOpen()) {
             f4vr::closeFavoriteMenu();
         }
-        f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, 0.6f, 0.5f);
+        vrcf::VRControllers.triggerHaptic(vrcf::Hand::Primary, 0.6f, 0.5f);
         const auto pipboyConfigUI = f4vr::getClonedNiNodeForNifFileSetName("FRIK/UI-ConfigHUD.nif", "PBCONFIGHUD");
         if (f4vr::isLeftHandedMode() && !g_config.leftHandedPipBoy) {
             // rotate the UI so left-handed with Pipboy on it have the UI in convenient position

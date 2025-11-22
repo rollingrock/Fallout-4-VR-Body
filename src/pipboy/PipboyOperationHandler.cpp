@@ -1,6 +1,6 @@
 #include "PipboyOperationHandler.h"
 
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 
 #include "Config.h"
 #include "FRIK.h"
@@ -16,27 +16,27 @@ namespace
 {
     bool isPrimaryTriggerPressed()
     {
-        return f4vr::VRControllers.isPressed(f4vr::Hand::Primary, vr::k_EButton_SteamVR_Trigger);
+        return vrcf::VRControllers.isPressed(vrcf::Hand::Primary, vr::k_EButton_SteamVR_Trigger);
     }
 
     bool isAButtonPressed()
     {
-        return f4vr::VRControllers.isPressed(f4vr::Hand::Primary, vr::k_EButton_A);
+        return vrcf::VRControllers.isPressed(vrcf::Hand::Primary, vr::k_EButton_A);
     }
 
     bool isBButtonPressed()
     {
-        return f4vr::VRControllers.isPressed(f4vr::Hand::Primary, vr::k_EButton_ApplicationMenu);
+        return vrcf::VRControllers.isPressed(vrcf::Hand::Primary, vr::k_EButton_ApplicationMenu);
     }
 
     bool isPrimaryGripPressHeldDown()
     {
-        return f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Primary, vr::k_EButton_Grip);
+        return vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Primary, vr::k_EButton_Grip);
     }
 
     bool isPrimaryThumbstickPressed()
     {
-        return f4vr::VRControllers.isPressed(f4vr::Hand::Primary, vr::k_EButton_Axis0);
+        return vrcf::VRControllers.isPressed(vrcf::Hand::Primary, vr::k_EButton_Axis0);
     }
 
     bool isWorldMapVisible(const GFx::Movie* root)
@@ -168,7 +168,7 @@ namespace frik
             return;
         }
 
-        const auto doinantHandStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
+        const auto doinantHandStick = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
         if (fEqual(doinantHandStick.x, 0, 0.1f) && fEqual(doinantHandStick.y, 0, 0.1f)) {
             return; // No movement, no operation
         }
@@ -183,23 +183,23 @@ namespace frik
             root->Invoke("root.Menu_mc.CurrentPage.WorldMapHolder_mc.PanMap", nullptr, akArgs, 2);
             root->Invoke("root.Menu_mc.CurrentPage.LocalMapHolder_mc.PanMap", nullptr, akArgs, 2);
         } else {
-            const auto direction = f4vr::VRControllers.getThumbstickPressedDirection(f4vr::Hand::Primary);
+            const auto direction = vrcf::VRControllers.getThumbstickPressedDirection(vrcf::Hand::Primary);
             if (direction.has_value()) {
                 switch (direction.value()) {
-                case f4vr::Direction::Right:
+                case vrcf::Direction::Right:
                     if (!isMessageHolderVisible(root)) {
                         gotoNextTab(root);
                     }
                     break;
-                case f4vr::Direction::Left:
+                case vrcf::Direction::Left:
                     if (!isMessageHolderVisible(root)) {
                         gotoPrevTab(root);
                     }
                     break;
-                case f4vr::Direction::Up:
+                case vrcf::Direction::Up:
                     moveListSelectionUpDown(root, true);
                     break;
-                case f4vr::Direction::Down:
+                case vrcf::Direction::Down:
                     moveListSelectionUpDown(root, false);
                     break;
                 default: ;
@@ -264,7 +264,7 @@ namespace frik
             }
         }
 
-        if (f4vr::VRControllers.isPressed(f4vr::Hand::Primary, vr::EVRButtonId::k_EButton_Axis0)) {
+        if (vrcf::VRControllers.isPressed(vrcf::Hand::Primary, vr::EVRButtonId::k_EButton_Axis0)) {
             root->Invoke("root.Menu_mc.CurrentPage.onMessageButtonPress()", nullptr, nullptr, 0);
         }
     }
@@ -396,7 +396,7 @@ namespace frik
                 f4vr::invokeScaleformProcessUserEvent(root, "root.Menu_mc.CurrentPage", "XButton");
             } else {
                 // zoom map
-                const auto [_, primAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
+                const auto [_, primAxisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
                 if (common::fNotEqual(primAxisY, 0, 0.5f)) {
                     GFx::Value args[1];
                     args[0] = primAxisY / 100.f;

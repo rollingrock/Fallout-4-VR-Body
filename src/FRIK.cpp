@@ -8,7 +8,7 @@
 #include "utils.h"
 #include "config-mode/ConfigurationMode.h"
 #include "f4vr/F4VRUtils.h"
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"

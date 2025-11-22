@@ -1,6 +1,7 @@
 #include "MainConfigMode.h"
 
 #include "FRIK.h"
+#include "vrcf/VRControllersManager.h"
 #include "vrui/UIManager.h"
 #include "vrui/UIMultiStateToggleButton.h"
 #include "vrui/UIToggleGroupContainer.h"
@@ -28,13 +29,13 @@ namespace frik
     {
         // open main config on both thumbsticks long-pressed shortcut
         if (!isOpen()
-            && f4vr::VRControllers.isLongPressed(f4vr::Hand::Primary, vr::k_EButton_Axis0, 1.0f, false)
-            && f4vr::VRControllers.isLongPressed(f4vr::Hand::Offhand, vr::k_EButton_Axis0, 1.0f, false)) {
+            && vrcf::VRControllers.isLongPressed(vrcf::Hand::Primary, vr::k_EButton_Axis0, 1.0f, false)
+            && vrcf::VRControllers.isLongPressed(vrcf::Hand::Offhand, vr::k_EButton_Axis0, 1.0f, false)) {
             logger::info("Open main config by shortcut...");
             if (g_frik.isFavoritesMenuOpen()) {
                 f4vr::closeFavoriteMenu();
             }
-            f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, .6f, .5f);
+            vrcf::VRControllers.triggerHaptic(vrcf::Hand::Primary, .6f, .5f);
             createMainConfigUI();
         }
 
@@ -43,7 +44,7 @@ namespace frik
         }
 
         // toggle selfie if Pipboy is not open as it uses the same button
-        if (!g_frik.isPipboyOn() && f4vr::VRControllers.isReleasedShort(f4vr::Hand::Primary, vr::k_EButton_A)) {
+        if (!g_frik.isPipboyOn() && vrcf::VRControllers.isReleasedShort(vrcf::Hand::Primary, vr::k_EButton_A)) {
             toggleSelfieMode();
         }
 

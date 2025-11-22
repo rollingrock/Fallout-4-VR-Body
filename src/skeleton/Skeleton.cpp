@@ -9,10 +9,11 @@
 #include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 
 using namespace common;
 using namespace f4vr;
+using namespace vrcf;
 
 namespace
 {

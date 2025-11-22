@@ -4,7 +4,7 @@
 #include "f4sevr/PapyrusUtils.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/PlayerNodes.h"
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 
 using namespace common;
 
@@ -15,14 +15,14 @@ namespace frik
         F4SEVR::execPapyrusGlobalFunction("Game", "TurnPlayerRadioOn", isActive);
     }
 
-    void triggerStrongHaptic(const f4vr::Hand hand)
+    void triggerStrongHaptic(const vrcf::Hand hand)
     {
-        f4vr::VRControllers.triggerHaptic(hand, 0.05f, 0.5f);
+        vrcf::VRControllers.triggerHaptic(hand, 0.05f, 0.5f);
     }
 
-    void triggerShortHaptic(const f4vr::Hand hand)
+    void triggerShortHaptic(const vrcf::Hand hand)
     {
-        f4vr::VRControllers.triggerHaptic(hand, 0.001f);
+        vrcf::VRControllers.triggerHaptic(hand, 0.001f);
     }
 
     /**

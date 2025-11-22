@@ -187,29 +187,29 @@ namespace frik
 
     void BodyAdjustmentSubConfigMode::handleHeightAdjustment()
     {
-        const auto primAxisY = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary).y;
+        const auto primAxisY = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary).y;
         g_config.setPlayerHMDOffsetUp(g_config.getPlayerHMDOffsetUp() + correctAdjustmentValue(primAxisY, 4));
         g_config.setPlayerBodyOffsetUp(g_config.getPlayerBodyOffsetUp() - 0.125f * correctAdjustmentValue(primAxisY, 4));
 
-        const auto offAxisY = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Offhand).y;
+        const auto offAxisY = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Offhand).y;
         g_config.setPlayerBodyOffsetUp(g_config.getPlayerBodyOffsetUp() - correctAdjustmentValue(offAxisY, 4));
     }
 
     void BodyAdjustmentSubConfigMode::handleForwardAdjustment()
     {
-        const auto axisY = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary).y;
+        const auto axisY = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary).y;
         g_config.setPlayerBodyOffsetForward(g_config.getPlayerBodyOffsetForward() + correctAdjustmentValue(axisY, 4));
     }
 
     void BodyAdjustmentSubConfigMode::handleArmsLengthAdjustment()
     {
-        const auto axisY = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary).y;
+        const auto axisY = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary).y;
         g_config.armLength += correctAdjustmentValue(axisY, 5);
     }
 
     void BodyAdjustmentSubConfigMode::handleVRScaleAdjustment()
     {
-        const auto axisY = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary).y;
+        const auto axisY = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary).y;
         g_config.fVrScale += correctAdjustmentValue(axisY, 5);
         updateVRScaleGameConfig();
     }

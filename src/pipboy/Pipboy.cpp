@@ -3,7 +3,7 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "utils.h"
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 
 using namespace common;
@@ -393,7 +393,7 @@ namespace frik
 
         const bool open = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0
             ? checkAttaboyActivation()
-            : f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonID);
+            : vrcf::VRControllers.isReleasedShort(vrcf::Hand::Offhand, g_config.pipBoyButtonID);
         if (open) {
             logger::info("Open Pipboy with button");
             openClose(open);
@@ -411,7 +411,7 @@ namespace frik
 
         const bool close = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0
             ? checkAttaboyActivation()
-            : f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID);
+            : vrcf::VRControllers.isReleasedShort(vrcf::Hand::Offhand, g_config.pipBoyButtonOffID);
         if (close) {
             logger::info("Close Pipboy with button");
             openClose(false);
@@ -428,11 +428,11 @@ namespace frik
         if (dist < g_config.attaboyGrabActivationDistance) {
             if (!_attaboyGrabHapticActivated) {
                 _attaboyGrabHapticActivated = true;
-                triggerStrongHaptic(f4vr::Hand::Left);
+                triggerStrongHaptic(vrcf::Hand::Left);
                 logger::debug("Attaboy activation area triggered");
             }
-            if (f4vr::VRControllers.isReleasedShort(f4vr::Hand::Left, g_config.attaboyGrabButtonId)) {
-                triggerShortHaptic(f4vr::Hand::Left);
+            if (vrcf::VRControllers.isReleasedShort(vrcf::Hand::Left, g_config.attaboyGrabButtonId)) {
+                triggerShortHaptic(vrcf::Hand::Left);
                 return true;
             }
         } else {
@@ -478,8 +478,8 @@ namespace frik
             return;
         }
 
-        const auto movingStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Offhand);
-        const auto lookingStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
+        const auto movingStick = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Offhand);
+        const auto lookingStick = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
 
         const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway
             && !g_frik.isPipboyConfigurationModeActive()
@@ -508,30 +508,30 @@ namespace frik
         if (isLeftHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::LeftArm)) {
             if (!_flashlightHapticActivated) {
                 _flashlightHapticActivated = true;
-                triggerStrongHaptic(f4vr::Hand::Left);
+                triggerStrongHaptic(vrcf::Hand::Left);
             }
         } else if (isRightHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::RightArm)) {
             if (!_flashlightHapticActivated) {
                 _flashlightHapticActivated = true;
-                triggerStrongHaptic(f4vr::Hand::Right);
+                triggerStrongHaptic(vrcf::Hand::Right);
             }
         } else {
             _flashlightHapticActivated = false;
             return;
         }
 
-        const bool isLeftHandGrab = isLeftHandCloseToHMD && f4vr::VRControllers.isReleasedShort(f4vr::Hand::Left, g_config.switchTorchButton);
-        const bool isRightHandGrab = isRightHandCloseToHMD && f4vr::VRControllers.isReleasedShort(f4vr::Hand::Right, g_config.switchTorchButton);
+        const bool isLeftHandGrab = isLeftHandCloseToHMD && vrcf::VRControllers.isReleasedShort(vrcf::Hand::Left, g_config.switchTorchButton);
+        const bool isRightHandGrab = isRightHandCloseToHMD && vrcf::VRControllers.isReleasedShort(vrcf::Hand::Right, g_config.switchTorchButton);
         if (!isLeftHandGrab && !isRightHandGrab) {
             return;
         }
 
         if (g_config.flashlightLocation == FlashlightLocation::Head) {
-            triggerStrongHaptic(isLeftHandGrab ? f4vr::Hand::Left : f4vr::Hand::Right);
+            triggerStrongHaptic(isLeftHandGrab ? vrcf::Hand::Left : vrcf::Hand::Right);
             g_config.setFlashlightLocation(isLeftHandGrab ? FlashlightLocation::LeftArm : FlashlightLocation::RightArm);
         } else if ((g_config.flashlightLocation == FlashlightLocation::LeftArm && isLeftHandGrab) ||
             (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab)) {
-            triggerStrongHaptic(isLeftHandGrab ? f4vr::Hand::Left : f4vr::Hand::Right);
+            triggerStrongHaptic(isLeftHandGrab ? vrcf::Hand::Left : vrcf::Hand::Right);
             g_config.setFlashlightLocation(FlashlightLocation::Head);
         }
     }
@@ -620,7 +620,7 @@ namespace frik
      */
     void Pipboy::holdPipboyScreenInPlace(RE::NiAVObject* const pipboyScreen)
     {
-        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID, 0.3f)) {
+        if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, g_config.pipBoyButtonOffID, 0.3f)) {
             _pipboyScreenStableFrame = pipboyScreen->world;
         } else {
             pipboyScreen->world = _pipboyScreenStableFrame;

@@ -2,7 +2,7 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 
 using namespace common;
@@ -126,7 +126,7 @@ namespace frik
         if (powerTranslate->local.translate.z < -0.10 && !_stickyPower) {
             logger::info("Pipboy power button pressed");
             _stickyPower = true;
-            triggerShortHaptic(f4vr::Hand::Right);
+            triggerShortHaptic(vrcf::Hand::Right);
             _pipboy->openClose(!_pipboy->isOpen());
         }
     }
@@ -153,7 +153,7 @@ namespace frik
         if (lightTranslate->local.translate.z < -0.14 && !_stickyLight) {
             logger::info("Light button pressed");
             _stickyLight = true;
-            triggerShortHaptic(f4vr::Hand::Right);
+            triggerShortHaptic(vrcf::Hand::Right);
             if (!_pipboy->isOpen()) {
                 f4vr::togglePipboyLight(f4vr::getPlayer());
             }
@@ -182,7 +182,7 @@ namespace frik
         if (lightTranslate->local.translate.y < -0.12 && !_stickyRadio) {
             logger::info("Radio button pressed");
             _stickyRadio = true;
-            triggerShortHaptic(f4vr::Hand::Right);
+            triggerShortHaptic(vrcf::Hand::Right);
             if (f4vr::isPlayerRadioEnabled()) {
                 turnPlayerRadioOn(false);
             } else {
@@ -262,9 +262,9 @@ namespace frik
             return;
         }
 
-        const auto doinantHandStick = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, f4vr::Axis::Thumbstick);
-        const auto doinantTrigger = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, f4vr::Axis::Trigger);
-        const auto secondaryTrigger = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand, f4vr::Axis::Trigger);
+        const auto doinantHandStick = vrcf::VRControllers.getAxisValue(vrcf::Hand::Primary, vrcf::Axis::Thumbstick);
+        const auto doinantTrigger = vrcf::VRControllers.getAxisValue(vrcf::Hand::Primary, vrcf::Axis::Trigger);
+        const auto secondaryTrigger = vrcf::VRControllers.getAxisValue(vrcf::Hand::Offhand, vrcf::Axis::Trigger);
 
         // Move Pipboy trigger mesh with controller trigger position.
         if (const auto trans = f4vr::findAVObject(arm, "SelectRotate")) {
