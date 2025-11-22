@@ -1,10 +1,10 @@
 #include "WeaponPositionAdjuster.h"
 
 #include "Config.h"
-#include "Debug.h"
 #include "FRIK.h"
 #include "utils.h"
 #include "common/Quaternion.h"
+#include "f4vr/DebugDump.h"
 #include "f4vr/F4VRUtils.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
@@ -605,11 +605,11 @@ namespace frik
         }
 
         logger::info("Weapon: {}, InPA: {}", _currentWeapon.c_str(), _currentlyInPA);
-        f4cf::dump::printTransform("Weapon Original: ", _weaponOriginalTransform);
-        f4cf::dump::printTransform("Weapon Offset  : ", _weaponOffsetTransform);
-        f4cf::dump::printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);
-        f4cf::dump::printTransform("Scope Offset   : ", f4vr::getPlayerNodes()->primaryWeaponScopeCamera->local);
-        f4cf::dump::printNodes(weapon);
-        f4cf::dump::printNodesTransform(weapon);
+        f4vr::DebugDump::printTransform("Weapon Original: ", _weaponOriginalTransform);
+        f4vr::DebugDump::printTransform("Weapon Offset  : ", _weaponOffsetTransform);
+        f4vr::DebugDump::printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);
+        f4vr::DebugDump::printTransform("Scope Offset   : ", f4vr::getPlayerNodes()->primaryWeaponScopeCamera->local);
+        f4vr::DebugDump::printNodes(weapon);
+        f4vr::DebugDump::printNodesTransform(weapon);
     }
 }

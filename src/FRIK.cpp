@@ -1,18 +1,18 @@
 #include "FRIK.h"
 
 #include "Config.h"
-#include "Debug.h"
 #include "GameHooks.h"
 #include "PapyrusApi.h"
 #include "PapyrusGateway.h"
 #include "utils.h"
 #include "config-mode/ConfigurationMode.h"
+#include "f4vr/DebugDump.h"
 #include "f4vr/F4VRUtils.h"
-#include "vrcf/VRControllersManager.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
 #include "smooth-movement/SmoothMovementVR.h"
+#include "vrcf/VRControllersManager.h"
 #include "vrui/UIManager.h"
 #include "vrui/UIModAdapter.h"
 
@@ -375,8 +375,8 @@ namespace frik
         }
         if (g_config.checkDebugDumpDataOnceFor("weapon_muzzle")) {
             if (const auto muzzle = getMuzzleFlashNodes()) {
-                f4cf::dump::printNodes(muzzle->fireNode);
-                f4cf::dump::printNodes(muzzle->projectileNode);
+                f4vr::DebugDump::printNodes(muzzle->fireNode);
+                f4vr::DebugDump::printNodes(muzzle->projectileNode);
             }
         }
     }
