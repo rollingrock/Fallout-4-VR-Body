@@ -7,6 +7,7 @@ namespace frik
 {
     void turnPlayerRadioOn(bool isActive);
 
+    void triggerStrongHaptic(f4vr::Hand hand = f4vr::Hand::Primary);
     void triggerShortHaptic(f4vr::Hand hand = f4vr::Hand::Primary);
 
     bool isAnyPipboyOpen();

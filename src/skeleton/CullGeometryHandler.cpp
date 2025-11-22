@@ -100,7 +100,7 @@ namespace frik
             restoreGeometry();
         }
 
-        if (g_config.hideEquipment) {
+        if (g_config.hideHeadEquipment) {
             _isEquipmentCulled = true;
             for (const auto slot : g_config.hideEquipSlotIndexes()) {
                 setEquipmentSlotByIndexVisibility(slot, true);

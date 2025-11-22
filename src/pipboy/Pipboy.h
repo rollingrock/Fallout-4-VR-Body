@@ -32,8 +32,9 @@ namespace frik
         void hideShowPipboyOnArm() const;
         static void restoreDefaultPipboyModelIfNeeded();
         void updateSetupPipboyNodes();
+        void updateSetupAttaboyNodes();
         void showHideCorrectPipboyMesh(const std::string& itemHide, const std::string& itemShow) const;
-        void setupPipboyRootNif();
+        void setupPipboyRootNif() const;
         static void detachReplacedPipboyRootNif();
 
         void checkTurningOnByButton();
@@ -57,7 +58,7 @@ namespace frik
         PipboyPhysicalHandler _physicalHandler;
 
         bool _isOpen = false;
-        uint64_t _lastAttaboyGrabTime = 0;
+        bool _attaboyGrabHapticActivated = 0;
 
         // see exitPowerArmorBugFixHack method
         bool _exitPowerArmorFixFirstFrame = true;
@@ -66,8 +67,8 @@ namespace frik
         uint64_t _startedLookingAtPip = 0;
         uint64_t _lastLookingAtPip = 0;
 
-        // cooldown to stop flashlight haptic feedback after switch
-        uint64_t _flashlightHapticCooldown = 0;
+        // to stop continuous flashlight haptic feedback
+        bool _flashlightHapticActivated = false;
 
         // handle dampening of pipboy screen to reduce movement
         std::deque<RE::NiPoint3> _pipboyScreenPrevFrame;
