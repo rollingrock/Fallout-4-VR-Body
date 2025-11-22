@@ -67,8 +67,8 @@ namespace frik
         uint64_t _startedLookingAtPip = 0;
         uint64_t _lastLookingAtPip = 0;
 
-        // cooldown to stop flashlight haptic feedback after switch
-        uint64_t _flashlightHapticCooldown = 0;
+        // to stop continuous flashlight haptic feedback
+        bool _flashlightHapticActivated = false;
 
         // handle dampening of pipboy screen to reduce movement
         std::deque<RE::NiPoint3> _pipboyScreenPrevFrame;

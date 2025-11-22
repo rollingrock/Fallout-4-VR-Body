@@ -15,6 +15,11 @@ namespace frik
         F4SEVR::execPapyrusGlobalFunction("Game", "TurnPlayerRadioOn", isActive);
     }
 
+    void triggerStrongHaptic(const f4vr::Hand hand)
+    {
+        f4vr::VRControllers.triggerHaptic(hand, 0.05f, 0.5f);
+    }
+
     void triggerShortHaptic(const f4vr::Hand hand)
     {
         f4vr::VRControllers.triggerHaptic(hand, 0.001f);

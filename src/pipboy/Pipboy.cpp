@@ -429,7 +429,7 @@ namespace frik
         if (dist < g_config.attaboyGrabActivationDistance) {
             if (!_attaboyGrabHapticActivated) {
                 _attaboyGrabHapticActivated = true;
-                f4vr::VRControllers.triggerHaptic(f4vr::Hand::Left, 0.05f, 0.5f);
+                triggerStrongHaptic(f4vr::Hand::Left);
                 logger::debug("Attaboy activation area triggered");
             }
             if (f4vr::VRControllers.isReleasedShort(f4vr::Hand::Left, g_config.attaboyGrabButtonId)) {
@@ -506,15 +506,18 @@ namespace frik
         const auto isLeftHandCloseToHMD = vec3Len(_skelly->getLeftArm().hand->world.translate - hmdPos) < 12;
         const auto isRightHandCloseToHMD = vec3Len(_skelly->getRightArm().hand->world.translate - hmdPos) < 12;
 
-        const auto now = nowMillis();
         if (isLeftHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::LeftArm)) {
-            if (_flashlightHapticCooldown < now)
-                triggerShortHaptic(f4vr::Hand::Left);
+            if (!_flashlightHapticActivated) {
+                _flashlightHapticActivated = true;
+                triggerStrongHaptic(f4vr::Hand::Left);
+            }
         } else if (isRightHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::RightArm)) {
-            if (_flashlightHapticCooldown < now)
-                triggerShortHaptic(f4vr::Hand::Right);
+            if (!_flashlightHapticActivated) {
+                _flashlightHapticActivated = true;
+                triggerStrongHaptic(f4vr::Hand::Right);
+            }
         } else {
-            _flashlightHapticCooldown = 0;
+            _flashlightHapticActivated = false;
             return;
         }
 
@@ -525,11 +528,11 @@ namespace frik
         }
 
         if (g_config.flashlightLocation == FlashlightLocation::Head) {
-            _flashlightHapticCooldown = now + 5000;
+            triggerStrongHaptic(isLeftHandGrab ? f4vr::Hand::Left : f4vr::Hand::Right);
             g_config.setFlashlightLocation(isLeftHandGrab ? FlashlightLocation::LeftArm : FlashlightLocation::RightArm);
         } else if ((g_config.flashlightLocation == FlashlightLocation::LeftArm && isLeftHandGrab) ||
             (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab)) {
-            _flashlightHapticCooldown = now + 5000;
+            triggerStrongHaptic(isLeftHandGrab ? f4vr::Hand::Left : f4vr::Hand::Right);
             g_config.setFlashlightLocation(FlashlightLocation::Head);
         }
     }
