@@ -205,7 +205,7 @@ namespace frik
             _primaryHandOffsetRot = primaryHandOffsetLookup.value().rotate;
         } else {
             // No stored offset, use identity for no change
-            _primaryHandOffsetRot = getIdentityMatrix();
+            _primaryHandOffsetRot = MatrixUtils::getIdentityMatrix();
         }
 
         // Load stored offsets for offhand for the new weapon
@@ -214,7 +214,7 @@ namespace frik
             _offhandOffsetRot = offhandOffsetLookup.value().rotate;
         } else {
             // No stored offset, use identity for no change
-            _offhandOffsetRot = getIdentityMatrix();
+            _offhandOffsetRot = MatrixUtils::getIdentityMatrix();
         }
 
         // Load stored offsets for back of hand UI for the new weapon
@@ -380,7 +380,7 @@ namespace frik
         const auto weaponToOffhandVecWorld = getOffhandPosition() - getPrimaryHandPosition();
 
         // Convert world-space vector into weapon space
-        const auto weaponLocalVec = weapon->world.rotate * (vec3Norm(weaponToOffhandVecWorld) / weapon->world.scale);
+        const auto weaponLocalVec = weapon->world.rotate * (MatrixUtils::vec3Norm(weaponToOffhandVecWorld) / weapon->world.scale);
 
         // Desired weapon forward direction after applying offhand offset
         const auto adjustedWeaponVec = _offhandOffsetRot.Transpose() * (weaponLocalVec);
@@ -465,10 +465,10 @@ namespace frik
     bool WeaponPositionAdjuster::isOffhandCloseToBarrel(const RE::NiNode* weapon) const
     {
         const auto offhand2WeaponVec = getOffhandPosition() - getPrimaryHandPosition();
-        const float distanceFromPrimaryHand = vec3Len(offhand2WeaponVec);
-        const auto weaponLocalVec = weapon->world.rotate * (vec3Norm(offhand2WeaponVec) / weapon->world.scale);
+        const float distanceFromPrimaryHand = MatrixUtils::vec3Len(offhand2WeaponVec);
+        const auto weaponLocalVec = weapon->world.rotate * (MatrixUtils::vec3Norm(offhand2WeaponVec) / weapon->world.scale);
         const auto adjustedWeaponVec = _offhandOffsetRot.Transpose() * (weaponLocalVec);
-        const float angleDiffToWeaponVec = vec3Dot(vec3Norm(adjustedWeaponVec), RE::NiPoint3(0, 1, 0));
+        const float angleDiffToWeaponVec = MatrixUtils::vec3Dot(MatrixUtils::vec3Norm(adjustedWeaponVec), RE::NiPoint3(0, 1, 0));
         return angleDiffToWeaponVec > 0.955 && distanceFromPrimaryHand > 15;
     }
 
@@ -486,8 +486,8 @@ namespace frik
         const auto offHandBone = f4vr::isLeftHandedMode() ? "RArm_Finger31" : "LArm_Finger31";
 
         const auto currentPos = f4vr::getCameraPosition();
-        const float handFrameMovement = vec3Len(_skelly->getBoneWorldTransform(offHandBone).translate - offhandFingerBonePos);
-        const float bodyFrameMovement = vec3Len(currentPos - bodyPos);
+        const float handFrameMovement = MatrixUtils::vec3Len(_skelly->getBoneWorldTransform(offHandBone).translate - offhandFingerBonePos);
+        const float bodyFrameMovement = MatrixUtils::vec3Len(currentPos - bodyPos);
         avgHandV[fc] = abs(handFrameMovement - bodyFrameMovement);
         fc = (fc + 1) % 3;
 
@@ -531,7 +531,7 @@ namespace frik
     {
         if (_currentWeapon.starts_with("Laser")) {
             if (const auto beamNode = f4vr::findNodeStartsWith(f4vr::findNode(weapon, "P-Barrel"), "BeamMesh")) {
-                beamNode->local.rotate = getIdentityMatrix() * (weapon->local.rotate * _weaponOriginalTransform.rotate);
+                beamNode->local.rotate = MatrixUtils::getIdentityMatrix() * (weapon->local.rotate * _weaponOriginalTransform.rotate);
             }
         }
     }
@@ -553,7 +553,7 @@ namespace frik
         }
         const auto reticlePos = scopeRet->world.translate;
         const auto offhandPos = getOffhandPosition();
-        const auto offset = vec3Len(reticlePos - offhandPos);
+        const auto offset = MatrixUtils::vec3Len(reticlePos - offhandPos);
 
         // is hand near scope
         if (offset < g_config.scopeAdjustDistance) {

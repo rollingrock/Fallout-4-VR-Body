@@ -43,7 +43,7 @@ find_path(F4VRCommonFrameworkPathFind
   PATHS
     ${F4VRCommonFrameworkPath}
     F4VRCommonFramework
-    ../F4VRCommonFramework
+    # ../F4VRCommonFramework
     external/F4VRCommonFramework
 )
 if(${F4VRCommonFrameworkPathFind} STREQUAL "F4VRCommonFrameworkPathFind-NOTFOUND")

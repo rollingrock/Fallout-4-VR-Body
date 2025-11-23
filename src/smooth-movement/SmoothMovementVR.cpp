@@ -49,7 +49,7 @@ namespace frik
         _smoothedPos = newPos;
 
         auto& playerLocalTransformPos = playerNodes->playerworldnode->local.translate;
-        if (_notMoving && distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, _lastAppliedLocalX, _lastAppliedLocalY) > 100) {
+        if (_notMoving && MatrixUtils::distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, _lastAppliedLocalX, _lastAppliedLocalY) > 100) {
             _smoothedPos = curPos;
             playerLocalTransformPos.z = 0;
             logger::sample("[SmoothMovement] Not moving values exceed normal; curPos:({:.2f}, {:.2f}), curPos:({:.2f}, {:.2f}), lastApplied:({:.2f}, {:.2f})",
@@ -81,7 +81,7 @@ namespace frik
             return curPos;
         }
 
-        if (distanceNoSqrt(curPos, prevPos) > 4000000.0f) {
+        if (MatrixUtils::distanceNoSqrt(curPos, prevPos) > 4000000.0f) {
             // don't smooth if values are way off
             logger::sample("[SmoothMovement] Values exceed normal; curPos:({:.2f}, {:.2f}, {:.2f}), SmoothPos:({:.2f}, {:.2f}, {:.2f})",
                 curPos.x, curPos.y, curPos.z, prevPos.x, prevPos.y, prevPos.z);

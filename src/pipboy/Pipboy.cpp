@@ -424,7 +424,7 @@ namespace frik
      */
     bool Pipboy::checkAttaboyActivation()
     {
-        const float dist = vec3Len(_skelly->getLeftArm().hand->world.translate - _attaboyOnBeltNode->world.translate);
+        const float dist = MatrixUtils::vec3Len(_skelly->getLeftArm().hand->world.translate - _attaboyOnBeltNode->world.translate);
         if (dist < g_config.attaboyGrabActivationDistance) {
             if (!_attaboyGrabHapticActivated) {
                 _attaboyGrabHapticActivated = true;
@@ -502,8 +502,8 @@ namespace frik
     {
         // check a bit higher than the HMD to allow hand close to the lower part of the face
         const auto hmdPos = f4vr::getPlayerNodes()->HmdNode->world.translate + RE::NiPoint3(0, 0, 4);
-        const auto isLeftHandCloseToHMD = vec3Len(_skelly->getLeftArm().hand->world.translate - hmdPos) < 12;
-        const auto isRightHandCloseToHMD = vec3Len(_skelly->getRightArm().hand->world.translate - hmdPos) < 12;
+        const auto isLeftHandCloseToHMD = MatrixUtils::vec3Len(_skelly->getLeftArm().hand->world.translate - hmdPos) < 12;
+        const auto isRightHandCloseToHMD = MatrixUtils::vec3Len(_skelly->getRightArm().hand->world.translate - hmdPos) < 12;
 
         if (isLeftHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::LeftArm)) {
             if (!_flashlightHapticActivated) {
@@ -548,7 +548,7 @@ namespace frik
         }
 
         // revert to original transform
-        lightNode->local.rotate = getIdentityMatrix();
+        lightNode->local.rotate = MatrixUtils::getIdentityMatrix();
         lightNode->local.translate = RE::NiPoint3(0, 0, 0);
 
         if (g_config.flashlightLocation != FlashlightLocation::Head) {
@@ -561,7 +561,7 @@ namespace frik
                 : f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand");
 
             // calculate relocation transform and set to local
-            lightNode->local = calculateRelocation(lightNode, armNode);
+            lightNode->local = MatrixUtils::calculateRelocation(lightNode, armNode);
 
             // small adjustment to prevent light on the fingers and shadows from them
             const float offsetX = f4vr::isInPowerArmor() ? 16.0f : 12.0f;
@@ -689,7 +689,7 @@ namespace frik
                 _skelly->getRightArm().forearm3->IsNode()->AttachChild(pipbone, true);
             }
 
-            pipbone->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(180.0), 0) * pipbone->local.rotate;
+            pipbone->local.rotate = MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(180.0), 0) * pipbone->local.rotate;
             pipbone->local.translate *= -1.5;
         }
     }

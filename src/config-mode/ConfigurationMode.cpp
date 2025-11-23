@@ -103,7 +103,7 @@ namespace frik
                     auto TouchMesh = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, meshName2[i]);
                     auto TransMesh = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, meshName[i]);
                     if (TouchMesh && TransMesh) {
-                        float distance = vec3Len(finger - TouchMesh->world.translate);
+                        float distance = MatrixUtils::vec3Len(finger - TouchMesh->world.translate);
                         if (distance > 2.0) {
                             TransMesh->local.translate.y = 0.0;
                             if (i == 1 || i == 3 || i == 10 || i == 11) {
@@ -213,9 +213,9 @@ namespace frik
                             rAxisOffsetY = 0 - rAxisOffsetY;
                         }
                         if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Primary, vr::k_EButton_Grip)) {
-                            pbScreenNode->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(rAxisOffsetY), 0) * pbScreenNode->local.rotate;
+                            pbScreenNode->local.rotate = MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(rAxisOffsetY), 0) * pbScreenNode->local.rotate;
                         } else {
-                            pbScreenNode->local.rotate = getMatrixFromEulerAngles(degreesToRads(rAxisOffsetY), 0, 0) * pbScreenNode->local.rotate;
+                            pbScreenNode->local.rotate = MatrixUtils::getMatrixFromEulerAngles(MatrixUtils::degreesToRads(rAxisOffsetY), 0, 0) * pbScreenNode->local.rotate;
                         }
                     }
                     if (rightHandStick.x > 0.10 || rightHandStick.x < -0.10) {
@@ -226,7 +226,7 @@ namespace frik
                             rAxisOffsetX = 0 - rAxisOffsetX;
                         }
                         if (!vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Primary, vr::k_EButton_Grip)) {
-                            pbScreenNode->local.rotate = getMatrixFromEulerAngles(0, 0, degreesToRads(rAxisOffsetX)) * pbScreenNode->local.rotate;
+                            pbScreenNode->local.rotate = MatrixUtils::getMatrixFromEulerAngles(0, 0, MatrixUtils::degreesToRads(rAxisOffsetX)) * pbScreenNode->local.rotate;
                         }
                     }
                 }
@@ -275,7 +275,7 @@ namespace frik
         if (f4vr::isLeftHandedMode() && !g_config.leftHandedPipBoy) {
             // rotate the UI so left-handed with Pipboy on it have the UI in convenient position
             pipboyConfigUI->local.translate = RE::NiPoint3(-12, 10, -3);
-            pipboyConfigUI->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(20), degreesToRads(-40)) * getMatrixFromEulerAngles(0, degreesToRads(90), degreesToRads(30));
+            pipboyConfigUI->local.rotate = MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(20), MatrixUtils::degreesToRads(-40)) * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(90), MatrixUtils::degreesToRads(30));
         } else {
             pipboyConfigUI->local.translate = RE::NiPoint3(0, 0, 10);
         }

@@ -37,7 +37,7 @@ namespace frik
     // Function to check if the camera is looking at the object and the object is facing the camera
     bool isCameraLookingAtObject(const RE::NiAVObject* cameraNode, const RE::NiAVObject* objectNode, const float detectThresh)
     {
-        return common::isCameraLookingAtObject(cameraNode->world, objectNode->world, detectThresh);
+        return MatrixUtils::isCameraLookingAtObject(cameraNode->world, objectNode->world, detectThresh);
     }
 
     /**
