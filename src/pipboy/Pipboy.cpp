@@ -110,7 +110,7 @@ namespace frik
             setAttaboyHandPose(open);
             if (_attaboyOnBeltNode && _attaboyOnBeltNode->parent && _attaboyOnBeltNode->parent->parent) {
                 // show/hide the Attaboy on belt model depending if it's on as it's grabbed by the player
-                f4vr::setNodeVisibilityDeep(_attaboyOnBeltNode->parent->parent, !open);
+                f4vr::setNodeVisibility(_attaboyOnBeltNode->parent->parent, !open);
             }
         }
     }
