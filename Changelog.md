@@ -1,26 +1,34 @@
 ## v0.76 (WIP)
 
-- Support Fallout London VR Attaboy replacement of Pipboy.
-- Improved Pipboy screen position configuration by adjust the screen itself.
-- Added support all 3 degrees (heading, roll, attitude) for Pipboy screen rotation.
-- Added support for adjusting weapon scale (size) in weapon adjustment config.
-- Added support for primary hand adjustment on a weapon to handle rifle type weapons much better (all embedded offsets updated).
-- Added support for primary wand thumbstick to open Pipboy submenus.
-- Fixed Pipboy operation by primary wand not working for some players.
-- Fixed issues with switching Pipboy game setting to "In Front" from "Wrist".
-- Fixed Pipboy auto-opens/closes if opened/closed with power button.
-- Fixed Pipboy can be opened when game pause menu is open.
-- Fixed Pipboy remains open after running a holotape.
-- Left-handed: Fixed hand pose for weapon holding with wither gun or melee holding pose (good but not perfect).
-- Left-handed: Fixed 15 more weapons offsets to match new hand pose.
-- Left-handed: Fixed primary hand is off the gun stock when doing 2-handed handling.
-- Left-handed: Fixed Pipboy config UI position.
-- Left-handed: Fixed look at screen activation not working.
-- Left-handed: Fixed Pipboy screen shaking when moving right hand.
-- Left-handed: Fixed Pipboy operating with right hand finger and haptic.
-- Left-handed: Fixed fast auto-closing Pipboy when not looking at and trying to move.
-- Left-handed: Allow operating Pipboy with finger while holding weapon.
-- Reintroduce support for automatic weapon holstering to operate Pipboy with a finger (behind `bHolsterWeaponForOperation` ini config flag)
+* Support Fallout London VR Attaboy replacement for the Pip-Boy.
+* Body: Added support for **Seated Mode** to adjust the player body when seated, with sane defaults.
+* Body: Fixed incorrect HMD, body height, and body position when using comfort sneak.
+* Body: Fixed issue where looking down moved the body forward and obstructed the view.
+* Body: Fixed incorrect body pitch calculation due to not respecting HMD height offset.
+* Body: Move only the head back to prevent clipping with player view without hiding the head affecting shadow.
+* Body: Removed **ArmsOnlyMode** as it significantly reduced the player hit box.
+* Config: Added new main configuration menu to simplify body adjustments and provide more help information.
+* Weapon: Added support for adjusting weapon scale (size) in the weapon adjustment config.
+* Weapon: Added support for primary-hand adjustment on weapons to handle rifle-type weapons much better (all embedded offsets updated).
+* Pip-Boy: Improved Pip-Boy screen position adjustments and added full 3-axis rotation support (heading, roll, attitude).
+* Pip-Boy: Added support for using the primary wand thumbstick to open Pip-Boy submenus.
+* Pip-Boy: Fixed Pip-Boy operation via the primary wand not working for some players.
+* Pip-Boy: Fixed issues when switching the Pip-Boy game setting to **In Front** from **Wrist** / **Projected**.
+* Pip-Boy: Fixed the Pip-Boy auto-opening/closing when toggled with the power button.
+* Pip-Boy: Fixed being able to open the Pip-Boy while the game pause menu is open.
+* Pip-Boy: Fixed the Pip-Boy remaining open after running a holotape.
+* Pip-Boy: Fixed weapon unequipped when opening Pipboy. Smoother handling of hiding weapon when operating Pipboy with a finger.
+* Pip-Boy: Reintroduced support for automatic weapon holstering to operate the Pip-Boy with a finger (behind the `bHolsterWeaponForOperation` INI config flag).
+* Left-handed: Fixed hand pose for weapon holding using either gun or melee pose (improved, but not perfect).
+* Left-handed: Fixed 15 more weapon offsets to match the new hand pose.
+* Left-handed: Fixed the primary hand sitting off the gun stock during two-handed handling.
+* Left-handed: Fixed Pip-Boy config UI position.
+* Left-handed: Fixed “look at screen” activation not working.
+* Left-handed: Fixed Pip-Boy screen shaking when moving the right hand.
+* Left-handed: Fixed Pip-Boy operation using the right-hand finger and haptics.
+* Left-handed: Fixed fast auto-closing of the Pip-Boy when not looking at it and moving.
+* Left-handed: Allowed operating the Pip-Boy with a finger while holding a weapon.
+
 
 ## v0.75
 - Migrated from F4SEVR to CommonLibF4 infrastructure!!!
