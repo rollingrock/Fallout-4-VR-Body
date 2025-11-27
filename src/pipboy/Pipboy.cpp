@@ -99,6 +99,9 @@ namespace frik
         if (open) {
             // prevent immediate closing of Pipboy
             _lastLookingAtPip = nowMillis();
+            if (g_frik.isFavoritesMenuOpen()) {
+                f4vr::closeFavoriteMenu();
+            }
         } else {
             // Prevents Pipboy from being turned on again immediately after closing it.
             _startedLookingAtPip = nowMillis() + 10000;
