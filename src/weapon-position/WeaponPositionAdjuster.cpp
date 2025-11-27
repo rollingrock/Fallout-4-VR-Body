@@ -120,7 +120,7 @@ namespace frik
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
             }
-            checkEquippedWeaponChanged(weapon, true);
+            checkEquippedWeaponChanged(weapon);
             backOfHand->local = _backOfHandUIOffsetTransform;
             return;
         }
@@ -129,7 +129,7 @@ namespace frik
         _weaponOriginalTransform = weapon->local;
         _weaponOriginalWorldTransform = weapon->world;
 
-        checkEquippedWeaponChanged(weapon, false);
+        checkEquippedWeaponChanged(weapon);
 
         // override the back-of-hand UI transform
         backOfHand->local = _backOfHandUIOffsetTransform;
@@ -165,9 +165,9 @@ namespace frik
     /**
      * If equipped weapon changed set offsets to stored if exists.
      */
-    void WeaponPositionAdjuster::checkEquippedWeaponChanged(RE::NiNode* weapon, const bool emptyHand)
+    void WeaponPositionAdjuster::checkEquippedWeaponChanged(RE::NiNode* weapon)
     {
-        const auto& weaponName = emptyHand ? EMPTY_HAND : getEquippedWeaponNameExtended(weapon);
+        const auto& weaponName = weapon == nullptr ? EMPTY_HAND : getEquippedWeaponNameExtended(weapon);
         const bool inPA = f4vr::isInPowerArmor();
         if (weaponName == _currentWeapon && inPA == _currentlyInPA) {
             // no weapon change

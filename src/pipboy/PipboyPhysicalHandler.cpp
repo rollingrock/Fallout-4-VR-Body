@@ -2,6 +2,7 @@
 
 #include "Config.h"
 #include "FRIK.h"
+#include "utils.h"
 #include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 

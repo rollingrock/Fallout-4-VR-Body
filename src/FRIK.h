@@ -2,6 +2,7 @@
 
 #include <Version.h>
 
+#include "Config.h"
 #include "ModBase.h"
 #include "PlayerControlsHandler.h"
 #include "config-mode/ConfigurationMode.h"

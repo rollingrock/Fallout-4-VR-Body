@@ -149,6 +149,9 @@ namespace frik
         logger::trace("Update Bone Sphere...");
         _boneSpheres.onFrameUpdate();
 
+        logger::trace("Update player controls...");
+        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition);
+
         logger::trace("Update Weapon Position...");
         _weaponPosition->onFrameUpdate();
 
@@ -161,8 +164,6 @@ namespace frik
 
         FrameUpdateContext context(_skelly);
         vrui::g_uiManager->onFrameUpdate(&context);
-
-        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition, &_gameMenusHandler);
 
         updateWorldFinal();
     }

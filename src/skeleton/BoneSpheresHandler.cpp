@@ -4,6 +4,7 @@
 
 #include "FRIK.h"
 #include "f4sevr/PapyrusNativeFunctions.h"
+#include "f4sevr/PapyrusUtils.h"
 
 using namespace common;
 using namespace F4SEVR;
