@@ -82,7 +82,6 @@ namespace frik
 
         logger::info("Register papyrus native functions...");
         initPapyrusApis();
-        PapyrusGateway::init();
         _boneSpheres.init();
 
         _gameMenusHandler.init([this](const std::string& name, const bool isOpened) {

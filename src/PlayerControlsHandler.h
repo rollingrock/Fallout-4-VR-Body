@@ -36,9 +36,9 @@ namespace frik
         if (pipboy->isOpen() || mainConfigMode.isBodyAdjustOpen() || weaponPosition->inWeaponRepositionMode() || pipboy->isOperatingWithFinger()) {
             disableControls();
 
-            // hide the weapon so the player can interact easily with the Pipboy
+            // hide the weapon so the player can interact easily with the Pipboy (not relevant for left-handed)
             // Note: important this codes runs before WeaponPositionAdjuster to have it not change hand transform
-            if (pipboy->isOperatingWithFinger() && weaponPosition->isWeaponDrawn()) {
+            if (!f4vr::isLeftHandedMode() && pipboy->isOperatingWithFinger() && weaponPosition->isWeaponDrawn()) {
                 f4vr::setNodeVisibility(f4vr::getWeaponNode(), false);
             }
             return;

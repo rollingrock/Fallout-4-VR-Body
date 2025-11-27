@@ -483,14 +483,18 @@ namespace frik
 
         const auto movingStick = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Offhand);
         const auto lookingStick = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
+        const bool isPlayerActing =
+            fNotEqual(movingStick.x, 0, 0.3f)
+            || fNotEqual(movingStick.y, 0, 0.3f)
+            || fNotEqual(lookingStick.x, 0, 0.3f)
+            || fNotEqual(lookingStick.y, 0, 0.3f)
+            || vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Primary, vr::k_EButton_SteamVR_Trigger);
 
         const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway
             && !g_frik.isPipboyConfigurationModeActive()
             && isNowTimePassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
 
-        const bool closeLookingWayWithMovement = g_config.pipboyCloseWhenMovingWhileLookingAway
-            && !g_frik.isPipboyConfigurationModeActive()
-            && (fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f) || fNotEqual(lookingStick.x, 0, 0.3f) || fNotEqual(lookingStick.y, 0, 0.3f));
+        const bool closeLookingWayWithMovement = isPlayerActing && g_config.pipboyCloseWhenMovingWhileLookingAway && !g_frik.isPipboyConfigurationModeActive();
 
         if (closeLookingWayWithDelay || closeLookingWayWithMovement) {
             logger::info("Close Pipboy when looking away: byDelay({}), byMovement({})", closeLookingWayWithDelay, closeLookingWayWithMovement);
