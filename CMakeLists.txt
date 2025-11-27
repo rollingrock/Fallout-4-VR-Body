@@ -48,7 +48,7 @@ else()
 endif()
 # Verify path is correct
 if(NOT EXISTS "${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}/src/ModBase.h")
-  message(FATAL_ERROR ">> F4VRCommonFramework path not found in '${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}'! Did you init submodules or set F4VRCommonFrameworkPath?")
+  message(FATAL_ERROR ">> F4VRCommonFramework path not found in '${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}'! Did you init submodules or set F4VR_COMMON_FRAMEWORK_PATH?")
 endif()
 
 # >>> Create Project
@@ -84,7 +84,7 @@ source_group(TREE ${ROOT_DIR} FILES ${headers} ${sources} ${inls})
 
 # >>> Resource files
 list(APPEND resource_files
-  "${ROOT_DIR}/data/config/FRIK.ini"
+  "${ROOT_DIR}/data/config/${NAME}.ini"
   "${ROOT_DIR}/data/config/mesh_hide_face.ini"
   "${ROOT_DIR}/data/config/mesh_hide_skins.ini"
   "${ROOT_DIR}/data/config/mesh_hide_slots.ini"
