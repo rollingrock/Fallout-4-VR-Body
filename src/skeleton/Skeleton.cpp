@@ -5,15 +5,15 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "HandPose.h"
-#include "common/Logger.h"
 #include "common/MatrixUtils.h"
 #include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRUtils.h"
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 
 using namespace common;
 using namespace f4vr;
+using namespace vrcf;
 
 namespace
 {
@@ -161,12 +161,12 @@ namespace frik
 
     void Skeleton::setBodyLen()
     {
-        _torsoLen = vec3Len(findNode(_root, "Camera")->world.translate - findNode(_root, "COM")->world.translate);
+        _torsoLen = MatrixUtils::vec3Len(findNode(_root, "Camera")->world.translate - findNode(_root, "COM")->world.translate);
         _torsoLen *= g_config.playerHeight / DEFAULT_CAMERA_HEIGHT;
 
-        _legLen = vec3Len(findNode(_root, "LLeg_Thigh")->world.translate - findNode(_root, "Pelvis")->world.translate);
-        _legLen += vec3Len(findNode(_root, "LLeg_Calf")->world.translate - findNode(_root, "LLeg_Thigh")->world.translate);
-        _legLen += vec3Len(findNode(_root, "LLeg_Foot")->world.translate - findNode(_root, "LLeg_Calf")->world.translate);
+        _legLen = MatrixUtils::vec3Len(findNode(_root, "LLeg_Thigh")->world.translate - findNode(_root, "Pelvis")->world.translate);
+        _legLen += MatrixUtils::vec3Len(findNode(_root, "LLeg_Calf")->world.translate - findNode(_root, "LLeg_Thigh")->world.translate);
+        _legLen += MatrixUtils::vec3Len(findNode(_root, "LLeg_Foot")->world.translate - findNode(_root, "LLeg_Calf")->world.translate);
         _legLen *= g_config.playerHeight / DEFAULT_CAMERA_HEIGHT;
     }
 
@@ -280,7 +280,7 @@ namespace frik
     {
         const float headBackAdj = g_frik.getSelfieMode() && g_config.selfieIgnoreHideFlags ? 0 : g_config.headBackPositionOffset + (neckPitch > 0 ? 2 * neckPitch : 0);
         _head->local.translate -= RE::NiPoint3(headBackAdj, 2 * headBackAdj, 0);
-        _head->local.rotate = _head->local.rotate * getMatrixFromEulerAngles(neckYaw, 0, neckPitch);
+        _head->local.rotate = _head->local.rotate * MatrixUtils::getMatrixFromEulerAngles(neckYaw, 0, neckPitch);
         RE::NiUpdateData* ud = nullptr;
         _head->UpdateWorldData(ud);
     }
@@ -302,7 +302,7 @@ namespace frik
         const RE::NiPoint3 hmdToRight = _playerNodes->primaryWandNode->world.translate - pos;
         float weight = 1.0f;
 
-        if (vec3Len(hmdToLeft) < 10.0f || vec3Len(hmdToRight) < 10.0f) {
+        if (MatrixUtils::vec3Len(hmdToLeft) < 10.0f || MatrixUtils::vec3Len(hmdToRight) < 10.0f) {
             return 0.0;
         }
 
@@ -327,28 +327,29 @@ namespace frik
 
         const RE::NiPoint3 sum = hmdToRight + hmdToLeft;
 
-        const RE::NiPoint3 forwardDir = vec3Norm(_playerNodes->HmdNode->world.rotate * (vec3Norm(sum))); // rotate sum to local hmd space to get the proper angle
-        const RE::NiPoint3 hmdForwardDir = vec3Norm(_playerNodes->HmdNode->world.rotate * (_playerNodes->HmdNode->local.translate));
+        const RE::NiPoint3 forwardDir = MatrixUtils::vec3Norm(_playerNodes->HmdNode->world.rotate * (MatrixUtils::vec3Norm(sum)));
+        // rotate sum to local hmd space to get the proper angle
+        const RE::NiPoint3 hmdForwardDir = MatrixUtils::vec3Norm(_playerNodes->HmdNode->world.rotate * (_playerNodes->HmdNode->local.translate));
 
         const float anglePrime = atan2f(forwardDir.x, forwardDir.y);
         const float angleSec = atan2f(forwardDir.x, forwardDir.z);
 
         const float pitchDiff = atan2f(hmdForwardDir.y, hmdForwardDir.z) - atan2f(forwardDir.z, forwardDir.y);
 
-        const float angleFinal = fabs(pitchDiff) > degreesToRads(80.0f) ? angleSec : anglePrime;
-        return std::clamp(-angleFinal * weight, degreesToRads(-50.0f), degreesToRads(50.0f));
+        const float angleFinal = fabs(pitchDiff) > MatrixUtils::degreesToRads(80.0f) ? angleSec : anglePrime;
+        return std::clamp(-angleFinal * weight, MatrixUtils::degreesToRads(-50.0f), MatrixUtils::degreesToRads(50.0f));
     }
 
     float Skeleton::getNeckPitch() const
     {
-        const RE::NiPoint3& lookDir = vec3Norm(_playerNodes->HmdNode->world.rotate * (_playerNodes->HmdNode->local.translate));
+        const RE::NiPoint3& lookDir = MatrixUtils::vec3Norm(_playerNodes->HmdNode->world.rotate * (_playerNodes->HmdNode->local.translate));
         return atan2f(lookDir.y, lookDir.z);
     }
 
     float Skeleton::getBodyPitch(const float neckPitch) const
     {
         if (isComfortSneakHackEnabled()) {
-            return degreesToRads(g_config.comfortSneakHackStaticBodyPitchAngle);
+            return MatrixUtils::degreesToRads(g_config.comfortSneakHackStaticBodyPitchAngle);
         }
 
         constexpr float basePitch = 105.3f;
@@ -356,8 +357,8 @@ namespace frik
 
         const float curHeight = g_config.playerHeight;
         const float heightCalc = std::abs((curHeight - (_playerNodes->UprightHmdNode->local.translate.z + getAdjustedPlayerHMDOffset())) / curHeight);
-        const float angle = heightCalc * (basePitch + weight * radsToDegrees(neckPitch));
-        return degreesToRads(angle);
+        const float angle = heightCalc * (basePitch + weight * MatrixUtils::radsToDegrees(neckPitch));
+        return MatrixUtils::degreesToRads(angle);
     }
 
     /**
@@ -380,7 +381,7 @@ namespace frik
 
         const RE::NiMatrix3 newRot = qa.getMatrix() * _playerNodes->HmdNode->local.rotate;
 
-        _forwardDir = rotateXY(RE::NiPoint3(newRot.entry[1][0], newRot.entry[1][1], 0), neckYaw * 0.7f);
+        _forwardDir = MatrixUtils::rotateXY(RE::NiPoint3(newRot.entry[1][0], newRot.entry[1][1], 0), neckYaw * 0.7f);
         _sidewaysRDir = RE::NiPoint3(_forwardDir.y, -_forwardDir.x, 0);
 
         RE::NiNode* body = _root->parent;
@@ -389,10 +390,10 @@ namespace frik
         body->world.translate.y = _curentPosition.y;
         body->world.translate.z += _playerNodes->playerworldnode->local.translate.z;
 
-        const RE::NiPoint3 back = vec3Norm(RE::NiPoint3(_forwardDir.x, _forwardDir.y, 0));
+        const RE::NiPoint3 back = MatrixUtils::vec3Norm(RE::NiPoint3(_forwardDir.x, _forwardDir.y, 0));
         const auto bodyDir = RE::NiPoint3(0, 1, 0);
 
-        _root->local.rotate = getMatrixFromRotateVectorVec(back, bodyDir) * body->world.rotate.Transpose();
+        _root->local.rotate = MatrixUtils::getMatrixFromRotateVectorVec(back, bodyDir) * body->world.rotate.Transpose();
         _root->local.translate = body->world.translate - _curentPosition;
         _root->local.translate.z = z;
         //_root->local.translate *= 0.0f;
@@ -429,17 +430,17 @@ namespace frik
             -_forwardDir.y * (g_config.getPlayerBodyOffsetForward() / 2 - xOffsetByNeckPitch),
             -playerAdjustZ);
 
-        _torsoLen = vec3Len(neck->world.translate - com->world.translate);
+        _torsoLen = MatrixUtils::vec3Len(neck->world.translate - com->world.translate);
 
         const RE::NiPoint3 hmdToHip = neckPos - com->world.translate;
         const auto dir = RE::NiPoint3(-_forwardDir.x, -_forwardDir.y, 0);
 
-        const float dist = tanf(bodyPitch) * vec3Len(hmdToHip);
-        RE::NiPoint3 tmpHipPos = com->world.translate + dir * (dist / vec3Len(dir));
+        const float dist = tanf(bodyPitch) * MatrixUtils::vec3Len(hmdToHip);
+        RE::NiPoint3 tmpHipPos = com->world.translate + dir * (dist / MatrixUtils::vec3Len(dir));
         tmpHipPos.z = com->world.translate.z;
 
         const RE::NiPoint3 hmdToNewHip = tmpHipPos - neckPos;
-        const RE::NiPoint3 newHipPos = neckPos + hmdToNewHip * (_torsoLen / vec3Len(hmdToNewHip));
+        const RE::NiPoint3 newHipPos = neckPos + hmdToNewHip * (_torsoLen / MatrixUtils::vec3Len(hmdToNewHip));
 
         const RE::NiPoint3 newPos = com->local.translate + _root->world.rotate * (newHipPos - com->world.translate);
         com->local.translate.y += newPos.y + g_config.getPlayerBodyOffsetForward() - 2 * xOffsetByNeckPitch;
@@ -448,7 +449,7 @@ namespace frik
         // ???
         _root->parent->world.translate.z -= g_config.getPlayerBodyOffsetUp() + getAdjustedPlayerHMDOffset();
 
-        const RE::NiMatrix3 mat = getMatrixFromRotateVectorVec(neckPos - tmpHipPos, hmdToHip) * spine->parent->world.rotate.Transpose();
+        const RE::NiMatrix3 mat = MatrixUtils::getMatrixFromRotateVectorVec(neckPos - tmpHipPos, hmdToHip) * spine->parent->world.rotate.Transpose();
         spine->local.rotate = spine->world.rotate * mat;
     }
 
@@ -524,13 +525,13 @@ namespace frik
 
         RE::NiPoint3 dir = curPos - lastPos;
 
-        float curSpeed = std::clamp(abs(vec3Len(dir)) / _frameTime, 0.0f, 350.0f);
+        float curSpeed = std::clamp(abs(MatrixUtils::vec3Len(dir)) / _frameTime, 0.0f, 350.0f);
         if (_prevSpeed > 20.0f) {
             curSpeed = (curSpeed + _prevSpeed) / 2.0f;
         }
 
         const float stepTime = std::clamp(cos(curSpeed / 140.0f), 0.28f, 0.50f);
-        dir = vec3Norm(dir);
+        dir = MatrixUtils::vec3Norm(dir);
 
         // if decelerating reset target
         if (curSpeed - _prevSpeed < -20.0f) {
@@ -619,7 +620,7 @@ namespace frik
         }
         if (_walkingState == 1) {
             RE::NiPoint3 dirOffset = dir - _stepDir;
-            const float dot = vec3Dot(dir, _stepDir);
+            const float dot = MatrixUtils::vec3Dot(dir, _stepDir);
             const float scale = (std::min)(curSpeed * stepTime * 1.5f, 140.0f);
             dirOffset = dirOffset * scale;
 
@@ -646,7 +647,7 @@ namespace frik
                 _rightFootTarget.z = _root->world.translate.z;
                 _rightFootStart.z = _root->world.translate.z;
                 _rightFootPos = _rightFootStart + (_rightFootTarget - _rightFootStart) * interp;
-                const float stepAmount = std::clamp(vec3Len(_rightFootTarget - _rightFootStart) / 150.0f, 0.0f, 1.0f);
+                const float stepAmount = std::clamp(MatrixUtils::vec3Len(_rightFootTarget - _rightFootStart) / 150.0f, 0.0f, 1.0f);
                 const float stepHeight = (std::max)(stepAmount * 9.0f, 1.0f);
                 const float up = sinf(interp * std::numbers::pi_v<float>) * stepHeight;
                 _rightFootPos.z += up;
@@ -665,7 +666,7 @@ namespace frik
                 _leftFootTarget.z = _root->world.translate.z;
                 _leftFootStart.z = _root->world.translate.z;
                 _leftFootPos = _leftFootStart + (_leftFootTarget - _leftFootStart) * interp;
-                const float stepAmount = std::clamp(vec3Len(_leftFootTarget - _leftFootStart) / 150.0f, 0.0f, 1.0f);
+                const float stepAmount = std::clamp(MatrixUtils::vec3Len(_leftFootTarget - _leftFootStart) / 150.0f, 0.0f, 1.0f);
                 const float stepHeight = (std::max)(stepAmount * 9.0f, 1.0f);
                 const float up = sinf(interp * std::numbers::pi_v<float>) * stepHeight;
                 _leftFootPos.z += up;
@@ -673,7 +674,7 @@ namespace frik
 
             spineAngle = sign * sinf(interp * std::numbers::pi_v<float>) * 3.0f;
 
-            _spine->local.rotate = getMatrixFromEulerAngles(degreesToRads(spineAngle), 0.0f, 0.0f) * _spine->local.rotate;
+            _spine->local.rotate = MatrixUtils::getMatrixFromEulerAngles(MatrixUtils::degreesToRads(spineAngle), 0.0f, 0.0f) * _spine->local.rotate;
 
             if (_currentStepTime > stepTime) {
                 _currentStepTime = 0.0;
@@ -718,15 +719,15 @@ namespace frik
             rotV.z = isLeft ? 1.0f : -1.0f;
         }
         const RE::NiPoint3 hipDir = hipNode->world.rotate.Transpose() * (rotV);
-        const RE::NiPoint3 xDir = vec3Norm(footToHip);
-        const RE::NiPoint3 yDir = vec3Norm(hipDir - xDir * vec3Dot(hipDir, xDir));
+        const RE::NiPoint3 xDir = MatrixUtils::vec3Norm(footToHip);
+        const RE::NiPoint3 yDir = MatrixUtils::vec3Norm(hipDir - xDir * MatrixUtils::vec3Dot(hipDir, xDir));
 
-        const float thighLenOrig = vec3Len(kneeNode->local.translate);
-        const float calfLenOrig = vec3Len(footNode->local.translate);
+        const float thighLenOrig = MatrixUtils::vec3Len(kneeNode->local.translate);
+        const float calfLenOrig = MatrixUtils::vec3Len(footNode->local.translate);
         float thighLen = thighLenOrig;
         float calfLen = calfLenOrig;
 
-        const float ftLen = (std::max)(vec3Len(footToHip), 0.1f);
+        const float ftLen = (std::max)(MatrixUtils::vec3Len(footToHip), 0.1f);
 
         if (ftLen > thighLen + calfLen) {
             const float diff = ftLen - thighLen - calfLen;
@@ -748,28 +749,28 @@ namespace frik
         const RE::NiPoint3 kneePos = footPos + xDir * xDist + yDir * yDist;
 
         const RE::NiPoint3 pos = kneePos - hipPos;
-        RE::NiPoint3 uLocalDir = hipNode->world.rotate * (vec3Norm(pos) / hipNode->world.scale);
-        hipNode->local.rotate = getMatrixFromRotateVectorVec(uLocalDir, kneeNode->local.translate) * hipNode->local.rotate;
+        RE::NiPoint3 uLocalDir = hipNode->world.rotate * (MatrixUtils::vec3Norm(pos) / hipNode->world.scale);
+        hipNode->local.rotate = MatrixUtils::getMatrixFromRotateVectorVec(uLocalDir, kneeNode->local.translate) * hipNode->local.rotate;
 
         const RE::NiMatrix3 hipWR = hipNode->local.rotate * hipNode->parent->world.rotate;
 
         RE::NiMatrix3 calfWR = kneeNode->local.rotate * hipWR;
 
-        uLocalDir = calfWR * (vec3Norm(footPos - kneePos) / kneeNode->world.scale);
-        kneeNode->local.rotate = getMatrixFromRotateVectorVec(uLocalDir, footNode->local.translate) * kneeNode->local.rotate;
+        uLocalDir = calfWR * (MatrixUtils::vec3Norm(footPos - kneePos) / kneeNode->world.scale);
+        kneeNode->local.rotate = MatrixUtils::getMatrixFromRotateVectorVec(uLocalDir, footNode->local.translate) * kneeNode->local.rotate;
 
         calfWR = kneeNode->local.rotate * hipWR;
 
         // Calculate Clp:  Cwp = Twp + Twr * (Clp * Tws) = kneePos   ===>   Clp = Twr' * (kneePos - Twp) / Tws
         kneeNode->local.translate = hipWR * ((kneePos - hipPos) / hipNode->world.scale);
-        if (vec3Len(kneeNode->local.translate) > thighLenOrig) {
-            kneeNode->local.translate = vec3Norm(kneeNode->local.translate) * thighLenOrig;
+        if (MatrixUtils::vec3Len(kneeNode->local.translate) > thighLenOrig) {
+            kneeNode->local.translate = MatrixUtils::vec3Norm(kneeNode->local.translate) * thighLenOrig;
         }
 
         // Calculate Flp:  Fwp = Cwp + Cwr * (Flp * Cws) = footPos   ===>   Flp = Cwr' * (footPos - Cwp) / Cws
         footNode->local.translate = calfWR * ((footPos - kneePos) / kneeNode->world.scale);
-        if (vec3Len(footNode->local.translate) > calfLenOrig) {
-            footNode->local.translate = vec3Norm(footNode->local.translate) * calfLenOrig;
+        if (MatrixUtils::vec3Len(footNode->local.translate) > calfLenOrig) {
+            footNode->local.translate = MatrixUtils::vec3Norm(footNode->local.translate) * calfLenOrig;
         }
     }
 
@@ -778,7 +779,7 @@ namespace frik
         const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
 
         auto& transform = rt->transforms[pos];
-        transform.local.rotate = getMatrixFromEulerAngles(degreesToRads(angle), 0, 0) * transform.local.rotate;
+        transform.local.rotate = MatrixUtils::getMatrixFromEulerAngles(MatrixUtils::degreesToRads(angle), 0, 0) * transform.local.rotate;
 
         const auto& parentTransform = rt->transforms[transform.parPos];
         const RE::NiPoint3 p = parentTransform.world.rotate * (transform.local.translate * parentTransform.world.scale);
@@ -939,17 +940,17 @@ namespace frik
         if (handleOffhand) {
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local = _playerNodes->primaryWeaponOffsetNOde->local;
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate =
-                _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(180.0f), 0);
+                _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(180.0f), 0);
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.translate = RE::NiPoint3(-2, -9, 2);
             updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
 
         weaponNode->local.rotate = !isLeftHandedMode()
-            ? getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
-            : getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
+            ? MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
+            : MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
 
         if (handleOffhand) {
-            weaponNode->local.rotate = weaponNode->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(isLeft ? 45.0f : -45.0f), 0);
+            weaponNode->local.rotate = weaponNode->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(isLeft ? 45.0f : -45.0f), 0);
         }
 
         weaponNode->local.translate = isLeftHandedMode()
@@ -972,7 +973,7 @@ namespace frik
         // If it is, do not handle IK and let Fallout use its normal animations for that arm instead.
         if (isnan(handPos.x) || isnan(handPos.y) || isnan(handPos.z) ||
             isinf(handPos.x) || isinf(handPos.y) || isinf(handPos.z) ||
-            vec3Len(arm.upper->world.translate - handPos) > 200.0) {
+            MatrixUtils::vec3Len(arm.upper->world.translate - handPos) > 200.0) {
             return;
         }
 
@@ -982,14 +983,14 @@ namespace frik
 
         RE::NiPoint3 shoulderToHand = handPos - arm.upper->world.translate;
         float armLength = g_config.armLength;
-        float adjustAmount = (std::clamp)(vec3Len(shoulderToHand) - armLength * 0.5f, 0.0f, armLength * 0.85f) / (armLength * 0.85f);
-        RE::NiPoint3 shoulderOffset = vec3Norm(shoulderToHand) * (adjustAmount * armLength * 0.08f);
+        float adjustAmount = (std::clamp)(MatrixUtils::vec3Len(shoulderToHand) - armLength * 0.5f, 0.0f, armLength * 0.85f) / (armLength * 0.85f);
+        RE::NiPoint3 shoulderOffset = MatrixUtils::vec3Norm(shoulderToHand) * (adjustAmount * armLength * 0.08f);
 
         RE::NiPoint3 clavicalToNewShoulder = arm.upper->world.translate + shoulderOffset - arm.shoulder->world.translate;
 
         RE::NiPoint3 sLocalDir = arm.shoulder->world.rotate * (clavicalToNewShoulder / arm.shoulder->world.scale);
 
-        RE::NiMatrix3 result = getMatrixFromRotateVectorVec(sLocalDir, RE::NiPoint3(1, 0, 0)) * arm.shoulder->local.rotate;
+        RE::NiMatrix3 result = MatrixUtils::getMatrixFromRotateVectorVec(sLocalDir, RE::NiPoint3(1, 0, 0)) * arm.shoulder->local.rotate;
         arm.shoulder->local.rotate = result;
 
         updateDown(arm.shoulder, true);
@@ -1010,20 +1011,21 @@ namespace frik
 
         float negLeft = isLeft ? -1.0f : 1.0f;
 
-        float originalUpperLen = vec3Len(arm.forearm1->local.translate);
+        float originalUpperLen = MatrixUtils::vec3Len(arm.forearm1->local.translate);
         float originalForearmLen;
 
         if (_inPowerArmor) {
-            originalForearmLen = vec3Len(arm.hand->local.translate);
+            originalForearmLen = MatrixUtils::vec3Len(arm.hand->local.translate);
         } else {
-            originalForearmLen = vec3Len(arm.hand->local.translate) + vec3Len(arm.forearm2->local.translate) + vec3Len(arm.forearm3->local.translate);
+            originalForearmLen = MatrixUtils::vec3Len(arm.hand->local.translate) + MatrixUtils::vec3Len(arm.forearm2->local.translate) + MatrixUtils::vec3Len(
+                arm.forearm3->local.translate);
         }
         float upperLen = originalUpperLen * adjustedArmLength;
         float forearmLen = originalForearmLen * adjustedArmLength;
 
         RE::NiPoint3 Uwp = arm.upper->world.translate;
         RE::NiPoint3 handToShoulder = Uwp - handPos;
-        float hsLen = (std::max)(vec3Len(handToShoulder), 0.1f);
+        float hsLen = (std::max)(MatrixUtils::vec3Len(handToShoulder), 0.1f);
 
         if (hsLen > (upperLen + forearmLen) * 2.25f) {
             return;
@@ -1037,8 +1039,8 @@ namespace frik
             upperLen += (1.0f - ratio) * diff + 0.1f;
         }
 
-        RE::NiPoint3 forwardDir = vec3Norm(_forwardDir);
-        RE::NiPoint3 sidewaysDir = vec3Norm(_sidewaysRDir * negLeft);
+        RE::NiPoint3 forwardDir = MatrixUtils::vec3Norm(_forwardDir);
+        RE::NiPoint3 sidewaysDir = MatrixUtils::vec3Norm(_sidewaysRDir * negLeft);
 
         // The primary twist angle comes from the direction the wrist is pointing into the forearm
         RE::NiPoint3 handBack = handRot.Transpose() * (RE::NiPoint3(-1, 0, 0));
@@ -1073,7 +1075,7 @@ namespace frik
         float behindAmount = (std::clamp)(handBehindDist / (40.0f * size), 0.0f, 1.0f);
 
         // Holding hands in front of chest increases the minimum elbow rotation angle (elbows lift) and decreases the maximum angle
-        RE::NiPoint3 planeDir = rotateXY(forwardDir, negLeft * degreesToRads(135));
+        RE::NiPoint3 planeDir = MatrixUtils::rotateXY(forwardDir, negLeft * MatrixUtils::degreesToRads(135));
         float planeD = -(planeDir.x * arm.shoulder->world.translate.x + planeDir.y * arm.shoulder->world.translate.y) + 16.0f * size;
         float armCrossAmount = (std::clamp)((handPos.x * planeDir.x + handPos.y * planeDir.y + planeD) / (20.0f * size), 0.0f, 1.0f);
 
@@ -1088,24 +1090,24 @@ namespace frik
         float adjustMinAmount = (std::max)(behindAmount, (std::min)(armCrossAmount, armLiftLimit));
 
         // Get the minimum and maximum angles at which the elbow is allowed to twist
-        float twistMinAngle = degreesToRads(-85.0) + degreesToRads(50) * adjustMinAmount;
-        float twistMaxAngle = degreesToRads(55.0) - (std::max)(degreesToRads(90) * armCrossAmount, degreesToRads(70) * upLimit);
+        float twistMinAngle = MatrixUtils::degreesToRads(-85.0) + MatrixUtils::degreesToRads(50) * adjustMinAmount;
+        float twistMaxAngle = MatrixUtils::degreesToRads(55.0) - (std::max)(MatrixUtils::degreesToRads(90) * armCrossAmount, MatrixUtils::degreesToRads(70) * upLimit);
 
         // Twist angle ranges from -PI/2 to +PI/2; map that range to go from the minimum to the maximum instead
         float twistLimitAngle = twistMinAngle + (twistAngle + std::numbers::pi_v<float> / 2.0f) / std::numbers::pi_v<float> * (twistMaxAngle - twistMinAngle);
 
         //logger::info("{} {} {} {}", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), rads_to_degrees(twistAngle), rads_to_degrees(twistLimitAngle));
         // The bendDownDir vector points in the direction the player faces, and bends up/down with the final elbow angle
-        RE::NiMatrix3 rot = getRotationAxisAngle(sidewaysDir * negLeft, twistLimitAngle);
+        RE::NiMatrix3 rot = MatrixUtils::getRotationAxisAngle(sidewaysDir * negLeft, twistLimitAngle);
         RE::NiPoint3 bendDownDir = rot.Transpose() * (forwardDir);
 
         // Get the "X" direction vectors pointing to the shoulder
-        RE::NiPoint3 xDir = vec3Norm(handToShoulder);
+        RE::NiPoint3 xDir = MatrixUtils::vec3Norm(handToShoulder);
 
         // Get the final "Y" vector, perpendicular to "X", and pointing in elbow direction (as in the diagram above)
         float sideD = -(sidewaysDir.x * arm.shoulder->world.translate.x + sidewaysDir.y * arm.shoulder->world.translate.y) - 1.0f * 8.0f;
         float acrossAmount = -(handPos.x * sidewaysDir.x + handPos.y * sidewaysDir.y + sideD) / (16.0f * 1.0f);
-        float handSideTwistOutward = vec3Dot(handSide, vec3Norm(sidewaysDir + forwardDir * 0.5f));
+        float handSideTwistOutward = MatrixUtils::vec3Dot(handSide, MatrixUtils::vec3Norm(sidewaysDir + forwardDir * 0.5f));
         float armTwist = (std::clamp)(handSideTwistOutward - (std::max)(0.0f, acrossAmount + 0.25f), 0.0f, 1.0f);
 
         if (acrossAmount < 0) {
@@ -1113,10 +1115,10 @@ namespace frik
         }
 
         float handBehindHead = (std::clamp)((handBehindDist + 0.0f * size) / (15.0f * size), 0.0f, 1.0f) * (std::clamp)(upLimit * 1.2f, 0.0f, 1.0f);
-        float elbowsTwistForward = (std::max)(acrossAmount * degreesToRads(90), handBehindHead * degreesToRads(120));
-        RE::NiPoint3 elbowDir = rotateXY(bendDownDir, -negLeft * (degreesToRads(150) - armTwist * degreesToRads(25) - elbowsTwistForward));
-        RE::NiPoint3 yDir = elbowDir - xDir * vec3Dot(elbowDir, xDir);
-        yDir = vec3Norm(yDir);
+        float elbowsTwistForward = (std::max)(acrossAmount * MatrixUtils::degreesToRads(90), handBehindHead * MatrixUtils::degreesToRads(120));
+        RE::NiPoint3 elbowDir = MatrixUtils::rotateXY(bendDownDir, -negLeft * (MatrixUtils::degreesToRads(150) - armTwist * MatrixUtils::degreesToRads(25) - elbowsTwistForward));
+        RE::NiPoint3 yDir = elbowDir - xDir * MatrixUtils::vec3Dot(elbowDir, xDir);
+        yDir = MatrixUtils::vec3Norm(yDir);
 
         // Get the angle wrist must bend to reach elbow position
         // In cases where this is impossible (hand too close to shoulder), then set forearmLen = upperLen so there is always a solution
@@ -1141,35 +1143,35 @@ namespace frik
         // Calculate Ulr:  baseUwr * rotTowardElbow = Cwr * Ulr   ===>   Ulr = Cwr' * baseUwr * rotTowardElbow
         RE::NiMatrix3 Uwr = arm.upper->world.rotate;
         RE::NiPoint3 pos = elbowWorld - Uwp;
-        RE::NiPoint3 uLocalDir = Uwr * (vec3Norm(pos) / arm.upper->world.scale);
+        RE::NiPoint3 uLocalDir = Uwr * (MatrixUtils::vec3Norm(pos) / arm.upper->world.scale);
 
-        arm.upper->local.rotate = getMatrixFromRotateVectorVec(uLocalDir, arm.forearm1->local.translate) * arm.upper->local.rotate;
+        arm.upper->local.rotate = MatrixUtils::getMatrixFromRotateVectorVec(uLocalDir, arm.forearm1->local.translate) * arm.upper->local.rotate;
 
         Uwr = arm.upper->local.rotate * arm.shoulder->world.rotate;
 
         // Find the angle of the forearm twisted around the upper arm and twist the upper arm to align it
         //    Uwr * twist = Cwr * Ulr   ===>   Ulr = Cwr' * Uwr * twist
         pos = handPos - elbowWorld;
-        RE::NiPoint3 uLocalTwist = Uwr * (vec3Norm(pos));
+        RE::NiPoint3 uLocalTwist = Uwr * (MatrixUtils::vec3Norm(pos));
         uLocalTwist.x = 0;
         RE::NiPoint3 upperSide = arm.upper->world.rotate.Transpose() * (RE::NiPoint3(0, 1, 0));
         RE::NiPoint3 uloc = arm.shoulder->world.rotate * (upperSide);
         uloc.x = 0;
-        float upperAngle = acosf(vec3Dot(vec3Norm(uLocalTwist), vec3Norm(uloc))) * (uLocalTwist.z > 0 ? 1.f : -1.f);
+        float upperAngle = acosf(MatrixUtils::vec3Dot(MatrixUtils::vec3Norm(uLocalTwist), MatrixUtils::vec3Norm(uloc))) * (uLocalTwist.z > 0 ? 1.f : -1.f);
 
-        arm.upper->local.rotate = getMatrixFromEulerAngles(-upperAngle, 0, 0) * arm.upper->local.rotate;
+        arm.upper->local.rotate = MatrixUtils::getMatrixFromEulerAngles(-upperAngle, 0, 0) * arm.upper->local.rotate;
 
         Uwr = arm.upper->local.rotate * arm.shoulder->world.rotate;
 
-        arm.forearm1->local.rotate = getMatrixFromEulerAngles(-upperAngle, 0, 0) * arm.forearm1->local.rotate;
+        arm.forearm1->local.rotate = MatrixUtils::getMatrixFromEulerAngles(-upperAngle, 0, 0) * arm.forearm1->local.rotate;
 
         // The forearm arm bone must be rotated from its forward vector to its elbow-to-hand vector in its local space
         // Calculate Flr:  Fwr * rotTowardHand = Uwr * Flr   ===>   Flr = Uwr' * Fwr * rotTowardHand
         RE::NiMatrix3 Fwr = arm.forearm1->local.rotate * Uwr;
         RE::NiPoint3 elbowHand = handPos - elbowWorld;
-        RE::NiPoint3 fLocalDir = Fwr * (vec3Norm(elbowHand));
+        RE::NiPoint3 fLocalDir = Fwr * (MatrixUtils::vec3Norm(elbowHand));
 
-        arm.forearm1->local.rotate = getMatrixFromRotateVectorVec(fLocalDir, RE::NiPoint3(1, 0, 0)) * arm.forearm1->local.rotate;
+        arm.forearm1->local.rotate = MatrixUtils::getMatrixFromRotateVectorVec(fLocalDir, RE::NiPoint3(1, 0, 0)) * arm.forearm1->local.rotate;
         Fwr = arm.forearm1->local.rotate * Uwr;
 
         RE::NiMatrix3 Fwr3;
@@ -1181,18 +1183,18 @@ namespace frik
             // Find the angle the wrist is pointing and twist forearm3 appropriately
             //    Fwr * twist = Uwr * Flr   ===>   Flr = (Uwr' * Fwr) * twist = (Flr) * twist
 
-            RE::NiPoint3 wLocalDir = Fwr3 * (vec3Norm(handInSide));
+            RE::NiPoint3 wLocalDir = Fwr3 * (MatrixUtils::vec3Norm(handInSide));
             wLocalDir.x = 0;
             RE::NiPoint3 forearm3Side = Fwr3.Transpose() * (RE::NiPoint3(0, 0, -1));
             // forearm is rotated 90 degrees already from hand so need this vector instead of 0,-1,0
-            RE::NiPoint3 floc = Fwr2 * (vec3Norm(forearm3Side));
+            RE::NiPoint3 floc = Fwr2 * (MatrixUtils::vec3Norm(forearm3Side));
             floc.x = 0;
-            float fcos = vec3Dot(vec3Norm(wLocalDir), vec3Norm(floc));
-            float fsin = vec3Det(vec3Norm(wLocalDir), vec3Norm(floc), RE::NiPoint3(-1, 0, 0));
+            float fcos = MatrixUtils::vec3Dot(MatrixUtils::vec3Norm(wLocalDir), MatrixUtils::vec3Norm(floc));
+            float fsin = MatrixUtils::vec3Det(MatrixUtils::vec3Norm(wLocalDir), MatrixUtils::vec3Norm(floc), RE::NiPoint3(-1, 0, 0));
             float forearmAngle = -1 * negLeft * atan2f(fsin, fcos);
 
-            arm.forearm2->local.rotate = getMatrixFromEulerAngles(negLeft * forearmAngle / 2, 0, 0) * arm.forearm2->local.rotate;
-            arm.forearm3->local.rotate = getMatrixFromEulerAngles(negLeft * forearmAngle / 2, 0, 0) * arm.forearm3->local.rotate;
+            arm.forearm2->local.rotate = MatrixUtils::getMatrixFromEulerAngles(negLeft * forearmAngle / 2, 0, 0) * arm.forearm2->local.rotate;
+            arm.forearm3->local.rotate = MatrixUtils::getMatrixFromEulerAngles(negLeft * forearmAngle / 2, 0, 0) * arm.forearm3->local.rotate;
 
             Fwr2 = arm.forearm2->local.rotate * Fwr;
             Fwr3 = arm.forearm3->local.rotate * Fwr2;
@@ -1204,7 +1206,7 @@ namespace frik
         // Calculate Flp:  Fwp = Uwp + Uwr * (Flp * Uws) = elbowWorld   ===>   Flp = Uwr' * (elbowWorld - Uwp) / Uws
         arm.forearm1->local.translate = Uwr * ((elbowWorld - Uwp) / arm.upper->world.scale);
 
-        float origEHLen = vec3Len(arm.hand->world.translate - arm.forearm1->world.translate);
+        float origEHLen = MatrixUtils::vec3Len(arm.hand->world.translate - arm.forearm1->world.translate);
         float forearmRatio = forearmLen / origEHLen * _root->local.scale;
 
         if (arm.forearm2 && !_inPowerArmor) {
@@ -1241,11 +1243,11 @@ namespace frik
         else if (thumbUp && bone.find("Finger1") != std::string::npos) {
             if (bone.find("Finger11") != std::string::npos) {
                 RE::NiMatrix3 wr = handOpen[bone].rotate;
-                wr = getMatrixFromEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f) * wr;
+                wr = MatrixUtils::getMatrixFromEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f) * wr;
                 qt.fromMatrix(wr);
             } else if (bone.find("Finger13") != std::string::npos) {
                 RE::NiMatrix3 wr = handOpen[bone].rotate;
-                wr = getMatrixFromEulerAngles(0, 0, degreesToRads(-35.0f)) * wr;
+                wr = MatrixUtils::getMatrixFromEulerAngles(0, 0, MatrixUtils::degreesToRads(-35.0f)) * wr;
                 qt.fromMatrix(wr);
             }
         } else if (_closedHand[bone]) {
@@ -1316,7 +1318,7 @@ namespace frik
                 _closedHand[name] = reg & ButtonMaskFromId(_handBonesButton.at(name));
 
                 if (IsWeaponDrawn()
-                    && (isLeftHandedMode() || (!g_frik.isPipboyOn() && !g_frik.isPipboyOperatingWithFinger())) // left-handed has pipboy on the hand with the weapon
+                    && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger()) // left-handed has pipboy on the hand with the weapon
                     && !(isLeft ^ isLeftHandedMode())) {
                     if (isLeftHandedMode()) {
                         setPredefinedHandPose(name);
@@ -1363,10 +1365,10 @@ namespace frik
         const float z = _root->local.translate.z;
         const RE::NiNode* body = _root->parent;
 
-        const RE::NiPoint3 back = vec3Norm(RE::NiPoint3(-_forwardDir.x, -_forwardDir.y, 0));
+        const RE::NiPoint3 back = MatrixUtils::vec3Norm(RE::NiPoint3(-_forwardDir.x, -_forwardDir.y, 0));
         const auto bodyDir = RE::NiPoint3(0, 1, 0);
 
-        _root->local.rotate = getMatrixFromRotateVectorVec(back, bodyDir) * body->world.rotate.Transpose();
+        _root->local.rotate = MatrixUtils::getMatrixFromRotateVectorVec(back, bodyDir) * body->world.rotate.Transpose();
         _root->local.translate = body->world.translate - _curentPosition;
         _root->local.translate.y += g_config.selfieOutFrontDistance;
         _root->local.translate.z = z;
@@ -1427,36 +1429,41 @@ namespace frik
     std::unordered_map<std::string, RE::NiTransform> Skeleton::getSkeletonNodesDefaultTransforms()
     {
         return std::unordered_map<std::string, RE::NiTransform>{
-            { "Root", getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "COM", getTransform(0.0f, 0.0f, 68.91130f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f) },
-            { "Pelvis", getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "LLeg_Thigh", getTransform(0.0f, 0.00040f, 6.61510f, -0.99112f, -0.00017f, -0.13297f, -0.03860f, 0.95730f, 0.28650f, 0.12725f, 0.28909f, -0.94881f, 1.0f) },
-            { "LLeg_Calf", getTransform(31.59520f, 0.0f, 0.0f, 0.99210f, 0.12266f, -0.02618f, -0.12266f, 0.99245f, 0.00159f, 0.02617f, 0.00164f, 0.99966f, 1.0f) },
-            { "LLeg_Foot", getTransform(31.94290f, 0.0f, 0.0f, 0.45330f, -0.88555f, -0.10159f, 0.88798f, 0.45855f, -0.03499f, 0.07757f, -0.07435f, 0.99421f, 1.0f) },
-            { "RLeg_Thigh", getTransform(0.0f, 0.00040f, -6.61510f, -0.99307f, 0.00520f, 0.11741f, -0.02903f, 0.95721f, -0.28795f, -0.11389f, -0.28936f, -0.95042f, 1.0f) },
-            { "RLeg_Calf", getTransform(31.59510f, 0.0f, 0.0f, 0.99108f, 0.13329f, 0.00011f, -0.13329f, 0.99108f, 0.00139f, 0.00007f, -0.00140f, 1.0f, 1.0f) },
-            { "RLeg_Foot", getTransform(31.94260f, 0.0f, 0.0f, 0.44741f, -0.88731f, 0.11181f, 0.89061f, 0.45344f, 0.03463f, -0.08143f, 0.08409f, 0.99313f, 1.0f) },
-            { "SPINE1", getTransform(3.792f, -0.00290f, 0.0f, 0.99246f, -0.12254f, 0.0f, 0.12254f, 0.99246f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "SPINE2", getTransform(8.70470f, 0.0f, 0.0f, 0.98463f, 0.17464f, 0.0f, -0.17464f, 0.98463f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "Chest", getTransform(9.95630f, 0.0f, 0.0f, 0.99983f, -0.01837f, 0.0f, 0.01837f, 0.99983f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "Root", MatrixUtils::getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "COM", MatrixUtils::getTransform(0.0f, 0.0f, 68.91130f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f) },
+            { "Pelvis", MatrixUtils::getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "LLeg_Thigh",
+              MatrixUtils::getTransform(0.0f, 0.00040f, 6.61510f, -0.99112f, -0.00017f, -0.13297f, -0.03860f, 0.95730f, 0.28650f, 0.12725f, 0.28909f, -0.94881f, 1.0f) },
+            { "LLeg_Calf", MatrixUtils::getTransform(31.59520f, 0.0f, 0.0f, 0.99210f, 0.12266f, -0.02618f, -0.12266f, 0.99245f, 0.00159f, 0.02617f, 0.00164f, 0.99966f, 1.0f) },
+            { "LLeg_Foot", MatrixUtils::getTransform(31.94290f, 0.0f, 0.0f, 0.45330f, -0.88555f, -0.10159f, 0.88798f, 0.45855f, -0.03499f, 0.07757f, -0.07435f, 0.99421f, 1.0f) },
+            { "RLeg_Thigh",
+              MatrixUtils::getTransform(0.0f, 0.00040f, -6.61510f, -0.99307f, 0.00520f, 0.11741f, -0.02903f, 0.95721f, -0.28795f, -0.11389f, -0.28936f, -0.95042f, 1.0f) },
+            { "RLeg_Calf", MatrixUtils::getTransform(31.59510f, 0.0f, 0.0f, 0.99108f, 0.13329f, 0.00011f, -0.13329f, 0.99108f, 0.00139f, 0.00007f, -0.00140f, 1.0f, 1.0f) },
+            { "RLeg_Foot", MatrixUtils::getTransform(31.94260f, 0.0f, 0.0f, 0.44741f, -0.88731f, 0.11181f, 0.89061f, 0.45344f, 0.03463f, -0.08143f, 0.08409f, 0.99313f, 1.0f) },
+            { "SPINE1", MatrixUtils::getTransform(3.792f, -0.00290f, 0.0f, 0.99246f, -0.12254f, 0.0f, 0.12254f, 0.99246f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "SPINE2", MatrixUtils::getTransform(8.70470f, 0.0f, 0.0f, 0.98463f, 0.17464f, 0.0f, -0.17464f, 0.98463f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "Chest", MatrixUtils::getTransform(9.95630f, 0.0f, 0.0f, 0.99983f, -0.01837f, 0.0f, 0.01837f, 0.99983f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
             { "LArm_Collarbone",
-              getTransform(19.15320f, -0.51040f, 1.69510f, -0.40489f, -0.00599f, -0.91434f, -0.26408f, 0.95813f, 0.11066f, 0.87540f, 0.28627f, -0.38952f, 1.0f) },
-            { "LArm_UpperArm", getTransform(12.53660f, 0.0f, 0.0f, 0.91617f, -0.25279f, -0.31102f, 0.25328f, 0.96658f, -0.03954f, 0.31062f, -0.04255f, 0.94958f, 1.0f) },
-            { "LArm_ForeArm1", getTransform(17.96830f, 0.0f, 0.0f, 0.85511f, -0.51462f, -0.06284f, 0.51548f, 0.85690f, -0.00289f, 0.05534f, -0.02992f, 0.99802f, 1.0f) },
-            { "LArm_ForeArm2", getTransform(6.15160f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, -0.00536f, 0.0f, 0.00536f, 0.99999f, 1.0f) },
-            { "LArm_ForeArm3", getTransform(6.15160f, -0.00010f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, -0.00536f, 0.0f, 0.00536f, 0.99999f, 1.0f) },
-            { "LArm_Hand", getTransform(6.15160f, 0.0f, -0.00010f, 0.98845f, 0.14557f, -0.04214f, 0.04136f, 0.00839f, 0.99911f, 0.14579f, -0.98931f, 0.00227f, 1.0f) },
+              MatrixUtils::getTransform(19.15320f, -0.51040f, 1.69510f, -0.40489f, -0.00599f, -0.91434f, -0.26408f, 0.95813f, 0.11066f, 0.87540f, 0.28627f, -0.38952f, 1.0f) },
+            { "LArm_UpperArm",
+              MatrixUtils::getTransform(12.53660f, 0.0f, 0.0f, 0.91617f, -0.25279f, -0.31102f, 0.25328f, 0.96658f, -0.03954f, 0.31062f, -0.04255f, 0.94958f, 1.0f) },
+            { "LArm_ForeArm1",
+              MatrixUtils::getTransform(17.96830f, 0.0f, 0.0f, 0.85511f, -0.51462f, -0.06284f, 0.51548f, 0.85690f, -0.00289f, 0.05534f, -0.02992f, 0.99802f, 1.0f) },
+            { "LArm_ForeArm2", MatrixUtils::getTransform(6.15160f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, -0.00536f, 0.0f, 0.00536f, 0.99999f, 1.0f) },
+            { "LArm_ForeArm3", MatrixUtils::getTransform(6.15160f, -0.00010f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, -0.00536f, 0.0f, 0.00536f, 0.99999f, 1.0f) },
+            { "LArm_Hand", MatrixUtils::getTransform(6.15160f, 0.0f, -0.00010f, 0.98845f, 0.14557f, -0.04214f, 0.04136f, 0.00839f, 0.99911f, 0.14579f, -0.98931f, 0.00227f, 1.0f) },
             {
                 "RArm_Collarbone",
-                getTransform(19.15320f, -0.51040f, -1.69510f, -0.40497f, -0.00602f, 0.91431f, -0.26413f, 0.95811f, -0.11069f, -0.87535f, -0.28632f, -0.38960f, 1.0f)
+                MatrixUtils::getTransform(19.15320f, -0.51040f, -1.69510f, -0.40497f, -0.00602f, 0.91431f, -0.26413f, 0.95811f, -0.11069f, -0.87535f, -0.28632f, -0.38960f, 1.0f)
             },
-            { "RArm_UpperArm", getTransform(12.53430f, 0.0f, 0.0f, 0.91620f, -0.25314f, 0.31064f, 0.25365f, 0.96649f, 0.03947f, -0.31022f, 0.04263f, 0.94971f, 1.0f) },
-            { "RArm_ForeArm1", getTransform(17.97050f, 0.00010f, -0.00010f, 0.85532f, -0.51419f, 0.06360f, 0.51507f, 0.85714f, 0.00288f, -0.05599f, 0.03030f, 0.99797f, 1.0f) },
-            { "RArm_ForeArm2", getTransform(6.15280f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, 0.00536f, 0.0f, -0.00536f, 0.99999f, 1.0f) },
-            { "RArm_ForeArm3", getTransform(6.15290f, 0.0f, -0.00010f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, 0.00536f, 0.0f, -0.00536f, 0.99999f, 1.0f) },
-            { "RArm_Hand", getTransform(6.15290f, 0.0f, 0.0f, 0.98845f, 0.14557f, 0.04214f, 0.04136f, 0.00839f, -0.99911f, -0.14579f, 0.98931f, 0.00227f, 1.0f) },
-            { "Neck", getTransform(22.084f, -3.767f, 0.0f, 0.91268f, -0.40867f, -0.00003f, 0.40867f, 0.91268f, 0.0f, 0.00002f, -0.00001f, 1.0f, 1.0f) },
-            { "Head", getTransform(8.22440f, 0.0f, 0.0f, 0.94872f, 0.31613f, 0.00002f, -0.31613f, 0.94872f, -0.00001f, -0.00003f, 0.0f, 1.0f, 1.0f) },
+            { "RArm_UpperArm", MatrixUtils::getTransform(12.53430f, 0.0f, 0.0f, 0.91620f, -0.25314f, 0.31064f, 0.25365f, 0.96649f, 0.03947f, -0.31022f, 0.04263f, 0.94971f, 1.0f) },
+            { "RArm_ForeArm1",
+              MatrixUtils::getTransform(17.97050f, 0.00010f, -0.00010f, 0.85532f, -0.51419f, 0.06360f, 0.51507f, 0.85714f, 0.00288f, -0.05599f, 0.03030f, 0.99797f, 1.0f) },
+            { "RArm_ForeArm2", MatrixUtils::getTransform(6.15280f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, 0.00536f, 0.0f, -0.00536f, 0.99999f, 1.0f) },
+            { "RArm_ForeArm3", MatrixUtils::getTransform(6.15290f, 0.0f, -0.00010f, 1.0f, 0.0f, 0.0f, 0.0f, 0.99999f, 0.00536f, 0.0f, -0.00536f, 0.99999f, 1.0f) },
+            { "RArm_Hand", MatrixUtils::getTransform(6.15290f, 0.0f, 0.0f, 0.98845f, 0.14557f, 0.04214f, 0.04136f, 0.00839f, -0.99911f, -0.14579f, 0.98931f, 0.00227f, 1.0f) },
+            { "Neck", MatrixUtils::getTransform(22.084f, -3.767f, 0.0f, 0.91268f, -0.40867f, -0.00003f, 0.40867f, 0.91268f, 0.0f, 0.00002f, -0.00001f, 1.0f, 1.0f) },
+            { "Head", MatrixUtils::getTransform(8.22440f, 0.0f, 0.0f, 0.94872f, 0.31613f, 0.00002f, -0.31613f, 0.94872f, -0.00001f, -0.00003f, 0.0f, 1.0f, 1.0f) },
         };
     }
 
@@ -1464,33 +1471,42 @@ namespace frik
     std::unordered_map<std::string, RE::NiTransform> Skeleton::getSkeletonNodesDefaultTransformsInPA()
     {
         return std::unordered_map<std::string, RE::NiTransform>{
-            { "Root", getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "COM", getTransform(0.0f, -3.74980f, 89.41950f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f) },
-            { "Pelvis", getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "LLeg_Thigh", getTransform(4.54870f, -1.33f, 6.90830f, -0.98736f, 0.14491f, 0.06416f, 0.06766f, 0.01940f, 0.99752f, 0.14331f, 0.98925f, -0.02896f, 1.0f) },
-            { "LLeg_Calf", getTransform(34.298f, 0.0f, 0.0f, 0.99681f, -0.00145f, 0.07983f, 0.00170f, 0.99999f, -0.00305f, -0.07982f, 0.00318f, 0.99680f, 1.0f) },
-            { "LLeg_Foot", getTransform(52.54120f, 0.0f, 0.0f, 0.63109f, -0.76168f, -0.14685f, -0.07775f, 0.12624f, -0.98895f, 0.77180f, 0.63554f, 0.02045f, 1.0f) },
-            { "RLeg_Thigh", getTransform(4.54760f, -1.32430f, -6.898f, -0.98732f, 0.14533f, -0.06381f, 0.06732f, 0.01938f, -0.99754f, -0.14374f, -0.98919f, -0.02892f, 1.0f) },
-            { "RLeg_Calf", getTransform(34.29790f, 0.0f, 0.0f, 0.99684f, -0.00096f, -0.07937f, 0.00120f, 0.99999f, 0.00307f, 0.07937f, -0.00316f, 0.99684f, 1.0f) },
-            { "RLeg_Foot", getTransform(52.54080f, 0.0f, 0.0f, 0.63118f, -0.76162f, 0.14677f, -0.07771f, 0.12618f, 0.98896f, -0.77173f, -0.63562f, 0.02046f, 1.0f) },
-            { "SPINE1", getTransform(5.75050f, -0.00290f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "SPINE2", getTransform(5.62550f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "Chest", getTransform(5.53660f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "LArm_Collarbone", getTransform(22.192f, 0.34820f, 1.00420f, -0.34818f, -0.05435f, -0.93585f, -0.26919f, 0.96207f, 0.04428f, 0.89794f, 0.26734f, -0.34961f, 1.0f) },
-            { "LArm_UpperArm", getTransform(14.59840f, 0.00010f, 0.00010f, 0.77214f, -0.19393f, -0.60514f, 0.08574f, 0.97538f, -0.20318f, 0.62964f, 0.10499f, 0.76976f, 1.0f) },
-            { "LArm_ForeArm1", getTransform(19.53690f, 0.41980f, 0.04580f, 0.92233f, -0.38166f, -0.06030f, 0.38176f, 0.92420f, -0.01042f, 0.05971f, -0.01341f, 0.99813f, 1.0f) },
-            { "LArm_ForeArm2", getTransform(0.00020f, 0.00020f, 0.00020f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "LArm_ForeArm3", getTransform(10.000494f, 0.000162f, -0.000004f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "LArm_Hand", getTransform(26.96440f, 0.00020f, 0.00040f, 0.98604f, 0.16503f, 0.02218f, 0.00691f, -0.17364f, 0.98479f, 0.16638f, -0.97088f, -0.17236f, 1.0f) },
+            { "Root", MatrixUtils::getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "COM", MatrixUtils::getTransform(0.0f, -3.74980f, 89.41950f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f) },
+            { "Pelvis", MatrixUtils::getTransform(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "LLeg_Thigh",
+              MatrixUtils::getTransform(4.54870f, -1.33f, 6.90830f, -0.98736f, 0.14491f, 0.06416f, 0.06766f, 0.01940f, 0.99752f, 0.14331f, 0.98925f, -0.02896f, 1.0f) },
+            { "LLeg_Calf", MatrixUtils::getTransform(34.298f, 0.0f, 0.0f, 0.99681f, -0.00145f, 0.07983f, 0.00170f, 0.99999f, -0.00305f, -0.07982f, 0.00318f, 0.99680f, 1.0f) },
+            { "LLeg_Foot", MatrixUtils::getTransform(52.54120f, 0.0f, 0.0f, 0.63109f, -0.76168f, -0.14685f, -0.07775f, 0.12624f, -0.98895f, 0.77180f, 0.63554f, 0.02045f, 1.0f) },
+            { "RLeg_Thigh",
+              MatrixUtils::getTransform(4.54760f, -1.32430f, -6.898f, -0.98732f, 0.14533f, -0.06381f, 0.06732f, 0.01938f, -0.99754f, -0.14374f, -0.98919f, -0.02892f, 1.0f) },
+            { "RLeg_Calf", MatrixUtils::getTransform(34.29790f, 0.0f, 0.0f, 0.99684f, -0.00096f, -0.07937f, 0.00120f, 0.99999f, 0.00307f, 0.07937f, -0.00316f, 0.99684f, 1.0f) },
+            { "RLeg_Foot", MatrixUtils::getTransform(52.54080f, 0.0f, 0.0f, 0.63118f, -0.76162f, 0.14677f, -0.07771f, 0.12618f, 0.98896f, -0.77173f, -0.63562f, 0.02046f, 1.0f) },
+            { "SPINE1", MatrixUtils::getTransform(5.75050f, -0.00290f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "SPINE2", MatrixUtils::getTransform(5.62550f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "Chest", MatrixUtils::getTransform(5.53660f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "LArm_Collarbone",
+              MatrixUtils::getTransform(22.192f, 0.34820f, 1.00420f, -0.34818f, -0.05435f, -0.93585f, -0.26919f, 0.96207f, 0.04428f, 0.89794f, 0.26734f, -0.34961f, 1.0f) },
+            { "LArm_UpperArm",
+              MatrixUtils::getTransform(14.59840f, 0.00010f, 0.00010f, 0.77214f, -0.19393f, -0.60514f, 0.08574f, 0.97538f, -0.20318f, 0.62964f, 0.10499f, 0.76976f, 1.0f) },
+            { "LArm_ForeArm1",
+              MatrixUtils::getTransform(19.53690f, 0.41980f, 0.04580f, 0.92233f, -0.38166f, -0.06030f, 0.38176f, 0.92420f, -0.01042f, 0.05971f, -0.01341f, 0.99813f, 1.0f) },
+            { "LArm_ForeArm2", MatrixUtils::getTransform(0.00020f, 0.00020f, 0.00020f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "LArm_ForeArm3", MatrixUtils::getTransform(10.000494f, 0.000162f, -0.000004f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "LArm_Hand",
+              MatrixUtils::getTransform(26.96440f, 0.00020f, 0.00040f, 0.98604f, 0.16503f, 0.02218f, 0.00691f, -0.17364f, 0.98479f, 0.16638f, -0.97088f, -0.17236f, 1.0f) },
             { "RArm_Collarbone",
-              getTransform(22.19190f, 0.34810f, -1.004f, -0.34818f, -0.06482f, 0.93518f, -0.26918f, 0.96251f, -0.03351f, -0.89795f, -0.26340f, -0.35257f, 1.0f) },
-            { "RArm_UpperArm", getTransform(14.59880f, 0.0f, 0.0f, 0.77213f, -0.19339f, 0.60533f, 0.09277f, 0.97667f, 0.19369f, -0.62866f, -0.09340f, 0.77205f, 1.0f) },
-            { "RArm_ForeArm1", getTransform(19.53660f, 0.41990f, -0.04620f, 0.92233f, -0.38166f, 0.06029f, 0.38171f, 0.92422f, 0.01129f, -0.06003f, 0.01260f, 0.99812f, 1.0f) },
-            { "RArm_ForeArm2", getTransform(-0.00010f, -0.00010f, -0.00010f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "RArm_ForeArm3", getTransform(10.00050f, -0.00010f, 0.00010f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
-            { "RArm_Hand", getTransform(26.96460f, 0.00010f, 0.00120f, 0.98604f, 0.16503f, -0.02218f, 0.00691f, -0.17364f, -0.98479f, -0.16638f, 0.97088f, -0.17236f, 1.0f) },
-            { "Neck", getTransform(24.29350f, -2.84160f, 0.0f, 0.92612f, -0.37723f, -0.00002f, 0.37723f, 0.92612f, 0.00001f, 0.00002f, -0.00002f, 1.0f, 1.0f) },
-            { "Head", getTransform(8.22440f, 0.0f, 0.0f, 0.94891f, 0.31555f, 0.00002f, -0.31555f, 0.94891f, 0.0f, -0.00002f, -0.00001f, 1.0f, 1.0f) },
+              MatrixUtils::getTransform(22.19190f, 0.34810f, -1.004f, -0.34818f, -0.06482f, 0.93518f, -0.26918f, 0.96251f, -0.03351f, -0.89795f, -0.26340f, -0.35257f, 1.0f) },
+            { "RArm_UpperArm",
+              MatrixUtils::getTransform(14.59880f, 0.0f, 0.0f, 0.77213f, -0.19339f, 0.60533f, 0.09277f, 0.97667f, 0.19369f, -0.62866f, -0.09340f, 0.77205f, 1.0f) },
+            { "RArm_ForeArm1",
+              MatrixUtils::getTransform(19.53660f, 0.41990f, -0.04620f, 0.92233f, -0.38166f, 0.06029f, 0.38171f, 0.92422f, 0.01129f, -0.06003f, 0.01260f, 0.99812f, 1.0f) },
+            { "RArm_ForeArm2", MatrixUtils::getTransform(-0.00010f, -0.00010f, -0.00010f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "RArm_ForeArm3", MatrixUtils::getTransform(10.00050f, -0.00010f, 0.00010f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f) },
+            { "RArm_Hand",
+              MatrixUtils::getTransform(26.96460f, 0.00010f, 0.00120f, 0.98604f, 0.16503f, -0.02218f, 0.00691f, -0.17364f, -0.98479f, -0.16638f, 0.97088f, -0.17236f, 1.0f) },
+            { "Neck", MatrixUtils::getTransform(24.29350f, -2.84160f, 0.0f, 0.92612f, -0.37723f, -0.00002f, 0.37723f, 0.92612f, 0.00001f, 0.00002f, -0.00002f, 1.0f, 1.0f) },
+            { "Head", MatrixUtils::getTransform(8.22440f, 0.0f, 0.0f, 0.94891f, 0.31555f, 0.00002f, -0.31555f, 0.94891f, 0.0f, -0.00002f, -0.00001f, 1.0f, 1.0f) },
         };
     }
 

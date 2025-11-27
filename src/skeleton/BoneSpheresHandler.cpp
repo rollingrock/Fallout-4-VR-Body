@@ -3,9 +3,8 @@
 #include <ranges>
 
 #include "FRIK.h"
-#include "common/CommonUtils.h"
-#include "common/Logger.h"
 #include "f4sevr/PapyrusNativeFunctions.h"
+#include "f4sevr/PapyrusUtils.h"
 
 using namespace common;
 using namespace F4SEVR;
@@ -223,7 +222,7 @@ namespace frik
             RE::NiPoint3 offset = element.second->bone->world.rotate.Transpose() * (element.second->offset);
             offset = element.second->bone->world.translate + offset;
 
-            double dist = vec3Len(rFinger->world.translate - offset);
+            double dist = MatrixUtils::vec3Len(rFinger->world.translate - offset);
 
             if (dist <= static_cast<double>(element.second->radius) - 0.1) {
                 if (!element.second->stickyRight) {
@@ -244,7 +243,7 @@ namespace frik
                 }
             }
 
-            dist = static_cast<double>(vec3Len(lFinger->world.translate - offset));
+            dist = static_cast<double>(MatrixUtils::vec3Len(lFinger->world.translate - offset));
 
             if (dist <= static_cast<double>(element.second->radius) - 0.1) {
                 if (!element.second->stickyLeft) {

@@ -3,8 +3,7 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "utils.h"
-#include "common/Logger.h"
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 
 using namespace common;
@@ -100,6 +99,9 @@ namespace frik
         if (open) {
             // prevent immediate closing of Pipboy
             _lastLookingAtPip = nowMillis();
+            if (g_frik.isFavoritesMenuOpen()) {
+                f4vr::closeFavoriteMenu();
+            }
         } else {
             // Prevents Pipboy from being turned on again immediately after closing it.
             _startedLookingAtPip = nowMillis() + 10000;
@@ -111,7 +113,7 @@ namespace frik
             setAttaboyHandPose(open);
             if (_attaboyOnBeltNode && _attaboyOnBeltNode->parent && _attaboyOnBeltNode->parent->parent) {
                 // show/hide the Attaboy on belt model depending if it's on as it's grabbed by the player
-                f4vr::setNodeVisibilityDeep(_attaboyOnBeltNode->parent->parent, !open);
+                f4vr::setNodeVisibility(_attaboyOnBeltNode->parent->parent, !open);
             }
         }
     }
@@ -394,7 +396,7 @@ namespace frik
 
         const bool open = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0
             ? checkAttaboyActivation()
-            : f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonID);
+            : vrcf::VRControllers.isReleasedShort(vrcf::Hand::Offhand, g_config.pipBoyButtonID);
         if (open) {
             logger::info("Open Pipboy with button");
             openClose(open);
@@ -412,7 +414,7 @@ namespace frik
 
         const bool close = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0
             ? checkAttaboyActivation()
-            : f4vr::VRControllers.isReleasedShort(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID);
+            : vrcf::VRControllers.isReleasedShort(vrcf::Hand::Offhand, g_config.pipBoyButtonOffID);
         if (close) {
             logger::info("Close Pipboy with button");
             openClose(false);
@@ -425,15 +427,15 @@ namespace frik
      */
     bool Pipboy::checkAttaboyActivation()
     {
-        const float dist = vec3Len(_skelly->getLeftArm().hand->world.translate - _attaboyOnBeltNode->world.translate);
+        const float dist = MatrixUtils::vec3Len(_skelly->getLeftArm().hand->world.translate - _attaboyOnBeltNode->world.translate);
         if (dist < g_config.attaboyGrabActivationDistance) {
             if (!_attaboyGrabHapticActivated) {
                 _attaboyGrabHapticActivated = true;
-                triggerStrongHaptic(f4vr::Hand::Left);
+                triggerStrongHaptic(vrcf::Hand::Left);
                 logger::debug("Attaboy activation area triggered");
             }
-            if (f4vr::VRControllers.isReleasedShort(f4vr::Hand::Left, g_config.attaboyGrabButtonId)) {
-                triggerShortHaptic(f4vr::Hand::Left);
+            if (vrcf::VRControllers.isReleasedShort(vrcf::Hand::Left, g_config.attaboyGrabButtonId)) {
+                triggerShortHaptic(vrcf::Hand::Left);
                 return true;
             }
         } else {
@@ -479,16 +481,20 @@ namespace frik
             return;
         }
 
-        const auto movingStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Offhand);
-        const auto lookingStick = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
+        const auto movingStick = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Offhand);
+        const auto lookingStick = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
+        const bool isPlayerActing =
+            fNotEqual(movingStick.x, 0, 0.3f)
+            || fNotEqual(movingStick.y, 0, 0.3f)
+            || fNotEqual(lookingStick.x, 0, 0.3f)
+            || fNotEqual(lookingStick.y, 0, 0.3f)
+            || vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Primary, vr::k_EButton_SteamVR_Trigger);
 
         const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway
             && !g_frik.isPipboyConfigurationModeActive()
             && isNowTimePassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
 
-        const bool closeLookingWayWithMovement = g_config.pipboyCloseWhenMovingWhileLookingAway
-            && !g_frik.isPipboyConfigurationModeActive()
-            && (fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f) || fNotEqual(lookingStick.x, 0, 0.3f) || fNotEqual(lookingStick.y, 0, 0.3f));
+        const bool closeLookingWayWithMovement = isPlayerActing && g_config.pipboyCloseWhenMovingWhileLookingAway && !g_frik.isPipboyConfigurationModeActive();
 
         if (closeLookingWayWithDelay || closeLookingWayWithMovement) {
             logger::info("Close Pipboy when looking away: byDelay({}), byMovement({})", closeLookingWayWithDelay, closeLookingWayWithMovement);
@@ -503,36 +509,36 @@ namespace frik
     {
         // check a bit higher than the HMD to allow hand close to the lower part of the face
         const auto hmdPos = f4vr::getPlayerNodes()->HmdNode->world.translate + RE::NiPoint3(0, 0, 4);
-        const auto isLeftHandCloseToHMD = vec3Len(_skelly->getLeftArm().hand->world.translate - hmdPos) < 12;
-        const auto isRightHandCloseToHMD = vec3Len(_skelly->getRightArm().hand->world.translate - hmdPos) < 12;
+        const auto isLeftHandCloseToHMD = MatrixUtils::vec3Len(_skelly->getLeftArm().hand->world.translate - hmdPos) < 12;
+        const auto isRightHandCloseToHMD = MatrixUtils::vec3Len(_skelly->getRightArm().hand->world.translate - hmdPos) < 12;
 
         if (isLeftHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::LeftArm)) {
             if (!_flashlightHapticActivated) {
                 _flashlightHapticActivated = true;
-                triggerStrongHaptic(f4vr::Hand::Left);
+                triggerStrongHaptic(vrcf::Hand::Left);
             }
         } else if (isRightHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::RightArm)) {
             if (!_flashlightHapticActivated) {
                 _flashlightHapticActivated = true;
-                triggerStrongHaptic(f4vr::Hand::Right);
+                triggerStrongHaptic(vrcf::Hand::Right);
             }
         } else {
             _flashlightHapticActivated = false;
             return;
         }
 
-        const bool isLeftHandGrab = isLeftHandCloseToHMD && f4vr::VRControllers.isReleasedShort(f4vr::Hand::Left, g_config.switchTorchButton);
-        const bool isRightHandGrab = isRightHandCloseToHMD && f4vr::VRControllers.isReleasedShort(f4vr::Hand::Right, g_config.switchTorchButton);
+        const bool isLeftHandGrab = isLeftHandCloseToHMD && vrcf::VRControllers.isReleasedShort(vrcf::Hand::Left, g_config.switchTorchButton);
+        const bool isRightHandGrab = isRightHandCloseToHMD && vrcf::VRControllers.isReleasedShort(vrcf::Hand::Right, g_config.switchTorchButton);
         if (!isLeftHandGrab && !isRightHandGrab) {
             return;
         }
 
         if (g_config.flashlightLocation == FlashlightLocation::Head) {
-            triggerStrongHaptic(isLeftHandGrab ? f4vr::Hand::Left : f4vr::Hand::Right);
+            triggerStrongHaptic(isLeftHandGrab ? vrcf::Hand::Left : vrcf::Hand::Right);
             g_config.setFlashlightLocation(isLeftHandGrab ? FlashlightLocation::LeftArm : FlashlightLocation::RightArm);
         } else if ((g_config.flashlightLocation == FlashlightLocation::LeftArm && isLeftHandGrab) ||
             (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab)) {
-            triggerStrongHaptic(isLeftHandGrab ? f4vr::Hand::Left : f4vr::Hand::Right);
+            triggerStrongHaptic(isLeftHandGrab ? vrcf::Hand::Left : vrcf::Hand::Right);
             g_config.setFlashlightLocation(FlashlightLocation::Head);
         }
     }
@@ -549,7 +555,7 @@ namespace frik
         }
 
         // revert to original transform
-        lightNode->local.rotate = getIdentityMatrix();
+        lightNode->local.rotate = MatrixUtils::getIdentityMatrix();
         lightNode->local.translate = RE::NiPoint3(0, 0, 0);
 
         if (g_config.flashlightLocation != FlashlightLocation::Head) {
@@ -562,7 +568,7 @@ namespace frik
                 : f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand");
 
             // calculate relocation transform and set to local
-            lightNode->local = calculateRelocation(lightNode, armNode);
+            lightNode->local = MatrixUtils::calculateRelocation(lightNode, armNode);
 
             // small adjustment to prevent light on the fingers and shadows from them
             const float offsetX = f4vr::isInPowerArmor() ? 16.0f : 12.0f;
@@ -621,7 +627,7 @@ namespace frik
      */
     void Pipboy::holdPipboyScreenInPlace(RE::NiAVObject* const pipboyScreen)
     {
-        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, g_config.pipBoyButtonOffID, 0.3f)) {
+        if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, g_config.pipBoyButtonOffID, 0.3f)) {
             _pipboyScreenStableFrame = pipboyScreen->world;
         } else {
             pipboyScreen->world = _pipboyScreenStableFrame;
@@ -690,7 +696,7 @@ namespace frik
                 _skelly->getRightArm().forearm3->IsNode()->AttachChild(pipbone, true);
             }
 
-            pipbone->local.rotate = getMatrixFromEulerAngles(0, degreesToRads(180.0), 0) * pipbone->local.rotate;
+            pipbone->local.rotate = MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(180.0), 0) * pipbone->local.rotate;
             pipbone->local.translate *= -1.5;
         }
     }

@@ -1,8 +1,7 @@
 #pragma once
 
 #include "BodyAdjustmentSubConfigMode.h"
-#include "pipboy/Pipboy.h"
-#include "ui/UIContainer.h"
+#include "vrui/UIContainer.h"
 
 namespace frik
 {

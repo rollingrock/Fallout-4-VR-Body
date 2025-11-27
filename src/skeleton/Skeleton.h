@@ -5,7 +5,7 @@
 #include "CullGeometryHandler.h"
 #include "common/CommonUtils.h"
 #include "f4vr/PlayerNodes.h"
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 
 namespace frik
 {
@@ -150,8 +150,8 @@ namespace frik
 
         std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator> _handBones;
         std::map<std::string, bool, common::CaseInsensitiveComparator> _closedHand;
-        static std::unordered_map<std::string, f4vr::VRButtonId> getHandBonesButtonMap();
-        inline static const std::unordered_map<std::string, f4vr::VRButtonId> _handBonesButton = getHandBonesButtonMap();
+        static std::unordered_map<std::string, vrcf::VRButtonId> getHandBonesButtonMap();
+        inline static const std::unordered_map<std::string, vrcf::VRButtonId> _handBonesButton = getHandBonesButtonMap();
 
         RE::NiTransform _rightHandPrevFrame;
         RE::NiTransform _leftHandPrevFrame;

@@ -3,15 +3,14 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "utils.h"
-#include "common/Logger.h"
 #include "common/MatrixUtils.h"
-#include "f4vr/VRControllersManager.h"
+#include "vrcf/VRControllersManager.h"
 #include "skeleton/Skeleton.h"
-#include "ui/UIButton.h"
-#include "ui/UIContainer.h"
-#include "ui/UIManager.h"
-#include "ui/UIToggleButton.h"
-#include "ui/UIToggleGroupContainer.h"
+#include "vrui/UIButton.h"
+#include "vrui/UIContainer.h"
+#include "vrui/UIManager.h"
+#include "vrui/UIToggleButton.h"
+#include "vrui/UIToggleGroupContainer.h"
 
 using namespace vrui;
 using namespace common;
@@ -39,10 +38,10 @@ namespace frik
         transform.scale = originalTransform.scale;
         if (f4vr::isLeftHandedMode()) {
             transform.translate = RE::NiPoint3(5.5f, -2.2f, 1);
-            rot = getMatrixFromEulerAngles(degreesToRads(95), degreesToRads(60), 0);
+            rot = MatrixUtils::getMatrixFromEulerAngles(MatrixUtils::degreesToRads(95), MatrixUtils::degreesToRads(60), 0);
         } else {
             transform.translate = RE::NiPoint3(4.5f, -2.2f, -1);
-            rot = getMatrixFromEulerAngles(degreesToRads(85), degreesToRads(-65), 0);
+            rot = MatrixUtils::getMatrixFromEulerAngles(MatrixUtils::degreesToRads(85), MatrixUtils::degreesToRads(-65), 0);
         }
         transform.rotate = originalTransform.rotate * rot;
         return transform;
@@ -72,10 +71,10 @@ namespace frik
         RE::NiTransform transform;
         transform.scale = originalTransform.scale;
         if (f4vr::isLeftHandedMode()) {
-            transform.rotate = getMatrixFromEulerAngles(degreesToRads(180), 0, degreesToRads(180));
+            transform.rotate = MatrixUtils::getMatrixFromEulerAngles(MatrixUtils::degreesToRads(180), 0, MatrixUtils::degreesToRads(180));
             transform.translate = inPA ? RE::NiPoint3(5, 6.5f, -11) : RE::NiPoint3(6.2f, 4.8f, -12.2f);
         } else {
-            transform.rotate = getIdentityMatrix();
+            transform.rotate = MatrixUtils::getIdentityMatrix();
             transform.translate = inPA ? RE::NiPoint3(-5.8f, 5.8f, 1.8f) : RE::NiPoint3(-6.2f, 3.6f, 0.8f);
         }
         return transform;
@@ -111,8 +110,8 @@ namespace frik
         handleReposition(weapon, throwable);
 
         // save
-        if (f4vr::VRControllers.isLongPressed(f4vr::Hand::Primary, vr::EVRButtonId::k_EButton_A)) {
-            f4vr::VRControllers.triggerHaptic(f4vr::Hand::Primary, .6f, .5f);
+        if (vrcf::VRControllers.isLongPressed(vrcf::Hand::Primary, vr::EVRButtonId::k_EButton_A)) {
+            vrcf::VRControllers.triggerHaptic(vrcf::Hand::Primary, .6f, .5f);
             saveConfig();
         }
     }
@@ -178,8 +177,8 @@ namespace frik
      */
     void WeaponPositionConfigMode::handleWeaponReposition(RE::NiNode* weapon) const
     {
-        const auto [primAxisX, primAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
-        const auto [secAxisX, secAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Offhand);
+        const auto [primAxisX, primAxisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
+        const auto [secAxisX, secAxisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Offhand);
         if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
             return;
         }
@@ -190,15 +189,15 @@ namespace frik
         // Update the weapon transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
 
-        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
+        if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // adjust the scale of the weapon
             transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
-        } else if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
+        } else if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = getMatrixFromEulerAngles(
-                -degreesToRads(correctAdjustmentValue(primAxisY, 5)),
-                -degreesToRads(correctAdjustmentValue(secAxisX, 3)),
-                degreesToRads(correctAdjustmentValue(primAxisX, 5)));
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(
+                -MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisY, 5)),
+                -MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisX, 3)),
+                MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisX, 5)));
             transform.rotate = rot * transform.rotate;
         } else {
             // adjust horizontal (y - right/left, x - forward/backward) by primary stick
@@ -218,11 +217,11 @@ namespace frik
     void WeaponPositionConfigMode::handlePrimaryHandReposition() const
     {
         // Update the offset position by player thumbstick.
-        const auto [axisX, axisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
+        const auto [axisX, axisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
-            const auto rot = f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)
-                ? getMatrixFromEulerAngles(-degreesToRads(correctAdjustmentValue(axisY, 2)), 0, 0)
-                : getMatrixFromEulerAngles(0, -degreesToRads(correctAdjustmentValue(axisY, 2)), -degreesToRads(correctAdjustmentValue(axisX, 3)));
+            const auto rot = vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)
+                ? MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)), 0, 0)
+                : MatrixUtils::getMatrixFromEulerAngles(0, -MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)), -MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 3)));
             _adjuster->_primaryHandOffsetRot = rot * _adjuster->_primaryHandOffsetRot;
             _adjuster->_hasPrimaryHandOffset = true;
         }
@@ -234,9 +233,9 @@ namespace frik
     void WeaponPositionConfigMode::handleOffhandReposition() const
     {
         // Update the offset position by player thumbstick.
-        const auto [axisX, axisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
+        const auto [axisX, axisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
-            const auto rot = getMatrixFromEulerAngles(-degreesToRads(correctAdjustmentValue(axisY, 5)), 0, degreesToRads(correctAdjustmentValue(axisX, 5)));
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 5)), 0, MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 5)));
             _adjuster->_offhandOffsetRot = rot * _adjuster->_offhandOffsetRot;
         }
     }
@@ -251,8 +250,8 @@ namespace frik
             return;
         }
 
-        const auto [primAxisX, primAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
-        const auto [secAxisX, secAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Offhand);
+        const auto [primAxisX, primAxisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
+        const auto [secAxisX, secAxisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Offhand);
         if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
             return;
         }
@@ -262,15 +261,15 @@ namespace frik
 
         // Update the transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
-        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
+        if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // adjust the scale of the weapon
             transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
-        } else if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
+        } else if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = getMatrixFromEulerAngles(
-                degreesToRads(correctAdjustmentValue(secAxisY, 6)),
-                degreesToRads(correctAdjustmentValue(secAxisX, 6)),
-                degreesToRads(correctAdjustmentValue(primAxisX, 6)));
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(
+                MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisY, 6)),
+                MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisX, 6)),
+                MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisX, 6)));
             transform.rotate = rot * transform.rotate;
         } else {
             // adjust horizontal (x - right/left, z - forward/backward) by primary stick
@@ -289,8 +288,8 @@ namespace frik
      */
     void WeaponPositionConfigMode::handleBackOfHandUIReposition() const
     {
-        const auto [primAxisX, primAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
-        const auto [secAxisX, secAxisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Offhand);
+        const auto [primAxisX, primAxisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
+        const auto [secAxisX, secAxisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Offhand);
         if (primAxisX == 0.f && primAxisY == 0.f && secAxisX == 0.f && secAxisY == 0.f) {
             return;
         }
@@ -300,15 +299,15 @@ namespace frik
 
         // Update the transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
-        if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
+        if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // adjust the scale of the weapon
             transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
-        } else if (f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
+        } else if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = getMatrixFromEulerAngles(
-                -degreesToRads(correctAdjustmentValue(secAxisY, 6)),
-                -degreesToRads(correctAdjustmentValue(primAxisX, 6)),
-                -degreesToRads(correctAdjustmentValue(primAxisY, 6)));
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(
+                -MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisY, 6)),
+                -MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisX, 6)),
+                -MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisY, 6)));
             transform.rotate = rot * transform.rotate;
         } else {
             // adjust horizontal (z - right/left, y - forward/backward) by primary stick
@@ -327,7 +326,7 @@ namespace frik
      */
     void WeaponPositionConfigMode::handleBetterScopesReposition()
     {
-        const auto [axisX, axisY] = f4vr::VRControllers.getThumbstickValue(f4vr::Hand::Primary);
+        const auto [axisX, axisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
             // Axis_state y is up and down, which corresponds to reticule z axis
             RE::NiPoint3 msgData(axisX / 10, 0.f, axisY / 10);
@@ -403,7 +402,7 @@ namespace frik
     void WeaponPositionConfigMode::resetPrimaryHandConfig() const
     {
         f4vr::showNotification("Reset Primary Hand Position to Default");
-        _adjuster->_primaryHandOffsetRot = getIdentityMatrix();
+        _adjuster->_primaryHandOffsetRot = MatrixUtils::getIdentityMatrix();
         g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::PrimaryHand, _adjuster->_currentlyInPA, true);
     }
 
@@ -420,7 +419,7 @@ namespace frik
     void WeaponPositionConfigMode::resetOffhandConfig() const
     {
         f4vr::showNotification("Reset Offhand Position to Default");
-        _adjuster->_offhandOffsetRot = getIdentityMatrix();
+        _adjuster->_offhandOffsetRot = MatrixUtils::getIdentityMatrix();
         g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA, true);
     }
 

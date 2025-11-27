@@ -1,6 +1,7 @@
 // Template for custom CMake user presets.
 // Set "COPY_PLUGIN_BASE_PATH" to your mod folder in MO2 or your Fallout 4 VR Data folder.
 // Support multiple paths separated by semicolons (i.e. "<path1>;<path2>").
+// Use "F4VR_COMMON_FRAMEWORK_PATH" to use existing F4VRCommonFramework instead of submodule.
 // Rename the file to 'CMakeUserPresets.json' (it is in .gitignore to keep it local to you).
 // Remove this comment block.
 // Run:
@@ -13,7 +14,8 @@
       "name": "custom",
       "cacheVariables": {
         "POST_BUILD_COPY_PLUGIN": true,
-        "COPY_PLUGIN_BASE_PATH": "[MO2 modlist folder]/mods/[my mod] OR [Fallout 4 VR game path]/Data"
+        "COPY_PLUGIN_BASE_PATH": "[MO2 modlist folder]/mods/[my mod] OR [Fallout 4 VR game path]/Data",
+        "F4VR_COMMON_FRAMEWORK_PATH": ""
       },
       "inherits": "default"
     }

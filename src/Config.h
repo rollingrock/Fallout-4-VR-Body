@@ -3,9 +3,9 @@
 #include <optional>
 #include <Version.h>
 
+#include "ConfigBase.h"
 #include "resources.h"
 #include "common/CommonUtils.h"
-#include "common/ConfigBase.h"
 
 namespace frik
 {
@@ -61,7 +61,7 @@ namespace frik
      * Most of the configuration variables are loaded from the FRIK.ini file.
      * Some values can be changed in-game and persisted into the FRIK.ini file.
      */
-    class Config : public common::ConfigBase
+    class Config : public ConfigBase
     {
     public:
         explicit Config() :

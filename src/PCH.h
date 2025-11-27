@@ -9,6 +9,10 @@
 
 using namespace std::literals;
 
+#include "Logger.h"
+
+using namespace f4cf;
+
 #define DLLEXPORT __declspec(dllexport)
 
 #include "Version.h"

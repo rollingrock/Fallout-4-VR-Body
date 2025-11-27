@@ -1,21 +1,20 @@
 #include "FRIK.h"
 
 #include "Config.h"
-#include "Debug.h"
 #include "GameHooks.h"
 #include "PapyrusApi.h"
 #include "PapyrusGateway.h"
 #include "utils.h"
-#include "common/Logger.h"
 #include "config-mode/ConfigurationMode.h"
+#include "f4vr/DebugDump.h"
 #include "f4vr/F4VRUtils.h"
-#include "f4vr/VRControllersManager.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
 #include "smooth-movement/SmoothMovementVR.h"
-#include "ui/UIManager.h"
-#include "ui/UIModAdapter.h"
+#include "vrcf/VRControllersManager.h"
+#include "vrui/UIManager.h"
+#include "vrui/UIModAdapter.h"
 
 using namespace common;
 
@@ -83,7 +82,6 @@ namespace frik
 
         logger::info("Register papyrus native functions...");
         initPapyrusApis();
-        PapyrusGateway::init();
         _boneSpheres.init();
 
         _gameMenusHandler.init([this](const std::string& name, const bool isOpened) {
@@ -150,6 +148,9 @@ namespace frik
         logger::trace("Update Bone Sphere...");
         _boneSpheres.onFrameUpdate();
 
+        logger::trace("Update player controls...");
+        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition);
+
         logger::trace("Update Weapon Position...");
         _weaponPosition->onFrameUpdate();
 
@@ -162,8 +163,6 @@ namespace frik
 
         FrameUpdateContext context(_skelly);
         vrui::g_uiManager->onFrameUpdate(&context);
-
-        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition, &_gameMenusHandler);
 
         updateWorldFinal();
     }
@@ -376,8 +375,8 @@ namespace frik
         }
         if (g_config.checkDebugDumpDataOnceFor("weapon_muzzle")) {
             if (const auto muzzle = getMuzzleFlashNodes()) {
-                f4cf::dump::printNodes(muzzle->fireNode);
-                f4cf::dump::printNodes(muzzle->projectileNode);
+                f4vr::DebugDump::printNodes(muzzle->fireNode);
+                f4vr::DebugDump::printNodes(muzzle->projectileNode);
             }
         }
     }

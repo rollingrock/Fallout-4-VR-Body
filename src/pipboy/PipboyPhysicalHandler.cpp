@@ -2,7 +2,8 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "f4vr/VRControllersManager.h"
+#include "utils.h"
+#include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 
 using namespace common;
@@ -82,9 +83,9 @@ namespace frik
 
         // have a buffer zone for finger detection not to trash the hand pose
         const float pipboyDetectionRange = g_config.pipboyOperationFingerDetectionRange + (_isOperatingPipboy ? 1.0f : -1.0f);
-        _isOperatingPipboy = vec3Len(fingerPos - powerButton->world.translate) < pipboyDetectionRange
-            || vec3Len(fingerPos - lightButton->world.translate) < pipboyDetectionRange
-            || vec3Len(fingerPos - radioButton->world.translate) < pipboyDetectionRange;
+        _isOperatingPipboy = MatrixUtils::vec3Len(fingerPos - powerButton->world.translate) < pipboyDetectionRange
+            || MatrixUtils::vec3Len(fingerPos - lightButton->world.translate) < pipboyDetectionRange
+            || MatrixUtils::vec3Len(fingerPos - radioButton->world.translate) < pipboyDetectionRange;
 
         if (wasOperating == _isOperatingPipboy) {
             return;
@@ -112,7 +113,7 @@ namespace frik
     {
         const auto powerTranslate = f4vr::findAVObject(getPipboyArmNode(), "PowerTranslate");
 
-        const float distance = vec3Len(fingerPos - powerButton->world.translate);
+        const float distance = MatrixUtils::vec3Len(fingerPos - powerButton->world.translate);
         if (distance > 3) {
             _stickyPower = false;
             powerTranslate->local.translate.z = 0.0;
@@ -126,7 +127,7 @@ namespace frik
         if (powerTranslate->local.translate.z < -0.10 && !_stickyPower) {
             logger::info("Pipboy power button pressed");
             _stickyPower = true;
-            triggerShortHaptic(f4vr::Hand::Right);
+            triggerShortHaptic(vrcf::Hand::Right);
             _pipboy->openClose(!_pipboy->isOpen());
         }
     }
@@ -139,7 +140,7 @@ namespace frik
     {
         const auto lightTranslate = f4vr::findAVObject(getPipboyArmNode(), "LightTranslate");
 
-        const float distance = vec3Len(fingerPos - lightButton->world.translate);
+        const float distance = MatrixUtils::vec3Len(fingerPos - lightButton->world.translate);
         if (distance > 2.0) {
             _stickyLight = false;
             lightTranslate->local.translate.z = 0.0;
@@ -153,7 +154,7 @@ namespace frik
         if (lightTranslate->local.translate.z < -0.14 && !_stickyLight) {
             logger::info("Light button pressed");
             _stickyLight = true;
-            triggerShortHaptic(f4vr::Hand::Right);
+            triggerShortHaptic(vrcf::Hand::Right);
             if (!_pipboy->isOpen()) {
                 f4vr::togglePipboyLight(f4vr::getPlayer());
             }
@@ -169,7 +170,7 @@ namespace frik
         const auto arm = getPipboyArmNode();
         const auto lightTranslate = f4vr::findAVObject(arm, "RadioTranslate");
 
-        const float distance = vec3Len(fingerPos - radioButton->world.translate);
+        const float distance = MatrixUtils::vec3Len(fingerPos - radioButton->world.translate);
         if (distance > 2.0) {
             _stickyRadio = false;
             lightTranslate->local.translate.y = 0.0;
@@ -182,7 +183,7 @@ namespace frik
         if (lightTranslate->local.translate.y < -0.12 && !_stickyRadio) {
             logger::info("Radio button pressed");
             _stickyRadio = true;
-            triggerShortHaptic(f4vr::Hand::Right);
+            triggerShortHaptic(vrcf::Hand::Right);
             if (f4vr::isPlayerRadioEnabled()) {
                 turnPlayerRadioOn(false);
             } else {
@@ -216,9 +217,9 @@ namespace frik
                 float rotx;
                 float roty;
                 float rotz;
-                getEulerAnglesFromMatrix(pageKnob->local.rotate, &rotx, &roty, &rotz);
+                MatrixUtils::getEulerAnglesFromMatrix(pageKnob->local.rotate, &rotx, &roty, &rotz);
                 if (rotx < 0.57) {
-                    pageKnob->local.rotate = pageKnob->local.rotate * getMatrixFromEulerAngles(-0.05f, 0, 0);
+                    pageKnob->local.rotate = pageKnob->local.rotate * MatrixUtils::getMatrixFromEulerAngles(-0.05f, 0, 0);
                 }
             } else {
                 // restores control of the 'Mode Knob' to the Pipboy behaviour file
@@ -250,11 +251,11 @@ namespace frik
         const float radioFreq = f4vr::getPlayerRadioFreq() - 23;
         if (isRadioOn && fNotEqual(radioFreq, _lastRadioFreq)) {
             const float x = -1 * (radioFreq - _lastRadioFreq);
-            radioNeedle->local.rotate = radioNeedle->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(x), 0);
+            radioNeedle->local.rotate = radioNeedle->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(x), 0);
             _lastRadioFreq = radioFreq;
         } else if (!isRadioOn && _lastRadioFreq > 0) {
             const float x = _lastRadioFreq;
-            radioNeedle->local.rotate = radioNeedle->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(x), 0);
+            radioNeedle->local.rotate = radioNeedle->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(x), 0);
             _lastRadioFreq = 0.0;
         }
 
@@ -262,9 +263,9 @@ namespace frik
             return;
         }
 
-        const auto doinantHandStick = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, f4vr::Axis::Thumbstick);
-        const auto doinantTrigger = f4vr::VRControllers.getAxisValue(f4vr::Hand::Primary, f4vr::Axis::Trigger);
-        const auto secondaryTrigger = f4vr::VRControllers.getAxisValue(f4vr::Hand::Offhand, f4vr::Axis::Trigger);
+        const auto doinantHandStick = vrcf::VRControllers.getAxisValue(vrcf::Hand::Primary, vrcf::Axis::Thumbstick);
+        const auto doinantTrigger = vrcf::VRControllers.getAxisValue(vrcf::Hand::Primary, vrcf::Axis::Trigger);
+        const auto secondaryTrigger = vrcf::VRControllers.getAxisValue(vrcf::Hand::Offhand, vrcf::Axis::Trigger);
 
         // Move Pipboy trigger mesh with controller trigger position.
         if (const auto trans = f4vr::findAVObject(arm, "SelectRotate")) {
@@ -281,16 +282,16 @@ namespace frik
         if (lastPipboyPage != PipboyPage::MAP || isPBMessageBoxVisible) {
             const auto scrollKnob = f4vr::findAVObject(arm, "ScrollItemsKnobRot");
             if (doinantHandStick.y > 0.85) {
-                scrollKnob->local.rotate = scrollKnob->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(0.4f), 0);
+                scrollKnob->local.rotate = scrollKnob->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(0.4f), 0);
             }
             if (doinantHandStick.y < -0.85) {
-                scrollKnob->local.rotate = scrollKnob->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(-0.4f), 0);
+                scrollKnob->local.rotate = scrollKnob->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(-0.4f), 0);
             }
         }
     }
 
     /**
-     * 
+     *
      */
     void PipboyPhysicalHandler::operatePipboyPhysicalElement(const RE::NiPoint3 fingerPos, const PipboyOperation operation)
     {
@@ -305,7 +306,7 @@ namespace frik
         bool& controlSticky = _controlsSticky[opIdx];
 
         if (bone && trans) {
-            const float distance = vec3Len(fingerPos - bone->world.translate);
+            const float distance = MatrixUtils::vec3Len(fingerPos - bone->world.translate);
             if (distance > boneDistance) {
                 trans->local.translate.z = 0.0;
                 controlSticky = false;
@@ -331,7 +332,7 @@ namespace frik
                         RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
                             ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
                             : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
-                        ScrollKnob->local.rotate = ScrollKnob->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(fz), 0);
+                        ScrollKnob->local.rotate = ScrollKnob->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(fz), 0);
                     } else if (operation == PipboyOperation::MOVE_LIST_SELECTION_DOWN) {
                         // Move Scroll Knob Clockwise when near control surface
                         const float roty = fz * -1;
@@ -339,7 +340,7 @@ namespace frik
                         RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
                             ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
                             : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
-                        ScrollKnob->local.rotate = ScrollKnob->local.rotate * getMatrixFromEulerAngles(0, degreesToRads(roty), 0);
+                        ScrollKnob->local.rotate = ScrollKnob->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(roty), 0);
                     }
                 }
                 if (trans->local.translate.z > transDistance && !controlSticky) {

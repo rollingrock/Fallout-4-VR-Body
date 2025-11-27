@@ -1,15 +1,14 @@
 #include "WeaponPositionAdjuster.h"
 
 #include "Config.h"
-#include "Debug.h"
 #include "FRIK.h"
 #include "utils.h"
-#include "common/Logger.h"
 #include "common/Quaternion.h"
+#include "f4vr/DebugDump.h"
 #include "f4vr/F4VRUtils.h"
-#include "f4vr/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
+#include "vrcf/VRControllersManager.h"
 
 using namespace common;
 
@@ -121,7 +120,7 @@ namespace frik
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
             }
-            checkEquippedWeaponChanged(weapon, true);
+            checkEquippedWeaponChanged(weapon);
             backOfHand->local = _backOfHandUIOffsetTransform;
             return;
         }
@@ -130,7 +129,7 @@ namespace frik
         _weaponOriginalTransform = weapon->local;
         _weaponOriginalWorldTransform = weapon->world;
 
-        checkEquippedWeaponChanged(weapon, false);
+        checkEquippedWeaponChanged(weapon);
 
         // override the back-of-hand UI transform
         backOfHand->local = _backOfHandUIOffsetTransform;
@@ -166,9 +165,9 @@ namespace frik
     /**
      * If equipped weapon changed set offsets to stored if exists.
      */
-    void WeaponPositionAdjuster::checkEquippedWeaponChanged(RE::NiNode* weapon, const bool emptyHand)
+    void WeaponPositionAdjuster::checkEquippedWeaponChanged(RE::NiNode* weapon)
     {
-        const auto& weaponName = emptyHand ? EMPTY_HAND : getEquippedWeaponNameExtended(weapon);
+        const auto& weaponName = weapon == nullptr ? EMPTY_HAND : getEquippedWeaponNameExtended(weapon);
         const bool inPA = f4vr::isInPowerArmor();
         if (weaponName == _currentWeapon && inPA == _currentlyInPA) {
             // no weapon change
@@ -206,7 +205,7 @@ namespace frik
             _primaryHandOffsetRot = primaryHandOffsetLookup.value().rotate;
         } else {
             // No stored offset, use identity for no change
-            _primaryHandOffsetRot = getIdentityMatrix();
+            _primaryHandOffsetRot = MatrixUtils::getIdentityMatrix();
         }
 
         // Load stored offsets for offhand for the new weapon
@@ -215,7 +214,7 @@ namespace frik
             _offhandOffsetRot = offhandOffsetLookup.value().rotate;
         } else {
             // No stored offset, use identity for no change
-            _offhandOffsetRot = getIdentityMatrix();
+            _offhandOffsetRot = MatrixUtils::getIdentityMatrix();
         }
 
         // Load stored offsets for back of hand UI for the new weapon
@@ -289,18 +288,18 @@ namespace frik
         }
 
         if (_offHandGripping) {
-            if (g_config.onePressGripButton && !f4vr::VRControllers.isPressHeldDown(f4vr::Hand::Offhand, g_config.gripButtonID)) {
+            if (g_config.onePressGripButton && !vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, g_config.gripButtonID)) {
                 // Mode 3 release grip when not holding the grip button
                 setOffhandGripping(false);
             }
 
-            if (g_config.enableGripButtonToLetGo && f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, g_config.gripButtonID)) {
+            if (g_config.enableGripButtonToLetGo && vrcf::VRControllers.isPressed(vrcf::Hand::Offhand, g_config.gripButtonID)) {
                 if (g_config.enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
                     // Mode 2,4 release grip on pressing the grip button again
                     setOffhandGripping(false);
                 } else {
                     // Mode 2 but close to barrel, so ignore un-grip as it will grip on next frame
-                    f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
+                    vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
                 }
             }
 
@@ -328,7 +327,7 @@ namespace frik
             // Mode 1,2 grab when close to barrel
             setOffhandGripping(true);
         }
-        if (!g_frik.isPipboyOn() && f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, g_config.gripButtonID)) {
+        if (!g_frik.isPipboyOn() && vrcf::VRControllers.isPressed(vrcf::Hand::Offhand, g_config.gripButtonID)) {
             // Mode 3,4 grab when pressing grip button
             setOffhandGripping(true);
         }
@@ -381,7 +380,7 @@ namespace frik
         const auto weaponToOffhandVecWorld = getOffhandPosition() - getPrimaryHandPosition();
 
         // Convert world-space vector into weapon space
-        const auto weaponLocalVec = weapon->world.rotate * (vec3Norm(weaponToOffhandVecWorld) / weapon->world.scale);
+        const auto weaponLocalVec = weapon->world.rotate * (MatrixUtils::vec3Norm(weaponToOffhandVecWorld) / weapon->world.scale);
 
         // Desired weapon forward direction after applying offhand offset
         const auto adjustedWeaponVec = _offhandOffsetRot.Transpose() * (weaponLocalVec);
@@ -466,10 +465,10 @@ namespace frik
     bool WeaponPositionAdjuster::isOffhandCloseToBarrel(const RE::NiNode* weapon) const
     {
         const auto offhand2WeaponVec = getOffhandPosition() - getPrimaryHandPosition();
-        const float distanceFromPrimaryHand = vec3Len(offhand2WeaponVec);
-        const auto weaponLocalVec = weapon->world.rotate * (vec3Norm(offhand2WeaponVec) / weapon->world.scale);
+        const float distanceFromPrimaryHand = MatrixUtils::vec3Len(offhand2WeaponVec);
+        const auto weaponLocalVec = weapon->world.rotate * (MatrixUtils::vec3Norm(offhand2WeaponVec) / weapon->world.scale);
         const auto adjustedWeaponVec = _offhandOffsetRot.Transpose() * (weaponLocalVec);
-        const float angleDiffToWeaponVec = vec3Dot(vec3Norm(adjustedWeaponVec), RE::NiPoint3(0, 1, 0));
+        const float angleDiffToWeaponVec = MatrixUtils::vec3Dot(MatrixUtils::vec3Norm(adjustedWeaponVec), RE::NiPoint3(0, 1, 0));
         return angleDiffToWeaponVec > 0.955 && distanceFromPrimaryHand > 15;
     }
 
@@ -487,8 +486,8 @@ namespace frik
         const auto offHandBone = f4vr::isLeftHandedMode() ? "RArm_Finger31" : "LArm_Finger31";
 
         const auto currentPos = f4vr::getCameraPosition();
-        const float handFrameMovement = vec3Len(_skelly->getBoneWorldTransform(offHandBone).translate - offhandFingerBonePos);
-        const float bodyFrameMovement = vec3Len(currentPos - bodyPos);
+        const float handFrameMovement = MatrixUtils::vec3Len(_skelly->getBoneWorldTransform(offHandBone).translate - offhandFingerBonePos);
+        const float bodyFrameMovement = MatrixUtils::vec3Len(currentPos - bodyPos);
         avgHandV[fc] = abs(handFrameMovement - bodyFrameMovement);
         fc = (fc + 1) % 3;
 
@@ -532,7 +531,7 @@ namespace frik
     {
         if (_currentWeapon.starts_with("Laser")) {
             if (const auto beamNode = f4vr::findNodeStartsWith(f4vr::findNode(weapon, "P-Barrel"), "BeamMesh")) {
-                beamNode->local.rotate = getIdentityMatrix() * (weapon->local.rotate * _weaponOriginalTransform.rotate);
+                beamNode->local.rotate = MatrixUtils::getIdentityMatrix() * (weapon->local.rotate * _weaponOriginalTransform.rotate);
             }
         }
     }
@@ -543,7 +542,7 @@ namespace frik
      */
     void WeaponPositionAdjuster::handleBetterScopes(RE::NiNode* weapon) const
     {
-        if (!f4vr::VRControllers.isPressed(f4vr::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
+        if (!vrcf::VRControllers.isPressed(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // fast return not to make additional calculations, checking button is cheap
             return;
         }
@@ -554,14 +553,14 @@ namespace frik
         }
         const auto reticlePos = scopeRet->world.translate;
         const auto offhandPos = getOffhandPosition();
-        const auto offset = vec3Len(reticlePos - offhandPos);
+        const auto offset = MatrixUtils::vec3Len(reticlePos - offhandPos);
 
         // is hand near scope
         if (offset < g_config.scopeAdjustDistance) {
             // Zoom toggling
             logger::info("Zoom Toggle pressed; sending message to switch zoom state");
             g_frik.dispatchMessageToBetterScopesVR(16, nullptr, 0);
-            f4vr::VRControllers.triggerHaptic(f4vr::Hand::Offhand);
+            vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
         }
     }
 
@@ -606,11 +605,11 @@ namespace frik
         }
 
         logger::info("Weapon: {}, InPA: {}", _currentWeapon.c_str(), _currentlyInPA);
-        f4cf::dump::printTransform("Weapon Original: ", _weaponOriginalTransform);
-        f4cf::dump::printTransform("Weapon Offset  : ", _weaponOffsetTransform);
-        f4cf::dump::printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);
-        f4cf::dump::printTransform("Scope Offset   : ", f4vr::getPlayerNodes()->primaryWeaponScopeCamera->local);
-        f4cf::dump::printNodes(weapon);
-        f4cf::dump::printNodesTransform(weapon);
+        f4vr::DebugDump::printTransform("Weapon Original: ", _weaponOriginalTransform);
+        f4vr::DebugDump::printTransform("Weapon Offset  : ", _weaponOffsetTransform);
+        f4vr::DebugDump::printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);
+        f4vr::DebugDump::printTransform("Scope Offset   : ", f4vr::getPlayerNodes()->primaryWeaponScopeCamera->local);
+        f4vr::DebugDump::printNodes(weapon);
+        f4vr::DebugDump::printNodesTransform(weapon);
     }
 }

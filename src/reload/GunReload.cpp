@@ -6,7 +6,7 @@
 // #include "f4se/GameExtraData.h"
 // #include "f4vr/F4VROffsets.h"
 // #include "f4vr/MiscStructs.h"
-// #include "f4vr/VRControllersManager.h"
+// #include "vrcf/VRControllersManager.h"
 //
 // using namespace common;
 //
@@ -52,8 +52,8 @@
 //         //float dist = abs(vec3_len(offhand->world.translate - bolt->world.translate));
 //
 //         const uint64_t handInput = f4vr::isLeftHandedMode()
-//             ? f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
-//             : f4vr::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
+//             ? vrcf::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Left).ulButtonPressed
+//             : vrcf::VRControllers.getControllerState_DEPRECATED(f4vr::TrackerType::Right).ulButtonPressed;
 //
 //         if (!reloadButtonPressed && handInput & vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip)) {
 //             const auto refrData = new f4vr::NEW_REFR_DATA();
