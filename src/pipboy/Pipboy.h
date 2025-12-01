@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Flashlight.h"
 #include "PipboyPhysicalHandler.h"
 
 namespace frik
@@ -42,8 +43,6 @@ namespace frik
         void checkTurningOffByButton();
         void checkTurningOnByLookingAt();
         void checkTurningOffByLookingAway();
-        void checkSwitchingFlashlightHeadHand();
-        void adjustFlashlightTransformToHandOrHead() const;
 
         static void storeLastPipboyPage();
         void holdPipboyScreenInPlace(RE::NiAVObject* pipboyScreen);
@@ -55,10 +54,12 @@ namespace frik
 
         Skeleton* _skelly;
 
+        Flashlight _flashlight;
+
         PipboyPhysicalHandler _physicalHandler;
 
         bool _isOpen = false;
-        bool _attaboyGrabHapticActivated = 0;
+        bool _attaboyGrabHapticActivated = false;
 
         // see exitPowerArmorBugFixHack method
         bool _exitPowerArmorFixFirstFrame = true;
@@ -66,9 +67,6 @@ namespace frik
         // handle auto open/close
         uint64_t _startedLookingAtPip = 0;
         uint64_t _lastLookingAtPip = 0;
-
-        // to stop continuous flashlight haptic feedback
-        bool _flashlightHapticActivated = false;
 
         // handle dampening of pipboy screen to reduce movement
         std::deque<RE::NiPoint3> _pipboyScreenPrevFrame;
