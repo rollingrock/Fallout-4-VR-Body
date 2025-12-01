@@ -88,6 +88,11 @@ namespace frik
             return;
         }
 
+        if (g_frik.isDialogueMenuOpen()) {
+            logger::debug("Dialog menu is open, cancel opening Pipboy");
+            return;
+        }
+
         logger::info("Turning Pipboy {}", open ? "ON" : "OFF");
         _isOpen = open;
 
