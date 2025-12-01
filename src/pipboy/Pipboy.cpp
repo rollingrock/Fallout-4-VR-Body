@@ -379,8 +379,12 @@ namespace frik
     void Pipboy::detachReplacedPipboyRootNif()
     {
         if (_newPipboyRootNifOnlyNode) {
-            logger::info("Detach current replaced pipboy root nif node");
-            _newPipboyRootNifOnlyNode->parent->DetachChild(_newPipboyRootNifOnlyNode);
+            if (_newPipboyRootNifOnlyNode->parent != nullptr) {
+                logger::info("Detach current replaced pipboy root nif node");
+                _newPipboyRootNifOnlyNode->parent->DetachChild(_newPipboyRootNifOnlyNode);
+            } else {
+                logger::warn("Replaced pipboy root nif node is already detached from parent!");
+            }
             _newPipboyRootNifOnlyNode = nullptr;
         }
     }
