@@ -18,6 +18,7 @@
 * Pip-Boy: Fixed being able to open the Pip-Boy while the game pause menu is open.
 * Pip-Boy: Fixed the Pip-Boy remaining open after running a holotape.
 * Pip-Boy: Fixed weapon unequipped when opening Pipboy. Smoother handling of hiding weapon when operating Pipboy with a finger.
+* Pip-boy: Fixed activation when looking at or with finger if offhand is gripping a weapon in 2-handed.
 * Pip-Boy: Reintroduced support for automatic weapon holstering to operate the Pip-Boy with a finger (behind the `bHolsterWeaponForOperation` INI config flag).
 * Left-handed: Fixed hand pose for weapon holding using either gun or melee pose (improved, but not perfect).
 * Left-handed: Fixed 15 more weapon offsets to match the new hand pose.

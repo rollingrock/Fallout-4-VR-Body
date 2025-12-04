@@ -6,6 +6,12 @@ Check the [Changelog](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Chan
 See [In‐Game-Configuration-Guide](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/In%E2%80%90Game-Configuration-Guide-(v69)).
 
 
+## Find FRIK.ini for All Config Options
+Location: `%USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config\FRIK.ini`  
+Most configuration is stored in FRIK.ini file. Much more than can be configured via in-game configuration interfaces.
+Any changes made to FRIK.ini will be live loaded into the running game to experience the effects.
+
+
 ## I don't see my head!
 The head hiding is all in `FRIK.ini` config.  
 Set `HideHead` and `HideEquipment` to false if you want full head to be rendered but it may obscure/clip your vision.  
