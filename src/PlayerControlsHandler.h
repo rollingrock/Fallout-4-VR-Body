@@ -23,8 +23,12 @@ namespace frik
 
     inline PlayerControlsHandler::PlayerControlsHandler()
     {
-        // only fast travel is enabled, the rest is disabled
-        _disableFlags.set(static_cast<RE::UserEvents::USER_EVENT_FLAG>(RE::OtherInputEvents::OTHER_EVENT_FLAG::kFastTravel));
+        // most disabled, leave some enabled that either needed (fast travel) or reported with bugs staying disabled
+        _disableFlags.set(
+            static_cast<RE::UserEvents::USER_EVENT_FLAG>(
+                RE::OtherInputEvents::OTHER_EVENT_FLAG::kFastTravel
+                | RE::OtherInputEvents::OTHER_EVENT_FLAG::kRunning
+                | RE::OtherInputEvents::OTHER_EVENT_FLAG::kSprinting));
     }
 
     /**
