@@ -40,8 +40,6 @@ namespace frik
         static RE::NiTransform getBackOfHandUIDefaultAdjustment(const RE::NiTransform& originalTransform, bool inPA);
         void showHideUIElements(bool weaponEquipped, bool throwableEquipped) const;
 
-        bool isInOffhandRepositioning() const { return _repositionTarget == RepositionTarget::Offhand; }
-
         void onFrameUpdate(RE::NiNode* weapon);
 
     private:

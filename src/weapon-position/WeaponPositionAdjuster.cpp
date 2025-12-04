@@ -370,7 +370,7 @@ namespace frik
      */
     void WeaponPositionAdjuster::handleWeaponGrippingRotationAdjustment(RE::NiNode* weapon) const
     {
-        if (!_offHandGripping && !(_configMode && _configMode->isInOffhandRepositioning())) {
+        if (!_offHandGripping) {
             return;
         }
 
