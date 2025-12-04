@@ -31,6 +31,7 @@ namespace frik
 
         bool isWeaponDrawn() const { return _currentWeapon != EMPTY_HAND; }
         bool isMeleeWeaponDrawn() const { return _isCurrentWeaponMelee; }
+        bool isOffHandGrippingWeapon() const { return _offHandGripping; }
         bool inWeaponRepositionMode() const { return _configMode != nullptr; }
 
         void toggleWeaponRepositionMode();

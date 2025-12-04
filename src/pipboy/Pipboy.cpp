@@ -452,10 +452,14 @@ namespace frik
 
     /**
      * Turn Pipboy on if player is looking at it for a certain amount of time.
+     * When to ignore:
+     * 1. Disabled by config
+     * 2. Fallout london mod
+     * 3. Gripping a weapon with two hands as not to accidentally turn it on
      */
     void Pipboy::checkTurningOnByLookingAt()
     {
-        if (_isOpen || !g_config.pipboyOpenWhenLookAt || !isPlayerLookingAtPipboy() || g_config.isFalloutLondonVR) {
+        if (_isOpen || !g_config.pipboyOpenWhenLookAt || g_config.isFalloutLondonVR || g_frik.isOffHandGrippingWeapon() || !isPlayerLookingAtPipboy()) {
             _startedLookingAtPip = 0;
             return;
         }
