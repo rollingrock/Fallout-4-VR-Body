@@ -30,6 +30,8 @@ namespace frik
                     true)
                 ) {}
 
+        bool isSkeletonReady() const { return _skelly != nullptr; }
+
         bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
         bool isPauseMenuOpen() { return _gameMenusHandler.isPauseMenuOpen(); }
         bool isFavoritesMenuOpen() { return _gameMenusHandler.isFavoritesMenuOpen(); }
@@ -65,6 +67,8 @@ namespace frik
         void toggleWeaponRepositionMode() const { if (_weaponPosition) { _weaponPosition->toggleWeaponRepositionMode(); } }
 
         void dispatchMessageToBetterScopesVR(std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
+
+        RE::NiPoint3 getIndexFingerTipWorldPosition(const bool primaryHand) const { return _skelly ? _skelly->getIndexFingerTipWorldPosition(primaryHand) : RE::NiPoint3(); }
 
         void smoothMovement();
 
