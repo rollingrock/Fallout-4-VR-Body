@@ -4,30 +4,49 @@
 #include "FRIK.h"
 #include "skeleton/HandPose.h"
 
-namespace frik::api
+namespace
 {
-    std::uint32_t FRIKAPI_getVersion()
+    using namespace frik;
+    using namespace frik::api;
+
+    std::uint32_t FRIK_CALL getVersion()
     {
         return FRIK_API_VERSION;
     }
 
-    bool FRIKAPI_isSkeletonReady()
+    bool FRIK_CALL isSkeletonReady()
     {
         return g_frik.isSkeletonReady();
     }
 
-    RE::NiPoint3 FRIKAPI_getIndexFingerTipPosition(const bool primaryHand)
+    RE::NiPoint3 FRIK_CALL getIndexFingerTipPosition(const bool primaryHand)
     {
         return g_frik.getIndexFingerTipWorldPosition(primaryHand);
     }
 
-    void FRIKAPI_setHandPoseFingerPositions(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
+    void FRIK_CALL setHandPoseFingerPositions(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
         setFingerPositionScalar(isLeft, thumb, index, middle, ring, pinky);
     }
 
-    void FRIKAPI_clearHandPoseFingerPositions(const bool isLeft)
+    void FRIK_CALL clearHandPoseFingerPositions(const bool isLeft)
     {
         restoreFingerPoseControl(isLeft);
+    }
+
+    constexpr FRIKApi FRIK_API_FUNCTIONS_TABLE{
+        .getVersion = &getVersion,
+        .isSkeletonReady = &isSkeletonReady,
+        .getIndexFingerTipPosition = &getIndexFingerTipPosition,
+        .setHandPoseFingerPositions = &setHandPoseFingerPositions,
+        .clearHandPoseFingerPositions = &clearHandPoseFingerPositions
+    };
+}
+
+namespace frik::api
+{
+    FRIK_API const FRIKApi* FRIK_CALL FRIKAPI_GetApi()
+    {
+        return &FRIK_API_FUNCTIONS_TABLE;
     }
 }

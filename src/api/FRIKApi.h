@@ -1,122 +1,121 @@
 #pragma once
 
 #include <cstdint>
+#include <Windows.h>
+#include "RE/NetImmerse/NiPoint.h"
+
+// ----------------------------------------------------------------------------------------
+// EXAMPLE USAGE:
+// Copy this whole file into your project AS IS
+// Use the code below as a reference of FRIK API use
+// Call initialize in GameLoaded event
+
+// {
+//     const int err = frik::api::FRIKApi::initialize();
+//     logger::info("FRIK API init {}!", err == 0 ? "successful" : "failed with error: " + std::to_string(err));
+//
+//     if (!frik::api::FRIKApi::inst->isSkeletonReady())
+//         return;
+//
+//     RE::NiPoint3 tip = frik::api::FRIKApi::inst->getIndexFingerTipPosition(true);
+//
+//     // Override left hand pose
+//     frik::api::FRIKApi::inst->setHandPoseFingerPositions(true, 1.0f, 0.5f, 0.2f, 0.0f, 0.0f);
+//
+//     // Later:
+//     frik::api::FRIKApi::inst->clearHandPoseFingerPositions(true);
+// }
 
 namespace frik::api
 {
-    // Export/import macro for the *functions*.
-    // We also give them C linkage so GetProcAddress("FRIKAPI_xxx") works.
 #if defined(FRIK_API_EXPORTS)
 #   define FRIK_API extern "C" __declspec(dllexport)
 #else
 #   define FRIK_API extern "C" __declspec(dllimport)
 #endif
 
-#pragma warning(push)
-#pragma warning(disable : 4190)
+#define FRIK_CALL __cdecl
 
     // API version for compatibility checking
     inline constexpr std::uint32_t FRIK_API_VERSION = 1;
 
-    /**
-     * Get the API version number.
-     * Use this to check compatibility before calling other functions.
-     */
-    FRIK_API std::uint32_t FRIKAPI_getVersion();
+    struct FRIKApi
+    {
+        /**
+         * Get the API version number.
+         * Use this to check compatibility before calling other functions.
+         */
+        std::uint32_t (FRIK_CALL*getVersion)();
 
-    /**
-     * Check if FRIK is ready and the skeleton is initialized.
-     */
-    FRIK_API bool FRIKAPI_isSkeletonReady();
+        /**
+         * Check if FRIK is ready and the skeleton is initialized.
+         */
+        bool (FRIK_CALL*isSkeletonReady)();
 
-    /**
-     * Get the world position of the index fingertip .
-     * @param primaryHand - true for primary (dominant) hand, false for offhand
-     */
-    FRIK_API RE::NiPoint3 FRIKAPI_getIndexFingerTipPosition(bool primaryHand);
+        /**
+         * Get the world position of the index fingertip .
+         * @param primaryHand - true for primary (dominant) hand, false for offhand
+         */
+        RE::NiPoint3 (FRIK_CALL*getIndexFingerTipPosition)(bool primaryHand);
 
-    /**
-     * Set a hand pose override to specific values for each finger.
-     * Each value is between 0 and 1 where 0 is bent and 1 is straight.
-     */
-    FRIK_API void FRIKAPI_setHandPoseFingerPositions(bool isLeft, float thumb, float index, float middle, float ring, float pinky);
+        /**
+         * Set a hand pose override to specific values for each finger.
+         * Each value is between 0 and 1 where 0 is bent and 1 is straight.
+         */
+        void (FRIK_CALL*setHandPoseFingerPositions)(bool isLeft, float thumb, float index, float middle, float ring, float pinky);
 
-    /**
-     * Clear the set values in "setHandPoseFingerPositions" for FRIK to have control over the hand pose.
-     */
-    FRIK_API void FRIKAPI_clearHandPoseFingerPositions(bool isLeft);
+        /**
+         * Clear the set values in "setHandPoseFingerPositions" for FRIK to have control over the hand pose.
+         */
+        void (FRIK_CALL*clearHandPoseFingerPositions)(bool isLeft);
 
-#pragma warning(pop)
+        /**
+         * Initialize the FRIK API object.
+         * NOTE: call after all mods have been loaded in the game (GameLoaded event).
+         *
+         * @param minVersion the minimal version required (default: the compiled against version)
+         * @return error codes:
+         * 0 - Successful
+         * 1 - Failed to find FRIK.dll (trying to init too early?)
+         * 2 - No FRIKAPI_GetApi API found
+         * 3 - Failed FRIKAPI_GetApi call
+         * 4 - FRIK API version is older than the minimal required version
+         */
+        static int initialize(const uint32_t minVersion = FRIK_API_VERSION)
+        {
+            if (inst) {
+                return 0;
+            }
+
+            // get FRIK.dll
+            const auto frikDll = GetModuleHandleA("FRIK.dll");
+            if (!frikDll) {
+                return 1;
+            }
+
+            const auto getApi = reinterpret_cast<const FRIKApi* (FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_GetApi"));
+            if (!getApi) {
+                return 2;
+            }
+
+            const auto frikApi = getApi();
+            if (!frikApi) {
+                return 3;
+            }
+
+            // check against expected version
+            if (frikApi->getVersion() < minVersion) {
+                return 4;
+            }
+
+            inst = frikApi;
+            return 0;
+        }
+
+        /**
+         * The initialized instance of FRIK API interface.
+         * Use after successful call to initialize.
+         */
+        inline static const FRIKApi* inst = nullptr;
+    };
 }
-
-// ----------------------------------------------------------------------------------------
-// EXAMPLE USAGE:
-//
-// #include <Windows.h>
-//
-// namespace {
-//     using frik::api::FRIK_API_VERSION;
-//
-//     using FRIKAPI_getVersion_t                = std::uint32_t(__cdecl*)();
-//     using FRIKAPI_isSkeletonReady_t           = bool(__cdecl*)();
-//     using FRIKAPI_getIndexFingerTipPosition_t = RE::NiPoint3(__cdecl*)(bool);
-//     using FRIKAPI_setHandPoseFingerPositions_t =
-//         void(__cdecl*)(bool, float, float, float, float, float);
-//     using FRIKAPI_clearHandPoseFingerPositions_t = void(__cdecl*)(bool);
-//
-//     struct FrikApi {
-//         FRIKAPI_getVersion_t                getVersion{};
-//         FRIKAPI_isSkeletonReady_t           isSkeletonReady{};
-//         FRIKAPI_getIndexFingerTipPosition_t getIndexFingerTipPosition{};
-//         FRIKAPI_setHandPoseFingerPositions_t setHandPoseFingerPositions{};
-//         FRIKAPI_clearHandPoseFingerPositions_t clearHandPoseFingerPositions{};
-//         bool loaded = false;
-//     } g_frik;
-// }
-//
-// bool InitFrikApi()
-// {
-//     if (g_frik.loaded)
-//         return true;
-//
-//     HMODULE frikDll = GetModuleHandleW(L"FRIK.dll");
-//     if (!frikDll)
-//         return false;
-//
-//     auto load = [frikDll](auto& fn, const char* name) {
-//         fn = reinterpret_cast<std::remove_reference_t<decltype(fn)>>(
-//             GetProcAddress(frikDll, name));
-//         return fn != nullptr;
-//     };
-//
-//     if (!load(g_frik.getVersion, "FRIKAPI_getVersion"))
-//         return false;
-//
-//     if (g_frik.getVersion() < FRIK_API_VERSION)
-//         return false;
-//
-//     if (!load(g_frik.isSkeletonReady, "FRIKAPI_isSkeletonReady"))               return false;
-//     if (!load(g_frik.getIndexFingerTipPosition, "FRIKAPI_getIndexFingerTipPosition")) return false;
-//     if (!load(g_frik.setHandPoseFingerPositions, "FRIKAPI_setHandPoseFingerPositions")) return false;
-//     if (!load(g_frik.clearHandPoseFingerPositions, "FRIKAPI_clearHandPoseFingerPositions")) return false;
-//
-//     g_frik.loaded = true;
-//     return true;
-// }
-//
-// void ExampleUse()
-// {
-//     if (!InitFrikApi())
-//         return;
-//
-//     if (!g_frik.isSkeletonReady())
-//         return;
-//
-//     RE::NiPoint3 tip = g_frik.getIndexFingerTipPosition(true);
-//
-//     // Override left hand pose
-//     g_frik.setHandPoseFingerPositions(true,1.0f,0.5f,0.2f,0.0f,0.0f);
-//
-//     // Later:
-//     g_frik.clearHandPoseFingerPositions(true);
-// }
