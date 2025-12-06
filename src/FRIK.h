@@ -68,7 +68,7 @@ namespace frik
 
         void dispatchMessageToBetterScopesVR(std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
 
-        RE::NiPoint3 getIndexFingerTipWorldPosition(const bool primaryHand) const { return _skelly ? _skelly->getIndexFingerTipWorldPosition(primaryHand) : RE::NiPoint3(); }
+        RE::NiPoint3 getIndexFingerTipWorldPosition(const vrcf::Hand hand) const { return _skelly ? _skelly->getIndexFingerTipWorldPosition(hand) : RE::NiPoint3(); }
 
         void smoothMovement();
 

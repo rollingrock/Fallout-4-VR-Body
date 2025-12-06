@@ -43,7 +43,7 @@ namespace frik
 
         virtual RE::NiPoint3 getInteractionBoneWorldPosition() override
         {
-            return _skelly->getIndexFingerTipWorldPosition(false);
+            return _skelly->getIndexFingerTipWorldPosition(vrcf::Hand::Offhand);
         }
 
         virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override

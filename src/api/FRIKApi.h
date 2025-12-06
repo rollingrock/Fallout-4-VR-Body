@@ -17,13 +17,13 @@
 //     if (!frik::api::FRIKApi::inst->isSkeletonReady())
 //         return;
 //
-//     RE::NiPoint3 tip = frik::api::FRIKApi::inst->getIndexFingerTipPosition(true);
+//     RE::NiPoint3 tip = frik::api::FRIKApi::inst->getIndexFingerTipPosition(frik::api::FRIKApi::Hand::Left);
 //
 //     // Override left hand pose
-//     frik::api::FRIKApi::inst->setHandPoseFingerPositions(true, 1.0f, 0.5f, 0.2f, 0.0f, 0.0f);
+//     frik::api::FRIKApi::inst->setHandPoseFingerPositions(frik::api::FRIKApi::Hand::Primary, 1.0f, 0.5f, 0.2f, 0.0f, 0.0f);
 //
 //     // Later:
-//     frik::api::FRIKApi::inst->clearHandPoseFingerPositions(true);
+//     frik::api::FRIKApi::inst->clearHandPoseFingerPositions(frik::api::FRIKApi::Hand::Primary);
 // }
 
 namespace frik::api
@@ -42,6 +42,17 @@ namespace frik::api
     struct FRIKApi
     {
         /**
+         * The player hand to act on with support of left-handed if needed.
+         */
+        enum class Hand : std::uint8_t
+        {
+            Primary,
+            Offhand,
+            Right,
+            Left,
+        };
+
+        /**
          * Get the API version number.
          * Use this to check compatibility before calling other functions.
          */
@@ -54,20 +65,19 @@ namespace frik::api
 
         /**
          * Get the world position of the index fingertip .
-         * @param primaryHand - true for primary (dominant) hand, false for offhand
          */
-        RE::NiPoint3 (FRIK_CALL*getIndexFingerTipPosition)(bool primaryHand);
+        RE::NiPoint3 (FRIK_CALL*getIndexFingerTipPosition)(Hand hand);
 
         /**
          * Set a hand pose override to specific values for each finger.
          * Each value is between 0 and 1 where 0 is bent and 1 is straight.
          */
-        void (FRIK_CALL*setHandPoseFingerPositions)(bool isLeft, float thumb, float index, float middle, float ring, float pinky);
+        void (FRIK_CALL*setHandPoseFingerPositions)(Hand hand, float thumb, float index, float middle, float ring, float pinky);
 
         /**
          * Clear the set values in "setHandPoseFingerPositions" for FRIK to have control over the hand pose.
          */
-        void (FRIK_CALL*clearHandPoseFingerPositions)(bool isLeft);
+        void (FRIK_CALL*clearHandPoseFingerPositions)(Hand hand);
 
         /**
          * Initialize the FRIK API object.
@@ -81,7 +91,7 @@ namespace frik::api
          * 3 - Failed FRIKAPI_GetApi call
          * 4 - FRIK API version is older than the minimal required version
          */
-        static int initialize(const uint32_t minVersion = FRIK_API_VERSION)
+        [[nodiscard]] static int initialize(const uint32_t minVersion = FRIK_API_VERSION)
         {
             if (inst) {
                 return 0;
