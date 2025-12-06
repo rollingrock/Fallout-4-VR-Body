@@ -4,7 +4,7 @@
 #include "FRIK.h"
 #include "skeleton/HandPose.h"
 
-namespace frik
+namespace frik::api
 {
     // Static functions for Papyrus - CommonLib F4 style (no parameters for static functions without arguments)
     static void openMainConfigurationMode(std::monostate)
