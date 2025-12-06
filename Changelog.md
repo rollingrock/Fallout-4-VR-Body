@@ -1,6 +1,9 @@
-## v0.76 (WIP)
+## v0.77 (TBD)
+
+## v0.76
 
 * Support Fallout London VR Attaboy replacement for the Pip-Boy.
+* Support C++ dev FRIK API.
 * Body: Added support for **Seated Mode** to adjust the player body when seated, with sane defaults.
 * Body: Fixed incorrect HMD, body height, and body position when using comfort sneak.
 * Body: Fixed issue where looking down moved the body forward and obstructed the view.
