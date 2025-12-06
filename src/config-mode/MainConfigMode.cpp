@@ -150,7 +150,7 @@ namespace frik
      */
     void MainConfigMode::toggleSelfieMode()
     {
-        const bool newSelfieMode = !g_frik.getSelfieMode();
+        const bool newSelfieMode = !g_frik.isSelfieModeOn();
         logger::info("Toggle selfie mode in main config... On:{}", newSelfieMode);
         g_frik.setSelfieMode(newSelfieMode);
     }

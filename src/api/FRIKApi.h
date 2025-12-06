@@ -64,6 +64,26 @@ namespace frik::api
         bool (FRIK_CALL*isSkeletonReady)();
 
         /**
+         * Is any of the FRIK config UI is open (main, Pipboy, weapon adjustment)
+         */
+        bool (FRIK_CALL*isConfigOpen)();
+
+        /**
+         * Is FRIK selfie mode is currently on or off.
+         */
+        bool (FRIK_CALL*isSelfieModeOn)();
+
+        /**
+         * Set FRIK selfie mode on or off.
+         */
+        void (FRIK_CALL*setSelfieModeOn)(bool setOn);
+
+        /**
+         * Is the player currently holding the weapon with two hands. i.e. offhand is holding the weapon.
+         */
+        bool (FRIK_CALL*isOffHandGrippingWeapon)();
+
+        /**
          * Get the world position of the index fingertip .
          */
         RE::NiPoint3 (FRIK_CALL*getIndexFingerTipPosition)(Hand hand);

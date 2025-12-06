@@ -53,7 +53,7 @@ namespace frik
     static void toggleSelfieMode(std::monostate)
     {
         logger::info("Papyrus: toggle selfie mode");
-        g_frik.setSelfieMode(!g_frik.getSelfieMode());
+        g_frik.setSelfieMode(!g_frik.isSelfieModeOn());
     }
 
     static void moveForward(std::monostate)
