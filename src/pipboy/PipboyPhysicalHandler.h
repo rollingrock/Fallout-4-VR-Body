@@ -20,6 +20,7 @@ namespace frik
 
         bool isOperating() const { return _isOperatingPipboy; }
         void operate(PipboyPage lastPipboyPage);
+        void updateIsOperatingPipboy(bool isOperating);
 
     private:
         void checkHandStateToOperatePipboy(RE::NiPoint3 fingerPos, const RE::NiNode* powerButton, const RE::NiNode* lightButton, const RE::NiNode* radioButton);

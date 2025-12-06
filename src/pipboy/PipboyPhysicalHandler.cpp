@@ -24,18 +24,15 @@ namespace frik
         if (g_config.pipboyHolsterWeaponForOperation) {
             if (!Pipboy::isPlayerLookingAtPipboy(false)) {
                 // no physical Pipboy operation if the player is not looking at it when weapon holstering is enabled
-                _isOperatingPipboy = false;
                 updatePipboyPhysicalElements(lastPipboyPage);
+                updateIsOperatingPipboy(false);
                 return;
             }
         } else {
             if (f4vr::IsWeaponDrawn() && !f4vr::isLeftHandedMode()) {
                 // no physical Pipboy operation if the player has a weapon equipped
                 updatePipboyPhysicalElements(lastPipboyPage);
-                if (_isOperatingPipboy) {
-                    _isOperatingPipboy = false;
-                    disablePipboyHandPose();
-                }
+                updateIsOperatingPipboy(false);
                 return;
             }
         }
@@ -79,17 +76,29 @@ namespace frik
     void PipboyPhysicalHandler::checkHandStateToOperatePipboy(
         const RE::NiPoint3 fingerPos, const RE::NiNode* powerButton, const RE::NiNode* lightButton, const RE::NiNode* radioButton)
     {
-        const bool wasOperating = _isOperatingPipboy;
+        bool isOperating = false;
+        if (!g_frik.isOffHandGrippingWeapon()) {
+            // have a buffer zone for finger detection not to trash the hand pose
+            const float pipboyDetectionRange = g_config.pipboyOperationFingerDetectionRange + (_isOperatingPipboy ? 1.0f : -1.0f);
+            isOperating = MatrixUtils::vec3Len(fingerPos - powerButton->world.translate) < pipboyDetectionRange
+                || MatrixUtils::vec3Len(fingerPos - lightButton->world.translate) < pipboyDetectionRange
+                || MatrixUtils::vec3Len(fingerPos - radioButton->world.translate) < pipboyDetectionRange;
+        }
+        updateIsOperatingPipboy(isOperating);
+    }
 
-        // have a buffer zone for finger detection not to trash the hand pose
-        const float pipboyDetectionRange = g_config.pipboyOperationFingerDetectionRange + (_isOperatingPipboy ? 1.0f : -1.0f);
-        _isOperatingPipboy = MatrixUtils::vec3Len(fingerPos - powerButton->world.translate) < pipboyDetectionRange
-            || MatrixUtils::vec3Len(fingerPos - lightButton->world.translate) < pipboyDetectionRange
-            || MatrixUtils::vec3Len(fingerPos - radioButton->world.translate) < pipboyDetectionRange;
-
-        if (wasOperating == _isOperatingPipboy) {
+    /**
+     * Set is operating to given value if it's different.
+     * Update hand-pose to reflect the change.
+     */
+    void PipboyPhysicalHandler::updateIsOperatingPipboy(const bool isOperating)
+    {
+        if (_isOperatingPipboy == isOperating) {
             return;
         }
+
+        logger::debug("Pipboy physical operation changed from {} to {}", _isOperatingPipboy, isOperating);
+        _isOperatingPipboy = isOperating;
 
         if (_isOperatingPipboy) {
             setPipboyHandPose();

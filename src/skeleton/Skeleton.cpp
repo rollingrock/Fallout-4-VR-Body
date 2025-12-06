@@ -43,9 +43,24 @@ namespace frik
      * Make small adjustment as the finger bone position is the center of the finger.
      * Would be nice to know how long the bone is instead of magic numbers, didn't find a way so far.
      */
-    RE::NiPoint3 Skeleton::getIndexFingerTipWorldPosition(const bool primaryHand)
+    RE::NiPoint3 Skeleton::getIndexFingerTipWorldPosition(const Hand hand)
     {
-        const auto indexFinger = primaryHand == isLeftHandedMode() ? "LArm_Finger23" : "RArm_Finger23";
+        bool rightHand = false;
+        switch (hand) {
+        case Hand::Primary:
+            rightHand = !isLeftHandedMode();
+            break;
+        case Hand::Offhand:
+            rightHand = isLeftHandedMode();
+            break;
+        case Hand::Right:
+            rightHand = true;
+            break;
+        case Hand::Left:
+            rightHand = false;
+            break;
+        }
+        const auto indexFinger = rightHand ? "RArm_Finger23" : "LArm_Finger23";
         const auto boneTransform = getBoneWorldTransform(indexFinger);
         const auto forward = boneTransform.rotate.Transpose() * (RE::NiPoint3(1, 0, 0));
         return boneTransform.translate + forward * (_inPowerArmor ? 3 : 1.8f);
