@@ -3,7 +3,6 @@
 #include "Config.h"
 #include "GameHooks.h"
 #include "PapyrusApi.h"
-#include "PapyrusGateway.h"
 #include "utils.h"
 #include "config-mode/ConfigurationMode.h"
 #include "f4vr/DebugDump.h"
