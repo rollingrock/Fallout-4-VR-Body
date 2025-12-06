@@ -34,6 +34,26 @@ namespace
         return g_frik.isSkeletonReady();
     }
 
+    bool FRIK_CALL isConfigOpen()
+    {
+        return g_frik.isMainConfigurationModeActive() || g_frik.isPipboyConfigurationModeActive() || g_frik.inWeaponRepositionMode();
+    }
+
+    bool FRIK_CALL isSelfieModeOn()
+    {
+        return g_frik.isSelfieModeOn();
+    }
+
+    void FRIK_CALL setSelfieModeOn(const bool setOn)
+    {
+        g_frik.setSelfieMode(setOn);
+    }
+
+    bool FRIK_CALL isOffHandGrippingWeapon()
+    {
+        return g_frik.isOffHandGrippingWeapon();
+    }
+
     RE::NiPoint3 FRIK_CALL getIndexFingerTipPosition(const FRIKApi::Hand hand)
     {
         return g_frik.getIndexFingerTipWorldPosition(static_cast<vrcf::Hand>(hand));
@@ -52,6 +72,10 @@ namespace
     constexpr FRIKApi FRIK_API_FUNCTIONS_TABLE{
         .getVersion = &getVersion,
         .isSkeletonReady = &isSkeletonReady,
+        .isConfigOpen = &isConfigOpen,
+        .isSelfieModeOn = &isSelfieModeOn,
+        .setSelfieModeOn = &setSelfieModeOn,
+        .isOffHandGrippingWeapon = &isOffHandGrippingWeapon,
         .getIndexFingerTipPosition = &getIndexFingerTipPosition,
         .setHandPoseFingerPositions = &setHandPoseFingerPositions,
         .clearHandPoseFingerPositions = &clearHandPoseFingerPositions

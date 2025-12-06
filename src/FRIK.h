@@ -37,7 +37,7 @@ namespace frik
         bool isFavoritesMenuOpen() { return _gameMenusHandler.isFavoritesMenuOpen(); }
         bool isDialogueMenuOpen() { return _gameMenusHandler.isDialogueMenuOpen(); }
 
-        bool getSelfieMode() const { return _selfieMode; }
+        bool isSelfieModeOn() const { return _selfieMode; }
         void setSelfieMode(const bool selfieMode) { _selfieMode = selfieMode; }
         float getDynamicCameraHeight() const { return _dynamicCameraHeight; }
         void setDynamicCameraHeight(const float dynamicCameraHeight) { _dynamicCameraHeight = dynamicCameraHeight; }

@@ -207,7 +207,7 @@ namespace frik
         const float neckYaw = getNeckYaw();
         const float neckPitch = getNeckPitch();
 
-        if (!g_config.hideHead || (g_frik.getSelfieMode() && g_config.selfieIgnoreHideFlags)) {
+        if (!g_config.hideHead || (g_frik.isSelfieModeOn() && g_config.selfieIgnoreHideFlags)) {
             logger::trace("Setup Head");
             setupHead(neckYaw, neckPitch);
         }
@@ -293,7 +293,7 @@ namespace frik
      */
     void Skeleton::setupHead(const float neckYaw, const float neckPitch) const
     {
-        const float headBackAdj = g_frik.getSelfieMode() && g_config.selfieIgnoreHideFlags ? 0 : g_config.headBackPositionOffset + (neckPitch > 0 ? 2 * neckPitch : 0);
+        const float headBackAdj = g_frik.isSelfieModeOn() && g_config.selfieIgnoreHideFlags ? 0 : g_config.headBackPositionOffset + (neckPitch > 0 ? 2 * neckPitch : 0);
         _head->local.translate -= RE::NiPoint3(headBackAdj, 2 * headBackAdj, 0);
         _head->local.rotate = _head->local.rotate * MatrixUtils::getMatrixFromEulerAngles(neckYaw, 0, neckPitch);
         RE::NiUpdateData* ud = nullptr;
@@ -1373,7 +1373,7 @@ namespace frik
     void Skeleton::selfieSkelly() const
     {
         // Projects the 3rd person body out in front of the player by offset amount
-        if (!g_frik.getSelfieMode() || !_root) {
+        if (!g_frik.isSelfieModeOn() || !_root) {
             return;
         }
 

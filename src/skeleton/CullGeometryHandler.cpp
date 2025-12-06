@@ -77,7 +77,7 @@ namespace frik
     /// </summary>
     void CullGeometryHandler::cullPlayerGeometry()
     {
-        if (g_frik.getSelfieMode() && g_config.selfieIgnoreHideFlags) {
+        if (g_frik.isSelfieModeOn() && g_config.selfieIgnoreHideFlags) {
             restoreGeometry();
             restoreEquipment();
             return;
