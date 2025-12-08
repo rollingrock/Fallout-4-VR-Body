@@ -40,7 +40,19 @@
       "name": "vs2022"
     },
     {
-      "inherits": ["cmake-dev", "vcpkg", "windows", "vs2022"],
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "/EHsc /MP /W4 /external:anglebrackets /external:W0 $penv{CXXFLAGS}"
+      },
+      "generator": "Visual Studio 18 2026",
+      "toolset": "v145",
+      "architecture": {
+        "value": "x64"
+      },
+      "hidden": true,
+      "name": "vs2026"
+    },
+    {
+      "inherits": ["cmake-dev", "vcpkg", "windows", "vs2026"],
       "name": "default"
     }
   ],
