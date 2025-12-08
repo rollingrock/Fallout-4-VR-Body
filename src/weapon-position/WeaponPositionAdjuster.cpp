@@ -151,11 +151,10 @@ namespace frik
 
         handleScopeCameraAdjustmentByWeaponOffset(weapon);
 
-        handleSpecialWeaponFix(weapon);
-
         handleBetterScopes(weapon);
 
-        f4vr::updateDown(weapon, true);
+        // update all the nodes world transforms by local transform changes recursively down the tree
+        f4vr::updateTransformsDown(weapon, true);
 
         fixMuzzleFlashPosition();
 
@@ -353,7 +352,7 @@ namespace frik
         if (_hasPrimaryHandOffset) {
             const auto primaryHand = f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
             primaryHand->local.rotate = _primaryHandOffsetRot * primaryHand->local.rotate;
-            f4vr::updateDown(primaryHand, true, weapon->name.c_str());
+            f4vr::updateTransformsDown(primaryHand, true, weapon->name.c_str());
         }
     }
 
@@ -427,7 +426,7 @@ namespace frik
         primaryHand->local.rotate = rotAdjustWithManual * primaryHand->local.rotate;
 
         // update all the fingers to match the hand rotation
-        f4vr::updateDown(primaryHand, true, weapon->name.c_str());
+        f4vr::updateTransformsDown(primaryHand, true, weapon->name.c_str());
     }
 
     /**
@@ -519,21 +518,6 @@ namespace frik
     {
         const auto offHandBone = f4vr::isLeftHandedMode() ? "RArm_Finger31" : "LArm_Finger31";
         return _skelly->getBoneWorldTransform(offHandBone).translate;
-    }
-
-    /**
-     * Special handling for the "Laser Musket" weapon as it's "loaded" state beam doesn't follow the parent weapon rotation.
-     * Fix by forcing the rotation on it from calculating the diff from original to the current after all other calculation including offhand gripping.
-     * Also works on Automatic laser specific modification that has laser beam in it.
-     * The BeamMesh can have different suffixes so using starts with to find it.
-     */
-    void WeaponPositionAdjuster::handleSpecialWeaponFix(RE::NiNode* weapon) const
-    {
-        if (_currentWeapon.starts_with("Laser")) {
-            if (const auto beamNode = f4vr::findNodeStartsWith(f4vr::findNode(weapon, "P-Barrel"), "BeamMesh")) {
-                beamNode->local.rotate = MatrixUtils::getIdentityMatrix() * (weapon->local.rotate * _weaponOriginalTransform.rotate);
-            }
-        }
     }
 
     /**
