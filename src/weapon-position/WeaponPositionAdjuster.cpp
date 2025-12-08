@@ -561,13 +561,8 @@ namespace frik
 
         // shockingly the projectile world location is exactly what we need to set of the muzzle flash node
         muzzle->fireNode->local = muzzle->projectileNode->world;
-
-        // small optimization to only run world update if the fireNode is visible
-        // note, setting fireNode local transform must happen ALWAYS or some artifact is visible in old location for some weapons
-        if (f4vr::isNodeVisible(muzzle->fireNode)) {
-            // critical to move all muzzle flash effects to the projectile node
-            f4vr::updateDown(muzzle->fireNode, true);
-        }
+        // critical to move all muzzle flash effects to the projectile node
+        f4vr::updateTransformsDown(muzzle->fireNode, true);
     }
 
     /**
