@@ -304,6 +304,21 @@ namespace frik
         // Torch/Flashlight
         removeFlashlight = ini.GetBoolValue(INI_SECTION_MAIN, "bRemoveFlashlight", false);
         flashlightLocation = static_cast<FlashlightLocation>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", 0));
+        // Head-mounted flashlight defaults
+        flashlightHeadFade = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fFlashlightHeadFade", 1.1));
+        flashlightHeadRadius = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightHeadRadius", 2400));
+        flashlightHeadFov = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fFlashlightHeadFov", 100.0));
+        flashlightHeadColorRed = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightHeadColorRed", 235));
+        flashlightHeadColorGreen = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightHeadColorGreen", 224));
+        flashlightHeadColorBlue = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightHeadColorBlue", 190));
+        // In-hand flashlight defaults (same values)
+        flashlightInHandFade = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fFlashlightInHandFade", 1.3));
+        flashlightInHandRadius = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightInHandRadius", 6000));
+        flashlightInHandFov = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fFlashlightInHandFov", 65.0));
+        flashlightInHandColorRed = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightInHandColorRed", 240));
+        flashlightInHandColorGreen = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightInHandColorGreen", 230));
+        flashlightInHandColorBlue = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightInHandColorBlue", 225));
+        // change hand / head button
         switchTorchButton = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2));
 
         // Fallout London VR support

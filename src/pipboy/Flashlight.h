@@ -16,6 +16,7 @@ namespace frik
     private:
         void checkSwitchingFlashlightHeadHand();
         void adjustFlashlightTransformToHandOrHead() const;
+        static void setLightValues();
 
         Skeleton* _skelly;
 
