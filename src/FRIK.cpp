@@ -325,21 +325,16 @@ namespace frik
         if (!g_config.removeFlashlight) {
             return;
         }
-        for (const auto& item : RE::TESDataHandler::GetSingleton()->GetFormArray<RE::TESObjectARMO>()) {
-            if (item->formID == 0x21B3B) {
-                for (std::uint32_t idx{}; idx < item->numKeywords; idx++) {
-                    const auto frmKey = item->keywords[idx];
-                    if (frmKey && frmKey->formID == 0xB34A6) {
-                        logger::info("Removing embedded FRIK flashlight from: '{}', keyword: 0x{:x}", item->GetFullName(), frmKey->formID);
-                        item->RemoveKeyword(frmKey);
-                        return;
-                    }
-                }
-                logger::warn("Failed to remove embedded FRIK flashlight, keyword not found in '{}'", item->GetFullName());
-                return;
+        if (auto* armorObj = RE::TESForm::GetFormByID<RE::TESObjectARMO>(0x21B3B)) {
+            if (const auto keywordObj = RE::TESForm::GetFormByID<RE::BGSKeyword>(0xB34A6)) {
+                logger::info("Removing embedded FRIK flashlight from: '{}', keyword: 0x{:x}", armorObj->GetFullName(), keywordObj->formID);
+                armorObj->RemoveKeyword(keywordObj);
+            } else {
+                logger::warn("Failed to remove embedded FRIK flashlight, keyword not found in '{}'", armorObj->GetFullName());
             }
+        } else {
+            logger::warn("Failed to remove embedded FRIK flashlight, armor not found");
         }
-        logger::warn("Failed to remove embedded FRIK flashlight, armor not found");
     }
 
     /**
