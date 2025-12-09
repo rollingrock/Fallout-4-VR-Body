@@ -1,4 +1,6 @@
-## v0.77 (TBD)
+## v0.77 (WIP)
+* Support flashlight configuration (intensity, distance, fov, and color) per on-head and in-hand location.
+* Fixed some weapon attachments effects like [laser pointers](https://www.nexusmods.com/fallout4/mods/12363) not rotated correctly in 2-handed use.
 
 ## v0.76
 
