@@ -48,7 +48,7 @@ else()
 endif()
 # Verify path is correct
 if(NOT EXISTS "${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}/src/ModBase.h")
-  message(FATAL_ERROR ">> F4VRCommonFramework path not found in '${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}'! Did you init submodules or set F4VR_COMMON_FRAMEWORK_PATH?")
+  message(FATAL_ERROR ">> F4VRCommonFramework path not found in '${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}'!\n >> Did you init submodules? (git submodule update --init --recursive)\n >> or set F4VR_COMMON_FRAMEWORK_PATH?")
 endif()
 
 # >>> Create Project
