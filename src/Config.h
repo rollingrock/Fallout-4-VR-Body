@@ -212,6 +212,7 @@ namespace frik
 
         // is the game is a Fallout London VR modded version
         bool isFalloutLondonVR = false;
+        bool ignoreFalloutLondonVR = false;
 
     protected:
         virtual void loadIniConfigInternal(const CSimpleIniA& ini) override;

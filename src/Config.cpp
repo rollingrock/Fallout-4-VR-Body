@@ -352,6 +352,9 @@ namespace frik
         selfieIgnoreHideFlags = ini.GetBoolValue(INI_SECTION_MAIN, "bSelfieIgnoreHideFlags", true);
         scopeAdjustDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f));
 
+        // special disable of Fallout London so Pipboy can be used - a hacky hack for a specific player
+        ignoreFalloutLondonVR = ini.GetBoolValue(INI_SECTION_MAIN, "bIgnoreFalloutLondonVR", true);
+
         //Smooth Movement
         disableSmoothMovement = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableSmoothMovement");
         smoothingAmount = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmount", 15.0));
