@@ -8,7 +8,7 @@
   - `git clone https://github.com/microsoft/vcpkg.git`
   - run `bootstrap-vcpkg.bat`. Example: `C:\github\vcpkg\bootstrap-vcpkg.bat`
   - Set environment variable `VCPKG_ROOT`. Example: `setx VCPKG_ROOT "C:\github\vcpkg"`
-- [Visual Studio Community 2022](https://visualstudio.microsoft.com/)
+- [Visual Studio Community 2026](https://visualstudio.microsoft.com/)
   - Desktop development with C++
 
 ## Building
@@ -19,11 +19,11 @@ cd Fallout-4-VR-Body
 git submodule update --init --recursive
 ```
 
-Create VS2022 solution:
+Create VS2026 solution:
 ```
 cmake --preset default
 ```
-- Open `.../Fallout-4-VR-Body/build/FRIK.sln` in VS2022.
+- Open `.../Fallout-4-VR-Body/build/FRIK.slnx` in VS2026.
   - Build and debug in VS as usual
   - Any project changes should be done in `CMakeLists.txt`
 - see `CMakeUserPresets.json.template` to customize presets by providing path for post-build event.
