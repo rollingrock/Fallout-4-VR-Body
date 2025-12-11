@@ -73,11 +73,7 @@ namespace frik
      */
     void FRIK::onGameLoaded()
     {
-        g_config.isFalloutLondonVR = isFalloutLondonVRModLoaded();
-        if (g_config.isFalloutLondonVR) {
-            logger::info("Fallout London VR mod detected, enabling compatibility mode...");
-            g_config.reloadForFalloutLondonVR();
-        }
+        initForFalloutLondonVR();
 
         logger::info("Register papyrus native functions...");
         api::initPapyrusApis();
@@ -95,6 +91,23 @@ namespace frik
             logger::info("BetterScopesVR mod detected, registering for messages...");
             _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
             _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
+        }
+    }
+
+    /**
+     * Check if the Fallout London VR mod is loaded and initialize compatibility mode if so.
+     * Special flag to ignore the mod can be used to use regular Pipboy instead of the Attaboy.
+     */
+    void FRIK::initForFalloutLondonVR()
+    {
+        g_config.isFalloutLondonVR = isFalloutLondonVRModLoaded();
+        if (g_config.isFalloutLondonVR) {
+            logger::info("Fallout London VR mod detected, enabling compatibility mode...");
+            g_config.reloadForFalloutLondonVR();
+            if (g_config.ignoreFalloutLondonVR) {
+                logger::warn("Ignore Fallout London VR flag set, do not treat the game as Fallout London!");
+                g_config.isFalloutLondonVR = false;
+            }
         }
     }
 
@@ -325,21 +338,16 @@ namespace frik
         if (!g_config.removeFlashlight) {
             return;
         }
-        for (const auto& item : RE::TESDataHandler::GetSingleton()->GetFormArray<RE::TESObjectARMO>()) {
-            if (item->formID == 0x21B3B) {
-                for (std::uint32_t idx{}; idx < item->numKeywords; idx++) {
-                    const auto frmKey = item->keywords[idx];
-                    if (frmKey && frmKey->formID == 0xB34A6) {
-                        logger::info("Removing embedded FRIK flashlight from: '{}', keyword: 0x{:x}", item->GetFullName(), frmKey->formID);
-                        item->RemoveKeyword(frmKey);
-                        return;
-                    }
-                }
-                logger::warn("Failed to remove embedded FRIK flashlight, keyword not found in '{}'", item->GetFullName());
-                return;
+        if (auto* armorObj = RE::TESForm::GetFormByID<RE::TESObjectARMO>(0x21B3B)) {
+            if (const auto keywordObj = RE::TESForm::GetFormByID<RE::BGSKeyword>(0xB34A6)) {
+                logger::info("Removing embedded FRIK flashlight from: '{}', keyword: 0x{:x}", armorObj->GetFullName(), keywordObj->formID);
+                armorObj->RemoveKeyword(keywordObj);
+            } else {
+                logger::warn("Failed to remove embedded FRIK flashlight, keyword not found in '{}'", armorObj->GetFullName());
             }
+        } else {
+            logger::warn("Failed to remove embedded FRIK flashlight, armor not found");
         }
-        logger::warn("Failed to remove embedded FRIK flashlight, armor not found");
     }
 
     /**

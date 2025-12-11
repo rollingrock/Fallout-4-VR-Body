@@ -89,6 +89,7 @@ namespace frik
         bool isRootNodeValid() const;
         static void removeEmbeddedFlashlight();
         static void onBetterScopesMessage(F4SE::MessagingInterface::Message* msg);
+        static void initForFalloutLondonVR();
 
         bool _inPowerArmor = false;
         bool _isLookingThroughScope = false;

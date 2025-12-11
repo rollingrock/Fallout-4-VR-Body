@@ -568,7 +568,7 @@ namespace frik
             _pipboyScreenStableFrame = pipboyScreen->world;
         } else {
             pipboyScreen->world = _pipboyScreenStableFrame;
-            f4vr::updateDown(pipboyScreen, false);
+            f4vr::updateTransformsDown(pipboyScreen, false);
         }
     }
 
@@ -601,7 +601,7 @@ namespace frik
         _pipboyScreenStableFrame = pipboyScreen->world;
         _pipboyScreenStableFrame.translate += dampeningDelta * (1 - g_config.dampenPipboyMultiplier);
 
-        f4vr::updateDown(pipboyScreen, false);
+        f4vr::updateTransformsDown(pipboyScreen, false);
     }
 
     /**

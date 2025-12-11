@@ -154,6 +154,18 @@ namespace frik
         // Pipboy Torch/Flashlight
         bool removeFlashlight = false;
         FlashlightLocation flashlightLocation = FlashlightLocation::Head;
+        float flashlightHeadFade;
+        int flashlightHeadRadius;
+        float flashlightHeadFov;
+        int flashlightHeadColorRed;
+        int flashlightHeadColorGreen;
+        int flashlightHeadColorBlue;
+        float flashlightInHandFade;
+        int flashlightInHandRadius;
+        float flashlightInHandFov;
+        int flashlightInHandColorRed;
+        int flashlightInHandColorGreen;
+        int flashlightInHandColorBlue;
         int switchTorchButton = 2;
 
         // Fallout London VR support
@@ -200,6 +212,7 @@ namespace frik
 
         // is the game is a Fallout London VR modded version
         bool isFalloutLondonVR = false;
+        bool ignoreFalloutLondonVR = false;
 
     protected:
         virtual void loadIniConfigInternal(const CSimpleIniA& ini) override;

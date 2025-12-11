@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 4.2)
 
 
 # >>> Project
 set(NAME "FRIK")
 set(FRIENDLY_NAME "FRIK")
-set(VERSION 0.76.12)
+set(VERSION 0.77.2)
 
 message(">>> Start build for '${NAME}' v${VERSION}")
 
