@@ -34,6 +34,14 @@ Grip modes affect how to grip the weapon with the offhand:
 ## GAME CRASHED!
 It happens, it could be bad install (see [installation wiki](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Installation)), could be related to FRIK, related to conflict between FRIK and other mods, and it could be unrelated to FRIK.  
 
+### Known Crashes
+- Not updating `Fallout4Custom.ini` during manual install, see [installation](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Installation) wiki page.
+- "Amazing Follower Tweaks" mod is known to conflict with FRIK in the past.
+- Anything that messes directly with the **skeleton** can cause a crash (body, heels, etc.).
+- New Game reported in the past as problematic, I don't believe it still is, but:
+  - Disabling before starting a game and re-enabling just after or after exiting the vault would probably be good enough.
+  - The last confirmed new game conflict was for a combination of 3 mods with skeleton change ([#107](https://github.com/rollingrock/Fallout-4-VR-Body/issues/107)).
+
 ### Reporting Crash Information
 If I, the developer, can reproduce the crash in 95% of the times I can fix it. Help me do so:
 1. Describe in as much details as possible what led to the crash.  
@@ -50,14 +58,6 @@ If I, the developer, can reproduce the crash in 95% of the times I can fix it. H
   - `f4sevr.log` and `f4sevr_loader.log` for mod loading failures.
 - Share the logs via [pastebin.com](https://pastebin.com)
 - **Bonus points** if you set `iLogLevel = 0` in FRIK.ini before reproducing the crash for more debug logs (performance expensive).
-
-### Known Crashes
-- Not updating `Fallout4Custom.ini` during manual install, see [installation](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Installation) wiki page.
-- "Amazing Follower Tweaks" mod is known to conflict with FRIK in the past.
-- Anything that messes directly with the **skeleton** can cause a crash (body, heels, etc.).
-- New Game reported in the past as problematic, I don't believe it still is, but:
-  - Disabling before starting a game and re-enabling just after or after exiting the vault would probably be good enough.
-  - The last confirmed new game conflict was for a combination of 3 mods with skeleton change ([#107](https://github.com/rollingrock/Fallout-4-VR-Body/issues/107)).
 
 
 ## When I launch the game, I do not see a body!
@@ -93,34 +93,14 @@ You're probably using mods that contain fixes for VR that are not required anymo
 Either remove it, find a way to remove the VR fix in it, or adjust the weapon in FRIK using [Weapon Adjustment](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Weapon-Adjustment-Guide-(v73)).
 
 
-## Keep Moving and Shooting when Using On-Wrist Pipboy
-When using on-wrist Pipboy you should be able to use the thumbsticks without rotating, jumping, or firing the weapon.  
-If this is not the case, it means that one of FRIK script files failed to load.  
-The solution I found to work is:
-1. Disable FRIK.  
-  If using MO2, make sure the esp is also unchecked (Common for Mad God modlist).
-2. Load a game and make a new save.
-3. Re-enable FRIK.
-4. Load the new save.
-
-
 ## Keep triggering VATS when using On-Wrist Pipboy
 You're probably using [Bullet Time VATS VR](https://www.nexusmods.com/fallout4/mods/72502) (default with Mad God modpack). It doesn't respect game VATS disabling logic.  
-I recommend using [VATS Tweaks](https://www.nexusmods.com/fallout4/mods/1064) instead as it is superior in every way.  
-Optionally, with [VR Neutral VATS](https://www.nexusmods.com/fallout4/mods/47850) and disabling the body part targeting by adding this to `fallout4custom.ini`:
-```
-[VATS]
-fVATSPotentialTargetRaycastDist=0
-```
+I have a fix and waiting for the mod author to respond, if not I will put it as optional file.
 
 
 ## Armor / Power Armor obstructs my view!
 Honestly, this is somewhat intentional—you’re wearing **bulky armor**, and some line-of-sight issues are expected based on Bethesda’s mesh design.  
 Tip: Use configuration to move the body downwards or camera upwards a little if needed.
-
-
-## Can I have Holsters for my weapons?
-Check out **CylonSurfer's** excellent mod:  [Virtual Holsters](https://www.nexusmods.com/fallout4/mods/51224)
 
 
 ## I don't like the built-in flashlight, how to remove it?
@@ -131,7 +111,7 @@ If I don't want to remove FRIK flashlight, only change how it looks: see this [r
 
 
 ## Is hiding the head prevents getting hit in the head?
-AFAIK, no!
+AFAIK, no!  
 I tested it by hiding all body parts and making the entire player invisible. Yet in combat, every body part was still hit by bullets, causing damage and even crippling limbs. This behaves differently from the now-removed “ArmsOnlyMode,” where enemies definitely could not hit hidden body parts.
 
 

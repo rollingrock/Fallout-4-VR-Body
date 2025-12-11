@@ -1,17 +1,22 @@
+See the first part of this video:
+
+[<img width="434" height="300" alt="image" src="https://github.com/user-attachments/assets/3658d4d3-9873-45aa-b2b3-ac94931c57a6" />](https://youtu.be/ymaNtirj_Qw?si=ovozJtFvf5GvyDZW)
+
+---
+
+> need to update the screenshot...
+
 ![image](https://github.com/user-attachments/assets/6dd0bc3e-acfd-43bd-b0d8-87d999bf0737)  
 Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 
 ## Main Configuration Mode
-- **Activation**: Press and hold both the 'sprint' & 'favorites' buttons until the UI is shown.  
-- **Exit & Save**: Press right trigger  
-- **Exit & Restore**: Press left trigger
+Press and hold both the 'sprint' & 'favorites' buttons until the UI is shown.  
 
-### Independent Posture Configuration
-- Configure **vertical camera**, **body**, and **posture offsets**  
+### Play Seated Mode
+- Toggle if you're playing seated for best body position.
 
-### Weapon Adjustment Mode Toggle
-- When enabled via config UI:  
-  - **Right stick is disabled** to prevent unintended player rotation
+### HMD and Body Configuration
+- Configure HMD/Body up/down offset and body in/out offset. 
 
 ### Weapon Grip Modes
 - Mode 1: Hand automatically snap to the barrel when in range, move hand quickly to let go.
@@ -46,7 +51,7 @@ Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 - Game window must be **in focus**  
 - Control Pipboy with your **primary index finger**
 
-### Right-Handed Pipboy Controls
+### Primary hand Pipboy Controls
 - Navigate menus with **right stick / trigger**  
 - Switch main tabs using **face buttons** on the **secondary controller**
 
@@ -58,7 +63,3 @@ Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 ### Auto Hand Posture for Pipboy Usage
 - Hand automatically **points** when in range of the Pipboy and screen is being looked at  
 - Hand returns to normal when **out of range**
-
-### Better Crouching Posture
-- Improvements both **in** and **out** of Power Armor  
-- *See what you think?*
