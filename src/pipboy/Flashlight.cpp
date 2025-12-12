@@ -10,12 +10,7 @@ using namespace common;
 namespace frik
 {
     Flashlight::Flashlight(Skeleton* skelly) :
-        _skelly(skelly)
-    {
-        if (!g_config.removeFlashlight) {
-            setLightValues();
-        }
-    }
+        _skelly(skelly) {}
 
     /**
      * Executed every frame to update to handle flashlight location and moving between hand and head.
@@ -68,12 +63,6 @@ namespace frik
             (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab)) {
             g_config.setFlashlightLocation(FlashlightLocation::Head);
         }
-
-        // toggle the flashlight to reload the light values
-        const auto player = f4vr::getPlayer();
-        f4vr::togglePipboyLight(player);
-        setLightValues();
-        f4vr::togglePipboyLight(player);
     }
 
     /**
@@ -107,33 +96,6 @@ namespace frik
             const float offsetX = f4vr::isInPowerArmor() ? 16.0f : 12.0f;
             const float offsetY = g_config.flashlightLocation == FlashlightLocation::LeftArm ? -5.0f : 5.0f;
             lightNode->local.translate += RE::NiPoint3(offsetX, offsetY, 5);
-        }
-    }
-
-    /**
-     * Set the light values to config depending if the flashlight is in hand or on head.
-     * The light object is the standard PA light.
-     */
-    void Flashlight::setLightValues()
-    {
-        if (auto* light = RE::TESForm::GetFormByID<RE::TESObjectLIGH>(0xB48A0)) {
-            if (g_config.flashlightLocation == FlashlightLocation::Head) {
-                light->fade = g_config.flashlightHeadFade;
-                light->data.radius = g_config.flashlightHeadRadius;
-                light->data.fov = g_config.flashlightHeadFov;
-                light->data.color.red = static_cast<std::uint8_t>(g_config.flashlightHeadColorRed);
-                light->data.color.green = static_cast<std::uint8_t>(g_config.flashlightHeadColorGreen);
-                light->data.color.blue = static_cast<std::uint8_t>(g_config.flashlightHeadColorBlue);
-            } else {
-                light->fade = g_config.flashlightInHandFade;
-                light->data.radius = g_config.flashlightInHandRadius;
-                light->data.fov = g_config.flashlightInHandFov;
-                light->data.color.red = static_cast<std::uint8_t>(g_config.flashlightInHandColorRed);
-                light->data.color.green = static_cast<std::uint8_t>(g_config.flashlightInHandColorGreen);
-                light->data.color.blue = static_cast<std::uint8_t>(g_config.flashlightInHandColorBlue);
-            }
-        } else {
-            logger::warn("Failed to find light object to set flashlight values");
         }
     }
 }
