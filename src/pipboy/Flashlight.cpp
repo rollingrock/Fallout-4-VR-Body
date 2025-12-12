@@ -63,11 +63,9 @@ namespace frik
         }
 
         if (g_config.flashlightLocation == FlashlightLocation::Head) {
-            triggerStrongHaptic(isLeftHandGrab ? vrcf::Hand::Left : vrcf::Hand::Right);
             g_config.setFlashlightLocation(isLeftHandGrab ? FlashlightLocation::LeftArm : FlashlightLocation::RightArm);
         } else if ((g_config.flashlightLocation == FlashlightLocation::LeftArm && isLeftHandGrab) ||
             (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab)) {
-            triggerStrongHaptic(isLeftHandGrab ? vrcf::Hand::Left : vrcf::Hand::Right);
             g_config.setFlashlightLocation(FlashlightLocation::Head);
         }
 
