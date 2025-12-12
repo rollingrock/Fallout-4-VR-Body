@@ -87,7 +87,7 @@ namespace frik
         static void configureGameVars();
         static bool isGameReadyForSkeletonInitialization();
         bool isRootNodeValid() const;
-        static void removeEmbeddedFlashlight();
+        static void addEmbeddedFlashlightKeywordIfNeeded();
         static void onBetterScopesMessage(F4SE::MessagingInterface::Message* msg);
         static void initForFalloutLondonVR();
 

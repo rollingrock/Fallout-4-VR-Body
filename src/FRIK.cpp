@@ -85,7 +85,7 @@ namespace frik
             }
         });
 
-        removeEmbeddedFlashlight();
+        addEmbeddedFlashlightKeywordIfNeeded();
 
         if (isBetterScopesVRModLoaded()) {
             logger::info("BetterScopesVR mod detected, registering for messages...");
@@ -330,23 +330,26 @@ namespace frik
     }
 
     /**
-     * If to remove the embedded FRIK flashlight from the game.
-     * Useful for players to be able to install other flashlight mods.
+     * If to add embedded flashlight to the game.
      */
-    void FRIK::removeEmbeddedFlashlight()
+    void FRIK::addEmbeddedFlashlightKeywordIfNeeded()
     {
-        if (!g_config.removeFlashlight) {
+        if (g_config.removeFlashlight) {
             return;
         }
         if (auto* armorObj = RE::TESForm::GetFormByID<RE::TESObjectARMO>(0x21B3B)) {
             if (const auto keywordObj = RE::TESForm::GetFormByID<RE::BGSKeyword>(0xB34A6)) {
-                logger::info("Removing embedded FRIK flashlight from: '{}', keyword: 0x{:x}", armorObj->GetFullName(), keywordObj->formID);
-                armorObj->RemoveKeyword(keywordObj);
+                if (!armorObj->HasKeyword(keywordObj)) {
+                    logger::info("Add embedded flashlight to: '{}', keyword: 0x{:x}", armorObj->GetFullName(), keywordObj->formID);
+                    armorObj->AddKeyword(keywordObj);
+                } else {
+                    logger::warn("Embedded flashlight keyword already exists in '{}'", armorObj->GetFullName());
+                }
             } else {
-                logger::warn("Failed to remove embedded FRIK flashlight, keyword not found in '{}'", armorObj->GetFullName());
+                logger::error("Failed to add embedded flashlight, keyword not found");
             }
         } else {
-            logger::warn("Failed to remove embedded FRIK flashlight, armor not found");
+            logger::error("Failed to add embedded flashlight, armor not found");
         }
     }
 
