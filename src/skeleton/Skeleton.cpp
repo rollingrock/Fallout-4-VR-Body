@@ -252,8 +252,7 @@ namespace frik
 
         // project body out in front of the camera for debug purposes
         logger::trace("Selfie Time");
-        selfieSkelly();
-        updateDownFromRoot();
+        _selfieHandler.onFrameUpdate();
 
         logger::trace("Operate hands...");
         setHandPose();
@@ -1368,25 +1367,6 @@ namespace frik
                 rt->transforms[pos].world.rotate = rt->transforms[pos].local.rotate * rt->transforms[parent].world.rotate;
             }
         }
-    }
-
-    void Skeleton::selfieSkelly() const
-    {
-        // Projects the 3rd person body out in front of the player by offset amount
-        if (!g_frik.isSelfieModeOn() || !_root) {
-            return;
-        }
-
-        const float z = _root->local.translate.z;
-        const RE::NiNode* body = _root->parent;
-
-        const RE::NiPoint3 back = MatrixUtils::vec3Norm(RE::NiPoint3(-_forwardDir.x, -_forwardDir.y, 0));
-        const auto bodyDir = RE::NiPoint3(0, 1, 0);
-
-        _root->local.rotate = MatrixUtils::getMatrixFromRotateVectorVec(back, bodyDir) * body->world.rotate.Transpose();
-        _root->local.translate = body->world.translate - _curentPosition;
-        _root->local.translate.y += g_config.selfieOutFrontDistance;
-        _root->local.translate.z = z;
     }
 
     void Skeleton::dampenHand(RE::NiNode* node, const bool isLeft)

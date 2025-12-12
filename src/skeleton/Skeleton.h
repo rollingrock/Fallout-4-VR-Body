@@ -3,6 +3,7 @@
 #include <map>
 
 #include "CullGeometryHandler.h"
+#include "SelfieHandler.h"
 #include "common/CommonUtils.h"
 #include "f4vr/PlayerNodes.h"
 #include "vrcf/VRControllersManager.h"
@@ -72,7 +73,6 @@ namespace frik
         void hide3rdPersonWeapon() const;
         void hideFistHelpers() const;
         void showHidePAHud() const;
-        void selfieSkelly() const;
         void setHandPose();
         void hideHands() const;
         void fixArmor() const;
@@ -164,5 +164,7 @@ namespace frik
 
         // cull (hide) parts of the skeleton (head, equipment)
         CullGeometryHandler _cullGeometry;
+
+        SelfieHandler _selfieHandler;
     };
 }
