@@ -4,8 +4,8 @@
 #include "FRIK.h"
 #include "utils.h"
 #include "common/MatrixUtils.h"
-#include "vrcf/VRControllersManager.h"
 #include "skeleton/Skeleton.h"
+#include "vrcf/VRControllersManager.h"
 #include "vrui/UIButton.h"
 #include "vrui/UIContainer.h"
 #include "vrui/UIManager.h"
@@ -26,6 +26,11 @@ namespace frik
             // remove the UI
             g_uiManager->detachElement(_configUI, true);
         }
+    }
+
+    bool WeaponPositionConfigMode::isInThrowableWeaponRepositionMode() const
+    {
+        return _repositionTarget == RepositionTarget::Throwable;
     }
 
     /**
@@ -221,7 +226,8 @@ namespace frik
         if (axisX != 0.f || axisY != 0.f) {
             const auto rot = vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)
                 ? MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)), 0, 0)
-                : MatrixUtils::getMatrixFromEulerAngles(0, -MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)), -MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 3)));
+                : MatrixUtils::getMatrixFromEulerAngles(0, -MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)),
+                    -MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 3)));
             _adjuster->_primaryHandOffsetRot = rot * _adjuster->_primaryHandOffsetRot;
             _adjuster->_hasPrimaryHandOffset = true;
         }
@@ -235,7 +241,8 @@ namespace frik
         // Update the offset position by player thumbstick.
         const auto [axisX, axisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
-            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 5)), 0, MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 5)));
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 5)), 0,
+                MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 5)));
             _adjuster->_offhandOffsetRot = rot * _adjuster->_offhandOffsetRot;
         }
     }

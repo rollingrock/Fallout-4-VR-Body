@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config-mode/MainConfigMode.h"
+#include "f4vr/F4VRThumbstickControls.h"
 #include "pipboy/Pipboy.h"
 #include "weapon-position/WeaponPositionAdjuster.h"
 
@@ -34,11 +35,20 @@ namespace frik
     /**
      * It's just easier to have single place that controls if player controls are enabled or not.
      * The enable/disable functions have to be idempotent to avoid issues and simplify logic on when we enable/disable player controls.
+     * Special handling for throwable weapon reposition mode to allow player to "cook" the throwable for repositioning. It's sucky but it's only
+     * for this limited scenario so it's not a big deal.
      */
     inline void PlayerControlsHandler::onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition)
     {
         if (pipboy->isOpen() || mainConfigMode.isBodyAdjustOpen() || weaponPosition->inWeaponRepositionMode() || pipboy->isOperatingWithFinger()) {
+            if (weaponPosition->inThrowableWeaponRepositionMode()) {
+                enableControls();
+                f4vr::F4VRThumbstickControls::setControlsThumbstickEnableState(false);
+                return;
+            }
+
             disableControls();
+            f4vr::F4VRThumbstickControls::setControlsThumbstickEnableState(true);
 
             // hide the weapon so the player can interact easily with the Pipboy (not relevant for left-handed)
             // Note: important this codes runs before WeaponPositionAdjuster to have it not change hand transform
@@ -49,6 +59,7 @@ namespace frik
         }
 
         enableControls();
+        f4vr::F4VRThumbstickControls::setControlsThumbstickEnableState(true);
     }
 
     /**
