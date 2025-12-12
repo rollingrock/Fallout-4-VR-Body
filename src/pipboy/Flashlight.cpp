@@ -17,7 +17,7 @@ namespace frik
      */
     void Flashlight::onFrameUpdate()
     {
-        if (g_config.removeFlashlight || !f4vr::isPipboyLightOn(f4vr::getPlayer())) {
+        if (!g_config.flashlightEnabled || !f4vr::isPipboyLightOn(f4vr::getPlayer())) {
             return;
         }
 

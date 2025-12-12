@@ -335,21 +335,29 @@ namespace frik
     void FRIK::addEmbeddedFlashlightKeywordIfNeeded()
     {
         if (g_config.removeFlashlight) {
+            F4SE::log::info("Flashlight disabled in config, skipping");
             return;
         }
+
+        if (isDLLModLoaded("ImmersiveFlashlightVR")) {
+            F4SE::log::info("Immersive Flashlight VR mod detected, skipping FRIK flashlight");
+            return;
+        }
+
         if (auto* armorObj = RE::TESForm::GetFormByID<RE::TESObjectARMO>(0x21B3B)) {
             if (const auto keywordObj = RE::TESForm::GetFormByID<RE::BGSKeyword>(0xB34A6)) {
+                g_config.flashlightEnabled = true;
                 if (!armorObj->HasKeyword(keywordObj)) {
-                    logger::info("Add embedded flashlight to: '{}', keyword: 0x{:x}", armorObj->GetFullName(), keywordObj->formID);
+                    logger::info("Init embedded flashlight, add keyword to: '{}', keyword: 0x{:x}", armorObj->GetFullName(), keywordObj->formID);
                     armorObj->AddKeyword(keywordObj);
                 } else {
-                    logger::warn("Embedded flashlight keyword already exists in '{}'", armorObj->GetFullName());
+                    logger::warn("Init embedded flashlight, keyword already exists in '{}'", armorObj->GetFullName());
                 }
             } else {
-                logger::error("Failed to add embedded flashlight, keyword not found");
+                logger::error("Failed to add init embedded flashlight, keyword not found");
             }
         } else {
-            logger::error("Failed to add embedded flashlight, armor not found");
+            logger::error("Failed to init embedded flashlight, armor not found");
         }
     }
 
