@@ -73,6 +73,15 @@ namespace frik
     }
 
     /**
+     * Add a button to open the main config for another mod that registered via API.
+     */
+    void MainConfigMode::registerOpenExternalModSettingButton(const api::FRIKApi::OpenExternalModConfigData& data)
+    {
+        F4SE::log::info("Register external mod config button: '{}', messageType: {}", data.callbackReceiverName, data.callbackMessageType);
+        _externalModConfigButtonDataList.push_back(data);
+    }
+
+    /**
      * Create all the main config UI elements.
      */
     void MainConfigMode::createMainConfigUI()
@@ -111,6 +120,13 @@ namespace frik
         const auto row2Container = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
         row2Container->addElement(openPipboyConfigBtn);
         row2Container->addElement(openWeaponAdjustConfigBtn);
+
+        for (const auto& buttonData : _externalModConfigButtonDataList) {
+            const auto openExtModConfigBtn = std::make_shared<UIButton>(buttonData.buttonIconNifPath);
+            openExtModConfigBtn->setOnPressHandler([this,buttonData](UIWidget*) { openExternalModConfig(buttonData); });
+            row2Container->addElement(openExtModConfigBtn);
+        }
+
         row2Container->addElement(exitBtn);
 
         const auto mainMsg = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\msg_main.nif");
@@ -226,6 +242,13 @@ namespace frik
     {
         closeMainConfigMode();
         g_frik.toggleWeaponRepositionMode();
+    }
+
+    void MainConfigMode::openExternalModConfig(const api::FRIKApi::OpenExternalModConfigData& data)
+    {
+        logger::info("Open external mod config for mod: '{}', messageType:{}", data.callbackReceiverName, data.callbackMessageType);
+        closeMainConfigMode();
+        g_frik.dispatchMessageToExternalMod(data.callbackReceiverName, data.callbackMessageType, nullptr, 0);
     }
 
     void MainConfigMode::closeMainConfigMode()

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <Windows.h>
+
 #include "RE/NetImmerse/NiPoint.h"
 
 // ----------------------------------------------------------------------------------------
@@ -12,8 +13,13 @@
 
 // {
 //     const int err = frik::api::FRIKApi::initialize();
-//     logger::info("FRIK API init {}!", err == 0 ? "successful" : "failed with error: " + std::to_string(err));
+//     const int err = frik::api::FRIKApi::initialize();
+//     if (err != 0) {
+//         logger::error("FRIK API init failed with error: {}!", err);
+//     }
+//     logger::info("FRIK API init successful!");
 //
+//     // later...
 //     if (!frik::api::FRIKApi::inst->isSkeletonReady())
 //         return;
 //
@@ -42,6 +48,13 @@ namespace frik::api
     struct FRIKApi
     {
         /**
+         * The name of FRIK mod as registered in F4SE used to be able to send/receive messages from to FRIK.
+         * Example:
+         * _messaging->RegisterListener(onFRIKMessage, frik::api::FRIKApi::FRIK_F4SE_MOD_NAME);
+         */
+        static constexpr auto FRIK_F4SE_MOD_NAME = "F4VRBody";
+
+        /**
          * The player hand to act on with support of left-handed if needed.
          */
         enum class Hand : std::uint8_t
@@ -50,6 +63,16 @@ namespace frik::api
             Offhand,
             Right,
             Left,
+        };
+
+        /**
+         * Data needed to register a button to open external mod config from FRIK main config UI.
+         */
+        struct OpenExternalModConfigData
+        {
+            std::string buttonIconNifPath;
+            std::string callbackReceiverName;
+            std::uint32_t callbackMessageType;
         };
 
         /**
@@ -98,6 +121,11 @@ namespace frik::api
          * Clear the set values in "setHandPoseFingerPositions" for FRIK to have control over the hand pose.
          */
         void (FRIK_CALL*clearHandPoseFingerPositions)(Hand hand);
+
+        /**
+         * Adds a button to open external mod config via a button in FRIK main config UI.
+         */
+        void (FRIK_CALL*registerOpenModSettingButtonToMainConfig)(const OpenExternalModConfigData& data);
 
         /**
          * Initialize the FRIK API object.

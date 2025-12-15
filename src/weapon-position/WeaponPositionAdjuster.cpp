@@ -543,7 +543,7 @@ namespace frik
         if (offset < g_config.scopeAdjustDistance) {
             // Zoom toggling
             logger::info("Zoom Toggle pressed; sending message to switch zoom state");
-            g_frik.dispatchMessageToBetterScopesVR(16, nullptr, 0);
+            g_frik.dispatchMessageToExternalMod(BETTER_SCOPES_VR_MOD_NAME, 16, nullptr, 0);
             vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
         }
     }

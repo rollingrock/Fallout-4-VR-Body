@@ -337,7 +337,7 @@ namespace frik
         if (axisX != 0.f || axisY != 0.f) {
             // Axis_state y is up and down, which corresponds to reticule z axis
             RE::NiPoint3 msgData(axisX / 10, 0.f, axisY / 10);
-            g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(RE::NiPoint3*));
+            g_frik.dispatchMessageToExternalMod(BETTER_SCOPES_VR_MOD_NAME, 17, &msgData, sizeof(RE::NiPoint3*));
         }
     }
 
@@ -471,14 +471,14 @@ namespace frik
     {
         f4vr::showNotification("Reset BetterScopesVR Scope Offset to Default");
         RE::NiPoint3 msgData(0.f, 0.f, 0.f);
-        g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(RE::NiPoint3*));
+        g_frik.dispatchMessageToExternalMod(BETTER_SCOPES_VR_MOD_NAME, 17, &msgData, sizeof(RE::NiPoint3*));
     }
 
     void WeaponPositionConfigMode::saveBetterScopesConfig()
     {
         f4vr::showNotification("Saving BetterScopesVR Scopes Offset");
         RE::NiPoint3 msgData(0.f, 1, 0.f);
-        g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(RE::NiPoint3*));
+        g_frik.dispatchMessageToExternalMod(BETTER_SCOPES_VR_MOD_NAME, 17, &msgData, sizeof(RE::NiPoint3*));
     }
 
     /**

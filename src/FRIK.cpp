@@ -362,11 +362,11 @@ namespace frik
     }
 
     /**
-     * Send a message to the BetterScopesVR mod.
+     * Send a message to the another mod in the game.
      */
-    void FRIK::dispatchMessageToBetterScopesVR(const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const
+    void FRIK::dispatchMessageToExternalMod(const std::string& receivingModName, const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const
     {
-        _messaging->Dispatch(messageType, data, dataLen, BETTER_SCOPES_VR_MOD_NAME);
+        _messaging->Dispatch(messageType, data, dataLen, receivingModName.c_str());
     }
 
     void FRIK::onBetterScopesMessage(F4SE::MessagingInterface::Message* msg)

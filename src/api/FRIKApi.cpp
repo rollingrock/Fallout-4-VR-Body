@@ -69,6 +69,11 @@ namespace
         restoreFingerPoseControl(getIsLeftForHandEnum(hand));
     }
 
+    void FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApi::OpenExternalModConfigData& data)
+    {
+        g_frik.addOpenSettingButton(data);
+    }
+
     constexpr FRIKApi FRIK_API_FUNCTIONS_TABLE{
         .getVersion = &getVersion,
         .isSkeletonReady = &isSkeletonReady,
@@ -78,7 +83,8 @@ namespace
         .isOffHandGrippingWeapon = &isOffHandGrippingWeapon,
         .getIndexFingerTipPosition = &getIndexFingerTipPosition,
         .setHandPoseFingerPositions = &setHandPoseFingerPositions,
-        .clearHandPoseFingerPositions = &clearHandPoseFingerPositions
+        .clearHandPoseFingerPositions = &clearHandPoseFingerPositions,
+        .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig
     };
 }
 

@@ -5,6 +5,7 @@
 #include "Config.h"
 #include "ModBase.h"
 #include "PlayerControlsHandler.h"
+#include "api/FRIKAPI.h"
 #include "config-mode/ConfigurationMode.h"
 #include "config-mode/MainConfigMode.h"
 #include "f4vr/GameMenusHandler.h"
@@ -60,13 +61,15 @@ namespace frik
 
         void closePipboyConfigurationModeActive() const { if (_configurationMode) { _configurationMode->exitPBConfig(); } }
 
+        void addOpenSettingButton(const api::FRIKApi::OpenExternalModConfigData& data) { _mainConfigMode.registerOpenExternalModSettingButton(data); }
+
         bool isMeleeWeaponDrawn() const { return _weaponPosition && _weaponPosition->isMeleeWeaponDrawn(); }
         bool isOffHandGrippingWeapon() const { return _weaponPosition && _weaponPosition->isOffHandGrippingWeapon(); }
 
         bool inWeaponRepositionMode() const { return _weaponPosition && _weaponPosition->inWeaponRepositionMode(); }
         void toggleWeaponRepositionMode() const { if (_weaponPosition) { _weaponPosition->toggleWeaponRepositionMode(); } }
 
-        void dispatchMessageToBetterScopesVR(std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
+        void dispatchMessageToExternalMod(const std::string& receivingModName, std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
 
         RE::NiPoint3 getIndexFingerTipWorldPosition(const vrcf::Hand hand) const { return _skelly ? _skelly->getIndexFingerTipWorldPosition(hand) : RE::NiPoint3(); }
 
