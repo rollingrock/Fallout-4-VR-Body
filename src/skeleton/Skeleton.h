@@ -42,10 +42,6 @@ namespace frik
             return _rightArm;
         }
 
-        RE::NiTransform getBoneWorldTransform(const std::string& boneName);
-
-        RE::NiPoint3 getIndexFingerTipWorldPosition(vrcf::Hand hand);
-
         static float getAdjustedPlayerHMDOffset();
 
         void onFrameUpdate();
@@ -55,7 +51,6 @@ namespace frik
         void initializeNodes();
         void initArmsNodes();
         void initSkeletonNodesDefaults();
-        void initBoneTreeMap();
         void setBodyLen();
 
         // on frame update - skeleton update
@@ -157,8 +152,6 @@ namespace frik
         RE::NiTransform _leftHandPrevFrame;
 
         // bones
-        std::map<std::string, int> _boneTreeMap;
-        std::vector<std::string> _boneTreeVec;
         static std::map<std::string, std::pair<std::string, std::string>> makeFingerRelations();
         inline static const std::map<std::string, std::pair<std::string, std::string>> _fingerRelations = makeFingerRelations();
 

@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "utils.h"
+#include "f4vr/F4VRSkelly.h"
 #include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 
@@ -37,7 +38,7 @@ namespace frik
             }
         }
 
-        const auto fingerPos = _skelly->getBoneWorldTransform(g_config.leftHandedPipBoy ? "LArm_Finger23" : "RArm_Finger23").translate;
+        const auto fingerPos = f4vr::Skelly::getBoneWorldTransform(g_config.leftHandedPipBoy ? "LArm_Finger23" : "RArm_Finger23").translate;
 
         const auto arm = getPipboyArmNode();
         const auto powerButton = arm ? f4vr::findNode(arm, "PowerDetect") : nullptr;

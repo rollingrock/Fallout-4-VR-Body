@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "config-mode/ConfigurationMode.h"
 #include "f4vr/DebugDump.h"
+#include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/HandPose.h"
@@ -42,7 +43,7 @@ namespace frik
 
         virtual RE::NiPoint3 getInteractionBoneWorldPosition() override
         {
-            return _skelly->getIndexFingerTipWorldPosition(vrcf::Hand::Offhand);
+            return f4vr::Skelly::getIndexFingerTipWorldPosition(vrcf::Hand::Offhand);
         }
 
         virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override

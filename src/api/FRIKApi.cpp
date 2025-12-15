@@ -2,6 +2,7 @@
 #include "FRIKAPI.h"
 
 #include "FRIK.h"
+#include "f4vr/F4VRSkelly.h"
 #include "skeleton/HandPose.h"
 
 namespace
@@ -66,7 +67,7 @@ namespace
 
     RE::NiPoint3 FRIK_CALL getIndexFingerTipPosition(const FRIKApi::Hand hand)
     {
-        return g_frik.getIndexFingerTipWorldPosition(static_cast<vrcf::Hand>(hand));
+        return f4vr::Skelly::getIndexFingerTipWorldPosition(static_cast<vrcf::Hand>(hand));
     }
 
     std::string FRIK_CALL getHandPoseSetTag(const FRIKApi::Hand hand)

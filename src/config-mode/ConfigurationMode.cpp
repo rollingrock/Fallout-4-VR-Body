@@ -2,6 +2,7 @@
 
 #include "Config.h"
 #include "FRIK.h"
+#include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
@@ -98,7 +99,7 @@ namespace frik
             if (_isPBConfigModeActive) {
                 setConfigModeHandPose();
 
-                const auto finger = _skelly->getBoneWorldTransform(f4vr::isLeftHandedMode() ? "RArm_Finger23" : "LArm_Finger23").translate;
+                const auto finger = f4vr::Skelly::getBoneWorldTransform(f4vr::isLeftHandedMode() ? "RArm_Finger23" : "LArm_Finger23").translate;
                 for (int i = 1; i <= 11; i++) {
                     auto TouchMesh = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, meshName2[i]);
                     auto TransMesh = f4vr::findNode(f4vr::getPlayerNodes()->primaryUIAttachNode, meshName[i]);
@@ -275,7 +276,8 @@ namespace frik
         if (f4vr::isLeftHandedMode() && !g_config.leftHandedPipBoy) {
             // rotate the UI so left-handed with Pipboy on it have the UI in convenient position
             pipboyConfigUI->local.translate = RE::NiPoint3(-12, 10, -3);
-            pipboyConfigUI->local.rotate = MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(20), MatrixUtils::degreesToRads(-40)) * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(90), MatrixUtils::degreesToRads(30));
+            pipboyConfigUI->local.rotate = MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(20), MatrixUtils::degreesToRads(-40)) *
+                MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(90), MatrixUtils::degreesToRads(30));
         } else {
             pipboyConfigUI->local.translate = RE::NiPoint3(0, 0, 10);
         }

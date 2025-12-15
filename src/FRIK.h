@@ -72,8 +72,6 @@ namespace frik
 
         void dispatchMessageToExternalMod(const std::string& receivingModName, std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
 
-        RE::NiPoint3 getIndexFingerTipWorldPosition(const vrcf::Hand hand) const { return _skelly ? _skelly->getIndexFingerTipWorldPosition(hand) : RE::NiPoint3(); }
-
         void smoothMovement();
 
     protected:

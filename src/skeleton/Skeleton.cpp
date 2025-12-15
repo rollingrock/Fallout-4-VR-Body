@@ -8,6 +8,7 @@
 #include "common/MatrixUtils.h"
 #include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"
+#include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "vrcf/VRControllersManager.h"
 
@@ -32,39 +33,6 @@ namespace frik
 {
     constexpr float COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT = 0.7f;
     constexpr float COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT = 0.5f;
-
-    RE::NiTransform Skeleton::getBoneWorldTransform(const std::string& boneName)
-    {
-        return getFlattenedBoneTree()->transforms[_boneTreeMap[boneName]].world;
-    }
-
-    /**
-     * Get the world position of the offhand index fingertip .
-     * Make small adjustment as the finger bone position is the center of the finger.
-     * Would be nice to know how long the bone is instead of magic numbers, didn't find a way so far.
-     */
-    RE::NiPoint3 Skeleton::getIndexFingerTipWorldPosition(const Hand hand)
-    {
-        bool rightHand = false;
-        switch (hand) {
-        case Hand::Primary:
-            rightHand = !isLeftHandedMode();
-            break;
-        case Hand::Offhand:
-            rightHand = isLeftHandedMode();
-            break;
-        case Hand::Right:
-            rightHand = true;
-            break;
-        case Hand::Left:
-            rightHand = false;
-            break;
-        }
-        const auto indexFinger = rightHand ? "RArm_Finger23" : "LArm_Finger23";
-        const auto boneTransform = getBoneWorldTransform(indexFinger);
-        const auto forward = boneTransform.rotate.Transpose() * (RE::NiPoint3(1, 0, 0));
-        return boneTransform.translate + forward * (_inPowerArmor ? 3 : 1.8f);
-    }
 
     /**
      * Get the player camera height offset adjusted for power armor, sneaking, and dynamic height from external API.
@@ -111,7 +79,7 @@ namespace frik
 
         _handBones = handOpen;
 
-        initBoneTreeMap();
+        Skelly::initBoneTreeMap();
 
         setBodyLen();
 
@@ -158,19 +126,6 @@ namespace frik
             } else {
                 logger::warn("Skeleton bone node not found for '{}'", boneName.c_str());
             }
-        }
-    }
-
-    void Skeleton::initBoneTreeMap()
-    {
-        _boneTreeMap.clear();
-        _boneTreeVec.clear();
-
-        const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
-        for (auto i = 0; i < rt->numTransforms; i++) {
-            logger::debug("BoneTree Init -> Push {} into position {}", rt->transforms[i].name.c_str(), i);
-            _boneTreeMap.insert({ rt->transforms[i].name.c_str(), i });
-            _boneTreeVec.emplace_back(rt->transforms[i].name.c_str());
         }
     }
 
@@ -1316,7 +1271,7 @@ namespace frik
     {
         const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
         for (auto pos = 0; pos < rt->numTransforms; pos++) {
-            std::string name = _boneTreeVec[pos];
+            std::string name = Skelly::getBoneName(pos);
             auto found = _fingerRelations.find(name);
             if (found != _fingerRelations.end()) {
                 const bool isLeft = name[0] == 'L';
