@@ -23,6 +23,7 @@ namespace frik
     public:
         FRIK() :
             ModBase(Settings(
+                    Version::PROJECT,
                     "F4VRBody",
                     Version::NAME,
                     &g_config,
