@@ -13,11 +13,10 @@
 
 // {
 //     const int err = frik::api::FRIKApi::initialize();
-//     const int err = frik::api::FRIKApi::initialize();
 //     if (err != 0) {
 //         logger::error("FRIK API init failed with error: {}!", err);
 //     }
-//     logger::info("FRIK API init successful!");
+//     logger::info("FRIK (v{}) API (v{}) init successful!", frik::api::FRIKApi::inst->getModVersion(), frik::api::FRIKApi::inst->getVersion());
 //
 //     // later...
 //     if (!frik::api::FRIKApi::inst->isSkeletonReady())
@@ -43,7 +42,7 @@ namespace frik::api
 #define FRIK_CALL __cdecl
 
     // API version for compatibility checking
-    inline constexpr std::uint32_t FRIK_API_VERSION = 1;
+    inline constexpr std::uint32_t FRIK_API_VERSION = 2;
 
     struct FRIKApi
     {
@@ -82,6 +81,11 @@ namespace frik::api
         std::uint32_t (FRIK_CALL*getVersion)();
 
         /**
+         * Get the mod version string. i.e. "0.12.5"
+         */
+        std::string_view (FRIK_CALL*getModVersion)();
+
+        /**
          * Check if FRIK is ready and the skeleton is initialized.
          */
         bool (FRIK_CALL*isSkeletonReady)();
@@ -107,18 +111,41 @@ namespace frik::api
         bool (FRIK_CALL*isOffHandGrippingWeapon)();
 
         /**
+         * Is the player currently have the FRIK Pipboy open.
+         */
+        bool (FRIK_CALL*isWristPipboyOpen)();
+
+        /**
          * Get the world position of the index fingertip .
          */
         RE::NiPoint3 (FRIK_CALL*getIndexFingerTipPosition)(Hand hand);
 
         /**
+         * Get the tag currently used tag to set the hand pose for the given hand.
+         * Can be used to identify if another system overriding the hand pose and your mod should react accordingly.
+         */
+        std::string (FRIK_CALL*getHandPoseSetTag)(Hand hand);
+
+        /**
          * Set a hand pose override to specific values for each finger.
+         * Use the tag to unique identify different systems using hand pose overrides.
          * Each value is between 0 and 1 where 0 is bent and 1 is straight.
+         */
+        void (FRIK_CALL*setHandPoseFingerPositionsV2)(Hand hand, std::string tag, float thumb, float index, float middle, float ring, float pinky);
+
+        /**
+         * Clear the set values in "setHandPoseFingerPositions" for FRIK to have control over the hand pose.
+         * Only clears the specific tag hand pose override.
+         */
+        void (FRIK_CALL*clearHandPoseFingerPositionsV2)(Hand hand, std::string tag);
+
+        /**
+         * @deprecated Use setHandPoseFingerPositions2 instead.
          */
         void (FRIK_CALL*setHandPoseFingerPositions)(Hand hand, float thumb, float index, float middle, float ring, float pinky);
 
         /**
-         * Clear the set values in "setHandPoseFingerPositions" for FRIK to have control over the hand pose.
+         * @deprecated Use clearHandPoseFingerPositions2 instead.
          */
         void (FRIK_CALL*clearHandPoseFingerPositions)(Hand hand);
 

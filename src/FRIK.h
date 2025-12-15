@@ -27,7 +27,7 @@ namespace frik
                     "F4VRBody",
                     Version::NAME,
                     &g_config,
-                    "FRIK",
+                    Version::PROJECT,
                     512,
                     true)
                 ) {}
@@ -62,7 +62,7 @@ namespace frik
 
         void closePipboyConfigurationModeActive() const { if (_configurationMode) { _configurationMode->exitPBConfig(); } }
 
-        void addOpenSettingButton(const api::FRIKApi::OpenExternalModConfigData& data) { _mainConfigMode.registerOpenExternalModSettingButton(data); }
+        void registerOpenSettingButton(const api::FRIKApi::OpenExternalModConfigData& data) { _mainConfigMode.registerOpenExternalModSettingButton(data); }
 
         bool isMeleeWeaponDrawn() const { return _weaponPosition && _weaponPosition->isMeleeWeaponDrawn(); }
         bool isOffHandGrippingWeapon() const { return _weaponPosition && _weaponPosition->isOffHandGrippingWeapon(); }
