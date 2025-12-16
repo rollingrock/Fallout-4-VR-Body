@@ -72,13 +72,28 @@ namespace
         return f4vr::Skelly::getIndexFingerTipWorldPosition(static_cast<vrcf::Hand>(hand));
     }
 
-    FRIKApi::HandPoseTagState FRIK_CALL getHandPoseSetTagState(const FRIKApi::Hand hand, const char* tag)
+    FRIKApi::HandPoseTagState FRIK_CALL getHandPoseSetTagState(const char* tag, const FRIKApi::Hand hand)
     {
         // TODO: implement 
         return FRIKApi::HandPoseTagState::None;
     }
 
-    bool FRIK_CALL setHandPoseFingerPositionsV2(const FRIKApi::Hand hand, const char* tag, const float thumb, const float index, const float middle, const float ring,
+    FRIKApi::HandPoses FRIK_CALL getCurrentHandPose(const FRIKApi::Hand hand)
+    {
+        // TODO: implement 
+        return FRIKApi::HandPoses::Unset;
+    }
+
+    bool FRIK_CALL setHandPose(const char* tag, const FRIKApi::Hand hand, FRIKApi::HandPoses handPose)
+    {
+        if (!tag) {
+            return false;
+        }
+        // TODO: implement tag usage
+        return true;
+    }
+
+    bool FRIK_CALL setHandPoseCustomFingerPositions(const char* tag, const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring,
         const float pinky)
     {
         if (!tag) {
@@ -92,7 +107,7 @@ namespace
         return true;
     }
 
-    bool FRIK_CALL clearHandPoseFingerPositionsV2(const FRIKApi::Hand hand, const char* tag)
+    bool FRIK_CALL clearHandPose(const char* tag, const FRIKApi::Hand hand)
     {
         if (!tag) {
             return false;
@@ -136,8 +151,10 @@ namespace
         .isWristPipboyOpen = &isWristPipboyOpen,
         .getIndexFingerTipPosition = &getIndexFingerTipPosition,
         .getHandPoseSetTagState = &getHandPoseSetTagState,
-        .setHandPoseFingerPositionsV2 = &setHandPoseFingerPositionsV2,
-        .clearHandPoseFingerPositionsV2 = &clearHandPoseFingerPositionsV2,
+        .getCurrentHandPose = &getCurrentHandPose,
+        .setHandPose = &setHandPose,
+        .setHandPoseCustomFingerPositions = &setHandPoseCustomFingerPositions,
+        .clearHandPose = &clearHandPose,
         .setHandPoseFingerPositions = &setHandPoseFingerPositions,
         .clearHandPoseFingerPositions = &clearHandPoseFingerPositions,
         .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig

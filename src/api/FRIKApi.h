@@ -25,10 +25,10 @@
 //     RE::NiPoint3 tip = frik::api::FRIKApi::inst->getIndexFingerTipPosition(frik::api::FRIKApi::Hand::Left);
 //
 //     // Override left hand pose
-//     frik::api::FRIKApi::inst->setHandPoseFingerPositions(frik::api::FRIKApi::Hand::Primary, 1.0f, 0.5f, 0.2f, 0.0f, 0.0f);
+//     frik::api::FRIKApi::inst->setHandPoseFingerPositions("MyMod_Interaction", frik::api::FRIKApi::Hand::Primary, frik::api::FRIKApi::HandPoses::Pointing);
 //
 //     // Later:
-//     frik::api::FRIKApi::inst->clearHandPoseFingerPositions(frik::api::FRIKApi::Hand::Primary);
+//     frik::api::FRIKApi::inst->clearHandPose("MyMod_Interaction", frik::api::FRIKApi::Hand::Primary);
 // }
 
 namespace frik::api
@@ -62,6 +62,22 @@ namespace frik::api
             Offhand,
             Right,
             Left,
+        };
+
+        /**
+         * Predefined hand poses.
+         */
+        enum class HandPoses : std::uint8_t
+        {
+            // no specific pose is set
+            Unset,
+            // pose set with custom finger positions
+            Custom,
+            Open,
+            Fist,
+            Pointing,
+            HoldingGun,
+            HoldingMelee,
         };
 
         /**
@@ -137,7 +153,12 @@ namespace frik::api
          * Get the current state of given hand pose tag to identify if it is active in FRIK.
          * Can be used to identify if another system overriding the hand pose and your mod should react accordingly.
          */
-        HandPoseTagState (FRIK_CALL*getHandPoseSetTagState)(Hand hand, const char* tag);
+        HandPoseTagState (FRIK_CALL*getHandPoseSetTagState)(const char* tag, Hand hand);
+
+        /**
+         * Get the current hand pose as active in FRIK.
+         */
+        HandPoses (FRIK_CALL*getCurrentHandPose)(Hand hand);
 
         /**
          * Set a hand pose override to specific values for each finger.
@@ -145,14 +166,22 @@ namespace frik::api
          * Each value is between 0 and 1 where 0 is bent and 1 is straight.
          * @return true if successful.
          */
-        bool (FRIK_CALL*setHandPoseFingerPositionsV2)(Hand hand, const char* tag, float thumb, float index, float middle, float ring, float pinky);
+        bool (FRIK_CALL*setHandPose)(const char* tag, Hand hand, HandPoses handPose);
+
+        /**
+         * Set a hand pose override to specific values for each finger.
+         * Use the tag to unique identify different systems using hand pose overrides.
+         * Each value is between 0 and 1 where 0 is bent and 1 is straight.
+         * @return true if successful.
+         */
+        bool (FRIK_CALL*setHandPoseCustomFingerPositions)(const char* tag, Hand hand, float thumb, float index, float middle, float ring, float pinky);
 
         /**
          * Clear the set values in "setHandPoseFingerPositions" for FRIK to have control over the hand pose.
          * Only clears the specific tag hand pose override.
          * @return true if successful.
          */
-        bool (FRIK_CALL*clearHandPoseFingerPositionsV2)(Hand hand, const char* tag);
+        bool (FRIK_CALL*clearHandPose)(const char* tag, Hand hand);
 
         /**
          * @deprecated Use setHandPoseFingerPositions2 instead.
