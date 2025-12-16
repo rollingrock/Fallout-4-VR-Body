@@ -5,7 +5,6 @@
 #include "Config.h"
 #include "ModBase.h"
 #include "PlayerControlsHandler.h"
-#include "api/FRIKAPI.h"
 #include "config-mode/ConfigurationMode.h"
 #include "config-mode/MainConfigMode.h"
 #include "f4vr/GameMenusHandler.h"
@@ -22,15 +21,16 @@ namespace frik
     {
     public:
         FRIK() :
-            ModBase(Settings(
-                    Version::PROJECT,
-                    "F4VRBody",
-                    Version::NAME,
-                    &g_config,
-                    Version::PROJECT,
-                    512,
-                    true)
-                ) {}
+            ModBase({
+                Version::PROJECT,
+                "F4VRBody",
+                Version::NAME,
+                &g_config,
+                Version::PROJECT,
+                512,
+                true,
+                true
+            }) {}
 
         bool isSkeletonReady() const { return _skelly != nullptr; }
 
