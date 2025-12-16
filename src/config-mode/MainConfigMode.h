@@ -1,7 +1,6 @@
 #pragma once
 
 #include "BodyAdjustmentSubConfigMode.h"
-#include "api/FRIKAPI.h"
 #include "vrui/UIContainer.h"
 
 namespace frik
@@ -14,6 +13,13 @@ namespace frik
         Mode4,
     };
 
+    struct OpenExternalModConfigData
+    {
+        std::string buttonIconNifPath;
+        std::string callbackReceiverName;
+        std::uint32_t callbackMessageType;
+    };
+
     class MainConfigMode
     {
     public :
@@ -21,7 +27,7 @@ namespace frik
         void openConfigMode();
         void onFrameUpdate();
         bool isBodyAdjustOpen() const;
-        void registerOpenExternalModSettingButton(const api::FRIKApi::OpenExternalModConfigData& data);
+        void registerOpenExternalModSettingButton(const OpenExternalModConfigData& data);
 
     private:
         void createMainConfigUI();
@@ -31,7 +37,7 @@ namespace frik
         static void updateTwoHandedGripMode(TwoHandedGripMode mode);
         void openPipboyConfigUI();
         void openWeaponAdjustConfigUI();
-        void openExternalModConfig(const api::FRIKApi::OpenExternalModConfigData& data);
+        void openExternalModConfig(const OpenExternalModConfigData& data);
         void closeMainConfigMode();
 
         // configuration UI
@@ -39,6 +45,6 @@ namespace frik
 
         std::shared_ptr<BodyAdjustmentSubConfigMode> _bodyAdjustmentSubConfig;
 
-        std::vector<api::FRIKApi::OpenExternalModConfigData> _externalModConfigButtonDataList;
+        std::vector<OpenExternalModConfigData> _externalModConfigButtonDataList;
     };
 }

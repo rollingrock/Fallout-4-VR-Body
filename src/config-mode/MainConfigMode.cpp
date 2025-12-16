@@ -75,7 +75,7 @@ namespace frik
     /**
      * Add a button to open the main config for another mod that registered via API.
      */
-    void MainConfigMode::registerOpenExternalModSettingButton(const api::FRIKApi::OpenExternalModConfigData& data)
+    void MainConfigMode::registerOpenExternalModSettingButton(const OpenExternalModConfigData& data)
     {
         F4SE::log::info("Register external mod config button: '{}', messageType: {}", data.callbackReceiverName, data.callbackMessageType);
         _externalModConfigButtonDataList.push_back(data);
@@ -244,7 +244,7 @@ namespace frik
         g_frik.toggleWeaponRepositionMode();
     }
 
-    void MainConfigMode::openExternalModConfig(const api::FRIKApi::OpenExternalModConfigData& data)
+    void MainConfigMode::openExternalModConfig(const OpenExternalModConfigData& data)
     {
         logger::info("Open external mod config for mod: '{}', messageType:{}", data.callbackReceiverName, data.callbackMessageType);
         closeMainConfigMode();

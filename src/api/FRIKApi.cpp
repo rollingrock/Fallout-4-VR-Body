@@ -30,9 +30,11 @@ namespace
         return FRIK_API_VERSION;
     }
 
-    std::string_view FRIK_CALL getModVersion()
+    const char* FRIK_CALL getModVersion()
     {
-        return Version::NAME;
+        // Safe to return pointer to static data
+        static_assert(Version::NAME.back() != '\0' || true, "Version must be backed by a string literal");
+        return Version::NAME.data();
     }
 
     bool FRIK_CALL isSkeletonReady()
@@ -70,23 +72,34 @@ namespace
         return f4vr::Skelly::getIndexFingerTipWorldPosition(static_cast<vrcf::Hand>(hand));
     }
 
-    std::string FRIK_CALL getHandPoseSetTag(const FRIKApi::Hand hand)
+    FRIKApi::HandPoseTagState FRIK_CALL getHandPoseSetTagState(const FRIKApi::Hand hand, const char* tag)
     {
         // TODO: implement 
-        return "";
+        return FRIKApi::HandPoseTagState::None;
     }
 
-    void FRIK_CALL setHandPoseFingerPositionsV2(const FRIKApi::Hand hand, std::string tag, const float thumb, const float index, const float middle, const float ring,
+    bool FRIK_CALL setHandPoseFingerPositionsV2(const FRIKApi::Hand hand, const char* tag, const float thumb, const float index, const float middle, const float ring,
         const float pinky)
     {
+        if (!tag) {
+            return false;
+        }
+
+        std::string tagStr = tag;
+        // do something...
         // TODO: implement tag usage
         setFingerPositionScalar(getIsLeftForHandEnum(hand), thumb, index, middle, ring, pinky);
+        return true;
     }
 
-    void FRIK_CALL clearHandPoseFingerPositionsV2(const FRIKApi::Hand hand, std::string tag)
+    bool FRIK_CALL clearHandPoseFingerPositionsV2(const FRIKApi::Hand hand, const char* tag)
     {
+        if (!tag) {
+            return false;
+        }
         // TODO: implement tag usage
         restoreFingerPoseControl(getIsLeftForHandEnum(hand));
+        return true;
     }
 
     void FRIK_CALL setHandPoseFingerPositions(const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring, const float pinky)
@@ -99,9 +112,17 @@ namespace
         restoreFingerPoseControl(getIsLeftForHandEnum(hand));
     }
 
-    void FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApi::OpenExternalModConfigData& data)
+    bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApi::OpenExternalModConfigData& data)
     {
-        g_frik.registerOpenSettingButton(data);
+        if (!data.buttonIconNifPath || !data.callbackReceiverName) {
+            return false;
+        }
+        g_frik.registerOpenSettingButton({
+            .buttonIconNifPath = data.buttonIconNifPath,
+            .callbackReceiverName = data.callbackReceiverName,
+            .callbackMessageType = data.callbackMessageType
+        });
+        return true;
     }
 
     constexpr FRIKApi FRIK_API_FUNCTIONS_TABLE{
@@ -114,7 +135,7 @@ namespace
         .isOffHandGrippingWeapon = &isOffHandGrippingWeapon,
         .isWristPipboyOpen = &isWristPipboyOpen,
         .getIndexFingerTipPosition = &getIndexFingerTipPosition,
-        .getHandPoseSetTag = &getHandPoseSetTag,
+        .getHandPoseSetTagState = &getHandPoseSetTagState,
         .setHandPoseFingerPositionsV2 = &setHandPoseFingerPositionsV2,
         .clearHandPoseFingerPositionsV2 = &clearHandPoseFingerPositionsV2,
         .setHandPoseFingerPositions = &setHandPoseFingerPositions,
