@@ -197,11 +197,11 @@ namespace frik
     /**
      * Save the Pipboy offset to the offsets map.
      */
-    void Config::savePipboyOffset(const RE::NiTransform& transform)
+    bool Config::savePipboyOffset(const RE::NiTransform& transform)
     {
         const auto key = getPipboyOffsetKey();
         _pipboyOffsets[key] = transform;
-        saveOffsetsToJsonFile(key, transform, getPipboyOffsetPath());
+        return saveOffsetsToJsonFile(key, transform, getPipboyOffsetPath());
     }
 
     /**
@@ -221,11 +221,12 @@ namespace frik
     /**
      * Save the weapon offset to config and filesystem.
      */
-    void Config::saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA)
+    bool Config::saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA)
     {
         const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
         _weaponsOffsets[fullName] = transform;
-        saveOffsetsToJsonFile(fullName, transform, WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json");
+        const auto offsetFilePath = fs::path{ WEAPONS_OFFSETS_PATH } / (sanitizePathWindows(fullName) + ".json");
+        return saveOffsetsToJsonFile(fullName, transform, offsetFilePath.string());
     }
 
     /**

@@ -402,8 +402,8 @@ namespace frik
 
     void WeaponPositionConfigMode::saveWeaponConfig() const
     {
-        f4vr::showNotification("Saving Weapon Position");
-        g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
+        const bool success = g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
+        f4vr::showNotification(success ? "Successfully saved Weapon Position" : "Failed to save Weapon Position - see FRIK.log");
     }
 
     void WeaponPositionConfigMode::resetPrimaryHandConfig() const
@@ -415,12 +415,12 @@ namespace frik
 
     void WeaponPositionConfigMode::savePrimaryHandConfig() const
     {
-        f4vr::showNotification("Saving Primary Hand Position");
         RE::NiTransform transform;
         transform.scale = 1;
         transform.translate = RE::NiPoint3(0, 0, 0);
         transform.rotate = _adjuster->_primaryHandOffsetRot;
-        g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::PrimaryHand, _adjuster->_currentlyInPA);
+        const bool success = g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::PrimaryHand, _adjuster->_currentlyInPA);
+        f4vr::showNotification(success ? "Successfully saved Primary Hand Position" : "Failed to save Primary Hand Position - see FRIK.log");
     }
 
     void WeaponPositionConfigMode::resetOffhandConfig() const
@@ -432,12 +432,12 @@ namespace frik
 
     void WeaponPositionConfigMode::saveOffhandConfig() const
     {
-        f4vr::showNotification("Saving Offhand Position");
         RE::NiTransform transform;
         transform.scale = 1;
         transform.translate = RE::NiPoint3(0, 0, 0);
         transform.rotate = _adjuster->_offhandOffsetRot;
-        g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA);
+        const bool success = g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA);
+        f4vr::showNotification(success ? "Successfully saved Offhand Position" : "Failed to save Offhand Position - see FRIK.log");
     }
 
     void WeaponPositionConfigMode::resetThrowableConfig() const
@@ -449,8 +449,9 @@ namespace frik
 
     void WeaponPositionConfigMode::saveThrowableConfig() const
     {
-        f4vr::showNotification("Saving Throwable Weapon Position");
-        g_config.saveWeaponOffsets(_adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
+        const bool success = g_config.saveWeaponOffsets(
+            _adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
+        f4vr::showNotification(success ? "Successfully saved Throwable Weapon Position" : "Failed to save Throwable Weapon Position - see FRIK.log");
     }
 
     void WeaponPositionConfigMode::resetBackOfHandUIConfig() const

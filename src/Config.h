@@ -89,9 +89,9 @@ namespace frik
 
         static void openInNotepad();
         RE::NiTransform getPipboyOffset();
-        void savePipboyOffset(const RE::NiTransform& transform);
+        bool savePipboyOffset(const RE::NiTransform& transform);
         std::optional<RE::NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA) const;
-        void saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
+        bool saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
         void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool replaceWithEmbedded);
 
         // Config variables: See FRIK.ini for descriptions.
