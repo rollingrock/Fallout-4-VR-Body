@@ -170,12 +170,12 @@ namespace frik
         logger::trace("Update Pipboy...");
         _pipboy->onFrameUpdate();
 
+        FrameUpdateContext context(_skelly);
+        vrui::g_uiManager->onFrameUpdate(&context);
+
         _mainConfigMode.onFrameUpdate();
 
         _configurationMode->onFrameUpdate();
-
-        FrameUpdateContext context(_skelly);
-        vrui::g_uiManager->onFrameUpdate(&context);
 
         updateWorldFinal();
     }

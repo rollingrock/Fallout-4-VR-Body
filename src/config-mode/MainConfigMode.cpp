@@ -43,6 +43,8 @@ namespace frik
             return;
         }
 
+        _configUI->setPosition(0, 0, f4vr::isNodeVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
+
         // toggle selfie if Pipboy is not open as it uses the same button
         if (!g_frik.isPipboyOn() && vrcf::VRControllers.isReleasedShort(vrcf::Hand::Primary, vr::k_EButton_A)) {
             toggleSelfieMode();
@@ -138,13 +140,13 @@ namespace frik
 
         const auto header = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\title_main.nif", 0.45f);
 
-        _configUI = std::make_shared<UIContainer>("MainConfig", UIContainerLayout::VerticalDown, 0.4f, 1.8f);
-        _configUI->addElement(header);
-        _configUI->addElement(row1Container);
-        _configUI->addElement(row2Container);
+        _configUI = std::make_shared<UIContainer>("MainConfig", UIContainerLayout::VerticalUp, 0.4f, 1.8f);
         _configUI->addElement(row3Container);
+        _configUI->addElement(row2Container);
+        _configUI->addElement(row1Container);
+        _configUI->addElement(header);
 
-        g_uiManager->attachPresetToPrimaryWandTop(_configUI, { 0, 0, 15 });
+        g_uiManager->attachPresetToPrimaryWandTop(_configUI, { 0, 0, 0 });
     }
 
     /**
