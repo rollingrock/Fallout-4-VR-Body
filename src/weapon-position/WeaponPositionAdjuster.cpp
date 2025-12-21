@@ -116,13 +116,12 @@ namespace frik
     void WeaponPositionAdjuster::handlePrimaryWeapon()
     {
         const auto weapon = f4vr::getWeaponNode();
-        const auto backOfHand = getBackOfHandUINode();
         if (!f4vr::isNodeVisible(weapon)) {
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
             }
             checkEquippedWeaponChanged(weapon);
-            backOfHand->local = _backOfHandUIOffsetTransform;
+            getBackOfHandUINode()->local = _backOfHandUIOffsetTransform;
             return;
         }
 
@@ -133,7 +132,7 @@ namespace frik
         checkEquippedWeaponChanged(weapon);
 
         // override the back-of-hand UI transform
-        backOfHand->local = _backOfHandUIOffsetTransform;
+        getBackOfHandUINode()->local = _backOfHandUIOffsetTransform;
 
         // override the weapon transform to the saved offset
         weapon->local = _weaponOffsetTransform;
@@ -164,10 +163,14 @@ namespace frik
 
     /**
      * If equipped weapon changed set offsets to stored if exists.
+     * IMPORTANT: weapon node will be non-nullptr MOST of the time even if no weapon is equipped.
+     * It's either going to be a throwable object if explosive is equipped, or the node of the last equipped weapon.
+     * But when the weapon node is not visible, it's transforms may not be valid so handling offset will be wrong.
+     * It is MUCH safer to only handle the weapon when it's visible.
      */
     void WeaponPositionAdjuster::checkEquippedWeaponChanged(RE::NiNode* weapon)
     {
-        const auto& weaponName = weapon == nullptr ? EMPTY_HAND : getEquippedWeaponNameExtended(weapon);
+        const auto& weaponName = f4vr::isNodeVisible(weapon) ? getEquippedWeaponNameExtended(weapon) : EMPTY_HAND;
         const bool inPA = f4vr::isInPowerArmor();
         if (weaponName == _currentWeapon && inPA == _currentlyInPA) {
             // no weapon change
@@ -232,8 +235,8 @@ namespace frik
             _backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->local, _currentlyInPA);
         }
 
-        logger::info("Equipped Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}, HasPrimaryHandOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
-            _currentWeapon, _currentlyInPA,
+        logger::info("Equipped Weapon changed to '{}' (Melee:{}) (InPA:{}); HasWeaponOffset:{}, HasPrimaryHandOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
+            _currentWeapon, _isCurrentWeaponMelee, _currentlyInPA,
             weaponOffsetLookup.has_value(), primaryHandOffsetLookup.has_value(), offhandOffsetLookup.has_value(), backOfHandOffsetLookup.has_value());
     }
 
