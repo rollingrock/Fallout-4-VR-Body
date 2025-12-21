@@ -1,7 +1,11 @@
 ## v0.77 (WIP)
-* Support flashlight configuration (intensity, distance, fov, and color) per on-head and in-hand location.
 * Fixed some weapon attachments effects like [laser pointers](https://www.nexusmods.com/fallout4/mods/12363) not rotated correctly in 2-handed use.
-* Support using Pipboy instead of Attaboy in Fallout London VR.
+* Fixed some weapons (without offsets config) becoming invisible when changing cells, loading, and others (broken in v76).
+* Fixed not being able to reposition throwable weapon (broken in v76).
+* Fixed weapon offsets not saved for weapons that have invalid path characters in name.
+* Added API for mods to open their config via FRIK main config UI.
+* Added compatibility support for "Immersive Flashlight VR" mod.
+* Added using Pipboy instead of Attaboy in Fallout London VR.
 
 ## v0.76
 
