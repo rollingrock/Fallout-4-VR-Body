@@ -4,8 +4,8 @@
 #include "FRIK.h"
 #include "utils.h"
 #include "common/MatrixUtils.h"
-#include "vrcf/VRControllersManager.h"
 #include "skeleton/Skeleton.h"
+#include "vrcf/VRControllersManager.h"
 #include "vrui/UIButton.h"
 #include "vrui/UIContainer.h"
 #include "vrui/UIManager.h"
@@ -26,6 +26,11 @@ namespace frik
             // remove the UI
             g_uiManager->detachElement(_configUI, true);
         }
+    }
+
+    bool WeaponPositionConfigMode::isInThrowableWeaponRepositionMode() const
+    {
+        return _repositionTarget == RepositionTarget::Throwable;
     }
 
     /**
@@ -221,7 +226,8 @@ namespace frik
         if (axisX != 0.f || axisY != 0.f) {
             const auto rot = vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)
                 ? MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)), 0, 0)
-                : MatrixUtils::getMatrixFromEulerAngles(0, -MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)), -MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 3)));
+                : MatrixUtils::getMatrixFromEulerAngles(0, -MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)),
+                    -MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 3)));
             _adjuster->_primaryHandOffsetRot = rot * _adjuster->_primaryHandOffsetRot;
             _adjuster->_hasPrimaryHandOffset = true;
         }
@@ -235,7 +241,8 @@ namespace frik
         // Update the offset position by player thumbstick.
         const auto [axisX, axisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
-            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 5)), 0, MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 5)));
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 5)), 0,
+                MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 5)));
             _adjuster->_offhandOffsetRot = rot * _adjuster->_offhandOffsetRot;
         }
     }
@@ -330,7 +337,7 @@ namespace frik
         if (axisX != 0.f || axisY != 0.f) {
             // Axis_state y is up and down, which corresponds to reticule z axis
             RE::NiPoint3 msgData(axisX / 10, 0.f, axisY / 10);
-            g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(RE::NiPoint3*));
+            g_frik.dispatchMessageToExternalMod(BETTER_SCOPES_VR_MOD_NAME, 17, &msgData, sizeof(RE::NiPoint3*));
         }
     }
 
@@ -395,8 +402,8 @@ namespace frik
 
     void WeaponPositionConfigMode::saveWeaponConfig() const
     {
-        f4vr::showNotification("Saving Weapon Position");
-        g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
+        const bool success = g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
+        f4vr::showNotification(success ? "Successfully saved Weapon Position" : "Failed to save Weapon Position - see FRIK.log");
     }
 
     void WeaponPositionConfigMode::resetPrimaryHandConfig() const
@@ -408,12 +415,12 @@ namespace frik
 
     void WeaponPositionConfigMode::savePrimaryHandConfig() const
     {
-        f4vr::showNotification("Saving Primary Hand Position");
         RE::NiTransform transform;
         transform.scale = 1;
         transform.translate = RE::NiPoint3(0, 0, 0);
         transform.rotate = _adjuster->_primaryHandOffsetRot;
-        g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::PrimaryHand, _adjuster->_currentlyInPA);
+        const bool success = g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::PrimaryHand, _adjuster->_currentlyInPA);
+        f4vr::showNotification(success ? "Successfully saved Primary Hand Position" : "Failed to save Primary Hand Position - see FRIK.log");
     }
 
     void WeaponPositionConfigMode::resetOffhandConfig() const
@@ -425,12 +432,12 @@ namespace frik
 
     void WeaponPositionConfigMode::saveOffhandConfig() const
     {
-        f4vr::showNotification("Saving Offhand Position");
         RE::NiTransform transform;
         transform.scale = 1;
         transform.translate = RE::NiPoint3(0, 0, 0);
         transform.rotate = _adjuster->_offhandOffsetRot;
-        g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA);
+        const bool success = g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA);
+        f4vr::showNotification(success ? "Successfully saved Offhand Position" : "Failed to save Offhand Position - see FRIK.log");
     }
 
     void WeaponPositionConfigMode::resetThrowableConfig() const
@@ -442,8 +449,9 @@ namespace frik
 
     void WeaponPositionConfigMode::saveThrowableConfig() const
     {
-        f4vr::showNotification("Saving Throwable Weapon Position");
-        g_config.saveWeaponOffsets(_adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
+        const bool success = g_config.saveWeaponOffsets(
+            _adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
+        f4vr::showNotification(success ? "Successfully saved Throwable Weapon Position" : "Failed to save Throwable Weapon Position - see FRIK.log");
     }
 
     void WeaponPositionConfigMode::resetBackOfHandUIConfig() const
@@ -464,14 +472,14 @@ namespace frik
     {
         f4vr::showNotification("Reset BetterScopesVR Scope Offset to Default");
         RE::NiPoint3 msgData(0.f, 0.f, 0.f);
-        g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(RE::NiPoint3*));
+        g_frik.dispatchMessageToExternalMod(BETTER_SCOPES_VR_MOD_NAME, 17, &msgData, sizeof(RE::NiPoint3*));
     }
 
     void WeaponPositionConfigMode::saveBetterScopesConfig()
     {
         f4vr::showNotification("Saving BetterScopesVR Scopes Offset");
         RE::NiPoint3 msgData(0.f, 1, 0.f);
-        g_frik.dispatchMessageToBetterScopesVR(17, &msgData, sizeof(RE::NiPoint3*));
+        g_frik.dispatchMessageToExternalMod(BETTER_SCOPES_VR_MOD_NAME, 17, &msgData, sizeof(RE::NiPoint3*));
     }
 
     /**

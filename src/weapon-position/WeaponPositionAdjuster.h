@@ -33,6 +33,7 @@ namespace frik
         bool isMeleeWeaponDrawn() const { return _isCurrentWeaponMelee; }
         bool isOffHandGrippingWeapon() const { return _offHandGripping; }
         bool inWeaponRepositionMode() const { return _configMode != nullptr; }
+        bool inThrowableWeaponRepositionMode() const { return _configMode != nullptr && _configMode->isInThrowableWeaponRepositionMode(); }
 
         void toggleWeaponRepositionMode();
 
@@ -50,10 +51,10 @@ namespace frik
         void handleWeaponGrippingRotationAdjustment(RE::NiNode* weapon) const;
         void handleWeaponScopeCameraGrippingRotationAdjustment(const RE::NiNode* weapon, common::Quaternion rotAdjust, RE::NiPoint3 adjustedWeaponVec) const;
         bool isOffhandCloseToBarrel(const RE::NiNode* weapon) const;
-        bool isOffhandMovedFastAway() const;
+        static bool isOffhandMovedFastAway();
         RE::NiPoint3 getPrimaryHandPosition() const;
-        RE::NiPoint3 getOffhandPosition() const;
-        void handleBetterScopes(RE::NiNode* weapon) const;
+        static RE::NiPoint3 getOffhandPosition();
+        static void handleBetterScopes(RE::NiNode* weapon);
         static void fixMuzzleFlashPosition();
         static RE::NiNode* getBackOfHandUINode();
         void debugPrintWeaponPositionData(RE::NiNode* weapon) const;

@@ -89,9 +89,9 @@ namespace frik
 
         static void openInNotepad();
         RE::NiTransform getPipboyOffset();
-        void savePipboyOffset(const RE::NiTransform& transform);
+        bool savePipboyOffset(const RE::NiTransform& transform);
         std::optional<RE::NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA) const;
-        void saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
+        bool saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
         void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool replaceWithEmbedded);
 
         // Config variables: See FRIK.ini for descriptions.
@@ -153,19 +153,8 @@ namespace frik
 
         // Pipboy Torch/Flashlight
         bool removeFlashlight = false;
+        bool flashlightEnabled = false;
         FlashlightLocation flashlightLocation = FlashlightLocation::Head;
-        float flashlightHeadFade;
-        int flashlightHeadRadius;
-        float flashlightHeadFov;
-        int flashlightHeadColorRed;
-        int flashlightHeadColorGreen;
-        int flashlightHeadColorBlue;
-        float flashlightInHandFade;
-        int flashlightInHandRadius;
-        float flashlightInHandFov;
-        int flashlightInHandColorRed;
-        int flashlightInHandColorGreen;
-        int flashlightInHandColorBlue;
         int switchTorchButton = 2;
 
         // Fallout London VR support

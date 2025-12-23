@@ -3,6 +3,7 @@
 #include <map>
 
 #include "CullGeometryHandler.h"
+#include "SelfieHandler.h"
 #include "common/CommonUtils.h"
 #include "f4vr/PlayerNodes.h"
 #include "vrcf/VRControllersManager.h"
@@ -41,10 +42,6 @@ namespace frik
             return _rightArm;
         }
 
-        RE::NiTransform getBoneWorldTransform(const std::string& boneName);
-
-        RE::NiPoint3 getIndexFingerTipWorldPosition(vrcf::Hand hand);
-
         static float getAdjustedPlayerHMDOffset();
 
         void onFrameUpdate();
@@ -54,7 +51,6 @@ namespace frik
         void initializeNodes();
         void initArmsNodes();
         void initSkeletonNodesDefaults();
-        void initBoneTreeMap();
         void setBodyLen();
 
         // on frame update - skeleton update
@@ -72,7 +68,6 @@ namespace frik
         void hide3rdPersonWeapon() const;
         void hideFistHelpers() const;
         void showHidePAHud() const;
-        void selfieSkelly() const;
         void setHandPose();
         void hideHands() const;
         void fixArmor() const;
@@ -157,12 +152,12 @@ namespace frik
         RE::NiTransform _leftHandPrevFrame;
 
         // bones
-        std::map<std::string, int> _boneTreeMap;
-        std::vector<std::string> _boneTreeVec;
         static std::map<std::string, std::pair<std::string, std::string>> makeFingerRelations();
         inline static const std::map<std::string, std::pair<std::string, std::string>> _fingerRelations = makeFingerRelations();
 
         // cull (hide) parts of the skeleton (head, equipment)
         CullGeometryHandler _cullGeometry;
+
+        SelfieHandler _selfieHandler;
     };
 }

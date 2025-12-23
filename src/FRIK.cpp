@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "config-mode/ConfigurationMode.h"
 #include "f4vr/DebugDump.h"
+#include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/HandPose.h"
@@ -42,7 +43,7 @@ namespace frik
 
         virtual RE::NiPoint3 getInteractionBoneWorldPosition() override
         {
-            return _skelly->getIndexFingerTipWorldPosition(vrcf::Hand::Offhand);
+            return f4vr::Skelly::getIndexFingerTipWorldPosition(vrcf::Hand::Offhand);
         }
 
         virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override
@@ -85,7 +86,7 @@ namespace frik
             }
         });
 
-        removeEmbeddedFlashlight();
+        addEmbeddedFlashlightKeywordIfNeeded();
 
         if (isBetterScopesVRModLoaded()) {
             logger::info("BetterScopesVR mod detected, registering for messages...");
@@ -169,12 +170,12 @@ namespace frik
         logger::trace("Update Pipboy...");
         _pipboy->onFrameUpdate();
 
+        FrameUpdateContext context(_skelly);
+        vrui::g_uiManager->onFrameUpdate(&context);
+
         _mainConfigMode.onFrameUpdate();
 
         _configurationMode->onFrameUpdate();
-
-        FrameUpdateContext context(_skelly);
-        vrui::g_uiManager->onFrameUpdate(&context);
 
         updateWorldFinal();
     }
@@ -330,32 +331,43 @@ namespace frik
     }
 
     /**
-     * If to remove the embedded FRIK flashlight from the game.
-     * Useful for players to be able to install other flashlight mods.
+     * If to add embedded flashlight to the game.
      */
-    void FRIK::removeEmbeddedFlashlight()
+    void FRIK::addEmbeddedFlashlightKeywordIfNeeded()
     {
-        if (!g_config.removeFlashlight) {
+        if (g_config.removeFlashlight) {
+            F4SE::log::info("Flashlight disabled in config, skipping");
             return;
         }
+
+        if (isDLLModLoaded("ImmersiveFlashlightVR")) {
+            F4SE::log::info("Immersive Flashlight VR mod detected, skipping FRIK flashlight");
+            return;
+        }
+
         if (auto* armorObj = RE::TESForm::GetFormByID<RE::TESObjectARMO>(0x21B3B)) {
             if (const auto keywordObj = RE::TESForm::GetFormByID<RE::BGSKeyword>(0xB34A6)) {
-                logger::info("Removing embedded FRIK flashlight from: '{}', keyword: 0x{:x}", armorObj->GetFullName(), keywordObj->formID);
-                armorObj->RemoveKeyword(keywordObj);
+                g_config.flashlightEnabled = true;
+                if (!armorObj->HasKeyword(keywordObj)) {
+                    logger::info("Init embedded flashlight, add keyword to: '{}', keyword: 0x{:x}", armorObj->GetFullName(), keywordObj->formID);
+                    armorObj->AddKeyword(keywordObj);
+                } else {
+                    logger::warn("Init embedded flashlight, keyword already exists in '{}'", armorObj->GetFullName());
+                }
             } else {
-                logger::warn("Failed to remove embedded FRIK flashlight, keyword not found in '{}'", armorObj->GetFullName());
+                logger::error("Failed to add init embedded flashlight, keyword not found");
             }
         } else {
-            logger::warn("Failed to remove embedded FRIK flashlight, armor not found");
+            logger::error("Failed to init embedded flashlight, armor not found");
         }
     }
 
     /**
-     * Send a message to the BetterScopesVR mod.
+     * Send a message to the another mod in the game.
      */
-    void FRIK::dispatchMessageToBetterScopesVR(const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const
+    void FRIK::dispatchMessageToExternalMod(const std::string& receivingModName, const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const
     {
-        _messaging->Dispatch(messageType, data, dataLen, BETTER_SCOPES_VR_MOD_NAME);
+        _messaging->Dispatch(messageType, data, dataLen, receivingModName.c_str());
     }
 
     void FRIK::onBetterScopesMessage(F4SE::MessagingInterface::Message* msg)

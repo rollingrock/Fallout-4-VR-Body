@@ -197,11 +197,11 @@ namespace frik
     /**
      * Save the Pipboy offset to the offsets map.
      */
-    void Config::savePipboyOffset(const RE::NiTransform& transform)
+    bool Config::savePipboyOffset(const RE::NiTransform& transform)
     {
         const auto key = getPipboyOffsetKey();
         _pipboyOffsets[key] = transform;
-        saveOffsetsToJsonFile(key, transform, getPipboyOffsetPath());
+        return saveOffsetsToJsonFile(key, transform, getPipboyOffsetPath());
     }
 
     /**
@@ -221,11 +221,12 @@ namespace frik
     /**
      * Save the weapon offset to config and filesystem.
      */
-    void Config::saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA)
+    bool Config::saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA)
     {
         const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
         _weaponsOffsets[fullName] = transform;
-        saveOffsetsToJsonFile(fullName, transform, WEAPONS_OFFSETS_PATH + "\\" + fullName + ".json");
+        const auto offsetFilePath = fs::path{ WEAPONS_OFFSETS_PATH } / (sanitizePathWindows(fullName) + ".json");
+        return saveOffsetsToJsonFile(fullName, transform, offsetFilePath.string());
     }
 
     /**
@@ -304,20 +305,6 @@ namespace frik
         // Torch/Flashlight
         removeFlashlight = ini.GetBoolValue(INI_SECTION_MAIN, "bRemoveFlashlight", false);
         flashlightLocation = static_cast<FlashlightLocation>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", 0));
-        // Head-mounted flashlight defaults
-        flashlightHeadFade = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fFlashlightHeadFade", 1.1));
-        flashlightHeadRadius = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightHeadRadius", 2400));
-        flashlightHeadFov = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fFlashlightHeadFov", 100.0));
-        flashlightHeadColorRed = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightHeadColorRed", 235));
-        flashlightHeadColorGreen = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightHeadColorGreen", 224));
-        flashlightHeadColorBlue = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightHeadColorBlue", 190));
-        // In-hand flashlight defaults (same values)
-        flashlightInHandFade = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fFlashlightInHandFade", 1.3));
-        flashlightInHandRadius = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightInHandRadius", 6000));
-        flashlightInHandFov = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fFlashlightInHandFov", 65.0));
-        flashlightInHandColorRed = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightInHandColorRed", 240));
-        flashlightInHandColorGreen = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightInHandColorGreen", 230));
-        flashlightInHandColorBlue = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightInHandColorBlue", 225));
         // change hand / head button
         switchTorchButton = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2));
 

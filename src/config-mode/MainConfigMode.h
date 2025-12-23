@@ -13,6 +13,13 @@ namespace frik
         Mode4,
     };
 
+    struct OpenExternalModConfigData
+    {
+        std::string buttonIconNifPath;
+        std::string callbackReceiverName;
+        std::uint32_t callbackMessageType;
+    };
+
     class MainConfigMode
     {
     public :
@@ -20,6 +27,7 @@ namespace frik
         void openConfigMode();
         void onFrameUpdate();
         bool isBodyAdjustOpen() const;
+        void registerOpenExternalModSettingButton(const OpenExternalModConfigData& data);
 
     private:
         void createMainConfigUI();
@@ -29,11 +37,14 @@ namespace frik
         static void updateTwoHandedGripMode(TwoHandedGripMode mode);
         void openPipboyConfigUI();
         void openWeaponAdjustConfigUI();
+        void openExternalModConfig(const OpenExternalModConfigData& data);
         void closeMainConfigMode();
 
         // configuration UI
         std::shared_ptr<vrui::UIContainer> _configUI;
 
         std::shared_ptr<BodyAdjustmentSubConfigMode> _bodyAdjustmentSubConfig;
+
+        std::vector<OpenExternalModConfigData> _externalModConfigButtonDataList;
     };
 }

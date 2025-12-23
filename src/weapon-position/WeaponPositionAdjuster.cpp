@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "common/Quaternion.h"
 #include "f4vr/DebugDump.h"
+#include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
@@ -115,13 +116,12 @@ namespace frik
     void WeaponPositionAdjuster::handlePrimaryWeapon()
     {
         const auto weapon = f4vr::getWeaponNode();
-        const auto backOfHand = getBackOfHandUINode();
         if (!f4vr::isNodeVisible(weapon)) {
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
             }
             checkEquippedWeaponChanged(weapon);
-            backOfHand->local = _backOfHandUIOffsetTransform;
+            getBackOfHandUINode()->local = _backOfHandUIOffsetTransform;
             return;
         }
 
@@ -132,7 +132,7 @@ namespace frik
         checkEquippedWeaponChanged(weapon);
 
         // override the back-of-hand UI transform
-        backOfHand->local = _backOfHandUIOffsetTransform;
+        getBackOfHandUINode()->local = _backOfHandUIOffsetTransform;
 
         // override the weapon transform to the saved offset
         weapon->local = _weaponOffsetTransform;
@@ -163,10 +163,14 @@ namespace frik
 
     /**
      * If equipped weapon changed set offsets to stored if exists.
+     * IMPORTANT: weapon node will be non-nullptr MOST of the time even if no weapon is equipped.
+     * It's either going to be a throwable object if explosive is equipped, or the node of the last equipped weapon.
+     * But when the weapon node is not visible, it's transforms may not be valid so handling offset will be wrong.
+     * It is MUCH safer to only handle the weapon when it's visible.
      */
     void WeaponPositionAdjuster::checkEquippedWeaponChanged(RE::NiNode* weapon)
     {
-        const auto& weaponName = weapon == nullptr ? EMPTY_HAND : getEquippedWeaponNameExtended(weapon);
+        const auto& weaponName = f4vr::isNodeVisible(weapon) ? getEquippedWeaponNameExtended(weapon) : EMPTY_HAND;
         const bool inPA = f4vr::isInPowerArmor();
         if (weaponName == _currentWeapon && inPA == _currentlyInPA) {
             // no weapon change
@@ -231,8 +235,8 @@ namespace frik
             _backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->local, _currentlyInPA);
         }
 
-        logger::info("Equipped Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}, HasPrimaryHandOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
-            _currentWeapon, _currentlyInPA,
+        logger::info("Equipped Weapon changed to '{}' (Melee:{}) (InPA:{}); HasWeaponOffset:{}, HasPrimaryHandOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
+            _currentWeapon, _isCurrentWeaponMelee, _currentlyInPA,
             weaponOffsetLookup.has_value(), primaryHandOffsetLookup.has_value(), offhandOffsetLookup.has_value(), backOfHandOffsetLookup.has_value());
     }
 
@@ -476,7 +480,7 @@ namespace frik
      * offhandFingerBonePos, bodyPos, and avgHandV are static and therefor persist between frames.
      * It's a bit of weird calculation and TBH I don't know if players really use this mode...
      */
-    bool WeaponPositionAdjuster::isOffhandMovedFastAway() const
+    bool WeaponPositionAdjuster::isOffhandMovedFastAway()
     {
         static auto bodyPos = RE::NiPoint3(0, 0, 0);
         static auto offhandFingerBonePos = RE::NiPoint3(0, 0, 0);
@@ -485,7 +489,7 @@ namespace frik
         const auto offHandBone = f4vr::isLeftHandedMode() ? "RArm_Finger31" : "LArm_Finger31";
 
         const auto currentPos = f4vr::getCameraPosition();
-        const float handFrameMovement = MatrixUtils::vec3Len(_skelly->getBoneWorldTransform(offHandBone).translate - offhandFingerBonePos);
+        const float handFrameMovement = MatrixUtils::vec3Len(f4vr::Skelly::getBoneWorldTransform(offHandBone).translate - offhandFingerBonePos);
         const float bodyFrameMovement = MatrixUtils::vec3Len(currentPos - bodyPos);
         avgHandV[fc] = abs(handFrameMovement - bodyFrameMovement);
         fc = (fc + 1) % 3;
@@ -497,7 +501,7 @@ namespace frik
         const float handV = sum / 3;
 
         bodyPos = currentPos;
-        offhandFingerBonePos = _skelly->getBoneWorldTransform(offHandBone).translate;
+        offhandFingerBonePos = f4vr::Skelly::getBoneWorldTransform(offHandBone).translate;
 
         return handV > g_config.gripLetGoThreshold;
     }
@@ -514,17 +518,17 @@ namespace frik
     /**
      * Get the world coordinates of the offhand.
      */
-    RE::NiPoint3 WeaponPositionAdjuster::getOffhandPosition() const
+    RE::NiPoint3 WeaponPositionAdjuster::getOffhandPosition()
     {
         const auto offHandBone = f4vr::isLeftHandedMode() ? "RArm_Finger31" : "LArm_Finger31";
-        return _skelly->getBoneWorldTransform(offHandBone).translate;
+        return f4vr::Skelly::getBoneWorldTransform(offHandBone).translate;
     }
 
     /**
      * Handle toggling of scope zoom for BetterScopesVR mod.
      * Toggle only when player presses offhand X/A button and the hand is close to the weapon scope.
      */
-    void WeaponPositionAdjuster::handleBetterScopes(RE::NiNode* weapon) const
+    void WeaponPositionAdjuster::handleBetterScopes(RE::NiNode* weapon)
     {
         if (!vrcf::VRControllers.isPressed(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // fast return not to make additional calculations, checking button is cheap
@@ -543,7 +547,7 @@ namespace frik
         if (offset < g_config.scopeAdjustDistance) {
             // Zoom toggling
             logger::info("Zoom Toggle pressed; sending message to switch zoom state");
-            g_frik.dispatchMessageToBetterScopesVR(16, nullptr, 0);
+            g_frik.dispatchMessageToExternalMod(BETTER_SCOPES_VR_MOD_NAME, 16, nullptr, 0);
             vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
         }
     }

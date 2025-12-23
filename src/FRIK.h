@@ -21,14 +21,16 @@ namespace frik
     {
     public:
         FRIK() :
-            ModBase(Settings(
-                    "F4VRBody",
-                    Version::NAME,
-                    &g_config,
-                    "FRIK",
-                    512,
-                    true)
-                ) {}
+            ModBase({
+                Version::PROJECT,
+                "F4VRBody",
+                Version::NAME,
+                &g_config,
+                Version::PROJECT,
+                512,
+                true,
+                true
+            }) {}
 
         bool isSkeletonReady() const { return _skelly != nullptr; }
 
@@ -60,15 +62,15 @@ namespace frik
 
         void closePipboyConfigurationModeActive() const { if (_configurationMode) { _configurationMode->exitPBConfig(); } }
 
+        void registerOpenSettingButton(const OpenExternalModConfigData& data) { _mainConfigMode.registerOpenExternalModSettingButton(data); }
+
         bool isMeleeWeaponDrawn() const { return _weaponPosition && _weaponPosition->isMeleeWeaponDrawn(); }
         bool isOffHandGrippingWeapon() const { return _weaponPosition && _weaponPosition->isOffHandGrippingWeapon(); }
 
         bool inWeaponRepositionMode() const { return _weaponPosition && _weaponPosition->inWeaponRepositionMode(); }
         void toggleWeaponRepositionMode() const { if (_weaponPosition) { _weaponPosition->toggleWeaponRepositionMode(); } }
 
-        void dispatchMessageToBetterScopesVR(std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
-
-        RE::NiPoint3 getIndexFingerTipWorldPosition(const vrcf::Hand hand) const { return _skelly ? _skelly->getIndexFingerTipWorldPosition(hand) : RE::NiPoint3(); }
+        void dispatchMessageToExternalMod(const std::string& receivingModName, std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
 
         void smoothMovement();
 
@@ -87,7 +89,7 @@ namespace frik
         static void configureGameVars();
         static bool isGameReadyForSkeletonInitialization();
         bool isRootNodeValid() const;
-        static void removeEmbeddedFlashlight();
+        static void addEmbeddedFlashlightKeywordIfNeeded();
         static void onBetterScopesMessage(F4SE::MessagingInterface::Message* msg);
         static void initForFalloutLondonVR();
 

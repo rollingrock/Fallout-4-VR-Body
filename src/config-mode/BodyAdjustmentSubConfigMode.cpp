@@ -30,6 +30,8 @@ namespace frik
 
     void BodyAdjustmentSubConfigMode::onFrameUpdate() const
     {
+        _configUI->setPosition(0, 0, f4vr::isNodeVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
+
         _noneMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::None);
         _heightMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::BodyHeight);
         _forwardMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::BodyForwardOffset);
@@ -105,14 +107,14 @@ namespace frik
 
         const auto header = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\title_body_adjust.nif", 0.5f);
 
-        _configUI = std::make_shared<UIContainer>("BodyAdjustConfig", UIContainerLayout::VerticalDown, 0.35f, 1.8f);
-        _configUI->addElement(header);
-        _configUI->addElement(row1Container);
-        _configUI->addElement(_row2Container);
-        _configUI->addElement(row3Container);
+        _configUI = std::make_shared<UIContainer>("BodyAdjustConfig", UIContainerLayout::VerticalUp, 0.35f, 1.8f);
         _configUI->addElement(row4Container);
+        _configUI->addElement(row3Container);
+        _configUI->addElement(_row2Container);
+        _configUI->addElement(row1Container);
+        _configUI->addElement(header);
 
-        g_uiManager->attachPresetToPrimaryWandTop(_configUI, { 0, 0, 20 });
+        g_uiManager->attachPresetToPrimaryWandTop(_configUI, { 0, 0, 0 });
     }
 
     /**

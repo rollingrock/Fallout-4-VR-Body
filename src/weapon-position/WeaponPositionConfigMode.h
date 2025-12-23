@@ -35,10 +35,11 @@ namespace frik
 
         ~WeaponPositionConfigMode();
 
+        bool isInThrowableWeaponRepositionMode() const;
+
         static RE::NiTransform getMeleeWeaponDefaultAdjustment(const RE::NiTransform& originalTransform);
         static RE::NiTransform getThrowableWeaponDefaultAdjustment(const RE::NiTransform& originalTransform, bool inPA);
         static RE::NiTransform getBackOfHandUIDefaultAdjustment(const RE::NiTransform& originalTransform, bool inPA);
-        void showHideUIElements(bool weaponEquipped, bool throwableEquipped) const;
 
         void onFrameUpdate(RE::NiNode* weapon);
 
@@ -65,6 +66,7 @@ namespace frik
         static void resetBetterScopesConfig();
         static void saveBetterScopesConfig();
         void createConfigUI();
+        void showHideUIElements(bool weaponEquipped, bool throwableEquipped) const;
 
         // access the weapon/offhand transform to change
         WeaponPositionAdjuster* _adjuster;

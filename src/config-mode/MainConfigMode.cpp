@@ -43,6 +43,8 @@ namespace frik
             return;
         }
 
+        _configUI->setPosition(0, 0, f4vr::isNodeVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
+
         // toggle selfie if Pipboy is not open as it uses the same button
         if (!g_frik.isPipboyOn() && vrcf::VRControllers.isReleasedShort(vrcf::Hand::Primary, vr::k_EButton_A)) {
             toggleSelfieMode();
@@ -70,6 +72,15 @@ namespace frik
     bool MainConfigMode::isBodyAdjustOpen() const
     {
         return _bodyAdjustmentSubConfig != nullptr;
+    }
+
+    /**
+     * Add a button to open the main config for another mod that registered via API.
+     */
+    void MainConfigMode::registerOpenExternalModSettingButton(const OpenExternalModConfigData& data)
+    {
+        F4SE::log::info("Register external mod config button: '{}', messageType: {}", data.callbackReceiverName, data.callbackMessageType);
+        _externalModConfigButtonDataList.push_back(data);
     }
 
     /**
@@ -111,6 +122,13 @@ namespace frik
         const auto row2Container = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
         row2Container->addElement(openPipboyConfigBtn);
         row2Container->addElement(openWeaponAdjustConfigBtn);
+
+        for (const auto& buttonData : _externalModConfigButtonDataList) {
+            const auto openExtModConfigBtn = std::make_shared<UIButton>(buttonData.buttonIconNifPath);
+            openExtModConfigBtn->setOnPressHandler([this,buttonData](UIWidget*) { openExternalModConfig(buttonData); });
+            row2Container->addElement(openExtModConfigBtn);
+        }
+
         row2Container->addElement(exitBtn);
 
         const auto mainMsg = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\msg_main.nif");
@@ -122,13 +140,13 @@ namespace frik
 
         const auto header = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\title_main.nif", 0.45f);
 
-        _configUI = std::make_shared<UIContainer>("MainConfig", UIContainerLayout::VerticalDown, 0.4f, 1.8f);
-        _configUI->addElement(header);
-        _configUI->addElement(row1Container);
-        _configUI->addElement(row2Container);
+        _configUI = std::make_shared<UIContainer>("MainConfig", UIContainerLayout::VerticalUp, 0.4f, 1.8f);
         _configUI->addElement(row3Container);
+        _configUI->addElement(row2Container);
+        _configUI->addElement(row1Container);
+        _configUI->addElement(header);
 
-        g_uiManager->attachPresetToPrimaryWandTop(_configUI, { 0, 0, 15 });
+        g_uiManager->attachPresetToPrimaryWandTop(_configUI, { 0, 0, 0 });
     }
 
     /**
@@ -226,6 +244,13 @@ namespace frik
     {
         closeMainConfigMode();
         g_frik.toggleWeaponRepositionMode();
+    }
+
+    void MainConfigMode::openExternalModConfig(const OpenExternalModConfigData& data)
+    {
+        logger::info("Open external mod config for mod: '{}', messageType:{}", data.callbackReceiverName, data.callbackMessageType);
+        closeMainConfigMode();
+        g_frik.dispatchMessageToExternalMod(data.callbackReceiverName, data.callbackMessageType, nullptr, 0);
     }
 
     void MainConfigMode::closeMainConfigMode()
