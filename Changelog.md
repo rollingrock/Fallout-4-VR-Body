@@ -3,6 +3,7 @@
 * Fixed some weapons (without offsets config) becoming invisible when changing cells, loading, and others (broken in v76).
 * Fixed not being able to reposition throwable weapon (broken in v76).
 * Fixed weapon offsets not saved for weapons that have invalid path characters in name.
+* Fixed unable to interact with Pipboy config if not using on-wrist Pipboy game setting.
 * Added API for mods to open their config via FRIK main config UI.
 * Added compatibility support for "Immersive Flashlight VR" mod.
 * Added using Pipboy instead of Attaboy in Fallout London VR.
