@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config-mode/ConfigurationMode.h"
 #include "config-mode/MainConfigMode.h"
 #include "f4vr/F4VRThumbstickControls.h"
 #include "pipboy/Pipboy.h"
@@ -11,7 +12,8 @@ namespace frik
     {
     public:
         PlayerControlsHandler();
-        void onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition);
+        void onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition,
+            const ConfigurationMode* pipboyConfigurationMode);
 
     private:
         void enableControls();
@@ -38,9 +40,11 @@ namespace frik
      * Special handling for throwable weapon reposition mode to allow player to "cook" the throwable for repositioning. It's sucky but it's only
      * for this limited scenario so it's not a big deal.
      */
-    inline void PlayerControlsHandler::onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition)
+    inline void PlayerControlsHandler::onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition,
+        const ConfigurationMode* pipboyConfigurationMode)
     {
-        if (pipboy->isOpen() || mainConfigMode.isBodyAdjustOpen() || weaponPosition->inWeaponRepositionMode() || pipboy->isOperatingWithFinger()) {
+        if (pipboy->isOpen() || pipboyConfigurationMode->isPipBoyConfigModeActive() || mainConfigMode.isBodyAdjustOpen() || weaponPosition->inWeaponRepositionMode() || pipboy->
+            isOperatingWithFinger()) {
             if (weaponPosition->inThrowableWeaponRepositionMode()) {
                 enableControls();
                 f4vr::F4VRThumbstickControls::setControlsThumbstickEnableState(false);
