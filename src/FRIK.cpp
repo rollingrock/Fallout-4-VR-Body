@@ -162,7 +162,7 @@ namespace frik
         _boneSpheres.onFrameUpdate();
 
         logger::trace("Update player controls...");
-        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition);
+        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition, _configurationMode);
 
         logger::trace("Update Weapon Position...");
         _weaponPosition->onFrameUpdate();
