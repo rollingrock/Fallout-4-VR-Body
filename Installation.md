@@ -9,14 +9,28 @@
 3. Edit your `Fallout4Custom.ini` (this is a pain point and players complained that different settings work)  
   **Important:** Not having it may result in game crash on starting new game or loading a save.
 
-Most common to work: (thanks u/JAPH):  
+This is what I have with clean install:
 ```
-  [Archive]
-  sResourceDataDirsFinal=
-  bInvalidateOlderFiles=1
-  sResourceStartUpArchiveList=Fallout4 - Startup.ba2, Fallout4 - Shaders.ba2, Fallout4 - Interface.ba2, Fallout4_VR - Shaders.ba2
-  sResourceIndexFileList=Fallout4 - Textures1.ba2, Fallout4 - Textures2.ba2, Fallout4 - Textures3.ba2, Fallout4 - Textures4.ba2, Fallout4 - Textures5.ba2, 
-  Fallout4 - Textures6.ba2, Fallout4 - Textures7.ba2, Fallout4 - Textures8.ba2, Fallout4 - Textures9.ba2, Fallout4_VR - Main.ba2, Fallout4_VR - Textures.ba2
+[Archive]
+bInvalidateOlderFiles=1
+sResourceIndexFileList=Fallout4 - Textures1.ba2, Fallout4 - Textures2.ba2, Fallout4 - Textures3.ba2, Fallout4 - Textures4.ba2, Fallout4 - Textures5.ba2, Fallout4 - Textures6.ba2, Fallout4 - Textures7.ba2, Fallout4 - Textures8.ba2, Fallout4 - Textures9.ba2
+sResourceStartUpArchiveList=Fallout4 - Startup.ba2, Fallout4 - Shaders.ba2, Fallout4 - Interface.ba2
+SResourceArchiveList=Fallout4 - Voices.ba2, Fallout4 - Meshes.ba2, Fallout4 - MeshesExtra.ba2, Fallout4 - Misc.ba2, Fallout4 - Sounds.ba2, Fallout4 - Materials.ba2
+SResourceArchiveList2=Fallout4 - Animations.ba2
+sResourceDataDirsFinal=STRINGS\
+SGeometryPackageList=Fallout4 - Geometry.csg
+SCellResourceIndexFileList=Fallout4.cdx
+SResourceArchiveMemoryCacheList= Fallout4 - Misc.ba2, Fallout4 - Shaders.ba2, Fallout4 - Interface.ba2, Fallout4 - Materials.ba2
+```
+
+This was in the guide for a long time but some player report it doesn't work well: (originally by u/JAPH):  
+```
+[Archive]
+sResourceDataDirsFinal=
+bInvalidateOlderFiles=1
+sResourceStartUpArchiveList=Fallout4 - Startup.ba2, Fallout4 - Shaders.ba2, Fallout4 - Interface.ba2, Fallout4_VR - Shaders.ba2
+sResourceIndexFileList=Fallout4 - Textures1.ba2, Fallout4 - Textures2.ba2, Fallout4 - Textures3.ba2, Fallout4 - Textures4.ba2, Fallout4 - Textures5.ba2, 
+Fallout4 - Textures6.ba2, Fallout4 - Textures7.ba2, Fallout4 - Textures8.ba2, Fallout4 - Textures9.ba2, Fallout4_VR - Main.ba2, Fallout4_VR - Textures.ba2
 ```
 
 Another player said it still caused crashes and removed the DLCs helped him but didn't give more details.
