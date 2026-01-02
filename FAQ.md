@@ -94,8 +94,8 @@ Either remove it, find a way to remove the VR fix in it, or adjust the weapon in
 
 
 ## Keep triggering VATS when using On-Wrist Pipboy
-You're probably using [Bullet Time VATS VR](https://www.nexusmods.com/fallout4/mods/72502) (default with Mad God modpack). It doesn't respect game VATS disabling logic.  
-I have a fix and waiting for the mod author to respond, if not I will put it as optional file.
+You're probably using [Bullet Time VATS VR](https://www.nexusmods.com/fallout4/mods/72502). It doesn't respect game VATS disabling logic.  
+Install this fix: [Bullet Time VATS VR - FRIK Pipboy Fix](https://www.nexusmods.com/fallout4/mods/99702)
 
 
 ## Armor / Power Armor obstructs my view!
