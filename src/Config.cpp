@@ -338,6 +338,7 @@ namespace frik
         selfieOutFrontDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0));
         selfieIgnoreHideFlags = ini.GetBoolValue(INI_SECTION_MAIN, "bSelfieIgnoreHideFlags", true);
         scopeAdjustDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f));
+        openConfigurationModePressDelay = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fOpenConfigurationModePressDelay", 1.5f));
 
         // special disable of Fallout London so Pipboy can be used - a hacky hack for a specific player
         ignoreFalloutLondonVR = ini.GetBoolValue(INI_SECTION_MAIN, "bIgnoreFalloutLondonVR", true);
