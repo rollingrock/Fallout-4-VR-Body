@@ -29,8 +29,8 @@ namespace frik
     {
         // open main config on both thumbsticks long-pressed shortcut
         if (!isOpen()
-            && vrcf::VRControllers.isLongPressed(vrcf::Hand::Primary, vr::k_EButton_Axis0, 1.0f, false)
-            && vrcf::VRControllers.isLongPressed(vrcf::Hand::Offhand, vr::k_EButton_Axis0, 1.0f, false)) {
+            && vrcf::VRControllers.isLongPressed(vrcf::Hand::Primary, vr::k_EButton_Axis0, g_config.openConfigurationModePressDelay, false)
+            && vrcf::VRControllers.isLongPressed(vrcf::Hand::Offhand, vr::k_EButton_Axis0, g_config.openConfigurationModePressDelay, false)) {
             logger::info("Open main config by shortcut...");
             if (g_frik.isFavoritesMenuOpen()) {
                 f4vr::closeFavoriteMenu();

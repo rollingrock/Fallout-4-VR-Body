@@ -187,6 +187,7 @@ namespace frik
         float selfieOutFrontDistance = 0;
         bool selfieIgnoreHideFlags = false;
         float scopeAdjustDistance = 0;
+        float openConfigurationModePressDelay = 0;
 
         // Smooth Movement
         bool disableSmoothMovement = false;
