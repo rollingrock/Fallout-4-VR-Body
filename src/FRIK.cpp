@@ -124,6 +124,8 @@ namespace frik
         }
 
         configureGameVars();
+
+        _playerControlsHandler.reset();
     }
 
     /**

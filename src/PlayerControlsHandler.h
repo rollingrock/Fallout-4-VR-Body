@@ -12,6 +12,7 @@ namespace frik
     {
     public:
         PlayerControlsHandler();
+        void reset();
         void onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition,
             const ConfigurationMode* pipboyConfigurationMode);
 
@@ -32,6 +33,14 @@ namespace frik
                 RE::OtherInputEvents::OTHER_EVENT_FLAG::kFastTravel
                 | RE::OtherInputEvents::OTHER_EVENT_FLAG::kRunning
                 | RE::OtherInputEvents::OTHER_EVENT_FLAG::kSprinting));
+    }
+
+    /**
+     * Reset the disable input state if game state changed externally like loading a save.
+     */
+    inline void PlayerControlsHandler::reset()
+    {
+        _disabledInput = false;
     }
 
     /**
@@ -71,10 +80,10 @@ namespace frik
      */
     inline void PlayerControlsHandler::enableControls()
     {
-        if (_disabledInput) {
+        if (!_disabledInput) {
             return;
         }
-        _disabledInput = true;
+        _disabledInput = false;
 
         logger::info("Player controls - Enabled");
         f4vr::SetActorRestrained(RE::PlayerCharacter::GetSingleton(), false);
@@ -89,7 +98,7 @@ namespace frik
      */
     inline void PlayerControlsHandler::disableControls()
     {
-        if (!_disabledInput) {
+        if (_disabledInput) {
             // the force state can change in some rare scenarios, redo our overrides
             if (RE::BSInputEnableManager::GetSingleton()->forceEnableInputUserEventsFlags != _disableFlags) {
                 logger::debug("Player controls - reapply disabled flags");
@@ -98,7 +107,7 @@ namespace frik
             }
             return;
         }
-        _disabledInput = false;
+        _disabledInput = true;
 
         logger::info("Player controls - Disabled");
 
