@@ -13,6 +13,7 @@ namespace frik
     public:
         PlayerControlsHandler();
         void reset();
+        void checkWeaponHideForPipboyOperationWIthFinger(const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition);
         void onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition,
             const ConfigurationMode* pipboyConfigurationMode);
 
@@ -21,6 +22,7 @@ namespace frik
         void disableControls();
 
         bool _disabledInput = false;
+        bool _weaponHidden = false;
         REX::EnumSet<RE::UserEvents::USER_EVENT_FLAG, std::uint32_t> _disableFlags;
         REX::EnumSet<RE::UserEvents::USER_EVENT_FLAG, std::uint32_t> _lastFlags;
     };
@@ -41,6 +43,7 @@ namespace frik
     inline void PlayerControlsHandler::reset()
     {
         _disabledInput = false;
+        _weaponHidden = false;
     }
 
     /**
@@ -52,6 +55,8 @@ namespace frik
     inline void PlayerControlsHandler::onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition,
         const ConfigurationMode* pipboyConfigurationMode)
     {
+        checkWeaponHideForPipboyOperationWIthFinger(pipboy, weaponPosition);
+
         if (pipboy->isOpen() || pipboyConfigurationMode->isPipBoyConfigModeActive() || mainConfigMode.isBodyAdjustOpen() || weaponPosition->inWeaponRepositionMode() || pipboy->
             isOperatingWithFinger()) {
             if (weaponPosition->inThrowableWeaponRepositionMode()) {
@@ -62,17 +67,31 @@ namespace frik
 
             disableControls();
             f4vr::F4VRThumbstickControls::setControlsThumbstickEnableState(true);
-
-            // hide the weapon so the player can interact easily with the Pipboy (not relevant for left-handed)
-            // Note: important this codes runs before WeaponPositionAdjuster to have it not change hand transform
-            if (!f4vr::isLeftHandedMode() && pipboy->isOperatingWithFinger() && weaponPosition->isWeaponDrawn()) {
-                f4vr::setNodeVisibility(f4vr::getWeaponNode(), false);
-            }
             return;
         }
 
         enableControls();
         f4vr::F4VRThumbstickControls::setControlsThumbstickEnableState(true);
+    }
+
+    /**
+     * hide the weapon so the player can interact easily with the Pipboy (not relevant for left-handed)
+     * Note: Hide the child element of the weapon as hiding the weapon node causes FRIK to think no weapon is equipped.
+     * Note: important this codes runs before WeaponPositionAdjuster to have it not change hand transform
+     */
+    inline void PlayerControlsHandler::checkWeaponHideForPipboyOperationWIthFinger(const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition)
+    {
+        if (!f4vr::isLeftHandedMode() && pipboy->isOperatingWithFinger() && weaponPosition->isWeaponDrawn()) {
+            if (!_weaponHidden) {
+                _weaponHidden = true;
+                logger::debug("Hide weapon for Pipboy operation with finger");
+                f4vr::setNodeVisibility(f4vr::get1StChildNode(f4vr::getWeaponNode()), false);
+            }
+        } else if (_weaponHidden) {
+            _weaponHidden = false;
+            logger::debug("Show weapon for Pipboy operation with finger");
+            f4vr::setNodeVisibility(f4vr::get1StChildNode(f4vr::getWeaponNode()), true);
+        }
     }
 
     /**
