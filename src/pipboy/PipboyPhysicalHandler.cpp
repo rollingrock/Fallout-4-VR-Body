@@ -269,7 +269,7 @@ namespace frik
             _lastRadioFreq = 0.0;
         }
 
-        if (g_frik.isPipboyConfigurationModeActive() || !g_config.enablePrimaryControllerPipboyUse || !f4vr::isPipboyOnWrist()) {
+        if (g_frik.isPipboyConfigurationModeActive() || !g_config.enablePrimaryControllerPipboyUse || !f4vr::isPipboyOnWrist() || !g_frik.isPipboyOn()) {
             return;
         }
 
