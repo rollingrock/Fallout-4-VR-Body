@@ -41,6 +41,10 @@ namespace frik
     inline void PlayerControlsHandler::reset()
     {
         _disabledInput = false;
+        // Fix: Reset thumbstick controls to enabled state on game session load
+        // Without this, if controls were disabled when the previous session ended,
+        // the thumbstick deadzone remains at 1.0 preventing sprint from working
+        f4vr::F4VRThumbstickControls::setControlsThumbstickEnableState(true);
     }
 
     /**
