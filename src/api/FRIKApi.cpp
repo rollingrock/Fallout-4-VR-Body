@@ -127,6 +127,16 @@ namespace
         restoreFingerPoseControl(getIsLeftForHandEnum(hand));
     }
 
+    bool FRIK_CALL setHandPoseCustomJointPositions(const char* tag, const FRIKApi::Hand hand, const float* values)
+    {
+        if (!tag || !values) {
+            return false;
+        }
+        // TODO: implement tag usage
+        setFingerJointPositions(getIsLeftForHandEnum(hand), values);
+        return true;
+    }
+
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApi::OpenExternalModConfigData& data)
     {
         if (!data.buttonIconNifPath || !data.callbackReceiverName) {
@@ -157,7 +167,8 @@ namespace
         .clearHandPose = &clearHandPose,
         .setHandPoseFingerPositions = &setHandPoseFingerPositions,
         .clearHandPoseFingerPositions = &clearHandPoseFingerPositions,
-        .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig
+        .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig,
+        .setHandPoseCustomJointPositions = &setHandPoseCustomJointPositions
     };
 }
 

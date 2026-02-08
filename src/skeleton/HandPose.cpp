@@ -280,6 +280,15 @@ namespace frik
         }
     }
 
+    void setFingerJointPositions(const bool isLeft, const float values[15])
+    {
+        const auto* const fingersArray = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
+        for (auto i = 0; i < FINGERS_COUNT; i++) {
+            handPapyrusHasControl[fingersArray[i]] = true;
+            handPapyrusPose[fingersArray[i]] = values[i];
+        }
+    }
+
     void restoreFingerPoseControl(const bool isLeft)
     {
         logger::debug("Hand pose: Restore control for {} hand", isLeft ? "Left" : "Right");
