@@ -42,7 +42,7 @@ namespace frik::api
 #define FRIK_CALL __cdecl
 
     // API version for compatibility checking
-    inline constexpr std::uint32_t FRIK_API_VERSION = 2;
+    inline constexpr std::uint32_t FRIK_API_VERSION = 3;
 
     struct FRIKApi
     {
@@ -197,6 +197,17 @@ namespace frik::api
          * Adds a button to open external mod config via a button in FRIK main config UI.
          */
         bool (FRIK_CALL*registerOpenModSettingButtonToMainConfig)(const OpenExternalModConfigData& data);
+
+        /**
+         * Set per-joint hand pose override for fine-grained finger control.
+         * 15 values, 3 joints per finger (proximal, medial, distal):
+         * [thumb_1, thumb_2, thumb_3, index_1..3, middle_1..3, ring_1..3, pinky_1..3]
+         * Matches internal bone order: XArm_Finger[1-5][1-3].
+         * Values: 0.0 = fully bent, 1.0 = fully straight (same as setHandPoseCustomFingerPositions).
+         * Use clearHandPose to release control.
+         * @return true if successful.
+         */
+        bool (FRIK_CALL*setHandPoseCustomJointPositions)(const char* tag, Hand hand, const float values[15]);
 
         /**
          * Initialize the FRIK API object.

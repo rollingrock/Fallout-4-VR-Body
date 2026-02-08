@@ -15,6 +15,7 @@ namespace frik
     float getHandBonePose(const std::string& bone, const bool melee);
 
     void setFingerPositionScalar(bool isLeft, float thumb, float index, float middle, float ring, float pinky);
+    void setFingerJointPositions(bool isLeft, const float values[15]);
     void restoreFingerPoseControl(bool isLeft);
 
     void setPipboyHandPose();
