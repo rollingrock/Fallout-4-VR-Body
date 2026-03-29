@@ -35,6 +35,8 @@ namespace frik
         bool inWeaponRepositionMode() const { return _configMode != nullptr; }
         bool inThrowableWeaponRepositionMode() const { return _configMode != nullptr && _configMode->isInThrowableWeaponRepositionMode(); }
 
+        static bool isOffHandGrippingEnabled();
+        static void setOffHandGrippingEnabled(bool enabled);
         void toggleWeaponRepositionMode();
 
         void onFrameUpdate();
@@ -74,6 +76,9 @@ namespace frik
 
         // is offhand (secondary hand) gripping the weapon barrel
         bool _offHandGripping = false;
+
+        // allow to disable offhand gripping feature without disabling the whole mod features, for external mods to control it (static to persist over recreation)
+        inline static bool _offHandGrippingEnabled = true;
 
         // weapon original transform before changing it
         RE::NiTransform _weaponOriginalTransform = RE::NiTransform();

@@ -66,6 +66,8 @@ namespace frik
 
         bool isMeleeWeaponDrawn() const { return _weaponPosition && _weaponPosition->isMeleeWeaponDrawn(); }
         bool isOffHandGrippingWeapon() const { return _weaponPosition && _weaponPosition->isOffHandGrippingWeapon(); }
+        bool isOffHandGrippingEnabled() const { return WeaponPositionAdjuster::isOffHandGrippingEnabled(); }
+        void setOffHandGrippingEnabled(const bool enabled) { WeaponPositionAdjuster::setOffHandGrippingEnabled(enabled); }
 
         bool inWeaponRepositionMode() const { return _weaponPosition && _weaponPosition->inWeaponRepositionMode(); }
         void toggleWeaponRepositionMode() const { if (_weaponPosition) { _weaponPosition->toggleWeaponRepositionMode(); } }

@@ -67,6 +67,28 @@ namespace frik
     }
 
     /**
+     * Return whether FRIK offhand weapon gripping logic is currently enabled.
+     */
+    bool WeaponPositionAdjuster::isOffHandGrippingEnabled()
+    {
+        return _offHandGrippingEnabled;
+    }
+
+    /**
+     * Enable/disable FRIK offhand weapon gripping logic.
+     * Existing grip state is reconciled on the next frame update.
+     */
+    void WeaponPositionAdjuster::setOffHandGrippingEnabled(const bool enabled)
+    {
+        if (_offHandGrippingEnabled == enabled) {
+            return;
+        }
+
+        logger::info("Offhand weapon gripping: {}", enabled ? "ENABLED" : "DISABLED");
+        _offHandGrippingEnabled = enabled;
+    }
+
+    /**
      * Run every game frame to do adjustments on all the weapon related nodes\elements.
      */
     void WeaponPositionAdjuster::onFrameUpdate()
@@ -286,7 +308,8 @@ namespace frik
      */
     void WeaponPositionAdjuster::checkIfOffhandIsGripping(const RE::NiNode* weapon)
     {
-        if (!g_config.enableOffHandGripping) {
+        if (!g_config.enableOffHandGripping || !_offHandGrippingEnabled) {
+            setOffhandGripping(false);
             return;
         }
 
@@ -341,6 +364,10 @@ namespace frik
      */
     void WeaponPositionAdjuster::setOffhandGripping(const bool isGripping)
     {
+        if (_offHandGripping == isGripping) {
+            return;
+        }
+
         _offHandGripping = isGripping;
         setOffhandGripHandPose(isGripping);
     }
