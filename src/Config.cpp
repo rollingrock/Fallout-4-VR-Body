@@ -178,6 +178,31 @@ namespace frik
         }
     }
 
+    float Config::getPlayerLegSlackAdjustOffset() const
+    {
+        if (isPlayingSeated) {
+            return f4vr::isInPowerArmor() ? playerLegSlackAdjustOffsetSittingInPA : playerLegSlackAdjustOffsetSitting;
+        }
+        return f4vr::isInPowerArmor() ? playerLegSlackAdjustOffsetStandingInPA : playerLegSlackAdjustOffsetStanding;
+    }
+
+    void Config::setPlayerLegSlackAdjustOffset(const float value)
+    {
+        if (isPlayingSeated) {
+            if (f4vr::isInPowerArmor()) {
+                playerLegSlackAdjustOffsetSittingInPA = value;
+            } else {
+                playerLegSlackAdjustOffsetSitting = value;
+            }
+        } else {
+            if (f4vr::isInPowerArmor()) {
+                playerLegSlackAdjustOffsetStandingInPA = value;
+            } else {
+                playerLegSlackAdjustOffsetStanding = value;
+            }
+        }
+    }
+
     /**
      * Open the FRIK.ini file in Notepad for editing.
      */
@@ -263,22 +288,27 @@ namespace frik
         // is the player playing standing or sitting
         isPlayingSeated = ini.GetBoolValue(INI_SECTION_MAIN, "bIsPlayingSeated", false);
 
-        // Camera and Body offsets
+        // HMD, body, and leg slack adjust offsets
         playerHMDOffsetUpStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStanding", 8.0f));
         playerBodyOffsetUpStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStanding", -3.0f));
+        playerLegSlackAdjustOffsetStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetStanding", 0.0f));
         playerBodyOffsetForwardStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStanding", -3.0f));
         playerHMDOffsetUpSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSitting", 31.0f));
         playerBodyOffsetUpSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSitting", -4.0f));
+        playerLegSlackAdjustOffsetSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetSitting", 0.0f));
         playerBodyOffsetForwardSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSitting", 2.0f));
 
         playerHMDOffsetUpStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStandingInPA", 23.0f));
         playerBodyOffsetUpStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStandingInPA", -8.0f));
+        playerLegSlackAdjustOffsetStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetStandingInPA", 0.0f));
         playerBodyOffsetForwardStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStandingInPA", -15.0f));
         playerHMDOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSittingInPA", 53.0f));
         playerBodyOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", -7.0f));
+        playerLegSlackAdjustOffsetSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetSittingInPA", 0.0f));
         playerBodyOffsetForwardSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", -9.0f));
 
         headBackPositionOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fHeadBackPositionOffset", 4));
+        skeletonLegSlackTarget = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fSkeletonLegSlackTarget", 2.5f));
 
         comfortSneakHackStaticBodyPitchAngle = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fComfortSneakHackStaticBodyPitchAngle", 30.0f));
 
@@ -365,17 +395,22 @@ namespace frik
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStanding", playerBodyOffsetUpStanding);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStanding", playerBodyOffsetForwardStanding);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStanding", playerHMDOffsetUpStanding);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetStanding", playerLegSlackAdjustOffsetStanding);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSitting", playerBodyOffsetUpSitting);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSitting", playerBodyOffsetForwardSitting);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSitting", playerHMDOffsetUpSitting);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetSitting", playerLegSlackAdjustOffsetSitting);
 
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStandingInPA", playerBodyOffsetUpStandingInPA);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStandingInPA", playerBodyOffsetForwardStandingInPA);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStandingInPA", playerHMDOffsetUpStandingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetStandingInPA", playerLegSlackAdjustOffsetStandingInPA);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", playerBodyOffsetUpSittingInPA);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", playerBodyOffsetForwardSittingInPA);
         ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSittingInPA", playerHMDOffsetUpSittingInPA);
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetSittingInPA", playerLegSlackAdjustOffsetSittingInPA);
 
+        ini.SetDoubleValue(INI_SECTION_MAIN, "fSkeletonLegSlackTarget", skeletonLegSlackTarget);
         ini.SetDoubleValue(INI_SECTION_MAIN, "armLength", armLength);
         ini.SetBoolValue(INI_SECTION_MAIN, "hidePipboy", hidePipboy);
         ini.SetDoubleValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);

@@ -391,10 +391,10 @@ namespace frik
         const float xOffsetByNeckPitch = fmaxf(0, (isComfortSneakHackEnabled() ? 2.0f : 5.0f) * fabs(neckPitch) * _root->local.scale);
         const float zOffsetByNeckPitch = 6.0f * neckPitch * _root->local.scale;
 
-        const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getPlayerHMDOffsetUp()) * comfortSneakAdjustZ + zOffsetByNeckPitch;
-        // if people complain about body posture we can add manual adjustment here later
+        const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getPlayerHMDOffsetUp() + g_config.getPlayerLegSlackAdjustOffset())
+            * comfortSneakAdjustZ + zOffsetByNeckPitch;
 
-        const auto neckPos = getCameraPosition() + RE::NiPoint3(
+        const auto neckPos = _curentPosition + RE::NiPoint3(
             -_forwardDir.x * (g_config.getPlayerBodyOffsetForward() / 2 - xOffsetByNeckPitch),
             -_forwardDir.y * (g_config.getPlayerBodyOffsetForward() / 2 - xOffsetByNeckPitch),
             -playerAdjustZ);
@@ -712,6 +712,9 @@ namespace frik
             calfLen = thighLen = (thighLenOrig + calfLenOrig) / 2.0f;
             footAngle = acosf((calfLen * calfLen + ftLen * ftLen - thighLen * thighLen) / (2 * calfLen * ftLen));
         }
+
+        BodyAdjustmentSubConfigMode::updateLegSlack((thighLenOrig + calfLenOrig) - ftLen);
+
         // Get the desired world coordinate of the knee
         const float xDist = cosf(footAngle) * calfLen;
         const float yDist = sinf(footAngle) * calfLen;
