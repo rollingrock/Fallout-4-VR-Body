@@ -1,4 +1,7 @@
-## v0.77 (WIP)
+## v0.77
+* Added configurable value for how long to hold thumbsticks to open configuration mode.
+* Fixed potential unable to run/use flashlight on first load after starting a game.
+* Fixed sometimes not being able to save weapon offset if name contain non-ascii characters like Chinese (may require players redoing some offsets).
 * Fixed some weapon attachments effects like [laser pointers](https://www.nexusmods.com/fallout4/mods/12363) not rotated correctly in 2-handed use.
 * Fixed some weapons (without offsets config) becoming invisible when changing cells, loading, and others (broken in v76).
 * Fixed not being able to reposition throwable weapon (broken in v76).
@@ -7,6 +10,9 @@
 * Added API for mods to open their config via FRIK main config UI.
 * Added compatibility support for "Immersive Flashlight VR" mod.
 * Added using Pipboy instead of Attaboy in Fallout London VR.
+* Added API for Virtual Reloads to enabling\disabling offhand weapon gripping feature.
+* Fixed body adjustment issues to make it easier and resolve knee bending.
+* Fixed not respecting fComfortSneakHeight ini setting to control how much to offset the camera.
 
 ## v0.76
 
