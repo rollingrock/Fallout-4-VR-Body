@@ -31,9 +31,6 @@ namespace
 
 namespace frik
 {
-    constexpr float COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT = 0.7f;
-    constexpr float COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT = 0.5f;
-
     /**
      * Get the player camera height offset adjusted for power armor, sneaking, and dynamic height from external API.
      * The height needs to be adjusted for comfort sneaking because the player physical height doesn't change but
@@ -44,7 +41,7 @@ namespace frik
     {
         auto offset = g_config.getPlayerHMDOffsetUp() + g_frik.getDynamicCameraHeight();
         if (isComfortSneakMode() && isPlayerSneaking()) {
-            offset *= COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT;
+            offset *= _comfortSneakCameraOffsetAdjustment;
         }
         return offset;
     }
@@ -84,6 +81,8 @@ namespace frik
         setBodyLen();
 
         initHandPoses(_inPowerArmor);
+
+        _comfortSneakCameraOffsetAdjustment = getIniSetting("fComfortSneakHeight:VR")->GetFloat();
     }
 
     void Skeleton::initArmsNodes()
@@ -385,7 +384,7 @@ namespace frik
         com->local.translate.y = 0.0;
 
         // comfort sneak changes the height of the avatar without the player changing height in the real world, need to adjust for it
-        const float comfortSneakAdjustZ = isComfortSneakMode() && isPlayerSneaking() ? COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT : 1.0f;
+        const float comfortSneakAdjustZ = isComfortSneakMode() && isPlayerSneaking() ? _comfortSneakCameraOffsetAdjustment * _comfortSneakCameraOffsetAdjustment : 1.0f;
 
         // small offset to (1) not change player height when looking up/down and (2) move the body back, especially when looking down
         const float xOffsetByNeckPitch = fmaxf(0, (isComfortSneakHackEnabled() ? 2.0f : 5.0f) * fabs(neckPitch) * _root->local.scale);
