@@ -99,6 +99,7 @@ namespace frik
         // Camera positions
         RE::NiPoint3 _curentPosition;
         RE::NiPoint3 _lastPosition;
+        inline static float _comfortSneakCameraOffsetAdjustment = -1.0f;
 
         // ???
         RE::NiPoint3 _forwardDir;

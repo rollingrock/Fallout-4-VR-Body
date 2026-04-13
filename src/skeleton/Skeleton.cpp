@@ -31,9 +31,6 @@ namespace
 
 namespace frik
 {
-    constexpr float COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT = 0.7f;
-    constexpr float COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT = 0.5f;
-
     /**
      * Get the player camera height offset adjusted for power armor, sneaking, and dynamic height from external API.
      * The height needs to be adjusted for comfort sneaking because the player physical height doesn't change but
@@ -44,7 +41,7 @@ namespace frik
     {
         auto offset = g_config.getPlayerHMDOffsetUp() + g_frik.getDynamicCameraHeight();
         if (isComfortSneakMode() && isPlayerSneaking()) {
-            offset *= COMFORT_SNEAK_CAMERA_OFFSET_ADJUSTMENT;
+            offset *= _comfortSneakCameraOffsetAdjustment;
         }
         return offset;
     }
@@ -84,6 +81,8 @@ namespace frik
         setBodyLen();
 
         initHandPoses(_inPowerArmor);
+
+        _comfortSneakCameraOffsetAdjustment = getIniSetting("fComfortSneakHeight:VR")->GetFloat();
     }
 
     void Skeleton::initArmsNodes()
@@ -385,16 +384,16 @@ namespace frik
         com->local.translate.y = 0.0;
 
         // comfort sneak changes the height of the avatar without the player changing height in the real world, need to adjust for it
-        const float comfortSneakAdjustZ = isComfortSneakMode() && isPlayerSneaking() ? COMFORT_SNEAK_BODY_OFFSET_ADJUSTMENT : 1.0f;
+        const float comfortSneakAdjustZ = isComfortSneakMode() && isPlayerSneaking() ? _comfortSneakCameraOffsetAdjustment * _comfortSneakCameraOffsetAdjustment : 1.0f;
 
         // small offset to (1) not change player height when looking up/down and (2) move the body back, especially when looking down
         const float xOffsetByNeckPitch = fmaxf(0, (isComfortSneakHackEnabled() ? 2.0f : 5.0f) * fabs(neckPitch) * _root->local.scale);
         const float zOffsetByNeckPitch = 6.0f * neckPitch * _root->local.scale;
 
-        const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getPlayerHMDOffsetUp()) * comfortSneakAdjustZ + zOffsetByNeckPitch;
-        // if people complain about body posture we can add manual adjustment here later
+        const float playerAdjustZ = (4 * g_config.getPlayerBodyOffsetUp() - g_config.getPlayerHMDOffsetUp() + g_config.getPlayerLegSlackAdjustOffset())
+            * comfortSneakAdjustZ + zOffsetByNeckPitch;
 
-        const auto neckPos = getCameraPosition() + RE::NiPoint3(
+        const auto neckPos = _curentPosition + RE::NiPoint3(
             -_forwardDir.x * (g_config.getPlayerBodyOffsetForward() / 2 - xOffsetByNeckPitch),
             -_forwardDir.y * (g_config.getPlayerBodyOffsetForward() / 2 - xOffsetByNeckPitch),
             -playerAdjustZ);
@@ -712,6 +711,9 @@ namespace frik
             calfLen = thighLen = (thighLenOrig + calfLenOrig) / 2.0f;
             footAngle = acosf((calfLen * calfLen + ftLen * ftLen - thighLen * thighLen) / (2 * calfLen * ftLen));
         }
+
+        BodyAdjustmentSubConfigMode::updateLegSlack((thighLenOrig + calfLenOrig) - ftLen);
+
         // Get the desired world coordinate of the knee
         const float xDist = cosf(footAngle) * calfLen;
         const float yDist = sinf(footAngle) * calfLen;

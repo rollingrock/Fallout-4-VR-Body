@@ -42,7 +42,7 @@ namespace frik::api
 #define FRIK_CALL __cdecl
 
     // API version for compatibility checking
-    inline constexpr std::uint32_t FRIK_API_VERSION = 2;
+    inline constexpr std::uint32_t FRIK_API_VERSION = 3;
 
     struct FRIKApi
     {
@@ -197,6 +197,14 @@ namespace frik::api
          * Adds a button to open external mod config via a button in FRIK main config UI.
          */
         bool (FRIK_CALL*registerOpenModSettingButtonToMainConfig)(const OpenExternalModConfigData& data);
+
+        /**
+         * Enable/disable FRIK offhand weapon gripping for a specific tag.
+         * The tag must be unique per external system using this API.
+         * FRIK keeps only the blocked state, so gripping remains disabled while any tag is blocking it.
+         * @return true if successful.
+         */
+        bool (FRIK_CALL*blockOffHandWeaponGripping)(const char* tag, bool block);
 
         /**
          * Initialize the FRIK API object.

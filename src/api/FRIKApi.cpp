@@ -2,13 +2,23 @@
 #include "FRIKAPI.h"
 
 #include "FRIK.h"
+#include "common/CommonUtils.h"
 #include "f4vr/F4VRSkelly.h"
 #include "skeleton/HandPose.h"
+
+#include <string>
+#include <unordered_set>
 
 namespace
 {
     using namespace frik;
     using namespace frik::api;
+
+    /**
+     * Used to keep track of external tags blocking offhand gripping to prevent conflicts between client mods.
+     * The actual tag values are not relevant to FRIK, only the fact that there is at least one tag blocking it.
+     */
+    std::unordered_set<std::string> g_offHandGripBlockingTags;
 
     bool getIsLeftForHandEnum(const FRIKApi::Hand hand)
     {
@@ -62,6 +72,28 @@ namespace
         return g_frik.isOffHandGrippingWeapon();
     }
 
+    /**
+     * Enable/disable FRIK offhand weapon gripping for a specific external tag.
+     * Offhand gripping remains disabled while at least one tag is still blocking it.
+     */
+    bool FRIK_CALL blockOffHandWeaponGripping(const char* tag, const bool block)
+    {
+        if (!f4cf::common::hasNonWhitespaceText(tag)) {
+            return false;
+        }
+
+        const std::string normalizedTag = f4cf::common::trim(tag);
+        if (block) {
+            g_offHandGripBlockingTags.emplace(normalizedTag);
+        } else {
+            g_offHandGripBlockingTags.erase(normalizedTag);
+        }
+
+        logger::sample("API blockOffHandWeaponGripping tag:'{}' block:{} activeBlocks:{}", normalizedTag, block, g_offHandGripBlockingTags.size());
+        g_frik.setOffHandGrippingEnabled(g_offHandGripBlockingTags.empty());
+        return true;
+    }
+
     bool FRIK_CALL isWristPipboyOpen()
     {
         return g_frik.isPipboyOn();
@@ -74,13 +106,13 @@ namespace
 
     FRIKApi::HandPoseTagState FRIK_CALL getHandPoseSetTagState(const char* tag, const FRIKApi::Hand hand)
     {
-        // TODO: implement 
+        // TODO: implement
         return FRIKApi::HandPoseTagState::None;
     }
 
     FRIKApi::HandPoses FRIK_CALL getCurrentHandPose(const FRIKApi::Hand hand)
     {
-        // TODO: implement 
+        // TODO: implement
         return FRIKApi::HandPoses::Unset;
     }
 
@@ -157,7 +189,8 @@ namespace
         .clearHandPose = &clearHandPose,
         .setHandPoseFingerPositions = &setHandPoseFingerPositions,
         .clearHandPoseFingerPositions = &clearHandPoseFingerPositions,
-        .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig
+        .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig,
+        .blockOffHandWeaponGripping = &blockOffHandWeaponGripping
     };
 }
 
