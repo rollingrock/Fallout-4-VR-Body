@@ -1209,6 +1209,15 @@ namespace frik
             qo.fromMatrix(handClosed[bone].rotate);
             qo.slerp(std::clamp(handPapyrusPose[bone], -1.0f, 2.0f), qt);
             qt = qo;
+            // Apply splay (side-to-side) on proximal joint if set for this finger
+            if (bone.back() == '1') {
+                const auto splayIt = handSplayPose.find(bone);
+                if (splayIt != handSplayPose.end() && splayIt->second != 0.0f) {
+                    RE::NiMatrix3 wr = qt.getMatrix();
+                    wr = MatrixUtils::getMatrixFromEulerAngles(0, sign * splayIt->second, 0) * wr;
+                    qt.fromMatrix(wr);
+                }
+            }
         }
         // thumbUp pose
         else if (thumbUp && bone.find("Finger1") != std::string::npos) {

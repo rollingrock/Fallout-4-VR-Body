@@ -26,6 +26,7 @@ namespace frik
     std::map<std::string, int> boneToIndexMap;
 
     std::map<std::string, float> handPapyrusPose;
+    std::map<std::string, float> handSplayPose;
     std::map<std::string, bool> handPapyrusHasControl;
 
     static constexpr float HAND_FINGERS_HOLDING_GUN_POSE[] = { 0.7f, 0.4f, 0.5f, 0.9f, 0.6f, 0.5f, 0.3f, 0.5f, 0.5f, 0.1f, 0.5f, 0.5f, 0.0f, 0.5f, 0.7f };
@@ -280,6 +281,16 @@ namespace frik
         }
     }
 
+    void setFingerSplayScalar(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
+    {
+        const std::string prefix = isLeft ? "LArm" : "RArm";
+        handSplayPose[prefix + "_Finger11"] = thumb;
+        handSplayPose[prefix + "_Finger21"] = index;
+        handSplayPose[prefix + "_Finger31"] = middle;
+        handSplayPose[prefix + "_Finger41"] = ring;
+        handSplayPose[prefix + "_Finger51"] = pinky;
+    }
+
     void restoreFingerPoseControl(const bool isLeft)
     {
         logger::debug("Hand pose: Restore control for {} hand", isLeft ? "Left" : "Right");
@@ -287,6 +298,12 @@ namespace frik
         for (auto i = 0; i < FINGERS_COUNT; i++) {
             handPapyrusHasControl[fingersArray[i]] = false;
         }
+        const std::string prefix = isLeft ? "LArm" : "RArm";
+        handSplayPose.erase(prefix + "_Finger11");
+        handSplayPose.erase(prefix + "_Finger21");
+        handSplayPose.erase(prefix + "_Finger31");
+        handSplayPose.erase(prefix + "_Finger41");
+        handSplayPose.erase(prefix + "_Finger51");
     }
 
     void setPipboyHandPose()

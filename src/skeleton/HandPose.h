@@ -9,12 +9,14 @@ namespace frik
 
     extern std::map<std::string, float> handPapyrusPose;
     extern std::map<std::string, bool> handPapyrusHasControl;
+    extern std::map<std::string, float> handSplayPose;
 
     void initHandPoses(bool inPowerArmor);
 
     float getHandBonePose(const std::string& bone, const bool melee);
 
     void setFingerPositionScalar(bool isLeft, float thumb, float index, float middle, float ring, float pinky);
+    void setFingerSplayScalar(bool isLeft, float thumb, float index, float middle, float ring, float pinky);
     void restoreFingerPoseControl(bool isLeft);
 
     void setPipboyHandPose();
