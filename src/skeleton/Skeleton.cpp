@@ -74,13 +74,13 @@ namespace frik
 
         initSkeletonNodesDefaults();
 
-        _handBones = handOpen;
+        _handBones = HandPose::getOpenPoses();
 
         Skelly::initBoneTreeMap();
 
         setBodyLen();
 
-        initHandPoses(_inPowerArmor);
+        HandPose::initHandPoses(_inPowerArmor);
 
         _comfortSneakCameraOffsetAdjustment = getIniSetting("fComfortSneakHeight:VR")->GetFloat();
     }
@@ -1203,18 +1203,18 @@ namespace frik
         const float sign = isLeft ? -1.0f : 1.0f;
 
         // if a mod is using the papyrus interface to manually set finger poses
-        if (handPapyrusHasControl[bone]) {
-            qt.fromMatrix(handOpen[bone].rotate);
+        if (HandPose::hasPapyrusControl(bone)) {
+            qt.fromMatrix(HandPose::getOpenPose(bone).rotate);
             Quaternion qo;
-            qo.fromMatrix(handClosed[bone].rotate);
-            qo.slerp(std::clamp(handPapyrusPose[bone], -1.0f, 2.0f), qt);
+            qo.fromMatrix(HandPose::getClosedPose(bone).rotate);
+            qo.slerp(std::clamp(HandPose::getPapyrusPose(bone), -1.0f, 2.0f), qt);
             qt = qo;
             // Apply splay (side-to-side) on proximal joint if set for this finger
             if (bone.back() == '1') {
-                const auto splayIt = handSplayPose.find(bone);
-                if (splayIt != handSplayPose.end() && splayIt->second != 0.0f) {
+                const float splay = HandPose::getSplayPose(bone);
+                if (splay != 0.0f) {
                     RE::NiMatrix3 wr = qt.getMatrix();
-                    wr = MatrixUtils::getMatrixFromEulerAngles(0, sign * splayIt->second, 0) * wr;
+                    wr = MatrixUtils::getMatrixFromEulerAngles(0, sign * splay, 0) * wr;
                     qt.fromMatrix(wr);
                 }
             }
@@ -1222,21 +1222,21 @@ namespace frik
         // thumbUp pose
         else if (thumbUp && bone.find("Finger1") != std::string::npos) {
             if (bone.find("Finger11") != std::string::npos) {
-                RE::NiMatrix3 wr = handOpen[bone].rotate;
+                RE::NiMatrix3 wr = HandPose::getOpenPose(bone).rotate;
                 wr = MatrixUtils::getMatrixFromEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f) * wr;
                 qt.fromMatrix(wr);
             } else if (bone.find("Finger13") != std::string::npos) {
-                RE::NiMatrix3 wr = handOpen[bone].rotate;
+                RE::NiMatrix3 wr = HandPose::getOpenPose(bone).rotate;
                 wr = MatrixUtils::getMatrixFromEulerAngles(0, 0, MatrixUtils::degreesToRads(-35.0f)) * wr;
                 qt.fromMatrix(wr);
             }
         } else if (_closedHand[bone]) {
-            qt.fromMatrix(handClosed[bone].rotate);
+            qt.fromMatrix(HandPose::getClosedPose(bone).rotate);
         } else {
-            qt.fromMatrix(handOpen[bone].rotate);
+            qt.fromMatrix(HandPose::getOpenPose(bone).rotate);
             if (_handBonesButton.at(bone) == k_EButton_Grip) {
                 Quaternion qo;
-                qo.fromMatrix(handClosed[bone].rotate);
+                qo.fromMatrix(HandPose::getClosedPose(bone).rotate);
                 qo.slerp(1.0f - gripProx, qt);
                 qt = qo;
             }
@@ -1272,9 +1272,9 @@ namespace frik
     void Skeleton::setPredefinedHandPose(const std::string& bone)
     {
         Quaternion qo, qt;
-        qt.fromMatrix(handOpen[bone].rotate);
-        qo.fromMatrix(handClosed[bone].rotate);
-        qo.slerp(std::clamp(getHandBonePose(bone, g_frik.isMeleeWeaponDrawn()), -1.0f, 2.0f), qt);
+        qt.fromMatrix(HandPose::getOpenPose(bone).rotate);
+        qo.fromMatrix(HandPose::getClosedPose(bone).rotate);
+        qo.slerp(std::clamp(HandPose::getHandBonePose(bone, g_frik.isMeleeWeaponDrawn()), -1.0f, 2.0f), qt);
         _handBones[bone].rotate = qo.getMatrix();
     }
 
@@ -1314,7 +1314,7 @@ namespace frik
                 const RE::NiTransform trans = _handBones[name];
 
                 rt->transforms[pos].local.rotate = trans.rotate;
-                rt->transforms[pos].local.translate = handOpen[name.c_str()].translate;
+                rt->transforms[pos].local.translate = HandPose::getOpenPose(name).translate;
 
                 if (rt->transforms[pos].refNode) {
                     rt->transforms[pos].refNode->local = rt->transforms[pos].local;

@@ -41,7 +41,7 @@ namespace frik
                 PBConfigUI->local.scale = 0;
                 PBConfigUI->parent->DetachChild(PBConfigUI);
             }
-            disableConfigModePose();
+            HandPose::disableConfigModePose();
             _isPBConfigModeActive = false;
 
             // restore pipboy scale if it was changed
@@ -100,7 +100,7 @@ namespace frik
             _PBConfigModeEnterCounter = 0;
         }
         if (_isPBConfigModeActive) {
-            setConfigModeHandPose();
+            HandPose::setConfigModeHandPose();
 
             const auto finger = f4vr::Skelly::getBoneWorldTransform(f4vr::isLeftHandedMode() ? "RArm_Finger23" : "LArm_Finger23").translate;
             for (int i = 1; i <= 11; i++) {

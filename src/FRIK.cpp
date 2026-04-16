@@ -48,7 +48,7 @@ namespace frik
 
         virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override
         {
-            setForceHandPointingPose(primaryHand, toPoint);
+            HandPose::setForceHandPointingPose(primaryHand, toPoint);
         }
 
     private:
