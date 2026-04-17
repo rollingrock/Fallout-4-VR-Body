@@ -2,7 +2,6 @@
 
 #include <map>
 #include <string>
-#include <vector>
 
 #include "common/CommonUtils.h"
 
@@ -64,10 +63,6 @@ namespace frik
         RE::NiMatrix3 blendBoneRotation(const std::string& bone, float flex, float splay, bool isLeft) const;
 
         static void setHandPoseOverride(bool setActive, bool rightHand, const HandFingersPose& pose);
-
-        void initHandPoses(bool inPowerArmor);
-        static void copyDataIntoHand(const std::vector<std::vector<float>>& data, std::map<std::string, RE::NiTransform>& hand);
-        static void copyDataIntoHand(const std::vector<float>& fingerData, std::map<std::string, RE::NiTransform>& hand, const char* finger);
 
         std::map<std::string, RE::NiTransform> _handClosed;
         std::map<std::string, RE::NiTransform> _handOpen;

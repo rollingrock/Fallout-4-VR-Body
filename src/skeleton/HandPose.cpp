@@ -1,8 +1,8 @@
 #include "HandPose.h"
 
 #include <algorithm>
+#include <array>
 #include <map>
-#include <numbers>
 #include <string>
 
 #include "Config.h"
@@ -20,32 +20,12 @@ using namespace vrcf;
 
 namespace
 {
-    constexpr int FINGERS_COUNT = 15;
     constexpr int FINGER_COUNT = 5;
-
-    const std::string LEFT_HAND_FINGERS[] = {
-        "LArm_Finger11", "LArm_Finger12", "LArm_Finger13",
-        "LArm_Finger21", "LArm_Finger22", "LArm_Finger23",
-        "LArm_Finger31", "LArm_Finger32", "LArm_Finger33",
-        "LArm_Finger41", "LArm_Finger42", "LArm_Finger43",
-        "LArm_Finger51", "LArm_Finger52", "LArm_Finger53",
-    };
-    const std::string RIGHT_HAND_FINGERS[] = {
-        "RArm_Finger11", "RArm_Finger12", "RArm_Finger13",
-        "RArm_Finger21", "RArm_Finger22", "RArm_Finger23",
-        "RArm_Finger31", "RArm_Finger32", "RArm_Finger33",
-        "RArm_Finger41", "RArm_Finger42", "RArm_Finger43",
-        "RArm_Finger51", "RArm_Finger52", "RArm_Finger53",
-    };
+    constexpr int BONES_PER_FINGER = 3;
+    constexpr int HAND_BONES_PER_HAND = FINGER_COUNT * BONES_PER_FINGER;
+    constexpr int HAND_BONE_COUNT = HAND_BONES_PER_HAND * 2;
 
     // Proximal (knuckle/MCP) bone of each finger — used for splay
-    const std::string LEFT_PROXIMAL_BONES[] = {
-        "LArm_Finger11", "LArm_Finger21", "LArm_Finger31", "LArm_Finger41", "LArm_Finger51",
-    };
-    const std::string RIGHT_PROXIMAL_BONES[] = {
-        "RArm_Finger11", "RArm_Finger21", "RArm_Finger31", "RArm_Finger41", "RArm_Finger51",
-    };
-
     // Predefined hand poses (flex values: 0.0 = bent/closed, 1.0 = straight/open)
     // clang-format off
     static constexpr frik::HandFingersPose GUN_GRIP_POSE = {
@@ -84,6 +64,160 @@ namespace
         .pinky  = { .prox=0.5f, .mid=0.5f,  .dist=0.5f  },
     };
     // clang-format on
+
+    using RotationData = std::array<float, 12>;
+
+    struct HandBonePoseData
+    {
+        const char* boneName;
+        RotationData closedRotation;
+        RotationData openRotation;
+        RE::NiPoint3 openTranslation;
+        RE::NiPoint3 openTranslationInPowerArmor;
+    };
+
+    const std::array<HandBonePoseData, HAND_BONE_COUNT> HAND_BONE_DATA = { {
+        HandBonePoseData{ .boneName = "LArm_Finger11",
+                          .closedRotation = RotationData{ 0.8494F, -0.2706F, 0.4531F, 0.0000F, -0.3826F, 0.2755F, 0.8819F, 0.0000F, -0.3635F, -0.9224F, 0.1305F, 0.0000F },
+                          .openRotation = RotationData{ 0.6177F, -0.4004F, 0.6768F, 0.0000F, -0.6540F, 0.2164F, 0.7249F, 0.0000F, -0.4367F, -0.8904F, -0.1282F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(1.583F, -1.263F, 1.853F), .openTranslationInPowerArmor = RE::NiPoint3(3.993F, -4.156F, 3.586F) },
+        HandBonePoseData{ .boneName = "LArm_Finger12",
+                          .closedRotation = RotationData{ 0.6985F, -0.7139F, 0.0489F, 0.0000F, 0.7105F, 0.7001F, 0.0707F, 0.0000F, -0.0847F, -0.0146F, 0.9963F, 0.0000F },
+                          .openRotation = RotationData{ 0.8995F, -0.4343F, -0.0484F, 0.0000F, 0.4355F, 0.9000F, 0.0194F, 0.0000F, 0.0351F, -0.0385F, 0.9986F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(3.570F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(2.894F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "LArm_Finger13",
+                          .closedRotation = RotationData{ 0.1252F, -0.9921F, -0.0064F, 0.0000F, 0.9910F, 0.1253F, -0.0480F, 0.0000F, 0.0485F, -0.0004F, 0.9988F, 0.0000F },
+                          .openRotation = RotationData{ 0.9457F, -0.3218F, -0.0458F, 0.0000F, 0.3214F, 0.9468F, -0.0153F, 0.0000F, 0.0483F, -0.0003F, 0.9988F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(2.402F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(4.687F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "LArm_Finger21",
+                          .closedRotation = RotationData{ 0.0890F, -0.9952F, 0.0408F, 0.0000F, 0.9952F, 0.0906F, 0.0382F, 0.0000F, -0.0418F, 0.0372F, 0.9984F, 0.0000F },
+                          .openRotation = RotationData{ 0.9903F, -0.1148F, 0.0788F, 0.0000F, 0.1112F, 0.9926F, 0.0480F, 0.0000F, -0.0838F, -0.0388F, 0.9957F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(7.501F, 0.430F, 2.278F), .openTranslationInPowerArmor = RE::NiPoint3(8.475F, -2.161F, 3.790F) },
+        HandBonePoseData{ .boneName = "LArm_Finger22",
+                          .closedRotation = RotationData{ -0.4736F, -0.8807F, 0.0000F, 0.0000F, 0.8807F, -0.4736F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9583F, -0.2858F, 0.0000F, 0.0000F, 0.2858F, 0.9583F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(3.018F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(2.613F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "LArm_Finger23",
+                          .closedRotation = RotationData{ -0.1231F, -0.9924F, 0.0000F, 0.0000F, 0.9924F, -0.1231F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9924F, -0.1234F, 0.0000F, 0.0000F, 0.1234F, 0.9924F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(1.850F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(5.146F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "LArm_Finger31",
+                          .closedRotation = RotationData{ 0.1593F, -0.9829F, 0.0927F, 0.0000F, 0.9839F, 0.1504F, -0.0967F, 0.0000F, 0.0811F, 0.1066F, 0.9910F, 0.0000F },
+                          .openRotation = RotationData{ 0.9517F, -0.2761F, -0.1346F, 0.0000F, 0.2670F, 0.9602F, -0.0820F, 0.0000F, 0.1519F, 0.0421F, 0.9875F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(7.596F, 0.621F, 0.457F), .openTranslationInPowerArmor = RE::NiPoint3(8.152F, -2.577F, 1.100F) },
+        HandBonePoseData{ .boneName = "LArm_Finger32",
+                          .closedRotation = RotationData{ -0.4566F, -0.8897F, 0.0000F, 0.0000F, 0.8897F, -0.4566F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9025F, -0.4306F, -0.0002F, 0.0000F, 0.4306F, 0.9025F, 0.0007F, 0.0000F, -0.0002F, -0.0007F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(3.092F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(3.723F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "LArm_Finger33",
+                          .closedRotation = RotationData{ -0.0767F, -0.9971F, 0.0000F, 0.0000F, 0.9971F, -0.0767F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9531F, -0.3025F, 0.0001F, 0.0000F, 0.3025F, 0.9531F, -0.0007F, 0.0000F, 0.0001F, 0.0007F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(2.188F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(4.984F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "LArm_Finger41",
+                          .closedRotation = RotationData{ 0.1230F, -0.9783F, 0.1665F, 0.0000F, 0.9783F, 0.0914F, -0.1858F, 0.0000F, 0.1665F, 0.1858F, 0.9684F, 0.0000F },
+                          .openRotation = RotationData{ 0.9190F, -0.3923F, -0.0385F, 0.0000F, 0.3844F, 0.9136F, -0.1323F, 0.0000F, 0.0871F, 0.1068F, 0.9905F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(7.464F, 0.350F, -1.439F), .openTranslationInPowerArmor = RE::NiPoint3(7.968F, -2.259F, -1.337F) },
+        HandBonePoseData{ .boneName = "LArm_Finger42",
+                          .closedRotation = RotationData{ -0.3667F, -0.9303F, 0.0000F, 0.0000F, 0.9303F, -0.3667F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9270F, -0.3750F, 0.0000F, 0.0000F, 0.3750F, 0.9270F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(2.664F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(2.934F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "LArm_Finger43",
+                          .closedRotation = RotationData{ 0.3242F, -0.9460F, 0.0000F, 0.0000F, 0.9460F, 0.3242F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9850F, -0.1727F, 0.0000F, 0.0000F, 0.1727F, 0.9850F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(1.900F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(5.103F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "LArm_Finger51",
+                          .closedRotation = RotationData{ 0.2045F, -0.9360F, 0.2866F, 0.0000F, 0.9528F, 0.1232F, -0.2776F, 0.0000F, 0.2245F, 0.3299F, 0.9169F, 0.0000F },
+                          .openRotation = RotationData{ 0.8260F, -0.5570F, -0.0867F, 0.0000F, 0.5349F, 0.8230F, -0.1911F, 0.0000F, 0.1778F, 0.1115F, 0.9777F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(6.637F, -0.357F, -3.018F), .openTranslationInPowerArmor = RE::NiPoint3(8.365F, -2.603F, -3.706F) },
+        HandBonePoseData{ .boneName = "LArm_Finger52",
+                          .closedRotation = RotationData{ -0.1904F, -0.9817F, -0.0004F, 0.0000F, 0.9817F, -0.1904F, -0.0005F, 0.0000F, 0.0004F, -0.0005F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9360F, -0.3521F, 0.0000F, 0.0000F, 0.3521F, 0.9360F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(2.238F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(2.128F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "LArm_Finger53",
+                          .closedRotation = RotationData{ -0.1882F, -0.9821F, 0.0000F, 0.0000F, 0.9821F, -0.1882F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.8336F, -0.5523F, 0.0000F, 0.0000F, 0.5523F, 0.8336F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(1.666F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(4.594F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "RArm_Finger11",
+                          .closedRotation = RotationData{ 0.7521F, -0.2827F, -0.5954F, 0.0000F, -0.3977F, 0.5257F, -0.7520F, 0.0000F, 0.5256F, 0.8023F, 0.2829F, 0.0000F },
+                          .openRotation = RotationData{ 0.5849F, -0.4006F, -0.7053F, 0.0000F, -0.6564F, 0.2770F, -0.7017F, 0.0000F, 0.4765F, 0.8734F, -0.1009F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(1.583F, -1.263F, -1.853F), .openTranslationInPowerArmor = RE::NiPoint3(3.993F, -4.156F, -3.586F) },
+        HandBonePoseData{ .boneName = "RArm_Finger12",
+                          .closedRotation = RotationData{ 0.5562F, -0.8303F, -0.0356F, 0.0000F, 0.8267F, 0.5571F, -0.0784F, 0.0000F, 0.0850F, 0.0142F, 0.9963F, 0.0000F },
+                          .openRotation = RotationData{ 0.8122F, -0.5833F, 0.0000F, 0.0000F, 0.5833F, 0.8122F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(3.570F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(2.894F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "RArm_Finger13",
+                          .closedRotation = RotationData{ 0.6207F, -0.7834F, 0.0302F, 0.0000F, 0.7825F, 0.6215F, 0.0376F, 0.0000F, -0.0482F, 0.0003F, 0.9988F, 0.0000F },
+                          .openRotation = RotationData{ 0.9704F, -0.2414F, 0.0000F, 0.0000F, 0.2414F, 0.9704F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(2.402F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(4.687F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "RArm_Finger21",
+                          .closedRotation = RotationData{ 0.3870F, -0.9154F, -0.1113F, 0.0000F, 0.9177F, 0.3941F, -0.0504F, 0.0000F, 0.0900F, -0.0827F, 0.9925F, 0.0000F },
+                          .openRotation = RotationData{ 0.9693F, -0.2046F, -0.1361F, 0.0000F, 0.1955F, 0.9776F, -0.0775F, 0.0000F, 0.1489F, 0.0485F, 0.9877F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(7.501F, 0.430F, -2.278F), .openTranslationInPowerArmor = RE::NiPoint3(8.474F, -2.161F, -3.790F) },
+        HandBonePoseData{ .boneName = "RArm_Finger22",
+                          .closedRotation = RotationData{ -0.1520F, -0.9884F, 0.0000F, 0.0000F, 0.9884F, -0.1520F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9495F, -0.3138F, 0.0000F, 0.0000F, 0.3138F, 0.9495F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(3.018F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(2.613F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "RArm_Finger23",
+                          .closedRotation = RotationData{ 0.3976F, -0.9176F, 0.0000F, 0.0000F, 0.9176F, 0.3976F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9802F, -0.1980F, 0.0000F, 0.0000F, 0.1980F, 0.9802F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(1.850F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(5.145F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "RArm_Finger31",
+                          .closedRotation = RotationData{ 0.0767F, -0.9920F, -0.1002F, 0.0000F, 0.9968F, 0.0785F, -0.0147F, 0.0000F, 0.0224F, -0.0987F, 0.9949F, 0.0000F },
+                          .openRotation = RotationData{ 0.9542F, -0.2989F, 0.0125F, 0.0000F, 0.2978F, 0.9530F, 0.0557F, 0.0000F, -0.0285F, -0.0494F, 0.9984F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(7.596F, 0.621F, -0.457F), .openTranslationInPowerArmor = RE::NiPoint3(8.152F, -2.577F, -1.100F) },
+        HandBonePoseData{ .boneName = "RArm_Finger32",
+                          .closedRotation = RotationData{ -0.0684F, -0.9977F, 0.0000F, 0.0000F, 0.9977F, -0.0684F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9034F, -0.4287F, 0.0000F, 0.0000F, 0.4287F, 0.9034F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(3.092F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(3.723F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "RArm_Finger33",
+                          .closedRotation = RotationData{ -0.0501F, -0.9987F, 0.0000F, 0.0000F, 0.9987F, -0.0501F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9677F, -0.2521F, 0.0000F, 0.0000F, 0.2521F, 0.9677F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(2.188F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(4.974F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "RArm_Finger41",
+                          .closedRotation = RotationData{ 0.0682F, -0.9827F, -0.1722F, 0.0000F, 0.9977F, 0.0681F, 0.0069F, 0.0000F, 0.0049F, -0.1722F, 0.9850F, 0.0000F },
+                          .openRotation = RotationData{ 0.9263F, -0.3767F, -0.0028F, 0.0000F, 0.3722F, 0.9140F, 0.1615F, 0.0000F, -0.0583F, -0.1507F, 0.9869F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(7.464F, 0.350F, 1.439F), .openTranslationInPowerArmor = RE::NiPoint3(7.968F, -2.259F, 1.337F) },
+        HandBonePoseData{ .boneName = "RArm_Finger42",
+                          .closedRotation = RotationData{ 0.0935F, -0.9956F, 0.0000F, 0.0000F, 0.9956F, 0.0935F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9143F, -0.4049F, 0.0000F, 0.0000F, 0.4049F, 0.9143F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(2.664F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(2.934F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "RArm_Finger43",
+                          .closedRotation = RotationData{ -0.3352F, -0.9421F, 0.0000F, 0.0000F, 0.9421F, -0.3352F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9191F, -0.3939F, 0.0000F, 0.0000F, 0.3939F, 0.9191F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(1.900F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(5.102F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "RArm_Finger51",
+                          .closedRotation = RotationData{ 0.2571F, -0.9316F, -0.2571F, 0.0000F, 0.9560F, 0.2063F, 0.2086F, 0.0000F, -0.1413F, -0.2994F, 0.9436F, 0.0000F },
+                          .openRotation = RotationData{ 0.9216F, -0.3766F, 0.0934F, 0.0000F, 0.3460F, 0.9066F, 0.2416F, 0.0000F, -0.1757F, -0.1903F, 0.9659F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(6.637F, -0.357F, 3.018F), .openTranslationInPowerArmor = RE::NiPoint3(8.365F, -2.603F, 3.707F) },
+        HandBonePoseData{ .boneName = "RArm_Finger52",
+                          .closedRotation = RotationData{ -0.2120F, -0.9773F, -0.0004F, 0.0000F, 0.9773F, -0.2120F, -0.0005F, 0.0000F, 0.0004F, -0.0005F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.9571F, -0.2898F, 0.0000F, 0.0000F, 0.2898F, 0.9571F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(2.238F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(2.128F, 0.000F, 0.000F) },
+        HandBonePoseData{ .boneName = "RArm_Finger53",
+                          .closedRotation = RotationData{ -0.2765F, -0.9610F, 0.0000F, 0.0000F, 0.9610F, -0.2765F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openRotation = RotationData{ 0.7585F, -0.6517F, 0.0000F, 0.0000F, 0.6517F, 0.7585F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, 1.0000F, 0.0000F },
+                          .openTranslation = RE::NiPoint3(1.666F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(4.594F, 0.000F, 0.000F) },
+    } };
+
+    const char* getHandBoneName(const bool isLeft, const int handBoneIndex)
+    {
+        const int handOffset = isLeft ? 0 : HAND_BONES_PER_HAND;
+        return HAND_BONE_DATA[handOffset + handBoneIndex].boneName;
+    }
+
+    const char* getProximalBoneName(const bool isLeft, const int fingerIndex)
+    {
+        return getHandBoneName(isLeft, fingerIndex * BONES_PER_FINGER);
+    }
+
+    void copyRotationIntoTransform(const RotationData& rotationData, RE::NiTransform& transform)
+    {
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 4; col++) {
+                transform.rotate.entry[row][col] = rotationData[row * 4 + col];
+            }
+        }
+    }
 
     int boneToFingerIndex(const std::string& bone)
     {
@@ -135,7 +269,16 @@ namespace frik
 
     HandPose::HandPose(const bool inPowerArmor)
     {
-        initHandPoses(inPowerArmor);
+        _handClosed.clear();
+        _handOpen.clear();
+        _handBones.clear();
+
+        for (const auto& boneData : HAND_BONE_DATA) {
+            copyRotationIntoTransform(boneData.closedRotation, _handClosed[boneData.boneName]);
+            copyRotationIntoTransform(boneData.openRotation, _handOpen[boneData.boneName]);
+            _handOpen[boneData.boneName].translate = inPowerArmor ? boneData.openTranslationInPowerArmor : boneData.openTranslation;
+        }
+
         _handBones = _handOpen;
     }
 
@@ -150,32 +293,29 @@ namespace frik
             .ring = { .prox = ring, .mid = ring, .dist = ring },
             .pinky = { .prox = pinky, .mid = pinky, .dist = pinky },
         };
-        const auto* const fingers = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
-        for (auto i = 0; i < FINGERS_COUNT; i++) {
-            _handPapyrusHasControl[fingers[i]] = true;
-            _handPapyrusPose[fingers[i]] = pose.getFlexAt(i);
+        for (auto i = 0; i < HAND_BONES_PER_HAND; i++) {
+            const auto* const finger = getHandBoneName(isLeft, i);
+            _handPapyrusHasControl[finger] = true;
+            _handPapyrusPose[finger] = pose.getFlexAt(i);
         }
     }
 
     void HandPose::setFingerSplayScalar(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
-        const auto* const proximal = isLeft ? LEFT_PROXIMAL_BONES : RIGHT_PROXIMAL_BONES;
         const float values[FINGER_COUNT] = { thumb, index, middle, ring, pinky };
         for (auto i = 0; i < FINGER_COUNT; i++) {
-            _handSplayPose[proximal[i]] = values[i];
+            _handSplayPose[getProximalBoneName(isLeft, i)] = values[i];
         }
     }
 
     void HandPose::restoreFingerPoseControl(const bool isLeft)
     {
         logger::debug("Hand pose: Restore control for {} hand", isLeft ? "Left" : "Right");
-        const auto* const fingers = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
-        for (auto i = 0; i < FINGERS_COUNT; i++) {
-            _handPapyrusHasControl[fingers[i]] = false;
+        for (auto i = 0; i < HAND_BONES_PER_HAND; i++) {
+            _handPapyrusHasControl[getHandBoneName(isLeft, i)] = false;
         }
-        const auto* const proximal = isLeft ? LEFT_PROXIMAL_BONES : RIGHT_PROXIMAL_BONES;
         for (auto i = 0; i < FINGER_COUNT; i++) {
-            _handSplayPose.erase(proximal[i]);
+            _handSplayPose.erase(getProximalBoneName(isLeft, i));
         }
     }
 
@@ -307,11 +447,9 @@ namespace frik
         const auto fpTree = getFirstPersonBoneTree();
         const int pos = fpTree->GetBoneIndex(bone);
         if (pos >= 0) {
-            if (fpTree->transforms[pos].refNode) {
-                _handBones[bone] = fpTree->transforms[pos].refNode->local;
-            } else {
-                _handBones[bone] = fpTree->transforms[pos].local;
-            }
+            _handBones[bone] = fpTree->transforms[pos].refNode
+                ? fpTree->transforms[pos].refNode->local
+                : fpTree->transforms[pos].local;
         }
     }
 
@@ -381,201 +519,11 @@ namespace frik
         }
         logger::debug("Hand pose: Set force hand pose for '{}' hand: {})", rightHand ? "Right" : "Left", setActive ? "Set" : "Release");
         poseSet = setActive;
-        const auto* const fingers = rightHand ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
-        for (auto i = 0; i < FINGERS_COUNT; i++) {
-            _handPapyrusHasControl[fingers[i]] = setActive;
-            _handPapyrusPose[fingers[i]] = pose.getFlexAt(i);
-        }
-    }
-
-    void HandPose::initHandPoses(const bool inPowerArmor)
-    {
-        _handClosed.clear();
-        _handOpen.clear();
-        _handBones.clear();
-
-        std::vector<std::vector<float>> data;
-
-        // pulled from the game engine while running idle animations
-
-        // closed fist
-        data.push_back({ 0.849409F, -0.270577F, 0.453092F, 0, -0.382631F, 0.275533F, 0.881859F, 0, -0.363453F, -0.922426F, 0.130509F, 0 });
-        data.push_back({ 0.698533F, -0.713903F, 0.048938F, 0, 0.710545F, 0.700093F, 0.070685F, 0, -0.084723F, -0.014603F, 0.996297F, 0 });
-        data.push_back({ 0.125157F, -0.992116F, -0.006447F, 0, 0.990953F, 0.125323F, -0.048036F, 0, 0.048466F, -0.000376F, 0.998825F, 0 });
-        data.push_back({ 0.088989F, -0.995196F, 0.04083F, 0, 0.995157F, 0.090554F, 0.038248F, 0, -0.041762F, 0.037228F, 0.998434F, 0 });
-        data.push_back({ -0.473616F, -0.880732F, 0, 0, 0.880732F, -0.473616F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ -0.123119F, -0.992392F, 0, 0, 0.992392F, -0.123119F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.159314F, -0.982871F, 0.09265F, 0, 0.983889F, 0.150362F, -0.096712F, 0, 0.081124F, 0.106565F, 0.990991F, 0 });
-        data.push_back({ -0.45663F, -0.889657F, 0, 0, 0.889657F, -0.45663F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ -0.076698F, -0.997054F, 0, 0, 0.997054F, -0.076698F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.123006F, -0.978335F, 0.166524F, 0, 0.978335F, 0.091386F, -0.185766F, 0, 0.166524F, 0.185766F, 0.96838F, 0 });
-        data.push_back({ -0.366717F, -0.930333F, 0, 0, 0.930333F, -0.366717F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.324171F, -0.945999F, 0, 0, 0.945999F, 0.324171F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.204525F, -0.935955F, 0.286631F, 0, 0.952761F, 0.123178F, -0.277623F, 0, 0.224536F, 0.329871F, 0.916934F, 0 });
-        data.push_back({ -0.190355F, -0.981715F, -0.00044F, 0, 0.981715F, -0.190355F, -0.000533F, 0, 0.00044F, -0.000533F, 1, 0 });
-        data.push_back({ -0.188246F, -0.982122F, 0, 0, 0.982122F, -0.188246F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.752071F, -0.282712F, -0.595368F, 0, -0.397682F, 0.525706F, -0.751986F, 0, 0.525584F, 0.802314F, 0.282939F, 0 });
-        data.push_back({ 0.556184F, -0.830294F, -0.035639F, 0, 0.826703F, 0.557145F, -0.078435F, 0, 0.084981F, 0.014162F, 0.996282F, 0 });
-        data.push_back({ 0.620726F, -0.783447F, 0.030166F, 0, 0.782545F, 0.621458F, 0.037589F, 0, -0.048196F, 0.000274F, 0.998838F, 0 });
-        data.push_back({ 0.38695F, -0.915355F, -0.111332F, 0, 0.917694F, 0.394073F, -0.050434F, 0, 0.090038F, -0.082654F, 0.992503F, 0 });
-        data.push_back({ -0.152033F, -0.988376F, 0, 0, 0.988376F, -0.152033F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.397566F, -0.917574F, 0, 0, 0.917574F, 0.397566F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.076671F, -0.99201F, -0.100188F, 0, 0.996805F, 0.078521F, -0.014653F, 0, 0.022403F, -0.098745F, 0.994861F, 0 });
-        data.push_back({ -0.068391F, -0.997659F, 0, 0, 0.997659F, -0.068391F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ -0.050058F, -0.998746F, 0, 0, 0.998746F, -0.050058F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.068248F, -0.982702F, -0.172158F, 0, 0.997656F, 0.068079F, 0.006893F, 0, 0.004947F, -0.172225F, 0.985045F, 0 });
-        data.push_back({ 0.093539F, -0.995616F, 0, 0, 0.995616F, 0.093539F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ -0.33522F, -0.94214F, 0, 0, 0.94214F, -0.33522F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.257096F, -0.93156F, -0.257096F, 0, 0.955995F, 0.206258F, 0.208641F, 0, -0.141334F, -0.299423F, 0.943595F, 0 });
-        data.push_back({ -0.21201F, -0.977267F, -0.000434F, 0, 0.977267F, -0.21201F, -0.000538F, 0, 0.000434F, -0.000538F, 1, 0 });
-        data.push_back({ -0.276492F, -0.961017F, 0, 0, 0.961017F, -0.276492F, 0, 0, 0, 0, 1, 0 });
-
-        copyDataIntoHand(data, _handClosed);
-
-        data.clear();
-
-        // open hand
-        data.push_back({ 0.617716F, -0.400404F, 0.676834F, 0, -0.65398F, 0.216427F, 0.724893F, 0, -0.436735F, -0.890414F, -0.128165F, 0 });
-        data.push_back({ 0.899514F, -std::numbers::log10e_v<float>, -0.048362F, 0, 0.435479F, 0.89999F, 0.019389F, 0, 0.035107F, -0.038501F, 0.998642F, 0 });
-        data.push_back({ 0.945701F, -0.321798F, -0.045777F, 0, 0.321435F, 0.946808F, -0.015267F, 0, 0.048255F, -0.000276F, 0.998835F, 0 });
-        data.push_back({ 0.990258F, -0.114774F, 0.078839F, 0, 0.111225F, 0.992634F, 0.048027F, 0, -0.08377F, -0.03879F, 0.99573F, 0 });
-        data.push_back({ 0.958294F, -0.285783F, 0, 0, 0.285783F, 0.958294F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.992354F, -0.123425F, 0, 0, 0.123425F, 0.992354F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.951661F, -0.27608F, -0.134618F, 0, 0.266956F, 0.960211F, -0.082032F, 0, 0.151909F, 0.04213F, 0.987496F, 0 });
-        data.push_back({ 0.902528F, -0.430632F, -0.000153F, 0, 0.430632F, 0.902527F, 0.000674F, 0, -0.000153F, -0.000674F, 1, 0 });
-        data.push_back({ 0.953147F, -0.302508F, 0.000106F, 0, 0.302508F, 0.953147F, -0.000683F, 0, 0.000106F, 0.000683F, 1, 0 });
-        data.push_back({ 0.919043F, -0.392269F, -0.038525F, 0, 0.384414F, 0.913631F, -0.132302F, 0, 0.087095F, 0.106782F, 0.990461F, 0 });
-        data.push_back({ 0.927023F, -0.375003F, 0, 0, 0.375003F, 0.927023F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.984968F, -0.172734F, 0, 0, 0.172734F, 0.984968F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.825976F, -0.557004F, -0.086665F, 0, 0.534941F, 0.822993F, -0.191102F, 0, 0.17777F, 0.111485F, 0.977737F, 0 });
-        data.push_back({ 0.935958F, -0.352111F, 0, 0, 0.352111F, 0.935958F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.833619F, -0.552339F, 0, 0, 0.552339F, 0.833619F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.584889F, -0.400611F, -0.705277F, 0, -0.656401F, 0.277021F, -0.70171F, 0, 0.47649F, 0.873367F, -0.100935F, 0 });
-        data.push_back({ 0.812239F, -0.583324F, 0, 0, 0.583324F, 0.812239F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.970436F, -0.241361F, 0, 0, 0.241361F, 0.970436F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.969328F, -0.20464F, -0.136108F, 0, 0.195507F, 0.977633F, -0.077531F, 0, 0.148929F, 0.048543F, 0.987656F, 0 });
-        data.push_back({ 0.949484F, -0.313814F, 0, 0, 0.313814F, 0.949484F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.980211F, -0.197957F, 0, 0, 0.197957F, 0.980211F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.954206F, -0.298892F, 0.01245F, 0, 0.29779F, 0.953005F, 0.055697F, 0, -0.028512F, -0.049439F, 0.99837F, 0 });
-        data.push_back({ 0.903441F, -0.428712F, 0, 0, 0.428712F, 0.903441F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.967689F, -0.252149F, 0, 0, 0.252149F, 0.967689F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.926338F, -0.376682F, -0.002837F, 0, 0.37216F, 0.914003F, 0.161543F, 0, -0.058257F, -0.1507F, 0.986862F, 0 });
-        data.push_back({ 0.914348F, -0.40493F, 0, 0, 0.40493F, 0.914348F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.919149F, -0.39391F, 0, 0, 0.39391F, 0.919149F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.921646F, -0.376617F, 0.09343F, 0, 0.345979F, 0.906603F, 0.241599F, 0, -0.175694F, -0.190344F, 0.965868F, 0 });
-        data.push_back({ 0.957083F, -0.289814F, 0, 0, 0.289814F, 0.957083F, 0, 0, 0, 0, 1, 0 });
-        data.push_back({ 0.758452F, -0.651728F, 0, 0, 0.651728F, 0.758452F, 0, 0, 0, 0, 1, 0 });
-
-        copyDataIntoHand(data, _handOpen);
-
-        if (inPowerArmor) {
-            _handOpen["LArm_Finger11"].translate = RE::NiPoint3(3.993323F, -4.156268F, 3.585619F);
-            _handOpen["LArm_Finger12"].translate = RE::NiPoint3(2.893830F, 0.000042F, 0.000004F);
-            _handOpen["LArm_Finger13"].translate = RE::NiPoint3(4.687409F, 0, 0);
-            _handOpen["LArm_Finger21"].translate = RE::NiPoint3(8.474635F, -2.161191F, 3.789806F);
-            _handOpen["LArm_Finger22"].translate = RE::NiPoint3(2.613208F, 0.000026F, 0.000011F);
-            _handOpen["LArm_Finger23"].translate = RE::NiPoint3(5.145684F, 0, 0);
-            _handOpen["LArm_Finger31"].translate = RE::NiPoint3(8.151892F, -2.576661F, 1.100114F);
-            _handOpen["LArm_Finger32"].translate = RE::NiPoint3(3.722714F, 0.000021F, -0.000004F);
-            _handOpen["LArm_Finger33"].translate = RE::NiPoint3(4.984375F, 0, 0);
-            _handOpen["LArm_Finger41"].translate = RE::NiPoint3(7.967844F, -2.258833F, -1.337387F);
-            _handOpen["LArm_Finger42"].translate = RE::NiPoint3(2.933939F, 0.000027F, 0.000004F);
-            _handOpen["LArm_Finger43"].translate = RE::NiPoint3(5.102559F, 0, 0);
-            _handOpen["LArm_Finger51"].translate = RE::NiPoint3(8.365221F, -2.603350F, -3.706458F);
-            _handOpen["LArm_Finger52"].translate = RE::NiPoint3(2.128304F, 0.000018F, 0.000003F);
-            _handOpen["LArm_Finger53"].translate = RE::NiPoint3(4.594295F, 0, 0);
-            _handOpen["RArm_Finger11"].translate = RE::NiPoint3(3.993090F, -4.156340F, -3.585553F);
-            _handOpen["RArm_Finger12"].translate = RE::NiPoint3(2.893783F, 0.000042F, 0.000004F);
-            _handOpen["RArm_Finger13"].translate = RE::NiPoint3(4.686954F, 0, 0);
-            _handOpen["RArm_Finger21"].translate = RE::NiPoint3(8.474229F, -2.161169F, -3.789712F);
-            _handOpen["RArm_Finger22"].translate = RE::NiPoint3(2.613165F, 0.000026F, 0.000011F);
-            _handOpen["RArm_Finger23"].translate = RE::NiPoint3(5.145271F, 0, 0);
-            _handOpen["RArm_Finger31"].translate = RE::NiPoint3(8.151529F, -2.576689F, -1.100008F);
-            _handOpen["RArm_Finger32"].translate = RE::NiPoint3(3.722677F, 0.000021F, -0.000004F);
-            _handOpen["RArm_Finger33"].translate = RE::NiPoint3(4.973974F, 0, 0);
-            _handOpen["RArm_Finger41"].translate = RE::NiPoint3(7.967505F, -2.258873F, 1.337498F);
-            _handOpen["RArm_Finger42"].translate = RE::NiPoint3(2.933841F, 0.000027F, 0.000004F);
-            _handOpen["RArm_Finger43"].translate = RE::NiPoint3(5.102017F, 0, 0);
-            _handOpen["RArm_Finger51"].translate = RE::NiPoint3(8.364894F, -2.603419F, 3.706582F);
-            _handOpen["RArm_Finger52"].translate = RE::NiPoint3(2.128275F, 0.000018F, 0.000003F);
-            _handOpen["RArm_Finger53"].translate = RE::NiPoint3(4.593989F, 0, 0);
-        } else {
-            _handOpen["LArm_Finger11"].translate = RE::NiPoint3(1.582972F, -1.262648F, 1.853201F);
-            _handOpen["LArm_Finger12"].translate = RE::NiPoint3(3.569515F, 0.000042F, 0.000004F);
-            _handOpen["LArm_Finger13"].translate = RE::NiPoint3(2.401824F, 0, 0);
-            _handOpen["LArm_Finger21"].translate = RE::NiPoint3(7.501364F, 0.430291F, 2.277657F);
-            _handOpen["LArm_Finger22"].translate = RE::NiPoint3(3.018186F, 0.000026F, 0.000011F);
-            _handOpen["LArm_Finger23"].translate = RE::NiPoint3(1.850236F, 0, 0);
-            _handOpen["LArm_Finger31"].translate = RE::NiPoint3(7.595781F, 0.62098F, 0.457392F);
-            _handOpen["LArm_Finger32"].translate = RE::NiPoint3(3.091653F, 0.000021F, -0.000004F);
-            _handOpen["LArm_Finger33"].translate = RE::NiPoint3(2.187974F, 0, 0);
-            _handOpen["LArm_Finger41"].translate = RE::NiPoint3(7.464033F, 0.350152F, -1.438817F);
-            _handOpen["LArm_Finger42"].translate = RE::NiPoint3(2.664419F, 0.000027F, 0.000004F);
-            _handOpen["LArm_Finger43"].translate = RE::NiPoint3(1.89974F, 0, 0);
-            _handOpen["LArm_Finger51"].translate = RE::NiPoint3(6.637259F, -0.35742F, -3.01848F);
-            _handOpen["LArm_Finger52"].translate = RE::NiPoint3(2.238261F, 0.000018F, 0.000003F);
-            _handOpen["LArm_Finger53"].translate = RE::NiPoint3(1.665912F, 0, 0);
-            _handOpen["RArm_Finger11"].translate = RE::NiPoint3(1.582972F, -1.262648F, -1.853201F);
-            _handOpen["RArm_Finger12"].translate = RE::NiPoint3(3.569515F, 0.000042F, 0.000004F);
-            _handOpen["RArm_Finger13"].translate = RE::NiPoint3(2.401824F, 0, 0);
-            _handOpen["RArm_Finger21"].translate = RE::NiPoint3(7.501364F, 0.430291F, -2.277657F);
-            _handOpen["RArm_Finger22"].translate = RE::NiPoint3(3.018186F, 0.000026F, 0.000011F);
-            _handOpen["RArm_Finger23"].translate = RE::NiPoint3(1.850236F, 0, 0);
-            _handOpen["RArm_Finger31"].translate = RE::NiPoint3(7.595781F, 0.62098F, -0.457392F);
-            _handOpen["RArm_Finger32"].translate = RE::NiPoint3(3.091653F, 0.000021F, -0.000004F);
-            _handOpen["RArm_Finger33"].translate = RE::NiPoint3(2.187974F, 0, 0);
-            _handOpen["RArm_Finger41"].translate = RE::NiPoint3(7.464033F, 0.350152F, 1.438817F);
-            _handOpen["RArm_Finger42"].translate = RE::NiPoint3(2.664419F, 0.000027F, 0.000004F);
-            _handOpen["RArm_Finger43"].translate = RE::NiPoint3(1.89974F, 0, 0);
-            _handOpen["RArm_Finger51"].translate = RE::NiPoint3(6.637259F, -0.35742F, 3.01848F);
-            _handOpen["RArm_Finger52"].translate = RE::NiPoint3(2.238261F, 0.000018F, 0.000003F);
-            _handOpen["RArm_Finger53"].translate = RE::NiPoint3(1.665912F, 0, 0);
-        }
-    }
-
-    void HandPose::copyDataIntoHand(const std::vector<std::vector<float>>& data, std::map<std::string, RE::NiTransform>& hand)
-    {
-        // Left hand fingers
-        copyDataIntoHand(data[0], hand, "LArm_Finger11");
-        copyDataIntoHand(data[1], hand, "LArm_Finger12");
-        copyDataIntoHand(data[2], hand, "LArm_Finger13");
-        copyDataIntoHand(data[3], hand, "LArm_Finger21");
-        copyDataIntoHand(data[4], hand, "LArm_Finger22");
-        copyDataIntoHand(data[5], hand, "LArm_Finger23");
-        copyDataIntoHand(data[6], hand, "LArm_Finger31");
-        copyDataIntoHand(data[7], hand, "LArm_Finger32");
-        copyDataIntoHand(data[8], hand, "LArm_Finger33");
-        copyDataIntoHand(data[9], hand, "LArm_Finger41");
-        copyDataIntoHand(data[10], hand, "LArm_Finger42");
-        copyDataIntoHand(data[11], hand, "LArm_Finger43");
-        copyDataIntoHand(data[12], hand, "LArm_Finger51");
-        copyDataIntoHand(data[13], hand, "LArm_Finger52");
-        copyDataIntoHand(data[14], hand, "LArm_Finger53");
-
-        // Right hand fingers
-        copyDataIntoHand(data[15], hand, "RArm_Finger11");
-        copyDataIntoHand(data[16], hand, "RArm_Finger12");
-        copyDataIntoHand(data[17], hand, "RArm_Finger13");
-        copyDataIntoHand(data[18], hand, "RArm_Finger21");
-        copyDataIntoHand(data[19], hand, "RArm_Finger22");
-        copyDataIntoHand(data[20], hand, "RArm_Finger23");
-        copyDataIntoHand(data[21], hand, "RArm_Finger31");
-        copyDataIntoHand(data[22], hand, "RArm_Finger32");
-        copyDataIntoHand(data[23], hand, "RArm_Finger33");
-        copyDataIntoHand(data[24], hand, "RArm_Finger41");
-        copyDataIntoHand(data[25], hand, "RArm_Finger42");
-        copyDataIntoHand(data[26], hand, "RArm_Finger43");
-        copyDataIntoHand(data[27], hand, "RArm_Finger51");
-        copyDataIntoHand(data[28], hand, "RArm_Finger52");
-        copyDataIntoHand(data[29], hand, "RArm_Finger53");
-    }
-
-    void HandPose::copyDataIntoHand(const std::vector<float>& fingerData, std::map<std::string, RE::NiTransform>& hand, const char* finger)
-    {
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 4; col++) {
-                hand[finger].rotate.entry[row][col] = fingerData[row * 4 + col];
-            }
+        const bool isLeft = !rightHand;
+        for (auto i = 0; i < HAND_BONES_PER_HAND; i++) {
+            const auto* const finger = getHandBoneName(isLeft, i);
+            _handPapyrusHasControl[finger] = setActive;
+            _handPapyrusPose[finger] = pose.getFlexAt(i);
         }
     }
 }
