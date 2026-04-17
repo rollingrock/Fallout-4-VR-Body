@@ -1,28 +1,36 @@
 #include "HandPose.h"
+
+#include <algorithm>
 #include <map>
 #include <numbers>
 #include <string>
+
 #include "Config.h"
+#include "FRIK.h"
+#include "common/MatrixUtils.h"
 #include "common/Quaternion.h"
+#include "f4vr/BSFlattenedBoneTree.h"
+#include "f4vr/F4VRSkelly.h"
+#include "f4vr/F4VRUtils.h"
+#include "vrcf/VRControllersManager.h"
 
 using namespace common;
+using namespace f4vr;
+using namespace vrcf;
 
-// TODO: this code is terrible, primarily it doesn't handle multiple code paths set hand pose, release will release all of them
-namespace frik
+namespace
 {
-    // -- File-private constants ------------------------------------------------------
-
     constexpr int FINGERS_COUNT = 15;
     constexpr int FINGER_COUNT = 5;
 
-    static const std::string LEFT_HAND_FINGERS[] = {
+    const std::string LEFT_HAND_FINGERS[] = {
         "LArm_Finger11", "LArm_Finger12", "LArm_Finger13",
         "LArm_Finger21", "LArm_Finger22", "LArm_Finger23",
         "LArm_Finger31", "LArm_Finger32", "LArm_Finger33",
         "LArm_Finger41", "LArm_Finger42", "LArm_Finger43",
         "LArm_Finger51", "LArm_Finger52", "LArm_Finger53",
     };
-    static const std::string RIGHT_HAND_FINGERS[] = {
+    const std::string RIGHT_HAND_FINGERS[] = {
         "RArm_Finger11", "RArm_Finger12", "RArm_Finger13",
         "RArm_Finger21", "RArm_Finger22", "RArm_Finger23",
         "RArm_Finger31", "RArm_Finger32", "RArm_Finger33",
@@ -31,52 +39,73 @@ namespace frik
     };
 
     // Proximal (knuckle/MCP) bone of each finger — used for splay
-    static const std::string LEFT_PROXIMAL_BONES[] = {
+    const std::string LEFT_PROXIMAL_BONES[] = {
         "LArm_Finger11", "LArm_Finger21", "LArm_Finger31", "LArm_Finger41", "LArm_Finger51",
     };
-    static const std::string RIGHT_PROXIMAL_BONES[] = {
+    const std::string RIGHT_PROXIMAL_BONES[] = {
         "RArm_Finger11", "RArm_Finger21", "RArm_Finger31", "RArm_Finger41", "RArm_Finger51",
     };
 
     // Predefined hand poses (flex values: 0.0 = bent/closed, 1.0 = straight/open)
     // clang-format off
-    static constexpr HandFingersPose GUN_GRIP_POSE = {
-        .thumb  = { 0.7f, 0.4f, 0.5f },
-        .index  = { 0.9f, 0.6f, 0.5f },
-        .middle = { 0.3f, 0.5f, 0.5f },
-        .ring   = { 0.1f, 0.5f, 0.5f },
-        .pinky  = { 0.0f, 0.5f, 0.7f },
+    static constexpr frik::HandFingersPose GUN_GRIP_POSE = {
+        .thumb  = { .prox=0.7f, .mid=0.4f, .dist=0.5f },
+        .index  = { .prox=0.9f, .mid=0.6f, .dist=0.5f },
+        .middle = { .prox=0.3f, .mid=0.5f, .dist=0.5f },
+        .ring   = { .prox=0.1f, .mid=0.5f, .dist=0.5f },
+        .pinky  = { .prox=0.0f, .mid=0.5f, .dist=0.7f },
     };
-    static constexpr HandFingersPose MELEE_GRIP_POSE = {
-        .thumb  = { 0.7f, 0.5f, 0.8f },
-        .index  = { 0.4f, 0.3f, 0.9f },
-        .middle = { 0.1f, 0.5f, 0.9f },
-        .ring   = { 0.0f, 0.5f, 0.9f },
-        .pinky  = { 0.0f, 0.4f, 0.9f },
+    static constexpr frik::HandFingersPose MELEE_GRIP_POSE = {
+        .thumb  = { .prox=0.7f, .mid=0.5f, .dist=0.8f },
+        .index  = { .prox=0.4f, .mid=0.3f, .dist=0.9f },
+        .middle = { .prox=0.1f, .mid=0.5f, .dist=0.9f },
+        .ring   = { .prox=0.0f, .mid=0.5f, .dist=0.9f },
+        .pinky  = { .prox=0.0f, .mid=0.4f, .dist=0.9f },
     };
-    static constexpr HandFingersPose POINTING_POSE = {
-        .thumb  = { 0.0f, 0.0f, 0.0f },
-        .index  = { 1.0f, 1.0f, 1.0f },
-        .middle = { 0.0f, 0.0f, 0.0f },
-        .ring   = { 0.0f, 0.0f, 0.0f },
-        .pinky  = { 0.0f, 0.0f, 0.0f },
+    static constexpr frik::HandFingersPose POINTING_POSE = {
+        .thumb  = { .prox=0.0f, .mid=0.0f, .dist=0.0f },
+        .index  = { .prox=1.0f, .mid=1.0f, .dist=1.0f },
+        .middle = { .prox=0.0f, .mid=0.0f, .dist=0.0f },
+        .ring   = { .prox=0.0f, .mid=0.0f, .dist=0.0f },
+        .pinky  = { .prox=0.0f, .mid=0.0f, .dist=0.0f },
     };
-    static constexpr HandFingersPose ATTABOY_POSE = {
-        .thumb  = { 0.7f, 1.2f, 1.3f },
-        .index  = { 1.1f, 1.1f, 1.2f },
-        .middle = { 0.8f, 0.6f, 1.0f },
-        .ring   = { 0.4f, 0.8f, 1.0f },
-        .pinky  = { 0.1f, 1.0f, 1.4f },
+    static constexpr frik::HandFingersPose ATTABOY_POSE = {
+        .thumb  = { .prox=0.7f, .mid=1.2f, .dist=1.3f },
+        .index  = { .prox=1.1f, .mid=1.1f, .dist=1.2f },
+        .middle = { .prox=0.8f, .mid=0.6f, .dist=1.0f },
+        .ring   = { .prox=0.4f, .mid=0.8f, .dist=1.0f },
+        .pinky  = { .prox=0.1f, .mid=1.0f, .dist=1.4f },
     };
-    static constexpr HandFingersPose OFFHAND_GRIP_POSE = {
-        .thumb  = { 1.0f, 1.0f,  0.9f  },
-        .index  = { 0.6f, 0.6f,  0.6f  },
-        .middle = { 0.5f, 0.6f,  0.55f },
-        .ring   = { 0.5f, 0.5f,  0.5f  },
-        .pinky  = { 0.5f, 0.5f,  0.5f  },
+    static constexpr frik::HandFingersPose OFFHAND_GRIP_POSE = {
+        .thumb  = { .prox=1.0f, .mid=1.0f,  .dist=0.9f  },
+        .index  = { .prox=0.6f, .mid=0.6f,  .dist=0.6f  },
+        .middle = { .prox=0.5f, .mid=0.6f,  .dist=0.55f },
+        .ring   = { .prox=0.5f, .mid=0.5f,  .dist=0.5f  },
+        .pinky  = { .prox=0.5f, .mid=0.5f,  .dist=0.5f  },
     };
     // clang-format on
 
+    int boneToFingerIndex(const std::string& bone)
+    {
+        return bone[bone.size() - 2] - '1';
+    }
+
+    VRButtonId getTrackedButton(const std::string& bone)
+    {
+        switch (boneToFingerIndex(bone)) {
+        case 0:
+            return k_EButton_SteamVR_Touchpad;
+        case 1:
+            return k_EButton_SteamVR_Trigger;
+        default:
+            return k_EButton_Grip;
+        }
+    }
+}
+
+// TODO: this code is terrible, primarily it doesn't handle multiple code paths set hand pose, release will release all of them
+namespace frik
+{
     // -- HandFingersPose ----------------------------------------------------------------
 
     // Get flex by flat bone index (0-14):
@@ -104,8 +133,267 @@ namespace frik
 
     // -- Lifecycle ----------------------------------------------------------------------
 
+    HandPose::HandPose(const bool inPowerArmor)
+    {
+        initHandPoses(inPowerArmor);
+        _handBones = _handOpen;
+    }
+
+    // -- Papyrus / API-driven pose overrides --------------------------------------------
+
+    void HandPose::setFingerPositionScalar(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
+    {
+        const HandFingersPose pose = {
+            .thumb = { .prox = thumb, .mid = thumb, .dist = thumb },
+            .index = { .prox = index, .mid = index, .dist = index },
+            .middle = { .prox = middle, .mid = middle, .dist = middle },
+            .ring = { .prox = ring, .mid = ring, .dist = ring },
+            .pinky = { .prox = pinky, .mid = pinky, .dist = pinky },
+        };
+        const auto* const fingers = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
+        for (auto i = 0; i < FINGERS_COUNT; i++) {
+            _handPapyrusHasControl[fingers[i]] = true;
+            _handPapyrusPose[fingers[i]] = pose.getFlexAt(i);
+        }
+    }
+
+    void HandPose::setFingerSplayScalar(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
+    {
+        const auto* const proximal = isLeft ? LEFT_PROXIMAL_BONES : RIGHT_PROXIMAL_BONES;
+        const float values[FINGER_COUNT] = { thumb, index, middle, ring, pinky };
+        for (auto i = 0; i < FINGER_COUNT; i++) {
+            _handSplayPose[proximal[i]] = values[i];
+        }
+    }
+
+    void HandPose::restoreFingerPoseControl(const bool isLeft)
+    {
+        logger::debug("Hand pose: Restore control for {} hand", isLeft ? "Left" : "Right");
+        const auto* const fingers = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
+        for (auto i = 0; i < FINGERS_COUNT; i++) {
+            _handPapyrusHasControl[fingers[i]] = false;
+        }
+        const auto* const proximal = isLeft ? LEFT_PROXIMAL_BONES : RIGHT_PROXIMAL_BONES;
+        for (auto i = 0; i < FINGER_COUNT; i++) {
+            _handSplayPose.erase(proximal[i]);
+        }
+    }
+
+    void HandPose::setPipboyHandPose()
+    {
+        setHandPoseOverride(true, !g_config.leftHandedPipBoy, POINTING_POSE);
+    }
+
+    void HandPose::disablePipboyHandPose()
+    {
+        setHandPoseOverride(false, !g_config.leftHandedPipBoy, POINTING_POSE);
+    }
+
+    void HandPose::setConfigModeHandPose()
+    {
+        setForceHandPointingPose(false, true);
+    }
+
+    void HandPose::disableConfigModePose()
+    {
+        setForceHandPointingPose(false, false);
+    }
+
+    void HandPose::setForceHandPointingPose(const bool primaryHand, const bool forcePointing)
+    {
+        setHandPoseOverride(forcePointing, primaryHand ^ isLeftHandedMode(), POINTING_POSE);
+    }
+
+    void HandPose::setOffhandGripHandPose(const bool toSet)
+    {
+        setHandPoseOverride(toSet, isLeftHandedMode(), OFFHAND_GRIP_POSE);
+    }
+
+    void HandPose::setAttaboyHandPose(const bool toSet)
+    {
+        setHandPoseOverride(toSet, false, ATTABOY_POSE);
+    }
+
+    // -- Bone rotation blending ---------------------------------------------------------
+
+    void HandPose::onFrameUpdate(RE::NiNode* root, const float frameTime)
+    {
+        const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(root);
+        for (auto pos = 0; pos < rt->numTransforms; pos++) {
+            auto boneName = Skelly::getBoneName(pos);
+            auto handBone = _handBones.find(boneName);
+            if (handBone != _handBones.end()) {
+                const bool isLeft = boneName[0] == 'L';
+
+                if (IsWeaponDrawn()
+                    && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger())
+                    && !(isLeft ^ isLeftHandedMode())) {
+                    if (isLeftHandedMode()) {
+                        // In left-handed mode the 1st-person skeleton is not using the correct hand so we can't use "copy1StPerson" method.
+                        // Instead, we just force a specific hand pose that makes sense.
+                        handBone->second.rotate = getGripBoneRotation(boneName, g_frik.isMeleeWeaponDrawn());
+                    } else {
+                        // use the game hand position for the weapon in hand
+                        copy1StPerson(boneName);
+                    }
+                } else {
+                    // use the forced hand position
+                    calculateHandPose(boneName, isLeft, frameTime);
+                }
+
+                rt->transforms[pos].local.rotate = handBone->second.rotate;
+                rt->transforms[pos].local.translate = _handOpen.at(boneName).translate;
+
+                if (rt->transforms[pos].refNode) {
+                    rt->transforms[pos].refNode->local = rt->transforms[pos].local;
+                }
+            }
+
+            if (rt->transforms[pos].refNode) {
+                rt->transforms[pos].world = rt->transforms[pos].refNode->world;
+            } else {
+                const short parent = rt->transforms[pos].parPos;
+                RE::NiPoint3 p = rt->transforms[pos].local.translate;
+                p = rt->transforms[parent].world.rotate.Transpose() * (p * rt->transforms[parent].world.scale);
+
+                rt->transforms[pos].world.translate = rt->transforms[parent].world.translate + p;
+
+                rt->transforms[pos].world.rotate = rt->transforms[pos].local.rotate * rt->transforms[parent].world.rotate;
+            }
+        }
+    }
+
+    void HandPose::calculateHandPose(const std::string& bone, const bool isLeft, const float frameTime)
+    {
+        Quaternion qc, qt;
+
+        const auto hand = isLeft ? Hand::Left : Hand::Right;
+        const float gripProx = VRControllers.getAxisValue(hand, Axis::Grip).x;
+        const bool thumbUp = VRControllers.isTouching(hand, k_EButton_Grip)
+            && VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Trigger)
+            && !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Touchpad);
+        const bool buttonTouched = [&]() {
+            const uint64_t touched = isLeft
+                ? VRControllers.getControllerState_DEPRECATED(TrackerType::Left).ulButtonTouched
+                : VRControllers.getControllerState_DEPRECATED(TrackerType::Right).ulButtonTouched;
+            return touched & ButtonMaskFromId(getTrackedButton(bone));
+        }();
+
+        RE::NiMatrix3 papyrusRot;
+        if (tryGetPapyrusRotation(bone, isLeft, papyrusRot)) {
+            qt.fromMatrix(papyrusRot);
+        } else if (thumbUp && bone.find("Finger1") != std::string::npos) {
+            qt.fromMatrix(getThumbsUpBoneRotation(bone, isLeft));
+        } else if (buttonTouched) {
+            qt.fromMatrix(blendBoneRotation(bone, 0.0f));
+        } else {
+            const float flex = getTrackedButton(bone) == k_EButton_Grip ? (1.0f - gripProx) : 1.0f;
+            qt.fromMatrix(blendBoneRotation(bone, flex));
+        }
+
+        auto& currentBone = _handBones.at(bone);
+        qc.fromMatrix(currentBone.rotate);
+        const float blend = std::clamp(frameTime * 7, -1.0f, 2.0f);
+        qc.slerp(blend, qt);
+        currentBone.rotate = qc.getMatrix();
+    }
+
+    /**
+     * Copy the 1st-person bone position for the given hand bone.
+     * Useful for different weapons holding hand poses.
+     */
+    void HandPose::copy1StPerson(const std::string& bone)
+    {
+        const auto fpTree = getFirstPersonBoneTree();
+        const int pos = fpTree->GetBoneIndex(bone);
+        if (pos >= 0) {
+            if (fpTree->transforms[pos].refNode) {
+                _handBones[bone] = fpTree->transforms[pos].refNode->local;
+            } else {
+                _handBones[bone] = fpTree->transforms[pos].local;
+            }
+        }
+    }
+
+    bool HandPose::tryGetPapyrusRotation(const std::string& bone, const bool isLeft, RE::NiMatrix3& outRotation) const
+    {
+        if (!_handPapyrusHasControl[bone]) {
+            return false;
+        }
+        const float flex = std::clamp(_handPapyrusPose[bone], -1.0f, 2.0f);
+        const auto boneSplay = _handSplayPose.find(bone);
+        outRotation = blendBoneRotation(bone, flex, boneSplay != _handSplayPose.end() ? boneSplay->second : 0.0f, isLeft);
+        return true;
+    }
+
+    RE::NiMatrix3 HandPose::blendBoneRotation(const std::string& bone, const float flex) const
+    {
+        Quaternion qOpen, qClosed;
+        qOpen.fromMatrix(_handOpen.at(bone).rotate);
+        qClosed.fromMatrix(_handClosed.at(bone).rotate);
+        qClosed.slerp(flex, qOpen);
+        return qClosed.getMatrix();
+    }
+
+    // -- Predefined gesture rotations -----------------------------------------------------
+
+    RE::NiMatrix3 HandPose::getGripBoneRotation(const std::string& bone, const bool melee) const
+    {
+        const HandFingersPose& pose = melee ? MELEE_GRIP_POSE : GUN_GRIP_POSE;
+
+        // Bone name format: "[LR]Arm_Finger[1-5][1-3]"
+        // Maps to: thumb=0-2, index=3-5, middle=6-8, ring=9-11, pinky=12-14
+        const auto boneToFlexIndex = boneToFingerIndex(bone) * 3 + (bone.back() - '1');
+
+        const float flex = std::clamp(pose.getFlexAt(boneToFlexIndex), -1.0f, 2.0f);
+        return blendBoneRotation(bone, flex);
+    }
+
+    RE::NiMatrix3 HandPose::getThumbsUpBoneRotation(const std::string& bone, const bool isLeft) const
+    {
+        const float sign = isLeft ? -1.0f : 1.0f;
+        RE::NiMatrix3 rot = _handOpen.at(bone).rotate;
+        if (bone.find("Finger11") != std::string::npos) {
+            rot = MatrixUtils::getMatrixFromEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f) * rot;
+        } else if (bone.find("Finger13") != std::string::npos) {
+            rot = MatrixUtils::getMatrixFromEulerAngles(0, 0, MatrixUtils::degreesToRads(-35.0f)) * rot;
+        }
+        return rot;
+    }
+
+    // -- Private helpers ----------------------------------------------------------------
+
+    RE::NiMatrix3 HandPose::blendBoneRotation(const std::string& bone, const float flex, const float splay, const bool isLeft) const
+    {
+        RE::NiMatrix3 result = blendBoneRotation(bone, flex);
+        if (splay != 0.0f) {
+            const float sign = isLeft ? -1.0f : 1.0f;
+            result = MatrixUtils::getMatrixFromEulerAngles(0, sign * splay, 0) * result;
+        }
+        return result;
+    }
+
+    void HandPose::setHandPoseOverride(const bool setActive, const bool rightHand, const HandFingersPose& pose)
+    {
+        bool& poseSet = rightHand ? _rightHandPoseSet : _leftHandPoseSet;
+        if (poseSet == setActive) {
+            return;
+        }
+        logger::debug("Hand pose: Set force hand pose for '{}' hand: {})", rightHand ? "Right" : "Left", setActive ? "Set" : "Release");
+        poseSet = setActive;
+        const auto* const fingers = rightHand ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
+        for (auto i = 0; i < FINGERS_COUNT; i++) {
+            _handPapyrusHasControl[fingers[i]] = setActive;
+            _handPapyrusPose[fingers[i]] = pose.getFlexAt(i);
+        }
+    }
+
     void HandPose::initHandPoses(const bool inPowerArmor)
     {
+        _handClosed.clear();
+        _handOpen.clear();
+        _handBones.clear();
+
         std::vector<std::vector<float>> data;
 
         // pulled from the game engine while running idle animations
@@ -245,183 +533,7 @@ namespace frik
         }
     }
 
-    // -- Bone rotation blending ---------------------------------------------------------
-
-    bool HandPose::tryGetPapyrusRotation(const std::string& bone, const bool isLeft, RE::NiMatrix3& outRotation)
-    {
-        if (!hasPapyrusControl(bone)) {
-            return false;
-        }
-        const float flex = std::clamp(getPapyrusPose(bone), -1.0f, 2.0f);
-        outRotation = blendBoneRotation(bone, flex, getSplayPose(bone), isLeft);
-        return true;
-    }
-
-    RE::NiMatrix3 HandPose::blendBoneRotation(const std::string& bone, const float flex)
-    {
-        Quaternion qOpen, qClosed;
-        qOpen.fromMatrix(_handOpen.at(bone).rotate);
-        qClosed.fromMatrix(_handClosed.at(bone).rotate);
-        qClosed.slerp(flex, qOpen);
-        return qClosed.getMatrix();
-    }
-
-    // -- Predefined gesture rotations -----------------------------------------------------
-
-    RE::NiMatrix3 HandPose::getGripBoneRotation(const std::string& bone, const bool melee)
-    {
-        const HandFingersPose& pose = melee ? MELEE_GRIP_POSE : GUN_GRIP_POSE;
-        const float flex = std::clamp(pose.getFlexAt(boneToFlexIndex(bone)), -1.0f, 2.0f);
-        return blendBoneRotation(bone, flex);
-    }
-
-    RE::NiMatrix3 HandPose::getThumbsUpBoneRotation(const std::string& bone, const bool isLeft)
-    {
-        const float sign = isLeft ? -1.0f : 1.0f;
-        RE::NiMatrix3 rot = _handOpen.at(bone).rotate;
-        if (bone.find("Finger11") != std::string::npos) {
-            rot = MatrixUtils::getMatrixFromEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f) * rot;
-        } else if (bone.find("Finger13") != std::string::npos) {
-            rot = MatrixUtils::getMatrixFromEulerAngles(0, 0, MatrixUtils::degreesToRads(-35.0f)) * rot;
-        }
-        return rot;
-    }
-
-    const RE::NiPoint3& HandPose::getBoneTranslate(const std::string& bone)
-    {
-        return _handOpen.at(bone).translate;
-    }
-
-    const std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator>& HandPose::getDefaultTransforms()
-    {
-        return _handOpen;
-    }
-
-    // -- Papyrus / API-driven pose overrides --------------------------------------------
-
-    void HandPose::setFingerPositionScalar(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
-    {
-        const HandFingersPose pose = {
-            .thumb = { thumb, thumb, thumb },
-            .index = { index, index, index },
-            .middle = { middle, middle, middle },
-            .ring = { ring, ring, ring },
-            .pinky = { pinky, pinky, pinky },
-        };
-        const auto* const fingers = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
-        for (auto i = 0; i < FINGERS_COUNT; i++) {
-            _handPapyrusHasControl[fingers[i]] = true;
-            _handPapyrusPose[fingers[i]] = pose.getFlexAt(i);
-        }
-    }
-
-    void HandPose::setFingerSplayScalar(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
-    {
-        const auto* const proximal = isLeft ? LEFT_PROXIMAL_BONES : RIGHT_PROXIMAL_BONES;
-        const float values[FINGER_COUNT] = { thumb, index, middle, ring, pinky };
-        for (auto i = 0; i < FINGER_COUNT; i++) {
-            _handSplayPose[proximal[i]] = values[i];
-        }
-    }
-
-    void HandPose::restoreFingerPoseControl(const bool isLeft)
-    {
-        logger::debug("Hand pose: Restore control for {} hand", isLeft ? "Left" : "Right");
-        const auto* const fingers = isLeft ? LEFT_HAND_FINGERS : RIGHT_HAND_FINGERS;
-        for (auto i = 0; i < FINGERS_COUNT; i++) {
-            _handPapyrusHasControl[fingers[i]] = false;
-        }
-        const auto* const proximal = isLeft ? LEFT_PROXIMAL_BONES : RIGHT_PROXIMAL_BONES;
-        for (auto i = 0; i < FINGER_COUNT; i++) {
-            _handSplayPose.erase(proximal[i]);
-        }
-    }
-
-    // -- Named pose setters -------------------------------------------------------------
-
-    void HandPose::setPipboyHandPose()
-    {
-        setHandPoseOverride(true, !g_config.leftHandedPipBoy, POINTING_POSE);
-    }
-
-    void HandPose::disablePipboyHandPose()
-    {
-        setHandPoseOverride(false, !g_config.leftHandedPipBoy, POINTING_POSE);
-    }
-
-    void HandPose::setConfigModeHandPose()
-    {
-        setForceHandPointingPose(false, true);
-    }
-
-    void HandPose::disableConfigModePose()
-    {
-        setForceHandPointingPose(false, false);
-    }
-
-    void HandPose::setForceHandPointingPose(const bool primaryHand, const bool forcePointing)
-    {
-        setHandPoseOverride(forcePointing, primaryHand ^ f4vr::isLeftHandedMode(), POINTING_POSE);
-    }
-
-    void HandPose::setOffhandGripHandPose(const bool toSet)
-    {
-        setHandPoseOverride(toSet, f4vr::isLeftHandedMode(), OFFHAND_GRIP_POSE);
-    }
-
-    void HandPose::setAttaboyHandPose(const bool toSet)
-    {
-        setHandPoseOverride(toSet, false, ATTABOY_POSE);
-    }
-
-    // -- Private helpers ----------------------------------------------------------------
-
-    bool HandPose::hasPapyrusControl(const std::string& bone)
-    {
-        return _handPapyrusHasControl[bone];
-    }
-
-    float HandPose::getPapyrusPose(const std::string& bone)
-    {
-        return _handPapyrusPose[bone];
-    }
-
-    float HandPose::getSplayPose(const std::string& bone)
-    {
-        const auto it = _handSplayPose.find(bone);
-        return it != _handSplayPose.end() ? it->second : 0.0f;
-    }
-
-    RE::NiMatrix3 HandPose::blendBoneRotation(const std::string& bone, const float flex, const float splay, const bool isLeft)
-    {
-        RE::NiMatrix3 result = blendBoneRotation(bone, flex);
-        if (splay != 0.0f) {
-            const float sign = isLeft ? -1.0f : 1.0f;
-            result = MatrixUtils::getMatrixFromEulerAngles(0, sign * splay, 0) * result;
-        }
-        return result;
-    }
-
-    int HandPose::boneToFlexIndex(const std::string& bone)
-    {
-        // Bone name format: "[LR]Arm_Finger[1-5][1-3]"
-        // Maps to: thumb=0-2, index=3-5, middle=6-8, ring=9-11, pinky=12-14
-        return (bone[bone.size() - 2] - '1') * 3 + (bone.back() - '1');
-    }
-
-    void HandPose::copyDataIntoHand(const std::vector<float>& fingerData,
-        std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator>& hand,
-        const char* finger)
-    {
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 4; col++) {
-                hand[finger].rotate.entry[row][col] = fingerData[row * 4 + col];
-            }
-        }
-    }
-
-    void HandPose::copyDataIntoHand(const std::vector<std::vector<float>>& data,
-        std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator>& hand)
+    void HandPose::copyDataIntoHand(const std::vector<std::vector<float>>& data, std::map<std::string, RE::NiTransform>& hand)
     {
         // Left hand fingers
         copyDataIntoHand(data[0], hand, "LArm_Finger11");
@@ -458,18 +570,12 @@ namespace frik
         copyDataIntoHand(data[29], hand, "RArm_Finger53");
     }
 
-    void HandPose::setHandPoseOverride(const bool setActive, const bool rightHand, const HandFingersPose& pose)
+    void HandPose::copyDataIntoHand(const std::vector<float>& fingerData, std::map<std::string, RE::NiTransform>& hand, const char* finger)
     {
-        bool& poseSet = rightHand ? _rightHandPoseSet : _leftHandPoseSet;
-        if (poseSet == setActive) {
-            return;
-        }
-        logger::debug("Hand pose: Set force hand pose for '{}' hand: {})", rightHand ? "Right" : "Left", setActive ? "Set" : "Release");
-        poseSet = setActive;
-        const auto* const fingers = rightHand ? RIGHT_HAND_FINGERS : LEFT_HAND_FINGERS;
-        for (auto i = 0; i < FINGERS_COUNT; i++) {
-            _handPapyrusHasControl[fingers[i]] = setActive;
-            _handPapyrusPose[fingers[i]] = pose.getFlexAt(i);
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 4; col++) {
+                hand[finger].rotate.entry[row][col] = fingerData[row * 4 + col];
+            }
         }
     }
 }
