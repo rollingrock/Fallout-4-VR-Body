@@ -73,9 +73,8 @@ namespace frik
         void fixArmor() const;
 
         // Utils
-        void calculateHandPose(const std::string& bone, float gripProx, bool thumbUp, bool isLeft);
+        void calculateHandPose(const std::string& bone, bool isLeft);
         void copy1StPerson(const std::string& bone);
-        void setPredefinedHandPose(const std::string& bone);
 
         // Utils - Body Positioning
         float getNeckYaw() const;

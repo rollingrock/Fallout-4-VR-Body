@@ -38,16 +38,21 @@ namespace frik
         // Lifecycle
         static void initHandPoses(bool inPowerArmor);
 
-        // Accessors for Skeleton — read the current pose state
-        static bool hasPapyrusControl(const std::string& bone);
-        static float getPapyrusPose(const std::string& bone);
-        static float getSplayPose(const std::string& bone); // returns 0 if not set
-        static const RE::NiTransform& getOpenPose(const std::string& bone);
-        static const RE::NiTransform& getClosedPose(const std::string& bone);
-        static const std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator>& getOpenPoses();
+        // If papyrus/API controls this bone, computes the blended rotation and returns true
+        static bool tryGetPapyrusRotation(const std::string& bone, bool isLeft, RE::NiMatrix3& outRotation);
 
-        // Predefined pose value for the given bone (gun or melee grip)
-        static float getHandBonePose(const std::string& bone, bool melee);
+        // Bone rotation blending: slerp between closed (flex=0) and open (flex=1)
+        static RE::NiMatrix3 blendBoneRotation(const std::string& bone, float flex);
+
+        // Predefined pose rotations for specific gestures
+        static RE::NiMatrix3 getGripBoneRotation(const std::string& bone, bool melee);
+        static RE::NiMatrix3 getThumbsUpBoneRotation(const std::string& bone, bool isLeft);
+
+        // Bone reference translate (from open pose, used for all hand bone positions)
+        static const RE::NiPoint3& getBoneTranslate(const std::string& bone);
+
+        // All default bone transforms (for initializing hand bone state)
+        static const std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator>& getDefaultTransforms();
 
         // Papyrus / API-driven pose overrides
         static void setFingerPositionScalar(bool isLeft, float thumb, float index, float middle, float ring, float pinky);
@@ -64,6 +69,10 @@ namespace frik
         static void setAttaboyHandPose(bool toSet);
 
     private:
+        static bool hasPapyrusControl(const std::string& bone);
+        static float getPapyrusPose(const std::string& bone);
+        static float getSplayPose(const std::string& bone);
+        static RE::NiMatrix3 blendBoneRotation(const std::string& bone, float flex, float splay, bool isLeft);
         static int boneToFlexIndex(const std::string& bone);
         static void copyDataIntoHand(const std::vector<float>& fingerData,
             std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator>& hand,

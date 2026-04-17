@@ -3,6 +3,7 @@
 #include <numbers>
 #include <string>
 #include "Config.h"
+#include "common/Quaternion.h"
 
 using namespace common;
 
@@ -244,45 +245,56 @@ namespace frik
         }
     }
 
-    // -- Accessors ----------------------------------------------------------------------
+    // -- Bone rotation blending ---------------------------------------------------------
 
-    bool HandPose::hasPapyrusControl(const std::string& bone)
+    bool HandPose::tryGetPapyrusRotation(const std::string& bone, const bool isLeft, RE::NiMatrix3& outRotation)
     {
-        return _handPapyrusHasControl[bone];
+        if (!hasPapyrusControl(bone)) {
+            return false;
+        }
+        const float flex = std::clamp(getPapyrusPose(bone), -1.0f, 2.0f);
+        outRotation = blendBoneRotation(bone, flex, getSplayPose(bone), isLeft);
+        return true;
     }
 
-    float HandPose::getPapyrusPose(const std::string& bone)
+    RE::NiMatrix3 HandPose::blendBoneRotation(const std::string& bone, const float flex)
     {
-        return _handPapyrusPose[bone];
+        Quaternion qOpen, qClosed;
+        qOpen.fromMatrix(_handOpen.at(bone).rotate);
+        qClosed.fromMatrix(_handClosed.at(bone).rotate);
+        qClosed.slerp(flex, qOpen);
+        return qClosed.getMatrix();
     }
 
-    float HandPose::getSplayPose(const std::string& bone)
-    {
-        const auto it = _handSplayPose.find(bone);
-        return it != _handSplayPose.end() ? it->second : 0.0f;
-    }
+    // -- Predefined gesture rotations -----------------------------------------------------
 
-    const RE::NiTransform& HandPose::getOpenPose(const std::string& bone)
-    {
-        return _handOpen.at(bone);
-    }
-
-    const RE::NiTransform& HandPose::getClosedPose(const std::string& bone)
-    {
-        return _handClosed.at(bone);
-    }
-
-    const std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator>& HandPose::getOpenPoses()
-    {
-        return _handOpen;
-    }
-
-    // -- Predefined pose ----------------------------------------------------------------
-
-    float HandPose::getHandBonePose(const std::string& bone, const bool melee)
+    RE::NiMatrix3 HandPose::getGripBoneRotation(const std::string& bone, const bool melee)
     {
         const HandFingersPose& pose = melee ? MELEE_GRIP_POSE : GUN_GRIP_POSE;
-        return pose.getFlexAt(boneToFlexIndex(bone));
+        const float flex = std::clamp(pose.getFlexAt(boneToFlexIndex(bone)), -1.0f, 2.0f);
+        return blendBoneRotation(bone, flex);
+    }
+
+    RE::NiMatrix3 HandPose::getThumbsUpBoneRotation(const std::string& bone, const bool isLeft)
+    {
+        const float sign = isLeft ? -1.0f : 1.0f;
+        RE::NiMatrix3 rot = _handOpen.at(bone).rotate;
+        if (bone.find("Finger11") != std::string::npos) {
+            rot = MatrixUtils::getMatrixFromEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f) * rot;
+        } else if (bone.find("Finger13") != std::string::npos) {
+            rot = MatrixUtils::getMatrixFromEulerAngles(0, 0, MatrixUtils::degreesToRads(-35.0f)) * rot;
+        }
+        return rot;
+    }
+
+    const RE::NiPoint3& HandPose::getBoneTranslate(const std::string& bone)
+    {
+        return _handOpen.at(bone).translate;
+    }
+
+    const std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator>& HandPose::getDefaultTransforms()
+    {
+        return _handOpen;
     }
 
     // -- Papyrus / API-driven pose overrides --------------------------------------------
@@ -363,6 +375,32 @@ namespace frik
     }
 
     // -- Private helpers ----------------------------------------------------------------
+
+    bool HandPose::hasPapyrusControl(const std::string& bone)
+    {
+        return _handPapyrusHasControl[bone];
+    }
+
+    float HandPose::getPapyrusPose(const std::string& bone)
+    {
+        return _handPapyrusPose[bone];
+    }
+
+    float HandPose::getSplayPose(const std::string& bone)
+    {
+        const auto it = _handSplayPose.find(bone);
+        return it != _handSplayPose.end() ? it->second : 0.0f;
+    }
+
+    RE::NiMatrix3 HandPose::blendBoneRotation(const std::string& bone, const float flex, const float splay, const bool isLeft)
+    {
+        RE::NiMatrix3 result = blendBoneRotation(bone, flex);
+        if (splay != 0.0f) {
+            const float sign = isLeft ? -1.0f : 1.0f;
+            result = MatrixUtils::getMatrixFromEulerAngles(0, sign * splay, 0) * result;
+        }
+        return result;
+    }
 
     int HandPose::boneToFlexIndex(const std::string& bone)
     {

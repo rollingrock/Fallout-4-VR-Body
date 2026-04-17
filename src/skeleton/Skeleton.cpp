@@ -74,7 +74,7 @@ namespace frik
 
         initSkeletonNodesDefaults();
 
-        _handBones = HandPose::getOpenPoses();
+        _handBones = HandPose::getDefaultTransforms();
 
         Skelly::initBoneTreeMap();
 
@@ -1197,49 +1197,26 @@ namespace frik
         updateDown(_root, false);
     }
 
-    void Skeleton::calculateHandPose(const std::string& bone, const float gripProx, const bool thumbUp, const bool isLeft)
+    void Skeleton::calculateHandPose(const std::string& bone, const bool isLeft)
     {
         Quaternion qc, qt;
-        const float sign = isLeft ? -1.0f : 1.0f;
 
-        // if a mod is using the papyrus interface to manually set finger poses
-        if (HandPose::hasPapyrusControl(bone)) {
-            qt.fromMatrix(HandPose::getOpenPose(bone).rotate);
-            Quaternion qo;
-            qo.fromMatrix(HandPose::getClosedPose(bone).rotate);
-            qo.slerp(std::clamp(HandPose::getPapyrusPose(bone), -1.0f, 2.0f), qt);
-            qt = qo;
-            // Apply splay (side-to-side) on proximal joint if set for this finger
-            if (bone.back() == '1') {
-                const float splay = HandPose::getSplayPose(bone);
-                if (splay != 0.0f) {
-                    RE::NiMatrix3 wr = qt.getMatrix();
-                    wr = MatrixUtils::getMatrixFromEulerAngles(0, sign * splay, 0) * wr;
-                    qt.fromMatrix(wr);
-                }
-            }
-        }
-        // thumbUp pose
-        else if (thumbUp && bone.find("Finger1") != std::string::npos) {
-            if (bone.find("Finger11") != std::string::npos) {
-                RE::NiMatrix3 wr = HandPose::getOpenPose(bone).rotate;
-                wr = MatrixUtils::getMatrixFromEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f) * wr;
-                qt.fromMatrix(wr);
-            } else if (bone.find("Finger13") != std::string::npos) {
-                RE::NiMatrix3 wr = HandPose::getOpenPose(bone).rotate;
-                wr = MatrixUtils::getMatrixFromEulerAngles(0, 0, MatrixUtils::degreesToRads(-35.0f)) * wr;
-                qt.fromMatrix(wr);
-            }
+        const auto hand = isLeft ? Hand::Left : Hand::Right;
+        const float gripProx = VRControllers.getAxisValue(hand, Axis::Grip).x;
+        const bool thumbUp = VRControllers.isTouching(hand, k_EButton_Grip)
+            && VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Trigger)
+            && !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Touchpad);
+
+        RE::NiMatrix3 papyrusRot;
+        if (HandPose::tryGetPapyrusRotation(bone, isLeft, papyrusRot)) {
+            qt.fromMatrix(papyrusRot);
+        } else if (thumbUp && bone.find("Finger1") != std::string::npos) {
+            qt.fromMatrix(HandPose::getThumbsUpBoneRotation(bone, isLeft));
         } else if (_closedHand[bone]) {
-            qt.fromMatrix(HandPose::getClosedPose(bone).rotate);
+            qt.fromMatrix(HandPose::blendBoneRotation(bone, 0.0f));
         } else {
-            qt.fromMatrix(HandPose::getOpenPose(bone).rotate);
-            if (_handBonesButton.at(bone) == k_EButton_Grip) {
-                Quaternion qo;
-                qo.fromMatrix(HandPose::getClosedPose(bone).rotate);
-                qo.slerp(1.0f - gripProx, qt);
-                qt = qo;
-            }
+            const float flex = (_handBonesButton.at(bone) == k_EButton_Grip) ? (1.0f - gripProx) : 1.0f;
+            qt.fromMatrix(HandPose::blendBoneRotation(bone, flex));
         }
 
         qc.fromMatrix(_handBones[bone].rotate);
@@ -1265,56 +1242,37 @@ namespace frik
         }
     }
 
-    /**
-     * In left-handed mode the 1st-person skeleton is not using the correct hand so we can't use "copy1StPerson" method.
-     * Instead, we just force a specific hand pose that makes sense.
-     */
-    void Skeleton::setPredefinedHandPose(const std::string& bone)
-    {
-        Quaternion qo, qt;
-        qt.fromMatrix(HandPose::getOpenPose(bone).rotate);
-        qo.fromMatrix(HandPose::getClosedPose(bone).rotate);
-        qo.slerp(std::clamp(HandPose::getHandBonePose(bone, g_frik.isMeleeWeaponDrawn()), -1.0f, 2.0f), qt);
-        _handBones[bone].rotate = qo.getMatrix();
-    }
-
     void Skeleton::setHandPose()
     {
         const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
         for (auto pos = 0; pos < rt->numTransforms; pos++) {
-            std::string name = Skelly::getBoneName(pos);
+            auto name = Skelly::getBoneName(pos);
             auto found = _fingerRelations.find(name);
             if (found != _fingerRelations.end()) {
                 const bool isLeft = name[0] == 'L';
                 const uint64_t reg = isLeft
                     ? VRControllers.getControllerState_DEPRECATED(TrackerType::Left).ulButtonTouched
                     : VRControllers.getControllerState_DEPRECATED(TrackerType::Right).ulButtonTouched;
-                const float gripProx = isLeft
-                    ? VRControllers.getControllerState_DEPRECATED(TrackerType::Left).rAxis[2].x
-                    : VRControllers.getControllerState_DEPRECATED(TrackerType::Right).rAxis[2].x;
-                const bool thumbUp = reg & ButtonMaskFromId(k_EButton_Grip)
-                    && reg & ButtonMaskFromId(k_EButton_SteamVR_Trigger)
-                    && !(reg & ButtonMaskFromId(k_EButton_SteamVR_Touchpad));
                 _closedHand[name] = reg & ButtonMaskFromId(_handBonesButton.at(name));
 
                 if (IsWeaponDrawn()
                     && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger()) // left-handed has pipboy on the hand with the weapon
                     && !(isLeft ^ isLeftHandedMode())) {
                     if (isLeftHandedMode()) {
-                        setPredefinedHandPose(name);
+                        // In left-handed mode the 1st-person skeleton is not using the correct hand so we can't use "copy1StPerson" method.
+                        // Instead, we just force a specific hand pose that makes sense.
+                        _handBones[name].rotate = HandPose::getGripBoneRotation(name, g_frik.isMeleeWeaponDrawn());
                     } else {
                         // use the game hand position for the weapon in hand
                         copy1StPerson(name);
                     }
                 } else {
                     // use the forced hand position
-                    calculateHandPose(name, gripProx, thumbUp, isLeft);
+                    calculateHandPose(name, isLeft);
                 }
 
-                const RE::NiTransform trans = _handBones[name];
-
-                rt->transforms[pos].local.rotate = trans.rotate;
-                rt->transforms[pos].local.translate = HandPose::getOpenPose(name).translate;
+                rt->transforms[pos].local.rotate = _handBones[name].rotate;
+                rt->transforms[pos].local.translate = HandPose::getBoneTranslate(name);
 
                 if (rt->transforms[pos].refNode) {
                     rt->transforms[pos].refNode->local = rt->transforms[pos].local;
