@@ -16,6 +16,14 @@ namespace frik
         float mid = 0.0f; // middle (PIP) joint flex
         float dist = 0.0f; // distal (DIP / fingertip) joint flex
         float splay = 0.0f; // lateral abduction/adduction of the proximal joint
+
+        constexpr FingerPose() noexcept = default;
+        constexpr explicit FingerPose(float flex) noexcept :
+            prox(flex), mid(flex), dist(flex)
+        {}
+        constexpr FingerPose(float proxValue, float midValue, float distValue, float splayValue = 0.0f) noexcept :
+            prox(proxValue), mid(midValue), dist(distValue), splay(splayValue)
+        {}
     };
 
     // Full hand pose: all 5 fingers, each with flex + splay.
@@ -27,8 +35,24 @@ namespace frik
         FingerPose ring;
         FingerPose pinky;
 
+        constexpr HandFingersPose() noexcept = default;
+        constexpr HandFingersPose(FingerPose thumbPose, FingerPose indexPose, FingerPose middlePose, FingerPose ringPose, FingerPose pinkyPose) noexcept :
+            thumb(thumbPose), index(indexPose), middle(middlePose), ring(ringPose), pinky(pinkyPose)
+        {}
+        constexpr HandFingersPose(float thumbFlex, float indexFlex, float middleFlex, float ringFlex, float pinkyFlex) noexcept :
+            thumb(thumbFlex), index(indexFlex), middle(middleFlex), ring(ringFlex), pinky(pinkyFlex)
+        {}
+
+        FingerPose& getFingerAt(int fingerIndex) noexcept;
+        const FingerPose& getFingerAt(int fingerIndex) const noexcept;
         float getFlexAt(int boneIndex) const noexcept;
         float getSplayAt(int fingerIndex) const noexcept;
+    };
+
+    struct HandOverrideState
+    {
+        HandFingersPose pose;
+        bool active = false;
     };
 
     class HandPose
@@ -37,8 +61,7 @@ namespace frik
         explicit HandPose(bool inPowerArmor);
 
         // Papyrus / API-driven pose overrides
-        static void setFingerPositionScalar(bool isLeft, float thumb, float index, float middle, float ring, float pinky);
-        static void setFingerSplayScalar(bool isLeft, float thumb, float index, float middle, float ring, float pinky);
+        static void setFingerPose(bool isLeft, const HandFingersPose& pose);
         static void restoreFingerPoseControl(bool isLeft);
 
         // Named pose setters
@@ -62,15 +85,13 @@ namespace frik
         RE::NiMatrix3 getThumbsUpBoneRotation(const std::string& bone, bool isLeft) const;
         RE::NiMatrix3 blendBoneRotation(const std::string& bone, float flex, float splay, bool isLeft) const;
 
-        static void setHandPoseOverride(bool setActive, bool rightHand, const HandFingersPose& pose);
+        static void setHandPoseOverride(bool setActive, bool isLeft, const HandFingersPose& pose);
+        static HandOverrideState& getHandOverrideState(bool isLeft);
 
         std::map<std::string, RE::NiTransform> _handClosed;
         std::map<std::string, RE::NiTransform> _handOpen;
         std::map<std::string, RE::NiTransform> _handBones;
-        inline static std::map<std::string, float> _handPapyrusPose;
-        inline static std::map<std::string, float> _handSplayPose;
-        inline static std::map<std::string, bool> _handPapyrusHasControl;
-        inline static bool _leftHandPoseSet = false;
-        inline static bool _rightHandPoseSet = false;
+        inline static HandOverrideState _leftHandOverride;
+        inline static HandOverrideState _rightHandOverride;
     };
 }

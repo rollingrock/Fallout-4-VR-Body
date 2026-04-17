@@ -79,7 +79,7 @@ namespace frik::api
     {
         logger::info("Papyrus: Set Finger Position Scalar '{}' ({:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f})",
             isLeft ? "Left" : "Right", thumb, index, middle, ring, pinky);
-        HandPose::setFingerPositionScalar(isLeft, thumb, index, middle, ring, pinky);
+        HandPose::setFingerPose(isLeft, HandFingersPose{ thumb, index, middle, ring, pinky });
     }
 
     static void restoreFingerPoseControl2(std::monostate, const bool isLeft)

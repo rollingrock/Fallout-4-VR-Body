@@ -28,40 +28,40 @@ namespace
     // Proximal (knuckle/MCP) bone of each finger — used for splay
     // Predefined hand poses (flex values: 0.0 = bent/closed, 1.0 = straight/open)
     // clang-format off
-    static constexpr frik::HandFingersPose GUN_GRIP_POSE = {
-        .thumb  = { .prox=0.7f, .mid=0.4f, .dist=0.5f },
-        .index  = { .prox=0.9f, .mid=0.6f, .dist=0.5f },
-        .middle = { .prox=0.3f, .mid=0.5f, .dist=0.5f },
-        .ring   = { .prox=0.1f, .mid=0.5f, .dist=0.5f },
-        .pinky  = { .prox=0.0f, .mid=0.5f, .dist=0.7f },
+    static constexpr frik::HandFingersPose GUN_GRIP_POSE{
+        frik::FingerPose{ 0.7f, 0.4f, 0.5f },
+        frik::FingerPose{ 0.9f, 0.6f, 0.5f },
+        frik::FingerPose{ 0.3f, 0.5f, 0.5f },
+        frik::FingerPose{ 0.1f, 0.5f, 0.5f },
+        frik::FingerPose{ 0.0f, 0.5f, 0.7f }
     };
-    static constexpr frik::HandFingersPose MELEE_GRIP_POSE = {
-        .thumb  = { .prox=0.7f, .mid=0.5f, .dist=0.8f },
-        .index  = { .prox=0.4f, .mid=0.3f, .dist=0.9f },
-        .middle = { .prox=0.1f, .mid=0.5f, .dist=0.9f },
-        .ring   = { .prox=0.0f, .mid=0.5f, .dist=0.9f },
-        .pinky  = { .prox=0.0f, .mid=0.4f, .dist=0.9f },
+    static constexpr frik::HandFingersPose MELEE_GRIP_POSE{
+        frik::FingerPose{ 0.7f, 0.5f, 0.8f },
+        frik::FingerPose{ 0.4f, 0.3f, 0.9f },
+        frik::FingerPose{ 0.1f, 0.5f, 0.9f },
+        frik::FingerPose{ 0.0f, 0.5f, 0.9f },
+        frik::FingerPose{ 0.0f, 0.4f, 0.9f }
     };
-    static constexpr frik::HandFingersPose POINTING_POSE = {
-        .thumb  = { .prox=0.0f, .mid=0.0f, .dist=0.0f },
-        .index  = { .prox=1.0f, .mid=1.0f, .dist=1.0f },
-        .middle = { .prox=0.0f, .mid=0.0f, .dist=0.0f },
-        .ring   = { .prox=0.0f, .mid=0.0f, .dist=0.0f },
-        .pinky  = { .prox=0.0f, .mid=0.0f, .dist=0.0f },
+    static constexpr frik::HandFingersPose POINTING_POSE{
+        frik::FingerPose{ 0.0f, 0.0f, 0.0f },
+        frik::FingerPose{ 1.0f, 1.0f, 1.0f },
+        frik::FingerPose{ 0.0f, 0.0f, 0.0f },
+        frik::FingerPose{ 0.0f, 0.0f, 0.0f },
+        frik::FingerPose{ 0.0f, 0.0f, 0.0f }
     };
-    static constexpr frik::HandFingersPose ATTABOY_POSE = {
-        .thumb  = { .prox=0.7f, .mid=1.2f, .dist=1.3f },
-        .index  = { .prox=1.1f, .mid=1.1f, .dist=1.2f },
-        .middle = { .prox=0.8f, .mid=0.6f, .dist=1.0f },
-        .ring   = { .prox=0.4f, .mid=0.8f, .dist=1.0f },
-        .pinky  = { .prox=0.1f, .mid=1.0f, .dist=1.4f },
+    static constexpr frik::HandFingersPose ATTABOY_POSE{
+        frik::FingerPose{ 0.7f, 1.2f, 1.3f },
+        frik::FingerPose{ 1.1f, 1.1f, 1.2f },
+        frik::FingerPose{ 0.8f, 0.6f, 1.0f },
+        frik::FingerPose{ 0.4f, 0.8f, 1.0f },
+        frik::FingerPose{ 0.1f, 1.0f, 1.4f }
     };
-    static constexpr frik::HandFingersPose OFFHAND_GRIP_POSE = {
-        .thumb  = { .prox=1.0f, .mid=1.0f,  .dist=0.9f  },
-        .index  = { .prox=0.6f, .mid=0.6f,  .dist=0.6f  },
-        .middle = { .prox=0.5f, .mid=0.6f,  .dist=0.55f },
-        .ring   = { .prox=0.5f, .mid=0.5f,  .dist=0.5f  },
-        .pinky  = { .prox=0.5f, .mid=0.5f,  .dist=0.5f  },
+    static constexpr frik::HandFingersPose OFFHAND_GRIP_POSE{
+        frik::FingerPose{ 1.0f, 1.0f, 0.9f },
+        frik::FingerPose{ 0.6f, 0.6f, 0.6f },
+        frik::FingerPose{ 0.5f, 0.6f, 0.55f },
+        frik::FingerPose{ 0.5f, 0.5f, 0.5f },
+        frik::FingerPose{ 0.5f, 0.5f, 0.5f }
     };
     // clang-format on
 
@@ -199,17 +199,6 @@ namespace
                           .openTranslation = RE::NiPoint3(1.666F, 0.000F, 0.000F), .openTranslationInPowerArmor = RE::NiPoint3(4.594F, 0.000F, 0.000F) },
     } };
 
-    const char* getHandBoneName(const bool isLeft, const int handBoneIndex)
-    {
-        const int handOffset = isLeft ? 0 : HAND_BONES_PER_HAND;
-        return HAND_BONE_DATA[handOffset + handBoneIndex].boneName;
-    }
-
-    const char* getProximalBoneName(const bool isLeft, const int fingerIndex)
-    {
-        return getHandBoneName(isLeft, fingerIndex * BONES_PER_FINGER);
-    }
-
     void copyRotationIntoTransform(const RotationData& rotationData, RE::NiTransform& transform)
     {
         for (int row = 0; row < 3; row++) {
@@ -242,12 +231,23 @@ namespace frik
 {
     // -- HandFingersPose ----------------------------------------------------------------
 
+    FingerPose& HandFingersPose::getFingerAt(const int fingerIndex) noexcept
+    {
+        FingerPose* const fingers[5] = { &thumb, &index, &middle, &ring, &pinky };
+        return *fingers[fingerIndex];
+    }
+
+    const FingerPose& HandFingersPose::getFingerAt(const int fingerIndex) const noexcept
+    {
+        const FingerPose* const fingers[5] = { &thumb, &index, &middle, &ring, &pinky };
+        return *fingers[fingerIndex];
+    }
+
     // Get flex by flat bone index (0-14):
     //   0-2: thumb prox/mid/dist, 3-5: index, 6-8: middle, 9-11: ring, 12-14: pinky
     float HandFingersPose::getFlexAt(const int boneIndex) const noexcept
     {
-        const FingerPose* const fingers[5] = { &thumb, &index, &middle, &ring, &pinky };
-        const FingerPose& f = *fingers[boneIndex / 3];
+        const FingerPose& f = getFingerAt(boneIndex / 3);
         switch (boneIndex % 3) {
         case 0:
             return f.prox;
@@ -261,8 +261,7 @@ namespace frik
     // Get splay by finger index (0=thumb, 1=index, 2=middle, 3=ring, 4=pinky)
     float HandFingersPose::getSplayAt(const int fingerIndex) const noexcept
     {
-        const FingerPose* const fingers[5] = { &thumb, &index, &middle, &ring, &pinky };
-        return fingers[fingerIndex]->splay;
+        return getFingerAt(fingerIndex).splay;
     }
 
     // -- Lifecycle ----------------------------------------------------------------------
@@ -284,49 +283,27 @@ namespace frik
 
     // -- Papyrus / API-driven pose overrides --------------------------------------------
 
-    void HandPose::setFingerPositionScalar(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
+    void HandPose::setFingerPose(const bool isLeft, const HandFingersPose& pose)
     {
-        const HandFingersPose pose = {
-            .thumb = { .prox = thumb, .mid = thumb, .dist = thumb },
-            .index = { .prox = index, .mid = index, .dist = index },
-            .middle = { .prox = middle, .mid = middle, .dist = middle },
-            .ring = { .prox = ring, .mid = ring, .dist = ring },
-            .pinky = { .prox = pinky, .mid = pinky, .dist = pinky },
-        };
-        for (auto i = 0; i < HAND_BONES_PER_HAND; i++) {
-            const auto* const finger = getHandBoneName(isLeft, i);
-            _handPapyrusHasControl[finger] = true;
-            _handPapyrusPose[finger] = pose.getFlexAt(i);
-        }
-    }
-
-    void HandPose::setFingerSplayScalar(const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
-    {
-        const float values[FINGER_COUNT] = { thumb, index, middle, ring, pinky };
-        for (auto i = 0; i < FINGER_COUNT; i++) {
-            _handSplayPose[getProximalBoneName(isLeft, i)] = values[i];
-        }
+        auto& overrideState = getHandOverrideState(isLeft);
+        overrideState.pose = pose;
+        overrideState.active = true;
     }
 
     void HandPose::restoreFingerPoseControl(const bool isLeft)
     {
         logger::debug("Hand pose: Restore control for {} hand", isLeft ? "Left" : "Right");
-        for (auto i = 0; i < HAND_BONES_PER_HAND; i++) {
-            _handPapyrusHasControl[getHandBoneName(isLeft, i)] = false;
-        }
-        for (auto i = 0; i < FINGER_COUNT; i++) {
-            _handSplayPose.erase(getProximalBoneName(isLeft, i));
-        }
+        getHandOverrideState(isLeft) = HandOverrideState{};
     }
 
     void HandPose::setPipboyHandPose()
     {
-        setHandPoseOverride(true, !g_config.leftHandedPipBoy, POINTING_POSE);
+        setHandPoseOverride(true, g_config.leftHandedPipBoy, POINTING_POSE);
     }
 
     void HandPose::disablePipboyHandPose()
     {
-        setHandPoseOverride(false, !g_config.leftHandedPipBoy, POINTING_POSE);
+        setHandPoseOverride(false, g_config.leftHandedPipBoy, POINTING_POSE);
     }
 
     void HandPose::setConfigModeHandPose()
@@ -341,17 +318,17 @@ namespace frik
 
     void HandPose::setForceHandPointingPose(const bool primaryHand, const bool forcePointing)
     {
-        setHandPoseOverride(forcePointing, primaryHand ^ isLeftHandedMode(), POINTING_POSE);
+        setHandPoseOverride(forcePointing, primaryHand == isLeftHandedMode(), POINTING_POSE);
     }
 
     void HandPose::setOffhandGripHandPose(const bool toSet)
     {
-        setHandPoseOverride(toSet, isLeftHandedMode(), OFFHAND_GRIP_POSE);
+        setHandPoseOverride(toSet, !isLeftHandedMode(), OFFHAND_GRIP_POSE);
     }
 
     void HandPose::setAttaboyHandPose(const bool toSet)
     {
-        setHandPoseOverride(toSet, false, ATTABOY_POSE);
+        setHandPoseOverride(toSet, true, ATTABOY_POSE);
     }
 
     // -- Bone rotation blending ---------------------------------------------------------
@@ -455,12 +432,14 @@ namespace frik
 
     bool HandPose::tryGetPapyrusRotation(const std::string& bone, const bool isLeft, RE::NiMatrix3& outRotation) const
     {
-        if (!_handPapyrusHasControl[bone]) {
+        const auto& overrideState = getHandOverrideState(isLeft);
+        if (!overrideState.active) {
             return false;
         }
-        const float flex = std::clamp(_handPapyrusPose[bone], -1.0f, 2.0f);
-        const auto boneSplay = _handSplayPose.find(bone);
-        outRotation = blendBoneRotation(bone, flex, boneSplay != _handSplayPose.end() ? boneSplay->second : 0.0f, isLeft);
+        const int fingerIndex = boneToFingerIndex(bone);
+        const int boneToFlexIndex = fingerIndex * BONES_PER_FINGER + (bone.back() - '1');
+        const float flex = std::clamp(overrideState.pose.getFlexAt(boneToFlexIndex), -1.0f, 2.0f);
+        outRotation = blendBoneRotation(bone, flex, overrideState.pose.getSplayAt(fingerIndex), isLeft);
         return true;
     }
 
@@ -511,19 +490,19 @@ namespace frik
         return result;
     }
 
-    void HandPose::setHandPoseOverride(const bool setActive, const bool rightHand, const HandFingersPose& pose)
+    HandOverrideState& HandPose::getHandOverrideState(const bool isLeft)
     {
-        bool& poseSet = rightHand ? _rightHandPoseSet : _leftHandPoseSet;
-        if (poseSet == setActive) {
+        return isLeft ? _leftHandOverride : _rightHandOverride;
+    }
+
+    void HandPose::setHandPoseOverride(const bool setActive, const bool isLeft, const HandFingersPose& pose)
+    {
+        auto& overrideState = getHandOverrideState(isLeft);
+        if (overrideState.active == setActive) {
             return;
         }
-        logger::debug("Hand pose: Set force hand pose for '{}' hand: {})", rightHand ? "Right" : "Left", setActive ? "Set" : "Release");
-        poseSet = setActive;
-        const bool isLeft = !rightHand;
-        for (auto i = 0; i < HAND_BONES_PER_HAND; i++) {
-            const auto* const finger = getHandBoneName(isLeft, i);
-            _handPapyrusHasControl[finger] = setActive;
-            _handPapyrusPose[finger] = pose.getFlexAt(i);
-        }
+        logger::debug("Hand pose: Set force hand pose for '{}' hand: {})", isLeft ? "Left" : "Right", setActive ? "Set" : "Release");
+        overrideState.active = setActive;
+        overrideState.pose = pose;
     }
 }
