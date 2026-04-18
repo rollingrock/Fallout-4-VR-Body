@@ -216,7 +216,9 @@ namespace frik
      */
     void HandPose::onFrameUpdate(RE::NiNode* root, const float frameTime)
     {
-        const bool shouldUseWeaponPoseForPrimaryHand = IsWeaponDrawn() && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
+        const bool leftHandedMode = isLeftHandedMode();
+        const bool shouldUseWeaponPoseForPrimaryHand = IsWeaponDrawn() && (leftHandedMode || !g_frik.isPipboyOperatingWithFinger());
+        const bool shouldUseFistPoseForBothHands = shouldUseWeaponPoseForPrimaryHand && leftHandedMode && isUnarmedWeaponEquipped();
         const auto leftHandOverridePose = tryGetHandOverridePose(true);
         const auto rightHandOverridePose = tryGetHandOverridePose(false);
 
@@ -228,12 +230,10 @@ namespace frik
                 continue;
             }
 
-            const bool isLeftHandBone = boneName[0] == 'L';
-            const bool isPrimaryHandBone = isLeftHandBone == isLeftHandedMode();
-
-            if (isPrimaryHandBone && shouldUseWeaponPoseForPrimaryHand) {
+            const bool leftHandBone = isLeftHandBone(boneName);
+            if (shouldUseFistPoseForBothHands || (leftHandBone == leftHandedMode && shouldUseWeaponPoseForPrimaryHand)) {
                 applyPrimaryWeaponHandPose(boneName);
-            } else if (const auto activePose = isLeftHandBone ? leftHandOverridePose : rightHandOverridePose) {
+            } else if (const auto activePose = leftHandBone ? leftHandOverridePose : rightHandOverridePose) {
                 applyOverrideHandPose(boneName, activePose, frameTime);
             } else {
                 applyDynamicHandPose(boneName, frameTime);
@@ -281,7 +281,9 @@ namespace frik
     void HandPose::applyPrimaryWeaponHandPose(const std::string& boneName)
     {
         if (isLeftHandedMode()) {
-            const auto& pose = g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose();
+            const auto& pose = isUnarmedWeaponEquipped()
+                ? getFistPose()
+                : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
             _handBones[boneName].rotate = getPoseBoneRotation(boneName, pose);
         } else {
             const auto fpTree = getFirstPersonBoneTree();
@@ -313,11 +315,13 @@ namespace frik
         const auto controllerButtonForBone = getTrackedButton(boneName);
         if (controllerButtonForBone == k_EButton_Grip) {
             flex = 1.0f - VRControllers.getAxisValue(boneHand, Axis::Grip).x;
+        } else if (controllerButtonForBone == k_EButton_SteamVR_Trigger) {
+            flex = 1.0f - 2 * VRControllers.getAxisValue(boneHand, Axis::Trigger).x;
         } else if (VRControllers.isTouching(boneHand, controllerButtonForBone)) {
             flex = 0.0F;
         }
 
-        blendBoneTowardRotation(boneName, blendBoneRotation(boneName, flex, 0), frameTime);
+        blendBoneTowardRotation(boneName, blendBoneRotation(boneName, fmax(0.0f, fmin(1.0f, flex)), 0), frameTime);
     }
 
     /**
