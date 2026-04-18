@@ -59,7 +59,7 @@ namespace frik
     public:
         explicit HandPose(bool inPowerArmor);
 
-        // Papyrus / API-driven pose overrides
+        // API-driven pose overrides
         static void setFingerPose(bool isLeft, const HandFingersPose& pose);
         static void restoreFingerPoseControl(bool isLeft);
 
@@ -75,18 +75,14 @@ namespace frik
         void onFrameUpdate(RE::NiNode* root, float frameTime);
 
     private:
-        static const HandFingersPose* tryGetActiveHandPose(bool isLeft);
+        static const HandFingersPose* tryGetHandOverridePose(bool isLeft);
         void applyPrimaryWeaponHandPose(const std::string& boneName);
+        void applyDynamicHandPose(const std::string& boneName, float frameTime);
+        void applyOverrideHandPose(const std::string& boneName, const HandFingersPose* activePose, float frameTime);
         void blendBoneTowardRotation(const std::string& boneName, const RE::NiMatrix3& targetRotation, float frameTime);
-
-        RE::NiMatrix3 resolveDynamicBoneRotation(const std::string& boneName, bool isLeft, const HandFingersPose* activePose) const;
         RE::NiMatrix3 getPoseBoneRotation(const std::string& boneName, const HandFingersPose& pose) const;
-        RE::NiMatrix3 blendBoneRotation(const std::string& boneName, float flex) const;
-        RE::NiMatrix3 blendBoneRotation(const std::string& boneName, float flex, float splay, bool isLeft) const;
-
+        RE::NiMatrix3 blendBoneRotation(const std::string& boneName, float flex, float splay) const;
         static bool shouldUseThumbsUpPose(bool isLeft);
-        static float getBoneFlex(const std::string& bone, bool isLeft);
-
         static void setHandPoseOverride(bool setActive, bool isLeft, const HandFingersPose& pose);
         static HandOverrideState& getHandOverrideState(bool isLeft);
 
