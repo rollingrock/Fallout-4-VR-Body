@@ -18,12 +18,12 @@ namespace frik
         float splay = 0.0f; // lateral abduction/adduction of the proximal joint
 
         constexpr FingerPose() noexcept = default;
+
         constexpr explicit FingerPose(float flex) noexcept :
-            prox(flex), mid(flex), dist(flex)
-        {}
+            prox(flex), mid(flex), dist(flex) {}
+
         constexpr FingerPose(float proxValue, float midValue, float distValue, float splayValue = 0.0f) noexcept :
-            prox(proxValue), mid(midValue), dist(distValue), splay(splayValue)
-        {}
+            prox(proxValue), mid(midValue), dist(distValue), splay(splayValue) {}
     };
 
     // Full hand pose: all 5 fingers, each with flex + splay.
@@ -36,17 +36,16 @@ namespace frik
         FingerPose pinky;
 
         constexpr HandFingersPose() noexcept = default;
+
         constexpr HandFingersPose(FingerPose thumbPose, FingerPose indexPose, FingerPose middlePose, FingerPose ringPose, FingerPose pinkyPose) noexcept :
-            thumb(thumbPose), index(indexPose), middle(middlePose), ring(ringPose), pinky(pinkyPose)
-        {}
+            thumb(thumbPose), index(indexPose), middle(middlePose), ring(ringPose), pinky(pinkyPose) {}
+
         constexpr HandFingersPose(float thumbFlex, float indexFlex, float middleFlex, float ringFlex, float pinkyFlex) noexcept :
-            thumb(thumbFlex), index(indexFlex), middle(middleFlex), ring(ringFlex), pinky(pinkyFlex)
-        {}
+            thumb(thumbFlex), index(indexFlex), middle(middleFlex), ring(ringFlex), pinky(pinkyFlex) {}
 
         FingerPose& getFingerAt(int fingerIndex) noexcept;
         const FingerPose& getFingerAt(int fingerIndex) const noexcept;
         float getFlexAt(int boneIndex) const noexcept;
-        float getSplayAt(int fingerIndex) const noexcept;
     };
 
     struct HandOverrideState
@@ -76,14 +75,17 @@ namespace frik
         void onFrameUpdate(RE::NiNode* root, float frameTime);
 
     private:
-        void calculateHandPose(const std::string& bone, bool isLeft, float frameTime);
-        void copy1StPerson(const std::string& bone);
+        static const HandFingersPose* tryGetActiveHandPose(bool isLeft);
+        void applyPrimaryWeaponHandPose(const std::string& boneName);
+        void blendBoneTowardRotation(const std::string& boneName, const RE::NiMatrix3& targetRotation, float frameTime);
 
-        bool tryGetPapyrusRotation(const std::string& bone, bool isLeft, RE::NiMatrix3& outRotation) const;
-        RE::NiMatrix3 blendBoneRotation(const std::string& bone, float flex) const;
-        RE::NiMatrix3 getGripBoneRotation(const std::string& bone, bool melee) const;
-        RE::NiMatrix3 getThumbsUpBoneRotation(const std::string& bone, bool isLeft) const;
-        RE::NiMatrix3 blendBoneRotation(const std::string& bone, float flex, float splay, bool isLeft) const;
+        RE::NiMatrix3 resolveDynamicBoneRotation(const std::string& boneName, bool isLeft, const HandFingersPose* activePose) const;
+        RE::NiMatrix3 getPoseBoneRotation(const std::string& boneName, const HandFingersPose& pose) const;
+        RE::NiMatrix3 blendBoneRotation(const std::string& boneName, float flex) const;
+        RE::NiMatrix3 blendBoneRotation(const std::string& boneName, float flex, float splay, bool isLeft) const;
+
+        static bool shouldUseThumbsUpPose(bool isLeft);
+        static float getBoneFlex(const std::string& bone, bool isLeft);
 
         static void setHandPoseOverride(bool setActive, bool isLeft, const HandFingersPose& pose);
         static HandOverrideState& getHandOverrideState(bool isLeft);
