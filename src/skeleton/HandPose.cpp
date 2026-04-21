@@ -62,6 +62,57 @@ namespace
             return k_EButton_Grip;
         }
     }
+
+    /**
+     * Return the fixed authored weapon pose used when the runtime cannot copy the first-person hand.
+     * Can be used to return specific pose for specific weapons.
+     */
+    const frik::HandFingersPose& getFixedPrimaryWeaponPose()
+    {
+        return isUnarmedWeaponEquipped()
+            ? getFistPose()
+            : (frik::g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
+    }
+
+    /**
+     * Refresh one flattened bone transform after its local transform changes.
+     */
+    void refreshFlattenedBoneTransform(const BSFlattenedBoneTree* const boneTree, const int pos)
+    {
+        auto& transform = boneTree->transforms[pos];
+        if (transform.refNode) {
+            transform.refNode->local = transform.local;
+        }
+
+        const auto parentWorld = transform.refNode && transform.refNode->parent
+            ? transform.refNode->parent->world
+            : boneTree->transforms[transform.parPos].world;
+        RE::NiPoint3 p = transform.local.translate;
+        p = parentWorld.rotate.Transpose() * (p * parentWorld.scale);
+        transform.world.translate = parentWorld.translate + p;
+        transform.world.rotate = transform.local.rotate * parentWorld.rotate;
+        transform.world.scale = transform.local.scale * parentWorld.scale;
+
+        if (transform.refNode) {
+            transform.refNode->world = transform.world;
+        }
+    }
+
+    /**
+     * Blend one palm axis toward its target and snap the tail to avoid endless tiny drift.
+     */
+    void blendPalmAxisToward(float& currentValue, const float targetValue, const float frameTime)
+    {
+        if (fEqual(currentValue, targetValue)) {
+            currentValue = targetValue;
+            return;
+        }
+
+        currentValue += (targetValue - currentValue) * std::clamp(frameTime * 7.0f, 0.0f, 1.0f);
+        if (fEqual(currentValue, targetValue)) {
+            currentValue = targetValue;
+        }
+    }
 }
 
 // TODO: this code is terrible, primarily it doesn't handle multiple code paths set hand pose, release will release all of them
@@ -204,6 +255,8 @@ namespace frik
     /**
      * Update all tracked hand bones for the current frame.
      *
+     * First, apply any pose-driven palm offset on the hand root so child finger bones inherit it.
+     *
      * For each finger bone in the flattened bone tree, this selects the highest-priority
      * pose source in this order:
      * 1. primary weapon pose for the dominant hand while a weapon is drawn
@@ -216,13 +269,13 @@ namespace frik
      */
     void HandPose::onFrameUpdate(RE::NiNode* root, const float frameTime)
     {
-        const bool leftHandedMode = isLeftHandedMode();
-        const bool shouldUseWeaponPoseForPrimaryHand = IsWeaponDrawn() && (leftHandedMode || !g_frik.isPipboyOperatingWithFinger());
-        const bool shouldUseFistPoseForBothHands = shouldUseWeaponPoseForPrimaryHand && leftHandedMode && isUnarmedWeaponEquipped();
-        const auto leftHandOverridePose = tryGetHandOverridePose(true);
-        const auto rightHandOverridePose = tryGetHandOverridePose(false);
+        const auto leftHandSource = resolveHandPoseSource(true);
+        const auto rightHandSource = resolveHandPoseSource(false);
 
         const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(root);
+        applyPalmPose(rt, true, leftHandSource, _leftPalmBlend, frameTime);
+        applyPalmPose(rt, false, rightHandSource, _rightPalmBlend, frameTime);
+
         for (auto pos = 0; pos < rt->numTransforms; pos++) {
             const auto& boneName = Skelly::getBoneName(pos);
             auto handBoneIt = _handBones.find(boneName);
@@ -231,42 +284,105 @@ namespace frik
             }
 
             const bool leftHandBone = isLeftHandBone(boneName);
-            if (shouldUseFistPoseForBothHands || (leftHandBone == leftHandedMode && shouldUseWeaponPoseForPrimaryHand)) {
-                applyPrimaryWeaponHandPose(boneName);
-            } else if (const auto activePose = leftHandBone ? leftHandOverridePose : rightHandOverridePose) {
-                applyOverrideHandPose(boneName, activePose, frameTime);
+            const auto& source = leftHandBone ? leftHandSource : rightHandSource;
+            if (source.kind == HandPoseSourceKind::PrimaryWeaponPose) {
+                applyPrimaryWeaponHandPose(boneName, source);
+            } else if (source.kind == HandPoseSourceKind::OverridePose) {
+                applyOverrideHandPose(boneName, source.pose, frameTime);
             } else {
                 applyDynamicHandPose(boneName, frameTime);
             }
 
             rt->transforms[pos].local.rotate = handBoneIt->second.rotate;
             rt->transforms[pos].local.translate = _handOpen.at(boneName).translate;
-            if (rt->transforms[pos].refNode) {
-                rt->transforms[pos].refNode->local = rt->transforms[pos].local;
-                rt->transforms[pos].world = rt->transforms[pos].refNode->world;
-            } else {
-                const auto parent = rt->transforms[pos].parPos;
-                RE::NiPoint3 p = rt->transforms[pos].local.translate;
-                p = rt->transforms[parent].world.rotate.Transpose() * (p * rt->transforms[parent].world.scale);
-                rt->transforms[pos].world.translate = rt->transforms[parent].world.translate + p;
-                rt->transforms[pos].world.rotate = rt->transforms[pos].local.rotate * rt->transforms[parent].world.rotate;
-            }
+            refreshFlattenedBoneTransform(rt, pos);
         }
     }
 
     /**
-     * Return the active override pose for a hand, including the implicit thumbs-up pose.
+     * Resolve the active hand pose source for one hand for this frame.
+     *
+     * This is the single hand-level source selection used by both pose consumers:
+     * 1. the palm prepass, which needs an authored pose before child finger bones are updated
+     * 2. the per-finger loop, which needs to know whether to use weapon, override, or dynamic logic
+     *
+     * Source priority matches the existing runtime behavior:
+     * 1. primary weapon pose for the dominant hand while a weapon is drawn
+     * 2. explicit hand override, then implicit thumbs-up
+     * 3. dynamic controller-driven curl
+     *
+     * The returned source may intentionally have `pose == nullptr` when the active source is the
+     * right-handed primary weapon path. In that case, finger bones should copy the first-person hand
+     * transform instead of using authored pose data, and the palm prepass should do nothing.
      */
-    const HandFingersPose* HandPose::tryGetHandOverridePose(const bool isLeft)
+    HandPose::HandPoseSource HandPose::resolveHandPoseSource(const bool isLeft)
     {
+        const bool shouldUseWeaponPoseForPrimaryHand = IsWeaponDrawn() && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
+
+        if (shouldUseWeaponPoseForPrimaryHand && isLeftHandedMode() && isUnarmedWeaponEquipped()) {
+            // Left-handed unarmed is a special authored fist case that applies to both hands.
+            return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = &getFistPose() };
+        }
+
+        const bool isPrimaryHand = isLeft == isLeftHandedMode();
+        if (isPrimaryHand && shouldUseWeaponPoseForPrimaryHand) {
+            // Right-handed mode can copy the first-person hand transform directly. Left-handed mode
+            // cannot, so it uses the fixed authored weapon pose instead.
+            return HandPoseSource{
+                .kind = HandPoseSourceKind::PrimaryWeaponPose,
+                .pose = isLeftHandedMode() ? &getFixedPrimaryWeaponPose() : nullptr
+            };
+        }
+
         const auto& overrideState = getHandOverrideState(isLeft);
         if (overrideState.active) {
-            return &overrideState.pose;
+            // Explicit mod/API override wins over gesture-driven posing.
+            return HandPoseSource{ .kind = HandPoseSourceKind::OverridePose, .pose = &overrideState.pose };
         }
+
         if (shouldUseThumbsUpPose(isLeft)) {
-            return &getThumbsUpPose();
+            // Thumbs-up is treated as an implicit authored override.
+            return HandPoseSource{ .kind = HandPoseSourceKind::OverridePose, .pose = &getThumbsUpPose() };
         }
-        return nullptr;
+
+        // Otherwise, let controller input drive the fingers and leave the palm neutral.
+        return HandPoseSource{};
+    }
+
+    /**
+     * Blend and apply the authored palm offset from the active hand source to one hand root transform.
+     */
+    void HandPose::applyPalmPose(BSFlattenedBoneTree* const boneTree, const bool isLeft, const HandPoseSource& source, PalmBlendState& blendState, const float frameTime)
+    {
+        const int pos = boneTree->GetBoneIndex(isLeft ? "LArm_Hand" : "RArm_Hand");
+        if (pos < 0) {
+            return;
+        }
+
+        auto& transform = boneTree->transforms[pos];
+
+        // The flattened tree locals/worlds are not rebuilt by Skeleton arm IK. Sync the hand root
+        // from the live refNode every frame so child finger refreshes use the correct wrist basis
+        // even when there is no additional palm offset applied.
+        if (transform.refNode) {
+            transform.local = transform.refNode->local;
+            transform.world = transform.refNode->world;
+        }
+
+        const float targetPalmPitch = source.pose ? source.pose->palmPitch : 0.0f;
+        const float targetPalmYaw = source.pose ? source.pose->palmYaw : 0.0f;
+        blendPalmAxisToward(blendState.pitch, targetPalmPitch, frameTime);
+        blendPalmAxisToward(blendState.yaw, targetPalmYaw, frameTime);
+
+        if (blendState.pitch == 0.0f && blendState.yaw == 0.0f) {
+            return;
+        }
+
+        // Apply the offset in the hand's local space so flexion/deviation follow the hand basis
+        // instead of the parent forearm basis.
+        const float deviationSign = isLeft ? -1.0f : 1.0f;
+        transform.local.rotate = transform.local.rotate * MatrixUtils::getMatrixFromEulerAnglesDegrees(0.0f, deviationSign * blendState.yaw, blendState.pitch);
+        refreshFlattenedBoneTransform(boneTree, pos);
     }
 
     /**
@@ -278,13 +394,10 @@ namespace frik
      * Left-handed: the 1st-person skeleton is not using the correct hand,
      * so use a fixed grip pose instead of copying the 1st-person weapon hand.
      */
-    void HandPose::applyPrimaryWeaponHandPose(const std::string& boneName)
+    void HandPose::applyPrimaryWeaponHandPose(const std::string& boneName, const HandPoseSource& source)
     {
-        if (isLeftHandedMode()) {
-            const auto& pose = isUnarmedWeaponEquipped()
-                ? getFistPose()
-                : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
-            _handBones[boneName].rotate = getPoseBoneRotation(boneName, pose);
+        if (source.pose) {
+            _handBones[boneName].rotate = getPoseBoneRotation(boneName, *source.pose);
         } else {
             const auto fpTree = getFirstPersonBoneTree();
             const int pos = fpTree->GetBoneIndex(boneName);

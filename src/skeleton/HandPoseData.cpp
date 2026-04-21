@@ -49,18 +49,18 @@ namespace
 
     constexpr HandFingersPose THUMBS_UP_POSE{
         FingerPose{ 1.6f, 1.4f, 1.5f, 0.5f },
-        FingerPose{ 0.0f },
-        FingerPose{ 0.0f },
-        FingerPose{ 0.0f },
-        FingerPose{ 0.0f }
+        FingerPose{ 0.0f, 0.0f, 0.0f },
+        FingerPose{ 0.0f, 0.0f, 0.0f },
+        FingerPose{ 0.0f, 0.0f, 0.0f },
+        FingerPose{ 0.0f, 0.0f, 0.0f }
     };
 
     constexpr HandFingersPose FIST_POSE{
-        FingerPose{ 0.0f },
-        FingerPose{ 0.0f },
-        FingerPose{ 0.0f },
-        FingerPose{ 0.0f },
-        FingerPose{ 0.0f }
+        FingerPose{ 0.0f, 0.0f, 0.0f },
+        FingerPose{ 0.0f, 0.0f, 0.0f },
+        FingerPose{ 0.0f, 0.0f, 0.0f },
+        FingerPose{ 0.0f, 0.0f, 0.0f },
+        FingerPose{ 0.0f, 0.0f, 0.0f }
     };
 
     const std::array<HandBonePoseData, 30> HAND_BONE_DATA = { {

@@ -4,6 +4,7 @@
 #include <string>
 
 #include "common/CommonUtils.h"
+#include "f4vr/BSFlattenedBoneTree.h"
 
 namespace frik
 {
@@ -19,14 +20,11 @@ namespace frik
 
         constexpr FingerPose() noexcept = default;
 
-        constexpr explicit FingerPose(float flex) noexcept :
-            prox(flex), mid(flex), dist(flex) {}
-
-        constexpr FingerPose(float proxValue, float midValue, float distValue, float splayValue = 0.0f) noexcept :
+        constexpr FingerPose(const float proxValue, const float midValue, const float distValue, const float splayValue = 0.0f) noexcept :
             prox(proxValue), mid(midValue), dist(distValue), splay(splayValue) {}
     };
 
-    // Full hand pose: all 5 fingers, each with flex + splay.
+    // Full hand pose: all 5 fingers, each with flex + splay, plus optional palm motion.
     struct HandFingersPose
     {
         FingerPose thumb;
@@ -34,14 +32,14 @@ namespace frik
         FingerPose middle;
         FingerPose ring;
         FingerPose pinky;
+        float palmPitch = 0.0f; // wrist flexion (+) / extension (-), degrees
+        float palmYaw = 0.0f; // radial (+) / ulnar (-) deviation, degrees
 
         constexpr HandFingersPose() noexcept = default;
 
-        constexpr HandFingersPose(FingerPose thumbPose, FingerPose indexPose, FingerPose middlePose, FingerPose ringPose, FingerPose pinkyPose) noexcept :
-            thumb(thumbPose), index(indexPose), middle(middlePose), ring(ringPose), pinky(pinkyPose) {}
-
-        constexpr HandFingersPose(float thumbFlex, float indexFlex, float middleFlex, float ringFlex, float pinkyFlex) noexcept :
-            thumb(thumbFlex), index(indexFlex), middle(middleFlex), ring(ringFlex), pinky(pinkyFlex) {}
+        constexpr HandFingersPose(const FingerPose thumbPose, const FingerPose indexPose, const FingerPose middlePose, const FingerPose ringPose, const FingerPose pinkyPose,
+            const float palmPitch = 0.0f, const float palmYaw = 0.0f) noexcept :
+            thumb(thumbPose), index(indexPose), middle(middlePose), ring(ringPose), pinky(pinkyPose), palmPitch(palmPitch), palmYaw(palmYaw) {}
 
         FingerPose& getFingerAt(int fingerIndex) noexcept;
         const FingerPose& getFingerAt(int fingerIndex) const noexcept;
@@ -75,8 +73,33 @@ namespace frik
         void onFrameUpdate(RE::NiNode* root, float frameTime);
 
     private:
-        static const HandFingersPose* tryGetHandOverridePose(bool isLeft);
-        void applyPrimaryWeaponHandPose(const std::string& boneName);
+        enum class HandPoseSourceKind : uint8_t
+        {
+            // Default controller-driven finger curl, with no authored palm pose.
+            Dynamic,
+            // Explicit or implicit authored pose, such as mod overrides or thumbs-up.
+            OverridePose,
+            // Weapon-driven hand source. This may carry an authored pose pointer, or a null pose
+            // to indicate the right-handed path should copy the first-person hand transform.
+            PrimaryWeaponPose
+        };
+
+        struct HandPoseSource
+        {
+            HandPoseSourceKind kind = HandPoseSourceKind::Dynamic;
+            // Present only when the source is backed by authored pose data.
+            const HandFingersPose* pose = nullptr;
+        };
+
+        struct PalmBlendState
+        {
+            float pitch = 0.0f; // degrees
+            float yaw = 0.0f; // degrees
+        };
+
+        static HandPoseSource resolveHandPoseSource(bool isLeft);
+        static void applyPalmPose(f4cf::f4vr::BSFlattenedBoneTree* boneTree, bool isLeft, const HandPoseSource& source, PalmBlendState& blendState, float frameTime);
+        void applyPrimaryWeaponHandPose(const std::string& boneName, const HandPoseSource& source);
         void applyDynamicHandPose(const std::string& boneName, float frameTime);
         void applyOverrideHandPose(const std::string& boneName, const HandFingersPose* activePose, float frameTime);
         void blendBoneTowardRotation(const std::string& boneName, const RE::NiMatrix3& targetRotation, float frameTime);
@@ -89,6 +112,8 @@ namespace frik
         std::map<std::string, RE::NiTransform> _handClosed;
         std::map<std::string, RE::NiTransform> _handOpen;
         std::map<std::string, RE::NiTransform> _handBones;
+        PalmBlendState _leftPalmBlend;
+        PalmBlendState _rightPalmBlend;
         inline static HandOverrideState _leftHandOverride;
         inline static HandOverrideState _rightHandOverride;
     };
