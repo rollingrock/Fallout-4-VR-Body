@@ -192,7 +192,7 @@ namespace
 
         const bool isLeft = getIsLeftForHandEnum(hand);
         if (handPose == FRIKApi::HandPoseKind::Unset) {
-            HandPose::restoreFingerPoseControl(isLeft, *normalizedTag);
+            HandPose::clearHandPoseOverride(isLeft, *normalizedTag);
             return true;
         }
 
@@ -217,7 +217,7 @@ namespace
             return false;
         }
 
-        HandPose::setFingerPose(isLeft, *normalizedTag, *pose);
+        HandPose::setHandPoseOverride(isLeft, *normalizedTag, *pose, false);
         return true;
     }
 
@@ -229,18 +229,18 @@ namespace
             return false;
         }
 
-        HandPose::setFingerPose(getIsLeftForHandEnum(hand), *normalizedTag, makeUniformFingerPose(thumb, index, middle, ring, pinky));
+        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag, makeUniformFingerPose(thumb, index, middle, ring, pinky), false);
         return true;
     }
 
-    bool FRIK_CALL setHandPoseCustom(const char* tag, const FRIKApi::Hand hand, const FRIKApi::HandPoseData& handPose)
+    bool FRIK_CALL setHandPoseCustom(const char* tag, const FRIKApi::Hand hand, const FRIKApi::HandPoseData& handPose, const bool forceTop)
     {
         const auto normalizedTag = getNormalizedTag(tag);
         if (!normalizedTag) {
             return false;
         }
 
-        HandPose::setFingerPose(getIsLeftForHandEnum(hand), *normalizedTag, HandFingersPose{
+        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag, HandFingersPose{
             FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
             FingerPose{ handPose.index.prox, handPose.index.mid, handPose.index.dist, handPose.index.splay },
             FingerPose{ handPose.middle.prox, handPose.middle.mid, handPose.middle.dist, handPose.middle.splay },
@@ -249,7 +249,7 @@ namespace
             handPose.palmPitch,
             handPose.palmYaw,
             HandPoseKind::Custom
-        });
+        }, forceTop);
         return true;
     }
 
@@ -260,18 +260,18 @@ namespace
             return false;
         }
 
-        HandPose::restoreFingerPoseControl(getIsLeftForHandEnum(hand), *normalizedTag);
+        HandPose::clearHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag);
         return true;
     }
 
     void FRIK_CALL setHandPoseFingerPositions(const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
-        HandPose::setFingerPose(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG, makeUniformFingerPose(thumb, index, middle, ring, pinky));
+        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG, makeUniformFingerPose(thumb, index, middle, ring, pinky), false);
     }
 
     void FRIK_CALL clearHandPoseFingerPositions(const FRIKApi::Hand hand)
     {
-        HandPose::restoreFingerPoseControl(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG);
+        HandPose::clearHandPoseOverride(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG);
     }
 
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApi::OpenExternalModConfigData& data)

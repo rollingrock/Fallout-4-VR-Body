@@ -177,17 +177,17 @@ namespace frik
     /**
      * Activate an explicit pose override for one hand.
      */
-    void HandPose::setFingerPose(const bool isLeft, const std::string_view tag, const HandFingersPose& pose)
+    void HandPose::setHandPoseOverride(const bool isLeft, const std::string_view tag, const HandFingersPose& pose, const bool forceTop = false)
     {
-        setHandPoseOverride(isLeft, tag, pose);
+        setHandPoseOverrideIntr(isLeft, tag, pose, forceTop);
     }
 
     /**
      * Release any explicit override and return control to runtime hand logic.
      */
-    void HandPose::restoreFingerPoseControl(const bool isLeft, const std::string_view tag)
+    void HandPose::clearHandPoseOverride(const bool isLeft, const std::string_view tag)
     {
-        clearHandPoseOverride(isLeft, tag);
+        clearHandPoseOverrideIntr(isLeft, tag);
     }
 
     /**
@@ -244,7 +244,7 @@ namespace frik
      */
     void HandPose::setPipboyHandPose()
     {
-        setHandPoseOverride(g_config.leftHandedPipBoy, PIPBOY_HAND_POSE_TAG, getPointingPose());
+        setHandPoseOverrideIntr(g_config.leftHandedPipBoy, PIPBOY_HAND_POSE_TAG, getPointingPose(), true);
     }
 
     /**
@@ -252,7 +252,7 @@ namespace frik
      */
     void HandPose::disablePipboyHandPose()
     {
-        clearHandPoseOverride(g_config.leftHandedPipBoy, PIPBOY_HAND_POSE_TAG);
+        clearHandPoseOverrideIntr(g_config.leftHandedPipBoy, PIPBOY_HAND_POSE_TAG);
     }
 
     /**
@@ -260,7 +260,7 @@ namespace frik
      */
     void HandPose::setConfigModeHandPose()
     {
-        setHandPoseOverride(!isLeftHandedMode(), CONFIG_MODE_HAND_POSE_TAG, getPointingPose());
+        setHandPoseOverrideIntr(!isLeftHandedMode(), CONFIG_MODE_HAND_POSE_TAG, getPointingPose(), true);
     }
 
     /**
@@ -268,7 +268,7 @@ namespace frik
      */
     void HandPose::disableConfigModePose()
     {
-        clearHandPoseOverride(!isLeftHandedMode(), CONFIG_MODE_HAND_POSE_TAG);
+        clearHandPoseOverrideIntr(!isLeftHandedMode(), CONFIG_MODE_HAND_POSE_TAG);
     }
 
     /**
@@ -277,9 +277,9 @@ namespace frik
     void HandPose::setForceHandPointingPose(const bool primaryHand, const bool forcePointing)
     {
         if (forcePointing) {
-            setHandPoseOverride(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG, getPointingPose());
+            setHandPoseOverrideIntr(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG, getPointingPose(), true);
         } else {
-            clearHandPoseOverride(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG);
+            clearHandPoseOverrideIntr(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG);
         }
     }
 
@@ -289,9 +289,9 @@ namespace frik
     void HandPose::setOffhandGripHandPose(const bool toSet)
     {
         if (toSet) {
-            setHandPoseOverride(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG, getOffhandWeaponGripPose());
+            setHandPoseOverrideIntr(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG, getOffhandWeaponGripPose(), true);
         } else {
-            clearHandPoseOverride(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG);
+            clearHandPoseOverrideIntr(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG);
         }
     }
 
@@ -301,9 +301,9 @@ namespace frik
     void HandPose::setAttaboyHandPose(const bool toSet)
     {
         if (toSet) {
-            setHandPoseOverride(true, ATTABOY_HAND_POSE_TAG, getAttaboyPose());
+            setHandPoseOverrideIntr(true, ATTABOY_HAND_POSE_TAG, getAttaboyPose(), true);
         } else {
-            clearHandPoseOverride(true, ATTABOY_HAND_POSE_TAG);
+            clearHandPoseOverrideIntr(true, ATTABOY_HAND_POSE_TAG);
         }
     }
 
@@ -564,40 +564,38 @@ namespace frik
     /**
      * Set, update, or promote one tagged explicit hand pose override.
      */
-    void HandPose::setHandPoseOverride(const bool isLeft, const std::string_view tag, const HandFingersPose& pose)
+    void HandPose::setHandPoseOverrideIntr(const bool isLeft, const std::string_view tag, const HandFingersPose& pose, const bool forceTop)
     {
         if (tag.empty()) {
             return;
         }
 
         auto& overrides = getHandOverrides(isLeft);
-        const std::string previousTopTag = overrides.empty() ? std::string("<none>") : overrides.back().tag;
+        const auto previousTopTag = overrides.empty() ? "---" : overrides.back().tag;
         const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) { return overrideEntry.tag == tag; });
-        const bool tagAlreadyExists = overrideIt != overrides.end();
-        const bool tagWasTop = tagAlreadyExists && std::next(overrideIt) == overrides.end();
 
         if (overrideIt == overrides.end()) {
             overrides.push_back(TaggedHandPoseOverride{ .tag = std::string(tag), .pose = pose });
-        } else {
-            TaggedHandPoseOverride updatedOverride = *overrideIt;
+
+            logger::info("Hand pose: Insert top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
+                tag, isLeft ? "Left" : "Right", previousTopTag, overrides.size());
+        } else if (forceTop && std::next(overrideIt) != overrides.end()) {
+            auto updatedOverride = *overrideIt;
             updatedOverride.pose = pose;
             overrides.erase(overrideIt);
             overrides.push_back(std::move(updatedOverride));
-        }
 
-        logger::info("Hand pose: Set override '{}' for {} hand (action '{}', previous top '{}', new top '{}', depth {})",
-            tag,
-            isLeft ? "Left" : "Right",
-            !tagAlreadyExists ? "inserted" : (tagWasTop ? "updated-top" : "updated-promoted"),
-            previousTopTag,
-            overrides.back().tag,
-            overrides.size());
+            logger::info("Hand pose: Forced to top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
+                tag, isLeft ? "Left" : "Right", previousTopTag, overrides.size());
+        } else {
+            overrideIt->pose = pose;
+        }
     }
 
     /**
      * Clear one tagged explicit hand pose override.
      */
-    void HandPose::clearHandPoseOverride(const bool isLeft, const std::string_view tag)
+    void HandPose::clearHandPoseOverrideIntr(const bool isLeft, const std::string_view tag)
     {
         if (tag.empty()) {
             return;
@@ -606,17 +604,14 @@ namespace frik
         auto& overrides = getHandOverrides(isLeft);
         const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) { return overrideEntry.tag == tag; });
         if (overrideIt == overrides.end()) {
-            logger::info("Hand pose: Clear override '{}' for {} hand ignored; tag not found", tag, isLeft ? "Left" : "Right");
             return;
         }
 
-        const bool removedWasTop = std::next(overrideIt) == overrides.end();
+        const bool wasTop = std::next(overrideIt) == overrides.end();
+
         overrides.erase(overrideIt);
-        logger::info("Hand pose: Cleared override '{}' for {} hand (was top '{}', new top '{}', remaining {})",
-            tag,
-            isLeft ? "Left" : "Right",
-            removedWasTop ? "yes" : "no",
-            overrides.empty() ? std::string("<none>") : overrides.back().tag,
-            overrides.size());
+
+        logger::info("Hand pose: Cleared override tag:'{}' for '{}' hand (was top '{}', new top tag:'{}', remaining {})",
+            tag, isLeft ? "Left" : "Right", wasTop ? "yes" : "no", overrides.empty() ? "---" : overrides.back().tag, overrides.size());
     }
 }

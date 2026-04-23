@@ -258,10 +258,11 @@ namespace frik::api
          * Supported since FRIK API v4.
          * Set a full hand pose override with per-joint finger values, per-finger splay, and palm motion.
          * Use the tag to uniquely identify different systems using hand pose overrides.
+         * Avoid using forceTop=true as it may thrash with internal FRIK logic, provided here as extreme use-case option.
          * Use clearHandPose to release the override.
          * @return true if successful.
          */
-        bool (FRIK_CALL*setHandPoseCustom)(const char* tag, Hand hand, const HandPoseData& handPose);
+        bool (FRIK_CALL*setHandPoseCustom)(const char* tag, Hand hand, const HandPoseData& handPose, bool forceTop);
 
         /**
          * Supported since FRIK API v1.
