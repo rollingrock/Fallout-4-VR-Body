@@ -1,0 +1,11 @@
+* text=auto eol=crlf
+
+*.bgem binary
+*.bgsm binary
+*.dds binary
+*.dds2 binary
+*.esp binary
+*.hkx binary
+*.lib binary
+*.nif binary
+*.pex binary
