@@ -65,17 +65,6 @@ namespace
     }
 
     /**
-     * Return the fixed authored weapon pose used when the runtime cannot copy the first-person hand.
-     * Can be used to return specific pose for specific weapons.
-     */
-    const frik::HandFingersPose& getFixedPrimaryWeaponPose()
-    {
-        return isUnarmedWeaponEquipped()
-            ? getFistPose()
-            : (frik::g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
-    }
-
-    /**
      * Refresh one flattened bone transform after its local transform changes.
      */
     void refreshFlattenedBoneTransform(const BSFlattenedBoneTree* const boneTree, const int pos)
@@ -241,6 +230,16 @@ namespace frik
     }
 
     /**
+     * Return the fixed authored weapon pose used when runtime hand posing cannot copy the first-person hand.
+     */
+    const HandFingersPose& HandPose::getFixedPrimaryWeaponPose()
+    {
+        return isUnarmedWeaponEquipped()
+            ? getFistPose()
+            : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
+    }
+
+    /**
      * Force the Pip-Boy interaction hand into the pointing pose.
      */
     void HandPose::setPipboyHandPose()
@@ -386,7 +385,7 @@ namespace frik
             // cannot, so it uses the fixed authored weapon pose instead.
             return HandPoseSource{
                 .kind = HandPoseSourceKind::PrimaryWeaponPose,
-                .pose = isLeftHandedMode() ? &getFixedPrimaryWeaponPose() : nullptr
+                .pose = isLeftHandedMode() ? &HandPose::getFixedPrimaryWeaponPose() : nullptr
             };
         }
 

@@ -20,6 +20,7 @@ namespace frik
         static void restoreFingerPoseControl(bool isLeft, std::string_view tag);
         static skeleton::data::HandPoseOverrideTagState getHandPoseSetTagState(bool isLeft, std::string_view tag);
         static skeleton::data::HandPoseKind getCurrentHandPoseKind(bool isLeft);
+        static const HandFingersPose& getFixedPrimaryWeaponPose();
 
         static void setPipboyHandPose();
         static void disablePipboyHandPose();
