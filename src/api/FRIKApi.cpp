@@ -135,7 +135,7 @@ namespace
         std::string tagStr = tag;
         // do something...
         // TODO: implement tag usage
-        HandPose::setFingerPose(getIsLeftForHandEnum(hand), HandFingersPose{
+        HandPose::setFingerPose(getIsLeftForHandEnum(hand), "legacy_API", HandFingersPose{
             FingerPose{ thumb, thumb, thumb },
             FingerPose{ index, index, index },
             FingerPose{ middle, middle, middle },
@@ -151,13 +151,13 @@ namespace
             return false;
         }
         // TODO: implement tag usage
-        HandPose::restoreFingerPoseControl(getIsLeftForHandEnum(hand));
+        HandPose::restoreFingerPoseControl(getIsLeftForHandEnum(hand), "legacy_API");
         return true;
     }
 
     void FRIK_CALL setHandPoseFingerPositions(const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
-        HandPose::setFingerPose(getIsLeftForHandEnum(hand), HandFingersPose{
+        HandPose::setFingerPose(getIsLeftForHandEnum(hand), "legacy_API", HandFingersPose{
             FingerPose{ thumb, thumb, thumb },
             FingerPose{ index, index, index },
             FingerPose{ middle, middle, middle },
@@ -168,7 +168,7 @@ namespace
 
     void FRIK_CALL clearHandPoseFingerPositions(const FRIKApi::Hand hand)
     {
-        HandPose::restoreFingerPoseControl(getIsLeftForHandEnum(hand));
+        HandPose::restoreFingerPoseControl(getIsLeftForHandEnum(hand), "legacy_API");
     }
 
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApi::OpenExternalModConfigData& data)

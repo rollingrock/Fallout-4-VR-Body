@@ -1,18 +1,34 @@
 #include "HandPoseData.h"
+#include "HandPose.h"
 
 using frik::FingerPose;
 using frik::HandFingersPose;
 using frik::skeleton::data::HandBonePoseData;
+using frik::skeleton::data::HandPoseKind;
 using frik::skeleton::data::RotationData;
 
 namespace
 {
+    constexpr HandFingersPose OPEN_POSE{
+        FingerPose{ 1.0f, 1.0f, 1.0f },
+        FingerPose{ 1.0f, 1.0f, 1.0f },
+        FingerPose{ 1.0f, 1.0f, 1.0f },
+        FingerPose{ 1.0f, 1.0f, 1.0f },
+        FingerPose{ 1.0f, 1.0f, 1.0f },
+        0.0f,
+        0.0f,
+        HandPoseKind::Open
+    };
+
     constexpr HandFingersPose GUN_GRIP_POSE{
         FingerPose{ 0.7f, 0.4f, 0.5f },
         FingerPose{ 0.9f, 0.6f, 0.5f },
         FingerPose{ 0.3f, 0.5f, 0.5f },
         FingerPose{ 0.1f, 0.5f, 0.5f },
-        FingerPose{ 0.0f, 0.5f, 0.7f }
+        FingerPose{ 0.0f, 0.5f, 0.7f },
+        0.0f,
+        0.0f,
+        HandPoseKind::HoldingWeapon
     };
 
     constexpr HandFingersPose MELEE_GRIP_POSE{
@@ -20,7 +36,10 @@ namespace
         FingerPose{ 0.4f, 0.3f, 0.9f },
         FingerPose{ 0.1f, 0.5f, 0.9f },
         FingerPose{ 0.0f, 0.5f, 0.9f },
-        FingerPose{ 0.0f, 0.4f, 0.9f }
+        FingerPose{ 0.0f, 0.4f, 0.9f },
+        0.0f,
+        0.0f,
+        HandPoseKind::HoldingWeapon
     };
 
     constexpr HandFingersPose POINTING_POSE{
@@ -28,7 +47,10 @@ namespace
         FingerPose{ 1.0f, 1.0f, 1.0f },
         FingerPose{ 0.0f, 0.0f, 0.0f },
         FingerPose{ 0.0f, 0.0f, 0.0f },
-        FingerPose{ 0.0f, 0.0f, 0.0f }
+        FingerPose{ 0.0f, 0.0f, 0.0f },
+        0.0f,
+        0.0f,
+        HandPoseKind::Pointing
     };
 
     constexpr HandFingersPose ATTABOY_POSE{
@@ -36,7 +58,10 @@ namespace
         FingerPose{ 1.1f, 1.1f, 1.2f },
         FingerPose{ 0.8f, 0.6f, 1.0f },
         FingerPose{ 0.4f, 0.8f, 1.0f },
-        FingerPose{ 0.1f, 1.0f, 1.4f }
+        FingerPose{ 0.1f, 1.0f, 1.4f },
+        0.0f,
+        0.0f,
+        HandPoseKind::Attaboy
     };
 
     constexpr HandFingersPose OFFHAND_WEAPON_GRIP_POSE{
@@ -44,7 +69,10 @@ namespace
         FingerPose{ 0.6f, 0.6f, 0.6f },
         FingerPose{ 0.5f, 0.6f, 0.55f },
         FingerPose{ 0.5f, 0.5f, 0.5f },
-        FingerPose{ 0.5f, 0.5f, 0.5f }
+        FingerPose{ 0.5f, 0.5f, 0.5f },
+        0.0f,
+        0.0f,
+        HandPoseKind::OffhandGrip
     };
 
     constexpr HandFingersPose THUMBS_UP_POSE{
@@ -52,7 +80,10 @@ namespace
         FingerPose{ 0.0f, 0.0f, 0.0f },
         FingerPose{ 0.0f, 0.0f, 0.0f },
         FingerPose{ 0.0f, 0.0f, 0.0f },
-        FingerPose{ 0.0f, 0.0f, 0.0f }
+        FingerPose{ 0.0f, 0.0f, 0.0f },
+        0.0f,
+        0.0f,
+        HandPoseKind::ThumbsUp
     };
 
     constexpr HandFingersPose FIST_POSE{
@@ -60,7 +91,10 @@ namespace
         FingerPose{ 0.0f, 0.0f, 0.0f },
         FingerPose{ 0.0f, 0.0f, 0.0f },
         FingerPose{ 0.0f, 0.0f, 0.0f },
-        FingerPose{ 0.0f, 0.0f, 0.0f }
+        FingerPose{ 0.0f, 0.0f, 0.0f },
+        0.0f,
+        0.0f,
+        HandPoseKind::HoldingWeapon
     };
 
     const std::array<HandBonePoseData, 30> HAND_BONE_DATA = { {
@@ -189,6 +223,11 @@ namespace
 
 namespace frik::skeleton::data
 {
+    const HandFingersPose& getOpenPose() noexcept
+    {
+        return OPEN_POSE;
+    }
+
     const HandFingersPose& getGunGripPose() noexcept
     {
         return GUN_GRIP_POSE;
