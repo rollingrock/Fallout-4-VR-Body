@@ -93,7 +93,7 @@ namespace frik
         if (PBConfigButtonPressed && !_isPBConfigModeActive) {
             // TODO: change from counter to timer so it will be fps independent
             _PBConfigModeEnterCounter += 1;
-            if (_PBConfigModeEnterCounter > 200) {
+            if (f4vr::isPipboyOnWrist() && _PBConfigModeEnterCounter > 200 && g_frik.isPipboyOn()) {
                 enterPipboyConfigMode();
             }
         } else if (!PBConfigButtonPressed && !_isPBConfigModeActive) {
