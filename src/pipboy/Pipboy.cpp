@@ -65,7 +65,7 @@ namespace frik
         }
 
         const float threshhold = isPipboyOpen ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
-        return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraNode, screen, threshhold);
+        return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraRoot.get(), screen, threshhold);
     }
 
     /**

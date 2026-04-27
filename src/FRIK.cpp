@@ -199,8 +199,8 @@ namespace frik
         logger::info("Initialize Skeleton ({}) ; Nodes: Player={}, Data={}, Root={}, Skeleton={}, Common={}",
             _inPowerArmor ? "PowerArmor" : "Regular",
             static_cast<const void*>(player),
-            static_cast<const void*>(player->unkF0),
-            static_cast<const void*>(player->unkF0->rootNode),
+            static_cast<const void*>(player->loadedData),
+            static_cast<const void*>(player->loadedData->data3D.get()),
             static_cast<const void*>(f4vr::getRootNode()),
             static_cast<const void*>(f4vr::getCommonNode()));
 
@@ -222,11 +222,11 @@ namespace frik
     bool FRIK::isGameReadyForSkeletonInitialization()
     {
         const auto player = f4vr::getPlayer();
-        if (!player || !player->unkF0) {
+        if (!player || !player->loadedData) {
             logger::sample(3000, "Player global not set yet!");
             return false;
         }
-        if (!player->unkF0->rootNode || !f4vr::getRootNode() || !f4vr::getWorldRootNode()) {
+        if (!player->loadedData->data3D || !f4vr::getRootNode() || !f4vr::getWorldRootNode()) {
             logger::sample("Player root nodes not set yet!");
             return false;
         }
@@ -243,7 +243,7 @@ namespace frik
             return false;
         }
         const auto camera = f4vr::getPlayerCamera();
-        if (!camera || !camera->cameraNode) {
+        if (!camera || !camera->cameraRoot) {
             logger::sample("Camera node not set yet!");
             return false;
         }

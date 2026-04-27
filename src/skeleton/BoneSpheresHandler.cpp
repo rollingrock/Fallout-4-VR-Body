@@ -102,7 +102,7 @@ namespace frik
             return 0;
         }
 
-        if (!f4vr::getPlayer()->unkF0) {
+        if (!f4vr::getPlayer()->loadedData) {
             logger::info("can't register yet as new game");
             return 0;
         }
