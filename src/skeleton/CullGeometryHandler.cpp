@@ -156,17 +156,21 @@ namespace frik
     /// </summary>
     void CullGeometryHandler::setEquipmentSlotByIndexVisibility(const int slotId, const bool toHide)
     {
-        const auto& slot = f4vr::getPlayer()->equipData->slots[slotId];
+        const auto biped = f4vr::getPlayer()->biped.get();
+        if (!biped) {
+            return;
+        }
+        const auto& slot = biped->object[slotId];
 
-        if (slot.item == nullptr || slot.node == nullptr) {
+        if (slot.parent.object == nullptr || slot.partClone == nullptr) {
             return;
         }
 
-        const auto formType = slot.item->GetFormType();
+        const auto formType = slot.parent.object->GetFormType();
         if (formType != RE::ENUM_FORM_ID::kARMO) {
             return;
         }
 
-        f4vr::setNodeVisibility(slot.node, !toHide);
+        f4vr::setNodeVisibility(slot.partClone.get(), !toHide);
     }
 }

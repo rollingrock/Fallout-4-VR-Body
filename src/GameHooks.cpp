@@ -11,14 +11,14 @@ namespace
     {
         const auto player = f4vr::getPlayer();
         f4vr::Actor_ReEquipAll(player);
-        f4vr::AIProcess_Set3DUpdateFlags(player->middleProcess, 0x520);
+        f4vr::AIProcess_Set3DUpdateFlags(player->currentProcess, 0x520);
     }
 
     void fixPA3DEnter(const std::uint64_t rcx, const std::uint64_t rdx)
     {
         const auto player = f4vr::getPlayer();
         f4vr::ExtraData_SetMultiBoundRef(rcx, rdx);
-        f4vr::AIProcess_Set3DUpdateFlags(player->middleProcess, 0x520);
+        f4vr::AIProcess_Set3DUpdateFlags(player->currentProcess, 0x520);
     }
 
     // renderer stuff
@@ -46,9 +46,9 @@ namespace
     {
         const auto player = f4vr::getPlayer();
         const auto playerCamera = f4vr::getPlayerCamera();
-        if (player && playerCamera && playerCamera->cameraNode && player->unkF0 && player->unkF0->rootNode) {
-            const auto body = player->unkF0->rootNode;
-            const auto& cameraPos = playerCamera->cameraNode->world.translate;
+        if (player && playerCamera && playerCamera->cameraRoot && player->loadedData && player->loadedData->data3D) {
+            const auto body = player->loadedData->data3D.get();
+            const auto& cameraPos = playerCamera->cameraRoot->world.translate;
             body->local.translate.x = cameraPos.x;
             body->local.translate.y = cameraPos.y;
             body->world.translate.x = cameraPos.x;

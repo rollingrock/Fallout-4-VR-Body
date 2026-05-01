@@ -1,8 +1,8 @@
 #include "BodyAdjustmentSubConfigMode.h"
 
 #include "Config.h"
+#include "ConfigurationMode.h"
 #include "utils.h"
-#include "skeleton/HandPose.h"
 #include "vrui/UIButton.h"
 #include "vrui/UIManager.h"
 #include "vrui/UIToggleGroupContainer.h"

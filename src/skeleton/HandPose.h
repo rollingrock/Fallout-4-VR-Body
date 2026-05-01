@@ -1,30 +1,88 @@
 #pragma once
 
-#include "Skeleton.h"
+#include <map>
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include "HandPoseData.h"
+#include "common/CommonUtils.h"
+#include "f4vr/BSFlattenedBoneTree.h"
 
 namespace frik
 {
-    extern std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator> handClosed;
-    extern std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator> handOpen;
+    class HandPose
+    {
+    public:
+        explicit HandPose(bool inPowerArmor);
 
-    extern std::map<std::string, float> handPapyrusPose;
-    extern std::map<std::string, bool> handPapyrusHasControl;
+        static void setHandPoseOverride(bool isLeft, std::string_view tag, const HandFingersPose& pose, bool forceTop);
+        static void clearHandPoseOverride(bool isLeft, std::string_view tag);
+        static skeleton::data::HandPoseOverrideTagState getHandPoseSetTagState(bool isLeft, std::string_view tag);
+        static skeleton::data::HandPoseKind getCurrentHandPoseKind(bool isLeft);
+        static const HandFingersPose& getFixedPrimaryWeaponPose();
 
-    void initHandPoses(bool inPowerArmor);
+        static void setPipboyHandPose();
+        static void disablePipboyHandPose();
+        static void setConfigModeHandPose();
+        static void disableConfigModePose();
+        static void setForceHandPointingPose(bool primaryHand, bool forcePointing);
+        static void setOffhandGripHandPose(bool toSet);
+        static void setAttaboyHandPose(bool toSet);
 
-    float getHandBonePose(const std::string& bone, const bool melee);
+        void onFrameUpdate(RE::NiNode* root, float frameTime);
 
-    void setFingerPositionScalar(bool isLeft, float thumb, float index, float middle, float ring, float pinky);
-    void restoreFingerPoseControl(bool isLeft);
+    private:
+        enum class HandPoseSourceKind : uint8_t
+        {
+            // Default controller-driven finger curl, with no authored palm pose.
+            Dynamic,
+            // Explicit or implicit authored pose, such as mod overrides or thumbs-up.
+            OverridePose,
+            // Weapon-driven hand source. This may carry an authored pose pointer, or a null pose
+            // to indicate the right-handed path should copy the first-person hand transform.
+            PrimaryWeaponPose
+        };
 
-    void setPipboyHandPose();
-    void disablePipboyHandPose();
-    void setConfigModeHandPose();
-    void disableConfigModePose();
+        struct HandPoseSource
+        {
+            HandPoseSourceKind kind = HandPoseSourceKind::Dynamic;
+            // Present only when the source is backed by authored pose data.
+            const HandFingersPose* pose = nullptr;
+        };
 
-    void setForceHandPointingPose(bool primaryHand, bool forcePointing);
+        struct TaggedHandPoseOverride
+        {
+            std::string tag;
+            HandFingersPose pose;
+        };
 
-    void setOffhandGripHandPose(bool toSet);
-    void setAttaboyHandPose(bool toSet);
-    void setHandPoseOverride(bool override, bool rightHand, const float* handPose);
+        struct PalmBlendState
+        {
+            float pitch = 0.0f; // degrees
+            float yaw = 0.0f; // degrees
+        };
+
+        static HandPoseSource resolveHandPoseSource(bool isLeft);
+        static void applyPalmPose(f4cf::f4vr::BSFlattenedBoneTree* boneTree, bool isLeft, const HandPoseSource& source, PalmBlendState& blendState, float frameTime);
+        void applyPrimaryWeaponHandPose(const std::string& boneName, const HandPoseSource& source);
+        void applyDynamicHandPose(const std::string& boneName, float frameTime);
+        void applyOverrideHandPose(const std::string& boneName, const HandFingersPose* activePose, float frameTime);
+        void blendBoneTowardRotation(const std::string& boneName, const RE::NiMatrix3& targetRotation, float frameTime);
+        RE::NiMatrix3 getPoseBoneRotation(const std::string& boneName, const HandFingersPose& pose) const;
+        RE::NiMatrix3 blendBoneRotation(const std::string& boneName, float flex, float splay) const;
+        static bool shouldUseThumbsUpPose(bool isLeft);
+        static void setHandPoseOverrideIntr(bool isLeft, std::string_view tag, const HandFingersPose& pose, bool forceTop);
+        static void clearHandPoseOverrideIntr(bool isLeft, std::string_view tag);
+        static std::vector<TaggedHandPoseOverride>& getHandOverrides(bool isLeft);
+        static const TaggedHandPoseOverride* getActiveHandPoseOverride(bool isLeft);
+
+        std::map<std::string, RE::NiTransform> _handClosed;
+        std::map<std::string, RE::NiTransform> _handOpen;
+        std::map<std::string, RE::NiTransform> _handBones;
+        PalmBlendState _leftPalmBlend;
+        PalmBlendState _rightPalmBlend;
+        inline static std::vector<TaggedHandPoseOverride> _leftHandOverrides;
+        inline static std::vector<TaggedHandPoseOverride> _rightHandOverrides;
+    };
 }

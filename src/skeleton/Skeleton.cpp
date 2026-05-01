@@ -4,7 +4,6 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "HandPose.h"
 #include "common/MatrixUtils.h"
 #include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"
@@ -74,13 +73,9 @@ namespace frik
 
         initSkeletonNodesDefaults();
 
-        _handBones = handOpen;
-
         Skelly::initBoneTreeMap();
 
         setBodyLen();
-
-        initHandPoses(_inPowerArmor);
 
         _comfortSneakCameraOffsetAdjustment = getIniSetting("fComfortSneakHeight:VR")->GetFloat();
     }
@@ -209,7 +204,7 @@ namespace frik
         _selfieHandler.onFrameUpdate();
 
         logger::trace("Operate hands...");
-        setHandPose();
+        _handPose.onFrameUpdate(_root, _frameTime);
 
         if (g_frik.isInScopeMenu()) {
             hideHands();
@@ -1197,135 +1192,6 @@ namespace frik
         updateDown(_root, false);
     }
 
-    void Skeleton::calculateHandPose(const std::string& bone, const float gripProx, const bool thumbUp, const bool isLeft)
-    {
-        Quaternion qc, qt;
-        const float sign = isLeft ? -1.0f : 1.0f;
-
-        // if a mod is using the papyrus interface to manually set finger poses
-        if (handPapyrusHasControl[bone]) {
-            qt.fromMatrix(handOpen[bone].rotate);
-            Quaternion qo;
-            qo.fromMatrix(handClosed[bone].rotate);
-            qo.slerp(std::clamp(handPapyrusPose[bone], -1.0f, 2.0f), qt);
-            qt = qo;
-        }
-        // thumbUp pose
-        else if (thumbUp && bone.find("Finger1") != std::string::npos) {
-            if (bone.find("Finger11") != std::string::npos) {
-                RE::NiMatrix3 wr = handOpen[bone].rotate;
-                wr = MatrixUtils::getMatrixFromEulerAngles(sign * 0.5f, sign * 0.4f, -0.3f) * wr;
-                qt.fromMatrix(wr);
-            } else if (bone.find("Finger13") != std::string::npos) {
-                RE::NiMatrix3 wr = handOpen[bone].rotate;
-                wr = MatrixUtils::getMatrixFromEulerAngles(0, 0, MatrixUtils::degreesToRads(-35.0f)) * wr;
-                qt.fromMatrix(wr);
-            }
-        } else if (_closedHand[bone]) {
-            qt.fromMatrix(handClosed[bone].rotate);
-        } else {
-            qt.fromMatrix(handOpen[bone].rotate);
-            if (_handBonesButton.at(bone) == k_EButton_Grip) {
-                Quaternion qo;
-                qo.fromMatrix(handClosed[bone].rotate);
-                qo.slerp(1.0f - gripProx, qt);
-                qt = qo;
-            }
-        }
-
-        qc.fromMatrix(_handBones[bone].rotate);
-        const float blend = std::clamp(_frameTime * 7, -1.0f, 2.0f);
-        qc.slerp(blend, qt);
-        _handBones[bone].rotate = qc.getMatrix();
-    }
-
-    /**
-     * Copy the 1st-person bone position for the given hand bone.
-     * Useful for different weapons holding hand poses.
-     */
-    void Skeleton::copy1StPerson(const std::string& bone)
-    {
-        const auto fpTree = getFirstPersonBoneTree();
-        const int pos = fpTree->GetBoneIndex(bone);
-        if (pos >= 0) {
-            if (fpTree->transforms[pos].refNode) {
-                _handBones[bone] = fpTree->transforms[pos].refNode->local;
-            } else {
-                _handBones[bone] = fpTree->transforms[pos].local;
-            }
-        }
-    }
-
-    /**
-     * In left-handed mode the 1st-person skeleton is not using the correct hand so we can't use "copy1StPerson" method.
-     * Instead, we just force a specific hand pose that makes sense.
-     */
-    void Skeleton::setPredefinedHandPose(const std::string& bone)
-    {
-        Quaternion qo, qt;
-        qt.fromMatrix(handOpen[bone].rotate);
-        qo.fromMatrix(handClosed[bone].rotate);
-        qo.slerp(std::clamp(getHandBonePose(bone, g_frik.isMeleeWeaponDrawn()), -1.0f, 2.0f), qt);
-        _handBones[bone].rotate = qo.getMatrix();
-    }
-
-    void Skeleton::setHandPose()
-    {
-        const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(_root);
-        for (auto pos = 0; pos < rt->numTransforms; pos++) {
-            std::string name = Skelly::getBoneName(pos);
-            auto found = _fingerRelations.find(name);
-            if (found != _fingerRelations.end()) {
-                const bool isLeft = name[0] == 'L';
-                const uint64_t reg = isLeft
-                    ? VRControllers.getControllerState_DEPRECATED(TrackerType::Left).ulButtonTouched
-                    : VRControllers.getControllerState_DEPRECATED(TrackerType::Right).ulButtonTouched;
-                const float gripProx = isLeft
-                    ? VRControllers.getControllerState_DEPRECATED(TrackerType::Left).rAxis[2].x
-                    : VRControllers.getControllerState_DEPRECATED(TrackerType::Right).rAxis[2].x;
-                const bool thumbUp = reg & ButtonMaskFromId(k_EButton_Grip)
-                    && reg & ButtonMaskFromId(k_EButton_SteamVR_Trigger)
-                    && !(reg & ButtonMaskFromId(k_EButton_SteamVR_Touchpad));
-                _closedHand[name] = reg & ButtonMaskFromId(_handBonesButton.at(name));
-
-                if (IsWeaponDrawn()
-                    && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger()) // left-handed has pipboy on the hand with the weapon
-                    && !(isLeft ^ isLeftHandedMode())) {
-                    if (isLeftHandedMode()) {
-                        setPredefinedHandPose(name);
-                    } else {
-                        // use the game hand position for the weapon in hand
-                        copy1StPerson(name);
-                    }
-                } else {
-                    // use the forced hand position
-                    calculateHandPose(name, gripProx, thumbUp, isLeft);
-                }
-
-                const RE::NiTransform trans = _handBones[name];
-
-                rt->transforms[pos].local.rotate = trans.rotate;
-                rt->transforms[pos].local.translate = handOpen[name.c_str()].translate;
-
-                if (rt->transforms[pos].refNode) {
-                    rt->transforms[pos].refNode->local = rt->transforms[pos].local;
-                }
-            }
-
-            if (rt->transforms[pos].refNode) {
-                rt->transforms[pos].world = rt->transforms[pos].refNode->world;
-            } else {
-                const short parent = rt->transforms[pos].parPos;
-                RE::NiPoint3 p = rt->transforms[pos].local.translate;
-                p = rt->transforms[parent].world.rotate.Transpose() * ((p * rt->transforms[parent].world.scale));
-
-                rt->transforms[pos].world.translate = rt->transforms[parent].world.translate + p;
-
-                rt->transforms[pos].world.rotate = rt->transforms[pos].local.rotate * rt->transforms[parent].world.rotate;
-            }
-        }
-    }
-
     void Skeleton::dampenHand(RE::NiNode* node, const bool isLeft)
     {
         if (!g_config.dampenHands) {
@@ -1459,73 +1325,6 @@ namespace frik
               MatrixUtils::getTransform(26.96460f, 0.00010f, 0.00120f, 0.98604f, 0.16503f, -0.02218f, 0.00691f, -0.17364f, -0.98479f, -0.16638f, 0.97088f, -0.17236f, 1.0f) },
             { "Neck", MatrixUtils::getTransform(24.29350f, -2.84160f, 0.0f, 0.92612f, -0.37723f, -0.00002f, 0.37723f, 0.92612f, 0.00001f, 0.00002f, -0.00002f, 1.0f, 1.0f) },
             { "Head", MatrixUtils::getTransform(8.22440f, 0.0f, 0.0f, 0.94891f, 0.31555f, 0.00002f, -0.31555f, 0.94891f, 0.0f, -0.00002f, -0.00001f, 1.0f, 1.0f) },
-        };
-    }
-
-    std::map<std::string, std::pair<std::string, std::string>> Skeleton::makeFingerRelations()
-    {
-        std::map<std::string, std::pair<std::string, std::string>> map;
-
-        auto addFingerRelations = [&](const std::string& hand, const std::string& finger1, const std::string& finger2,
-            const std::string& finger3) {
-            map.insert({ finger1, { hand, finger2 } });
-            map.insert({ finger2, { finger1, finger3 } });
-            map.insert({ finger3, { finger2, std::string() } });
-        };
-
-        //left hand
-        addFingerRelations("LArm_Hand", "LArm_Finger11", "LArm_Finger12", "LArm_Finger13");
-        addFingerRelations("LArm_Hand", "LArm_Finger21", "LArm_Finger22", "LArm_Finger23");
-        addFingerRelations("LArm_Hand", "LArm_Finger31", "LArm_Finger32", "LArm_Finger33");
-        addFingerRelations("LArm_Hand", "LArm_Finger41", "LArm_Finger42", "LArm_Finger43");
-        addFingerRelations("LArm_Hand", "LArm_Finger51", "LArm_Finger52", "LArm_Finger53");
-
-        //right hand
-        addFingerRelations("RArm_Hand", "RArm_Finger11", "RArm_Finger12", "RArm_Finger13");
-        addFingerRelations("RArm_Hand", "RArm_Finger21", "RArm_Finger22", "RArm_Finger23");
-        addFingerRelations("RArm_Hand", "RArm_Finger31", "RArm_Finger32", "RArm_Finger33");
-        addFingerRelations("RArm_Hand", "RArm_Finger41", "RArm_Finger42", "RArm_Finger43");
-        addFingerRelations("RArm_Hand", "RArm_Finger51", "RArm_Finger52", "RArm_Finger53");
-
-        return map;
-    }
-
-    /**
-     * setup hand bones to openvr button mapping
-     */
-    std::unordered_map<std::string, VRButtonId> Skeleton::getHandBonesButtonMap()
-    {
-        return std::unordered_map<std::string, VRButtonId>{
-            { "LArm_Finger11", k_EButton_SteamVR_Touchpad },
-            { "LArm_Finger12", k_EButton_SteamVR_Touchpad },
-            { "LArm_Finger13", k_EButton_SteamVR_Touchpad },
-            { "LArm_Finger21", k_EButton_SteamVR_Trigger },
-            { "LArm_Finger22", k_EButton_SteamVR_Trigger },
-            { "LArm_Finger23", k_EButton_SteamVR_Trigger },
-            { "LArm_Finger31", k_EButton_Grip },
-            { "LArm_Finger32", k_EButton_Grip },
-            { "LArm_Finger33", k_EButton_Grip },
-            { "LArm_Finger41", k_EButton_Grip },
-            { "LArm_Finger42", k_EButton_Grip },
-            { "LArm_Finger43", k_EButton_Grip },
-            { "LArm_Finger51", k_EButton_Grip },
-            { "LArm_Finger52", k_EButton_Grip },
-            { "LArm_Finger53", k_EButton_Grip },
-            { "RArm_Finger11", k_EButton_SteamVR_Touchpad },
-            { "RArm_Finger12", k_EButton_SteamVR_Touchpad },
-            { "RArm_Finger13", k_EButton_SteamVR_Touchpad },
-            { "RArm_Finger21", k_EButton_SteamVR_Trigger },
-            { "RArm_Finger22", k_EButton_SteamVR_Trigger },
-            { "RArm_Finger23", k_EButton_SteamVR_Trigger },
-            { "RArm_Finger31", k_EButton_Grip },
-            { "RArm_Finger32", k_EButton_Grip },
-            { "RArm_Finger33", k_EButton_Grip },
-            { "RArm_Finger41", k_EButton_Grip },
-            { "RArm_Finger42", k_EButton_Grip },
-            { "RArm_Finger43", k_EButton_Grip },
-            { "RArm_Finger51", k_EButton_Grip },
-            { "RArm_Finger52", k_EButton_Grip },
-            { "RArm_Finger53", k_EButton_Grip }
         };
     }
 }

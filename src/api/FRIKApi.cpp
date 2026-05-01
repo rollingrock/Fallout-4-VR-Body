@@ -4,21 +4,27 @@
 #include "FRIK.h"
 #include "common/CommonUtils.h"
 #include "f4vr/F4VRSkelly.h"
+#include "f4vr/F4VRUtils.h"
 #include "skeleton/HandPose.h"
+#include "skeleton/HandPoseData.h"
 
+#include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 
 namespace
 {
     using namespace frik;
     using namespace frik::api;
+    using namespace frik::skeleton::data;
 
     /**
      * Used to keep track of external tags blocking offhand gripping to prevent conflicts between client mods.
      * The actual tag values are not relevant to FRIK, only the fact that there is at least one tag blocking it.
      */
     std::unordered_set<std::string> g_offHandGripBlockingTags;
+    constexpr std::string_view LEGACY_API_HAND_POSE_TAG = "frik.api.legacy";
 
     bool getIsLeftForHandEnum(const FRIKApi::Hand hand)
     {
@@ -33,6 +39,64 @@ namespace
             return true;
         }
         return false;
+    }
+
+    std::optional<std::string> getNormalizedTag(const char* tag)
+    {
+        if (!f4cf::common::hasNonWhitespaceText(tag)) {
+            return std::nullopt;
+        }
+
+        return f4cf::common::trim(tag);
+    }
+
+    HandFingersPose makeUniformFingerPose(const float thumb, const float index, const float middle, const float ring, const float pinky)
+    {
+        return HandFingersPose{
+            FingerPose{ thumb, thumb, thumb },
+            FingerPose{ index, index, index },
+            FingerPose{ middle, middle, middle },
+            FingerPose{ ring, ring, ring },
+            FingerPose{ pinky, pinky, pinky }
+        };
+    }
+
+    FRIKApi::HandPoseTagState toApiHandPoseTagState(const HandPoseOverrideTagState state)
+    {
+        switch (state) {
+        case HandPoseOverrideTagState::None:
+            return FRIKApi::HandPoseTagState::None;
+        case HandPoseOverrideTagState::Active:
+            return FRIKApi::HandPoseTagState::Active;
+        case HandPoseOverrideTagState::Overridden:
+            return FRIKApi::HandPoseTagState::Overriden;
+        default:
+            return FRIKApi::HandPoseTagState::None;
+        }
+    }
+
+    FRIKApi::HandPoseKind toApiHandPoseKind(const frik::skeleton::data::HandPoseKind kind)
+    {
+        switch (kind) {
+        case HandPoseKind::Unset:
+            return FRIKApi::HandPoseKind::Unset;
+        case HandPoseKind::Custom:
+            return FRIKApi::HandPoseKind::Custom;
+        case HandPoseKind::Open:
+            return FRIKApi::HandPoseKind::Open;
+        case HandPoseKind::Pointing:
+            return FRIKApi::HandPoseKind::Pointing;
+        case HandPoseKind::HoldingWeapon:
+            return FRIKApi::HandPoseKind::HoldingWeapon;
+        case HandPoseKind::OffhandGrip:
+            return FRIKApi::HandPoseKind::OffhandGrip;
+        case HandPoseKind::Attaboy:
+            return FRIKApi::HandPoseKind::Attaboy;
+        case HandPoseKind::ThumbsUp:
+            return FRIKApi::HandPoseKind::ThumbsUp;
+        default:
+            return FRIKApi::HandPoseKind::Unset;
+        }
     }
 
     std::uint32_t FRIK_CALL getVersion()
@@ -106,57 +170,108 @@ namespace
 
     FRIKApi::HandPoseTagState FRIK_CALL getHandPoseSetTagState(const char* tag, const FRIKApi::Hand hand)
     {
-        // TODO: implement
-        return FRIKApi::HandPoseTagState::None;
+        const auto normalizedTag = getNormalizedTag(tag);
+        if (!normalizedTag) {
+            return FRIKApi::HandPoseTagState::None;
+        }
+
+        return toApiHandPoseTagState(HandPose::getHandPoseSetTagState(getIsLeftForHandEnum(hand), *normalizedTag));
     }
 
-    FRIKApi::HandPoses FRIK_CALL getCurrentHandPose(const FRIKApi::Hand hand)
+    FRIKApi::HandPoseKind FRIK_CALL getCurrentHandPose(const FRIKApi::Hand hand)
     {
-        // TODO: implement
-        return FRIKApi::HandPoses::Unset;
+        return toApiHandPoseKind(HandPose::getCurrentHandPoseKind(getIsLeftForHandEnum(hand)));
     }
 
-    bool FRIK_CALL setHandPose(const char* tag, const FRIKApi::Hand hand, FRIKApi::HandPoses handPose)
+    bool FRIK_CALL setHandPose(const char* tag, const FRIKApi::Hand hand, const FRIKApi::HandPoseKind handPose)
     {
-        if (!tag) {
+        const auto normalizedTag = getNormalizedTag(tag);
+        if (!normalizedTag) {
             return false;
         }
-        // TODO: implement tag usage
+
+        const bool isLeft = getIsLeftForHandEnum(hand);
+        if (handPose == FRIKApi::HandPoseKind::Unset) {
+            HandPose::clearHandPoseOverride(isLeft, *normalizedTag);
+            return true;
+        }
+
+        if (handPose == FRIKApi::HandPoseKind::Custom) {
+            return false;
+        }
+
+        const HandFingersPose* pose;
+        if (handPose == FRIKApi::HandPoseKind::Open) {
+            pose = &getOpenPose();
+        } else if (handPose == FRIKApi::HandPoseKind::Pointing) {
+            pose = &getPointingPose();
+        } else if (handPose == FRIKApi::HandPoseKind::HoldingWeapon) {
+            pose = &HandPose::getFixedPrimaryWeaponPose();
+        } else if (handPose == FRIKApi::HandPoseKind::OffhandGrip) {
+            pose = &getOffhandWeaponGripPose();
+        } else if (handPose == FRIKApi::HandPoseKind::Attaboy) {
+            pose = &getAttaboyPose();
+        } else if (handPose == FRIKApi::HandPoseKind::ThumbsUp) {
+            pose = &getThumbsUpPose();
+        } else {
+            return false;
+        }
+
+        HandPose::setHandPoseOverride(isLeft, *normalizedTag, *pose, false);
         return true;
     }
 
     bool FRIK_CALL setHandPoseCustomFingerPositions(const char* tag, const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring,
         const float pinky)
     {
-        if (!tag) {
+        const auto normalizedTag = getNormalizedTag(tag);
+        if (!normalizedTag) {
             return false;
         }
 
-        std::string tagStr = tag;
-        // do something...
-        // TODO: implement tag usage
-        setFingerPositionScalar(getIsLeftForHandEnum(hand), thumb, index, middle, ring, pinky);
+        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag, makeUniformFingerPose(thumb, index, middle, ring, pinky), false);
+        return true;
+    }
+
+    bool FRIK_CALL setHandPoseCustom(const char* tag, const FRIKApi::Hand hand, const FRIKApi::HandPoseData& handPose, const bool forceTop)
+    {
+        const auto normalizedTag = getNormalizedTag(tag);
+        if (!normalizedTag) {
+            return false;
+        }
+
+        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag, HandFingersPose{
+            FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
+            FingerPose{ handPose.index.prox, handPose.index.mid, handPose.index.dist, handPose.index.splay },
+            FingerPose{ handPose.middle.prox, handPose.middle.mid, handPose.middle.dist, handPose.middle.splay },
+            FingerPose{ handPose.ring.prox, handPose.ring.mid, handPose.ring.dist, handPose.ring.splay },
+            FingerPose{ handPose.pinky.prox, handPose.pinky.mid, handPose.pinky.dist, handPose.pinky.splay },
+            handPose.palmPitch,
+            handPose.palmYaw,
+            HandPoseKind::Custom
+        }, forceTop);
         return true;
     }
 
     bool FRIK_CALL clearHandPose(const char* tag, const FRIKApi::Hand hand)
     {
-        if (!tag) {
+        const auto normalizedTag = getNormalizedTag(tag);
+        if (!normalizedTag) {
             return false;
         }
-        // TODO: implement tag usage
-        restoreFingerPoseControl(getIsLeftForHandEnum(hand));
+
+        HandPose::clearHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag);
         return true;
     }
 
     void FRIK_CALL setHandPoseFingerPositions(const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
-        setFingerPositionScalar(getIsLeftForHandEnum(hand), thumb, index, middle, ring, pinky);
+        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG, makeUniformFingerPose(thumb, index, middle, ring, pinky), false);
     }
 
     void FRIK_CALL clearHandPoseFingerPositions(const FRIKApi::Hand hand)
     {
-        restoreFingerPoseControl(getIsLeftForHandEnum(hand));
+        HandPose::clearHandPoseOverride(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG);
     }
 
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApi::OpenExternalModConfigData& data)
@@ -190,7 +305,8 @@ namespace
         .setHandPoseFingerPositions = &setHandPoseFingerPositions,
         .clearHandPoseFingerPositions = &clearHandPoseFingerPositions,
         .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig,
-        .blockOffHandWeaponGripping = &blockOffHandWeaponGripping
+        .blockOffHandWeaponGripping = &blockOffHandWeaponGripping,
+        .setHandPoseCustom = &setHandPoseCustom
     };
 }
 

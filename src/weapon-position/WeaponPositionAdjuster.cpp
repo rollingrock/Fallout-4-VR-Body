@@ -369,7 +369,7 @@ namespace frik
         }
 
         _offHandGripping = isGripping;
-        setOffhandGripHandPose(isGripping);
+        HandPose::setOffhandGripHandPose(isGripping);
     }
 
     /**

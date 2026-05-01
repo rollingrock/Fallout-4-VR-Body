@@ -41,7 +41,7 @@ namespace frik
                 PBConfigUI->local.scale = 0;
                 PBConfigUI->parent->DetachChild(PBConfigUI);
             }
-            disableConfigModePose();
+            HandPose::disableConfigModePose();
             _isPBConfigModeActive = false;
 
             // restore pipboy scale if it was changed
@@ -93,14 +93,14 @@ namespace frik
         if (PBConfigButtonPressed && !_isPBConfigModeActive) {
             // TODO: change from counter to timer so it will be fps independent
             _PBConfigModeEnterCounter += 1;
-            if (_PBConfigModeEnterCounter > 200) {
+            if (f4vr::isPipboyOnWrist() && _PBConfigModeEnterCounter > 200 && g_frik.isPipboyOn()) {
                 enterPipboyConfigMode();
             }
         } else if (!PBConfigButtonPressed && !_isPBConfigModeActive) {
             _PBConfigModeEnterCounter = 0;
         }
         if (_isPBConfigModeActive) {
-            setConfigModeHandPose();
+            HandPose::setConfigModeHandPose();
 
             const auto finger = f4vr::Skelly::getBoneWorldTransform(f4vr::isLeftHandedMode() ? "RArm_Finger23" : "LArm_Finger23").translate;
             for (int i = 1; i <= 11; i++) {

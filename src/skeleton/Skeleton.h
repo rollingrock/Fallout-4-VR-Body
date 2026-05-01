@@ -3,6 +3,7 @@
 #include <map>
 
 #include "CullGeometryHandler.h"
+#include "HandPose.h"
 #include "SelfieHandler.h"
 #include "common/CommonUtils.h"
 #include "f4vr/PlayerNodes.h"
@@ -25,7 +26,7 @@ namespace frik
     {
     public:
         Skeleton(RE::NiNode* rootNode, const bool inPowerArmor) :
-            _root(rootNode), _inPowerArmor(inPowerArmor)
+            _root(rootNode), _inPowerArmor(inPowerArmor), _handPose(inPowerArmor)
         {
             _curentPosition = RE::NiPoint3(0, 0, 0);
             _walkingState = 0;
@@ -68,14 +69,8 @@ namespace frik
         void hide3rdPersonWeapon() const;
         void hideFistHelpers() const;
         void showHidePAHud() const;
-        void setHandPose();
         void hideHands() const;
         void fixArmor() const;
-
-        // Utils
-        void calculateHandPose(const std::string& bone, float gripProx, bool thumbUp, bool isLeft);
-        void copy1StPerson(const std::string& bone);
-        void setPredefinedHandPose(const std::string& bone);
 
         // Utils - Body Positioning
         float getNeckYaw() const;
@@ -144,17 +139,10 @@ namespace frik
         float _stepTimeinStep;
         int _delayFrame;
 
-        std::map<std::string, RE::NiTransform, common::CaseInsensitiveComparator> _handBones;
-        std::map<std::string, bool, common::CaseInsensitiveComparator> _closedHand;
-        static std::unordered_map<std::string, vrcf::VRButtonId> getHandBonesButtonMap();
-        inline static const std::unordered_map<std::string, vrcf::VRButtonId> _handBonesButton = getHandBonesButtonMap();
-
         RE::NiTransform _rightHandPrevFrame;
         RE::NiTransform _leftHandPrevFrame;
 
-        // bones
-        static std::map<std::string, std::pair<std::string, std::string>> makeFingerRelations();
-        inline static const std::map<std::string, std::pair<std::string, std::string>> _fingerRelations = makeFingerRelations();
+        HandPose _handPose;
 
         // cull (hide) parts of the skeleton (head, equipment)
         CullGeometryHandler _cullGeometry;
