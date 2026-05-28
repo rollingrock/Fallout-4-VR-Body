@@ -1,6 +1,9 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
+#include <span>
+#include <type_traits>
 #include <Windows.h>
 
 #include "RE/NetImmerse/NiPoint.h"
@@ -95,9 +98,20 @@ namespace frik::api
 
         /**
          * Full pose data for one hand, including per-joint finger values and palm motion.
+         *
+         * Canonical float layout (22 floats, used by fromFloats / toFloats / asFloatView):
+         *   [0..3]   thumb  { prox, mid, dist, splay }
+         *   [4..7]   index  { prox, mid, dist, splay }
+         *   [8..11]  middle { prox, mid, dist, splay }
+         *   [12..15] ring   { prox, mid, dist, splay }
+         *   [16..19] pinky  { prox, mid, dist, splay }
+         *   [20]     palmPitch
+         *   [21]     palmYaw
          */
         struct HandPoseData
         {
+            static constexpr std::size_t FLOAT_COUNT = 22;
+
             FingerPoseData thumb;
             FingerPoseData index;
             FingerPoseData middle;
@@ -105,7 +119,58 @@ namespace frik::api
             FingerPoseData pinky;
             float palmPitch = 0.0f;
             float palmYaw = 0.0f;
+
+            /**
+             * Build a HandPoseData from the canonical 22-float packed layout.
+             */
+            static HandPoseData fromFloats(std::span<const float, FLOAT_COUNT> v)
+            {
+                return HandPoseData{
+                    .thumb = { v[0], v[1], v[2], v[3] },
+                    .index = { v[4], v[5], v[6], v[7] },
+                    .middle = { v[8], v[9], v[10], v[11] },
+                    .ring = { v[12], v[13], v[14], v[15] },
+                    .pinky = { v[16], v[17], v[18], v[19] },
+                    .palmPitch = v[20],
+                    .palmYaw = v[21],
+                };
+            }
+
+            /**
+             * Copy this pose into the canonical 22-float packed layout.
+             */
+            std::array<float, FLOAT_COUNT> toFloats() const
+            {
+                return {
+                    thumb.prox, thumb.mid, thumb.dist, thumb.splay,
+                    index.prox, index.mid, index.dist, index.splay,
+                    middle.prox, middle.mid, middle.dist, middle.splay,
+                    ring.prox, ring.mid, ring.dist, ring.splay,
+                    pinky.prox, pinky.mid, pinky.dist, pinky.splay,
+                    palmPitch, palmYaw
+                };
+            }
+
+            /**
+             * Zero-copy view of this pose as the canonical 22-float packed layout.
+             * The struct's standard-layout / no-padding contract is enforced by static_assert below,
+             * so this aliases directly onto the member fields with no copy.
+             */
+            std::span<const float, FLOAT_COUNT> asFloatView() const
+            {
+                return std::span<const float, FLOAT_COUNT>(reinterpret_cast<const float*>(this), FLOAT_COUNT);
+            }
+
+            std::span<float, FLOAT_COUNT> asFloatView()
+            {
+                return std::span<float, FLOAT_COUNT>(reinterpret_cast<float*>(this), FLOAT_COUNT);
+            }
         };
+
+        static_assert(std::is_standard_layout_v<HandPoseData>,
+            "HandPoseData must be standard-layout for asFloatView() to alias safely");
+        static_assert(sizeof(HandPoseData) == HandPoseData::FLOAT_COUNT * sizeof(float),
+            "HandPoseData must be tightly packed (22 contiguous floats, no padding)");
 
         /**
          * The potential state of a set hand pose for specific tag as returned from FRIK.
