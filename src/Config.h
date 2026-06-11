@@ -6,6 +6,7 @@
 #include "ConfigBase.h"
 #include "common/CommonUtils.h"
 #include "resources.h"
+#include "vrcf/VRControllersManager.h"
 
 namespace frik
 {
@@ -163,19 +164,21 @@ namespace frik
         float pipboyOperationFingerDetectionRange = 0;
         int pipBoyOnDelay = 0;
         int pipBoyOffDelay = 0;
-        int pipBoyButtonArm = 0;
-        int pipBoyButtonID = 0;
-        int pipBoyButtonOffArm = 0;
-        int pipBoyButtonOffID = 0;
+        // Controller input that opens / closes the Pipboy. The close binding's button is also used to
+        // hold the holo Pipboy screen in place (see DampenPipboyScreenMode::HoldInPlace).
+        vrcf::InputBinding pipboyOpenBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_SteamVR_Trigger };
+        vrcf::InputBinding pipboyCloseBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
 
         // Pipboy Torch/Flashlight
         bool removeFlashlight = false;
         bool flashlightEnabled = false;
         FlashlightLocation flashlightLocation = FlashlightLocation::Head;
-        int switchTorchButton = 2;
+        // Switch the torch between head and hand: tapped on whichever hand is near the head (one binding per hand).
+        vrcf::InputBinding switchTorchLeftBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
+        vrcf::InputBinding switchTorchRightBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
 
         // Fallout London VR support
-        int attaboyGrabButtonId = 0;
+        vrcf::InputBinding attaboyGrabBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
         float attaboyGrabActivationDistance = 0;
 
         // Weapon offhand grip
@@ -184,7 +187,10 @@ namespace frik
         bool enableGripButtonToLetGo = false;
         bool onePressGripButton = false;
         float gripLetGoThreshold = 0;
-        int gripButtonID = 0;
+        // Offhand input that grips / releases a two-handed weapon (press = grab and release toggle, modes 2/3/4).
+        vrcf::InputBinding offhandGripBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Press, vr::k_EButton_Grip };
+        // Offhand input that must stay held to keep gripping (mode 3 releases the grip when this is no longer held).
+        vrcf::InputBinding offhandGripHoldBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::HoldDown, vr::k_EButton_Grip };
 
         // Dampen hands
         bool dampenHands = false;

@@ -5,6 +5,7 @@
 
 .vscode
 /build*/
+build_output.txt
 
 CMakeUserPresets*.json
 

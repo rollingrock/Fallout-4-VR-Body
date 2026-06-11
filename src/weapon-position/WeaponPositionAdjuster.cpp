@@ -322,12 +322,12 @@ namespace frik
         }
 
         if (_offHandGripping) {
-            if (g_config.onePressGripButton && !vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, g_config.gripButtonID)) {
+            if (g_config.onePressGripButton && !vrcf::VRControllers.check(g_config.offhandGripHoldBinding)) {
                 // Mode 3 release grip when not holding the grip button
                 setOffhandGripping(false);
             }
 
-            if (g_config.enableGripButtonToLetGo && vrcf::VRControllers.isPressed(vrcf::Hand::Offhand, g_config.gripButtonID)) {
+            if (g_config.enableGripButtonToLetGo && vrcf::VRControllers.check(g_config.offhandGripBinding)) {
                 if (g_config.enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
                     // Mode 2,4 release grip on pressing the grip button again
                     setOffhandGripping(false);
@@ -361,7 +361,7 @@ namespace frik
             // Mode 1,2 grab when close to barrel
             setOffhandGripping(true);
         }
-        if (!g_frik.isPipboyOn() && vrcf::VRControllers.isPressed(vrcf::Hand::Offhand, g_config.gripButtonID)) {
+        if (!g_frik.isPipboyOn() && vrcf::VRControllers.check(g_config.offhandGripBinding)) {
             // Mode 3,4 grab when pressing grip button
             setOffhandGripping(true);
         }

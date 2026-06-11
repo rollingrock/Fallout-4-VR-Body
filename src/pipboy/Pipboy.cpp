@@ -402,8 +402,7 @@ namespace frik
             return;
         }
 
-        const bool open =
-            _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation() : vrcf::VRControllers.isTap(vrcf::Hand::Offhand, g_config.pipBoyButtonID);
+        const bool open = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation() : vrcf::VRControllers.check(g_config.pipboyOpenBinding);
         if (open) {
             logger::info("Open Pipboy with button");
             openClose(open);
@@ -419,8 +418,7 @@ namespace frik
             return;
         }
 
-        const bool close = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation()
-                                                                                            : vrcf::VRControllers.isTap(vrcf::Hand::Offhand, g_config.pipBoyButtonOffID);
+        const bool close = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation() : vrcf::VRControllers.check(g_config.pipboyCloseBinding);
         if (close) {
             logger::info("Close Pipboy with button");
             openClose(false);
@@ -440,7 +438,7 @@ namespace frik
                 triggerStrongHaptic(vrcf::Hand::Left);
                 logger::debug("Attaboy activation area triggered");
             }
-            if (vrcf::VRControllers.isTap(vrcf::Hand::Left, g_config.attaboyGrabButtonId)) {
+            if (vrcf::VRControllers.check(g_config.attaboyGrabBinding)) {
                 triggerShortHaptic(vrcf::Hand::Left);
                 return true;
             }
@@ -559,7 +557,7 @@ namespace frik
      */
     void Pipboy::holdPipboyScreenInPlace(RE::NiAVObject* const pipboyScreen)
     {
-        if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, g_config.pipBoyButtonOffID, 0.3f)) {
+        if (vrcf::VRControllers.isPressHeldDown(g_config.pipboyCloseBinding.hand, g_config.pipboyCloseBinding.button, 0.3f)) {
             _pipboyScreenStableFrame = pipboyScreen->world;
         } else {
             pipboyScreen->world = _pipboyScreenStableFrame;
