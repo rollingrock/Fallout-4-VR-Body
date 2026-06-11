@@ -15,10 +15,15 @@ namespace frik
     class PipboyPhysicalHandler
     {
     public:
-        explicit PipboyPhysicalHandler(Skeleton* skelly, Pipboy* pipboy) :
-            _skelly(skelly), _pipboy(pipboy) {}
+        explicit PipboyPhysicalHandler(Skeleton* skelly, Pipboy* pipboy)
+            : _skelly(skelly),
+              _pipboy(pipboy)
+        {}
 
-        bool isOperating() const { return _isOperatingPipboy; }
+        bool isOperating() const
+        {
+            return _isOperatingPipboy;
+        }
         void operate(PipboyPage lastPipboyPage);
         void updateIsOperatingPipboy(bool isOperating);
 
@@ -44,15 +49,16 @@ namespace frik
 
         // the other 7 points of interaction with the Pipboy (not including power, light, and radio)
         bool _controlsSticky[7] = { false, false, false, false, false, false, false };
-        inline static std::string BONES_NAMES[7] = {
-            "TabChangeUp", "TabChangeDown", "PageChangeUp", "PageChangeDown", "ScrollItemsUp", "ScrollItemsDown", "SelectButton02"
-        };
-        inline static std::string TRANS_NAMES[7] = {
-            "TabChangeUpTrans", "TabChangeDownTrans", "PageChangeUpTrans", "PageChangeDownTrans", "ScrollItemsUpTrans", "ScrollItemsDownTrans", "SelectButtonTrans"
-        };
-        inline static std::string ORBS_NAMES[7] = {
-            "TabChangeUpOrb", "TabChangeDownOrb", "PageChangeUpOrb", "PageChangeDownOrb", "ScrollItemsUpOrb", "ScrollItemsDownOrb", "SelectItemsOrb"
-        };
+        inline static std::string BONES_NAMES[7] = { "TabChangeUp", "TabChangeDown", "PageChangeUp", "PageChangeDown", "ScrollItemsUp", "ScrollItemsDown", "SelectButton02" };
+        inline static std::string TRANS_NAMES[7] = { "TabChangeUpTrans",
+            "TabChangeDownTrans",
+            "PageChangeUpTrans",
+            "PageChangeDownTrans",
+            "ScrollItemsUpTrans",
+            "ScrollItemsDownTrans",
+            "SelectButtonTrans" };
+        inline static std::string
+            ORBS_NAMES[7] = { "TabChangeUpOrb", "TabChangeDownOrb", "PageChangeUpOrb", "PageChangeDownOrb", "ScrollItemsUpOrb", "ScrollItemsDownOrb", "SelectItemsOrb" };
         inline static float BONES_DISTANCES[7] = { 2.0f, 2.0f, 2.0f, 2.0f, 1.5f, 1.5f, 2.0f };
         inline static float TRANS_DISTANCES[7] = { 0.6f, 0.6f, 0.6f, 0.6f, 0.1f, 0.1f, 0.4f };
         inline static float MAX_DISTANCES[7] = { 1.2f, 1.2f, 1.2f, 1.2f, 1.2f, 1.2f, 0.6f };

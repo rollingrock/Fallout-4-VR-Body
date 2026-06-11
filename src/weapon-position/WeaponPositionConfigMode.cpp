@@ -2,9 +2,9 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "utils.h"
 #include "common/MatrixUtils.h"
 #include "skeleton/Skeleton.h"
+#include "utils.h"
 #include "vrcf/VRControllersManager.h"
 #include "vrui/UIButton.h"
 #include "vrui/UIContainer.h"
@@ -60,11 +60,9 @@ namespace frik
         RE::NiTransform transform;
         transform.scale = originalTransform.scale;
         transform.rotate = originalTransform.rotate;
-        transform.translate = f4vr::isLeftHandedMode()
-            ? (inPA ? RE::NiPoint3(-2.5f, 7.5f, -1) : RE::NiPoint3(-3, 4, 0))
-            : inPA
-            ? RE::NiPoint3(-0.5f, 6, 2)
-            : RE::NiPoint3(-2, 3, 1);
+        transform.translate = f4vr::isLeftHandedMode() ? (inPA ? RE::NiPoint3(-2.5f, 7.5f, -1) : RE::NiPoint3(-3, 4, 0))
+            : inPA                                     ? RE::NiPoint3(-0.5f, 6, 2)
+                                                       : RE::NiPoint3(-2, 3, 1);
         return transform;
     }
 
@@ -199,8 +197,7 @@ namespace frik
             transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
         } else if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = MatrixUtils::getMatrixFromEulerAngles(
-                -MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisY, 5)),
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisY, 5)),
                 -MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisX, 3)),
                 MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisX, 5)));
             transform.rotate = rot * transform.rotate;
@@ -226,8 +223,9 @@ namespace frik
         if (axisX != 0.f || axisY != 0.f) {
             const auto rot = vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)
                 ? MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)), 0, 0)
-                : MatrixUtils::getMatrixFromEulerAngles(0, -MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)),
-                    -MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 3)));
+                : MatrixUtils::getMatrixFromEulerAngles(0,
+                      -MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)),
+                      -MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 3)));
             _adjuster->_primaryHandOffsetRot = rot * _adjuster->_primaryHandOffsetRot;
             _adjuster->_hasPrimaryHandOffset = true;
         }
@@ -241,7 +239,8 @@ namespace frik
         // Update the offset position by player thumbstick.
         const auto [axisX, axisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
-            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 5)), 0,
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 5)),
+                0,
                 MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 5)));
             _adjuster->_offhandOffsetRot = rot * _adjuster->_offhandOffsetRot;
         }
@@ -273,8 +272,7 @@ namespace frik
             transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
         } else if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = MatrixUtils::getMatrixFromEulerAngles(
-                MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisY, 6)),
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisY, 6)),
                 MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisX, 6)),
                 MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisX, 6)));
             transform.rotate = rot * transform.rotate;
@@ -311,8 +309,7 @@ namespace frik
             transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
         } else if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = MatrixUtils::getMatrixFromEulerAngles(
-                -MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisY, 6)),
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisY, 6)),
                 -MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisX, 6)),
                 -MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisY, 6)));
             transform.rotate = rot * transform.rotate;
@@ -394,9 +391,8 @@ namespace frik
     void WeaponPositionConfigMode::resetWeaponConfig() const
     {
         f4vr::showNotification("Reset Weapon Position to Default");
-        _adjuster->_weaponOffsetTransform = f4vr::isMeleeWeaponEquipped()
-            ? getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
-            : _adjuster->_weaponOriginalTransform;
+        _adjuster->_weaponOffsetTransform =
+            f4vr::isMeleeWeaponEquipped() ? getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform) : _adjuster->_weaponOriginalTransform;
         g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA, true);
     }
 
@@ -449,8 +445,8 @@ namespace frik
 
     void WeaponPositionConfigMode::saveThrowableConfig() const
     {
-        const bool success = g_config.saveWeaponOffsets(
-            _adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
+        const bool success =
+            g_config.saveWeaponOffsets(_adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
         f4vr::showNotification(success ? "Successfully saved Throwable Weapon Position" : "Failed to save Throwable Weapon Position - see FRIK.log");
     }
 

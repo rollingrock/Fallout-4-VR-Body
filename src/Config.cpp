@@ -447,8 +447,7 @@ namespace frik
     {
         const auto slotsGeometry = loadListFromFile(MESH_HIDE_SLOTS_INI_PATH);
 
-        std::unordered_map<std::string, int> slotToIndexMap = {
-            { "hairtop", 0 }, // i.e. helmet
+        std::unordered_map<std::string, int> slotToIndexMap = { { "hairtop", 0 }, // i.e. helmet
             { "hairlong", 1 },
             { "head", 2 },
             { "headband", 16 },
@@ -456,8 +455,7 @@ namespace frik
             { "beard", 18 },
             { "mouth", 19 },
             { "neck", 20 },
-            { "scalp", 22 }
-        };
+            { "scalp", 22 } };
 
         _hideEquipSlotIndexes.clear();
         for (auto& geometry : slotsGeometry) {

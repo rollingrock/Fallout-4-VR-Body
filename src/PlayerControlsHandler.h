@@ -30,11 +30,8 @@ namespace frik
     inline PlayerControlsHandler::PlayerControlsHandler()
     {
         // most disabled, leave some enabled that either needed (fast travel) or reported with bugs staying disabled
-        _disableFlags.set(
-            static_cast<RE::UserEvents::USER_EVENT_FLAG>(
-                RE::OtherInputEvents::OTHER_EVENT_FLAG::kFastTravel
-                | RE::OtherInputEvents::OTHER_EVENT_FLAG::kRunning
-                | RE::OtherInputEvents::OTHER_EVENT_FLAG::kSprinting));
+        _disableFlags.set(static_cast<RE::UserEvents::USER_EVENT_FLAG>(
+            RE::OtherInputEvents::OTHER_EVENT_FLAG::kFastTravel | RE::OtherInputEvents::OTHER_EVENT_FLAG::kRunning | RE::OtherInputEvents::OTHER_EVENT_FLAG::kSprinting));
     }
 
     /**
@@ -61,8 +58,8 @@ namespace frik
     {
         checkWeaponHideForPipboyOperationWIthFinger(pipboy, weaponPosition);
 
-        if (pipboy->isOpen() || pipboyConfigurationMode->isPipBoyConfigModeActive() || mainConfigMode.isBodyAdjustOpen() || weaponPosition->inWeaponRepositionMode() || pipboy->
-            isOperatingWithFinger()) {
+        if (pipboy->isOpen() || pipboyConfigurationMode->isPipBoyConfigModeActive() || mainConfigMode.isBodyAdjustOpen() || weaponPosition->inWeaponRepositionMode() ||
+            pipboy->isOperatingWithFinger()) {
             if (weaponPosition->inThrowableWeaponRepositionMode()) {
                 enableControls();
                 f4vr::F4VRThumbstickControls::setControlsThumbstickEnableState(false);

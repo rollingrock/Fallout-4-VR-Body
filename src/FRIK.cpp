@@ -3,7 +3,6 @@
 #include "Config.h"
 #include "GameHooks.h"
 #include "PapyrusApi.h"
-#include "utils.h"
 #include "config-mode/ConfigurationMode.h"
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
@@ -12,6 +11,7 @@
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
 #include "smooth-movement/SmoothMovementVR.h"
+#include "utils.h"
 #include "vrcf/VRControllersManager.h"
 #include "vrui/UIManager.h"
 #include "vrui/UIModAdapter.h"
@@ -38,8 +38,9 @@ namespace frik
     class FrameUpdateContext : public vrui::UIModAdapter
     {
     public:
-        explicit FrameUpdateContext(Skeleton* skelly) :
-            _skelly(skelly) {}
+        explicit FrameUpdateContext(Skeleton* skelly)
+            : _skelly(skelly)
+        {}
 
         virtual RE::NiPoint3 getInteractionBoneWorldPosition() override
         {

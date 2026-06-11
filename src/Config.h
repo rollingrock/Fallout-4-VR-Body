@@ -1,11 +1,11 @@
 #pragma once
 
-#include <optional>
 #include <Version.h>
+#include <optional>
 
 #include "ConfigBase.h"
-#include "resources.h"
 #include "common/CommonUtils.h"
+#include "resources.h"
 
 namespace frik
 {
@@ -64,8 +64,9 @@ namespace frik
     class Config : public ConfigBase
     {
     public:
-        explicit Config() :
-            ConfigBase(Version::PROJECT, FRIK_INI_PATH, IDR_FRIK_INI) {}
+        explicit Config()
+            : ConfigBase(Version::PROJECT, FRIK_INI_PATH, IDR_FRIK_INI)
+        {}
 
         virtual void load() override;
         void loadIniOnly();
@@ -108,9 +109,18 @@ namespace frik
         bool hideHead = false;
         bool hideHeadEquipment = false;
         bool hideSkin = false;
-        const std::vector<std::string>& faceGeometry() const { return _faceGeometry; }
-        const std::vector<std::string>& skinGeometry() const { return _skinGeometry; }
-        const std::vector<int>& hideEquipSlotIndexes() const { return _hideEquipSlotIndexes; }
+        const std::vector<std::string>& faceGeometry() const
+        {
+            return _faceGeometry;
+        }
+        const std::vector<std::string>& skinGeometry() const
+        {
+            return _skinGeometry;
+        }
+        const std::vector<int>& hideEquipSlotIndexes() const
+        {
+            return _hideEquipSlotIndexes;
+        }
 
         // is the player playing standing or sitting
         bool isPlayingSeated = false;

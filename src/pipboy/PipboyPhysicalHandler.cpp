@@ -2,10 +2,10 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "utils.h"
 #include "f4vr/F4VRSkelly.h"
-#include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
+#include "utils.h"
+#include "vrcf/VRControllersManager.h"
 
 using namespace common;
 
@@ -74,16 +74,16 @@ namespace frik
      * Enabling operation state by hiding the weapon and setting the hand pose for pointing.
      * Disabling operation state if the hand moves outside the control area or if the Pipboy is not looking at it.
      */
-    void PipboyPhysicalHandler::checkHandStateToOperatePipboy(
-        const RE::NiPoint3 fingerPos, const RE::NiNode* powerButton, const RE::NiNode* lightButton, const RE::NiNode* radioButton)
+    void PipboyPhysicalHandler::checkHandStateToOperatePipboy(const RE::NiPoint3 fingerPos, const RE::NiNode* powerButton, const RE::NiNode* lightButton,
+        const RE::NiNode* radioButton)
     {
         bool isOperating = false;
         if (!g_frik.isOffHandGrippingWeapon()) {
             // have a buffer zone for finger detection not to trash the hand pose
             const float pipboyDetectionRange = g_config.pipboyOperationFingerDetectionRange + (_isOperatingPipboy ? 1.0f : -1.0f);
-            isOperating = MatrixUtils::vec3Len(fingerPos - powerButton->world.translate) < pipboyDetectionRange
-                || MatrixUtils::vec3Len(fingerPos - lightButton->world.translate) < pipboyDetectionRange
-                || MatrixUtils::vec3Len(fingerPos - radioButton->world.translate) < pipboyDetectionRange;
+            isOperating = MatrixUtils::vec3Len(fingerPos - powerButton->world.translate) < pipboyDetectionRange ||
+                MatrixUtils::vec3Len(fingerPos - lightButton->world.translate) < pipboyDetectionRange ||
+                MatrixUtils::vec3Len(fingerPos - radioButton->world.translate) < pipboyDetectionRange;
         }
         updateIsOperatingPipboy(isOperating);
     }
@@ -320,17 +320,15 @@ namespace frik
             if (distance > boneDistance) {
                 trans->local.translate.z = 0.0;
                 controlSticky = false;
-                RE::NiAVObject* orb = g_config.leftHandedPipBoy
-                    ? f4vr::findAVObject(_skelly->getRightArm().forearm3, orbName)
-                    : f4vr::findAVObject(_skelly->getLeftArm().forearm3, orbName); //Hide helper Orbs when not near a control surface
+                RE::NiAVObject* orb = g_config.leftHandedPipBoy ? f4vr::findAVObject(_skelly->getRightArm().forearm3, orbName)
+                                                                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, orbName); //Hide helper Orbs when not near a control surface
                 if (orb != nullptr) {
                     orb->local.scale = std::min<float>(orb->local.scale, 0);
                 }
             } else if (distance <= boneDistance) {
                 const float fz = boneDistance - distance;
-                RE::NiAVObject* orb = g_config.leftHandedPipBoy
-                    ? f4vr::findAVObject(_skelly->getRightArm().forearm3, orbName)
-                    : f4vr::findAVObject(_skelly->getLeftArm().forearm3, orbName); //Show helper Orbs when not near a control surface
+                RE::NiAVObject* orb = g_config.leftHandedPipBoy ? f4vr::findAVObject(_skelly->getRightArm().forearm3, orbName)
+                                                                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, orbName); //Show helper Orbs when not near a control surface
                 if (orb != nullptr) {
                     orb->local.scale = std::max<float>(orb->local.scale, 1);
                 }
@@ -339,17 +337,15 @@ namespace frik
                     if (operation == PipboyOperation::MOVE_LIST_SELECTION_UP) {
                         // Move Scroll Knob Anti-Clockwise when near control surface
                         static std::string KnobNode = "ScrollItemsKnobRot";
-                        RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
-                            ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
-                            : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
+                        RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
+                                                                               : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
                         ScrollKnob->local.rotate = ScrollKnob->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(fz), 0);
                     } else if (operation == PipboyOperation::MOVE_LIST_SELECTION_DOWN) {
                         // Move Scroll Knob Clockwise when near control surface
                         const float roty = fz * -1;
                         static std::string KnobNode = "ScrollItemsKnobRot";
-                        RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy
-                            ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
-                            : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
+                        RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
+                                                                               : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
                         ScrollKnob->local.rotate = ScrollKnob->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(roty), 0);
                     }
                 }

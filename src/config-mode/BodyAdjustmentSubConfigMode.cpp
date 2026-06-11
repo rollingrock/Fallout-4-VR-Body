@@ -22,8 +22,8 @@ namespace
 
 namespace frik
 {
-    BodyAdjustmentSubConfigMode::BodyAdjustmentSubConfigMode(const std::function<void()>& onClose) :
-        _onClose(onClose)
+    BodyAdjustmentSubConfigMode::BodyAdjustmentSubConfigMode(const std::function<void()>& onClose)
+        : _onClose(onClose)
     {
         createConfigUI();
     }
@@ -197,7 +197,8 @@ namespace frik
         g_config.setPlayerLegSlackAdjustOffset(g_config.getPlayerLegSlackAdjustOffset() + 3 * correctAdjustmentValue(offAxisY, 4));
 
         if (_skeletonLegSlack > g_config.skeletonLegSlackTarget + 0.1f || _skeletonLegSlack < g_config.skeletonLegSlackTarget - 0.1f) {
-            logger::debug("Update player leg slack adjust offset due to skeleton leg slack value out of optimal: {}, adjust: {}", _skeletonLegSlack,
+            logger::debug("Update player leg slack adjust offset due to skeleton leg slack value out of optimal: {}, adjust: {}",
+                _skeletonLegSlack,
                 g_config.getPlayerLegSlackAdjustOffset());
             g_config.setPlayerLegSlackAdjustOffset(g_config.getPlayerLegSlackAdjustOffset() + (_skeletonLegSlack > g_config.skeletonLegSlackTarget + 0.1f ? -0.1f : 0.1f));
         }

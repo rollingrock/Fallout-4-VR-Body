@@ -4,9 +4,9 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "utils.h"
 #include "common/CommonUtils.h"
 #include "f4vr/scaleformUtils.h"
+#include "utils.h"
 
 using namespace RE::Scaleform;
 using namespace std::chrono;
@@ -57,9 +57,8 @@ namespace
     bool isQuestTabObjectiveListEnabledOnDataPage(const GFx::Movie* root)
     {
         GFx::Value var;
-        return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.selectedIndex")
-            && var.GetType() == GFx::Value::ValueType::kInt
-            && var.GetInt() > -1;
+        return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.selectedIndex") && var.GetType() == GFx::Value::ValueType::kInt &&
+            var.GetInt() > -1;
     }
 
     bool isWorkshopsTabVisibleOnDataPage(const GFx::Movie* root)
@@ -82,8 +81,7 @@ namespace frik
     bool PipboyOperationHandler::isMessageHolderVisible(const GFx::Movie* root)
     {
         return root &&
-        (f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.MessageHolder_mc")
-            || f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc"));
+            (f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.MessageHolder_mc") || f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc"));
     }
 
     /**
@@ -101,7 +99,8 @@ namespace frik
             return static_cast<PipboyPage>(PBCurrentPage.GetUInt());
         }
         logger::sample("Failed to get current Pipboy page! getVariableSuccessful?({}) Type?({})",
-            getVariableSuccessful, getVariableSuccessful ? static_cast<int>(PBCurrentPage.GetType()) : -1);
+            getVariableSuccessful,
+            getVariableSuccessful ? static_cast<int>(PBCurrentPage.GetType()) : -1);
         return std::nullopt;
     }
 
@@ -202,7 +201,7 @@ namespace frik
                 case vrcf::Direction::Down:
                     moveListSelectionUpDown(root, false);
                     break;
-                default: ;
+                default:;
                 }
             }
         }
@@ -260,7 +259,7 @@ namespace frik
             case PipboyPage::RADIO:
                 handlePrimaryControllerOperationOnRadioPage(root, triggerPressed);
                 break;
-            default: ;
+            default:;
             }
         }
 
@@ -321,9 +320,8 @@ namespace frik
         // Quest, Workshop, and Stats tabs exist at the same time, need to check which one is visible
         if (isQuestTabVisibleOnDataPage(root)) {
             // Quests tab has 2 lists for the main quests and quest objectives
-            const char* listPath = isQuestTabObjectiveListEnabledOnDataPage(root)
-                ? "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc"
-                : "root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc";
+            const char* listPath =
+                isQuestTabObjectiveListEnabledOnDataPage(root) ? "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc" : "root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc";
             f4vr::doOperationOnScaleformList(root, listPath, listOp);
         } else if (isWorkshopsTabVisibleOnDataPage(root)) {
             f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.WorkshopsTab_mc.List_mc", listOp);

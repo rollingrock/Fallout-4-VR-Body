@@ -28,9 +28,8 @@ namespace frik
     void MainConfigMode::onFrameUpdate()
     {
         // open main config on both thumbsticks long-pressed shortcut
-        if (!isOpen()
-            && vrcf::VRControllers.isLongPressed(vrcf::Hand::Primary, vr::k_EButton_Axis0, g_config.openConfigurationModePressDelay, false)
-            && vrcf::VRControllers.isLongPressed(vrcf::Hand::Offhand, vr::k_EButton_Axis0, g_config.openConfigurationModePressDelay, false)) {
+        if (!isOpen() && vrcf::VRControllers.isLongPressed(vrcf::Hand::Primary, vr::k_EButton_Axis0, g_config.openConfigurationModePressDelay, false) &&
+            vrcf::VRControllers.isLongPressed(vrcf::Hand::Offhand, vr::k_EButton_Axis0, g_config.openConfigurationModePressDelay, false)) {
             logger::info("Open main config by shortcut...");
             if (g_frik.isFavoritesMenuOpen()) {
                 f4vr::closeFavoriteMenu();
@@ -95,12 +94,10 @@ namespace frik
         dampenHandsBtn->setToggleState(g_config.dampenHands);
         dampenHandsBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { g_config.saveDampenHands(enabled); });
 
-        const auto gripModesMap = std::map<TwoHandedGripMode, std::string>{
-            { TwoHandedGripMode::Mode1, "FRIK\\UI_Main_Config\\btn_grip_mode_1.nif" },
+        const auto gripModesMap = std::map<TwoHandedGripMode, std::string>{ { TwoHandedGripMode::Mode1, "FRIK\\UI_Main_Config\\btn_grip_mode_1.nif" },
             { TwoHandedGripMode::Mode2, "FRIK\\UI_Main_Config\\btn_grip_mode_2.nif" },
             { TwoHandedGripMode::Mode3, "FRIK\\UI_Main_Config\\btn_grip_mode_3.nif" },
-            { TwoHandedGripMode::Mode4, "FRIK\\UI_Main_Config\\btn_grip_mode_4.nif" }
-        };
+            { TwoHandedGripMode::Mode4, "FRIK\\UI_Main_Config\\btn_grip_mode_4.nif" } };
         const auto twoHandedGripModeBtn = std::make_shared<UIMultiStateToggleButton<TwoHandedGripMode>>(gripModesMap);
         twoHandedGripModeBtn->setState(getTwoHandedGripMode());
         twoHandedGripModeBtn->setOnStateChangedHandler([this](UIWidget*, const TwoHandedGripMode mode) { updateTwoHandedGripMode(mode); });
@@ -125,7 +122,7 @@ namespace frik
 
         for (const auto& buttonData : _externalModConfigButtonDataList) {
             const auto openExtModConfigBtn = std::make_shared<UIButton>(buttonData.buttonIconNifPath);
-            openExtModConfigBtn->setOnPressHandler([this,buttonData](UIWidget*) { openExternalModConfig(buttonData); });
+            openExtModConfigBtn->setOnPressHandler([this, buttonData](UIWidget*) { openExternalModConfig(buttonData); });
             row2Container->addElement(openExtModConfigBtn);
         }
 
@@ -158,9 +155,7 @@ namespace frik
             logger::error("Body adjust config class is already initialized");
             return;
         }
-        _bodyAdjustmentSubConfig = std::make_shared<BodyAdjustmentSubConfigMode>([this]() {
-            _bodyAdjustmentSubConfig.reset();
-        });
+        _bodyAdjustmentSubConfig = std::make_shared<BodyAdjustmentSubConfigMode>([this]() { _bodyAdjustmentSubConfig.reset(); });
     }
 
     /**

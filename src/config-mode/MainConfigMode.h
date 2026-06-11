@@ -22,7 +22,7 @@ namespace frik
 
     class MainConfigMode
     {
-    public :
+    public:
         int isOpen() const;
         void openConfigMode();
         void onFrameUpdate();

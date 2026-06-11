@@ -20,57 +20,134 @@ namespace frik
     class FRIK : public f4cf::ModBase
     {
     public:
-        FRIK() :
-            ModBase({
-                Version::PROJECT,
-                "F4VRBody",
-                Version::NAME,
-                &g_config,
-                Version::PROJECT,
-                512,
-                true,
-                true
-            }) {}
+        FRIK()
+            : ModBase({ Version::PROJECT, "F4VRBody", Version::NAME, &g_config, Version::PROJECT, 512, true, true })
+        {}
 
-        bool isSkeletonReady() const { return _skelly != nullptr; }
+        bool isSkeletonReady() const
+        {
+            return _skelly != nullptr;
+        }
 
-        bool isInScopeMenu() { return _gameMenusHandler.isInScopeMenu(); }
-        bool isPauseMenuOpen() { return _gameMenusHandler.isPauseMenuOpen(); }
-        bool isFavoritesMenuOpen() { return _gameMenusHandler.isFavoritesMenuOpen(); }
-        bool isDialogueMenuOpen() { return _gameMenusHandler.isDialogueMenuOpen(); }
+        bool isInScopeMenu()
+        {
+            return _gameMenusHandler.isInScopeMenu();
+        }
+        bool isPauseMenuOpen()
+        {
+            return _gameMenusHandler.isPauseMenuOpen();
+        }
+        bool isFavoritesMenuOpen()
+        {
+            return _gameMenusHandler.isFavoritesMenuOpen();
+        }
+        bool isDialogueMenuOpen()
+        {
+            return _gameMenusHandler.isDialogueMenuOpen();
+        }
 
-        bool isSelfieModeOn() const { return _selfieMode; }
-        void setSelfieMode(const bool selfieMode) { _selfieMode = selfieMode; }
-        float getDynamicCameraHeight() const { return _dynamicCameraHeight; }
-        void setDynamicCameraHeight(const float dynamicCameraHeight) { _dynamicCameraHeight = dynamicCameraHeight; }
-        bool isLookingThroughScope() const { return _isLookingThroughScope; }
-        void setLookingThroughScope(const bool isLookingThroughScope) { _isLookingThroughScope = isLookingThroughScope; }
+        bool isSelfieModeOn() const
+        {
+            return _selfieMode;
+        }
+        void setSelfieMode(const bool selfieMode)
+        {
+            _selfieMode = selfieMode;
+        }
+        float getDynamicCameraHeight() const
+        {
+            return _dynamicCameraHeight;
+        }
+        void setDynamicCameraHeight(const float dynamicCameraHeight)
+        {
+            _dynamicCameraHeight = dynamicCameraHeight;
+        }
+        bool isLookingThroughScope() const
+        {
+            return _isLookingThroughScope;
+        }
+        void setLookingThroughScope(const bool isLookingThroughScope)
+        {
+            _isLookingThroughScope = isLookingThroughScope;
+        }
 
-        bool isPipboyOn() const { return _pipboy && _pipboy->isOpen(); }
-        bool isPipboyOperatingWithFinger() const { return _pipboy && _pipboy->isOperatingWithFinger(); }
-        void swapPipboyModel() const { if (_pipboy) { _pipboy->swapModel(); } }
+        bool isPipboyOn() const
+        {
+            return _pipboy && _pipboy->isOpen();
+        }
+        bool isPipboyOperatingWithFinger() const
+        {
+            return _pipboy && _pipboy->isOperatingWithFinger();
+        }
+        void swapPipboyModel() const
+        {
+            if (_pipboy) {
+                _pipboy->swapModel();
+            }
+        }
 
-        bool isMainConfigurationModeActive() const { return _mainConfigMode.isOpen(); }
-        bool isPipboyConfigurationModeActive() const { return _configurationMode && _configurationMode->isPipBoyConfigModeActive(); }
-        void openMainConfigurationModeActive() { _mainConfigMode.openConfigMode(); }
+        bool isMainConfigurationModeActive() const
+        {
+            return _mainConfigMode.isOpen();
+        }
+        bool isPipboyConfigurationModeActive() const
+        {
+            return _configurationMode && _configurationMode->isPipBoyConfigModeActive();
+        }
+        void openMainConfigurationModeActive()
+        {
+            _mainConfigMode.openConfigMode();
+        }
 
         void openPipboyConfigurationModeActive() const
         {
-            if (_pipboy) { _pipboy->openClose(true); }
-            if (_configurationMode) { _configurationMode->openPipboyConfigurationMode(); }
+            if (_pipboy) {
+                _pipboy->openClose(true);
+            }
+            if (_configurationMode) {
+                _configurationMode->openPipboyConfigurationMode();
+            }
         }
 
-        void closePipboyConfigurationModeActive() const { if (_configurationMode) { _configurationMode->exitPBConfig(); } }
+        void closePipboyConfigurationModeActive() const
+        {
+            if (_configurationMode) {
+                _configurationMode->exitPBConfig();
+            }
+        }
 
-        void registerOpenSettingButton(const OpenExternalModConfigData& data) { _mainConfigMode.registerOpenExternalModSettingButton(data); }
+        void registerOpenSettingButton(const OpenExternalModConfigData& data)
+        {
+            _mainConfigMode.registerOpenExternalModSettingButton(data);
+        }
 
-        bool isMeleeWeaponDrawn() const { return _weaponPosition && _weaponPosition->isMeleeWeaponDrawn(); }
-        bool isOffHandGrippingWeapon() const { return _weaponPosition && _weaponPosition->isOffHandGrippingWeapon(); }
-        bool isOffHandGrippingEnabled() const { return WeaponPositionAdjuster::isOffHandGrippingEnabled(); }
-        void setOffHandGrippingEnabled(const bool enabled) { WeaponPositionAdjuster::setOffHandGrippingEnabled(enabled); }
+        bool isMeleeWeaponDrawn() const
+        {
+            return _weaponPosition && _weaponPosition->isMeleeWeaponDrawn();
+        }
+        bool isOffHandGrippingWeapon() const
+        {
+            return _weaponPosition && _weaponPosition->isOffHandGrippingWeapon();
+        }
+        bool isOffHandGrippingEnabled() const
+        {
+            return WeaponPositionAdjuster::isOffHandGrippingEnabled();
+        }
+        void setOffHandGrippingEnabled(const bool enabled)
+        {
+            WeaponPositionAdjuster::setOffHandGrippingEnabled(enabled);
+        }
 
-        bool inWeaponRepositionMode() const { return _weaponPosition && _weaponPosition->inWeaponRepositionMode(); }
-        void toggleWeaponRepositionMode() const { if (_weaponPosition) { _weaponPosition->toggleWeaponRepositionMode(); } }
+        bool inWeaponRepositionMode() const
+        {
+            return _weaponPosition && _weaponPosition->inWeaponRepositionMode();
+        }
+        void toggleWeaponRepositionMode() const
+        {
+            if (_weaponPosition) {
+                _weaponPosition->toggleWeaponRepositionMode();
+            }
+        }
 
         void dispatchMessageToExternalMod(const std::string& receivingModName, std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
 

@@ -1,10 +1,10 @@
 #pragma once
 
+#include <Windows.h>
 #include <array>
 #include <cstdint>
 #include <span>
 #include <type_traits>
-#include <Windows.h>
 
 #include "RE/NetImmerse/NiPoint.h"
 
@@ -37,9 +37,9 @@
 namespace frik::api
 {
 #if defined(FRIK_API_EXPORTS)
-#   define FRIK_API extern "C" __declspec(dllexport)
+#define FRIK_API extern "C" __declspec(dllexport)
 #else
-#   define FRIK_API extern "C" __declspec(dllimport)
+#define FRIK_API extern "C" __declspec(dllimport)
 #endif
 
 #define FRIK_CALL __cdecl
@@ -141,14 +141,28 @@ namespace frik::api
              */
             std::array<float, FLOAT_COUNT> toFloats() const
             {
-                return {
-                    thumb.prox, thumb.mid, thumb.dist, thumb.splay,
-                    index.prox, index.mid, index.dist, index.splay,
-                    middle.prox, middle.mid, middle.dist, middle.splay,
-                    ring.prox, ring.mid, ring.dist, ring.splay,
-                    pinky.prox, pinky.mid, pinky.dist, pinky.splay,
-                    palmPitch, palmYaw
-                };
+                return { thumb.prox,
+                    thumb.mid,
+                    thumb.dist,
+                    thumb.splay,
+                    index.prox,
+                    index.mid,
+                    index.dist,
+                    index.splay,
+                    middle.prox,
+                    middle.mid,
+                    middle.dist,
+                    middle.splay,
+                    ring.prox,
+                    ring.mid,
+                    ring.dist,
+                    ring.splay,
+                    pinky.prox,
+                    pinky.mid,
+                    pinky.dist,
+                    pinky.splay,
+                    palmPitch,
+                    palmYaw };
             }
 
             /**
@@ -167,10 +181,8 @@ namespace frik::api
             }
         };
 
-        static_assert(std::is_standard_layout_v<HandPoseData>,
-            "HandPoseData must be standard-layout for asFloatView() to alias safely");
-        static_assert(sizeof(HandPoseData) == HandPoseData::FLOAT_COUNT * sizeof(float),
-            "HandPoseData must be tightly packed (22 contiguous floats, no padding)");
+        static_assert(std::is_standard_layout_v<HandPoseData>, "HandPoseData must be standard-layout for asFloatView() to alias safely");
+        static_assert(sizeof(HandPoseData) == HandPoseData::FLOAT_COUNT * sizeof(float), "HandPoseData must be tightly packed (22 contiguous floats, no padding)");
 
         /**
          * The potential state of a set hand pose for specific tag as returned from FRIK.
@@ -200,69 +212,69 @@ namespace frik::api
          * Get the API version number.
          * Use this to check compatibility before calling other functions.
          */
-        std::uint32_t (FRIK_CALL*getVersion)();
+        std::uint32_t(FRIK_CALL* getVersion)();
 
         /**
          * Supported since FRIK API v2.
          * Get the mod version string. i.e. "0.12.5"
          */
-        const char* (FRIK_CALL*getModVersion)();
+        const char*(FRIK_CALL* getModVersion)();
 
         /**
          * Supported since FRIK API v1.
          * Check if FRIK is ready and the skeleton is initialized.
          */
-        bool (FRIK_CALL*isSkeletonReady)();
+        bool(FRIK_CALL* isSkeletonReady)();
 
         /**
          * Supported since FRIK API v2.
          * Is any of the FRIK config UI is open (main, Pipboy, weapon adjustment)
          */
-        bool (FRIK_CALL*isConfigOpen)();
+        bool(FRIK_CALL* isConfigOpen)();
 
         /**
          * Supported since FRIK API v2.
          * Is FRIK selfie mode is currently on or off.
          */
-        bool (FRIK_CALL*isSelfieModeOn)();
+        bool(FRIK_CALL* isSelfieModeOn)();
 
         /**
          * Supported since FRIK API v2.
          * Set FRIK selfie mode on or off.
          */
-        void (FRIK_CALL*setSelfieModeOn)(bool setOn);
+        void(FRIK_CALL* setSelfieModeOn)(bool setOn);
 
         /**
          * Supported since FRIK API v2.
          * Is the player currently holding the weapon with two hands. i.e. offhand is holding the weapon.
          */
-        bool (FRIK_CALL*isOffHandGrippingWeapon)();
+        bool(FRIK_CALL* isOffHandGrippingWeapon)();
 
         /**
          * Supported since FRIK API v2.
          * Is the player currently have the FRIK Pipboy open.
          */
-        bool (FRIK_CALL*isWristPipboyOpen)();
+        bool(FRIK_CALL* isWristPipboyOpen)();
 
         /**
          * Supported since FRIK API v1.
          * Get the world position of the index fingertip .
          */
-        RE::NiPoint3 (FRIK_CALL*getIndexFingerTipPosition)(Hand hand);
+        RE::NiPoint3(FRIK_CALL* getIndexFingerTipPosition)(Hand hand);
 
         /**
          * Supported since FRIK API v2.
          * Get the current state of given hand pose tag to identify if it is active in FRIK.
          * Can be used to identify if another system overriding the hand pose and your mod should react accordingly.
          */
-        HandPoseTagState (FRIK_CALL*getHandPoseSetTagState)(const char* tag, Hand hand);
+        HandPoseTagState(FRIK_CALL* getHandPoseSetTagState)(const char* tag, Hand hand);
 
         /**
          * Supported since FRIK API v2.
          * Get the current hand pose as active in FRIK.
          * Uses the canonical API HandPoseKind values since FRIK API v4.
          */
-        HandPoseKind (FRIK_CALL*getCurrentHandPose)(Hand hand);
+        HandPoseKind(FRIK_CALL* getCurrentHandPose)(Hand hand);
 
         /**
          * Supported since FRIK API v2.
@@ -271,7 +283,7 @@ namespace frik::api
          * Use setHandPoseCustomFingerPositions for Custom.
          * @return true if successful.
          */
-        bool (FRIK_CALL*setHandPose)(const char* tag, Hand hand, HandPoseKind handPose);
+        bool(FRIK_CALL* setHandPose)(const char* tag, Hand hand, HandPoseKind handPose);
 
         /**
          * Supported since FRIK API v2.
@@ -280,7 +292,7 @@ namespace frik::api
          * Each value is between 0 and 1 where 0 is bent and 1 is straight.
          * @return true if successful.
          */
-        bool (FRIK_CALL*setHandPoseCustomFingerPositions)(const char* tag, Hand hand, float thumb, float index, float middle, float ring, float pinky);
+        bool(FRIK_CALL* setHandPoseCustomFingerPositions)(const char* tag, Hand hand, float thumb, float index, float middle, float ring, float pinky);
 
         /**
          * Supported since FRIK API v2.
@@ -288,27 +300,27 @@ namespace frik::api
          * Only clears the specific tag hand pose override.
          * @return true if successful.
          */
-        bool (FRIK_CALL*clearHandPose)(const char* tag, Hand hand);
+        bool(FRIK_CALL* clearHandPose)(const char* tag, Hand hand);
 
         /**
          * Supported since FRIK API v1.
          * Deprecated since FRIK API v2.
          * @deprecated Use setHandPoseCustomFingerPositions instead.
          */
-        void (FRIK_CALL*setHandPoseFingerPositions)(Hand hand, float thumb, float index, float middle, float ring, float pinky);
+        void(FRIK_CALL* setHandPoseFingerPositions)(Hand hand, float thumb, float index, float middle, float ring, float pinky);
 
         /**
          * Supported since FRIK API v1.
          * Deprecated since FRIK API v2.
          * @deprecated Use clearHandPose instead.
          */
-        void (FRIK_CALL*clearHandPoseFingerPositions)(Hand hand);
+        void(FRIK_CALL* clearHandPoseFingerPositions)(Hand hand);
 
         /**
          * Supported since FRIK API v2.
          * Adds a button to open external mod config via a button in FRIK main config UI.
          */
-        bool (FRIK_CALL*registerOpenModSettingButtonToMainConfig)(const OpenExternalModConfigData& data);
+        bool(FRIK_CALL* registerOpenModSettingButtonToMainConfig)(const OpenExternalModConfigData& data);
 
         /**
          * Supported since FRIK API v3.
@@ -317,7 +329,7 @@ namespace frik::api
          * FRIK keeps only the blocked state, so gripping remains disabled while any tag is blocking it.
          * @return true if successful.
          */
-        bool (FRIK_CALL*blockOffHandWeaponGripping)(const char* tag, bool block);
+        bool(FRIK_CALL* blockOffHandWeaponGripping)(const char* tag, bool block);
 
         /**
          * Supported since FRIK API v4.
@@ -327,7 +339,7 @@ namespace frik::api
          * Use clearHandPose to release the override.
          * @return true if successful.
          */
-        bool (FRIK_CALL*setHandPoseCustom)(const char* tag, Hand hand, const HandPoseData& handPose, bool forceTop);
+        bool(FRIK_CALL* setHandPoseCustom)(const char* tag, Hand hand, const HandPoseData& handPose, bool forceTop);
 
         /**
          * Supported since FRIK API v1.
@@ -354,7 +366,7 @@ namespace frik::api
                 return 1;
             }
 
-            const auto getApi = reinterpret_cast<const FRIKApi* (FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_GetApi"));
+            const auto getApi = reinterpret_cast<const FRIKApi*(FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_GetApi"));
             if (!getApi) {
                 return 2;
             }

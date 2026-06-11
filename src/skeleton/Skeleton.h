@@ -25,8 +25,10 @@ namespace frik
     class Skeleton
     {
     public:
-        Skeleton(RE::NiNode* rootNode, const bool inPowerArmor) :
-            _root(rootNode), _inPowerArmor(inPowerArmor), _handPose(inPowerArmor)
+        Skeleton(RE::NiNode* rootNode, const bool inPowerArmor)
+            : _root(rootNode),
+              _inPowerArmor(inPowerArmor),
+              _handPose(inPowerArmor)
         {
             _curentPosition = RE::NiPoint3(0, 0, 0);
             _walkingState = 0;

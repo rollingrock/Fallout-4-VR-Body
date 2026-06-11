@@ -4,22 +4,38 @@
 #include "FRIK.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
-#include "vrcf/VRControllersManager.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
+#include "vrcf/VRControllersManager.h"
 
 using namespace common;
 
 namespace frik
 {
-    constexpr const char* meshName[12] = {
-        "PB-MainTitleTrans", "PB-Tile07Trans", "PB-Tile03Trans", "PB-Tile08Trans", "PB-Tile02Trans", "PB-Tile01Trans", "PB-Tile04Trans", "PB-Tile05Trans",
-        "PB-Tile06Trans", "PB-Tile09Trans", "PB-Tile10Trans", "PB-Tile11Trans"
-    };
-    constexpr const char* meshName2[12] = {
-        "PB-MainTitle", "PB-Tile07", "PB-Tile03", "PB-Tile08", "PB-Tile02", "PB-Tile01", "PB-Tile04", "PB-Tile05", "PB-Tile06", "PB-Tile09", "PB-Tile10",
-        "PB-Tile11"
-    };
+    constexpr const char* meshName[12] = { "PB-MainTitleTrans",
+        "PB-Tile07Trans",
+        "PB-Tile03Trans",
+        "PB-Tile08Trans",
+        "PB-Tile02Trans",
+        "PB-Tile01Trans",
+        "PB-Tile04Trans",
+        "PB-Tile05Trans",
+        "PB-Tile06Trans",
+        "PB-Tile09Trans",
+        "PB-Tile10Trans",
+        "PB-Tile11Trans" };
+    constexpr const char* meshName2[12] = { "PB-MainTitle",
+        "PB-Tile07",
+        "PB-Tile03",
+        "PB-Tile08",
+        "PB-Tile02",
+        "PB-Tile01",
+        "PB-Tile04",
+        "PB-Tile05",
+        "PB-Tile06",
+        "PB-Tile09",
+        "PB-Tile10",
+        "PB-Tile11" };
 
     /**
      * Open Pipboy configuration mode which also requires Pipboy to be open.
@@ -66,9 +82,8 @@ namespace frik
             return;
         }
 
-        const uint64_t dominantHand = f4vr::isLeftHandedMode()
-            ? vrcf::VRControllers.getControllerState_DEPRECATED(vrcf::TrackerType::Left).ulButtonPressed
-            : vrcf::VRControllers.getControllerState_DEPRECATED(vrcf::TrackerType::Right).ulButtonPressed;
+        const uint64_t dominantHand = f4vr::isLeftHandedMode() ? vrcf::VRControllers.getControllerState_DEPRECATED(vrcf::TrackerType::Left).ulButtonPressed
+                                                               : vrcf::VRControllers.getControllerState_DEPRECATED(vrcf::TrackerType::Right).ulButtonPressed;
         const auto PBConfigButtonPressed = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
         bool ModelSwapButtonPressed = _PBTouchbuttons[1];
         bool RotateButtonPressed = _PBTouchbuttons[2];
@@ -285,16 +300,30 @@ namespace frik
         }
         f4vr::getPlayerNodes()->primaryUIAttachNode->AttachChild(pipboyConfigUI, true);
         for (int i = 0; i <= 11; i++) {
-            static const char* MainHud[12] = {
-                "Data/Meshes/FRIK/UI-MainTitle.nif", "Data/Meshes/FRIK/UI-Tile07.nif", "Data/Meshes/FRIK/UI-Tile03.nif", "Data/Meshes/FRIK/UI-Tile08.nif",
-                "Data/Meshes/FRIK/UI-Tile02.nif", "Data/Meshes/FRIK/UI-Tile01.nif", "Data/Meshes/FRIK/UI-Tile04.nif", "Data/Meshes/FRIK/UI-Tile05.nif",
-                "Data/Meshes/FRIK/UI-Tile06.nif", "Data/Meshes/FRIK/UI-Tile09.nif", "Data/Meshes/FRIK/UI-Tile10.nif", "Data/Meshes/FRIK/UI-Tile11.nif"
-            };
-            static const char* MainHud2[12] = {
-                "Data/Meshes/FRIK/PB-MainTitle.nif", "Data/Meshes/FRIK/PB-Tile07.nif", "Data/Meshes/FRIK/PB-Tile03.nif", "Data/Meshes/FRIK/PB-Tile08.nif",
-                "Data/Meshes/FRIK/PB-Tile02.nif", "Data/Meshes/FRIK/PB-Tile01.nif", "Data/Meshes/FRIK/PB-Tile04.nif", "Data/Meshes/FRIK/PB-Tile05.nif",
-                "Data/Meshes/FRIK/PB-Tile06.nif", "Data/Meshes/FRIK/PB-Tile09.nif", "Data/Meshes/FRIK/PB-Tile10.nif", "Data/Meshes/FRIK/PB-Tile11.nif"
-            };
+            static const char* MainHud[12] = { "Data/Meshes/FRIK/UI-MainTitle.nif",
+                "Data/Meshes/FRIK/UI-Tile07.nif",
+                "Data/Meshes/FRIK/UI-Tile03.nif",
+                "Data/Meshes/FRIK/UI-Tile08.nif",
+                "Data/Meshes/FRIK/UI-Tile02.nif",
+                "Data/Meshes/FRIK/UI-Tile01.nif",
+                "Data/Meshes/FRIK/UI-Tile04.nif",
+                "Data/Meshes/FRIK/UI-Tile05.nif",
+                "Data/Meshes/FRIK/UI-Tile06.nif",
+                "Data/Meshes/FRIK/UI-Tile09.nif",
+                "Data/Meshes/FRIK/UI-Tile10.nif",
+                "Data/Meshes/FRIK/UI-Tile11.nif" };
+            static const char* MainHud2[12] = { "Data/Meshes/FRIK/PB-MainTitle.nif",
+                "Data/Meshes/FRIK/PB-Tile07.nif",
+                "Data/Meshes/FRIK/PB-Tile03.nif",
+                "Data/Meshes/FRIK/PB-Tile08.nif",
+                "Data/Meshes/FRIK/PB-Tile02.nif",
+                "Data/Meshes/FRIK/PB-Tile01.nif",
+                "Data/Meshes/FRIK/PB-Tile04.nif",
+                "Data/Meshes/FRIK/PB-Tile05.nif",
+                "Data/Meshes/FRIK/PB-Tile06.nif",
+                "Data/Meshes/FRIK/PB-Tile09.nif",
+                "Data/Meshes/FRIK/PB-Tile10.nif",
+                "Data/Meshes/FRIK/PB-Tile11.nif" };
 
             RE::NiNode* UI = f4vr::getClonedNiNodeForNifFileSetName(MainHud[i], meshName2[i]);
             pipboyConfigUI->AttachChild(UI, true);

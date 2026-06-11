@@ -2,13 +2,13 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "utils.h"
 #include "common/Quaternion.h"
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
+#include "utils.h"
 #include "vrcf/VRControllersManager.h"
 
 using namespace common;
@@ -120,9 +120,8 @@ namespace frik
 
             // get saved offset or use hard-coded global default
             const auto offsetLookup = g_config.getWeaponOffsets(_currentThrowableWeaponName, WeaponOffsetsMode::Throwable, _currentlyInPA);
-            _throwableWeaponOffsetTransform = offsetLookup.has_value()
-                ? offsetLookup.value()
-                : WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(_throwableWeaponOriginalTransform, _currentlyInPA);
+            _throwableWeaponOffsetTransform =
+                offsetLookup.has_value() ? offsetLookup.value() : WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(_throwableWeaponOriginalTransform, _currentlyInPA);
 
             logger::info("Equipped Throwable Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}", _currentThrowableWeaponName.c_str(), _currentlyInPA, offsetLookup.has_value());
         }
@@ -251,15 +250,24 @@ namespace frik
         if (backOfHandOffsetLookup.has_value()) {
             _backOfHandUIOffsetTransform = backOfHandOffsetLookup.value();
             logger::debug("Use back of hand offset Pos: ({:2.2f}, {:2.2f}, {:2.2f}), Scale: {:.3f}, InPA: {}",
-                _weaponOffsetTransform.translate.x, _weaponOffsetTransform.translate.y, _weaponOffsetTransform.translate.z, _weaponOffsetTransform.scale, _currentlyInPA);
+                _weaponOffsetTransform.translate.x,
+                _weaponOffsetTransform.translate.y,
+                _weaponOffsetTransform.translate.z,
+                _weaponOffsetTransform.scale,
+                _currentlyInPA);
         } else {
             // No stored offset, use default adjustment
             _backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->local, _currentlyInPA);
         }
 
         logger::info("Equipped Weapon changed to '{}' (Melee:{}) (InPA:{}); HasWeaponOffset:{}, HasPrimaryHandOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
-            _currentWeapon, _isCurrentWeaponMelee, _currentlyInPA,
-            weaponOffsetLookup.has_value(), primaryHandOffsetLookup.has_value(), offhandOffsetLookup.has_value(), backOfHandOffsetLookup.has_value());
+            _currentWeapon,
+            _isCurrentWeaponMelee,
+            _currentlyInPA,
+            weaponOffsetLookup.has_value(),
+            primaryHandOffsetLookup.has_value(),
+            offhandOffsetLookup.has_value(),
+            backOfHandOffsetLookup.has_value());
     }
 
     /**

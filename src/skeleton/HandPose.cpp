@@ -74,9 +74,7 @@ namespace
             transform.refNode->local = transform.local;
         }
 
-        const auto parentWorld = transform.refNode && transform.refNode->parent
-            ? transform.refNode->parent->world
-            : boneTree->transforms[transform.parPos].world;
+        const auto parentWorld = transform.refNode && transform.refNode->parent ? transform.refNode->parent->world : boneTree->transforms[transform.parPos].world;
         RE::NiPoint3 p = transform.local.translate;
         p = parentWorld.rotate.Transpose() * (p * parentWorld.scale);
         transform.world.translate = parentWorld.translate + p;
@@ -234,9 +232,7 @@ namespace frik
      */
     const HandFingersPose& HandPose::getFixedPrimaryWeaponPose()
     {
-        return isUnarmedWeaponEquipped()
-            ? getFistPose()
-            : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
+        return isUnarmedWeaponEquipped() ? getFistPose() : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
     }
 
     /**
@@ -383,10 +379,7 @@ namespace frik
         if (isPrimaryHand && shouldUseWeaponPoseForPrimaryHand) {
             // Right-handed mode can copy the first-person hand transform directly. Left-handed mode
             // cannot, so it uses the fixed authored weapon pose instead.
-            return HandPoseSource{
-                .kind = HandPoseSourceKind::PrimaryWeaponPose,
-                .pose = isLeftHandedMode() ? &HandPose::getFixedPrimaryWeaponPose() : nullptr
-            };
+            return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = isLeftHandedMode() ? &HandPose::getFixedPrimaryWeaponPose() : nullptr };
         }
 
         if (const auto* activeOverride = getActiveHandPoseOverride(isLeft)) {
@@ -456,9 +449,7 @@ namespace frik
             const auto fpTree = getFirstPersonBoneTree();
             const int pos = fpTree->GetBoneIndex(boneName);
             if (pos >= 0) {
-                _handBones[boneName] = fpTree->transforms[pos].refNode
-                    ? fpTree->transforms[pos].refNode->local
-                    : fpTree->transforms[pos].local;
+                _handBones[boneName] = fpTree->transforms[pos].refNode ? fpTree->transforms[pos].refNode->local : fpTree->transforms[pos].local;
             }
         }
     }
@@ -556,9 +547,8 @@ namespace frik
     bool HandPose::shouldUseThumbsUpPose(const bool isLeft)
     {
         const auto hand = isLeft ? Hand::Left : Hand::Right;
-        return VRControllers.isTouching(hand, k_EButton_Grip)
-            && VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Trigger)
-            && !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Touchpad);
+        return VRControllers.isTouching(hand, k_EButton_Grip) && VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Trigger) &&
+            !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Touchpad);
     }
 
     /**
@@ -578,7 +568,10 @@ namespace frik
             overrides.push_back(TaggedHandPoseOverride{ .tag = std::string(tag), .pose = pose });
 
             logger::info("Hand pose: Insert top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
-                tag, isLeft ? "Left" : "Right", previousTopTag, overrides.size());
+                tag,
+                isLeft ? "Left" : "Right",
+                previousTopTag,
+                overrides.size());
         } else if (forceTop && std::next(overrideIt) != overrides.end()) {
             auto updatedOverride = *overrideIt;
             updatedOverride.pose = pose;
@@ -586,7 +579,10 @@ namespace frik
             overrides.push_back(std::move(updatedOverride));
 
             logger::info("Hand pose: Forced to top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
-                tag, isLeft ? "Left" : "Right", previousTopTag, overrides.size());
+                tag,
+                isLeft ? "Left" : "Right",
+                previousTopTag,
+                overrides.size());
         } else {
             overrideIt->pose = pose;
         }
@@ -612,6 +608,10 @@ namespace frik
         overrides.erase(overrideIt);
 
         logger::info("Hand pose: Cleared override tag:'{}' for '{}' hand (was top '{}', new top tag:'{}', remaining {})",
-            tag, isLeft ? "Left" : "Right", wasTop ? "yes" : "no", overrides.empty() ? "---" : overrides.back().tag, overrides.size());
+            tag,
+            isLeft ? "Left" : "Right",
+            wasTop ? "yes" : "no",
+            overrides.empty() ? "---" : overrides.back().tag,
+            overrides.size());
     }
 }

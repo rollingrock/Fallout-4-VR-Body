@@ -52,13 +52,11 @@ namespace
 
     HandFingersPose makeUniformFingerPose(const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
-        return HandFingersPose{
-            FingerPose{ thumb, thumb, thumb },
+        return HandFingersPose{ FingerPose{ thumb, thumb, thumb },
             FingerPose{ index, index, index },
             FingerPose{ middle, middle, middle },
             FingerPose{ ring, ring, ring },
-            FingerPose{ pinky, pinky, pinky }
-        };
+            FingerPose{ pinky, pinky, pinky } };
     }
 
     FRIKApi::HandPoseTagState toApiHandPoseTagState(const HandPoseOverrideTagState state)
@@ -240,16 +238,17 @@ namespace
             return false;
         }
 
-        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag, HandFingersPose{
-            FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
-            FingerPose{ handPose.index.prox, handPose.index.mid, handPose.index.dist, handPose.index.splay },
-            FingerPose{ handPose.middle.prox, handPose.middle.mid, handPose.middle.dist, handPose.middle.splay },
-            FingerPose{ handPose.ring.prox, handPose.ring.mid, handPose.ring.dist, handPose.ring.splay },
-            FingerPose{ handPose.pinky.prox, handPose.pinky.mid, handPose.pinky.dist, handPose.pinky.splay },
-            handPose.palmPitch,
-            handPose.palmYaw,
-            HandPoseKind::Custom
-        }, forceTop);
+        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand),
+            *normalizedTag,
+            HandFingersPose{ FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
+                FingerPose{ handPose.index.prox, handPose.index.mid, handPose.index.dist, handPose.index.splay },
+                FingerPose{ handPose.middle.prox, handPose.middle.mid, handPose.middle.dist, handPose.middle.splay },
+                FingerPose{ handPose.ring.prox, handPose.ring.mid, handPose.ring.dist, handPose.ring.splay },
+                FingerPose{ handPose.pinky.prox, handPose.pinky.mid, handPose.pinky.dist, handPose.pinky.splay },
+                handPose.palmPitch,
+                handPose.palmYaw,
+                HandPoseKind::Custom },
+            forceTop);
         return true;
     }
 
@@ -279,16 +278,12 @@ namespace
         if (!data.buttonIconNifPath || !data.callbackReceiverName) {
             return false;
         }
-        g_frik.registerOpenSettingButton({
-            .buttonIconNifPath = data.buttonIconNifPath,
-            .callbackReceiverName = data.callbackReceiverName,
-            .callbackMessageType = data.callbackMessageType
-        });
+        g_frik.registerOpenSettingButton(
+            { .buttonIconNifPath = data.buttonIconNifPath, .callbackReceiverName = data.callbackReceiverName, .callbackMessageType = data.callbackMessageType });
         return true;
     }
 
-    constexpr FRIKApi FRIK_API_FUNCTIONS_TABLE{
-        .getVersion = &getVersion,
+    constexpr FRIKApi FRIK_API_FUNCTIONS_TABLE{ .getVersion = &getVersion,
         .getModVersion = &getModVersion,
         .isSkeletonReady = &isSkeletonReady,
         .isConfigOpen = &isConfigOpen,
@@ -306,8 +301,7 @@ namespace
         .clearHandPoseFingerPositions = &clearHandPoseFingerPositions,
         .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig,
         .blockOffHandWeaponGripping = &blockOffHandWeaponGripping,
-        .setHandPoseCustom = &setHandPoseCustom
-    };
+        .setHandPoseCustom = &setHandPoseCustom };
 }
 
 namespace frik::api

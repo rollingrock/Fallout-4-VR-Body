@@ -9,8 +9,9 @@ using namespace common;
 
 namespace frik
 {
-    Flashlight::Flashlight(Skeleton* skelly) :
-        _skelly(skelly) {}
+    Flashlight::Flashlight(Skeleton* skelly)
+        : _skelly(skelly)
+    {}
 
     /**
      * Executed every frame to update to handle flashlight location and moving between hand and head.
@@ -85,9 +86,8 @@ namespace frik
             f4vr::updateTransforms(lightNode);
 
             // use the right arm node
-            const auto armNode = g_config.flashlightLocation == FlashlightLocation::LeftArm
-                ? f4vr::findNode(_skelly->getLeftArm().shoulder, "LArm_Hand")
-                : f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand");
+            const auto armNode = g_config.flashlightLocation == FlashlightLocation::LeftArm ? f4vr::findNode(_skelly->getLeftArm().shoulder, "LArm_Hand")
+                                                                                            : f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand");
 
             // calculate relocation transform and set to local
             lightNode->local = MatrixUtils::calculateRelocation(lightNode, armNode);
