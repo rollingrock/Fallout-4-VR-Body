@@ -402,8 +402,8 @@ namespace frik
             return;
         }
 
-        const bool open = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation()
-                                                                                           : vrcf::VRControllers.isReleasedShort(vrcf::Hand::Offhand, g_config.pipBoyButtonID);
+        const bool open =
+            _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation() : vrcf::VRControllers.isTap(vrcf::Hand::Offhand, g_config.pipBoyButtonID);
         if (open) {
             logger::info("Open Pipboy with button");
             openClose(open);
@@ -420,7 +420,7 @@ namespace frik
         }
 
         const bool close = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation()
-                                                                                            : vrcf::VRControllers.isReleasedShort(vrcf::Hand::Offhand, g_config.pipBoyButtonOffID);
+                                                                                            : vrcf::VRControllers.isTap(vrcf::Hand::Offhand, g_config.pipBoyButtonOffID);
         if (close) {
             logger::info("Close Pipboy with button");
             openClose(false);
@@ -440,7 +440,7 @@ namespace frik
                 triggerStrongHaptic(vrcf::Hand::Left);
                 logger::debug("Attaboy activation area triggered");
             }
-            if (vrcf::VRControllers.isReleasedShort(vrcf::Hand::Left, g_config.attaboyGrabButtonId)) {
+            if (vrcf::VRControllers.isTap(vrcf::Hand::Left, g_config.attaboyGrabButtonId)) {
                 triggerShortHaptic(vrcf::Hand::Left);
                 return true;
             }

@@ -52,8 +52,8 @@ namespace frik
             return;
         }
 
-        const bool isLeftHandGrab = isLeftHandCloseToHMD && vrcf::VRControllers.isReleasedShort(vrcf::Hand::Left, g_config.switchTorchButton);
-        const bool isRightHandGrab = isRightHandCloseToHMD && vrcf::VRControllers.isReleasedShort(vrcf::Hand::Right, g_config.switchTorchButton);
+        const bool isLeftHandGrab = isLeftHandCloseToHMD && vrcf::VRControllers.isTap(vrcf::Hand::Left, g_config.switchTorchButton);
+        const bool isRightHandGrab = isRightHandCloseToHMD && vrcf::VRControllers.isTap(vrcf::Hand::Right, g_config.switchTorchButton);
         if (!isLeftHandGrab && !isRightHandGrab) {
             return;
         }
