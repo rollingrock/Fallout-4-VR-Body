@@ -27,9 +27,8 @@ namespace frik
      */
     void MainConfigMode::onFrameUpdate()
     {
-        // open main config on both thumbsticks long-pressed shortcut
-        if (!isOpen() && vrcf::VRControllers.isLongPressed(vrcf::Hand::Primary, vr::k_EButton_Axis0, g_config.openConfigurationModePressDelay, false) &&
-            vrcf::VRControllers.isLongPressed(vrcf::Hand::Offhand, vr::k_EButton_Axis0, g_config.openConfigurationModePressDelay, false)) {
+        // open main config on the configured shortcut (both thumbsticks long-pressed by default)
+        if (!isOpen() && vrcf::VRControllers.check(g_config.openMainConfigBinding)) {
             logger::info("Open main config by shortcut...");
             if (g_frik.isFavoritesMenuOpen()) {
                 f4vr::closeFavoriteMenu();
@@ -45,7 +44,7 @@ namespace frik
         _configUI->setPosition(0, 0, f4vr::isNodeVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
 
         // toggle selfie if Pipboy is not open as it uses the same button
-        if (!g_frik.isPipboyOn() && vrcf::VRControllers.isTap(vrcf::Hand::Primary, vr::k_EButton_A)) {
+        if (!g_frik.isPipboyOn() && vrcf::VRControllers.check(g_config.toggleSelfieBinding)) {
             toggleSelfieMode();
         }
 

@@ -42,6 +42,5 @@ namespace frik
         bool _isModelSwapButtonPressed = false;
         bool _isGlanceButtonPressed = false;
         bool _isDampenScreenButtonPressed = false;
-        int _PBConfigModeEnterCounter = 0;
     };
 }

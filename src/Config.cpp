@@ -331,6 +331,24 @@ namespace frik
             getInputBindingValue(ini, INI_SECTION_MAIN, "sPipboyOpenButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_SteamVR_Trigger });
         pipboyCloseBinding =
             getInputBindingValue(ini, INI_SECTION_MAIN, "sPipboyCloseButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
+        holdPipboyScreenBinding = getInputBindingValue(ini,
+            INI_SECTION_MAIN,
+            "sHoldPipboyScreenButton",
+            vrcf::InputBinding{
+                .hand = vrcf::Hand::Offhand,
+                .type = vrcf::ActivationType::HoldDown,
+                .button = vr::k_EButton_Grip,
+                .duration = 0.3f,
+            });
+        enterPipboyConfigBinding = getInputBindingValue(ini,
+            INI_SECTION_MAIN,
+            "sEnterPipboyConfigButton",
+            vrcf::InputBinding{
+                .hand = vrcf::Hand::Primary,
+                .type = vrcf::ActivationType::LongPress,
+                .button = vr::k_EButton_SteamVR_Touchpad,
+                .duration = 2.0f,
+            });
 
         // Torch/Flashlight
         removeFlashlight = ini.GetBoolValue(INI_SECTION_MAIN, "bRemoveFlashlight", false);
@@ -373,8 +391,19 @@ namespace frik
         showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
         selfieOutFrontDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0));
         selfieIgnoreHideFlags = ini.GetBoolValue(INI_SECTION_MAIN, "bSelfieIgnoreHideFlags", true);
+        toggleSelfieBinding =
+            getInputBindingValue(ini, INI_SECTION_MAIN, "sToggleSelfieButton", vrcf::InputBinding{ vrcf::Hand::Primary, vrcf::ActivationType::Tap, vr::k_EButton_A });
         scopeAdjustDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f));
-        openConfigurationModePressDelay = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fOpenConfigurationModePressDelay", 1.5f));
+        openMainConfigBinding = getInputBindingValue(ini,
+            INI_SECTION_MAIN,
+            "sOpenConfigButton",
+            vrcf::InputBinding{
+                .hand = vrcf::Hand::Primary,
+                .type = vrcf::ActivationType::LongPress,
+                .button = vr::k_EButton_SteamVR_Touchpad,
+                .modifier = vrcf::InputModifier{ vr::k_EButton_SteamVR_Touchpad, vrcf::Hand::Offhand },
+                .duration = 1.5f,
+            });
 
         // special disable of Fallout London so Pipboy can be used - a hacky hack for a specific player
         ignoreFalloutLondonVR = ini.GetBoolValue(INI_SECTION_MAIN, "bIgnoreFalloutLondonVR", true);

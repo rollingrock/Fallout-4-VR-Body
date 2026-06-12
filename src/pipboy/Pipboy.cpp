@@ -557,7 +557,7 @@ namespace frik
      */
     void Pipboy::holdPipboyScreenInPlace(RE::NiAVObject* const pipboyScreen)
     {
-        if (vrcf::VRControllers.isPressHeldDown(g_config.pipboyCloseBinding.hand, g_config.pipboyCloseBinding.button, 0.3f)) {
+        if (vrcf::VRControllers.check(g_config.holdPipboyScreenBinding)) {
             _pipboyScreenStableFrame = pipboyScreen->world;
         } else {
             pipboyScreen->world = _pipboyScreenStableFrame;

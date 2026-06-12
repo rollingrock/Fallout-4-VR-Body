@@ -164,10 +164,13 @@ namespace frik
         float pipboyOperationFingerDetectionRange = 0;
         int pipBoyOnDelay = 0;
         int pipBoyOffDelay = 0;
-        // Controller input that opens / closes the Pipboy. The close binding's button is also used to
-        // hold the holo Pipboy screen in place (see DampenPipboyScreenMode::HoldInPlace).
+        // Controller input that opens / closes the Pipboy.
         vrcf::InputBinding pipboyOpenBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_SteamVR_Trigger };
         vrcf::InputBinding pipboyCloseBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
+        // Controller input that must be held to move the holo Pipboy screen (see DampenPipboyScreenMode::HoldInPlace).
+        vrcf::InputBinding holdPipboyScreenBinding;
+        // Controller input that enters the wrist-Pipboy configuration mode (long-press the favorites button).
+        vrcf::InputBinding enterPipboyConfigBinding;
 
         // Pipboy Torch/Flashlight
         bool removeFlashlight = false;
@@ -209,8 +212,12 @@ namespace frik
         bool showPAHUD = false;
         float selfieOutFrontDistance = 0;
         bool selfieIgnoreHideFlags = false;
+        // Controller input that toggles selfie mode (only when the Pipboy is off, as it shares the button).
+        vrcf::InputBinding toggleSelfieBinding;
         float scopeAdjustDistance = 0;
-        float openConfigurationModePressDelay = 0;
+        // Controller input that opens the in-VR configuration menu. Default: long-press both thumbsticks
+        // (primary thumbstick held past the duration while the offhand thumbstick is also held).
+        vrcf::InputBinding openMainConfigBinding;
 
         // Smooth Movement
         bool disableSmoothMovement = false;

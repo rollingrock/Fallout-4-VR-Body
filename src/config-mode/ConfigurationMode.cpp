@@ -82,9 +82,6 @@ namespace frik
             return;
         }
 
-        const uint64_t dominantHand = f4vr::isLeftHandedMode() ? vrcf::VRControllers.getControllerState_DEPRECATED(vrcf::TrackerType::Left).ulButtonPressed
-                                                               : vrcf::VRControllers.getControllerState_DEPRECATED(vrcf::TrackerType::Right).ulButtonPressed;
-        const auto PBConfigButtonPressed = dominantHand & vr::ButtonMaskFromId(static_cast<vr::EVRButtonId>(32));
         bool ModelSwapButtonPressed = _PBTouchbuttons[1];
         bool RotateButtonPressed = _PBTouchbuttons[2];
         bool SaveButtonPressed = _PBTouchbuttons[3];
@@ -104,15 +101,9 @@ namespace frik
         } else {
             _3rdPipboy = f4vr::findAVObject(_skelly->getRightArm().forearm3, "PipboyBone");
         }
-        // Enter Pipboy Config Mode by holding down favorites button.
-        if (PBConfigButtonPressed && !_isPBConfigModeActive) {
-            // TODO: change from counter to timer so it will be fps independent
-            _PBConfigModeEnterCounter += 1;
-            if (f4vr::isPipboyOnWrist() && _PBConfigModeEnterCounter > 200 && g_frik.isPipboyOn()) {
-                enterPipboyConfigMode();
-            }
-        } else if (!PBConfigButtonPressed && !_isPBConfigModeActive) {
-            _PBConfigModeEnterCounter = 0;
+        // Enter Pipboy Config Mode by long-pressing the favorites button.
+        if (!_isPBConfigModeActive && f4vr::isPipboyOnWrist() && g_frik.isPipboyOn() && vrcf::VRControllers.check(g_config.enterPipboyConfigBinding)) {
+            enterPipboyConfigMode();
         }
         if (_isPBConfigModeActive) {
             HandPose::setConfigModeHandPose();
@@ -341,6 +332,5 @@ namespace frik
             }
         }
         _isPBConfigModeActive = true;
-        _PBConfigModeEnterCounter = 0;
     }
 }
