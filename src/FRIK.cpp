@@ -171,8 +171,10 @@ namespace frik
         logger::trace("Update player controls...");
         _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition, _configurationMode);
 
-        logger::trace("Update Weapon Position...");
-        _weaponPosition->onFrameUpdate();
+        if (_weaponPositionEnabled) {
+            logger::trace("Update Weapon Position...");
+            _weaponPosition->onFrameUpdate();
+        }
 
         logger::trace("Update Pipboy...");
         _pipboy->onFrameUpdate();
@@ -189,6 +191,9 @@ namespace frik
 
     void FRIK::smoothMovement()
     {
+        if (!_smoothMovementEnabled) {
+            return;
+        }
         try {
             _smoothMovement.onFrameUpdate();
         } catch (const std::exception& e) {
@@ -344,6 +349,11 @@ namespace frik
     {
         if (g_config.removeFlashlight) {
             F4SE::log::info("Flashlight disabled in config, skipping");
+            return;
+        }
+
+        if (!g_frik.isFlashlightEnabled()) {
+            F4SE::log::info("Flashlight disabled via API, skipping FRIK flashlight");
             return;
         }
 

@@ -144,9 +144,53 @@ namespace frik
         }
         void toggleWeaponRepositionMode() const
         {
-            if (_weaponPosition) {
+            // reposition mode is unavailable while weapon positioning is disabled via API
+            if (_weaponPosition && _weaponPositionEnabled) {
                 _weaponPosition->toggleWeaponRepositionMode();
             }
+        }
+
+        // Feature enable/disable toggled via the public API so other mods can turn off FRIK
+        // subsystems they replace (e.g. a mod providing its own flashlight). Default: enabled.
+        bool isFlashlightEnabled() const
+        {
+            return _flashlightEnabled;
+        }
+        void setFlashlightEnabled(const bool enabled)
+        {
+            _flashlightEnabled = enabled;
+        }
+        bool isWeaponPositionEnabled() const
+        {
+            return _weaponPositionEnabled;
+        }
+        void setWeaponPositionEnabled(const bool enabled)
+        {
+            _weaponPositionEnabled = enabled;
+            // release transient state (offhand grip pose, reposition mode) so nothing stays stuck while disabled
+            if (!enabled && _weaponPosition) {
+                _weaponPosition->resetOnDisable();
+            }
+        }
+        bool isPipboyEnabled() const
+        {
+            return _pipboyEnabled;
+        }
+        void setPipboyEnabled(const bool enabled)
+        {
+            _pipboyEnabled = enabled;
+            // close the Pipboy and clear finger-operation state on disable so player controls / hand pose don't stay stuck
+            if (!enabled && _pipboy) {
+                _pipboy->resetOnDisable();
+            }
+        }
+        bool isSmoothMovementEnabled() const
+        {
+            return _smoothMovementEnabled;
+        }
+        void setSmoothMovementEnabled(const bool enabled)
+        {
+            _smoothMovementEnabled = enabled;
         }
 
         void dispatchMessageToExternalMod(const std::string& receivingModName, std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
@@ -176,6 +220,12 @@ namespace frik
         bool _isLookingThroughScope = false;
         float _dynamicCameraHeight = 0;
         bool _selfieMode = false;
+
+        // Feature enable/disable flags toggled via the public API (see blockFeature). Default: enabled.
+        bool _flashlightEnabled = true;
+        bool _weaponPositionEnabled = true;
+        bool _pipboyEnabled = true;
+        bool _smoothMovementEnabled = true;
 
         // the currently root node used in skeleton
         RE::NiNode* _workingRootNode = nullptr;

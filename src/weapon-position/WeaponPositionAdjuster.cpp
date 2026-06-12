@@ -67,6 +67,21 @@ namespace frik
     }
 
     /**
+     * Reset transient state when weapon positioning is disabled via API so nothing stays stuck:
+     * release an active offhand grip (and its hand pose) and exit reposition mode.
+     * The weapon node itself self-heals as the game re-applies its animation transform each frame.
+     */
+    void WeaponPositionAdjuster::resetOnDisable()
+    {
+        if (_offHandGripping) {
+            setOffhandGripping(false);
+        }
+        if (inWeaponRepositionMode()) {
+            toggleWeaponRepositionMode();
+        }
+    }
+
+    /**
      * Return whether FRIK offhand weapon gripping logic is currently enabled.
      */
     bool WeaponPositionAdjuster::isOffHandGrippingEnabled()

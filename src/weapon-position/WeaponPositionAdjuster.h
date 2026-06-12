@@ -53,6 +53,7 @@ namespace frik
         static bool isOffHandGrippingEnabled();
         static void setOffHandGrippingEnabled(bool enabled);
         void toggleWeaponRepositionMode();
+        void resetOnDisable();
 
         void onFrameUpdate();
         void loadStoredOffsets(const std::string& weaponName);

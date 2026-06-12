@@ -30,6 +30,8 @@ namespace frik
         }
         void openClose(bool open);
 
+        void resetOnDisable();
+
         void swapModel();
 
         void onFrameUpdate();

@@ -93,31 +93,38 @@ namespace frik
         dampenHandsBtn->setToggleState(g_config.dampenHands);
         dampenHandsBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { g_config.saveDampenHands(enabled); });
 
-        const auto gripModesMap = std::map<TwoHandedGripMode, std::string>{ { TwoHandedGripMode::Mode1, "FRIK\\UI_Main_Config\\btn_grip_mode_1.nif" },
-            { TwoHandedGripMode::Mode2, "FRIK\\UI_Main_Config\\btn_grip_mode_2.nif" },
-            { TwoHandedGripMode::Mode3, "FRIK\\UI_Main_Config\\btn_grip_mode_3.nif" },
-            { TwoHandedGripMode::Mode4, "FRIK\\UI_Main_Config\\btn_grip_mode_4.nif" } };
-        const auto twoHandedGripModeBtn = std::make_shared<UIMultiStateToggleButton<TwoHandedGripMode>>(gripModesMap);
-        twoHandedGripModeBtn->setState(getTwoHandedGripMode());
-        twoHandedGripModeBtn->setOnStateChangedHandler([this](UIWidget*, const TwoHandedGripMode mode) { updateTwoHandedGripMode(mode); });
-
         const auto row1Container = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.3f);
         row1Container->addElement(openBodyConfigBtn);
         row1Container->addElement(dampenHandsBtn);
-        row1Container->addElement(twoHandedGripModeBtn);
 
-        const auto openPipboyConfigBtn = std::make_shared<UIButton>("FRIK\\UI_Main_Config\\btn_pipboy_config.nif");
-        openPipboyConfigBtn->setOnPressHandler([this](UIWidget*) { openPipboyConfigUI(); });
-
-        const auto openWeaponAdjustConfigBtn = std::make_shared<UIButton>("FRIK\\UI_Main_Config\\btn_weapon_adjust.nif");
-        openWeaponAdjustConfigBtn->setOnPressHandler([this](UIWidget*) { openWeaponAdjustConfigUI(); });
+        // two-handed grip mode is part of weapon positioning, hide it when that feature is disabled via API
+        if (g_frik.isWeaponPositionEnabled()) {
+            const auto gripModesMap = std::map<TwoHandedGripMode, std::string>{ { TwoHandedGripMode::Mode1, "FRIK\\UI_Main_Config\\btn_grip_mode_1.nif" },
+                { TwoHandedGripMode::Mode2, "FRIK\\UI_Main_Config\\btn_grip_mode_2.nif" },
+                { TwoHandedGripMode::Mode3, "FRIK\\UI_Main_Config\\btn_grip_mode_3.nif" },
+                { TwoHandedGripMode::Mode4, "FRIK\\UI_Main_Config\\btn_grip_mode_4.nif" } };
+            const auto twoHandedGripModeBtn = std::make_shared<UIMultiStateToggleButton<TwoHandedGripMode>>(gripModesMap);
+            twoHandedGripModeBtn->setState(getTwoHandedGripMode());
+            twoHandedGripModeBtn->setOnStateChangedHandler([this](UIWidget*, const TwoHandedGripMode mode) { updateTwoHandedGripMode(mode); });
+            row1Container->addElement(twoHandedGripModeBtn);
+        }
 
         const auto exitBtn = std::make_shared<UIButton>("FRIK\\UI_Common\\btn_exit.nif");
         exitBtn->setOnPressHandler([this](UIWidget*) { closeMainConfigMode(); });
 
         const auto row2Container = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
-        row2Container->addElement(openPipboyConfigBtn);
-        row2Container->addElement(openWeaponAdjustConfigBtn);
+
+        // hide a sub-config button when its feature is disabled via API as its config is not relevant
+        if (g_frik.isPipboyEnabled()) {
+            const auto openPipboyConfigBtn = std::make_shared<UIButton>("FRIK\\UI_Main_Config\\btn_pipboy_config.nif");
+            openPipboyConfigBtn->setOnPressHandler([this](UIWidget*) { openPipboyConfigUI(); });
+            row2Container->addElement(openPipboyConfigBtn);
+        }
+        if (g_frik.isWeaponPositionEnabled()) {
+            const auto openWeaponAdjustConfigBtn = std::make_shared<UIButton>("FRIK\\UI_Main_Config\\btn_weapon_adjust.nif");
+            openWeaponAdjustConfigBtn->setOnPressHandler([this](UIWidget*) { openWeaponAdjustConfigUI(); });
+            row2Container->addElement(openWeaponAdjustConfigBtn);
+        }
 
         for (const auto& buttonData : _externalModConfigButtonDataList) {
             const auto openExtModConfigBtn = std::make_shared<UIButton>(buttonData.buttonIconNifPath);

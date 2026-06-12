@@ -198,6 +198,22 @@ namespace frik::api
         };
 
         /**
+         * FRIK subsystems that can be turned off by other mods via blockFeature.
+         * Use when your mod replaces or conflicts with one of these parts of FRIK.
+         */
+        enum class Feature : std::uint8_t
+        {
+            // Embedded flashlight: head/hand switching and light positioning.
+            Flashlight,
+            // Weapon repositioning: per-weapon offsets, offhand two-handed grip, reposition mode.
+            WeaponPositioning,
+            // Wrist Pipboy: show/hide on arm, physical finger interaction, open/close (flashlight is unaffected).
+            Pipboy,
+            // Smooth movement (anti motion-sickness locomotion smoothing).
+            SmoothMovement,
+        };
+
+        /**
          * Data needed to register a button to open external mod config from FRIK main config UI.
          */
         struct OpenExternalModConfigData
@@ -340,6 +356,24 @@ namespace frik::api
          * @return true if successful.
          */
         bool(FRIK_CALL* setHandPoseCustom)(const char* tag, Hand hand, const HandPoseData& handPose, bool forceTop);
+
+        /**
+         * Supported since FRIK API v4.
+         * Enable/disable a FRIK subsystem/feature for a specific tag.
+         * The tag must be unique per external system using this API.
+         * FRIK keeps only the blocked state, so the feature stays disabled while any tag is still blocking it.
+         * Use when your mod replaces a FRIK feature (e.g. provides its own flashlight) and wants FRIK's turned off.
+         * @param block true to disable the feature, false to release this tag's block.
+         * @return true if successful.
+         */
+        bool(FRIK_CALL* blockFeature)(const char* tag, Feature feature, bool block);
+
+        /**
+         * Supported since FRIK API v4.
+         * Check whether a FRIK subsystem/feature is currently disabled (blocked by any tag).
+         * @return true if the feature is currently blocked/disabled.
+         */
+        bool(FRIK_CALL* isFeatureBlocked)(Feature feature);
 
         /**
          * Supported since FRIK API v1.

@@ -127,6 +127,19 @@ namespace frik
     }
 
     /**
+     * Reset transient state when the Pipboy is disabled via API so nothing stays stuck:
+     * close it if open (which also exits Pipboy config mode), and clear physical finger-operation
+     * state so its hand pose / helper orbs don't remain after the per-frame update stops running.
+     */
+    void Pipboy::resetOnDisable()
+    {
+        if (_isOpen) {
+            openClose(false);
+        }
+        _physicalHandler.updateIsOperatingPipboy(false);
+    }
+
+    /**
      * Swap the Pipboy model between screen and holo models.
      */
     void Pipboy::swapModel()
@@ -152,7 +165,12 @@ namespace frik
 
         exitPowerArmorBugFixHack(false);
 
+        // flashlight is independent of the Pipboy and stays active even when the Pipboy is disabled via API
         _flashlight.onFrameUpdate();
+
+        if (!g_frik.isPipboyEnabled()) {
+            return;
+        }
 
         hideShowPipboyOnArm();
         if (g_config.hidePipboy) {
