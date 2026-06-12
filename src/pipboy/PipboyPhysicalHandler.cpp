@@ -5,6 +5,7 @@
 #include "f4vr/F4VRSkelly.h"
 #include "skeleton/HandPose.h"
 #include "utils.h"
+#include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 
 using namespace common;
@@ -137,7 +138,7 @@ namespace frik
         if (powerTranslate->local.translate.z < -0.10 && !_stickyPower) {
             logger::info("Pipboy power button pressed");
             _stickyPower = true;
-            triggerShortHaptic(vrcf::Hand::Right);
+            vrcf::VRHaptics.trigger(vrcf::Hand::Right, vrcf::HapticPattern::Click);
             _pipboy->openClose(!_pipboy->isOpen());
         }
     }
@@ -164,7 +165,7 @@ namespace frik
         if (lightTranslate->local.translate.z < -0.14 && !_stickyLight) {
             logger::info("Light button pressed");
             _stickyLight = true;
-            triggerShortHaptic(vrcf::Hand::Right);
+            vrcf::VRHaptics.trigger(vrcf::Hand::Right, vrcf::HapticPattern::Click);
             if (!_pipboy->isOpen()) {
                 f4vr::togglePipboyLight(f4vr::getPlayer());
             }
@@ -193,7 +194,7 @@ namespace frik
         if (lightTranslate->local.translate.y < -0.12 && !_stickyRadio) {
             logger::info("Radio button pressed");
             _stickyRadio = true;
-            triggerShortHaptic(vrcf::Hand::Right);
+            vrcf::VRHaptics.trigger(vrcf::Hand::Right, vrcf::HapticPattern::Click);
             if (f4vr::isPlayerRadioEnabled()) {
                 turnPlayerRadioOn(false);
             } else {

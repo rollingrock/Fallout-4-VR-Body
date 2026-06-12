@@ -5,6 +5,7 @@
 #include "common/PerfMonitor.h"
 #include "skeleton/HandPose.h"
 #include "utils.h"
+#include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 
 using namespace common;
@@ -457,11 +458,13 @@ namespace frik
         if (dist < g_config.attaboyGrabActivationDistance) {
             if (!_attaboyGrabHapticActivated) {
                 _attaboyGrabHapticActivated = true;
-                triggerStrongHaptic(vrcf::Hand::Left);
+                // hand entered the Attaboy grab zone
+                vrcf::VRHaptics.trigger(vrcf::Hand::Left, vrcf::HapticPattern::Click);
                 logger::debug("Attaboy activation area triggered");
             }
             if (vrcf::VRControllers.check(g_config.attaboyGrabBinding)) {
-                triggerShortHaptic(vrcf::Hand::Left);
+                // grab confirmed
+                vrcf::VRHaptics.trigger(vrcf::Hand::Left, vrcf::HapticPattern::DoubleClick);
                 return true;
             }
         } else {

@@ -5,6 +5,7 @@
 #include "common/MatrixUtils.h"
 #include "skeleton/Skeleton.h"
 #include "utils.h"
+#include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 #include "vrui/UIButton.h"
 #include "vrui/UIContainer.h"
@@ -114,7 +115,7 @@ namespace frik
 
         // save
         if (vrcf::VRControllers.isLongPressed(vrcf::Hand::Primary, vr::EVRButtonId::k_EButton_A)) {
-            vrcf::VRControllers.triggerHaptic(vrcf::Hand::Primary, .6f, .5f);
+            vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Success);
             saveConfig();
         }
     }

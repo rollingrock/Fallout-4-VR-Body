@@ -1,5 +1,6 @@
 #include "PipboyOperationHandler.h"
 
+#include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 
 #include "Config.h"
@@ -233,7 +234,7 @@ namespace frik
 
         // Context menu message box handling
         if (triggerPressed && isMessageHolderVisible(root)) {
-            triggerShortHaptic();
+            vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Click);
             f4vr::doOperationOnScaleformMessageHolderList(root, "root.Menu_mc.CurrentPage.MessageHolder_mc", f4vr::ScaleformListOp::Select);
             f4vr::doOperationOnScaleformMessageHolderList(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc", f4vr::ScaleformListOp::Select);
             // prevent affecting the main list if message box is visible
@@ -270,25 +271,25 @@ namespace frik
 
     void PipboyOperationHandler::gotoPrevPage(GFx::Movie* root)
     {
-        triggerShortHaptic();
+        vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Tick);
         root->Invoke("root.Menu_mc.gotoPrevPage", nullptr, nullptr, 0);
     }
 
     void PipboyOperationHandler::gotoNextPage(GFx::Movie* root)
     {
-        triggerShortHaptic();
+        vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Tick);
         root->Invoke("root.Menu_mc.gotoNextPage", nullptr, nullptr, 0);
     }
 
     void PipboyOperationHandler::gotoPrevTab(GFx::Movie* root)
     {
-        triggerShortHaptic();
+        vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Tick);
         root->Invoke("root.Menu_mc.gotoPrevTab", nullptr, nullptr, 0);
     }
 
     void PipboyOperationHandler::gotoNextTab(GFx::Movie* root)
     {
-        triggerShortHaptic();
+        vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Tick);
         root->Invoke("root.Menu_mc.gotoNextTab", nullptr, nullptr, 0);
     }
 
@@ -301,7 +302,7 @@ namespace frik
      */
     void PipboyOperationHandler::moveListSelectionUpDown(GFx::Movie* root, const bool moveUp)
     {
-        triggerShortHaptic();
+        vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Tick);
 
         const auto listOp = moveUp ? f4vr::ScaleformListOp::MoveUp : f4vr::ScaleformListOp::MoveDown;
 
@@ -333,7 +334,7 @@ namespace frik
     void PipboyOperationHandler::handlePrimaryControllerOperationOnStatusPage(GFx::Movie* root, const bool triggerPressed)
     {
         if (triggerPressed) {
-            triggerShortHaptic();
+            vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Click);
             f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.SPECIALTab_mc.List_mc", f4vr::ScaleformListOp::Select);
             f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.PerksTab_mc.List_mc", f4vr::ScaleformListOp::Select);
         }
@@ -342,13 +343,13 @@ namespace frik
     void PipboyOperationHandler::handlePrimaryControllerOperationOnInventoryPage(GFx::Movie* root, const bool triggerPressed)
     {
         if (triggerPressed) {
-            triggerShortHaptic();
+            vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Click);
             f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.List_mc", f4vr::ScaleformListOp::Select);
         } else if (isPrimaryThumbstickPressed()) {
             GFx::Value currentTab;
             if (root->GetVariable(&currentTab, "root.Menu_mc.DataObj.CurrentTab")) {
                 // open context submenu
-                triggerShortHaptic();
+                vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Click);
                 GFx::Value args[1];
                 args[0] = currentTab.GetUInt();
                 root->Invoke("root.Menu_mc.CurrentPage.CloseMessage", nullptr, nullptr, 0);
@@ -363,7 +364,7 @@ namespace frik
     void PipboyOperationHandler::handlePrimaryControllerOperationOnDataPage(GFx::Movie* root, const bool triggerPressed)
     {
         if (triggerPressed) {
-            triggerShortHaptic();
+            vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Click);
             if (isQuestTabVisibleOnDataPage(root)) {
                 f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc", f4vr::ScaleformListOp::Select);
             } else {
@@ -372,7 +373,7 @@ namespace frik
             }
         } else if (isPrimaryThumbstickPressed()) {
             // open context submenu
-            triggerShortHaptic();
+            vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Click);
             if (isQuestTabVisibleOnDataPage(root)) {
                 root->Invoke("root.Menu_mc.CurrentPage.QuestsTab_mc.OnOpenSubmenu", nullptr, nullptr, 0);
             } else {
@@ -390,7 +391,7 @@ namespace frik
         if (isPrimaryGripPressHeldDown()) {
             if (triggerPressed) {
                 // switch world/local maps
-                triggerShortHaptic();
+                vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Click);
                 f4vr::invokeScaleformProcessUserEvent(root, "root.Menu_mc.CurrentPage", "XButton");
             } else {
                 // zoom map
@@ -402,14 +403,14 @@ namespace frik
                 }
             }
         } else if (triggerPressed) {
-            triggerShortHaptic();
+            vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Click);
 
             // handle fast travel, custom marker
             const char* eventName = f4vr::getScaleformBool(root, getCurrentMapPath(root, ".bCanFastTravel").c_str()) ? "MapHolder:activate_marker" : "MapHolder:set_custom_marker";
             f4vr::invokeScaleformDispatchEvent(root, getCurrentMapPath(root), eventName);
         } else if (isPrimaryThumbstickPressed()) {
             // open context submenu
-            triggerShortHaptic();
+            vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Click);
             root->Invoke("root.Menu_mc.CurrentPage.OnOpenSubmenu", nullptr, nullptr, 0);
         }
     }
@@ -417,7 +418,7 @@ namespace frik
     void PipboyOperationHandler::handlePrimaryControllerOperationOnRadioPage(GFx::Movie* root, const bool triggerPressed)
     {
         if (triggerPressed) {
-            triggerShortHaptic();
+            vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Click);
             f4vr::doOperationOnScaleformList(root, "root.Menu_mc.CurrentPage.List_mc", f4vr::ScaleformListOp::Select);
         }
     }

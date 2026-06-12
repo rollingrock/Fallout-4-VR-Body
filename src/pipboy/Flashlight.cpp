@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "utils.h"
+#include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 
 using namespace common;
@@ -40,12 +41,14 @@ namespace frik
         if (isLeftHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::LeftArm)) {
             if (!_flashlightHapticActivated) {
                 _flashlightHapticActivated = true;
-                triggerStrongHaptic(vrcf::Hand::Left);
+                // hand entered the head zone where the torch can be switched
+                vrcf::VRHaptics.trigger(vrcf::Hand::Left, vrcf::HapticPattern::Tick);
             }
         } else if (isRightHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::RightArm)) {
             if (!_flashlightHapticActivated) {
                 _flashlightHapticActivated = true;
-                triggerStrongHaptic(vrcf::Hand::Right);
+                // hand entered the head zone where the torch can be switched
+                vrcf::VRHaptics.trigger(vrcf::Hand::Right, vrcf::HapticPattern::Tick);
             }
         } else {
             _flashlightHapticActivated = false;

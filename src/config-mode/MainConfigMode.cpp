@@ -1,6 +1,7 @@
 #include "MainConfigMode.h"
 
 #include "FRIK.h"
+#include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 #include "vrui/UIManager.h"
 #include "vrui/UIMultiStateToggleButton.h"
@@ -33,7 +34,7 @@ namespace frik
             if (g_frik.isFavoritesMenuOpen()) {
                 f4vr::closeFavoriteMenu();
             }
-            vrcf::VRControllers.triggerHaptic(vrcf::Hand::Primary, .6f, .5f);
+            vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::RampUp);
             createMainConfigUI();
         }
 

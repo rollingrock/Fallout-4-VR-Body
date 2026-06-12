@@ -9,6 +9,7 @@
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
 #include "utils.h"
+#include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 
 using namespace common;
@@ -348,7 +349,7 @@ namespace frik
                     setOffhandGripping(false);
                 } else {
                     // Mode 2 but close to barrel, so ignore un-grip as it will grip on next frame
-                    vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
+                    vrcf::VRHaptics.trigger(vrcf::Hand::Offhand, vrcf::HapticPattern::Click);
                 }
             }
 
@@ -598,7 +599,7 @@ namespace frik
             // Zoom toggling
             logger::info("Zoom Toggle pressed; sending message to switch zoom state");
             g_frik.dispatchMessageToExternalMod(BETTER_SCOPES_VR_MOD_NAME, 16, nullptr, 0);
-            vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
+            vrcf::VRHaptics.trigger(vrcf::Hand::Offhand, vrcf::HapticPattern::DoubleClick);
         }
     }
 

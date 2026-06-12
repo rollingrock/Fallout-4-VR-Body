@@ -6,6 +6,7 @@
 #include "f4vr/F4VRUtils.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
+#include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 
 using namespace common;
@@ -126,7 +127,7 @@ namespace frik
                         }
                         if (TransMesh->local.translate.y > 1.0 && !_PBTouchbuttons[i]) {
                             //_PBConfigSticky = true;
-                            vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
+                            vrcf::VRHaptics.trigger(vrcf::Hand::Offhand, vrcf::HapticPattern::Click);
                             for (int j = 1; j <= 11; j++) {
                                 if (j != 1 && j != 3) {
                                     _PBTouchbuttons[j] = false;
@@ -279,7 +280,7 @@ namespace frik
         if (g_frik.isFavoritesMenuOpen()) {
             f4vr::closeFavoriteMenu();
         }
-        vrcf::VRControllers.triggerHaptic(vrcf::Hand::Primary, 0.6f, 0.5f);
+        vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::RampUp);
         const auto pipboyConfigUI = f4vr::getClonedNiNodeForNifFileSetName("FRIK/UI-ConfigHUD.nif", "PBCONFIGHUD");
         if (f4vr::isLeftHandedMode() && !g_config.leftHandedPipBoy) {
             // rotate the UI so left-handed with Pipboy on it have the UI in convenient position
