@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "GameHooks.h"
 #include "PapyrusApi.h"
+#include "common/PerfMonitor.h"
 #include "config-mode/ConfigurationMode.h"
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
@@ -135,6 +136,9 @@ namespace frik
      */
     void FRIK::onFrameUpdate()
     {
+        static PerfMonitor perf("FRIK::onFrameUpdate");
+        const auto timer = perf.scope();
+
         if (!RE::PlayerCharacter::GetSingleton()) {
             // game not loaded or existing
             return;

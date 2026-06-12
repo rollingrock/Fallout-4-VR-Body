@@ -2,6 +2,7 @@
 
 #include "Config.h"
 #include "FRIK.h"
+#include "common/PerfMonitor.h"
 #include "skeleton/HandPose.h"
 #include "utils.h"
 #include "vrcf/VRControllersManager.h"
@@ -146,6 +147,9 @@ namespace frik
      */
     void Pipboy::onFrameUpdate()
     {
+        static PerfMonitor perf("Pipboy::onFrameUpdate");
+        const auto timer = perf.scope();
+
         exitPowerArmorBugFixHack(false);
 
         _flashlight.onFrameUpdate();

@@ -5,6 +5,7 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "common/MatrixUtils.h"
+#include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
@@ -137,6 +138,9 @@ namespace frik
      */
     void Skeleton::onFrameUpdate()
     {
+        static PerfMonitor perf("Skeleton::onFrameUpdate");
+        const auto timer = perf.scope();
+
         setTime();
 
         // save last position at this time for anyone doing speed calculations
