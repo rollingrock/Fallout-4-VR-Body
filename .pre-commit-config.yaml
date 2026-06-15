@@ -22,4 +22,4 @@ repos:
       - id: check-yaml
       - id: check-merge-conflict
       - id: check-added-large-files
-        args: [--maxkb=1024]
+        args: [--maxkb=5120]

@@ -46,11 +46,11 @@ namespace frik
      */
     void BodyAdjustmentSubConfigMode::createConfigUI()
     {
-        const auto playSeattedBtn = std::make_shared<UIToggleButton>("FRIK\\UI_Main_Config\\btn_play_seated.nif");
+        const auto playSeattedBtn = std::make_shared<UIToggleButton>("FRIK\\ui-config-main\\btn-play-seated.nif");
         playSeattedBtn->setToggleState(g_config.isPlayingSeated);
         playSeattedBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { togglePlayingSeated(enabled); });
 
-        const auto hideHeadBtn = std::make_shared<UIToggleButton>("FRIK\\UI_Main_Config\\btn_hide_head.nif");
+        const auto hideHeadBtn = std::make_shared<UIToggleButton>("FRIK\\ui-config-main\\btn-hide-head.nif");
         hideHeadBtn->setToggleState(g_config.hideHeadEquipment);
         hideHeadBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { toggleHideHeadEquipment(enabled); });
 
@@ -58,16 +58,16 @@ namespace frik
         row1Container->addElement(playSeattedBtn);
         row1Container->addElement(hideHeadBtn);
 
-        const auto heightToggleBtn = std::make_shared<UIToggleButton>("FRIK\\UI_Main_Config\\btn_body_vertical.nif");
+        const auto heightToggleBtn = std::make_shared<UIToggleButton>("FRIK\\ui-config-main\\btn-body-vertical.nif");
         heightToggleBtn->setOnToggleHandler([this](UIWidget*, bool) { _configTarget = BodyAdjustmentConfigTarget::BodyHeight; });
 
-        const auto forwardToggleBtn = std::make_shared<UIToggleButton>("FRIK\\UI_Main_Config\\btn_body_forward.nif");
+        const auto forwardToggleBtn = std::make_shared<UIToggleButton>("FRIK\\ui-config-main\\btn-body-forward.nif");
         forwardToggleBtn->setOnToggleHandler([this](UIWidget*, bool) { _configTarget = BodyAdjustmentConfigTarget::BodyForwardOffset; });
 
-        const auto armsLengthToggleBtn = std::make_shared<UIToggleButton>("FRIK\\UI_Main_Config\\btn_arms_length.nif");
+        const auto armsLengthToggleBtn = std::make_shared<UIToggleButton>("FRIK\\ui-config-main\\btn-arms-length.nif");
         armsLengthToggleBtn->setOnToggleHandler([this](UIWidget*, bool) { _configTarget = BodyAdjustmentConfigTarget::BodyArmsLength; });
 
-        const auto vrScaleToggleBtn = std::make_shared<UIToggleButton>("FRIK\\UI_Main_Config\\btn_vr_scale.nif");
+        const auto vrScaleToggleBtn = std::make_shared<UIToggleButton>("FRIK\\ui-config-main\\btn-vr-scale.nif");
         vrScaleToggleBtn->setOnToggleHandler([this](UIWidget*, bool) { _configTarget = BodyAdjustmentConfigTarget::VRScale; });
 
         _row2Container = std::make_shared<UIToggleGroupContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
@@ -76,13 +76,13 @@ namespace frik
         _row2Container->addElement(armsLengthToggleBtn);
         _row2Container->addElement(vrScaleToggleBtn);
 
-        const auto saveBtn = std::make_shared<UIButton>("FRIK\\UI_Common\\btn_save.nif");
+        const auto saveBtn = std::make_shared<UIButton>("FRIK\\ui-common\\btn-save.nif");
         saveBtn->setOnPressHandler([this](UIWidget*) { saveConfig(); });
 
-        const auto resetBtn = std::make_shared<UIButton>("FRIK\\UI_Common\\btn_reset.nif");
+        const auto resetBtn = std::make_shared<UIButton>("FRIK\\ui-common\\btn-reset.nif");
         resetBtn->setOnPressHandler([this](UIWidget*) { resetConfig(); });
 
-        const auto exitBtn = std::make_shared<UIButton>("FRIK\\UI_Common\\btn_back.nif");
+        const auto exitBtn = std::make_shared<UIButton>("FRIK\\ui-common\\btn-back.nif");
         exitBtn->setOnPressHandler([this](UIWidget*) { closeConfig(); });
 
         const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
@@ -90,14 +90,14 @@ namespace frik
         row3Container->addElement(resetBtn);
         row3Container->addElement(exitBtn);
 
-        _noneMsg = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\msg_node_selected.nif");
-        _heightMsg = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\msg_body_vertical.nif");
-        _forwardMsg = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\msg_body_forward.nif");
-        _armsLengthMsg = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\msg_arms_length.nif");
-        _vrScaleMsg = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\msg_vr_scale.nif");
-        const auto toggleSelfieMsg = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\msg_toggle_selfie.nif");
+        _noneMsg = std::make_shared<UIWidget>("FRIK\\ui-config-main\\msg-node-selected.nif");
+        _heightMsg = std::make_shared<UIWidget>("FRIK\\ui-config-main\\msg-body-vertical.nif");
+        _forwardMsg = std::make_shared<UIWidget>("FRIK\\ui-config-main\\msg-body-forward.nif");
+        _armsLengthMsg = std::make_shared<UIWidget>("FRIK\\ui-config-main\\msg-arms-length.nif");
+        _vrScaleMsg = std::make_shared<UIWidget>("FRIK\\ui-config-main\\msg-vr-scale.nif");
+        const auto toggleSelfieMsg = std::make_shared<UIWidget>("FRIK\\ui-config-main\\msg-toggle-selfie.nif");
 
-        const auto row4Container = std::make_shared<UIContainer>("Row4", UIContainerLayout::HorizontalCenter, 0.3f, 0.7f);
+        const auto row4Container = std::make_shared<UIContainer>("Row4", UIContainerLayout::HorizontalCenter, 0.3f);
         row4Container->addElement(_noneMsg);
         row4Container->addElement(_heightMsg);
         row4Container->addElement(_forwardMsg);
@@ -105,9 +105,9 @@ namespace frik
         row4Container->addElement(_vrScaleMsg);
         row4Container->addElement(toggleSelfieMsg);
 
-        const auto header = std::make_shared<UIWidget>("FRIK\\UI_Main_Config\\title_body_adjust.nif", 0.5f);
+        const auto header = std::make_shared<UIWidget>("FRIK\\ui-config-main\\title-body-adjust.nif", 1.7f);
 
-        _configUI = std::make_shared<UIContainer>("BodyAdjustConfig", UIContainerLayout::VerticalUp, 0.35f, 1.8f);
+        _configUI = std::make_shared<UIContainer>("BodyAdjustConfig", UIContainerLayout::VerticalUp, 0.35f, 1.7f);
         _configUI->addElement(row4Container);
         _configUI->addElement(row3Container);
         _configUI->addElement(_row2Container);
