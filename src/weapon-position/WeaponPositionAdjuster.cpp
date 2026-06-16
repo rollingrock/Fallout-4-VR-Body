@@ -218,8 +218,8 @@ namespace frik
         _currentlyInPA = inPA;
         _isCurrentWeaponMelee = f4vr::isMeleeWeaponEquipped();
 
-        // reset state
-        _offHandGripping = false;
+        // reset state; go through setOffhandGripping so the offhand grip hand-pose override is released too
+        setOffhandGripping(false);
 
         loadStoredOffsets(weaponName);
     }
