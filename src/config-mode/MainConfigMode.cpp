@@ -110,9 +110,6 @@ namespace frik
             row1Container->addElement(twoHandedGripModeBtn);
         }
 
-        const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-exit.nif");
-        exitBtn->setOnPressHandler([this](UIWidget*) { closeMainConfigMode(); });
-
         const auto row2Container = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
 
         // hide a sub-config button when its feature is disabled via API as its config is not relevant
@@ -133,18 +130,27 @@ namespace frik
             row2Container->addElement(openExtModConfigBtn);
         }
 
-        row2Container->addElement(exitBtn);
+        const auto advancedConfigBtn = std::make_shared<UIButton>("ui-common\\btn-advanced-config.nif");
+        advancedConfigBtn->setOnPressHandler([](UIWidget*) { openAdvancedConfig(); });
+
+        const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-exit.nif");
+        exitBtn->setOnPressHandler([this](UIWidget*) { closeMainConfigMode(); });
+
+        const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
+        row3Container->addElement(advancedConfigBtn);
+        row3Container->addElement(exitBtn);
 
         const auto mainMsg = std::make_shared<UIWidget>("ui-config-main\\msg-main.nif");
         const auto toggleSelfieMsg = std::make_shared<UIWidget>("ui-config-main\\msg-toggle-selfie.nif");
 
-        const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
-        row3Container->addElement(mainMsg);
-        row3Container->addElement(toggleSelfieMsg);
+        const auto messagesContainer = std::make_shared<UIContainer>("Messages", UIContainerLayout::HorizontalCenter, 0.3f);
+        messagesContainer->addElement(mainMsg);
+        messagesContainer->addElement(toggleSelfieMsg);
 
         const auto header = std::make_shared<UIWidget>("ui-config-main\\title-main.nif", 1.7f);
 
         _configUI = std::make_shared<UIContainer>("MainConfig", UIContainerLayout::VerticalUp, 0.35f, 1.8f);
+        _configUI->addElement(messagesContainer);
         _configUI->addElement(row3Container);
         _configUI->addElement(row2Container);
         _configUI->addElement(row1Container);
@@ -253,6 +259,16 @@ namespace frik
         logger::info("Open external mod config for mod: '{}', messageType:{}", data.callbackReceiverName, data.callbackMessageType);
         closeMainConfigMode();
         g_frik.dispatchMessageToExternalMod(data.callbackReceiverName, data.callbackMessageType, nullptr, 0);
+    }
+
+    /**
+     * Open FRIK.ini in Notepad on the PC desktop for advanced settings not exposed in the in-VR menu.
+     */
+    void MainConfigMode::openAdvancedConfig()
+    {
+        logger::info("Open advanced config (FRIK.ini) on PC...");
+        f4vr::showNotification("FRIK.ini opened in Notepad on your PC. Switch to your monitor to edit advanced settings; saved changes apply live.");
+        Config::openInNotepad();
     }
 
     void MainConfigMode::closeMainConfigMode()

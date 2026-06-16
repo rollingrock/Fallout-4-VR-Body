@@ -38,6 +38,7 @@ namespace frik
         void openPipboyConfigUI();
         void openWeaponAdjustConfigUI();
         void openExternalModConfig(const OpenExternalModConfigData& data);
+        static void openAdvancedConfig();
         void closeMainConfigMode();
 
         // configuration UI
