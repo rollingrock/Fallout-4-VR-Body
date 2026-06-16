@@ -1,7 +1,7 @@
 #pragma once
 
-#include "config-mode/ConfigurationMode.h"
 #include "config-mode/MainConfigMode.h"
+#include "config-mode/PipboyConfigMode.h"
 #include "f4vr/F4VRThumbstickControls.h"
 #include "pipboy/Pipboy.h"
 #include "weapon-position/WeaponPositionAdjuster.h"
@@ -15,7 +15,7 @@ namespace frik
         void reset();
         void checkWeaponHideForPipboyOperationWIthFinger(const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition);
         void onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition,
-            const ConfigurationMode* pipboyConfigurationMode);
+            const PipboyConfigMode* pipboyConfigurationMode);
 
     private:
         void enableControls();
@@ -54,7 +54,7 @@ namespace frik
      * for this limited scenario so it's not a big deal.
      */
     inline void PlayerControlsHandler::onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition,
-        const ConfigurationMode* pipboyConfigurationMode)
+        const PipboyConfigMode* pipboyConfigurationMode)
     {
         checkWeaponHideForPipboyOperationWIthFinger(pipboy, weaponPosition);
 

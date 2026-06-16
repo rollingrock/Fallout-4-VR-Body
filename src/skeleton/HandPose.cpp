@@ -104,7 +104,6 @@ namespace
     }
 
     constexpr std::string_view PIPBOY_HAND_POSE_TAG = "frik.pipboy";
-    constexpr std::string_view CONFIG_MODE_HAND_POSE_TAG = "frik.config_mode";
     constexpr std::string_view FORCE_POINTING_HAND_POSE_TAG = "frik.force_pointing";
     constexpr std::string_view OFFHAND_GRIP_HAND_POSE_TAG = "frik.offhand_grip";
     constexpr std::string_view ATTABOY_HAND_POSE_TAG = "frik.attaboy";
@@ -250,22 +249,6 @@ namespace frik
     void HandPose::disablePipboyHandPose()
     {
         clearHandPoseOverrideIntr(g_config.leftHandedPipBoy, PIPBOY_HAND_POSE_TAG);
-    }
-
-    /**
-     * Reuse the pointing pose while config mode is active.
-     */
-    void HandPose::setConfigModeHandPose()
-    {
-        setHandPoseOverrideIntr(!isLeftHandedMode(), CONFIG_MODE_HAND_POSE_TAG, getPointingPose(), true);
-    }
-
-    /**
-     * Release the config mode pointing pose.
-     */
-    void HandPose::disableConfigModePose()
-    {
-        clearHandPoseOverrideIntr(!isLeftHandedMode(), CONFIG_MODE_HAND_POSE_TAG);
     }
 
     /**

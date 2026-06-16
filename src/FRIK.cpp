@@ -4,7 +4,7 @@
 #include "GameHooks.h"
 #include "PapyrusApi.h"
 #include "common/PerfMonitor.h"
-#include "config-mode/ConfigurationMode.h"
+#include "config-mode/PipboyConfigMode.h"
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
@@ -169,7 +169,7 @@ namespace frik
         _boneSpheres.onFrameUpdate();
 
         logger::trace("Update player controls...");
-        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition, _configurationMode);
+        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition, _pipboyConfigMode);
 
         if (_weaponPositionEnabled) {
             logger::trace("Update Weapon Position...");
@@ -184,7 +184,7 @@ namespace frik
 
         _mainConfigMode.onFrameUpdate();
 
-        _configurationMode->onFrameUpdate();
+        _pipboyConfigMode->onFrameUpdate();
 
         updateWorldFinal();
     }
@@ -220,7 +220,7 @@ namespace frik
 
         // init handlers depending on skeleton
         _pipboy = new Pipboy(_skelly);
-        _configurationMode = new ConfigurationMode(_skelly);
+        _pipboyConfigMode = new PipboyConfigMode(_skelly);
         _weaponPosition = new WeaponPositionAdjuster(_skelly);
     }
 
@@ -308,8 +308,8 @@ namespace frik
         delete _pipboy;
         _pipboy = nullptr;
 
-        delete _configurationMode;
-        _configurationMode = nullptr;
+        delete _pipboyConfigMode;
+        _pipboyConfigMode = nullptr;
 
         delete _weaponPosition;
         _weaponPosition = nullptr;

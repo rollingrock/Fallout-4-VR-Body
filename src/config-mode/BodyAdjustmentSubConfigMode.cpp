@@ -1,7 +1,8 @@
 #include "BodyAdjustmentSubConfigMode.h"
 
 #include "Config.h"
-#include "ConfigurationMode.h"
+#include "f4vr/F4VRUtils.h"
+#include "f4vr/PlayerNodes.h"
 #include "utils.h"
 #include "vrui/UIButton.h"
 #include "vrui/UIManager.h"

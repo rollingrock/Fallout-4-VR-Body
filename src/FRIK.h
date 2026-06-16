@@ -5,8 +5,8 @@
 #include "Config.h"
 #include "ModBase.h"
 #include "PlayerControlsHandler.h"
-#include "config-mode/ConfigurationMode.h"
 #include "config-mode/MainConfigMode.h"
+#include "config-mode/PipboyConfigMode.h"
 #include "f4vr/GameMenusHandler.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/BoneSpheresHandler.h"
@@ -85,6 +85,12 @@ namespace frik
                 _pipboy->swapModel();
             }
         }
+        void closePipboy() const
+        {
+            if (_pipboy) {
+                _pipboy->openClose(false);
+            }
+        }
 
         bool isMainConfigurationModeActive() const
         {
@@ -92,7 +98,11 @@ namespace frik
         }
         bool isPipboyConfigurationModeActive() const
         {
-            return _configurationMode && _configurationMode->isPipBoyConfigModeActive();
+            return _pipboyConfigMode && _pipboyConfigMode->isPipBoyConfigModeActive();
+        }
+        bool isPipboyConfigurationModeAdjusting() const
+        {
+            return _pipboyConfigMode && _pipboyConfigMode->isAdjusting();
         }
         void openMainConfigurationModeActive()
         {
@@ -104,15 +114,15 @@ namespace frik
             if (_pipboy) {
                 _pipboy->openClose(true);
             }
-            if (_configurationMode) {
-                _configurationMode->openPipboyConfigurationMode();
+            if (_pipboyConfigMode) {
+                _pipboyConfigMode->openPipboyConfigurationMode();
             }
         }
 
         void closePipboyConfigurationModeActive() const
         {
-            if (_configurationMode) {
-                _configurationMode->exitPBConfig();
+            if (_pipboyConfigMode) {
+                _pipboyConfigMode->exitPBConfig();
             }
         }
 
@@ -233,7 +243,7 @@ namespace frik
         Skeleton* _skelly = nullptr;
         Pipboy* _pipboy = nullptr;
         MainConfigMode _mainConfigMode;
-        ConfigurationMode* _configurationMode = nullptr;
+        PipboyConfigMode* _pipboyConfigMode = nullptr;
         WeaponPositionAdjuster* _weaponPosition = nullptr;
 
         // handler for the interaction spheres around the skeleton

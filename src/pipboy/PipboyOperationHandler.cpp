@@ -146,7 +146,7 @@ namespace frik
      */
     void PipboyOperationHandler::operate()
     {
-        if (!g_config.enablePrimaryControllerPipboyUse || g_frik.isPipboyConfigurationModeActive()) {
+        if (!g_config.enablePrimaryControllerPipboyUse || g_frik.isPipboyConfigurationModeAdjusting()) {
             return;
         }
 

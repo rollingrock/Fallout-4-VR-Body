@@ -79,6 +79,12 @@ namespace frik
         saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
     }
 
+    void Config::togglePipBoyCloseWhenLookAway()
+    {
+        pipboyCloseWhenLookAway = !pipboyCloseWhenLookAway;
+        saveIniConfigValue(INI_SECTION_MAIN, "PipBoyCloseWhenLookAway", pipboyCloseWhenLookAway);
+    }
+
     void Config::savePipboyScale(const float scale)
     {
         pipBoyScale = scale;
@@ -217,6 +223,15 @@ namespace frik
     RE::NiTransform Config::getPipboyOffset()
     {
         return _pipboyOffsets[getPipboyOffsetKey()];
+    }
+
+    /**
+     * Get the factory-default Pipboy offset for the currently used Pipboy type, read from the embedded resources.
+     */
+    RE::NiTransform Config::getDefaultPipboyOffset()
+    {
+        auto defaults = loadEmbeddedOffsets(IDR_PIPBOY_HOLO_OFFSETS, IDR_PIPBOY_ATTABOY_OFFSETS);
+        return defaults[getPipboyOffsetKey()];
     }
 
     /**

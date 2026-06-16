@@ -24,8 +24,6 @@ namespace frik
 
         static void setPipboyHandPose();
         static void disablePipboyHandPose();
-        static void setConfigModeHandPose();
-        static void disableConfigModePose();
         static void setForceHandPointingPose(bool primaryHand, bool forcePointing);
         static void setOffhandGripHandPose(bool toSet);
         static void setAttaboyHandPose(bool toSet);

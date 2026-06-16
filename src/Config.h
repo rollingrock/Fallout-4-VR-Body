@@ -77,6 +77,7 @@ namespace frik
         void toggleIsHoloPipboy();
         void toggleDampenPipboyScreen();
         void togglePipBoyOpenWhenLookAt();
+        void togglePipBoyCloseWhenLookAway();
         void savePipboyScale(float scale);
         void saveIsPlayingSeated(bool iIsPlayingSeated);
         void saveHideHeadEquipment(bool hide);
@@ -93,6 +94,7 @@ namespace frik
 
         static void openInNotepad();
         RE::NiTransform getPipboyOffset();
+        RE::NiTransform getDefaultPipboyOffset();
         bool savePipboyOffset(const RE::NiTransform& transform);
         std::optional<RE::NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA) const;
         bool saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
