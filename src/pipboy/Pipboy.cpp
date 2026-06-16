@@ -31,9 +31,9 @@ namespace
     const char* getPipboyReplacementNifPath()
     {
         if (frik::g_config.isFalloutLondonVR) {
-            return "FRIK/AttaboyVR.nif";
+            return "AttaboyVR.nif";
         }
-        return frik::g_config.isHoloPipboy ? "FRIK/HoloPipboyVR.nif" : "FRIK/PipboyVR.nif";
+        return frik::g_config.isHoloPipboy ? "HoloPipboyVR.nif" : "PipboyVR.nif";
     }
 }
 
