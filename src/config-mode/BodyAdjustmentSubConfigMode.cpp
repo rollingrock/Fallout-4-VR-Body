@@ -39,6 +39,11 @@ namespace frik
         _armsLengthMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::BodyArmsLength);
         _vrScaleMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::VRScale);
 
+        // save/reset only make sense once an adjustment target is selected
+        const bool noTarget = _configTarget == BodyAdjustmentConfigTarget::None;
+        _saveBtn->setDisabled(noTarget);
+        _resetBtn->setDisabled(noTarget);
+
         handleAdjustment();
     }
 
@@ -60,16 +65,20 @@ namespace frik
         row1Container->addElement(hideHeadBtn);
 
         const auto heightToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-body-vertical.nif");
-        heightToggleBtn->setOnToggleHandler([this](UIWidget*, bool) { _configTarget = BodyAdjustmentConfigTarget::BodyHeight; });
+        heightToggleBtn->setOnToggleHandler(
+            [this](UIWidget*, const bool enabled) { _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyHeight : BodyAdjustmentConfigTarget::None; });
 
         const auto forwardToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-body-forward.nif");
-        forwardToggleBtn->setOnToggleHandler([this](UIWidget*, bool) { _configTarget = BodyAdjustmentConfigTarget::BodyForwardOffset; });
+        forwardToggleBtn->setOnToggleHandler(
+            [this](UIWidget*, const bool enabled) { _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyForwardOffset : BodyAdjustmentConfigTarget::None; });
 
         const auto armsLengthToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-arms-length.nif");
-        armsLengthToggleBtn->setOnToggleHandler([this](UIWidget*, bool) { _configTarget = BodyAdjustmentConfigTarget::BodyArmsLength; });
+        armsLengthToggleBtn->setOnToggleHandler(
+            [this](UIWidget*, const bool enabled) { _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyArmsLength : BodyAdjustmentConfigTarget::None; });
 
         const auto vrScaleToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-vr-scale.nif");
-        vrScaleToggleBtn->setOnToggleHandler([this](UIWidget*, bool) { _configTarget = BodyAdjustmentConfigTarget::VRScale; });
+        vrScaleToggleBtn->setOnToggleHandler(
+            [this](UIWidget*, const bool enabled) { _configTarget = enabled ? BodyAdjustmentConfigTarget::VRScale : BodyAdjustmentConfigTarget::None; });
 
         _row2Container = std::make_shared<UIToggleGroupContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
         _row2Container->addElement(heightToggleBtn);
@@ -77,18 +86,24 @@ namespace frik
         _row2Container->addElement(armsLengthToggleBtn);
         _row2Container->addElement(vrScaleToggleBtn);
 
-        const auto saveBtn = std::make_shared<UIButton>("ui-common\\btn-save.nif");
-        saveBtn->setOnPressHandler([this](UIWidget*) { saveConfig(); });
+        // the toggle group disables un-toggling by default; re-enable it so the user can clear the selection back to no target
+        heightToggleBtn->setUnToggleAllowed(true);
+        forwardToggleBtn->setUnToggleAllowed(true);
+        armsLengthToggleBtn->setUnToggleAllowed(true);
+        vrScaleToggleBtn->setUnToggleAllowed(true);
 
-        const auto resetBtn = std::make_shared<UIButton>("ui-common\\btn-reset.nif");
-        resetBtn->setOnPressHandler([this](UIWidget*) { resetConfig(); });
+        _saveBtn = std::make_shared<UIButton>("ui-common\\btn-save.nif");
+        _saveBtn->setOnPressHandler([this](UIWidget*) { saveConfig(); });
+
+        _resetBtn = std::make_shared<UIButton>("ui-common\\btn-reset.nif");
+        _resetBtn->setOnPressHandler([this](UIWidget*) { resetConfig(); });
 
         const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-back.nif");
         exitBtn->setOnPressHandler([this](UIWidget*) { closeConfig(); });
 
         const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
-        row3Container->addElement(saveBtn);
-        row3Container->addElement(resetBtn);
+        row3Container->addElement(_saveBtn);
+        row3Container->addElement(_resetBtn);
         row3Container->addElement(exitBtn);
 
         _noneMsg = std::make_shared<UIWidget>("ui-config-main\\msg-node-selected.nif");

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vrui/UIButton.h"
 #include "vrui/UIContainer.h"
 #include "vrui/UIToggleGroupContainer.h"
 
@@ -53,6 +54,8 @@ namespace frik
         std::shared_ptr<vrui::UIContainer> _configUI;
 
         std::shared_ptr<vrui::UIToggleGroupContainer> _row2Container;
+        std::shared_ptr<vrui::UIButton> _saveBtn;
+        std::shared_ptr<vrui::UIButton> _resetBtn;
         std::shared_ptr<vrui::UIWidget> _noneMsg;
         std::shared_ptr<vrui::UIWidget> _heightMsg;
         std::shared_ptr<vrui::UIWidget> _forwardMsg;
