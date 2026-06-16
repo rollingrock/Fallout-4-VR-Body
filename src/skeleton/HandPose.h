@@ -69,6 +69,7 @@ namespace frik
         void blendBoneTowardRotation(const std::string& boneName, const RE::NiMatrix3& targetRotation, float frameTime);
         RE::NiMatrix3 getPoseBoneRotation(const std::string& boneName, const HandFingersPose& pose) const;
         RE::NiMatrix3 blendBoneRotation(const std::string& boneName, float flex, float splay) const;
+        static bool shouldUsePointingPose(bool isLeft);
         static bool shouldUseThumbsUpPose(bool isLeft);
         static void setHandPoseOverrideIntr(bool isLeft, std::string_view tag, const HandFingersPose& pose, bool forceTop);
         static void clearHandPoseOverrideIntr(bool isLeft, std::string_view tag);
