@@ -1,15 +1,15 @@
-## Reverse Engineer
+## Reverse Engineering
 Tools:
 - [jpexs-decompiler](https://github.com/jindrapetrik/jpexs-decompiler)
 - [B.A.E. - Bethesda Archive Extractor](https://www.nexusmods.com/fallout4/mods/78)
  
 Steps:
-1. Extract `Data\Fallout4 - Interface.ba2` file using BAE.
-2. Open relevant `.swf` file in `Interface`
+1. Extract the `Data\Fallout4 - Interface.ba2` file using BAE.
+2. Open the relevant `.swf` file in `Interface`.
   - `PipboyMenu.swf`
   - `Pipboy_InvPage.swf`
   - etc.
-3. Look in `scripts` folder classes like 'PipboyMenu', 'PipboyPage', 'Pipboy_InvPage', 'StatusTab', etc.
+3. Look in the `scripts` folder for classes like `PipboyMenu`, `PipboyPage`, `Pipboy_InvPage`, `StatusTab`, etc.
 
 ## General Navigation
 ```
@@ -31,8 +31,8 @@ if (root->GetVariable(&PBCurrentPage, "root.Menu_mc.DataObj._CurrentPage")) {
 ```
 
 ## List Controls
-Most of Pipboy UI is using a generic list that have the following API that can be used to navigate and select items.  
-Most of the work needed to control the Pipboy is finding the list path in Scaleform.
+Most of the Pip-Boy UI uses a generic list with the following API, which can be used to navigate and select items.
+Most of the work needed to control the Pip-Boy is finding the list path in Scaleform.
 
 ### Moving Selected Item Up/Down
 ```
@@ -40,8 +40,8 @@ root->Invoke("root.Menu_mc.CurrentPage.List_mc.moveSelectionUp", nullptr, &event
 root->Invoke("root.Menu_mc.CurrentPage.List_mc.moveSelectionDown", nullptr, &event, 1);
 ```
 
-### Selecting/Pressing on an item in a list
-Like selecting an item in the inventory, activating a quest, or an item in context menu message box.
+### Selecting/Pressing an Item in a List
+This is like selecting an item in the inventory, activating a quest, or selecting an item in a context menu message box.
 ```
 GFxValue event;
 GFxValue args[3];
@@ -59,7 +59,7 @@ root->Invoke("root.Menu_mc.CurrentPage.List_mc.dispatchEvent", nullptr, &event, 
 root->GetVariable("root.Menu_mc.CurrentPage.List_mc", nullptr, nullptr, 0);
 ```
 
-### Inventory and Radio Tabs Controls
+### Inventory and Radio Tab Controls
 ```
 root->GetVariable("root.Menu_mc.CurrentPage.List_mc", nullptr, nullptr, 0);
 ```
@@ -69,7 +69,7 @@ root->GetVariable("root.Menu_mc.CurrentPage.List_mc", nullptr, nullptr, 0);
 // Stats page list
 root->GetVariable("root.Menu_mc.CurrentPage.StatsTab_mc.CategoryList_mc", nullptr, nullptr, 0);
 
-// Quest page List
+// Quest page list
 root->GetVariable("root.Menu_mc.CurrentPage.QuestsTab_mc.QuestsList_mc", nullptr, nullptr, 0);
 
 // Workshop page list
@@ -99,8 +99,8 @@ root->Invoke("root.Menu_mc.CurrentPage.WorldMapHolder_mc.PanMap", nullptr, akArg
 ```
 
 ## Context Menu Message Box
-The box that pops with options to select usually when pressing the offhand thumbstick.  
-The context menu also has a generic list inside but unlike the other lists it is dynamically created and doesn't have a static path so it requires finding the list by walking the UI hierarchy from static path to `MessageHolder`.
+The box that pops up with selectable options, usually when pressing the offhand thumbstick.
+The context menu also has a generic list inside, but unlike the other lists, it is dynamically created and does not have a static path. This requires finding the list by walking the UI hierarchy from a static path to `MessageHolder`.
 
 ### Detect Context Menu Message Box Visible
 ```

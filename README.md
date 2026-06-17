@@ -1,6 +1,6 @@
 # Fallout 4 VR Body - FRIK
 
-Developing mod to add full body support with IK for Fallout 4 VR!
+A Fallout 4 VR mod that adds full-body IK support.
 
 ## Nexus
 
@@ -11,7 +11,7 @@ Developing mod to add full body support with IK for Fallout 4 VR!
 
 - [Main](docs/README.md)
 - [Changelog](docs/changelog.md)
-- [In‐Game Configuration Guide](docs/in-game-configuration-guide.md)
+- [In-Game Configuration Guide](docs/in-game-configuration-guide.md)
 - [FAQ](docs/faq.md)
 
 ## Development

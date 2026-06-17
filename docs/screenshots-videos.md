@@ -1,12 +1,12 @@
 ## Screenshots
 
-![Pipboy regular](assets/pipboy-regular.png)
+![Regular Pip-Boy](assets/pipboy-regular.png)
 
-![Pipboy Holo](assets/pipboy-holo.png)
+![Holo Pip-Boy](assets/pipboy-holo.png)
 
-![minigun](assets/minigun.png)
+![Minigun](assets/minigun.png)
 
-![minigun in PA](assets/minigun-power-armor.png)
+![Minigun in power armor](assets/minigun-power-armor.png)
 
 ![London Attaboy](assets/london-attaboy.png)
 
