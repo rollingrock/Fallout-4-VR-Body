@@ -1,4 +1,4 @@
-![Weapon Adjustment Config](https://github.com/user-attachments/assets/54e395af-b4f3-4ccc-ab92-cf390793c9eb)
+![Weapon Adjustment Config](assets/weapon-adjustment-config.png)
 
 ## Defaults
 FRIK ships with 160+ embedded pre-created offset files covering vanilla weapons (including throwables) in right-handed mode.  
@@ -7,7 +7,7 @@ Note: See "Resetting" behavior.
 
 ## Enable Adjustment Config
 
-1. Select "Weapon Adjustment" mode in [main config mode](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/In%E2%80%90Game-Configuration-Guide-(v69)).
+1. Select "Weapon Adjustment" mode in [main config mode](in-game-configuration-guide.md).
 2. Toggle "Weapon Adjustment" mode in FRIK Settings holotape.
 
 When in config mode both controllers thumbstick are disabled to prevent movement.  
@@ -42,7 +42,7 @@ There can be 12 of file variants per weapon which can be shared with others.
 For back-of-hand UI there is an additional `EmptyHand` "weapon" that is used as a global offset used if no weapon specific offset is found. Player can adjust it in weapon adjustment config mode by unequipping a weapon and switching to back-of-hand adjustment in the UI.
 
 ## Throwable Weapon
-![image](https://github.com/user-attachments/assets/bd538d25-79be-46b1-b816-58b16b50542e)
+![Throwable weapon adjustment](assets/weapon-adjustment-throwable.png)
 
 Throwable weapon adjustment requires the player to prime the throwable and *KEEP HOLDING* while using the thumbsticks to adjust. This is because the throwable weapon game object only exists when primed to be thrown and removed as soon as released.
 
@@ -60,7 +60,7 @@ But in case it's not true the player can adjust the back-of-hand UI globally and
 Unequip a weapon to adjust back-of-hand UI global offsets. It will create `EmptyHand-backOfHand` offset json file.
 
 ## Better Scopes VR
-![image](https://github.com/user-attachments/assets/285d8b51-0d38-414b-a695-da399acfe97d)
+![Better Scopes VR adjustment](assets/weapon-adjustment-better-scopes.png)
 
 The config mode supports scope reticle repositioning if you have BetterScopesVR mod installed.  
 Scopes may need to be calibrated so the reticles are true to the impact.

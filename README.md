@@ -7,18 +7,18 @@ Developing mod to add full body support with IK for Fallout 4 VR!
 - [Main](https://www.nexusmods.com/fallout4/mods/53464/)
 - [Support](https://www.nexusmods.com/fallout4/mods/53464?tab=posts)
 
-## Wiki
+## Docs
 
-- [Main](https://github.com/rollingrock/Fallout-4-VR-Body/wiki)
-- [Changelog](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Changelog)
-- [In‐Game Configuration Guide](<https://github.com/rollingrock/Fallout-4-VR-Body/wiki/In%E2%80%90Game-Configuration-Guide-(v69)>)
-- [FAQ](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/FAQ)
+- [Main](docs/README.md)
+- [Changelog](docs/changelog.md)
+- [In‐Game Configuration Guide](docs/in-game-configuration-guide.md)
+- [FAQ](docs/faq.md)
 
 ## Development
 
-- [Development](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Development)
-- [Features Backlog](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Features-Backlog)
+- [Development](docs/development.md)
+- [Features Backlog](docs/features-backlog.md)
 
 ## Credits
 
-- [Credits](https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Credits)
+- [Credits](docs/README.md#credits)

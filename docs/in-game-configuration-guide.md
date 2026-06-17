@@ -1,12 +1,12 @@
 See the first part of this video:
 
-[<img width="434" height="300" alt="image" src="https://github.com/user-attachments/assets/3658d4d3-9873-45aa-b2b3-ac94931c57a6" />](https://youtu.be/ymaNtirj_Qw?si=ovozJtFvf5GvyDZW)
+[<img width="434" height="300" alt="image" src="assets/video-main-config-guide.png" />](https://youtu.be/ymaNtirj_Qw?si=ovozJtFvf5GvyDZW)
 
 ---
 
 > need to update the screenshot...
 
-![image](https://github.com/user-attachments/assets/6dd0bc3e-acfd-43bd-b0d8-87d999bf0737)  
+![Main configuration mode](assets/main-config-mode.png)
 Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 
 ## Main Configuration Mode
