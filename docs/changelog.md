@@ -1,0 +1,313 @@
+## v0.77
+* Added configurable value for how long to hold thumbsticks to open configuration mode.
+* Fixed potential unable to run/use flashlight on first load after starting a game.
+* Fixed sometimes not being able to save weapon offsets if names contain non-ASCII characters like Chinese (may require players to redo some offsets).
+* Fixed some weapon attachment effects like [laser pointers](https://www.nexusmods.com/fallout4/mods/12363) not being rotated correctly in two-handed use.
+* Fixed some weapons (without offsets config) becoming invisible when changing cells, loading, and others (broken in v76).
+* Fixed not being able to reposition throwable weapon (broken in v76).
+* Fixed weapon offsets not saved for weapons that have invalid path characters in name.
+* Fixed being unable to interact with Pip-Boy config if not using the on-wrist Pip-Boy game setting.
+* Added API for mods to open their config via FRIK main config UI.
+* Added compatibility support for "Immersive Flashlight VR" mod.
+* Use Pip-Boy instead of Attaboy in Fallout London VR.
+* Added an API for Virtual Reloads to enable/disable the offhand weapon gripping feature.
+* Fixed body adjustment issues to make it easier and resolve knee bending.
+* Fixed not respecting fComfortSneakHeight ini setting to control how much to offset the camera.
+
+## v0.76
+
+* Support Fallout London VR Attaboy replacement for the Pip-Boy.
+* Support C++ dev FRIK API.
+* Body: Added support for **Seated Mode** to adjust the player body when seated, with sane defaults.
+* Body: Fixed incorrect HMD, body height, and body position when using comfort sneak.
+* Body: Fixed issue where looking down moved the body forward and obstructed the view.
+* Body: Fixed incorrect body pitch calculation due to not respecting HMD height offset.
+* Body: Move only the head back to prevent clipping with player view without hiding the head affecting shadow.
+* Body: Removed **ArmsOnlyMode** as it significantly reduced the player hit box.
+* Config: Added new main configuration menu to simplify body adjustments and provide more help information.
+* Weapon: Added support for adjusting weapon scale (size) in the weapon adjustment config.
+* Weapon: Added support for primary-hand adjustment on weapons to handle rifle-type weapons much better (all embedded offsets updated).
+* Pip-Boy: Improved Pip-Boy screen position adjustments and added full 3-axis rotation support (heading, roll, attitude).
+* Pip-Boy: Added support for using the primary wand thumbstick to open Pip-Boy submenus.
+* Pip-Boy: Fixed Pip-Boy operation via the primary wand not working for some players.
+* Pip-Boy: Fixed issues when switching the Pip-Boy game setting to **In Front** from **Wrist** / **Projected**.
+* Pip-Boy: Fixed the Pip-Boy auto-opening/closing when toggled with the power button.
+* Pip-Boy: Fixed being able to open the Pip-Boy while the game pause menu is open.
+* Pip-Boy: Fixed the Pip-Boy remaining open after running a holotape.
+* Pip-Boy: Fixed weapon unequipping when opening the Pip-Boy. Smoother handling of hiding weapons when operating the Pip-Boy with a finger.
+* Pip-Boy: Fixed activation by looking or with a finger if the offhand is gripping a weapon in two-handed mode.
+* Pip-Boy: Reintroduced support for automatic weapon holstering to operate the Pip-Boy with a finger (behind the `bHolsterWeaponForOperation` INI config flag).
+* Left-handed: Fixed hand pose for weapon holding using either gun or melee pose (improved, but not perfect).
+* Left-handed: Fixed 15 more weapon offsets to match the new hand pose.
+* Left-handed: Fixed the primary hand sitting off the gun stock during two-handed handling.
+* Left-handed: Fixed Pip-Boy config UI position.
+* Left-handed: Fixed “look at screen” activation not working.
+* Left-handed: Fixed Pip-Boy screen shaking when moving the right hand.
+* Left-handed: Fixed Pip-Boy operation using the right-hand finger and haptics.
+* Left-handed: Fixed fast auto-closing of the Pip-Boy when not looking at it and moving.
+* Left-handed: Allowed operating the Pip-Boy with a finger while holding a weapon.
+
+
+## v0.75
+- Migrated from F4SEVR to CommonLibF4 infrastructure!!!
+- Support moving flashlight to either left or right arm/hand depending on the hand used to "grab" the flashlight from the head.
+- Support removing embedded FRIK flashlight using FRIK.ini to easily use other flashlight mods.
+- Support separate pistol/rifle weapon offsets for Pipe, Laser, and Plasma weapons.
+- Support new Pip-Boy dampening Hold-In-Place mode where the screen remains where it was opened and moves only if grip is held.
+- Improve Pip-Boy dampening: reduce lag on big swings and fix screen fly-in on opening.
+- Improve Pip-Boy physical operation by requiring a free hand (no weapon) and not forcing the player to look directly at the Pip-Boy.
+- Make the holo Pip-Boy background darker for easier use (optional darker and lighter textures available).
+- Stop running a bunch of code for non-on-wrist Pip-Boy settings.
+- Fixed Laser Musket "loaded" beam not aligned correctly with the weapon.
+- Fixed not being able to open the main menu after exiting power armor only with on-wrist Pip-Boy.
+- Fixed in-front pipboy was invisible if switched from on-wrist or projected in game.
+- Fixed in-front pipboy double paging and operating with controller issues.
+- Fixed always drawing the weapon when closing the Pip-Boy.
+- Fixed Pip-Boy staying open after fast travel.
+- Fixed rare Pip-Boy flashlight game crash.
+
+## v0.74
+- Fixed two-handed weapon rotation around the adjusted position to keep stock near primary hand pivot.
+- Fixed in two-handed mode primary hand not rotating with the weapon to keep primary hand fully on stock.
+- Fixed two-handed aim direction vector calculation, fixing jarred aiming for weapons with large offsets.
+- Fixed two-handed offhand grip trigger area calculation resulting in hard grip triggering for weapons with large offsets.
+- Fixed laser weapons and minigun muzzle flash shown in incorrect location especially when using two-handed.
+- Fixed entering/exiting power armor delay in camera height adjustment causing jarred movement.
+- Fixed jarred movement on jump landing and in areas where there is a small gap in the ground, like the exit platform of Vault 111.
+- Fixed weapon not disabling when interacting with on-wrist Pip-Boy (broken in v72).
+- Fixed need to have the game window in focus for Pip-Boy primary controller interactions.
+- Improve Pip-Boy close interaction by adding look-away flag and look-away threshold.
+- Improve Pip-Boy map primary controller interaction: switch world/local map by grip+trigger and zoom by grip+thumbstick.
+- Fixed rare body invalid position after loading a save not from main menu.
+- Fixed being unable to navigate the pause menu if opened while doing weapon adjustment or Pip-Boy interaction.
+- Fixed (probably) equipped weapon becomes invisible sometime ([#97](https://github.com/rollingrock/Fallout-4-VR-Body/issues/97)).
+- Live FRIK.ini reload using file-watch, removing the need for setting reload interval and having override issues.
+- Remove dependency on "[Fallout4 VR Tools](https://www.nexusmods.com/fallout4/mods/45167)" mod allowing the use of [OpenComposite](https://gitlab.com/znixian/OpenOVR).
+- Changed log file to `FRIK.log` and support rolling last 6 logs (FRIK.log, FRIK_1.log, ..., FRIK_6.log).
+
+
+## v0.73
+
+- Rewrite Weapon Position Adjustment UX with new friendly UI.
+- Improve adjustment accuracy by using controllers thumbsticks.
+- Create default adjustments for most game weapons (mostly right-handed).
+- Support throwable weapons position adjustment.
+- Create default adjustments for all throwable weapons (right-handed).
+- Support "Back of Hand UI" position adjustment globally and per weapon.
+- Support putting the torch (flashlight) on the right arm when the Pip-Boy is on the left.
+- Fixed vanilla scope misalignment with weapon after adjustment.
+- Fixed offhand gripping position adjustment misc issues.
+- Fixed "Back of Hand UI" moving around and get hidden for some weapons.
+- Fixed left-handed weapon adjustment and separate saved files from right-handed.
+- Fixed left-handed main and Pip-Boy config UI being inverted.
+- Fixed left-handed melee weapon position and rotation.
+- Fixed rare crash in smooth movement (thx FOLON VR team)
+
+## v0.72
+
+- Update FRIK Configuration holotape to use new config modes + readme
+- Move all ini and json config file into `.\Data\FRIK_Config`
+- Fixed selfie ignore hide geometries and distance
+- Support FRIK.ini live reloading while game is running
+- Improve FRIK.ini configuration layout and documentation
+- Fixed Pip-Boy position JSON files being overwritten on update.
+- Fixed FRIK.ini file overwritten on update by stopping distributing it with the mod
+- Fixed left handed mode having right hand incorrect positioning when a throwable weapon is equipped.
+- Fixed not being able to operate the in-front or projected Pip-Boy when in weapon reposition mode.
+- Fixed blurry 3D object rendering on specific screens (Pip-Boy, crafting, transfer).
+- Fixed PipBot scale not saved when save button is pressed.
+
+## v0.71
+
+- Fixed Thumb pose issues introduced last version
+- Added better logic around look-at Pip-Boy detection.
+- Fixed issue with dampened Pip-Boy that caused the screen to move from the last position where it was opened, leading to strange behavior.
+- Added Pip-Boy Config UI options for glance and dampening settings.
+- Fixed sheathed weapons from being drawn on Pip-Boy exit.
+- Added function to autofocus window
+
+## v0.70
+
+- Fixed Pip-Boy crash in power armor.
+- Added function to open Pip-Boy while looking at it.
+- Added function to dampen Pip-Boy screen movement frame by frame for easier reading on the wrist.
+- Added function to tune or toggle hand dampening while in vanilla scope
+
+## v0.69
+
+- New Pip-Boy controls and major improvements to immersion (see main page for details).
+- New config menu for adjusting body and weapon position
+- Improved IK function
+
+## v0.68
+
+- Hotfix to handle null pointer crash with missing nodes in the cull geometry function
+
+## v0.67
+
+- Fixed workshop crash
+- Added new method to hide head geometry based on Biped position in the `TESObjectARMO` form
+- Added substring matching for the mesh and skin INIs (thanks @alandtse)
+- Added clamp on the leg IK code to prevent mesh from overextending ("no more stretchy boy")
+
+## v0.66
+
+- Fixed SmoothMovement again
+- Fixed finger grip issue when equipped with weapon
+- Updated Native `GetBoneIndex` function
+
+## v0.65
+
+- Fixed save-while-in-power-armor bug
+- Fixed engine bug with skeleton switching between power armor and human
+- Fixed power armor leg rotation issues and improved skeleton pose data
+- Refactored hand UI placement function
+- Fixed SmoothMovement to behave like version 0.58
+- Adjusted update hooks for more stability
+
+## v0.64
+
+- Hotfix to fix crash with face and skin hiding
+
+## v0.63
+
+- Better left-handed mode support
+- Fixed crash with Amazing Follower Tweaks
+- Fixed issue with two-handed aiming
+- Minor pose improvements (crouch issues still pending)
+- Hotfix to fix crash with face and skin hiding
+
+## v0.58
+
+- Added master mode toggle for weapon repositioning (configurable via holotape or INI)
+
+## v0.57
+
+- Fix for workbench inventory crash when moving items
+
+## v0.56
+
+- Forgot to add relocation to previous crash fix
+
+## v0.55
+
+- Fixed crash when unequipping items with bad equip data
+
+## v0.54
+
+- Added function to dampen excessive hand jitter
+- Possible crash fix in `setNodes`
+
+## v0.52
+
+- Reimplemented pipe gun crash fix without breaking shadows
+
+## v0.51
+
+- Reverted pipe gun patch due to shadow artifacts (new fix coming later)
+
+## v0.50
+
+- Fixed crash with some weapons and mods
+
+## v0.49
+
+- Fixes for weapon reposition mode
+- Added PDB
+- Prevented reticle movement when not repositioning
+- Adjusted analog stick controls (Y/Z) in weapon reposition mode
+
+## v0.48
+
+- Fixed muzzle flashes to match weapon repositioning
+
+## v0.47
+
+- Added weapon and reticle repositioning system
+  > Fixes many issues with weapon placements (see sticky post)
+- Fixed pipe gun crashes with certain scopes
+- Fixed rare weapon name crash
+- Misc. polish
+
+## v0.45
+
+- Added INI option: hold grip to grab; let go to release two-handed weapons
+
+## v0.44
+
+- Added grip button release for two-handed mode
+- Improved Pip-Boy interaction reliability.
+
+## v0.43
+
+- Added toggle option for magnetic vs. push-to-grip method
+- Fixed bug when letting go of weapon while moving
+- Updated INI
+
+## v0.42
+
+- New two-handed weapon feature: control barrel with off hand
+- Added Pip-Boy button activation (configurable in INI).
+- Reorganized and commented INI
+
+## v0.39
+
+- New mesh for power armor that aligns PA parts and body
+- Hands hidden when looking through scope
+- Hand UI position configurable via holotape
+- Head can now be hidden via holotape
+- Re-enabled dynamic weapon gripping (toggle to static in holotape)
+- Misc. bug fixes
+
+## v0.38
+
+- Fixed body pretzel and corruption issues with some armors
+
+## v0.37
+
+- Fixed save/load issue
+
+## v0.36
+
+- Added Papyrus support to control finger poses
+
+## v0.35
+
+- Fixed issue with saving INI to wrong filename
+- Improved usability for high grip angle weapons
+- Fixed scope alignment — crosshairs now accurate
+
+## v0.34
+
+- Fixed glove compatibility for finger poses
+- Crash fix for out-of-bounds position references
+
+## v0.33
+
+- Added Finger Tracking
+- More dynamic grip positioning
+- Crash fixes
+
+## v0.32
+
+- Crash fix for searching child nodes
+- Switch to move Pip-Boy to the right hand.
+- Calibration and posture updates
+
+## v0.30
+
+- Improved bonesphere code robustness
+- Fixed SmoothMovement bug where jumping caused flying
+- INI option to disable SmoothMovement
+- Fixed leg stretch/crazy movement during flight/jump/fall
+- Function to detect grounded status
+
+## v0.28
+
+- Added left-handed mode support
+- Added Papyrus function for left-handed mode detection
+- Hid UI for Pip-Boy interaction in projected mode.
+
+## v0.10
+
+- Initial general release
