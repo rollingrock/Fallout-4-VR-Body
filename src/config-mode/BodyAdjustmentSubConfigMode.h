@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vrui/UIButton.h"
 #include "vrui/UIContainer.h"
 #include "vrui/UIToggleGroupContainer.h"
 
@@ -19,11 +20,14 @@ namespace frik
 
     class BodyAdjustmentSubConfigMode
     {
-    public :
+    public:
         explicit BodyAdjustmentSubConfigMode(const std::function<void()>& onClose);
 
         void onFrameUpdate() const;
-        static void updateLegSlack(const float skeletonLegSlack) { _skeletonLegSlack = skeletonLegSlack; };
+        static void updateLegSlack(const float skeletonLegSlack)
+        {
+            _skeletonLegSlack = skeletonLegSlack;
+        };
 
     private:
         void createConfigUI();
@@ -50,6 +54,8 @@ namespace frik
         std::shared_ptr<vrui::UIContainer> _configUI;
 
         std::shared_ptr<vrui::UIToggleGroupContainer> _row2Container;
+        std::shared_ptr<vrui::UIButton> _saveBtn;
+        std::shared_ptr<vrui::UIButton> _resetBtn;
         std::shared_ptr<vrui::UIWidget> _noneMsg;
         std::shared_ptr<vrui::UIWidget> _heightMsg;
         std::shared_ptr<vrui::UIWidget> _forwardMsg;

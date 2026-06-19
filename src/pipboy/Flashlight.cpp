@@ -3,21 +3,23 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "utils.h"
+#include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 
 using namespace common;
 
 namespace frik
 {
-    Flashlight::Flashlight(Skeleton* skelly) :
-        _skelly(skelly) {}
+    Flashlight::Flashlight(Skeleton* skelly)
+        : _skelly(skelly)
+    {}
 
     /**
      * Executed every frame to update to handle flashlight location and moving between hand and head.
      */
     void Flashlight::onFrameUpdate()
     {
-        if (!g_config.flashlightEnabled || !f4vr::isPipboyLightOn(f4vr::getPlayer())) {
+        if (!g_config.flashlightEnabled || !g_frik.isFlashlightEnabled() || !f4vr::isPipboyLightOn(f4vr::getPlayer())) {
             return;
         }
 
@@ -39,20 +41,22 @@ namespace frik
         if (isLeftHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::LeftArm)) {
             if (!_flashlightHapticActivated) {
                 _flashlightHapticActivated = true;
-                triggerStrongHaptic(vrcf::Hand::Left);
+                // hand entered the head zone where the torch can be switched
+                vrcf::VRHaptics.trigger(vrcf::Hand::Left, vrcf::HapticPattern::Tick);
             }
         } else if (isRightHandCloseToHMD && (g_config.flashlightLocation == FlashlightLocation::Head || g_config.flashlightLocation == FlashlightLocation::RightArm)) {
             if (!_flashlightHapticActivated) {
                 _flashlightHapticActivated = true;
-                triggerStrongHaptic(vrcf::Hand::Right);
+                // hand entered the head zone where the torch can be switched
+                vrcf::VRHaptics.trigger(vrcf::Hand::Right, vrcf::HapticPattern::Tick);
             }
         } else {
             _flashlightHapticActivated = false;
             return;
         }
 
-        const bool isLeftHandGrab = isLeftHandCloseToHMD && vrcf::VRControllers.isReleasedShort(vrcf::Hand::Left, g_config.switchTorchButton);
-        const bool isRightHandGrab = isRightHandCloseToHMD && vrcf::VRControllers.isReleasedShort(vrcf::Hand::Right, g_config.switchTorchButton);
+        const bool isLeftHandGrab = isLeftHandCloseToHMD && vrcf::VRControllers.check(g_config.switchTorchLeftBinding);
+        const bool isRightHandGrab = isRightHandCloseToHMD && vrcf::VRControllers.check(g_config.switchTorchRightBinding);
         if (!isLeftHandGrab && !isRightHandGrab) {
             return;
         }
@@ -85,9 +89,8 @@ namespace frik
             f4vr::updateTransforms(lightNode);
 
             // use the right arm node
-            const auto armNode = g_config.flashlightLocation == FlashlightLocation::LeftArm
-                ? f4vr::findNode(_skelly->getLeftArm().shoulder, "LArm_Hand")
-                : f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand");
+            const auto armNode = g_config.flashlightLocation == FlashlightLocation::LeftArm ? f4vr::findNode(_skelly->getLeftArm().shoulder, "LArm_Hand")
+                                                                                            : f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand");
 
             // calculate relocation transform and set to local
             lightNode->local = MatrixUtils::calculateRelocation(lightNode, armNode);

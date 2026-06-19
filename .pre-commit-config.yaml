@@ -1,0 +1,25 @@
+# Pre-commit hooks for FRIK.
+# Local install (each developer, once):  python -m pip install pre-commit && pre-commit install
+# GitHub Actions (.github/workflows/maintenance.yml) is the server-side fallback.
+ci:
+  autofix_prs: true
+
+repos:
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v18.1.8
+    hooks:
+      - id: clang-format
+        types_or: [c++, c]
+        args: [--style=file]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # The repo enforces CRLF (.gitattributes + .editorconfig + clang-format UseCRLF).
+      # Only use line-ending-safe hooks here; clang-format owns C/C++ whitespace + EOF.
+      - id: mixed-line-ending
+        args: [--fix=crlf]
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=5120]

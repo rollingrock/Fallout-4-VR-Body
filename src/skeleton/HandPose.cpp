@@ -1,6 +1,7 @@
 #include "HandPose.h"
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -8,6 +9,7 @@
 #include "FRIK.h"
 #include "HandPoseData.h"
 #include "common/MatrixUtils.h"
+#include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
@@ -50,18 +52,57 @@ namespace
     }
 
     /**
-     * Map a finger to the controller input that should drive its dynamic curl.
+     * Map a (non-thumb) finger to the controller button that should drive its dynamic curl.
+     * The index finger follows the trigger; the bottom three fingers (middle, ring, pinky) follow the grip.
      */
     VRButtonId getTrackedButton(const std::string& bone)
     {
-        switch (boneToFingerIndex(bone)) {
-        case 0:
-            return k_EButton_SteamVR_Touchpad;
-        case 1:
-            return k_EButton_SteamVR_Trigger;
+        return boneToFingerIndex(bone) == 1 ? k_EButton_SteamVR_Trigger : k_EButton_Grip;
+    }
+
+    /**
+     * Map a tracked finger button to its analog curl-depth axis, when the controller exposes one.
+     * Touch-only inputs (face buttons, thumbstick) report no axis.
+     */
+    std::optional<Axis> getTrackedButtonAxis(const VRButtonId button)
+    {
+        switch (button) { // NOLINT(clang-diagnostic-switch-enum)
+        case k_EButton_SteamVR_Trigger:
+            return Axis::Trigger;
+        case k_EButton_Grip:
+            return Axis::Grip;
         default:
-            return k_EButton_Grip;
+            return std::nullopt;
         }
+    }
+
+    struct DynamicThumbCurl
+    {
+        float curl; // 0 = open, 1 = fully closed
+        float splay; // proximal lateral splay, right-hand convention
+    };
+
+    /**
+     * Resolve the thumb's dynamic curl and proximal splay from the face control it rests on.
+     *
+     * The thumb has no usable curl-depth axis, so touching any of its controls curls it to a fixed
+     * mid pose while the touched control selects a distinct splay, shifting the thumb tip toward the
+     * thumbstick, A, or B button. Returns a neutral open thumb when nothing is touched. The A and B
+     * buttons are checked before the thumbstick so a deliberate button reach wins over the resting
+     * thumbstick contact.
+     */
+    DynamicThumbCurl resolveDynamicThumbCurl(const Hand hand)
+    {
+        if (VRControllers.isTouching(hand, k_EButton_A)) {
+            return { .curl = 0.7f, .splay = 0.2f };
+        }
+        if (VRControllers.isTouching(hand, k_EButton_ApplicationMenu)) {
+            return { .curl = 0.2f, .splay = 0.1f };
+        }
+        if (VRControllers.isTouching(hand, k_EButton_SteamVR_Touchpad)) {
+            return { .curl = 0.4f, .splay = 0.3f };
+        }
+        return { .curl = 0.0f, .splay = 0.0f };
     }
 
     /**
@@ -74,9 +115,7 @@ namespace
             transform.refNode->local = transform.local;
         }
 
-        const auto parentWorld = transform.refNode && transform.refNode->parent
-            ? transform.refNode->parent->world
-            : boneTree->transforms[transform.parPos].world;
+        const auto parentWorld = transform.refNode && transform.refNode->parent ? transform.refNode->parent->world : boneTree->transforms[transform.parPos].world;
         RE::NiPoint3 p = transform.local.translate;
         p = parentWorld.rotate.Transpose() * (p * parentWorld.scale);
         transform.world.translate = parentWorld.translate + p;
@@ -105,7 +144,6 @@ namespace
     }
 
     constexpr std::string_view PIPBOY_HAND_POSE_TAG = "frik.pipboy";
-    constexpr std::string_view CONFIG_MODE_HAND_POSE_TAG = "frik.config_mode";
     constexpr std::string_view FORCE_POINTING_HAND_POSE_TAG = "frik.force_pointing";
     constexpr std::string_view OFFHAND_GRIP_HAND_POSE_TAG = "frik.offhand_grip";
     constexpr std::string_view ATTABOY_HAND_POSE_TAG = "frik.attaboy";
@@ -234,9 +272,7 @@ namespace frik
      */
     const HandFingersPose& HandPose::getFixedPrimaryWeaponPose()
     {
-        return isUnarmedWeaponEquipped()
-            ? getFistPose()
-            : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
+        return isUnarmedWeaponEquipped() ? getFistPose() : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
     }
 
     /**
@@ -253,22 +289,6 @@ namespace frik
     void HandPose::disablePipboyHandPose()
     {
         clearHandPoseOverrideIntr(g_config.leftHandedPipBoy, PIPBOY_HAND_POSE_TAG);
-    }
-
-    /**
-     * Reuse the pointing pose while config mode is active.
-     */
-    void HandPose::setConfigModeHandPose()
-    {
-        setHandPoseOverrideIntr(!isLeftHandedMode(), CONFIG_MODE_HAND_POSE_TAG, getPointingPose(), true);
-    }
-
-    /**
-     * Release the config mode pointing pose.
-     */
-    void HandPose::disableConfigModePose()
-    {
-        clearHandPoseOverrideIntr(!isLeftHandedMode(), CONFIG_MODE_HAND_POSE_TAG);
     }
 
     /**
@@ -324,6 +344,9 @@ namespace frik
      */
     void HandPose::onFrameUpdate(RE::NiNode* root, const float frameTime)
     {
+        static PerfMonitor perf("HandPose::onFrameUpdate");
+        const auto timer = perf.scope();
+
         const auto leftHandSource = resolveHandPoseSource(true);
         const auto rightHandSource = resolveHandPoseSource(false);
 
@@ -383,15 +406,17 @@ namespace frik
         if (isPrimaryHand && shouldUseWeaponPoseForPrimaryHand) {
             // Right-handed mode can copy the first-person hand transform directly. Left-handed mode
             // cannot, so it uses the fixed authored weapon pose instead.
-            return HandPoseSource{
-                .kind = HandPoseSourceKind::PrimaryWeaponPose,
-                .pose = isLeftHandedMode() ? &HandPose::getFixedPrimaryWeaponPose() : nullptr
-            };
+            return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = isLeftHandedMode() ? &HandPose::getFixedPrimaryWeaponPose() : nullptr };
         }
 
         if (const auto* activeOverride = getActiveHandPoseOverride(isLeft)) {
             // Explicit mod/API override wins over gesture-driven posing.
             return HandPoseSource{ .kind = HandPoseSourceKind::OverridePose, .pose = &activeOverride->pose };
+        }
+
+        if (shouldUsePointingPose(isLeft)) {
+            // Pointing is treated as an implicit authored override.
+            return HandPoseSource{ .kind = HandPoseSourceKind::OverridePose, .pose = &getPointingPose() };
         }
 
         if (shouldUseThumbsUpPose(isLeft)) {
@@ -456,9 +481,7 @@ namespace frik
             const auto fpTree = getFirstPersonBoneTree();
             const int pos = fpTree->GetBoneIndex(boneName);
             if (pos >= 0) {
-                _handBones[boneName] = fpTree->transforms[pos].refNode
-                    ? fpTree->transforms[pos].refNode->local
-                    : fpTree->transforms[pos].local;
+                _handBones[boneName] = fpTree->transforms[pos].refNode ? fpTree->transforms[pos].refNode->local : fpTree->transforms[pos].local;
             }
         }
     }
@@ -474,21 +497,37 @@ namespace frik
 
     /**
      * Apply hand pose by what controller buttons are touched/pressed.
+     *
+     * Touching a finger's tracked control curls it to a baseline; if that control exposes an analog
+     * axis (trigger, grip) the axis drives the remaining curl up to a full fist, otherwise the curl
+     * rests at that fixed touch baseline. The thumb has no curl-depth axis, so it instead reads which face
+     * control it rests on (thumbstick, A, or B) and splays its proximal joint toward that control.
      */
     void HandPose::applyDynamicHandPose(const std::string& boneName, const float frameTime)
     {
-        float flex = 1.0F; // open
         const auto boneHand = isLeftHandBone(boneName) ? Hand::Left : Hand::Right;
-        const auto controllerButtonForBone = getTrackedButton(boneName);
-        if (controllerButtonForBone == k_EButton_Grip) {
-            flex = 1.0f - VRControllers.getAxisValue(boneHand, Axis::Grip).x;
-        } else if (controllerButtonForBone == k_EButton_SteamVR_Trigger) {
-            flex = 1.0f - 2 * VRControllers.getAxisValue(boneHand, Axis::Trigger).x;
-        } else if (VRControllers.isTouching(boneHand, controllerButtonForBone)) {
-            flex = 0.0F;
+
+        float curl = 0.0f; // 0 = open, 1 = fully closed
+        float splay = 0.0f;
+        if (boneToFingerIndex(boneName) == 0) {
+            const auto thumb = resolveDynamicThumbCurl(boneHand);
+            curl = thumb.curl;
+            splay = boneName.back() == '1' ? thumb.splay : 0.0f;
+        } else {
+            constexpr float DYNAMIC_CURL_ON_TOUCH = 0.35f;
+            const auto button = getTrackedButton(boneName);
+            const auto axis = getTrackedButtonAxis(button);
+            const float axisVal = axis ? VRControllers.getAxisValue(boneHand, *axis).x : 0.0f;
+            if (axisVal > 0.1f) {
+                // Past the deadzone the analog axis drives curl from the touch baseline up to a full fist.
+                curl = DYNAMIC_CURL_ON_TOUCH + (1.0f - DYNAMIC_CURL_ON_TOUCH) * std::clamp(axisVal, 0.0f, 1.0f);
+            } else if (axisVal > 0.001f || VRControllers.isTouching(boneHand, button)) {
+                // Resting on or lightly holding the control curls to the baseline only.
+                curl = DYNAMIC_CURL_ON_TOUCH;
+            }
         }
 
-        blendBoneTowardRotation(boneName, blendBoneRotation(boneName, fmax(0.0f, fmin(1.0f, flex)), 0), frameTime);
+        blendBoneTowardRotation(boneName, blendBoneRotation(boneName, 1.0f - curl, splay), frameTime);
     }
 
     /**
@@ -551,14 +590,26 @@ namespace frik
     }
 
     /**
+     * Detect the controller gesture that should temporarily map to pointing:
+     * the index lifted off the trigger, the grip held, and the thumb resting on a face button (A or B).
+     */
+    bool HandPose::shouldUsePointingPose(const bool isLeft)
+    {
+        const auto hand = isLeft ? Hand::Left : Hand::Right;
+        return !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Trigger) &&
+            (VRControllers.getAxisValue(hand, Axis::Grip).x > 0.01f || VRControllers.isTouching(hand, k_EButton_Grip)) &&
+            (VRControllers.isTouching(hand, vr::k_EButton_A) || VRControllers.isTouching(hand, vr::k_EButton_ApplicationMenu));
+    }
+
+    /**
      * Detect the controller gesture that should temporarily map to thumbs-up.
      */
     bool HandPose::shouldUseThumbsUpPose(const bool isLeft)
     {
         const auto hand = isLeft ? Hand::Left : Hand::Right;
-        return VRControllers.isTouching(hand, k_EButton_Grip)
-            && VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Trigger)
-            && !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Touchpad);
+        return VRControllers.isTouching(hand, k_EButton_Grip) && VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Trigger) &&
+            !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Touchpad) && !VRControllers.isTouching(hand, vr::k_EButton_A) &&
+            !VRControllers.isTouching(hand, vr::k_EButton_ApplicationMenu);
     }
 
     /**
@@ -578,7 +629,10 @@ namespace frik
             overrides.push_back(TaggedHandPoseOverride{ .tag = std::string(tag), .pose = pose });
 
             logger::info("Hand pose: Insert top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
-                tag, isLeft ? "Left" : "Right", previousTopTag, overrides.size());
+                tag,
+                isLeft ? "Left" : "Right",
+                previousTopTag,
+                overrides.size());
         } else if (forceTop && std::next(overrideIt) != overrides.end()) {
             auto updatedOverride = *overrideIt;
             updatedOverride.pose = pose;
@@ -586,7 +640,10 @@ namespace frik
             overrides.push_back(std::move(updatedOverride));
 
             logger::info("Hand pose: Forced to top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
-                tag, isLeft ? "Left" : "Right", previousTopTag, overrides.size());
+                tag,
+                isLeft ? "Left" : "Right",
+                previousTopTag,
+                overrides.size());
         } else {
             overrideIt->pose = pose;
         }
@@ -612,6 +669,10 @@ namespace frik
         overrides.erase(overrideIt);
 
         logger::info("Hand pose: Cleared override tag:'{}' for '{}' hand (was top '{}', new top tag:'{}', remaining {})",
-            tag, isLeft ? "Left" : "Right", wasTop ? "yes" : "no", overrides.empty() ? "---" : overrides.back().tag, overrides.size());
+            tag,
+            isLeft ? "Left" : "Right",
+            wasTop ? "yes" : "no",
+            overrides.empty() ? "---" : overrides.back().tag,
+            overrides.size());
     }
 }

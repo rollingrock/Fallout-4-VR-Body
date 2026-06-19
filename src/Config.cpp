@@ -79,6 +79,12 @@ namespace frik
         saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
     }
 
+    void Config::togglePipBoyCloseWhenLookAway()
+    {
+        pipboyCloseWhenLookAway = !pipboyCloseWhenLookAway;
+        saveIniConfigValue(INI_SECTION_MAIN, "PipBoyCloseWhenLookAway", pipboyCloseWhenLookAway);
+    }
+
     void Config::savePipboyScale(const float scale)
     {
         pipBoyScale = scale;
@@ -220,6 +226,15 @@ namespace frik
     }
 
     /**
+     * Get the factory-default Pipboy offset for the currently used Pipboy type, read from the embedded resources.
+     */
+    RE::NiTransform Config::getDefaultPipboyOffset()
+    {
+        auto defaults = loadEmbeddedOffsets(IDR_PIPBOY_HOLO_OFFSETS, IDR_PIPBOY_ATTABOY_OFFSETS);
+        return defaults[getPipboyOffsetKey()];
+    }
+
+    /**
      * Save the Pipboy offset to the offsets map.
      */
     bool Config::savePipboyOffset(const RE::NiTransform& transform)
@@ -327,19 +342,41 @@ namespace frik
         pipboyOperationFingerDetectionRange = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPipboyOperationFingerDetectionRange", 12.0));
         pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 400));
         pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 1000));
-        pipBoyButtonArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonArm", 0));
-        pipBoyButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonID", vrcf::VRButtonId::k_EButton_SteamVR_Trigger));
-        pipBoyButtonOffArm = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffArm", 0));
-        pipBoyButtonOffID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "OperatePipboyWithButtonOffID", vrcf::VRButtonId::k_EButton_Grip));
+        pipboyOpenBinding =
+            getInputBindingValue(ini, INI_SECTION_MAIN, "sPipboyOpenButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_SteamVR_Trigger });
+        pipboyCloseBinding =
+            getInputBindingValue(ini, INI_SECTION_MAIN, "sPipboyCloseButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
+        holdPipboyScreenBinding = getInputBindingValue(ini,
+            INI_SECTION_MAIN,
+            "sHoldPipboyScreenButton",
+            vrcf::InputBinding{
+                .hand = vrcf::Hand::Offhand,
+                .type = vrcf::ActivationType::HoldDown,
+                .button = vr::k_EButton_Grip,
+                .duration = 0.3f,
+            });
+        enterPipboyConfigBinding = getInputBindingValue(ini,
+            INI_SECTION_MAIN,
+            "sEnterPipboyConfigButton",
+            vrcf::InputBinding{
+                .hand = vrcf::Hand::Primary,
+                .type = vrcf::ActivationType::LongPress,
+                .button = vr::k_EButton_SteamVR_Touchpad,
+                .duration = 2.0f,
+            });
 
         // Torch/Flashlight
         removeFlashlight = ini.GetBoolValue(INI_SECTION_MAIN, "bRemoveFlashlight", false);
         flashlightLocation = static_cast<FlashlightLocation>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", 0));
-        // change hand / head button
-        switchTorchButton = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "SwitchTorchButton", 2));
+        // change hand / head button (one binding per hand)
+        switchTorchLeftBinding =
+            getInputBindingValue(ini, INI_SECTION_MAIN, "sSwitchTorchLeftButton", vrcf::InputBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
+        switchTorchRightBinding =
+            getInputBindingValue(ini, INI_SECTION_MAIN, "sSwitchTorchRightButton", vrcf::InputBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
 
         // Fallout London VR support
-        attaboyGrabButtonId = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "iAttaboyGrabButtonId", vrcf::VRButtonId::k_EButton_Grip));
+        attaboyGrabBinding =
+            getInputBindingValue(ini, INI_SECTION_MAIN, "sAttaboyGrabButton", vrcf::InputBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
         attaboyGrabActivationDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fAttaboyGrabActivationDistance", 15.0));
 
         // Two-handed gripping
@@ -348,7 +385,9 @@ namespace frik
         enableGripButtonToLetGo = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", true);
         onePressGripButton = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", true);
         gripLetGoThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "GripLetGoThreshold", 15.0f));
-        gripButtonID = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "GripButtonID", vr::EVRButtonId::k_EButton_Grip)); // 2
+        offhandGripBinding = getInputBindingValue(ini, INI_SECTION_MAIN, "sGripButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Press, vr::k_EButton_Grip });
+        offhandGripHoldBinding =
+            getInputBindingValue(ini, INI_SECTION_MAIN, "sGripHoldButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::HoldDown, vr::k_EButton_Grip });
 
         // Dampen hands
         dampenHands = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHands", true);
@@ -367,8 +406,19 @@ namespace frik
         showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
         selfieOutFrontDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0));
         selfieIgnoreHideFlags = ini.GetBoolValue(INI_SECTION_MAIN, "bSelfieIgnoreHideFlags", true);
+        toggleSelfieBinding =
+            getInputBindingValue(ini, INI_SECTION_MAIN, "sToggleSelfieButton", vrcf::InputBinding{ vrcf::Hand::Primary, vrcf::ActivationType::Tap, vr::k_EButton_A });
         scopeAdjustDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f));
-        openConfigurationModePressDelay = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fOpenConfigurationModePressDelay", 1.5f));
+        openMainConfigBinding = getInputBindingValue(ini,
+            INI_SECTION_MAIN,
+            "sOpenConfigButton",
+            vrcf::InputBinding{
+                .hand = vrcf::Hand::Primary,
+                .type = vrcf::ActivationType::LongPress,
+                .button = vr::k_EButton_SteamVR_Touchpad,
+                .modifier = vrcf::InputModifier{ vr::k_EButton_SteamVR_Touchpad, vrcf::Hand::Offhand },
+                .duration = 1.5f,
+            });
 
         // special disable of Fallout London so Pipboy can be used - a hacky hack for a specific player
         ignoreFalloutLondonVR = ini.GetBoolValue(INI_SECTION_MAIN, "bIgnoreFalloutLondonVR", true);
@@ -447,8 +497,7 @@ namespace frik
     {
         const auto slotsGeometry = loadListFromFile(MESH_HIDE_SLOTS_INI_PATH);
 
-        std::unordered_map<std::string, int> slotToIndexMap = {
-            { "hairtop", 0 }, // i.e. helmet
+        std::unordered_map<std::string, int> slotToIndexMap = { { "hairtop", 0 }, // i.e. helmet
             { "hairlong", 1 },
             { "head", 2 },
             { "headband", 16 },
@@ -456,8 +505,7 @@ namespace frik
             { "beard", 18 },
             { "mouth", 19 },
             { "neck", 20 },
-            { "scalp", 22 }
-        };
+            { "scalp", 22 } };
 
         _hideEquipSlotIndexes.clear();
         for (auto& geometry : slotsGeometry) {

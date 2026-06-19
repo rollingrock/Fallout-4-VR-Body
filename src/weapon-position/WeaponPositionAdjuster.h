@@ -25,19 +25,35 @@ namespace frik
 
             // the angle was calculated by looking at the weapon in hand, seems to work for all weapons
             const float sign = f4vr::isLeftHandedMode() ? -1.0f : 1.0f;
-            _twoHandedPrimaryHandManualAdjustment = common::MatrixUtils::getMatrixFromEulerAngles(0, common::MatrixUtils::degreesToRads(-6 * sign),
-                common::MatrixUtils::degreesToRads(7 * sign));
+            _twoHandedPrimaryHandManualAdjustment =
+                common::MatrixUtils::getMatrixFromEulerAngles(0, common::MatrixUtils::degreesToRads(-6 * sign), common::MatrixUtils::degreesToRads(7 * sign));
         }
 
-        bool isWeaponDrawn() const { return _currentWeapon != EMPTY_HAND; }
-        bool isMeleeWeaponDrawn() const { return _isCurrentWeaponMelee; }
-        bool isOffHandGrippingWeapon() const { return _offHandGripping; }
-        bool inWeaponRepositionMode() const { return _configMode != nullptr; }
-        bool inThrowableWeaponRepositionMode() const { return _configMode != nullptr && _configMode->isInThrowableWeaponRepositionMode(); }
+        bool isWeaponDrawn() const
+        {
+            return _currentWeapon != EMPTY_HAND;
+        }
+        bool isMeleeWeaponDrawn() const
+        {
+            return _isCurrentWeaponMelee;
+        }
+        bool isOffHandGrippingWeapon() const
+        {
+            return _offHandGripping;
+        }
+        bool inWeaponRepositionMode() const
+        {
+            return _configMode != nullptr;
+        }
+        bool inThrowableWeaponRepositionMode() const
+        {
+            return _configMode != nullptr && _configMode->isInThrowableWeaponRepositionMode();
+        }
 
         static bool isOffHandGrippingEnabled();
         static void setOffHandGrippingEnabled(bool enabled);
         void toggleWeaponRepositionMode();
+        void resetOnDisable();
 
         void onFrameUpdate();
         void loadStoredOffsets(const std::string& weaponName);

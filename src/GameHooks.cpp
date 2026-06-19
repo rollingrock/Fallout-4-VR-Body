@@ -105,8 +105,8 @@ namespace
     {
         struct PatchShortVar : Xbyak::CodeGenerator
         {
-            PatchShortVar(void* buf) :
-                CodeGenerator(32, buf)
+            PatchShortVar(void* buf)
+                : CodeGenerator(32, buf)
             {
                 Xbyak::Label retLab;
 
@@ -131,8 +131,8 @@ namespace
     {
         struct PatchMoreMask : Xbyak::CodeGenerator
         {
-            PatchMoreMask(void* buf) :
-                CodeGenerator(64, buf)
+            PatchMoreMask(void* buf)
+                : CodeGenerator(64, buf)
             {
                 Xbyak::Label retLab;
 
@@ -157,8 +157,8 @@ namespace
     {
         struct PatchMissingR15 : Xbyak::CodeGenerator
         {
-            PatchMissingR15(void* buf) :
-                CodeGenerator(64, buf)
+            PatchMissingR15(void* buf)
+                : CodeGenerator(64, buf)
             {
                 Xbyak::Label retLab;
                 Xbyak::Label contLab;

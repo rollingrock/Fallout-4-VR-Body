@@ -2,9 +2,11 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "utils.h"
-#include "vrcf/VRControllersManager.h"
+#include "common/PerfMonitor.h"
 #include "skeleton/HandPose.h"
+#include "utils.h"
+#include "vrcf/VRControllersHaptic.h"
+#include "vrcf/VRControllersManager.h"
 
 using namespace common;
 
@@ -29,9 +31,9 @@ namespace
     const char* getPipboyReplacementNifPath()
     {
         if (frik::g_config.isFalloutLondonVR) {
-            return "FRIK/AttaboyVR.nif";
+            return "AttaboyVR.nif";
         }
-        return frik::g_config.isHoloPipboy ? "FRIK/HoloPipboyVR.nif" : "FRIK/PipboyVR.nif";
+        return frik::g_config.isHoloPipboy ? "HoloPipboyVR.nif" : "PipboyVR.nif";
     }
 }
 
@@ -41,8 +43,10 @@ namespace frik
      * First frame PA fix:
      *
      */
-    Pipboy::Pipboy(Skeleton* skelly) :
-        _skelly(skelly), _flashlight(skelly), _physicalHandler(skelly, this)
+    Pipboy::Pipboy(Skeleton* skelly)
+        : _skelly(skelly),
+          _flashlight(skelly),
+          _physicalHandler(skelly, this)
     {
         // force hide if was open before like when fast traveling (force show if not wrist to allow changing mid-game)
         f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = f4vr::isPipboyOnWrist() ? 0.0f : 1.0f;
@@ -124,6 +128,19 @@ namespace frik
     }
 
     /**
+     * Reset transient state when the Pipboy is disabled via API so nothing stays stuck:
+     * close it if open (which also exits Pipboy config mode), and clear physical finger-operation
+     * state so its hand pose / helper orbs don't remain after the per-frame update stops running.
+     */
+    void Pipboy::resetOnDisable()
+    {
+        if (_isOpen) {
+            openClose(false);
+        }
+        _physicalHandler.updateIsOperatingPipboy(false);
+    }
+
+    /**
      * Swap the Pipboy model between screen and holo models.
      */
     void Pipboy::swapModel()
@@ -144,9 +161,17 @@ namespace frik
      */
     void Pipboy::onFrameUpdate()
     {
+        static PerfMonitor perf("Pipboy::onFrameUpdate");
+        const auto timer = perf.scope();
+
         exitPowerArmorBugFixHack(false);
 
+        // flashlight is independent of the Pipboy and stays active even when the Pipboy is disabled via API
         _flashlight.onFrameUpdate();
+
+        if (!g_frik.isPipboyEnabled()) {
+            return;
+        }
 
         hideShowPipboyOnArm();
         if (g_config.hidePipboy) {
@@ -400,9 +425,7 @@ namespace frik
             return;
         }
 
-        const bool open = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0
-            ? checkAttaboyActivation()
-            : vrcf::VRControllers.isReleasedShort(vrcf::Hand::Offhand, g_config.pipBoyButtonID);
+        const bool open = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation() : vrcf::VRControllers.check(g_config.pipboyOpenBinding);
         if (open) {
             logger::info("Open Pipboy with button");
             openClose(open);
@@ -418,9 +441,7 @@ namespace frik
             return;
         }
 
-        const bool close = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0
-            ? checkAttaboyActivation()
-            : vrcf::VRControllers.isReleasedShort(vrcf::Hand::Offhand, g_config.pipBoyButtonOffID);
+        const bool close = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation() : vrcf::VRControllers.check(g_config.pipboyCloseBinding);
         if (close) {
             logger::info("Close Pipboy with button");
             openClose(false);
@@ -437,11 +458,13 @@ namespace frik
         if (dist < g_config.attaboyGrabActivationDistance) {
             if (!_attaboyGrabHapticActivated) {
                 _attaboyGrabHapticActivated = true;
-                triggerStrongHaptic(vrcf::Hand::Left);
+                // hand entered the Attaboy grab zone
+                vrcf::VRHaptics.trigger(vrcf::Hand::Left, vrcf::HapticPattern::Click);
                 logger::debug("Attaboy activation area triggered");
             }
-            if (vrcf::VRControllers.isReleasedShort(vrcf::Hand::Left, g_config.attaboyGrabButtonId)) {
-                triggerShortHaptic(vrcf::Hand::Left);
+            if (vrcf::VRControllers.check(g_config.attaboyGrabBinding)) {
+                // grab confirmed
+                vrcf::VRHaptics.trigger(vrcf::Hand::Left, vrcf::HapticPattern::DoubleClick);
                 return true;
             }
         } else {
@@ -460,8 +483,8 @@ namespace frik
      */
     void Pipboy::checkTurningOnByLookingAt()
     {
-        if (_isOpen || !g_config.pipboyOpenWhenLookAt || g_config.isFalloutLondonVR
-            || g_frik.isMainConfigurationModeActive() || g_frik.isOffHandGrippingWeapon() || !isPlayerLookingAtPipboy()) {
+        if (_isOpen || !g_config.pipboyOpenWhenLookAt || g_config.isFalloutLondonVR || g_frik.isMainConfigurationModeActive() || g_frik.isOffHandGrippingWeapon() ||
+            !isPlayerLookingAtPipboy()) {
             _startedLookingAtPip = 0;
             return;
         }
@@ -495,16 +518,11 @@ namespace frik
 
         const auto movingStick = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Offhand);
         const auto lookingStick = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
-        const bool isPlayerActing =
-            fNotEqual(movingStick.x, 0, 0.3f)
-            || fNotEqual(movingStick.y, 0, 0.3f)
-            || fNotEqual(lookingStick.x, 0, 0.3f)
-            || fNotEqual(lookingStick.y, 0, 0.3f)
-            || vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Primary, vr::k_EButton_SteamVR_Trigger);
+        const bool isPlayerActing = fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f) || fNotEqual(lookingStick.x, 0, 0.3f) ||
+            fNotEqual(lookingStick.y, 0, 0.3f) || vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Primary, vr::k_EButton_SteamVR_Trigger);
 
-        const bool closeLookingWayWithDelay = g_config.pipboyCloseWhenLookAway
-            && !g_frik.isPipboyConfigurationModeActive()
-            && isNowTimePassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
+        const bool closeLookingWayWithDelay =
+            g_config.pipboyCloseWhenLookAway && !g_frik.isPipboyConfigurationModeActive() && isNowTimePassed(_lastLookingAtPip, g_config.pipBoyOffDelay);
 
         const bool closeLookingWayWithMovement = isPlayerActing && g_config.pipboyCloseWhenMovingWhileLookingAway && !g_frik.isPipboyConfigurationModeActive();
 
@@ -564,7 +582,7 @@ namespace frik
      */
     void Pipboy::holdPipboyScreenInPlace(RE::NiAVObject* const pipboyScreen)
     {
-        if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, g_config.pipBoyButtonOffID, 0.3f)) {
+        if (vrcf::VRControllers.check(g_config.holdPipboyScreenBinding)) {
             _pipboyScreenStableFrame = pipboyScreen->world;
         } else {
             pipboyScreen->world = _pipboyScreenStableFrame;

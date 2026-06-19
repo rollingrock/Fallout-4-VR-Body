@@ -8,6 +8,7 @@
 #include "skeleton/HandPose.h"
 #include "skeleton/HandPoseData.h"
 
+#include <array>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -25,6 +26,34 @@ namespace
      */
     std::unordered_set<std::string> g_offHandGripBlockingTags;
     constexpr std::string_view LEGACY_API_HAND_POSE_TAG = "frik.api.legacy";
+
+    /**
+     * Per-feature sets of external tags blocking each FRIK subsystem (see blockFeature).
+     * A feature stays disabled while at least one tag is still blocking it. Indexed by FRIKApi::Feature.
+     */
+    constexpr std::size_t FEATURE_COUNT = 4;
+    std::array<std::unordered_set<std::string>, FEATURE_COUNT> g_featureBlockingTags;
+
+    /**
+     * Apply the resolved enabled state of a feature to its FRIK subsystem.
+     */
+    void applyFeatureEnabled(const FRIKApi::Feature feature, const bool enabled)
+    {
+        switch (feature) {
+        case FRIKApi::Feature::Flashlight:
+            g_frik.setFlashlightEnabled(enabled);
+            break;
+        case FRIKApi::Feature::WeaponPositioning:
+            g_frik.setWeaponPositionEnabled(enabled);
+            break;
+        case FRIKApi::Feature::Pipboy:
+            g_frik.setPipboyEnabled(enabled);
+            break;
+        case FRIKApi::Feature::SmoothMovement:
+            g_frik.setSmoothMovementEnabled(enabled);
+            break;
+        }
+    }
 
     bool getIsLeftForHandEnum(const FRIKApi::Hand hand)
     {
@@ -52,13 +81,11 @@ namespace
 
     HandFingersPose makeUniformFingerPose(const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
-        return HandFingersPose{
-            FingerPose{ thumb, thumb, thumb },
+        return HandFingersPose{ FingerPose{ thumb, thumb, thumb },
             FingerPose{ index, index, index },
             FingerPose{ middle, middle, middle },
             FingerPose{ ring, ring, ring },
-            FingerPose{ pinky, pinky, pinky }
-        };
+            FingerPose{ pinky, pinky, pinky } };
     }
 
     FRIKApi::HandPoseTagState toApiHandPoseTagState(const HandPoseOverrideTagState state)
@@ -158,6 +185,52 @@ namespace
         return true;
     }
 
+    /**
+     * Enable/disable a FRIK subsystem for a specific external tag.
+     * The feature remains disabled while at least one tag is still blocking it.
+     */
+    bool FRIK_CALL blockFeature(const char* tag, const FRIKApi::Feature feature, const bool block)
+    {
+        if (!f4cf::common::hasNonWhitespaceText(tag)) {
+            return false;
+        }
+
+        const auto featureIndex = static_cast<std::size_t>(feature);
+        if (featureIndex >= g_featureBlockingTags.size()) {
+            return false;
+        }
+
+        const std::string normalizedTag = f4cf::common::trim(tag);
+        auto& blockingTags = g_featureBlockingTags[featureIndex];
+        if (block) {
+            blockingTags.emplace(normalizedTag);
+        } else {
+            blockingTags.erase(normalizedTag);
+        }
+
+        logger::info("API blockFeature tag:'{}' - feature:{}, block:{}, activeBlocks:{}", normalizedTag, featureIndex, block, blockingTags.size());
+        applyFeatureEnabled(feature, blockingTags.empty());
+        return true;
+    }
+
+    /**
+     * Check whether a FRIK subsystem is currently disabled (blocked by any tag).
+     */
+    bool FRIK_CALL isFeatureBlocked(const FRIKApi::Feature feature)
+    {
+        switch (feature) {
+        case FRIKApi::Feature::Flashlight:
+            return !g_frik.isFlashlightEnabled();
+        case FRIKApi::Feature::WeaponPositioning:
+            return !g_frik.isWeaponPositionEnabled();
+        case FRIKApi::Feature::Pipboy:
+            return !g_frik.isPipboyEnabled();
+        case FRIKApi::Feature::SmoothMovement:
+            return !g_frik.isSmoothMovementEnabled();
+        }
+        return false;
+    }
+
     bool FRIK_CALL isWristPipboyOpen()
     {
         return g_frik.isPipboyOn();
@@ -240,16 +313,17 @@ namespace
             return false;
         }
 
-        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag, HandFingersPose{
-            FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
-            FingerPose{ handPose.index.prox, handPose.index.mid, handPose.index.dist, handPose.index.splay },
-            FingerPose{ handPose.middle.prox, handPose.middle.mid, handPose.middle.dist, handPose.middle.splay },
-            FingerPose{ handPose.ring.prox, handPose.ring.mid, handPose.ring.dist, handPose.ring.splay },
-            FingerPose{ handPose.pinky.prox, handPose.pinky.mid, handPose.pinky.dist, handPose.pinky.splay },
-            handPose.palmPitch,
-            handPose.palmYaw,
-            HandPoseKind::Custom
-        }, forceTop);
+        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand),
+            *normalizedTag,
+            HandFingersPose{ FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
+                FingerPose{ handPose.index.prox, handPose.index.mid, handPose.index.dist, handPose.index.splay },
+                FingerPose{ handPose.middle.prox, handPose.middle.mid, handPose.middle.dist, handPose.middle.splay },
+                FingerPose{ handPose.ring.prox, handPose.ring.mid, handPose.ring.dist, handPose.ring.splay },
+                FingerPose{ handPose.pinky.prox, handPose.pinky.mid, handPose.pinky.dist, handPose.pinky.splay },
+                handPose.palmPitch,
+                handPose.palmYaw,
+                HandPoseKind::Custom },
+            forceTop);
         return true;
     }
 
@@ -279,16 +353,12 @@ namespace
         if (!data.buttonIconNifPath || !data.callbackReceiverName) {
             return false;
         }
-        g_frik.registerOpenSettingButton({
-            .buttonIconNifPath = data.buttonIconNifPath,
-            .callbackReceiverName = data.callbackReceiverName,
-            .callbackMessageType = data.callbackMessageType
-        });
+        g_frik.registerOpenSettingButton(
+            { .buttonIconNifPath = data.buttonIconNifPath, .callbackReceiverName = data.callbackReceiverName, .callbackMessageType = data.callbackMessageType });
         return true;
     }
 
-    constexpr FRIKApi FRIK_API_FUNCTIONS_TABLE{
-        .getVersion = &getVersion,
+    constexpr FRIKApi FRIK_API_FUNCTIONS_TABLE{ .getVersion = &getVersion,
         .getModVersion = &getModVersion,
         .isSkeletonReady = &isSkeletonReady,
         .isConfigOpen = &isConfigOpen,
@@ -306,8 +376,9 @@ namespace
         .clearHandPoseFingerPositions = &clearHandPoseFingerPositions,
         .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig,
         .blockOffHandWeaponGripping = &blockOffHandWeaponGripping,
-        .setHandPoseCustom = &setHandPoseCustom
-    };
+        .setHandPoseCustom = &setHandPoseCustom,
+        .blockFeature = &blockFeature,
+        .isFeatureBlocked = &isFeatureBlocked };
 }
 
 namespace frik::api

@@ -22,7 +22,7 @@ namespace frik
 
     class MainConfigMode
     {
-    public :
+    public:
         int isOpen() const;
         void openConfigMode();
         void onFrameUpdate();
@@ -38,6 +38,7 @@ namespace frik
         void openPipboyConfigUI();
         void openWeaponAdjustConfigUI();
         void openExternalModConfig(const OpenExternalModConfigData& data);
+        static void openAdvancedConfig();
         void closeMainConfigMode();
 
         // configuration UI

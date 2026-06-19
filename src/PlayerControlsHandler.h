@@ -1,7 +1,7 @@
 #pragma once
 
-#include "config-mode/ConfigurationMode.h"
 #include "config-mode/MainConfigMode.h"
+#include "config-mode/PipboyConfigMode.h"
 #include "f4vr/F4VRThumbstickControls.h"
 #include "pipboy/Pipboy.h"
 #include "weapon-position/WeaponPositionAdjuster.h"
@@ -15,7 +15,7 @@ namespace frik
         void reset();
         void checkWeaponHideForPipboyOperationWIthFinger(const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition);
         void onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition,
-            const ConfigurationMode* pipboyConfigurationMode);
+            const PipboyConfigMode* pipboyConfigurationMode);
 
     private:
         void enableControls();
@@ -30,11 +30,8 @@ namespace frik
     inline PlayerControlsHandler::PlayerControlsHandler()
     {
         // most disabled, leave some enabled that either needed (fast travel) or reported with bugs staying disabled
-        _disableFlags.set(
-            static_cast<RE::UserEvents::USER_EVENT_FLAG>(
-                RE::OtherInputEvents::OTHER_EVENT_FLAG::kFastTravel
-                | RE::OtherInputEvents::OTHER_EVENT_FLAG::kRunning
-                | RE::OtherInputEvents::OTHER_EVENT_FLAG::kSprinting));
+        _disableFlags.set(static_cast<RE::UserEvents::USER_EVENT_FLAG>(
+            RE::OtherInputEvents::OTHER_EVENT_FLAG::kFastTravel | RE::OtherInputEvents::OTHER_EVENT_FLAG::kRunning | RE::OtherInputEvents::OTHER_EVENT_FLAG::kSprinting));
     }
 
     /**
@@ -57,12 +54,12 @@ namespace frik
      * for this limited scenario so it's not a big deal.
      */
     inline void PlayerControlsHandler::onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition,
-        const ConfigurationMode* pipboyConfigurationMode)
+        const PipboyConfigMode* pipboyConfigurationMode)
     {
         checkWeaponHideForPipboyOperationWIthFinger(pipboy, weaponPosition);
 
-        if (pipboy->isOpen() || pipboyConfigurationMode->isPipBoyConfigModeActive() || mainConfigMode.isBodyAdjustOpen() || weaponPosition->inWeaponRepositionMode() || pipboy->
-            isOperatingWithFinger()) {
+        if (pipboy->isOpen() || pipboyConfigurationMode->isPipBoyConfigModeActive() || mainConfigMode.isBodyAdjustOpen() || weaponPosition->inWeaponRepositionMode() ||
+            pipboy->isOperatingWithFinger()) {
             if (weaponPosition->inThrowableWeaponRepositionMode()) {
                 enableControls();
                 f4vr::F4VRThumbstickControls::setControlsThumbstickEnableState(false);

@@ -2,13 +2,14 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "utils.h"
 #include "common/Quaternion.h"
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
+#include "utils.h"
+#include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 
 using namespace common;
@@ -67,6 +68,21 @@ namespace frik
     }
 
     /**
+     * Reset transient state when weapon positioning is disabled via API so nothing stays stuck:
+     * release an active offhand grip (and its hand pose) and exit reposition mode.
+     * The weapon node itself self-heals as the game re-applies its animation transform each frame.
+     */
+    void WeaponPositionAdjuster::resetOnDisable()
+    {
+        if (_offHandGripping) {
+            setOffhandGripping(false);
+        }
+        if (inWeaponRepositionMode()) {
+            toggleWeaponRepositionMode();
+        }
+    }
+
+    /**
      * Return whether FRIK offhand weapon gripping logic is currently enabled.
      */
     bool WeaponPositionAdjuster::isOffHandGrippingEnabled()
@@ -120,9 +136,8 @@ namespace frik
 
             // get saved offset or use hard-coded global default
             const auto offsetLookup = g_config.getWeaponOffsets(_currentThrowableWeaponName, WeaponOffsetsMode::Throwable, _currentlyInPA);
-            _throwableWeaponOffsetTransform = offsetLookup.has_value()
-                ? offsetLookup.value()
-                : WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(_throwableWeaponOriginalTransform, _currentlyInPA);
+            _throwableWeaponOffsetTransform =
+                offsetLookup.has_value() ? offsetLookup.value() : WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(_throwableWeaponOriginalTransform, _currentlyInPA);
 
             logger::info("Equipped Throwable Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}", _currentThrowableWeaponName.c_str(), _currentlyInPA, offsetLookup.has_value());
         }
@@ -203,8 +218,8 @@ namespace frik
         _currentlyInPA = inPA;
         _isCurrentWeaponMelee = f4vr::isMeleeWeaponEquipped();
 
-        // reset state
-        _offHandGripping = false;
+        // reset state; go through setOffhandGripping so the offhand grip hand-pose override is released too
+        setOffhandGripping(false);
 
         loadStoredOffsets(weaponName);
     }
@@ -251,15 +266,24 @@ namespace frik
         if (backOfHandOffsetLookup.has_value()) {
             _backOfHandUIOffsetTransform = backOfHandOffsetLookup.value();
             logger::debug("Use back of hand offset Pos: ({:2.2f}, {:2.2f}, {:2.2f}), Scale: {:.3f}, InPA: {}",
-                _weaponOffsetTransform.translate.x, _weaponOffsetTransform.translate.y, _weaponOffsetTransform.translate.z, _weaponOffsetTransform.scale, _currentlyInPA);
+                _weaponOffsetTransform.translate.x,
+                _weaponOffsetTransform.translate.y,
+                _weaponOffsetTransform.translate.z,
+                _weaponOffsetTransform.scale,
+                _currentlyInPA);
         } else {
             // No stored offset, use default adjustment
             _backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->local, _currentlyInPA);
         }
 
         logger::info("Equipped Weapon changed to '{}' (Melee:{}) (InPA:{}); HasWeaponOffset:{}, HasPrimaryHandOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
-            _currentWeapon, _isCurrentWeaponMelee, _currentlyInPA,
-            weaponOffsetLookup.has_value(), primaryHandOffsetLookup.has_value(), offhandOffsetLookup.has_value(), backOfHandOffsetLookup.has_value());
+            _currentWeapon,
+            _isCurrentWeaponMelee,
+            _currentlyInPA,
+            weaponOffsetLookup.has_value(),
+            primaryHandOffsetLookup.has_value(),
+            offhandOffsetLookup.has_value(),
+            backOfHandOffsetLookup.has_value());
     }
 
     /**
@@ -314,18 +338,18 @@ namespace frik
         }
 
         if (_offHandGripping) {
-            if (g_config.onePressGripButton && !vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, g_config.gripButtonID)) {
+            if (g_config.onePressGripButton && !vrcf::VRControllers.check(g_config.offhandGripHoldBinding)) {
                 // Mode 3 release grip when not holding the grip button
                 setOffhandGripping(false);
             }
 
-            if (g_config.enableGripButtonToLetGo && vrcf::VRControllers.isPressed(vrcf::Hand::Offhand, g_config.gripButtonID)) {
+            if (g_config.enableGripButtonToLetGo && vrcf::VRControllers.check(g_config.offhandGripBinding)) {
                 if (g_config.enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
                     // Mode 2,4 release grip on pressing the grip button again
                     setOffhandGripping(false);
                 } else {
                     // Mode 2 but close to barrel, so ignore un-grip as it will grip on next frame
-                    vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
+                    vrcf::VRHaptics.trigger(vrcf::Hand::Offhand, vrcf::HapticPattern::Click);
                 }
             }
 
@@ -353,7 +377,7 @@ namespace frik
             // Mode 1,2 grab when close to barrel
             setOffhandGripping(true);
         }
-        if (!g_frik.isPipboyOn() && vrcf::VRControllers.isPressed(vrcf::Hand::Offhand, g_config.gripButtonID)) {
+        if (!g_frik.isPipboyOn() && vrcf::VRControllers.check(g_config.offhandGripBinding)) {
             // Mode 3,4 grab when pressing grip button
             setOffhandGripping(true);
         }
@@ -575,7 +599,7 @@ namespace frik
             // Zoom toggling
             logger::info("Zoom Toggle pressed; sending message to switch zoom state");
             g_frik.dispatchMessageToExternalMod(BETTER_SCOPES_VR_MOD_NAME, 16, nullptr, 0);
-            vrcf::VRControllers.triggerHaptic(vrcf::Hand::Offhand);
+            vrcf::VRHaptics.trigger(vrcf::Hand::Offhand, vrcf::HapticPattern::DoubleClick);
         }
     }
 

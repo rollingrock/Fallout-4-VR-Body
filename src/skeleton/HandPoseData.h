@@ -19,8 +19,12 @@ namespace frik
 
         constexpr FingerPose() noexcept = default;
 
-        constexpr FingerPose(const float proxValue, const float midValue, const float distValue, const float splayValue = 0.0f) noexcept :
-            prox(proxValue), mid(midValue), dist(distValue), splay(splayValue) {}
+        constexpr FingerPose(const float proxValue, const float midValue, const float distValue, const float splayValue = 0.0f) noexcept
+            : prox(proxValue),
+              mid(midValue),
+              dist(distValue),
+              splay(splayValue)
+        {}
     };
 }
 
@@ -56,8 +60,16 @@ namespace frik
         constexpr HandFingersPose() noexcept = default;
 
         constexpr HandFingersPose(const FingerPose thumbPose, const FingerPose indexPose, const FingerPose middlePose, const FingerPose ringPose, const FingerPose pinkyPose,
-            const float palmPitch = 0.0f, const float palmYaw = 0.0f, const skeleton::data::HandPoseKind kindValue = skeleton::data::HandPoseKind::Custom) noexcept :
-            thumb(thumbPose), index(indexPose), middle(middlePose), ring(ringPose), pinky(pinkyPose), palmPitch(palmPitch), palmYaw(palmYaw), kind(kindValue) {}
+            const float palmPitch = 0.0f, const float palmYaw = 0.0f, const skeleton::data::HandPoseKind kindValue = skeleton::data::HandPoseKind::Custom) noexcept
+            : thumb(thumbPose),
+              index(indexPose),
+              middle(middlePose),
+              ring(ringPose),
+              pinky(pinkyPose),
+              palmPitch(palmPitch),
+              palmYaw(palmYaw),
+              kind(kindValue)
+        {}
 
         /** Return a mutable finger pose by zero-based finger index. */
         FingerPose& getFingerAt(int fingerIndex) noexcept;

@@ -3,8 +3,8 @@
 #include "Config.h"
 #include "GameHooks.h"
 #include "PapyrusApi.h"
-#include "utils.h"
-#include "config-mode/ConfigurationMode.h"
+#include "common/PerfMonitor.h"
+#include "config-mode/PipboyConfigMode.h"
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
@@ -12,6 +12,7 @@
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
 #include "smooth-movement/SmoothMovementVR.h"
+#include "utils.h"
 #include "vrcf/VRControllersManager.h"
 #include "vrui/UIManager.h"
 #include "vrui/UIModAdapter.h"
@@ -38,8 +39,9 @@ namespace frik
     class FrameUpdateContext : public vrui::UIModAdapter
     {
     public:
-        explicit FrameUpdateContext(Skeleton* skelly) :
-            _skelly(skelly) {}
+        explicit FrameUpdateContext(Skeleton* skelly)
+            : _skelly(skelly)
+        {}
 
         virtual RE::NiPoint3 getInteractionBoneWorldPosition() override
         {
@@ -134,6 +136,9 @@ namespace frik
      */
     void FRIK::onFrameUpdate()
     {
+        static PerfMonitor perf("FRIK::onFrameUpdate");
+        const auto timer = perf.scope();
+
         if (!RE::PlayerCharacter::GetSingleton()) {
             // game not loaded or existing
             return;
@@ -164,10 +169,12 @@ namespace frik
         _boneSpheres.onFrameUpdate();
 
         logger::trace("Update player controls...");
-        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition, _configurationMode);
+        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition, _pipboyConfigMode);
 
-        logger::trace("Update Weapon Position...");
-        _weaponPosition->onFrameUpdate();
+        if (_weaponPositionEnabled) {
+            logger::trace("Update Weapon Position...");
+            _weaponPosition->onFrameUpdate();
+        }
 
         logger::trace("Update Pipboy...");
         _pipboy->onFrameUpdate();
@@ -177,13 +184,16 @@ namespace frik
 
         _mainConfigMode.onFrameUpdate();
 
-        _configurationMode->onFrameUpdate();
+        _pipboyConfigMode->onFrameUpdate();
 
         updateWorldFinal();
     }
 
     void FRIK::smoothMovement()
     {
+        if (!_smoothMovementEnabled) {
+            return;
+        }
         try {
             _smoothMovement.onFrameUpdate();
         } catch (const std::exception& e) {
@@ -210,7 +220,7 @@ namespace frik
 
         // init handlers depending on skeleton
         _pipboy = new Pipboy(_skelly);
-        _configurationMode = new ConfigurationMode(_skelly);
+        _pipboyConfigMode = new PipboyConfigMode(_skelly);
         _weaponPosition = new WeaponPositionAdjuster(_skelly);
     }
 
@@ -298,8 +308,8 @@ namespace frik
         delete _pipboy;
         _pipboy = nullptr;
 
-        delete _configurationMode;
-        _configurationMode = nullptr;
+        delete _pipboyConfigMode;
+        _pipboyConfigMode = nullptr;
 
         delete _weaponPosition;
         _weaponPosition = nullptr;
@@ -339,6 +349,11 @@ namespace frik
     {
         if (g_config.removeFlashlight) {
             F4SE::log::info("Flashlight disabled in config, skipping");
+            return;
+        }
+
+        if (!g_frik.isFlashlightEnabled()) {
+            F4SE::log::info("Flashlight disabled via API, skipping FRIK flashlight");
             return;
         }
 
