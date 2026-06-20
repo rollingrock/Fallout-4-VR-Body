@@ -64,7 +64,7 @@ namespace frik
         if (g_config.flashlightLocation == FlashlightLocation::Head) {
             g_config.setFlashlightLocation(isLeftHandGrab ? FlashlightLocation::LeftArm : FlashlightLocation::RightArm);
         } else if ((g_config.flashlightLocation == FlashlightLocation::LeftArm && isLeftHandGrab) ||
-            (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab)) {
+                   (g_config.flashlightLocation == FlashlightLocation::RightArm && isRightHandGrab)) {
             g_config.setFlashlightLocation(FlashlightLocation::Head);
         }
     }

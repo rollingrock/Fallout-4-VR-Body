@@ -112,14 +112,17 @@ namespace frik
         bool hideHead = false;
         bool hideHeadEquipment = false;
         bool hideSkin = false;
+
         const std::vector<std::string>& faceGeometry() const
         {
             return _faceGeometry;
         }
+
         const std::vector<std::string>& skinGeometry() const
         {
             return _skinGeometry;
         }
+
         const std::vector<int>& hideEquipSlotIndexes() const
         {
             return _hideEquipSlotIndexes;

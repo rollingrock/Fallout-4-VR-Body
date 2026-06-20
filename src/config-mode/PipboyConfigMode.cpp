@@ -294,10 +294,14 @@ namespace frik
         // Row of mutually-exclusive adjustment-mode toggles; the selected one drives the thumbstick in handleAdjustment().
         // Screen move/rotate/scale are all done from the single "Adjust Screen" mode via stick + button combinations.
         _adjustScreenBtn = std::make_shared<UIToggleButton>("ui-config-pipboy\\btn-adjust-screen.nif");
-        _adjustScreenBtn->setOnToggleHandler([this](UIWidget*, const bool on) { _adjustTarget = on ? PipboyAdjustTarget::ScreenAdjust : PipboyAdjustTarget::None; });
+        _adjustScreenBtn->setOnToggleHandler([this](UIWidget*, const bool on) {
+            _adjustTarget = on ? PipboyAdjustTarget::ScreenAdjust : PipboyAdjustTarget::None;
+        });
 
         const auto scaleModelBtn = std::make_shared<UIToggleButton>("ui-config-pipboy\\btn-scale-model.nif");
-        scaleModelBtn->setOnToggleHandler([this](UIWidget*, const bool on) { _adjustTarget = on ? PipboyAdjustTarget::ModelScale : PipboyAdjustTarget::None; });
+        scaleModelBtn->setOnToggleHandler([this](UIWidget*, const bool on) {
+            _adjustTarget = on ? PipboyAdjustTarget::ModelScale : PipboyAdjustTarget::None;
+        });
 
         _adjustModeGroup = std::make_shared<UIToggleGroupContainer>("AdjustModes", UIContainerLayout::HorizontalCenter, 0.3f);
         _adjustModeGroup->addElement(_adjustScreenBtn);
@@ -329,11 +333,15 @@ namespace frik
         // Row of independent toggles.
         const auto glanceBtn = std::make_shared<UIToggleButton>("ui-config-pipboy\\btn-open-look-at.nif");
         glanceBtn->setToggleState(g_config.pipboyOpenWhenLookAt);
-        glanceBtn->setOnToggleHandler([](UIWidget*, const bool on) { onOpenWhenLookAtToggled(on); });
+        glanceBtn->setOnToggleHandler([](UIWidget*, const bool on) {
+            onOpenWhenLookAtToggled(on);
+        });
 
         const auto closeLookAwayBtn = std::make_shared<UIToggleButton>("ui-config-pipboy\\btn-close-look-away.nif");
         closeLookAwayBtn->setToggleState(g_config.pipboyCloseWhenLookAway);
-        closeLookAwayBtn->setOnToggleHandler([](UIWidget*, const bool on) { onCloseWhenLookAwayToggled(on); });
+        closeLookAwayBtn->setOnToggleHandler([](UIWidget*, const bool on) {
+            onCloseWhenLookAwayToggled(on);
+        });
 
         const auto dampenModesMap = std::map<DampenPipboyScreenMode, std::string>{ { DampenPipboyScreenMode::None, "ui-config-pipboy\\btn-dampen-off.nif" },
             { DampenPipboyScreenMode::Movement, "ui-config-pipboy\\btn-dampen-smooth.nif" },
@@ -353,15 +361,21 @@ namespace frik
         // Row of save / reset / exit. Save and reset are only enabled while actively adjusting a target
         // (toggled each frame in onFrameUpdate); exit is always available.
         _saveBtn = std::make_shared<UIButton>("ui-common\\btn-save.nif");
-        _saveBtn->setOnPressHandler([this](UIWidget*) { saveConfig(); });
+        _saveBtn->setOnPressHandler([this](UIWidget*) {
+            saveConfig();
+        });
         _saveBtn->setDisabled(true);
 
         _resetBtn = std::make_shared<UIButton>("ui-common\\btn-reset.nif");
-        _resetBtn->setOnPressHandler([this](UIWidget*) { resetConfig(); });
+        _resetBtn->setOnPressHandler([this](UIWidget*) {
+            resetConfig();
+        });
         _resetBtn->setDisabled(true);
 
         const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-exit.nif");
-        exitBtn->setOnPressHandler([this](UIWidget*) { exitPBConfig(); });
+        exitBtn->setOnPressHandler([this](UIWidget*) {
+            exitPBConfig();
+        });
 
         const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
         row3Container->addElement(_saveBtn);

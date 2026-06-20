@@ -390,10 +390,9 @@ namespace frik
         const float playerAdjustZ =
             (4 * g_config.getPlayerBodyOffsetUp() - g_config.getPlayerHMDOffsetUp() + g_config.getPlayerLegSlackAdjustOffset()) * comfortSneakAdjustZ + zOffsetByNeckPitch;
 
-        const auto neckPos = _curentPosition +
-            RE::NiPoint3(-_forwardDir.x * (g_config.getPlayerBodyOffsetForward() / 2 - xOffsetByNeckPitch),
-                -_forwardDir.y * (g_config.getPlayerBodyOffsetForward() / 2 - xOffsetByNeckPitch),
-                -playerAdjustZ);
+        const auto neckPos = _curentPosition + RE::NiPoint3(-_forwardDir.x * (g_config.getPlayerBodyOffsetForward() / 2 - xOffsetByNeckPitch),
+                                                   -_forwardDir.y * (g_config.getPlayerBodyOffsetForward() / 2 - xOffsetByNeckPitch),
+                                                   -playerAdjustZ);
 
         _torsoLen = MatrixUtils::vec3Len(neck->world.translate - com->world.translate);
 
@@ -919,7 +918,7 @@ namespace frik
         }
 
         weaponNode->local.translate = isLeftHandedMode() ? (isLeft ? RE::NiPoint3(3.389f, -2.099f, 3.133f) : RE::NiPoint3(0, -4.8f, 0))
-            : isLeft                                     ? RE::NiPoint3(0, 0, 0)
+                                      : isLeft           ? RE::NiPoint3(0, 0, 0)
                                                          : RE::NiPoint3(4.389f, -1.899f, -3.133f);
 
         dampenHand(offsetNode, isLeft);

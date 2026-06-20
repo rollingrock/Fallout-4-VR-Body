@@ -59,7 +59,7 @@ namespace
     {
         GFx::Value var;
         return root->GetVariable(&var, "root.Menu_mc.CurrentPage.QuestsTab_mc.ObjectivesList_mc.selectedIndex") && var.GetType() == GFx::Value::ValueType::kInt &&
-            var.GetInt() > -1;
+               var.GetInt() > -1;
     }
 
     bool isWorkshopsTabVisibleOnDataPage(const GFx::Movie* root)
@@ -81,8 +81,8 @@ namespace frik
      */
     bool PipboyOperationHandler::isMessageHolderVisible(const GFx::Movie* root)
     {
-        return root &&
-            (f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.MessageHolder_mc") || f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc"));
+        return root && (f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.MessageHolder_mc") ||
+                           f4vr::isElementVisible(root, "root.Menu_mc.CurrentPage.QuestsTab_mc.MessageHolder_mc"));
     }
 
     /**

@@ -88,11 +88,15 @@ namespace frik
     void MainConfigMode::createMainConfigUI()
     {
         const auto openBodyConfigBtn = std::make_shared<UIButton>("ui-config-main\\btn-body-config.nif");
-        openBodyConfigBtn->setOnPressHandler([this](UIWidget*) { openBodyAdjustmentSubConfigUI(); });
+        openBodyConfigBtn->setOnPressHandler([this](UIWidget*) {
+            openBodyAdjustmentSubConfigUI();
+        });
 
         const auto dampenHandsBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-dampen-hands.nif");
         dampenHandsBtn->setToggleState(g_config.dampenHands);
-        dampenHandsBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { g_config.saveDampenHands(enabled); });
+        dampenHandsBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+            g_config.saveDampenHands(enabled);
+        });
 
         const auto row1Container = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.3f);
         row1Container->addElement(openBodyConfigBtn);
@@ -106,7 +110,9 @@ namespace frik
                 { TwoHandedGripMode::Mode4, "ui-config-main\\btn-grip-mode-4.nif" } };
             const auto twoHandedGripModeBtn = std::make_shared<UIMultiStateToggleButton<TwoHandedGripMode>>(gripModesMap);
             twoHandedGripModeBtn->setState(getTwoHandedGripMode());
-            twoHandedGripModeBtn->setOnStateChangedHandler([this](UIWidget*, const TwoHandedGripMode mode) { updateTwoHandedGripMode(mode); });
+            twoHandedGripModeBtn->setOnStateChangedHandler([this](UIWidget*, const TwoHandedGripMode mode) {
+                updateTwoHandedGripMode(mode);
+            });
             row1Container->addElement(twoHandedGripModeBtn);
         }
 
@@ -115,26 +121,36 @@ namespace frik
         // hide a sub-config button when its feature is disabled via API as its config is not relevant
         if (g_frik.isPipboyEnabled()) {
             const auto openPipboyConfigBtn = std::make_shared<UIButton>("ui-config-main\\btn-pipboy-config.nif");
-            openPipboyConfigBtn->setOnPressHandler([this](UIWidget*) { openPipboyConfigUI(); });
+            openPipboyConfigBtn->setOnPressHandler([this](UIWidget*) {
+                openPipboyConfigUI();
+            });
             row2Container->addElement(openPipboyConfigBtn);
         }
         if (g_frik.isWeaponPositionEnabled()) {
             const auto openWeaponAdjustConfigBtn = std::make_shared<UIButton>("ui-config-main\\btn-weapon-adjust.nif");
-            openWeaponAdjustConfigBtn->setOnPressHandler([this](UIWidget*) { openWeaponAdjustConfigUI(); });
+            openWeaponAdjustConfigBtn->setOnPressHandler([this](UIWidget*) {
+                openWeaponAdjustConfigUI();
+            });
             row2Container->addElement(openWeaponAdjustConfigBtn);
         }
 
         for (const auto& buttonData : _externalModConfigButtonDataList) {
             const auto openExtModConfigBtn = std::make_shared<UIButton>(buttonData.buttonIconNifPath);
-            openExtModConfigBtn->setOnPressHandler([this, buttonData](UIWidget*) { openExternalModConfig(buttonData); });
+            openExtModConfigBtn->setOnPressHandler([this, buttonData](UIWidget*) {
+                openExternalModConfig(buttonData);
+            });
             row2Container->addElement(openExtModConfigBtn);
         }
 
         const auto advancedConfigBtn = std::make_shared<UIButton>("ui-common\\btn-advanced-config.nif");
-        advancedConfigBtn->setOnPressHandler([](UIWidget*) { openAdvancedConfig(); });
+        advancedConfigBtn->setOnPressHandler([](UIWidget*) {
+            openAdvancedConfig();
+        });
 
         const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-exit.nif");
-        exitBtn->setOnPressHandler([this](UIWidget*) { closeMainConfigMode(); });
+        exitBtn->setOnPressHandler([this](UIWidget*) {
+            closeMainConfigMode();
+        });
 
         const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
         row3Container->addElement(advancedConfigBtn);
@@ -168,7 +184,9 @@ namespace frik
             logger::error("Body adjust config class is already initialized");
             return;
         }
-        _bodyAdjustmentSubConfig = std::make_shared<BodyAdjustmentSubConfigMode>([this]() { _bodyAdjustmentSubConfig.reset(); });
+        _bodyAdjustmentSubConfig = std::make_shared<BodyAdjustmentSubConfigMode>([this]() {
+            _bodyAdjustmentSubConfig.reset();
+        });
     }
 
     /**

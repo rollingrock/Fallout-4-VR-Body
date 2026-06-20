@@ -54,31 +54,39 @@ namespace frik
     {
         const auto playSeattedBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-play-seated.nif");
         playSeattedBtn->setToggleState(g_config.isPlayingSeated);
-        playSeattedBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { togglePlayingSeated(enabled); });
+        playSeattedBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+            togglePlayingSeated(enabled);
+        });
 
         const auto hideHeadBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-hide-head.nif");
         hideHeadBtn->setToggleState(g_config.hideHeadEquipment);
-        hideHeadBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { toggleHideHeadEquipment(enabled); });
+        hideHeadBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+            toggleHideHeadEquipment(enabled);
+        });
 
         const auto row1Container = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.5f);
         row1Container->addElement(playSeattedBtn);
         row1Container->addElement(hideHeadBtn);
 
         const auto heightToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-body-vertical.nif");
-        heightToggleBtn->setOnToggleHandler(
-            [this](UIWidget*, const bool enabled) { _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyHeight : BodyAdjustmentConfigTarget::None; });
+        heightToggleBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+            _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyHeight : BodyAdjustmentConfigTarget::None;
+        });
 
         const auto forwardToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-body-forward.nif");
-        forwardToggleBtn->setOnToggleHandler(
-            [this](UIWidget*, const bool enabled) { _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyForwardOffset : BodyAdjustmentConfigTarget::None; });
+        forwardToggleBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+            _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyForwardOffset : BodyAdjustmentConfigTarget::None;
+        });
 
         const auto armsLengthToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-arms-length.nif");
-        armsLengthToggleBtn->setOnToggleHandler(
-            [this](UIWidget*, const bool enabled) { _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyArmsLength : BodyAdjustmentConfigTarget::None; });
+        armsLengthToggleBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+            _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyArmsLength : BodyAdjustmentConfigTarget::None;
+        });
 
         const auto vrScaleToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-vr-scale.nif");
-        vrScaleToggleBtn->setOnToggleHandler(
-            [this](UIWidget*, const bool enabled) { _configTarget = enabled ? BodyAdjustmentConfigTarget::VRScale : BodyAdjustmentConfigTarget::None; });
+        vrScaleToggleBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+            _configTarget = enabled ? BodyAdjustmentConfigTarget::VRScale : BodyAdjustmentConfigTarget::None;
+        });
 
         _row2Container = std::make_shared<UIToggleGroupContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
         _row2Container->addElement(heightToggleBtn);
@@ -93,13 +101,19 @@ namespace frik
         vrScaleToggleBtn->setUnToggleAllowed(true);
 
         _saveBtn = std::make_shared<UIButton>("ui-common\\btn-save.nif");
-        _saveBtn->setOnPressHandler([this](UIWidget*) { saveConfig(); });
+        _saveBtn->setOnPressHandler([this](UIWidget*) {
+            saveConfig();
+        });
 
         _resetBtn = std::make_shared<UIButton>("ui-common\\btn-reset.nif");
-        _resetBtn->setOnPressHandler([this](UIWidget*) { resetConfig(); });
+        _resetBtn->setOnPressHandler([this](UIWidget*) {
+            resetConfig();
+        });
 
         const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-back.nif");
-        exitBtn->setOnPressHandler([this](UIWidget*) { closeConfig(); });
+        exitBtn->setOnPressHandler([this](UIWidget*) {
+            closeConfig();
+        });
 
         const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
         row3Container->addElement(_saveBtn);

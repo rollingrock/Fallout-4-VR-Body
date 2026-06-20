@@ -234,7 +234,9 @@ namespace frik
     HandPoseOverrideTagState HandPose::getHandPoseSetTagState(const bool isLeft, const std::string_view tag)
     {
         const auto& overrides = getHandOverrides(isLeft);
-        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) { return overrideEntry.tag == tag; });
+        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) {
+            return overrideEntry.tag == tag;
+        });
         if (overrideIt == overrides.end()) {
             return HandPoseOverrideTagState::None;
         }
@@ -597,8 +599,8 @@ namespace frik
     {
         const auto hand = isLeft ? Hand::Left : Hand::Right;
         return !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Trigger) &&
-            (VRControllers.getAxisValue(hand, Axis::Grip).x > 0.01f || VRControllers.isTouching(hand, k_EButton_Grip)) &&
-            (VRControllers.isTouching(hand, vr::k_EButton_A) || VRControllers.isTouching(hand, vr::k_EButton_ApplicationMenu));
+               (VRControllers.getAxisValue(hand, Axis::Grip).x > 0.01f || VRControllers.isTouching(hand, k_EButton_Grip)) &&
+               (VRControllers.isTouching(hand, vr::k_EButton_A) || VRControllers.isTouching(hand, vr::k_EButton_ApplicationMenu));
     }
 
     /**
@@ -608,8 +610,8 @@ namespace frik
     {
         const auto hand = isLeft ? Hand::Left : Hand::Right;
         return VRControllers.isTouching(hand, k_EButton_Grip) && VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Trigger) &&
-            !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Touchpad) && !VRControllers.isTouching(hand, vr::k_EButton_A) &&
-            !VRControllers.isTouching(hand, vr::k_EButton_ApplicationMenu);
+               !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Touchpad) && !VRControllers.isTouching(hand, vr::k_EButton_A) &&
+               !VRControllers.isTouching(hand, vr::k_EButton_ApplicationMenu);
     }
 
     /**
@@ -623,7 +625,9 @@ namespace frik
 
         auto& overrides = getHandOverrides(isLeft);
         const auto previousTopTag = overrides.empty() ? "---" : overrides.back().tag;
-        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) { return overrideEntry.tag == tag; });
+        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) {
+            return overrideEntry.tag == tag;
+        });
 
         if (overrideIt == overrides.end()) {
             overrides.push_back(TaggedHandPoseOverride{ .tag = std::string(tag), .pose = pose });
@@ -659,7 +663,9 @@ namespace frik
         }
 
         auto& overrides = getHandOverrides(isLeft);
-        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) { return overrideEntry.tag == tag; });
+        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) {
+            return overrideEntry.tag == tag;
+        });
         if (overrideIt == overrides.end()) {
             return;
         }
