@@ -47,36 +47,13 @@ Manual setup details, including `Fallout4Custom.ini`, are in the [installation g
 
 ### Documentation
 
+- [Main](docs/README.md)
 - [Installation](docs/installation.md)
 - [FAQ and Troubleshooting](docs/faq.md)
 - [In-Game Configuration Guide](docs/in-game-configuration-guide.md)
 - [Weapon Adjustment Guide](docs/weapon-adjustment-guide.md)
 - [Screenshots and Videos](docs/screenshots-videos.md)
 - [Changelog](docs/changelog.md)
-
-### Shortcuts
-
-- Open Main Configuration: press and hold both thumbsticks for 2 seconds (`Sprint` and `Favorites` buttons).
-- Open Pip-Boy Configuration: while the Pip-Boy is open, press and hold the right thumbstick (`Favorites` button).
-- These can also be opened via the FRIK Settings holotape.
-
-### Body Adjustments
-
-Use [main configuration mode](docs/in-game-configuration-guide.md) to fine-tune your avatar body and camera position. Use selfie mode to see how your body looks in the world. Make sure to adjust both in and out of power armor.
-
-### Pip-Boy Configuration
-
-Pip-Boy configuration applies when using the on-wrist Pip-Boy. Check the holo and non-holo Pip-Boy screen types, then reposition them for your comfort. The game window must be in focus for primary-hand control to work.
-
-### Weapon Adjustment Mode
-
-Enter weapon adjustment mode from [main configuration](docs/in-game-configuration-guide.md). Use this mode to adjust the primary-hand weapon grip position, offhand grip position, throwable holding position, and back-of-hand UI offset. Vanilla weapons should all be properly positioned unless VR scale was changed; use this mode to fix positions for new modded weapons.
-
-### Advanced Configuration
-
-Most configuration is stored in the FRIK.ini file, including many settings that are not exposed through the in-game configuration interfaces. Changes made to `FRIK.ini` are live-loaded into the running game.
-
-Location: `%USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config`
 
 ## Development
 
