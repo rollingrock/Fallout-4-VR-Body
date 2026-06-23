@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WeaponPositionConfigMode.h"
+#include "f4vr/EquippedWeaponHandler.h"
 #include "skeleton/Skeleton.h"
 
 namespace frik
@@ -9,9 +10,6 @@ namespace frik
     {
         // To simplify changing offsets during configuration
         friend class WeaponPositionConfigMode;
-
-        // use as weapon name when no weapon in equipped. specifically for default back of hand UI offset.
-        static constexpr auto EMPTY_HAND = "EmptyHand";
 
     public:
         explicit WeaponPositionAdjuster(Skeleton* skelly)
@@ -31,12 +29,12 @@ namespace frik
 
         bool isWeaponDrawn() const
         {
-            return _currentWeapon != EMPTY_HAND;
+            return _equippedWeapon.isWeaponDrawn();
         }
 
         bool isMeleeWeaponDrawn() const
         {
-            return _isCurrentWeaponMelee;
+            return _equippedWeapon.isMelee();
         }
 
         bool isOffHandGrippingWeapon() const
@@ -60,7 +58,7 @@ namespace frik
         void resetOnDisable();
 
         void onFrameUpdate();
-        void loadStoredOffsets(const std::string& weaponName);
+        void loadStoredOffsets();
 
     private:
         void handleThrowableWeapon();
@@ -89,10 +87,9 @@ namespace frik
 
         Skeleton* _skelly;
 
-        // used to know if weapon changed to load saved offsets
-        std::string _currentWeapon;
-        bool _currentlyInPA = false;
-        bool _isCurrentWeaponMelee = false;
+        // detects equipped-weapon / power-armor changes and resolves the weapon name; the single
+        // source of truth for the current weapon name, power-armor state, and melee state
+        f4vr::EquippedWeaponHandler _equippedWeapon{ true };
 
         // is offhand (secondary hand) gripping the weapon barrel
         bool _offHandGripping = false;
@@ -117,7 +114,6 @@ namespace frik
         // custom throwable weapon transform to update
         RE::NiTransform _throwableWeaponOriginalTransform = RE::NiTransform();
         RE::NiTransform _throwableWeaponOffsetTransform = RE::NiTransform();
-        std::string _currentThrowableWeaponName;
 
         // custom back of hand UI transform to update
         RE::NiTransform _backOfHandUIOffsetTransform = RE::NiTransform();

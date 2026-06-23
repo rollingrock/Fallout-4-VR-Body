@@ -14,44 +14,6 @@
 
 using namespace common;
 
-namespace
-{
-    std::string_view getGripStockName(RE::NiNode* weapon)
-    {
-        if (const auto gripNode = f4vr::getFirstChild(f4vr::findNode(weapon, "P-Grip"))) {
-            return gripNode->name;
-        }
-        return "";
-    }
-
-    /**
-     * Get the game name of the equipped weapon extending weapon that can be both pistol and rifle to include rifle suffix.
-     * It's not critical but a nice to have a better hand grip for the weapons.
-     */
-    std::string getEquippedWeaponNameExtended(RE::NiNode* weapon)
-    {
-        const auto& weaponName = f4vr::getEquippedWeaponName();
-        if (weaponName == "Plasma") {
-            const auto stockName = getGripStockName(weapon);
-            if (stockName.starts_with("RiotGrip") || stockName.starts_with("Sniper") || stockName.find("Rifle") != std::string_view::npos) {
-                return weaponName + " Rifle";
-            }
-        } else if (weaponName == "Pipe" || weaponName == "Pipe Bolt-Action") {
-            const auto stockName = getGripStockName(weapon);
-            if (stockName.starts_with("HandmadePaddedStock") || stockName.starts_with("SpringStock") || stockName.starts_with("PipeStock")) {
-                return weaponName + " Rifle";
-            }
-        } else if (weaponName == "Laser" || weaponName == "Institute") {
-            const auto stockName = getGripStockName(weapon);
-            if (stockName.find("Rifle") != std::string_view::npos) {
-                return weaponName + " Rifle";
-            }
-        }
-
-        return weaponName;
-    }
-}
-
 namespace frik
 {
     /**
@@ -63,7 +25,7 @@ namespace frik
         _configMode = _configMode ? nullptr : std::make_unique<WeaponPositionConfigMode>(this);
         if (!inWeaponRepositionMode()) {
             // reload offset to handle player didn't save changes
-            loadStoredOffsets(_currentWeapon);
+            loadStoredOffsets();
         }
     }
 
@@ -118,32 +80,28 @@ namespace frik
     /**
      * Handle adjustment of the throwable weapon position.
      * The throwable weapon exists only when the player is actively throwing it, NOT if it is equipped.
-     * So all the handling needs to happen here with finding the offsets, defaults, and names.
+     * Change detection and the throwable name live in the framework's EquippedWeaponHandler; here we
+     * react to a newly-equipped throwable by loading its offsets and apply the offset every frame.
      */
     void WeaponPositionAdjuster::handleThrowableWeapon()
     {
-        const auto throwableWeapon = f4vr::getThrowableWeaponNode();
-        if (!throwableWeapon) {
-            // no throwable, clear name and noop
-            _currentThrowableWeaponName = "";
-            return;
-        }
-
-        // check throwable weapon is equipped for the first time
-        if (_currentThrowableWeaponName.empty()) {
-            _currentThrowableWeaponName = throwableWeapon->name.c_str();
-            _throwableWeaponOriginalTransform = throwableWeapon->local;
+        if (_equippedWeapon.detectThrowableChange()) {
+            // throwable equipped for the first time: capture original transform and load offsets
+            _throwableWeaponOriginalTransform = _equippedWeapon.throwableNode()->local;
 
             // get saved offset or use hard-coded global default
-            const auto offsetLookup = g_config.getWeaponOffsets(_currentThrowableWeaponName, WeaponOffsetsMode::Throwable, _currentlyInPA);
+            const bool inPA = _equippedWeapon.isInPowerArmor();
+            const auto offsetLookup = g_config.getWeaponOffsets(_equippedWeapon.throwableName(), WeaponOffsetsMode::Throwable, inPA);
             _throwableWeaponOffsetTransform =
-                offsetLookup.has_value() ? offsetLookup.value() : WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(_throwableWeaponOriginalTransform, _currentlyInPA);
+                offsetLookup.has_value() ? offsetLookup.value() : WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(_throwableWeaponOriginalTransform, inPA);
 
-            logger::info("Equipped Throwable Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}", _currentThrowableWeaponName.c_str(), _currentlyInPA, offsetLookup.has_value());
+            logger::info("Equipped Throwable Weapon changed to '{}' (InPA:{}); HasWeaponOffset:{}", _equippedWeapon.throwableName().c_str(), inPA, offsetLookup.has_value());
         }
 
-        // use custom offset
-        throwableWeapon->local = _throwableWeaponOffsetTransform;
+        // use custom offset every frame while the throwable exists
+        if (const auto throwableWeapon = _equippedWeapon.throwableNode()) {
+            throwableWeapon->local = _throwableWeaponOffsetTransform;
+        }
     }
 
     /**
@@ -200,46 +158,45 @@ namespace frik
 
     /**
      * If equipped weapon changed set offsets to stored if exists.
+     * The change detection and weapon-name resolution live in the framework's EquippedWeaponHandler;
+     * here we only react to a change by reloading the FRIK-specific offsets.
      * IMPORTANT: weapon node will be non-nullptr MOST of the time even if no weapon is equipped.
      * It's either going to be a throwable object if explosive is equipped, or the node of the last equipped weapon.
      * But when the weapon node is not visible, it's transforms may not be valid so handling offset will be wrong.
-     * It is MUCH safer to only handle the weapon when it's visible.
+     * It is MUCH safer to only handle the weapon when it's visible (the handler reports EMPTY_HAND otherwise).
      */
     void WeaponPositionAdjuster::checkEquippedWeaponChanged(RE::NiNode* weapon)
     {
-        const auto& weaponName = f4vr::isNodeVisible(weapon) ? getEquippedWeaponNameExtended(weapon) : EMPTY_HAND;
-        const bool inPA = f4vr::isInPowerArmor();
-        if (weaponName == _currentWeapon && inPA == _currentlyInPA) {
+        if (!_equippedWeapon.detectChange(weapon)) {
             // no weapon change
             return;
         }
 
-        _currentWeapon = weaponName;
-        _currentlyInPA = inPA;
-        _isCurrentWeaponMelee = f4vr::isMeleeWeaponEquipped();
-
         // reset state; go through setOffhandGripping so the offhand grip hand-pose override is released too
         setOffhandGripping(false);
 
-        loadStoredOffsets(weaponName);
+        loadStoredOffsets();
     }
 
     /**
      * Load the stored weapon position adjustment offset for weapon and offhand.
      */
-    void WeaponPositionAdjuster::loadStoredOffsets(const std::string& weaponName)
+    void WeaponPositionAdjuster::loadStoredOffsets()
     {
+        const auto& weaponName = _equippedWeapon.weaponName();
+        const bool inPA = _equippedWeapon.isInPowerArmor();
+
         // Load stored offsets for the new weapon
-        const auto weaponOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::Weapon, _currentlyInPA);
+        const auto weaponOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::Weapon, inPA);
         if (weaponOffsetLookup.has_value()) {
             _weaponOffsetTransform = weaponOffsetLookup.value();
         } else {
             // No stored offset, use original weapon transform
-            _weaponOffsetTransform = _isCurrentWeaponMelee ? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_weaponOriginalTransform) : _weaponOriginalTransform;
+            _weaponOffsetTransform = _equippedWeapon.isMelee() ? WeaponPositionConfigMode::getMeleeWeaponDefaultAdjustment(_weaponOriginalTransform) : _weaponOriginalTransform;
         }
 
         // Load stored offsets for primary hand for the new weapon
-        const auto primaryHandOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::PrimaryHand, _currentlyInPA);
+        const auto primaryHandOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::PrimaryHand, inPA);
         _hasPrimaryHandOffset = primaryHandOffsetLookup.has_value();
         if (primaryHandOffsetLookup.has_value()) {
             _primaryHandOffsetRot = primaryHandOffsetLookup.value().rotate;
@@ -249,7 +206,7 @@ namespace frik
         }
 
         // Load stored offsets for offhand for the new weapon
-        const auto offhandOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::OffHand, _currentlyInPA);
+        const auto offhandOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::OffHand, inPA);
         if (offhandOffsetLookup.has_value()) {
             _offhandOffsetRot = offhandOffsetLookup.value().rotate;
         } else {
@@ -258,10 +215,10 @@ namespace frik
         }
 
         // Load stored offsets for back of hand UI for the new weapon
-        auto backOfHandOffsetLookup = g_config.getWeaponOffsets(_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _currentlyInPA);
+        auto backOfHandOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::BackOfHandUI, inPA);
         if (!backOfHandOffsetLookup.has_value()) {
             // Use empty hand offset as a global default that the player can adjust so they won't have to adjust it for every weapon.
-            backOfHandOffsetLookup = g_config.getWeaponOffsets(EMPTY_HAND, WeaponOffsetsMode::BackOfHandUI, _currentlyInPA);
+            backOfHandOffsetLookup = g_config.getWeaponOffsets(f4vr::EquippedWeaponHandler::EMPTY_HAND, WeaponOffsetsMode::BackOfHandUI, inPA);
         }
         if (backOfHandOffsetLookup.has_value()) {
             _backOfHandUIOffsetTransform = backOfHandOffsetLookup.value();
@@ -270,16 +227,16 @@ namespace frik
                 _weaponOffsetTransform.translate.y,
                 _weaponOffsetTransform.translate.z,
                 _weaponOffsetTransform.scale,
-                _currentlyInPA);
+                inPA);
         } else {
             // No stored offset, use default adjustment
-            _backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->local, _currentlyInPA);
+            _backOfHandUIOffsetTransform = WeaponPositionConfigMode::getBackOfHandUIDefaultAdjustment(getBackOfHandUINode()->local, inPA);
         }
 
         logger::info("Equipped Weapon changed to '{}' (Melee:{}) (InPA:{}); HasWeaponOffset:{}, HasPrimaryHandOffset:{}, HasOffhandOffset:{}, HasBackOfHandOffset:{}",
-            _currentWeapon,
-            _isCurrentWeaponMelee,
-            _currentlyInPA,
+            weaponName,
+            _equippedWeapon.isMelee(),
+            inPA,
             weaponOffsetLookup.has_value(),
             primaryHandOffsetLookup.has_value(),
             offhandOffsetLookup.has_value(),
@@ -638,7 +595,7 @@ namespace frik
             return;
         }
 
-        logger::info("Weapon: {}, InPA: {}", _currentWeapon.c_str(), _currentlyInPA);
+        logger::info("Weapon: {}, InPA: {}", _equippedWeapon.weaponName().c_str(), _equippedWeapon.isInPowerArmor());
         f4vr::DebugDump::printTransform("Weapon Original: ", _weaponOriginalTransform);
         f4vr::DebugDump::printTransform("Weapon Offset  : ", _weaponOffsetTransform);
         f4vr::DebugDump::printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);
