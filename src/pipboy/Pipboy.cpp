@@ -63,13 +63,20 @@ namespace frik
      */
     bool Pipboy::isPlayerLookingAtPipboy(const bool isPipboyOpen)
     {
+        return isPlayerLookingAtPipboy(isPipboyOpen ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold);
+    }
+
+    /**
+     * Check if the player is looking at the Pipboy screen with the given detection threshold.
+     * Lower threshold is more relaxed (wider angle counts as "looking at").
+     */
+    bool Pipboy::isPlayerLookingAtPipboy(const float threshold)
+    {
         const auto screen = f4vr::getPlayerNodes()->ScreenNode;
         if (screen == nullptr) {
             return false;
         }
-
-        const float threshhold = isPipboyOpen ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
-        return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraRoot.get(), screen, threshhold);
+        return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraRoot.get(), screen, threshold);
     }
 
     /**
@@ -418,14 +425,23 @@ namespace frik
 
     /**
      * Turn Pipboy off if "on" button was pressed (short press).
+     * Don't open while gripping a weapon with two hands as not to accidentally turn it on.
      */
     void Pipboy::checkTurningOnByButton()
     {
-        if (_isOpen || g_frik.isMainConfigurationModeActive()) {
+        if (_isOpen || g_frik.isMainConfigurationModeActive() || g_frik.isOffHandGrippingWeapon()) {
             return;
         }
 
-        const bool open = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation() : vrcf::VRControllers.check(g_config.pipboyOpenBinding);
+        const bool useAttaboy = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0;
+
+        // Optionally require looking at the Pipboy for the open button to work, to avoid accidentally opening it.
+        // Uses a more relaxed threshold than the auto-open-on-look-at. The Attaboy grab uses proximity, so it's not affected.
+        if (!useAttaboy && g_config.pipboyOpenWithButtonOnlyWhenLookingAt && !isPlayerLookingAtPipboy(g_config.pipboyButtonLookAtThreshold)) {
+            return;
+        }
+
+        const bool open = useAttaboy ? checkAttaboyActivation() : vrcf::VRControllers.check(g_config.pipboyOpenBinding);
         if (open) {
             logger::info("Open Pipboy with button");
             openClose(open);

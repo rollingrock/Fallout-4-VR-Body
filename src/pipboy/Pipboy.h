@@ -19,6 +19,7 @@ namespace frik
         explicit Pipboy(Skeleton* skelly);
 
         static bool isPlayerLookingAtPipboy(bool isPipboyOpen);
+        static bool isPlayerLookingAtPipboy(float threshold);
 
         bool isOpen() const
         {

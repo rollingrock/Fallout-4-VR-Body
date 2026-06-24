@@ -161,11 +161,13 @@ namespace frik
         bool leftHandedPipBoy = false;
         bool enablePrimaryControllerPipboyUse = false;
         bool pipboyOpenWhenLookAt = false;
+        bool pipboyOpenWithButtonOnlyWhenLookingAt = false;
         bool pipboyCloseWhenLookAway = false;
         bool pipboyCloseWhenMovingWhileLookingAway = false;
         bool pipboyHolsterWeaponForOperation = false;
         float pipboyLookAtThreshold = 0;
         float pipboyLookAwayThreshold = 0;
+        float pipboyButtonLookAtThreshold = 0;
         float pipboyOperationFingerDetectionRange = 0;
         int pipBoyOnDelay = 0;
         int pipBoyOffDelay = 0;

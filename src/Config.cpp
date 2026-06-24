@@ -334,11 +334,13 @@ namespace frik
         leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
         enablePrimaryControllerPipboyUse = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
         pipboyOpenWhenLookAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", false);
+        pipboyOpenWithButtonOnlyWhenLookingAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWithButtonOnlyWhenLookingAt", false);
         pipboyCloseWhenLookAway = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyCloseWhenLookAway", false);
         pipboyCloseWhenMovingWhileLookingAway = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true);
         pipboyHolsterWeaponForOperation = ini.GetBoolValue(INI_SECTION_MAIN, "bHolsterWeaponForOperation", false);
         pipboyLookAtThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.75f));
         pipboyLookAwayThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAwayThreshold", 0.3f));
+        pipboyButtonLookAtThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyButtonLookAtThreshold", 0.5f));
         pipboyOperationFingerDetectionRange = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPipboyOperationFingerDetectionRange", 12.0));
         pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 400));
         pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 1000));
