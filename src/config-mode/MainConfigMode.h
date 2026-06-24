@@ -39,6 +39,7 @@ namespace frik
         void openWeaponAdjustConfigUI();
         void openExternalModConfig(const OpenExternalModConfigData& data);
         static void openAdvancedConfig();
+        static void openHelpWiki();
         void closeMainConfigMode();
 
         // configuration UI

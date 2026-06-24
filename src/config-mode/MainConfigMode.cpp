@@ -147,6 +147,11 @@ namespace frik
             openAdvancedConfig();
         });
 
+        const auto helpWikiBtn = std::make_shared<UIButton>("ui-common\\btn-help-wiki.nif");
+        helpWikiBtn->setOnPressHandler([](UIWidget*) {
+            openHelpWiki();
+        });
+
         const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-exit.nif");
         exitBtn->setOnPressHandler([this](UIWidget*) {
             closeMainConfigMode();
@@ -154,6 +159,7 @@ namespace frik
 
         const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
         row3Container->addElement(advancedConfigBtn);
+        row3Container->addElement(helpWikiBtn);
         row3Container->addElement(exitBtn);
 
         const auto mainMsg = std::make_shared<UIWidget>("ui-config-main\\msg-main.nif");
@@ -287,6 +293,18 @@ namespace frik
         logger::info("Open advanced config (FRIK.ini) on PC...");
         f4vr::showNotification("FRIK.ini opened in Notepad on your PC. Switch to your monitor to edit advanced settings; saved changes apply live.");
         Config::openInNotepad();
+    }
+
+    /**
+     * Open the FRIK help wiki page in the default browser on the PC desktop.
+     */
+    void MainConfigMode::openHelpWiki()
+    {
+        logger::info("Open help wiki on PC...");
+        f4vr::showNotification("FRIK help wiki opened in your browser. Switch to your monitor to read it.");
+        // Launch the URL via explorer.exe rather than passing it directly to ShellExecute: in the game process the shell's
+        // protocol-association lookup needs COM initialized on this thread and fails silently, but a direct exe launch works.
+        ShellExecuteA(nullptr, "open", "explorer.exe", "https://github.com/rollingrock/Fallout-4-VR-Body/blob/main/docs/README.md", nullptr, SW_SHOWNORMAL);
     }
 
     void MainConfigMode::closeMainConfigMode()

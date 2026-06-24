@@ -632,7 +632,7 @@ namespace frik
         if (overrideIt == overrides.end()) {
             overrides.push_back(TaggedHandPoseOverride{ .tag = std::string(tag), .pose = pose });
 
-            logger::info("Hand pose: Insert top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
+            logger::debug("Hand pose: Insert top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
                 tag,
                 isLeft ? "Left" : "Right",
                 previousTopTag,
@@ -643,7 +643,7 @@ namespace frik
             overrides.erase(overrideIt);
             overrides.push_back(std::move(updatedOverride));
 
-            logger::info("Hand pose: Forced to top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
+            logger::debug("Hand pose: Forced to top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
                 tag,
                 isLeft ? "Left" : "Right",
                 previousTopTag,
@@ -674,7 +674,7 @@ namespace frik
 
         overrides.erase(overrideIt);
 
-        logger::info("Hand pose: Cleared override tag:'{}' for '{}' hand (was top '{}', new top tag:'{}', remaining {})",
+        logger::debug("Hand pose: Cleared override tag:'{}' for '{}' hand (was top '{}', new top tag:'{}', remaining {})",
             tag,
             isLeft ? "Left" : "Right",
             wasTop ? "yes" : "no",
