@@ -274,7 +274,7 @@ namespace frik
      */
     const HandFingersPose& HandPose::getFixedPrimaryWeaponPose()
     {
-        return isUnarmedWeaponEquipped() ? getFistPose() : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
+        return isUnarmedWeaponDrawn() ? getFistPose() : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
     }
 
     /**
@@ -397,9 +397,9 @@ namespace frik
      */
     HandPose::HandPoseSource HandPose::resolveHandPoseSource(const bool isLeft)
     {
-        const bool shouldUseWeaponPoseForPrimaryHand = IsWeaponDrawn() && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
+        const bool shouldUseWeaponPoseForPrimaryHand = isWeaponDrawn() && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
 
-        if (shouldUseWeaponPoseForPrimaryHand && isLeftHandedMode() && isUnarmedWeaponEquipped()) {
+        if (shouldUseWeaponPoseForPrimaryHand && isLeftHandedMode() && isUnarmedWeaponDrawn()) {
             // Left-handed unarmed is a special authored fist case that applies to both hands.
             return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = &getFistPose() };
         }

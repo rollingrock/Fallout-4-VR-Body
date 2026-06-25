@@ -90,7 +90,7 @@ namespace frik
             _throwableWeaponOriginalTransform = _equippedWeapon.throwableNode()->local;
 
             // get saved offset or use hard-coded global default
-            const bool inPA = _equippedWeapon.isInPowerArmor();
+            const bool inPA = _equippedWeapon.inPowerArmor();
             const auto offsetLookup = g_config.getWeaponOffsets(_equippedWeapon.throwableName(), WeaponOffsetsMode::Throwable, inPA);
             _throwableWeaponOffsetTransform =
                 offsetLookup.has_value() ? offsetLookup.value() : WeaponPositionConfigMode::getThrowableWeaponDefaultAdjustment(_throwableWeaponOriginalTransform, inPA);
@@ -115,7 +115,7 @@ namespace frik
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
             }
-            checkEquippedWeaponChanged(weapon);
+            checkEquippedWeaponChanged();
             getBackOfHandUINode()->local = _backOfHandUIOffsetTransform;
             return;
         }
@@ -124,7 +124,7 @@ namespace frik
         _weaponOriginalTransform = weapon->local;
         _weaponOriginalWorldTransform = weapon->world;
 
-        checkEquippedWeaponChanged(weapon);
+        checkEquippedWeaponChanged();
 
         // override the back-of-hand UI transform
         getBackOfHandUINode()->local = _backOfHandUIOffsetTransform;
@@ -165,9 +165,9 @@ namespace frik
      * But when the weapon node is not visible, it's transforms may not be valid so handling offset will be wrong.
      * It is MUCH safer to only handle the weapon when it's visible (the handler reports EMPTY_HAND otherwise).
      */
-    void WeaponPositionAdjuster::checkEquippedWeaponChanged(RE::NiNode* weapon)
+    void WeaponPositionAdjuster::checkEquippedWeaponChanged()
     {
-        if (!_equippedWeapon.detectChange(weapon)) {
+        if (!_equippedWeapon.detectChange()) {
             // no weapon change
             return;
         }
@@ -183,8 +183,8 @@ namespace frik
      */
     void WeaponPositionAdjuster::loadStoredOffsets()
     {
-        const auto& weaponName = _equippedWeapon.weaponName();
-        const bool inPA = _equippedWeapon.isInPowerArmor();
+        const auto& weaponName = _equippedWeapon.weaponNameExtended();
+        const bool inPA = _equippedWeapon.inPowerArmor();
 
         // Load stored offsets for the new weapon
         const auto weaponOffsetLookup = g_config.getWeaponOffsets(weaponName, WeaponOffsetsMode::Weapon, inPA);
@@ -589,13 +589,13 @@ namespace frik
         return f4vr::getPrimaryWandNode();
     }
 
-    void WeaponPositionAdjuster::debugPrintWeaponPositionData(RE::NiNode* weapon) const
+    void WeaponPositionAdjuster::debugPrintWeaponPositionData(RE::NiNode* weapon)
     {
         if (!g_config.checkDebugDumpDataOnceFor("weapon_pos")) {
             return;
         }
 
-        logger::info("Weapon: {}, InPA: {}", _equippedWeapon.weaponName().c_str(), _equippedWeapon.isInPowerArmor());
+        logger::info("Weapon: {}, InPA: {}", _equippedWeapon.weaponNameExtended().c_str(), _equippedWeapon.inPowerArmor());
         f4vr::DebugDump::printTransform("Weapon Original: ", _weaponOriginalTransform);
         f4vr::DebugDump::printTransform("Weapon Offset  : ", _weaponOffsetTransform);
         f4vr::DebugDump::printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);

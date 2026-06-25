@@ -29,7 +29,7 @@ namespace frik
 
         bool isWeaponDrawn() const
         {
-            return _equippedWeapon.isWeaponDrawn();
+            return _equippedWeapon.isDrawn();
         }
 
         bool isMeleeWeaponDrawn() const
@@ -63,7 +63,7 @@ namespace frik
     private:
         void handleThrowableWeapon();
         void handlePrimaryWeapon();
-        void checkEquippedWeaponChanged(RE::NiNode* weapon);
+        void checkEquippedWeaponChanged();
         void handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const;
         void checkIfOffhandIsGripping(const RE::NiNode* weapon);
         void setOffhandGripping(bool isGripping);
@@ -77,7 +77,7 @@ namespace frik
         static void handleBetterScopes(RE::NiNode* weapon);
         static void fixMuzzleFlashPosition();
         static RE::NiNode* getBackOfHandUINode();
-        void debugPrintWeaponPositionData(RE::NiNode* weapon) const;
+        void debugPrintWeaponPositionData(RE::NiNode* weapon);
 
         // Define a basis remapping matrix to correct coordinate system for scope camera
         RE::NiMatrix3 _scopeCameraBaseMatrix;
@@ -89,7 +89,7 @@ namespace frik
 
         // detects equipped-weapon / power-armor changes and resolves the weapon name; the single
         // source of truth for the current weapon name, power-armor state, and melee state
-        f4vr::EquippedWeaponHandler _equippedWeapon{ true };
+        f4vr::EquippedWeaponHandler _equippedWeapon;
 
         // is offhand (secondary hand) gripping the weapon barrel
         bool _offHandGripping = false;

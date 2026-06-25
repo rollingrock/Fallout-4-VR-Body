@@ -392,9 +392,8 @@ namespace frik
     void WeaponPositionConfigMode::resetWeaponConfig() const
     {
         f4vr::showNotification("Reset Weapon Position to Default");
-        _adjuster->_weaponOffsetTransform =
-            f4vr::isMeleeWeaponEquipped() ? getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform) : _adjuster->_weaponOriginalTransform;
-        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::Weapon, _adjuster->_equippedWeapon.isInPowerArmor(), true);
+        _adjuster->_weaponOffsetTransform = f4vr::isMeleeWeaponDrawn() ? getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform) : _adjuster->_weaponOriginalTransform;
+        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::Weapon, _adjuster->_equippedWeapon.inPowerArmor(), true);
     }
 
     void WeaponPositionConfigMode::saveWeaponConfig() const
@@ -402,7 +401,7 @@ namespace frik
         const bool success = g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.weaponName(),
             _adjuster->_weaponOffsetTransform,
             WeaponOffsetsMode::Weapon,
-            _adjuster->_equippedWeapon.isInPowerArmor());
+            _adjuster->_equippedWeapon.inPowerArmor());
         f4vr::showNotification(success ? "Successfully saved Weapon Position" : "Failed to save Weapon Position - see FRIK.log");
     }
 
@@ -410,7 +409,7 @@ namespace frik
     {
         f4vr::showNotification("Reset Primary Hand Position to Default");
         _adjuster->_primaryHandOffsetRot = MatrixUtils::getIdentityMatrix();
-        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::PrimaryHand, _adjuster->_equippedWeapon.isInPowerArmor(), true);
+        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::PrimaryHand, _adjuster->_equippedWeapon.inPowerArmor(), true);
     }
 
     void WeaponPositionConfigMode::savePrimaryHandConfig() const
@@ -420,7 +419,7 @@ namespace frik
         transform.translate = RE::NiPoint3(0, 0, 0);
         transform.rotate = _adjuster->_primaryHandOffsetRot;
         const bool success =
-            g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), transform, WeaponOffsetsMode::PrimaryHand, _adjuster->_equippedWeapon.isInPowerArmor());
+            g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), transform, WeaponOffsetsMode::PrimaryHand, _adjuster->_equippedWeapon.inPowerArmor());
         f4vr::showNotification(success ? "Successfully saved Primary Hand Position" : "Failed to save Primary Hand Position - see FRIK.log");
     }
 
@@ -428,7 +427,7 @@ namespace frik
     {
         f4vr::showNotification("Reset Offhand Position to Default");
         _adjuster->_offhandOffsetRot = MatrixUtils::getIdentityMatrix();
-        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::OffHand, _adjuster->_equippedWeapon.isInPowerArmor(), true);
+        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::OffHand, _adjuster->_equippedWeapon.inPowerArmor(), true);
     }
 
     void WeaponPositionConfigMode::saveOffhandConfig() const
@@ -437,8 +436,7 @@ namespace frik
         transform.scale = 1;
         transform.translate = RE::NiPoint3(0, 0, 0);
         transform.rotate = _adjuster->_offhandOffsetRot;
-        const bool success =
-            g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), transform, WeaponOffsetsMode::OffHand, _adjuster->_equippedWeapon.isInPowerArmor());
+        const bool success = g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), transform, WeaponOffsetsMode::OffHand, _adjuster->_equippedWeapon.inPowerArmor());
         f4vr::showNotification(success ? "Successfully saved Offhand Position" : "Failed to save Offhand Position - see FRIK.log");
     }
 
@@ -446,7 +444,7 @@ namespace frik
     {
         f4vr::showNotification("Reset Throwable Weapon Position to Default");
         _adjuster->_throwableWeaponOffsetTransform = _adjuster->_throwableWeaponOriginalTransform;
-        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::Throwable, _adjuster->_equippedWeapon.isInPowerArmor(), true);
+        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::Throwable, _adjuster->_equippedWeapon.inPowerArmor(), true);
     }
 
     void WeaponPositionConfigMode::saveThrowableConfig() const
@@ -454,16 +452,16 @@ namespace frik
         const bool success = g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.throwableName(),
             _adjuster->_throwableWeaponOffsetTransform,
             WeaponOffsetsMode::Throwable,
-            _adjuster->_equippedWeapon.isInPowerArmor());
+            _adjuster->_equippedWeapon.inPowerArmor());
         f4vr::showNotification(success ? "Successfully saved Throwable Weapon Position" : "Failed to save Throwable Weapon Position - see FRIK.log");
     }
 
     void WeaponPositionConfigMode::resetBackOfHandUIConfig() const
     {
         f4vr::showNotification("Reset Back of Hand UI Position to Default");
-        _adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_equippedWeapon.isInPowerArmor());
+        _adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_equippedWeapon.inPowerArmor());
         WeaponPositionAdjuster::getBackOfHandUINode()->local = _adjuster->_backOfHandUIOffsetTransform;
-        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::BackOfHandUI, _adjuster->_equippedWeapon.isInPowerArmor(), true);
+        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::BackOfHandUI, _adjuster->_equippedWeapon.inPowerArmor(), true);
     }
 
     void WeaponPositionConfigMode::saveBackOfHandUIConfig() const
@@ -472,7 +470,7 @@ namespace frik
         g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.weaponName(),
             _adjuster->_backOfHandUIOffsetTransform,
             WeaponOffsetsMode::BackOfHandUI,
-            _adjuster->_equippedWeapon.isInPowerArmor());
+            _adjuster->_equippedWeapon.inPowerArmor());
     }
 
     void WeaponPositionConfigMode::resetBetterScopesConfig()
