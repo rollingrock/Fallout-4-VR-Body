@@ -13,9 +13,9 @@ Changes made to FRIK.ini are live-loaded into the running game.
 
 
 ## I don't see my head!
-Head hiding is controlled by `FRIK.ini`.
-Set `HideHead` and `HideEquipment` to false if you want the full head to render, but it may obscure or clip your vision.
-If you only want to see the head in selfie mode, set `selfieIgnoreHideFlags` to true.
+Head rendering is controlled in `FRIK.ini`. By default the head equipment is hidden (`bHidePlayerHeadEquipment = true`) and the head is pushed back out of view (`fHeadBackPositionOffset = 5`).
+To render the full head, set `bHidePlayerHeadEquipment = false` and lower `fHeadBackPositionOffset` toward `0` (keep `bHidePlayerHead = false`). Be aware this may obscure or clip your vision.
+If you only want to see the head in selfie mode, leave `bSelfieIgnoreHideFlags = true`.
 
 
 ## How Do I Operate the Flashlight?

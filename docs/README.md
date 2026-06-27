@@ -1,6 +1,6 @@
 # FRIK
 
-FRIK brings the full player body to life in VR! Inspired by VRIK from SkyrimVR FRIK aims to bring the same level of immersion of having your body visible to Fallout 4 VR. Full body Inverse Kinematics has been implemented to animate the arms and legs based on your controller and HMD position.
+FRIK brings the full player body to life in VR! Inspired by VRIK from Skyrim VR, FRIK aims to bring the same level of immersion of having your body visible to Fallout 4 VR. Full-body inverse kinematics animates the arms and legs based on your controller and HMD position.
 
 ## Quick Links
 
@@ -11,11 +11,12 @@ FRIK brings the full player body to life in VR! Inspired by VRIK from SkyrimVR F
 - [Weapon Adjustment Guide](weapon-adjustment-guide.md)
 - [Screenshots and Videos](screenshots-videos.md)
 - [Changelog](changelog.md)
+- [FRIK API (for mod developers)](frik-api.md)
 
 ## Shortcuts
 
-- Open Main Configuration - Press and hold both thumbsticks for 2 seconds (`Sprint` and `Favorites` buttons).
-- Open Pip-Boy Configuration - While the Pip-Boy is open, press and hold the right thumbstick (`Favorites` button).
+- Open Main Configuration - Press and hold both thumbsticks (the `Sprint` and `Favorites` buttons) for ~1.5 seconds. The hold time is configurable via `sOpenConfigButton` in `FRIK.ini`.
+- Open Pip-Boy Configuration - While the Pip-Boy is open, press and hold the primary-hand thumbstick (the `Favorites` button) for ~2 seconds.
 - These can also be opened via the FRIK Settings holotape.
 
 ## Body Adjustments

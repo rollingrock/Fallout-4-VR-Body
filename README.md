@@ -39,21 +39,33 @@ What it provides:
 
 ### Recommended install
 
-Download from [Nexus Mods](https://www.nexusmods.com/fallout4/mods/53464/) and install the published mod package through your mod manager and enable the mod:
+Download from [Nexus Mods](https://www.nexusmods.com/fallout4/mods/53464/) and install the published mod package through your mod manager, then enable the `FRIK.esp` plugin. Load order does not matter.
 
-Manual setup details, including `Fallout4Custom.ini`, are in the [installation guide](docs/installation.md).
+Manual setup, including the required `Fallout4Custom.ini` edits, is covered in the [installation guide](docs/installation.md). Skipping those edits is a common cause of crashes on new games and save loads.
+
+### Compatibility
+
+- **BetterScopesVR** - supported; FRIK repositions scope reticles and adjusts dampening while looking through a scope.
+- **Fallout London VR** - detected automatically; swaps the Pip-Boy for the Attaboy and loads `FRIK_FOLVR.ini` overrides.
+- **Immersive Flashlight VR** - compatible; FRIK disables its embedded flashlight to avoid conflicts.
+- Mods that modify the player **skeleton** (body, heel, or pose mods) can conflict and cause crashes - run only what you need.
 
 ## Usage
 
+Once installed, FRIK shows your full body in VR automatically. Open the in-game configuration to fine-tune the body and camera (hold both thumbsticks for ~1.5 seconds), reposition weapons, and adjust the Pip-Boy. Most settings apply live, and advanced options live in `FRIK.ini`.
+
+See the **[documentation](docs/README.md)** for shortcuts, body and Pip-Boy configuration, weapon adjustment, and advanced INI settings.
+
 ### Documentation
 
-- [Main](docs/README.md)
+- [Overview and Quick Links](docs/README.md)
 - [Installation](docs/installation.md)
 - [FAQ and Troubleshooting](docs/faq.md)
 - [In-Game Configuration Guide](docs/in-game-configuration-guide.md)
 - [Weapon Adjustment Guide](docs/weapon-adjustment-guide.md)
 - [Screenshots and Videos](docs/screenshots-videos.md)
 - [Changelog](docs/changelog.md)
+- [FRIK API for mod developers](docs/frik-api.md)
 
 ## Development
 
@@ -75,10 +87,10 @@ git clone https://github.com/rollingrock/Fallout-4-VR-Body.git
 cd Fallout-4-VR-Body
 git submodule update --init --recursive
 cmake --preset default
-cmake --build build
+cmake --build build --config Release
 ```
 
-This generates the Visual Studio solution in `build/`. Open `build/FRIK.slnx` if you prefer building or debugging in Visual Studio. Project configuration belongs in `CMakeLists.txt`, not the generated VS project files.
+This generates the Visual Studio solution in `build/`. Open `build/FRIK.slnx` if you prefer building or debugging in Visual Studio. Project configuration belongs in `CMakeLists.txt`, not the generated VS project files. Release builds automatically produce a `.7z` package in `build/package`.
 
 For local post-build copying, copy `CMakeUserPresets.json.template` to `CMakeUserPresets.json` and set `COPY_PLUGIN_BASE_PATH` to your MO2 mod folder or Fallout 4 VR `Data` folder. More development notes are in [docs/development.md](docs/development.md).
 
