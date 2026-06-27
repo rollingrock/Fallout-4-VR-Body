@@ -305,7 +305,9 @@ namespace frik
 
         if (!_newPipboyRootNifOnlyNode) {
             setupPipboyRootNif();
-            if (g_config.isHoloPipboy) {
+            // The holo projection (in-front screen) is driven by the replacement nif above; the on-wrist mesh is
+            // switched to the holo emitter here unless the player opted to keep the regular wrist model.
+            if (g_config.isHoloPipboy && !g_config.holoPipboyKeepWristModel) {
                 showHideCorrectPipboyMesh("Screen", "HoloEmitter");
             } else {
                 showHideCorrectPipboyMesh("HoloEmitter", "Screen");

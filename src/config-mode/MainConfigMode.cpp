@@ -291,7 +291,7 @@ namespace frik
     void MainConfigMode::openAdvancedConfig()
     {
         logger::info("Open advanced config (FRIK.ini) on PC...");
-        f4vr::showNotification("FRIK.ini opened in Notepad on your PC. Switch to your monitor to edit advanced settings; saved changes apply live.");
+        f4vr::showNotification("Config INI opened in Notepad on your PC.\nSwitch to your monitor to edit advanced settings.\nSaved changes apply live.");
         Config::openInNotepad();
     }
 
@@ -301,7 +301,7 @@ namespace frik
     void MainConfigMode::openHelpWiki()
     {
         logger::info("Open help wiki on PC...");
-        f4vr::showNotification("FRIK help wiki opened in your browser. Switch to your monitor to read it.");
+        f4vr::showNotification("FRIK help wiki opened in your browser.\nSwitch to your monitor to read it.");
         // Launch the URL via explorer.exe rather than passing it directly to ShellExecute: in the game process the shell's
         // protocol-association lookup needs COM initialized on this thread and fails silently, but a direct exe launch works.
         ShellExecuteA(nullptr, "open", "explorer.exe", "https://github.com/rollingrock/Fallout-4-VR-Body/blob/main/docs/README.md", nullptr, SW_SHOWNORMAL);

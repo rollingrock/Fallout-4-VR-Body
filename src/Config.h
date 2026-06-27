@@ -158,6 +158,7 @@ namespace frik
         float pipBoyScale = 0;
         bool hidePipboy = false;
         bool isHoloPipboy = false;
+        bool holoPipboyKeepWristModel = false;
         bool leftHandedPipBoy = false;
         bool enablePrimaryControllerPipboyUse = false;
         bool pipboyOpenWhenLookAt = false;
