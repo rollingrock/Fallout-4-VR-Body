@@ -1,6 +1,7 @@
 #define FRIK_API_EXPORTS
 #include "FRIKAPI.h"
 
+#include "Config.h"
 #include "FRIK.h"
 #include "common/CommonUtils.h"
 #include "f4vr/F4VRSkelly.h"
@@ -348,6 +349,63 @@ namespace
         HandPose::clearHandPoseOverride(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG);
     }
 
+    /**
+     * Read the current effective config value (override, else on-disk, else default) into outBuf.
+     */
+    int FRIK_CALL getConfigValue(const char* caller, const char* section, const char* key, char* outBuf, const int bufLen, const char* defaultValue)
+    {
+        if (!section || !key) {
+            if (outBuf && bufLen > 0) {
+                outBuf[0] = '\0';
+            }
+            return 0;
+        }
+
+        const std::string value = g_config.getConfigValue(section, key, defaultValue);
+        logger::debug("API getConfigValue caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
+        if (outBuf && bufLen > 0) {
+            const auto copied = value.copy(outBuf, static_cast<std::size_t>(bufLen) - 1);
+            outBuf[copied] = '\0';
+        }
+        return static_cast<int>(value.size());
+    }
+
+    /**
+     * Check whether a session override is currently set for a config section/key.
+     */
+    bool FRIK_CALL hasConfigValueOverride(const char* caller, const char* section, const char* key)
+    {
+        const bool result = section && key && g_config.hasConfigOverride(section, key);
+        logger::debug("API hasConfigValueOverride caller:'{}' {}.{} = {}", caller ? caller : "?", section ? section : "?", key ? key : "?", result);
+        return result;
+    }
+
+    /**
+     * Set a session-only override for a config section/key (string parsed by the type-appropriate reader).
+     */
+    bool FRIK_CALL setConfigValueOverride(const char* caller, const char* section, const char* key, const char* value)
+    {
+        if (!section || !key || !value) {
+            return false;
+        }
+        logger::info("API setConfigValueOverride caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
+        g_config.setConfigOverride(section, key, value);
+        return true;
+    }
+
+    /**
+     * Remove a previously set session override for a config section/key.
+     */
+    bool FRIK_CALL clearConfigValueOverride(const char* caller, const char* section, const char* key)
+    {
+        if (!section || !key || !g_config.hasConfigOverride(section, key)) {
+            return false;
+        }
+        logger::info("API clearConfigValueOverride caller:'{}' {}.{}", caller ? caller : "?", section, key);
+        g_config.clearConfigOverride(section, key);
+        return true;
+    }
+
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApi::OpenExternalModConfigData& data)
     {
         if (!data.buttonIconNifPath || !data.callbackReceiverName) {
@@ -378,7 +436,11 @@ namespace
         .blockOffHandWeaponGripping = &blockOffHandWeaponGripping,
         .setHandPoseCustom = &setHandPoseCustom,
         .blockFeature = &blockFeature,
-        .isFeatureBlocked = &isFeatureBlocked };
+        .isFeatureBlocked = &isFeatureBlocked,
+        .getConfigValue = &getConfigValue,
+        .hasConfigValueOverride = &hasConfigValueOverride,
+        .setConfigValueOverride = &setConfigValueOverride,
+        .clearConfigValueOverride = &clearConfigValueOverride };
 }
 
 namespace frik::api
