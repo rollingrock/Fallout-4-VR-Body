@@ -1,7 +1,7 @@
 # Fallout 4 VR Body - FRIK
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![License: GPLv3](https://img.shields.io/badge/license-GPLv3-blue.svg?style=flat-square)](LICENSE)
 
 > A Fallout 4 VR F4SE plugin that adds full-body IK, weapon repositioning, an in-VR Pip-Boy, and hand-pose / finger control.
 
@@ -123,4 +123,4 @@ FRIK builds on years of Fallout VR and Skyrim VR modding work.
 
 ## License
 
-[MIT](LICENSE) (c) 2021 Jason Pharis
+[GPL-3.0](LICENSE) © 2021 Jason Pharis
