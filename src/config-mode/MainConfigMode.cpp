@@ -116,7 +116,9 @@ namespace frik
             row1Container->addElement(twoHandedGripModeBtn);
         }
 
-        const auto row2Container = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
+        // sub-config + external-mod buttons share the second row; collect them so they can be split
+        // into multiple balanced rows when there are too many to fit in one (see createBalancedButtonRows)
+        std::vector<std::shared_ptr<UIElement>> secondRowButtons;
 
         // hide a sub-config button when its feature is disabled via API as its config is not relevant
         if (g_frik.isPipboyEnabled()) {
@@ -124,22 +126,21 @@ namespace frik
             openPipboyConfigBtn->setOnPressHandler([this](UIWidget*) {
                 openPipboyConfigUI();
             });
-            row2Container->addElement(openPipboyConfigBtn);
+            secondRowButtons.push_back(openPipboyConfigBtn);
         }
         if (g_frik.isWeaponPositionEnabled()) {
             const auto openWeaponAdjustConfigBtn = std::make_shared<UIButton>("ui-config-main\\btn-weapon-adjust.nif");
             openWeaponAdjustConfigBtn->setOnPressHandler([this](UIWidget*) {
                 openWeaponAdjustConfigUI();
             });
-            row2Container->addElement(openWeaponAdjustConfigBtn);
+            secondRowButtons.push_back(openWeaponAdjustConfigBtn);
         }
-
         for (const auto& buttonData : _externalModConfigButtonDataList) {
             const auto openExtModConfigBtn = std::make_shared<UIButton>(buttonData.buttonIconNifPath);
             openExtModConfigBtn->setOnPressHandler([this, buttonData](UIWidget*) {
                 openExternalModConfig(buttonData);
             });
-            row2Container->addElement(openExtModConfigBtn);
+            secondRowButtons.push_back(openExtModConfigBtn);
         }
 
         const auto advancedConfigBtn = std::make_shared<UIButton>("ui-common\\btn-advanced-config.nif");
@@ -174,11 +175,45 @@ namespace frik
         _configUI = std::make_shared<UIContainer>("MainConfig", UIContainerLayout::VerticalUp, 0.35f, 1.8f);
         _configUI->addElement(messagesContainer);
         _configUI->addElement(row3Container);
-        _configUI->addElement(row2Container);
+        if (const auto secondRowContainer = createBalancedButtonRows("Row2", secondRowButtons)) {
+            _configUI->addElement(secondRowContainer);
+        }
         _configUI->addElement(row1Container);
         _configUI->addElement(header);
 
         g_uiManager->attachPresetToPrimaryWandTop(_configUI, { 0, 0, 0 });
+    }
+
+    /**
+     * Arrange the given buttons into one or more horizontally-centered rows stacked vertically.
+     * A single row is capped so it doesn't get too long; when there are more buttons they are split
+     * into multiple balanced rows (e.g. 6 buttons become 2 rows of 3, not a row of 5 and a row of 1).
+     * Returns null when there are no buttons.
+     */
+    std::shared_ptr<UIContainer> MainConfigMode::createBalancedButtonRows(const std::string& name, const std::vector<std::shared_ptr<UIElement>>& buttons)
+    {
+        constexpr std::size_t maxButtonsPerRow = 5;
+
+        const std::size_t buttonCount = buttons.size();
+        if (buttonCount == 0) {
+            return nullptr;
+        }
+
+        const std::size_t rowCount = (buttonCount + maxButtonsPerRow - 1) / maxButtonsPerRow;
+        const std::size_t minButtonsPerRow = buttonCount / rowCount;
+        const std::size_t rowsWithExtraButton = buttonCount % rowCount;
+
+        const auto rowsContainer = std::make_shared<UIContainer>(name, UIContainerLayout::VerticalCenter, 0.35f);
+        std::size_t buttonIndex = 0;
+        for (std::size_t row = 0; row < rowCount; row++) {
+            const std::size_t buttonsInRow = minButtonsPerRow + (row < rowsWithExtraButton ? 1 : 0);
+            const auto rowContainer = std::make_shared<UIContainer>(name + "Row" + std::to_string(row), UIContainerLayout::HorizontalCenter, 0.3f);
+            for (std::size_t i = 0; i < buttonsInRow; i++, buttonIndex++) {
+                rowContainer->addElement(buttons[buttonIndex]);
+            }
+            rowsContainer->addElement(rowContainer);
+        }
+        return rowsContainer;
     }
 
     /**
