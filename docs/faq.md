@@ -37,7 +37,7 @@ It happens. It could be a bad installation (see the [installation guide](install
 ### Known Crashes
 - Not updating `Fallout4Custom.ini` during manual installation. See the [installation](installation.md) page.
 - "Amazing Follower Tweaks" mod is known to conflict with FRIK in the past.
-- Anything that messes directly with the **skeleton** can cause a crash (body, heels, etc.).
+- Anything that messes directly with the **skeleton** can cause a crash (body, heels, etc.). CBBE has been tested and is fine.
 - New games were reported as problematic in the past. I don't believe they still are, but:
   - Disabling FRIK before starting a new game and re-enabling it after exiting the vault should be good enough.
   - The last confirmed new-game conflict involved a combination of 3 mods with skeleton changes ([#107](https://github.com/rollingrock/Fallout-4-VR-Body/issues/107)).

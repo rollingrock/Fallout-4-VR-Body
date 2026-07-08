@@ -2,6 +2,18 @@
 
 FRIK brings the full player body to life in VR! Inspired by VRIK from Skyrim VR, FRIK aims to bring the same level of immersion of having your body visible to Fallout 4 VR. Full-body inverse kinematics animates the arms and legs based on your controller and HMD position.
 
+## Features
+
+- **Full-body IK** — arms and legs animated from your controllers and HMD, including body posture and walking animation.
+- **Smooth movement** — locomotion smoothing to reduce VR motion sickness (integrated directly into FRIK).
+- **On-wrist & Holo Pip-Boy** — standard and "Holo" models, operated with your primary index finger and "physical" knobs.
+- **Two-handed weapon handling** — grip the barrel with your offhand, with four grip modes and per-weapon adjustment.
+- **Hand & finger poses** — fingers curl dynamically from your controller's trigger, grip, and touch sensing.
+- **Power-armor-style flashlight** — switch it between hand and head in-game.
+- **Full left-handed mode** — complete left-handed support.
+- **In-VR configuration** — simple in-game config UI, plus selfie mode to see and fine-tune your body.
+- **Modder APIs** — C++ and Papyrus APIs, see the [FRIK API](frik-api.md).
+
 ## Quick Links
 
 - [Root](../README.md)
