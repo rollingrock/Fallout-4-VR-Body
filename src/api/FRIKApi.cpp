@@ -291,6 +291,7 @@ namespace
             return false;
         }
 
+        logger::sample("API setHandPose tag:'{}' hand={} pose={}", *normalizedTag, FRIKApi::handName(hand), static_cast<int>(handPose));
         HandPose::setHandPoseOverride(isLeft, *normalizedTag, *pose, false);
         return true;
     }
@@ -303,6 +304,7 @@ namespace
             return false;
         }
 
+        logger::sample("API setHandPoseCustomFingerPositions tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
         HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag, makeUniformFingerPose(thumb, index, middle, ring, pinky), false);
         return true;
     }
@@ -314,6 +316,7 @@ namespace
             return false;
         }
 
+        logger::sample("API setHandPoseCustom tag:'{}' hand={} forceTop={}", *normalizedTag, FRIKApi::handName(hand), forceTop);
         HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand),
             *normalizedTag,
             HandFingersPose{ FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
@@ -335,24 +338,27 @@ namespace
             return false;
         }
 
+        logger::sample("API clearHandPose tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
         HandPose::clearHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag);
         return true;
     }
 
     void FRIK_CALL setHandPoseFingerPositions(const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
+        logger::sample("API [DEPRECATED] setHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
         HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG, makeUniformFingerPose(thumb, index, middle, ring, pinky), false);
     }
 
     void FRIK_CALL clearHandPoseFingerPositions(const FRIKApi::Hand hand)
     {
+        logger::sample("API [DEPRECATED] clearHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
         HandPose::clearHandPoseOverride(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG);
     }
 
     /**
      * Read the current effective config value (override, else on-disk, else default) into outBuf.
      */
-    int FRIK_CALL getConfigValue(const char* caller, const char* section, const char* key, char* outBuf, const int bufLen, const char* defaultValue)
+    int FRIK_CALL getConfigValue(const char* /*caller*/, const char* section, const char* key, char* outBuf, const int bufLen, const char* defaultValue)
     {
         if (!section || !key) {
             if (outBuf && bufLen > 0) {
@@ -362,7 +368,6 @@ namespace
         }
 
         const std::string value = g_config.getConfigValue(section, key, defaultValue);
-        logger::debug("API getConfigValue caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
         if (outBuf && bufLen > 0) {
             const auto copied = value.copy(outBuf, static_cast<std::size_t>(bufLen) - 1);
             outBuf[copied] = '\0';
@@ -373,11 +378,9 @@ namespace
     /**
      * Check whether a session override is currently set for a config section/key.
      */
-    bool FRIK_CALL hasConfigValueOverride(const char* caller, const char* section, const char* key)
+    bool FRIK_CALL hasConfigValueOverride(const char* /*caller*/, const char* section, const char* key)
     {
-        const bool result = section && key && g_config.hasConfigOverride(section, key);
-        logger::debug("API hasConfigValueOverride caller:'{}' {}.{} = {}", caller ? caller : "?", section ? section : "?", key ? key : "?", result);
-        return result;
+        return section && key && g_config.hasConfigOverride(section, key);
     }
 
     /**
@@ -388,7 +391,7 @@ namespace
         if (!section || !key || !value) {
             return false;
         }
-        logger::info("API setConfigValueOverride caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
+        logger::sample("API setConfigValueOverride caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
         g_config.setConfigOverride(section, key, value);
         return true;
     }
@@ -401,7 +404,7 @@ namespace
         if (!section || !key || !g_config.hasConfigOverride(section, key)) {
             return false;
         }
-        logger::info("API clearConfigValueOverride caller:'{}' {}.{}", caller ? caller : "?", section, key);
+        logger::sample("API clearConfigValueOverride caller:'{}' {}.{}", caller ? caller : "?", section, key);
         g_config.clearConfigOverride(section, key);
         return true;
     }

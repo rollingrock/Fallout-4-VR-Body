@@ -68,6 +68,24 @@ namespace frik::api
         };
 
         /**
+         * Readable name of a hand enum for logging (scoped enums are not directly formattable).
+         */
+        static std::string_view handName(const FRIKApi::Hand hand)
+        {
+            switch (hand) {
+            case FRIKApi::Hand::Primary:
+                return "Primary";
+            case FRIKApi::Hand::Offhand:
+                return "Offhand";
+            case FRIKApi::Hand::Right:
+                return "Right";
+            case FRIKApi::Hand::Left:
+                return "Left";
+            }
+            return "?";
+        }
+
+        /**
          * Predefined hand pose kinds exposed by the FRIK API.
          * Matches FRIK runtime hand pose kinds.
          */
