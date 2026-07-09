@@ -63,13 +63,20 @@ namespace frik
      */
     bool Pipboy::isPlayerLookingAtPipboy(const bool isPipboyOpen)
     {
+        return isPlayerLookingAtPipboy(isPipboyOpen ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold);
+    }
+
+    /**
+     * Check if the player is looking at the Pipboy screen with the given detection threshold.
+     * Lower threshold is more relaxed (wider angle counts as "looking at").
+     */
+    bool Pipboy::isPlayerLookingAtPipboy(const float threshold)
+    {
         const auto screen = f4vr::getPlayerNodes()->ScreenNode;
         if (screen == nullptr) {
             return false;
         }
-
-        const float threshhold = isPipboyOpen ? g_config.pipboyLookAwayThreshold : g_config.pipboyLookAtThreshold;
-        return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraRoot.get(), screen, threshhold);
+        return isCameraLookingAtObject(f4vr::getPlayerCamera()->cameraRoot.get(), screen, threshold);
     }
 
     /**
@@ -200,11 +207,16 @@ namespace frik
             return;
         }
 
-        // check by looking should be first to handle closing by button not opening it again by looking at Pipboy.
-        checkTurningOnByLookingAt();
+        if (_attaboyOnBeltNode && g_config.attaboyGrab.primary.type != vrcf::ActivationType::Disabled) {
+            // Fallout London VR: grabbing the Attaboy off the belt (a proximity gesture) toggles it open/closed.
+            checkAttaboyGrab();
+        } else {
+            // check by looking should be first to handle closing by button not opening it again by looking at Pipboy.
+            checkTurningOnByLookingAt();
 
-        checkTurningOnByButton();
-        checkTurningOffByButton();
+            checkTurningOnByButton();
+            checkTurningOffByButton();
+        }
 
         if (_isOpen) {
             PipboyOperationHandler::operate();
@@ -298,7 +310,9 @@ namespace frik
 
         if (!_newPipboyRootNifOnlyNode) {
             setupPipboyRootNif();
-            if (g_config.isHoloPipboy) {
+            // The holo projection (in-front screen) is driven by the replacement nif above; the on-wrist mesh is
+            // switched to the holo emitter here unless the player opted to keep the regular wrist model.
+            if (g_config.isHoloPipboy && !g_config.holoPipboyKeepWristModel) {
                 showHideCorrectPipboyMesh("Screen", "HoloEmitter");
             } else {
                 showHideCorrectPipboyMesh("HoloEmitter", "Screen");
@@ -418,17 +432,23 @@ namespace frik
 
     /**
      * Turn Pipboy off if "on" button was pressed (short press).
+     * Don't open while gripping a weapon with two hands as not to accidentally turn it on.
      */
     void Pipboy::checkTurningOnByButton()
     {
-        if (_isOpen || g_frik.isMainConfigurationModeActive()) {
+        if (_isOpen || g_frik.isMainConfigurationModeActive() || g_frik.isOffHandGrippingWeapon()) {
             return;
         }
 
-        const bool open = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation() : vrcf::VRControllers.check(g_config.pipboyOpenBinding);
-        if (open) {
+        // Optionally require looking at the Pipboy for the open button to work, to avoid accidentally opening it.
+        // Uses a more relaxed threshold than the auto-open-on-look-at.
+        if (g_config.pipboyOpenWithButtonOnlyWhenLookingAt && !isPlayerLookingAtPipboy(g_config.pipboyButtonLookAtThreshold)) {
+            return;
+        }
+
+        if (vrcf::VRControllers.check(g_config.pipboyOpenBinding)) {
             logger::info("Open Pipboy with button");
-            openClose(open);
+            openClose(true);
         }
     }
 
@@ -441,36 +461,30 @@ namespace frik
             return;
         }
 
-        const bool close = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation() : vrcf::VRControllers.check(g_config.pipboyCloseBinding);
-        if (close) {
+        if (vrcf::VRControllers.check(g_config.pipboyCloseBinding)) {
             logger::info("Close Pipboy with button");
             openClose(false);
         }
     }
 
     /**
-     * Check if Fallout London Attaboy activation is triggered.
-     * If configured, check that the left hand is close enough to the Attaboy on belt.
+     * Fallout London VR: toggle the Pipboy by grabbing the Attaboy off the belt.
+     *
+     * Driven by a WandActivationSphere anchored to the on-belt Attaboy node: while the bound hand's wand
+     * is inside the zone it suppresses the grab button (if configured), pulses the one-shot entry haptic,
+     * and fires on the bound press to toggle the Pipboy open/closed. Opening is guarded like the button
+     * path (blocked in the main config menu or while two-hand gripping); closing is always allowed.
      */
-    bool Pipboy::checkAttaboyActivation()
+    void Pipboy::checkAttaboyGrab()
     {
-        const float dist = MatrixUtils::vec3Len(_skelly->getLeftArm().hand->world.translate - _attaboyOnBeltNode->world.translate);
-        if (dist < g_config.attaboyGrabActivationDistance) {
-            if (!_attaboyGrabHapticActivated) {
-                _attaboyGrabHapticActivated = true;
-                // hand entered the Attaboy grab zone
-                vrcf::VRHaptics.trigger(vrcf::Hand::Left, vrcf::HapticPattern::Click);
-                logger::debug("Attaboy activation area triggered");
+        _attaboyGrabSphere.onFrameUpdate(_attaboyOnBeltNode, g_config.attaboyGrab, [this](const vrcf::InputBinding&) {
+            if (!_isOpen && (g_frik.isMainConfigurationModeActive() || g_frik.isOffHandGrippingWeapon())) {
+                return false;
             }
-            if (vrcf::VRControllers.check(g_config.attaboyGrabBinding)) {
-                // grab confirmed
-                vrcf::VRHaptics.trigger(vrcf::Hand::Left, vrcf::HapticPattern::DoubleClick);
-                return true;
-            }
-        } else {
-            _attaboyGrabHapticActivated = false; // move hand away for activation area
-        }
-        return false;
+            logger::info("{} Pipboy with Attaboy grab", _isOpen ? "Close" : "Open");
+            openClose(!_isOpen);
+            return true;
+        });
     }
 
     /**
@@ -519,7 +533,7 @@ namespace frik
         const auto movingStick = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Offhand);
         const auto lookingStick = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
         const bool isPlayerActing = fNotEqual(movingStick.x, 0, 0.3f) || fNotEqual(movingStick.y, 0, 0.3f) || fNotEqual(lookingStick.x, 0, 0.3f) ||
-            fNotEqual(lookingStick.y, 0, 0.3f) || vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Primary, vr::k_EButton_SteamVR_Trigger);
+                                    fNotEqual(lookingStick.y, 0, 0.3f) || vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Primary, vr::k_EButton_SteamVR_Trigger);
 
         const bool closeLookingWayWithDelay =
             g_config.pipboyCloseWhenLookAway && !g_frik.isPipboyConfigurationModeActive() && isNowTimePassed(_lastLookingAtPip, g_config.pipBoyOffDelay);

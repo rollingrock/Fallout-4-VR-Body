@@ -22,22 +22,20 @@ Resetting weapon adjustment deletes the saved offset config and loads the game's
 
 ## File Location
 
-All saved files can be found in `%USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config\Weapons_Offsets`.
-There can be multiple file variants per weapon, and they can be shared with others.
-1. `Weapon.json` - The weapon offset.
-1. `Weapon-PowerArmor.json` - The weapon offsets for wearing Power Armor.
-1. `Weapon-leftHanded.json` - The weapon offset for left-handed mode.
-1. `Weapon-PowerArmor-leftHanded.json` - The weapon offsets for wearing Power Armor in left-handed mode.
-1. `Weapon-offHand.json` - The offhand grip offset.
-1. `Weapon-offHand-PowerArmor.json` - The offhand grip offset for wearing Power Armor.
-1. `Weapon-offHand-leftHanded.json` - The offhand grip offset for left-handed mode.
-1. `Weapon-offHand-PowerArmor-leftHanded.json` - The offhand grip offset for wearing Power Armor in left-handed mode.
-1. `Weapon-backOfHand` - The back-of-hand UI offset.
-1. `Weapon-backOfHand-leftHanded` - The back-of-hand UI offset for left-handed mode.
-1. `Weapon-throwable.json` - The throwable weapon offset.
-1. `Weapon-throwable-PowerArmor.json` - The throwable weapon offset for wearing Power Armor.
-1. `Weapon-throwable-leftHanded.json` - The throwable weapon offset for left-handed mode.
-1. `Weapon-throwable-PowerArmor-leftHanded.json` - The throwable weapon offset for wearing Power Armor in left-handed mode.
+All saved files are in `%USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config\Weapons_Offsets`.
+There can be multiple variants per weapon, and the files can be shared with others.
+
+File names follow the pattern `<WeaponName>[-<mode>][-PowerArmor][-leftHanded].json`, combining a mode segment with optional Power Armor and left-handed segments:
+
+| Mode segment | Meaning |
+| --- | --- |
+| _(none)_ | Primary weapon grip offset. |
+| `-primHand` | Primary-hand offset (improves rifle-type weapons). |
+| `-offHand` | Offhand two-handed grip offset. |
+| `-throwable` | Throwable weapon offset. |
+| `-backOfHand` | Back-of-hand UI offset. |
+
+For example: `Pipe Gun.json`, `Pipe Gun-PowerArmor.json`, `Pipe Gun-leftHanded.json`, `Pipe Gun-offHand-PowerArmor-leftHanded.json`, and `Pipe Gun-backOfHand.json`.
 
 For back-of-hand UI, there is an additional `EmptyHand` "weapon" that is used as a global offset if no weapon-specific offset is found. You can adjust it in weapon adjustment config mode by unequipping a weapon and switching to back-of-hand adjustment in the UI.
 

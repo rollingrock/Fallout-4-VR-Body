@@ -331,14 +331,17 @@ namespace frik
         pipBoyScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipboyScale", 1.0));
         hidePipboy = ini.GetBoolValue(INI_SECTION_MAIN, "hidePipboy");
         isHoloPipboy = ini.GetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", true);
+        holoPipboyKeepWristModel = ini.GetBoolValue(INI_SECTION_MAIN, "HoloPipBoyKeepWristModel", false);
         leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
         enablePrimaryControllerPipboyUse = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
         pipboyOpenWhenLookAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", false);
+        pipboyOpenWithButtonOnlyWhenLookingAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWithButtonOnlyWhenLookingAt", false);
         pipboyCloseWhenLookAway = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyCloseWhenLookAway", false);
         pipboyCloseWhenMovingWhileLookingAway = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true);
         pipboyHolsterWeaponForOperation = ini.GetBoolValue(INI_SECTION_MAIN, "bHolsterWeaponForOperation", false);
         pipboyLookAtThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.75f));
         pipboyLookAwayThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAwayThreshold", 0.3f));
+        pipboyButtonLookAtThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyButtonLookAtThreshold", 0.5f));
         pipboyOperationFingerDetectionRange = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPipboyOperationFingerDetectionRange", 12.0));
         pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 400));
         pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 1000));
@@ -374,10 +377,18 @@ namespace frik
         switchTorchRightBinding =
             getInputBindingValue(ini, INI_SECTION_MAIN, "sSwitchTorchRightButton", vrcf::InputBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
 
-        // Fallout London VR support
-        attaboyGrabBinding =
-            getInputBindingValue(ini, INI_SECTION_MAIN, "sAttaboyGrabButton", vrcf::InputBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
-        attaboyGrabActivationDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fAttaboyGrabActivationDistance", 15.0));
+        // Fallout London VR support: the Attaboy grab proximity gesture (anchored to the on-belt Attaboy node).
+        static const f4vr::WandActivationConfig attaboyGrabDefaults = [] {
+            f4vr::WandActivationConfig cfg;
+            cfg.zone.MakeIdentity();
+            cfg.zone.scale = 30.0f; // sphere diameter in game units (radius = scale * beltNodeWorldScale * 0.5)
+            cfg.primary = vrcf::InputBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
+            cfg.entryHaptic = vrcf::HapticPattern::Click; // matches the previous "hand entered the grab zone" haptic
+            cfg.primaryHaptic = vrcf::HapticPattern::DoubleClick;
+            cfg.showSphere = f4vr::ActivationSphereVisibility::Never;
+            return cfg;
+        }();
+        attaboyGrab = loadWandActivationConfig(ini, INI_SECTION_ATTABOY_GRAB, attaboyGrabDefaults);
 
         // Two-handed gripping
         enableOffHandGripping = ini.GetBoolValue(INI_SECTION_MAIN, "EnableOffHandGripping", true);
@@ -465,6 +476,7 @@ namespace frik
         ini.SetBoolValue(INI_SECTION_MAIN, "hidePipboy", hidePipboy);
         ini.SetDoubleValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
         ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
+        ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyKeepWristModel", holoPipboyKeepWristModel);
         ini.SetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
         ini.SetLongValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
         ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);

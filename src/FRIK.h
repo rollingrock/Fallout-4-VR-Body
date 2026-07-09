@@ -33,14 +33,17 @@ namespace frik
         {
             return _gameMenusHandler.isInScopeMenu();
         }
+
         bool isPauseMenuOpen()
         {
             return _gameMenusHandler.isPauseMenuOpen();
         }
+
         bool isFavoritesMenuOpen()
         {
             return _gameMenusHandler.isFavoritesMenuOpen();
         }
+
         bool isDialogueMenuOpen()
         {
             return _gameMenusHandler.isDialogueMenuOpen();
@@ -50,22 +53,27 @@ namespace frik
         {
             return _selfieMode;
         }
+
         void setSelfieMode(const bool selfieMode)
         {
             _selfieMode = selfieMode;
         }
+
         float getDynamicCameraHeight() const
         {
             return _dynamicCameraHeight;
         }
+
         void setDynamicCameraHeight(const float dynamicCameraHeight)
         {
             _dynamicCameraHeight = dynamicCameraHeight;
         }
+
         bool isLookingThroughScope() const
         {
             return _isLookingThroughScope;
         }
+
         void setLookingThroughScope(const bool isLookingThroughScope)
         {
             _isLookingThroughScope = isLookingThroughScope;
@@ -75,16 +83,19 @@ namespace frik
         {
             return _pipboy && _pipboy->isOpen();
         }
+
         bool isPipboyOperatingWithFinger() const
         {
             return _pipboy && _pipboy->isOperatingWithFinger();
         }
+
         void swapPipboyModel() const
         {
             if (_pipboy) {
                 _pipboy->swapModel();
             }
         }
+
         void closePipboy() const
         {
             if (_pipboy) {
@@ -96,14 +107,17 @@ namespace frik
         {
             return _mainConfigMode.isOpen();
         }
+
         bool isPipboyConfigurationModeActive() const
         {
             return _pipboyConfigMode && _pipboyConfigMode->isPipBoyConfigModeActive();
         }
+
         bool isPipboyConfigurationModeAdjusting() const
         {
             return _pipboyConfigMode && _pipboyConfigMode->isAdjusting();
         }
+
         void openMainConfigurationModeActive()
         {
             _mainConfigMode.openConfigMode();
@@ -135,14 +149,17 @@ namespace frik
         {
             return _weaponPosition && _weaponPosition->isMeleeWeaponDrawn();
         }
+
         bool isOffHandGrippingWeapon() const
         {
             return _weaponPosition && _weaponPosition->isOffHandGrippingWeapon();
         }
+
         bool isOffHandGrippingEnabled() const
         {
             return WeaponPositionAdjuster::isOffHandGrippingEnabled();
         }
+
         void setOffHandGrippingEnabled(const bool enabled)
         {
             WeaponPositionAdjuster::setOffHandGrippingEnabled(enabled);
@@ -152,6 +169,7 @@ namespace frik
         {
             return _weaponPosition && _weaponPosition->inWeaponRepositionMode();
         }
+
         void toggleWeaponRepositionMode() const
         {
             // reposition mode is unavailable while weapon positioning is disabled via API
@@ -166,14 +184,17 @@ namespace frik
         {
             return _flashlightEnabled;
         }
+
         void setFlashlightEnabled(const bool enabled)
         {
             _flashlightEnabled = enabled;
         }
+
         bool isWeaponPositionEnabled() const
         {
             return _weaponPositionEnabled;
         }
+
         void setWeaponPositionEnabled(const bool enabled)
         {
             _weaponPositionEnabled = enabled;
@@ -182,10 +203,12 @@ namespace frik
                 _weaponPosition->resetOnDisable();
             }
         }
+
         bool isPipboyEnabled() const
         {
             return _pipboyEnabled;
         }
+
         void setPipboyEnabled(const bool enabled)
         {
             _pipboyEnabled = enabled;
@@ -194,10 +217,12 @@ namespace frik
                 _pipboy->resetOnDisable();
             }
         }
+
         bool isSmoothMovementEnabled() const
         {
             return _smoothMovementEnabled;
         }
+
         void setSmoothMovementEnabled(const bool enabled)
         {
             _smoothMovementEnabled = enabled;

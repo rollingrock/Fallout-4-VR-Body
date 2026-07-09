@@ -68,6 +68,24 @@ namespace frik::api
         };
 
         /**
+         * Readable name of a hand enum for logging (scoped enums are not directly formattable).
+         */
+        static std::string_view handName(const FRIKApi::Hand hand)
+        {
+            switch (hand) {
+            case FRIKApi::Hand::Primary:
+                return "Primary";
+            case FRIKApi::Hand::Offhand:
+                return "Offhand";
+            case FRIKApi::Hand::Right:
+                return "Right";
+            case FRIKApi::Hand::Left:
+                return "Left";
+            }
+            return "?";
+        }
+
+        /**
          * Predefined hand pose kinds exposed by the FRIK API.
          * Matches FRIK runtime hand pose kinds.
          */
@@ -374,6 +392,50 @@ namespace frik::api
          * @return true if the feature is currently blocked/disabled.
          */
         bool(FRIK_CALL* isFeatureBlocked)(Feature feature);
+
+        /**
+         * Supported since FRIK API v4.
+         * Read the current effective value for a FRIK config section/key into the caller-provided buffer.
+         * The value returned is the active session override if one is set (see setConfigValueOverride),
+         * otherwise the on-disk FRIK.ini value, otherwise defaultValue. The value is returned as a raw
+         * string; the caller parses it to the type it expects (e.g. std::strtof / std::atoi).
+         * Always null-terminates outBuf when bufLen > 0; writes at most bufLen-1 characters plus the null.
+         * Note: when the key is absent from the .ini the caller's defaultValue is returned, which may
+         * differ from FRIK's own built-in default for that key.
+         * @param caller name of the calling mod, used only for FRIK logging.
+         * @param defaultValue value returned when the key is missing; may be null (treated as empty).
+         * @return the full value length excluding the null terminator; if >= bufLen the value was truncated.
+         */
+        int(FRIK_CALL* getConfigValue)(const char* caller, const char* section, const char* key, char* outBuf, int bufLen, const char* defaultValue);
+
+        /**
+         * Supported since FRIK API v4.
+         * Check whether a session override is currently set for a FRIK config section/key.
+         * @param caller name of the calling mod, used only for FRIK logging.
+         */
+        bool(FRIK_CALL* hasConfigValueOverride)(const char* caller, const char* section, const char* key);
+
+        /**
+         * Supported since FRIK API v4.
+         * Set an in-memory override for a FRIK config section/key for the rest of this game session.
+         * The override is re-applied on every config (re)load, so it survives FRIK.ini live-reload, and
+         * is never written to disk (cleared on game restart). The value is given as a string and parsed
+         * by the type-appropriate reader when the config is loaded, so it works for any config value
+         * (bool/int/float/string and the compound transform/binding/hand-pose values). FRIK reloads its
+         * config immediately so the change takes effect right away.
+         * @param caller name of the calling mod, used only for FRIK logging.
+         * @return true if section, key, and value are all non-null.
+         */
+        bool(FRIK_CALL* setConfigValueOverride)(const char* caller, const char* section, const char* key, const char* value);
+
+        /**
+         * Supported since FRIK API v4.
+         * Remove a previously set session override for section/key; FRIK reloads so the value reverts to
+         * its on-disk FRIK.ini value.
+         * @param caller name of the calling mod, used only for FRIK logging.
+         * @return true if an override was set for that key and has been removed.
+         */
+        bool(FRIK_CALL* clearConfigValueOverride)(const char* caller, const char* section, const char* key);
 
         /**
          * Supported since FRIK API v1.

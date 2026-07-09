@@ -31,6 +31,7 @@ namespace frik
 
     private:
         void createMainConfigUI();
+        static std::shared_ptr<vrui::UIContainer> createBalancedButtonRows(const std::string& name, const std::vector<std::shared_ptr<vrui::UIElement>>& buttons);
         void openBodyAdjustmentSubConfigUI();
         static void toggleSelfieMode();
         static TwoHandedGripMode getTwoHandedGripMode();
@@ -39,6 +40,7 @@ namespace frik
         void openWeaponAdjustConfigUI();
         void openExternalModConfig(const OpenExternalModConfigData& data);
         static void openAdvancedConfig();
+        static void openHelpWiki();
         void closeMainConfigMode();
 
         // configuration UI

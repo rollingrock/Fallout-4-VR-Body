@@ -40,8 +40,28 @@ There is also [this report](https://www.reddit.com/r/SteamDeck/comments/1pwxwb8/
 > I narrowed it down to the Fallout4custom.ini config and specifically the ini tweaks that FRIK tells you to use. I don't know if this is a Linux issue but it doesn't work on Linux. The fix was simple, remove all the texture b2a files and others from the list of things in the ini tweak and it works.
 
 
+## Incompatibilities
+
+* Any mod that fundamentally changes the player **skeleton**. CBBE has been tested and is fine.
+* **Idle Hands** — FRIK replaces its functionality; do not run both.
+* **Smooth Movement VR (standalone)** — the smooth-movement code is integrated directly into FRIK, so do not run the standalone version alongside it.
+
 ## Recommendations
 
 * If you previously used HUIDE_VR alongside Idle Hands, reinstall HUIDE_VR after disabling Idle Hands and choose Vanilla in the installer instead. It kept crashing until I did this. Thanks, u/Zebrazilla!
 * Pip-Boy touch operation requires you to be looking at the screen and the screen to be facing you.
 * Index controllers require SteamVR controller bindings for finger tracking to work. Look for FRIK bindings published on Steam Workshop.
+
+## Recommended Companion Mods
+
+These pair well with FRIK:
+
+* [Virtual Holsters](https://www.nexusmods.com/fallout4/mods/51224) — realistic body-based weapon holstering.
+* [Virtual Chems](https://www.nexusmods.com/fallout4/mods/53625) — pull health and chem items off virtual pouches on your body.
+* [Comfort Swim VR](https://www.nexusmods.com/fallout4/mods/94647) — fixes the underwater swimming mechanic.
+* [Immersive Flashlight VR](https://www.nexusmods.com/fallout4/mods/99342) — a highly configurable Pip-Boy flashlight replacement (FRIK auto-disables its own embedded flashlight when this is present).
+
+## Help and Support
+
+* Documentation, FAQ, and troubleshooting: see the [docs](README.md).
+* Community discussion and support: [r/fo4vr on Reddit](https://www.reddit.com/r/fo4vr/).

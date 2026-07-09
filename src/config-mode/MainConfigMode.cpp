@@ -88,11 +88,15 @@ namespace frik
     void MainConfigMode::createMainConfigUI()
     {
         const auto openBodyConfigBtn = std::make_shared<UIButton>("ui-config-main\\btn-body-config.nif");
-        openBodyConfigBtn->setOnPressHandler([this](UIWidget*) { openBodyAdjustmentSubConfigUI(); });
+        openBodyConfigBtn->setOnPressHandler([this](UIWidget*) {
+            openBodyAdjustmentSubConfigUI();
+        });
 
         const auto dampenHandsBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-dampen-hands.nif");
         dampenHandsBtn->setToggleState(g_config.dampenHands);
-        dampenHandsBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) { g_config.saveDampenHands(enabled); });
+        dampenHandsBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+            g_config.saveDampenHands(enabled);
+        });
 
         const auto row1Container = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.3f);
         row1Container->addElement(openBodyConfigBtn);
@@ -106,38 +110,57 @@ namespace frik
                 { TwoHandedGripMode::Mode4, "ui-config-main\\btn-grip-mode-4.nif" } };
             const auto twoHandedGripModeBtn = std::make_shared<UIMultiStateToggleButton<TwoHandedGripMode>>(gripModesMap);
             twoHandedGripModeBtn->setState(getTwoHandedGripMode());
-            twoHandedGripModeBtn->setOnStateChangedHandler([this](UIWidget*, const TwoHandedGripMode mode) { updateTwoHandedGripMode(mode); });
+            twoHandedGripModeBtn->setOnStateChangedHandler([this](UIWidget*, const TwoHandedGripMode mode) {
+                updateTwoHandedGripMode(mode);
+            });
             row1Container->addElement(twoHandedGripModeBtn);
         }
 
-        const auto row2Container = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
+        // sub-config + external-mod buttons share the second row; collect them so they can be split
+        // into multiple balanced rows when there are too many to fit in one (see createBalancedButtonRows)
+        std::vector<std::shared_ptr<UIElement>> secondRowButtons;
 
         // hide a sub-config button when its feature is disabled via API as its config is not relevant
         if (g_frik.isPipboyEnabled()) {
             const auto openPipboyConfigBtn = std::make_shared<UIButton>("ui-config-main\\btn-pipboy-config.nif");
-            openPipboyConfigBtn->setOnPressHandler([this](UIWidget*) { openPipboyConfigUI(); });
-            row2Container->addElement(openPipboyConfigBtn);
+            openPipboyConfigBtn->setOnPressHandler([this](UIWidget*) {
+                openPipboyConfigUI();
+            });
+            secondRowButtons.push_back(openPipboyConfigBtn);
         }
         if (g_frik.isWeaponPositionEnabled()) {
             const auto openWeaponAdjustConfigBtn = std::make_shared<UIButton>("ui-config-main\\btn-weapon-adjust.nif");
-            openWeaponAdjustConfigBtn->setOnPressHandler([this](UIWidget*) { openWeaponAdjustConfigUI(); });
-            row2Container->addElement(openWeaponAdjustConfigBtn);
+            openWeaponAdjustConfigBtn->setOnPressHandler([this](UIWidget*) {
+                openWeaponAdjustConfigUI();
+            });
+            secondRowButtons.push_back(openWeaponAdjustConfigBtn);
         }
-
         for (const auto& buttonData : _externalModConfigButtonDataList) {
             const auto openExtModConfigBtn = std::make_shared<UIButton>(buttonData.buttonIconNifPath);
-            openExtModConfigBtn->setOnPressHandler([this, buttonData](UIWidget*) { openExternalModConfig(buttonData); });
-            row2Container->addElement(openExtModConfigBtn);
+            openExtModConfigBtn->setOnPressHandler([this, buttonData](UIWidget*) {
+                openExternalModConfig(buttonData);
+            });
+            secondRowButtons.push_back(openExtModConfigBtn);
         }
 
         const auto advancedConfigBtn = std::make_shared<UIButton>("ui-common\\btn-advanced-config.nif");
-        advancedConfigBtn->setOnPressHandler([](UIWidget*) { openAdvancedConfig(); });
+        advancedConfigBtn->setOnPressHandler([](UIWidget*) {
+            openAdvancedConfig();
+        });
+
+        const auto helpWikiBtn = std::make_shared<UIButton>("ui-common\\btn-help-wiki.nif");
+        helpWikiBtn->setOnPressHandler([](UIWidget*) {
+            openHelpWiki();
+        });
 
         const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-exit.nif");
-        exitBtn->setOnPressHandler([this](UIWidget*) { closeMainConfigMode(); });
+        exitBtn->setOnPressHandler([this](UIWidget*) {
+            closeMainConfigMode();
+        });
 
         const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
         row3Container->addElement(advancedConfigBtn);
+        row3Container->addElement(helpWikiBtn);
         row3Container->addElement(exitBtn);
 
         const auto mainMsg = std::make_shared<UIWidget>("ui-config-main\\msg-main.nif");
@@ -152,11 +175,45 @@ namespace frik
         _configUI = std::make_shared<UIContainer>("MainConfig", UIContainerLayout::VerticalUp, 0.35f, 1.8f);
         _configUI->addElement(messagesContainer);
         _configUI->addElement(row3Container);
-        _configUI->addElement(row2Container);
+        if (const auto secondRowContainer = createBalancedButtonRows("Row2", secondRowButtons)) {
+            _configUI->addElement(secondRowContainer);
+        }
         _configUI->addElement(row1Container);
         _configUI->addElement(header);
 
         g_uiManager->attachPresetToPrimaryWandTop(_configUI, { 0, 0, 0 });
+    }
+
+    /**
+     * Arrange the given buttons into one or more horizontally-centered rows stacked vertically.
+     * A single row is capped so it doesn't get too long; when there are more buttons they are split
+     * into multiple balanced rows (e.g. 6 buttons become 2 rows of 3, not a row of 5 and a row of 1).
+     * Returns null when there are no buttons.
+     */
+    std::shared_ptr<UIContainer> MainConfigMode::createBalancedButtonRows(const std::string& name, const std::vector<std::shared_ptr<UIElement>>& buttons)
+    {
+        constexpr std::size_t maxButtonsPerRow = 5;
+
+        const std::size_t buttonCount = buttons.size();
+        if (buttonCount == 0) {
+            return nullptr;
+        }
+
+        const std::size_t rowCount = (buttonCount + maxButtonsPerRow - 1) / maxButtonsPerRow;
+        const std::size_t minButtonsPerRow = buttonCount / rowCount;
+        const std::size_t rowsWithExtraButton = buttonCount % rowCount;
+
+        const auto rowsContainer = std::make_shared<UIContainer>(name, UIContainerLayout::VerticalCenter, 0.35f);
+        std::size_t buttonIndex = 0;
+        for (std::size_t row = 0; row < rowCount; row++) {
+            const std::size_t buttonsInRow = minButtonsPerRow + (row < rowsWithExtraButton ? 1 : 0);
+            const auto rowContainer = std::make_shared<UIContainer>(name + "Row" + std::to_string(row), UIContainerLayout::HorizontalCenter, 0.3f);
+            for (std::size_t i = 0; i < buttonsInRow; i++, buttonIndex++) {
+                rowContainer->addElement(buttons[buttonIndex]);
+            }
+            rowsContainer->addElement(rowContainer);
+        }
+        return rowsContainer;
     }
 
     /**
@@ -168,7 +225,9 @@ namespace frik
             logger::error("Body adjust config class is already initialized");
             return;
         }
-        _bodyAdjustmentSubConfig = std::make_shared<BodyAdjustmentSubConfigMode>([this]() { _bodyAdjustmentSubConfig.reset(); });
+        _bodyAdjustmentSubConfig = std::make_shared<BodyAdjustmentSubConfigMode>([this]() {
+            _bodyAdjustmentSubConfig.reset();
+        });
     }
 
     /**
@@ -267,8 +326,20 @@ namespace frik
     void MainConfigMode::openAdvancedConfig()
     {
         logger::info("Open advanced config (FRIK.ini) on PC...");
-        f4vr::showNotification("FRIK.ini opened in Notepad on your PC. Switch to your monitor to edit advanced settings; saved changes apply live.");
+        f4vr::showNotification("Config INI opened in Notepad on your PC.\nSwitch to your monitor to edit advanced settings.\nSaved changes apply live.");
         Config::openInNotepad();
+    }
+
+    /**
+     * Open the FRIK help wiki page in the default browser on the PC desktop.
+     */
+    void MainConfigMode::openHelpWiki()
+    {
+        logger::info("Open help wiki on PC...");
+        f4vr::showNotification("FRIK help wiki opened in your browser.\nSwitch to your monitor to read it.");
+        // Launch the URL via explorer.exe rather than passing it directly to ShellExecute: in the game process the shell's
+        // protocol-association lookup needs COM initialized on this thread and fails silently, but a direct exe launch works.
+        ShellExecuteA(nullptr, "open", "explorer.exe", "https://github.com/rollingrock/Fallout-4-VR-Body/blob/main/docs/README.md", nullptr, SW_SHOWNORMAL);
     }
 
     void MainConfigMode::closeMainConfigMode()

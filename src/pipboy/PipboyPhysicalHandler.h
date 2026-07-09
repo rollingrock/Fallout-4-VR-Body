@@ -24,6 +24,7 @@ namespace frik
         {
             return _isOperatingPipboy;
         }
+
         void operate(PipboyPage lastPipboyPage);
         void updateIsOperatingPipboy(bool isOperating);
 

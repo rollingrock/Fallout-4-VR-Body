@@ -234,7 +234,9 @@ namespace frik
     HandPoseOverrideTagState HandPose::getHandPoseSetTagState(const bool isLeft, const std::string_view tag)
     {
         const auto& overrides = getHandOverrides(isLeft);
-        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) { return overrideEntry.tag == tag; });
+        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) {
+            return overrideEntry.tag == tag;
+        });
         if (overrideIt == overrides.end()) {
             return HandPoseOverrideTagState::None;
         }
@@ -272,7 +274,7 @@ namespace frik
      */
     const HandFingersPose& HandPose::getFixedPrimaryWeaponPose()
     {
-        return isUnarmedWeaponEquipped() ? getFistPose() : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
+        return isUnarmedWeaponDrawn() ? getFistPose() : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
     }
 
     /**
@@ -395,9 +397,9 @@ namespace frik
      */
     HandPose::HandPoseSource HandPose::resolveHandPoseSource(const bool isLeft)
     {
-        const bool shouldUseWeaponPoseForPrimaryHand = IsWeaponDrawn() && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
+        const bool shouldUseWeaponPoseForPrimaryHand = isWeaponDrawn() && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
 
-        if (shouldUseWeaponPoseForPrimaryHand && isLeftHandedMode() && isUnarmedWeaponEquipped()) {
+        if (shouldUseWeaponPoseForPrimaryHand && isLeftHandedMode() && isUnarmedWeaponDrawn()) {
             // Left-handed unarmed is a special authored fist case that applies to both hands.
             return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = &getFistPose() };
         }
@@ -597,8 +599,8 @@ namespace frik
     {
         const auto hand = isLeft ? Hand::Left : Hand::Right;
         return !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Trigger) &&
-            (VRControllers.getAxisValue(hand, Axis::Grip).x > 0.01f || VRControllers.isTouching(hand, k_EButton_Grip)) &&
-            (VRControllers.isTouching(hand, vr::k_EButton_A) || VRControllers.isTouching(hand, vr::k_EButton_ApplicationMenu));
+               (VRControllers.getAxisValue(hand, Axis::Grip).x > 0.01f || VRControllers.isTouching(hand, k_EButton_Grip)) &&
+               (VRControllers.isTouching(hand, vr::k_EButton_A) || VRControllers.isTouching(hand, vr::k_EButton_ApplicationMenu));
     }
 
     /**
@@ -608,8 +610,8 @@ namespace frik
     {
         const auto hand = isLeft ? Hand::Left : Hand::Right;
         return VRControllers.isTouching(hand, k_EButton_Grip) && VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Trigger) &&
-            !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Touchpad) && !VRControllers.isTouching(hand, vr::k_EButton_A) &&
-            !VRControllers.isTouching(hand, vr::k_EButton_ApplicationMenu);
+               !VRControllers.isTouching(hand, vr::k_EButton_SteamVR_Touchpad) && !VRControllers.isTouching(hand, vr::k_EButton_A) &&
+               !VRControllers.isTouching(hand, vr::k_EButton_ApplicationMenu);
     }
 
     /**
@@ -623,12 +625,14 @@ namespace frik
 
         auto& overrides = getHandOverrides(isLeft);
         const auto previousTopTag = overrides.empty() ? "---" : overrides.back().tag;
-        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) { return overrideEntry.tag == tag; });
+        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) {
+            return overrideEntry.tag == tag;
+        });
 
         if (overrideIt == overrides.end()) {
             overrides.push_back(TaggedHandPoseOverride{ .tag = std::string(tag), .pose = pose });
 
-            logger::info("Hand pose: Insert top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
+            logger::debug("Hand pose: Insert top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
                 tag,
                 isLeft ? "Left" : "Right",
                 previousTopTag,
@@ -639,7 +643,7 @@ namespace frik
             overrides.erase(overrideIt);
             overrides.push_back(std::move(updatedOverride));
 
-            logger::info("Hand pose: Forced to top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
+            logger::debug("Hand pose: Forced to top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
                 tag,
                 isLeft ? "Left" : "Right",
                 previousTopTag,
@@ -659,7 +663,9 @@ namespace frik
         }
 
         auto& overrides = getHandOverrides(isLeft);
-        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) { return overrideEntry.tag == tag; });
+        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) {
+            return overrideEntry.tag == tag;
+        });
         if (overrideIt == overrides.end()) {
             return;
         }
@@ -668,7 +674,7 @@ namespace frik
 
         overrides.erase(overrideIt);
 
-        logger::info("Hand pose: Cleared override tag:'{}' for '{}' hand (was top '{}', new top tag:'{}', remaining {})",
+        logger::debug("Hand pose: Cleared override tag:'{}' for '{}' hand (was top '{}', new top tag:'{}', remaining {})",
             tag,
             isLeft ? "Left" : "Right",
             wasTop ? "yes" : "no",

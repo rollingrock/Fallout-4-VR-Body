@@ -31,7 +31,7 @@ namespace frik
                 return;
             }
         } else {
-            if (f4vr::IsWeaponDrawn() && !f4vr::isLeftHandedMode()) {
+            if (f4vr::isWeaponDrawn() && !f4vr::isLeftHandedMode()) {
                 // no physical Pipboy operation if the player has a weapon equipped
                 updatePipboyPhysicalElements(lastPipboyPage);
                 updateIsOperatingPipboy(false);
@@ -83,8 +83,8 @@ namespace frik
             // have a buffer zone for finger detection not to trash the hand pose
             const float pipboyDetectionRange = g_config.pipboyOperationFingerDetectionRange + (_isOperatingPipboy ? 1.0f : -1.0f);
             isOperating = MatrixUtils::vec3Len(fingerPos - powerButton->world.translate) < pipboyDetectionRange ||
-                MatrixUtils::vec3Len(fingerPos - lightButton->world.translate) < pipboyDetectionRange ||
-                MatrixUtils::vec3Len(fingerPos - radioButton->world.translate) < pipboyDetectionRange;
+                          MatrixUtils::vec3Len(fingerPos - lightButton->world.translate) < pipboyDetectionRange ||
+                          MatrixUtils::vec3Len(fingerPos - radioButton->world.translate) < pipboyDetectionRange;
         }
         updateIsOperatingPipboy(isOperating);
     }

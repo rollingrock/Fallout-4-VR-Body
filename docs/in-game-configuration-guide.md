@@ -17,12 +17,24 @@ Press and hold both the `Sprint` and `Favorites` buttons until the UI is shown.
 
 ### HMD and Body Configuration
 - Configure the HMD/body up/down offset and body in/out offset.
+- Select an adjustment target first — **Save** and **Reset** stay disabled until a target is selected. Re-tap the selected target to clear the selection.
+
+### Advanced Config and Help
+- **Advanced config** — opens `FRIK.ini` in Notepad on the PC for the many settings not exposed in the in-VR menu. Saved changes apply live via the INI file watcher.
+- **Help** — opens the FRIK documentation in your web browser.
 
 ### Weapon Grip Modes
 - Mode 1: The hand automatically snaps to the barrel when in range; move your hand quickly to let go.
 - Mode 2: The hand automatically snaps to the barrel when in range; press the grip button to let go.
 - Mode 3: Hold the grip button to snap to the barrel; release it to let go.
 - Mode 4: Press the grip button to snap to the barrel; press it again to let go.
+
+## Hand and Finger Poses
+Your fingers curl dynamically from the controller instead of snapping between fixed poses:
+- Touching a finger's control curls it to a baseline, then the analog axis drives the rest of the curl to a full fist — the **trigger** controls the index finger and the **grip** controls the middle, ring, and pinky.
+- The thumb curls to a set pose and leans toward whichever control it rests on (thumbstick, A, or B).
+- Gestures are recognized automatically: **pointing** (index off the trigger, grip held, thumb on a face button) and **thumbs-up**.
+- Capacitive-touch controllers (e.g. Valve Index, Oculus Touch) drive this best. Index controllers need SteamVR controller bindings for finger tracking — look for FRIK bindings on the Steam Workshop.
 
 ## Pip-Boy Configuration Mode
 - **Activation**: Press and hold the `Favorites` button with the Pip-Boy open

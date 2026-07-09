@@ -13,9 +13,9 @@ Changes made to FRIK.ini are live-loaded into the running game.
 
 
 ## I don't see my head!
-Head hiding is controlled by `FRIK.ini`.
-Set `HideHead` and `HideEquipment` to false if you want the full head to render, but it may obscure or clip your vision.
-If you only want to see the head in selfie mode, set `selfieIgnoreHideFlags` to true.
+Head rendering is controlled in `FRIK.ini`. By default the head equipment is hidden (`bHidePlayerHeadEquipment = true`) and the head is pushed back out of view (`fHeadBackPositionOffset = 5`).
+To render the full head, set `bHidePlayerHeadEquipment = false` and lower `fHeadBackPositionOffset` toward `0` (keep `bHidePlayerHead = false`). Be aware this may obscure or clip your vision.
+If you only want to see the head in selfie mode, leave `bSelfieIgnoreHideFlags = true`.
 
 
 ## How Do I Operate the Flashlight?
@@ -37,7 +37,7 @@ It happens. It could be a bad installation (see the [installation guide](install
 ### Known Crashes
 - Not updating `Fallout4Custom.ini` during manual installation. See the [installation](installation.md) page.
 - "Amazing Follower Tweaks" mod is known to conflict with FRIK in the past.
-- Anything that messes directly with the **skeleton** can cause a crash (body, heels, etc.).
+- Anything that messes directly with the **skeleton** can cause a crash (body, heels, etc.). CBBE has been tested and is fine.
 - New games were reported as problematic in the past. I don't believe they still are, but:
   - Disabling FRIK before starting a new game and re-enabling it after exiting the vault should be good enough.
   - The last confirmed new-game conflict involved a combination of 3 mods with skeleton changes ([#107](https://github.com/rollingrock/Fallout-4-VR-Body/issues/107)).
