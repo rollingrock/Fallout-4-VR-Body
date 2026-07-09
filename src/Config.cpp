@@ -377,10 +377,18 @@ namespace frik
         switchTorchRightBinding =
             getInputBindingValue(ini, INI_SECTION_MAIN, "sSwitchTorchRightButton", vrcf::InputBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
 
-        // Fallout London VR support
-        attaboyGrabBinding =
-            getInputBindingValue(ini, INI_SECTION_MAIN, "sAttaboyGrabButton", vrcf::InputBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
-        attaboyGrabActivationDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fAttaboyGrabActivationDistance", 15.0));
+        // Fallout London VR support: the Attaboy grab proximity gesture (anchored to the on-belt Attaboy node).
+        static const f4vr::WandActivationConfig attaboyGrabDefaults = [] {
+            f4vr::WandActivationConfig cfg;
+            cfg.zone.MakeIdentity();
+            cfg.zone.scale = 30.0f; // sphere diameter in game units (radius = scale * beltNodeWorldScale * 0.5)
+            cfg.primary = vrcf::InputBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
+            cfg.entryHaptic = vrcf::HapticPattern::Click; // matches the previous "hand entered the grab zone" haptic
+            cfg.primaryHaptic = vrcf::HapticPattern::DoubleClick;
+            cfg.showSphere = f4vr::ActivationSphereVisibility::Never;
+            return cfg;
+        }();
+        attaboyGrab = loadWandActivationConfig(ini, INI_SECTION_ATTABOY_GRAB, attaboyGrabDefaults);
 
         // Two-handed gripping
         enableOffHandGripping = ini.GetBoolValue(INI_SECTION_MAIN, "EnableOffHandGripping", true);

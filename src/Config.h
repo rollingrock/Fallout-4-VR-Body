@@ -5,6 +5,7 @@
 
 #include "ConfigBase.h"
 #include "common/CommonUtils.h"
+#include "f4vr/WandActivationSphere.h"
 #include "resources.h"
 #include "vrcf/VRControllersManager.h"
 
@@ -12,6 +13,8 @@ namespace frik
 {
     constexpr auto INI_SECTION_MAIN = "Fallout4VRBody";
     constexpr auto INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
+    // Activation-sphere section for the Fallout London VR Attaboy grab gesture.
+    constexpr auto INI_SECTION_ATTABOY_GRAB = "FRIK_AttaboyActivationSphere";
 
     static const auto BASE_PATH = common::getRelativePathInDocuments(R"(\My Games\Fallout4VR\FRIK_Config)");
     static const auto FRIK_INI_PATH = BASE_PATH + R"(\FRIK.ini)";
@@ -188,9 +191,9 @@ namespace frik
         vrcf::InputBinding switchTorchLeftBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
         vrcf::InputBinding switchTorchRightBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
 
-        // Fallout London VR support
-        vrcf::InputBinding attaboyGrabBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
-        float attaboyGrabActivationDistance = 0;
+        // Fallout London VR support: grab the Attaboy off the belt (a proximity gesture) to toggle the Pipboy.
+        // Loaded from the [AttaboyGrab] activation-sphere section; disable by setting sPrimaryBinding = none.
+        f4vr::WandActivationConfig attaboyGrab;
 
         // Weapon offhand grip
         bool enableOffHandGripping = false;

@@ -207,11 +207,16 @@ namespace frik
             return;
         }
 
-        // check by looking should be first to handle closing by button not opening it again by looking at Pipboy.
-        checkTurningOnByLookingAt();
+        if (_attaboyOnBeltNode && g_config.attaboyGrab.primary.type != vrcf::ActivationType::Disabled) {
+            // Fallout London VR: grabbing the Attaboy off the belt (a proximity gesture) toggles it open/closed.
+            checkAttaboyGrab();
+        } else {
+            // check by looking should be first to handle closing by button not opening it again by looking at Pipboy.
+            checkTurningOnByLookingAt();
 
-        checkTurningOnByButton();
-        checkTurningOffByButton();
+            checkTurningOnByButton();
+            checkTurningOffByButton();
+        }
 
         if (_isOpen) {
             PipboyOperationHandler::operate();
@@ -435,18 +440,15 @@ namespace frik
             return;
         }
 
-        const bool useAttaboy = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0;
-
         // Optionally require looking at the Pipboy for the open button to work, to avoid accidentally opening it.
-        // Uses a more relaxed threshold than the auto-open-on-look-at. The Attaboy grab uses proximity, so it's not affected.
-        if (!useAttaboy && g_config.pipboyOpenWithButtonOnlyWhenLookingAt && !isPlayerLookingAtPipboy(g_config.pipboyButtonLookAtThreshold)) {
+        // Uses a more relaxed threshold than the auto-open-on-look-at.
+        if (g_config.pipboyOpenWithButtonOnlyWhenLookingAt && !isPlayerLookingAtPipboy(g_config.pipboyButtonLookAtThreshold)) {
             return;
         }
 
-        const bool open = useAttaboy ? checkAttaboyActivation() : vrcf::VRControllers.check(g_config.pipboyOpenBinding);
-        if (open) {
+        if (vrcf::VRControllers.check(g_config.pipboyOpenBinding)) {
             logger::info("Open Pipboy with button");
-            openClose(open);
+            openClose(true);
         }
     }
 
@@ -459,36 +461,30 @@ namespace frik
             return;
         }
 
-        const bool close = _attaboyOnBeltNode && g_config.attaboyGrabActivationDistance > 0 ? checkAttaboyActivation() : vrcf::VRControllers.check(g_config.pipboyCloseBinding);
-        if (close) {
+        if (vrcf::VRControllers.check(g_config.pipboyCloseBinding)) {
             logger::info("Close Pipboy with button");
             openClose(false);
         }
     }
 
     /**
-     * Check if Fallout London Attaboy activation is triggered.
-     * If configured, check that the left hand is close enough to the Attaboy on belt.
+     * Fallout London VR: toggle the Pipboy by grabbing the Attaboy off the belt.
+     *
+     * Driven by a WandActivationSphere anchored to the on-belt Attaboy node: while the bound hand's wand
+     * is inside the zone it suppresses the grab button (if configured), pulses the one-shot entry haptic,
+     * and fires on the bound press to toggle the Pipboy open/closed. Opening is guarded like the button
+     * path (blocked in the main config menu or while two-hand gripping); closing is always allowed.
      */
-    bool Pipboy::checkAttaboyActivation()
+    void Pipboy::checkAttaboyGrab()
     {
-        const float dist = MatrixUtils::vec3Len(_skelly->getLeftArm().hand->world.translate - _attaboyOnBeltNode->world.translate);
-        if (dist < g_config.attaboyGrabActivationDistance) {
-            if (!_attaboyGrabHapticActivated) {
-                _attaboyGrabHapticActivated = true;
-                // hand entered the Attaboy grab zone
-                vrcf::VRHaptics.trigger(vrcf::Hand::Left, vrcf::HapticPattern::Click);
-                logger::debug("Attaboy activation area triggered");
+        _attaboyGrabSphere.onFrameUpdate(_attaboyOnBeltNode, g_config.attaboyGrab, [this](const vrcf::InputBinding&) {
+            if (!_isOpen && (g_frik.isMainConfigurationModeActive() || g_frik.isOffHandGrippingWeapon())) {
+                return false;
             }
-            if (vrcf::VRControllers.check(g_config.attaboyGrabBinding)) {
-                // grab confirmed
-                vrcf::VRHaptics.trigger(vrcf::Hand::Left, vrcf::HapticPattern::DoubleClick);
-                return true;
-            }
-        } else {
-            _attaboyGrabHapticActivated = false; // move hand away for activation area
-        }
-        return false;
+            logger::info("{} Pipboy with Attaboy grab", _isOpen ? "Close" : "Open");
+            openClose(!_isOpen);
+            return true;
+        });
     }
 
     /**

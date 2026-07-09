@@ -7,6 +7,7 @@
 - Weapon: Fixed the offhand getting stuck in a curled grip/fist pose after switching weapons.
 - Pip-Boy: No longer opens with the button while gripping a weapon two-handed, plus a new `PipBoyOpenWithButtonOnlyWhenLookingAt` option.
 - Pip-Boy: Reworked Pip-Boy in-VR config UI.
+- Pip-Boy: Reworked the Fallout London VR Attaboy belt-grab into a configurable activation sphere with configurable visible sphere indicator and haptics.
 - Config: Added FRIK.ini options for customizing input binding button, hand, and press style.
 - Config: Added an **Advanced config** button that opens FRIK.ini in Notepad for settings not exposed in the VR menu.
 - Config: Added a help button that opens the FRIK docs in your browser.
