@@ -9,21 +9,95 @@ using namespace common;
 
 namespace frik
 {
-    void SmoothMovementVR::onFrameUpdate()
+    namespace
     {
-        if (g_config.disableSmoothMovement) {
+        constexpr float kTeleportResetDistanceSquared = 4000000.0f;
+        constexpr float kNotMovingResetDistanceSquared = 100.0f;
+
+        RE::NiPoint3 zeroPoint()
+        {
+            return RE::NiPoint3(0.0f, 0.0f, 0.0f);
+        }
+    }
+
+    void SmoothMovementVR::reset()
+    {
+        resetState();
+        clearAppliedPlayerWorldOffset();
+    }
+
+    void SmoothMovementVR::resetState()
+    {
+        _notMoving = false;
+        _lastPositions.clear();
+        _smoothedPos = zeroPoint();
+        _hasSmoothedPosition = false;
+        _lastAppliedLocalX = 0.0f;
+        _lastAppliedLocalY = 0.0f;
+        _frameTime = 0.0f;
+        resetFrameTimer();
+    }
+
+    void SmoothMovementVR::seedCurrentPosition(const RE::NiPoint3& curPos)
+    {
+        resetState();
+        _smoothedPos = curPos;
+        _hasSmoothedPosition = true;
+    }
+
+    void SmoothMovementVR::resetFrameTimer()
+    {
+        QueryPerformanceCounter(&_prevTime);
+    }
+
+    void SmoothMovementVR::clearAppliedPlayerWorldOffset()
+    {
+        const auto player = RE::PlayerCharacter::GetSingleton();
+        if (!player) {
             return;
         }
+
         const auto playerNodes = f4vr::getPlayerNodes();
         if (!playerNodes || !playerNodes->playerworldnode) {
             return;
         }
 
+        playerNodes->playerworldnode->local.translate = zeroPoint();
+    }
+
+    void SmoothMovementVR::onFrameUpdate()
+    {
+        if (g_config.disableSmoothMovement) {
+            return;
+        }
+
         const auto player = RE::PlayerCharacter::GetSingleton();
+        if (!player) {
+            resetState();
+            return;
+        }
+
+        const auto playerNodes = f4vr::getPlayerNodes();
+        if (!playerNodes || !playerNodes->playerworldnode) {
+            resetState();
+            return;
+        }
+
         const RE::NiPoint3 curPos = player->GetPosition();
 
-        if (_lastPositions.size() < 2 && fNotEqual(curPos.z, 0)) {
+        if (!_hasSmoothedPosition) {
             _smoothedPos = curPos;
+            _hasSmoothedPosition = true;
+        }
+
+        if (MatrixUtils::distanceNoSqrt(curPos, _smoothedPos) > kTeleportResetDistanceSquared) {
+            // don't smooth if values are way off
+            logger::sample("[SmoothMovement] Values exceed normal; curPos:({:.2f}, {:.2f}, {:.2f}), SmoothPos:({:.2f}, {:.2f}, {:.2f})",
+                curPos.x, curPos.y, curPos.z, _smoothedPos.x, _smoothedPos.y, _smoothedPos.z);
+            seedCurrentPosition(curPos);
+            playerNodes->playerworldnode->local.translate = zeroPoint();
+            playerNodes->playerworldnode->local.translate.z += Skeleton::getAdjustedPlayerHMDOffset();
+            return;
         }
 
         if (_lastPositions.size() >= 4) {
@@ -49,10 +123,10 @@ namespace frik
         _smoothedPos = newPos;
 
         auto& playerLocalTransformPos = playerNodes->playerworldnode->local.translate;
-        if (_notMoving && MatrixUtils::distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, _lastAppliedLocalX, _lastAppliedLocalY) > 100) {
-            _smoothedPos = curPos;
-            playerLocalTransformPos.z = 0;
-            logger::sample("[SmoothMovement] Not moving values exceed normal; curPos:({:.2f}, {:.2f}), curPos:({:.2f}, {:.2f}), lastApplied:({:.2f}, {:.2f})",
+        if (_notMoving && MatrixUtils::distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, _lastAppliedLocalX, _lastAppliedLocalY) > kNotMovingResetDistanceSquared) {
+            seedCurrentPosition(curPos);
+            playerLocalTransformPos = zeroPoint();
+            logger::sample("[SmoothMovement] Not moving values exceed normal; curPos:({:.2f}, {:.2f}), newPos:({:.2f}, {:.2f}), lastApplied:({:.2f}, {:.2f})",
                 curPos.x, curPos.y, newPos.x, newPos.y, _lastAppliedLocalX, _lastAppliedLocalY);
         } else {
             playerLocalTransformPos = newPos - curPos;
@@ -78,13 +152,6 @@ namespace frik
 
         if (g_config.disableInteriorSmoothingHorizontal && f4vr::isInInternalCell()) {
             // don't smooth if in interior cell and smoothing is disabled for it
-            return curPos;
-        }
-
-        if (MatrixUtils::distanceNoSqrt(curPos, prevPos) > 4000000.0f) {
-            // don't smooth if values are way off
-            logger::sample("[SmoothMovement] Values exceed normal; curPos:({:.2f}, {:.2f}, {:.2f}), SmoothPos:({:.2f}, {:.2f}, {:.2f})",
-                curPos.x, curPos.y, curPos.z, prevPos.x, prevPos.y, prevPos.z);
             return curPos;
         }
 

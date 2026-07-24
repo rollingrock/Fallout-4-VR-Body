@@ -1,9 +1,15 @@
 #include "Skeleton.h"
 
 #include <array>
+#include <atomic>
+#include <cmath>
+#include <mutex>
+#include <string>
+#include <unordered_set>
 
 #include "Config.h"
 #include "FRIK.h"
+#include "api/RecoilControllerRuntime.h"
 #include "common/MatrixUtils.h"
 #include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"
@@ -17,6 +23,10 @@ using namespace vrcf;
 
 namespace
 {
+    std::mutex g_primaryWeaponNodeOwnershipTagsLock;
+    std::unordered_set<std::string> g_primaryWeaponNodeOwnershipTags;
+    std::atomic<std::uint32_t> g_primaryWeaponNodeOwnershipTagCount{ 0 };
+
     /**
      * Hack to handle comfort sneak affecting the height of the player without real-world body change.
      * By setting static body pitch the body position doesn't change, making it easier to handle skeleton
@@ -25,6 +35,91 @@ namespace
     bool isComfortSneakHackEnabled()
     {
         return frik::g_config.comfortSneakHackStaticBodyPitchAngle > 0 && isComfortSneakMode() && isPlayerSneaking();
+    }
+
+    bool isFiniteTransform(const RE::NiTransform& transform)
+    {
+        if (!std::isfinite(transform.translate.x) || !std::isfinite(transform.translate.y) || !std::isfinite(transform.translate.z) ||
+            !std::isfinite(transform.scale) || std::abs(transform.scale) <= 0.0001f) {
+            return false;
+        }
+
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 4; col++) {
+                if (!std::isfinite(transform.rotate.entry[row][col])) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    struct ScopedKickbackNeutralizer
+    {
+        explicit ScopedKickbackNeutralizer(RE::NiNode* const node, const bool enabled) :
+            _node(node)
+        {
+            if (!_node || !enabled || !isFiniteTransform(_node->local)) {
+                return;
+            }
+
+            _savedLocal = _node->local;
+            _node->local.MakeIdentity();
+            updateTransformsDown(_node, true);
+            _active = true;
+        }
+
+        ~ScopedKickbackNeutralizer()
+        {
+            if (!_active) {
+                return;
+            }
+            _node->local = _savedLocal;
+            updateTransformsDown(_node, true);
+        }
+
+        ScopedKickbackNeutralizer(const ScopedKickbackNeutralizer&) = delete;
+        ScopedKickbackNeutralizer& operator=(const ScopedKickbackNeutralizer&) = delete;
+
+    private:
+        RE::NiNode* _node = nullptr;
+        RE::NiTransform _savedLocal{};
+        bool _active = false;
+    };
+
+    struct ArmLocalTransformSnapshot
+    {
+        std::array<std::pair<RE::NiAVObject*, RE::NiTransform>, 7> locals{};
+        std::size_t count = 0;
+
+        void add(RE::NiAVObject* const node)
+        {
+            if (!node) {
+                return;
+            }
+            locals[count++] = { node, node->local };
+        }
+
+        void restore() const
+        {
+            for (std::size_t i = 0; i < count; ++i) {
+                locals[i].first->local = locals[i].second;
+            }
+        }
+    };
+
+    ArmLocalTransformSnapshot captureArmLocalTransforms(const frik::ArmNodes& arm)
+    {
+        ArmLocalTransformSnapshot snapshot;
+        snapshot.add(arm.shoulder);
+        snapshot.add(arm.upper);
+        snapshot.add(arm.upperT1);
+        snapshot.add(arm.forearm1);
+        snapshot.add(arm.forearm2);
+        snapshot.add(arm.forearm3);
+        snapshot.add(arm.hand);
+        return snapshot;
     }
 }
 
@@ -45,11 +140,102 @@ namespace frik
         return offset;
     }
 
+    bool Skeleton::blockPrimaryWeaponNodeOwnership(const std::string_view tag, const bool block)
+    {
+        if (tag.empty()) {
+            return false;
+        }
+
+        std::lock_guard lock(g_primaryWeaponNodeOwnershipTagsLock);
+        if (block) {
+            g_primaryWeaponNodeOwnershipTags.emplace(std::string(tag));
+        } else {
+            g_primaryWeaponNodeOwnershipTags.erase(std::string(tag));
+        }
+        g_primaryWeaponNodeOwnershipTagCount.store(static_cast<std::uint32_t>(g_primaryWeaponNodeOwnershipTags.size()), std::memory_order_release);
+        return true;
+    }
+
+    bool Skeleton::isPrimaryWeaponNodeOwnershipBlocked()
+    {
+        return g_primaryWeaponNodeOwnershipTagCount.load(std::memory_order_acquire) != 0;
+    }
+
+    void Skeleton::clearPrimaryWeaponNodeOwnershipBlocks()
+    {
+        std::lock_guard lock(g_primaryWeaponNodeOwnershipTagsLock);
+        g_primaryWeaponNodeOwnershipTags.clear();
+        g_primaryWeaponNodeOwnershipTagCount.store(0, std::memory_order_release);
+    }
+
+    bool Skeleton::applyExternalHandWorldTransform(const bool isLeft, const RE::NiTransform& worldTarget)
+    {
+        if (!isFiniteTransform(worldTarget)) {
+            return false;
+        }
+
+        RE::NiTransform controlledWorldTarget = worldTarget;
+        (void)applyControlledWeaponHandRecoil(isLeft, controlledWorldTarget);
+
+        const ArmNodes arm = isLeft ? _leftArm : _rightArm;
+        if (!arm.shoulder || !arm.hand || !arm.upper || !arm.forearm1 || (!_inPowerArmor && (!arm.forearm2 || !arm.forearm3))) {
+            return false;
+        }
+
+        const auto weaponNode = f4vr::getWeaponNode();
+        const char* ignoredChildNodeName = weaponNode ? weaponNode->name.c_str() : nullptr;
+        const auto armSnapshot = captureArmLocalTransforms(arm);
+        const auto restoreArmSnapshot = [&]() {
+            armSnapshot.restore();
+            f4vr::updateTransformsDown(arm.shoulder, true, ignoredChildNodeName);
+        };
+
+        restoreArmNodesToDefault(isLeft);
+        f4vr::updateTransformsDown(arm.shoulder, true, ignoredChildNodeName);
+
+        if (!solveArmToHandWorldTarget(isLeft, controlledWorldTarget, true, ignoredChildNodeName)) {
+            restoreArmSnapshot();
+            return false;
+        }
+
+        f4vr::updateTransformsDown(arm.shoulder, true, ignoredChildNodeName);
+        if (!isFiniteTransform(arm.hand->world)) {
+            restoreArmSnapshot();
+            return false;
+        }
+        return true;
+    }
+
+    bool Skeleton::restoreTrackedHandAfterExternalAuthority(const bool isLeft)
+    {
+        if (getFirstPersonSkeleton() == nullptr) {
+            return false;
+        }
+
+        setArms(isLeft);
+        const ArmNodes arm = isLeft ? _leftArm : _rightArm;
+        return arm.hand && isFiniteTransform(arm.hand->world);
+    }
+
+    void Skeleton::refreshExternalHandAfterAuthority(const bool isLeft)
+    {
+        _handPose.onFrameUpdate(_root, _frameTime);
+
+        const ArmNodes arm = isLeft ? _leftArm : _rightArm;
+        if (!arm.hand) {
+            return;
+        }
+
+        const auto weaponNode = f4vr::getWeaponNode();
+        const char* ignoredChildNodeName = weaponNode ? weaponNode->name.c_str() : nullptr;
+        f4vr::updateTransformsDown(arm.hand, true, ignoredChildNodeName);
+    }
+
     /**
      * Initialize all the skeleton nodes for quick access during frame update.
      * Setup known defaults where relevant.
      */
-    void Skeleton::initializeNodes()
+    bool Skeleton::initializeNodes()
     {
         QueryPerformanceFrequency(&_freqCounter);
         QueryPerformanceCounter(&_timer);
@@ -57,16 +243,33 @@ namespace frik
         _prevSpeed = 0.0;
 
         _playerNodes = getPlayerNodes();
+        if (!_playerNodes || !_root) {
+            logger::warn("Skeleton initialization failed: missing player nodes or root. playerNodes={} root={}", static_cast<const void*>(_playerNodes), static_cast<const void*>(_root));
+            return false;
+        }
 
         const auto fpSkeleton = getFirstPersonSkeleton();
+        if (!fpSkeleton) {
+            logger::warn("Skeleton initialization failed: missing first-person skeleton.");
+            return false;
+        }
+
         _rightHand = findNode(fpSkeleton, "RArm_Hand");
         _leftHand = findNode(fpSkeleton, "LArm_Hand");
+        if (!_rightHand || !_leftHand) {
+            logger::warn("Skeleton initialization failed: missing first-person hand nodes. right={} left={}", static_cast<const void*>(_rightHand), static_cast<const void*>(_leftHand));
+            return false;
+        }
         _rightHandPrevFrame = _rightHand->world;
         _leftHandPrevFrame = _leftHand->world;
 
         _head = findNode(_root, "Head");
         _spine = findNode(_root, "SPINE2");
         _chest = findNode(_root, "Chest");
+        if (!_head || !_spine || !_chest) {
+            logger::warn("Skeleton initialization failed: missing body nodes. head={} spine={} chest={}", static_cast<const void*>(_head), static_cast<const void*>(_spine), static_cast<const void*>(_chest));
+            return false;
+        }
 
         // Setup Arms
         initArmsNodes();
@@ -78,6 +281,7 @@ namespace frik
         setBodyLen();
 
         _comfortSneakCameraOffsetAdjustment = getIniSetting("fComfortSneakHeight:VR")->GetFloat();
+        return true;
     }
 
     void Skeleton::initArmsNodes()
@@ -186,6 +390,7 @@ namespace frik
         // do arm IK - Right then Left
         logger::trace("Set Arms...");
         handleLeftHandedWeaponNodesSwitch();
+        prepareWeaponHandRecoilFrame();
         setArms(false);
         setArms(true);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
@@ -846,12 +1051,10 @@ namespace frik
      */
     void Skeleton::handleLeftHandedWeaponNodesSwitch()
     {
-        if (_lastLeftHandedModeSwitch == isLeftHandedMode()) {
+        const bool effectiveLeftHanded = isLeftHandedMode() || isPrimaryWeaponNodeOwnershipBlocked();
+        if (_lastLeftHandedModeSwitch == effectiveLeftHanded) {
             return;
         }
-
-        _lastLeftHandedModeSwitch = isLeftHandedMode();
-        logger::warn("Left-handed mode weapon nodes switch (LeftHanded:{})", _lastLeftHandedModeSwitch);
 
         RE::NiNode* rightWeapon = getWeaponNode();
         RE::NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
@@ -860,22 +1063,181 @@ namespace frik
 
         if (!rightWeapon || !rHand || !leftWeapon || !lHand) {
             logger::sample("Cannot set up weapon nodes for left-handed mode switch");
-            _lastLeftHandedModeSwitch = isLeftHandedMode();
             return;
         }
+
+        _lastLeftHandedModeSwitch = effectiveLeftHanded;
+        logger::warn("Left-handed mode weapon nodes switch (EffectiveLeftHanded:{}, GameSetting:{})", effectiveLeftHanded, isLeftHandedMode());
 
         rHand->DetachChild(rightWeapon);
         rHand->DetachChild(leftWeapon);
         lHand->DetachChild(rightWeapon);
         lHand->DetachChild(leftWeapon);
 
-        if (isLeftHandedMode()) {
+        if (effectiveLeftHanded) {
             rHand->AttachChild(leftWeapon, true);
             lHand->AttachChild(rightWeapon, true);
         } else {
             rHand->AttachChild(rightWeapon, true);
             lHand->AttachChild(leftWeapon, true);
         }
+    }
+
+    namespace
+    {
+        RE::NiTransform composeWorldFromFrameLocal(const RE::NiTransform& frame, const RE::NiTransform& local)
+        {
+            RE::NiTransform world;
+            world.rotate = local.rotate * frame.rotate;
+            world.translate = frame.translate + frame.rotate.Transpose() * (local.translate * frame.scale);
+            world.scale = frame.scale * local.scale;
+            return world;
+        }
+
+        RE::NiTransform invertFrameTransform(const RE::NiTransform& transform)
+        {
+            const float safeScale = transform.scale != 0.0f ? transform.scale : 1.0f;
+            RE::NiTransform inverse;
+            inverse.rotate = transform.rotate.Transpose();
+            inverse.translate = (transform.rotate * transform.translate) * (-1.0f / safeScale);
+            inverse.scale = 1.0f / safeScale;
+            return inverse;
+        }
+
+        RE::NiTransform mirrorRecoilLocalAcrossSagittal(const RE::NiTransform& local)
+        {
+            const RE::NiMatrix3 mx = MatrixUtils::getMatrix(-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            RE::NiTransform mirrored = local;
+            mirrored.rotate = mx * local.rotate * mx;
+            mirrored.translate = RE::NiPoint3(-local.translate.x, local.translate.y, local.translate.z);
+            return mirrored;
+        }
+    }
+
+    void Skeleton::prepareWeaponHandRecoilFrame()
+    {
+        _weaponHandRecoilSample = {};
+        _weaponHandRecoilSample.structSize = sizeof(api::FRIKApi::RecoilSample);
+        _weaponHandRecoilSample.nativeKickLocal.MakeIdentity();
+
+        _weaponHandRecoilPhysicalPrimaryIsLeft =
+            isLeftHandedMode() || isPrimaryWeaponNodeOwnershipBlocked();
+
+        _weaponHandRecoilResponse = {};
+        _weaponHandRecoilResponse.structSize = sizeof(api::FRIKApi::RecoilResponse);
+        _weaponHandRecoilResponse.controlledKickLocal.MakeIdentity();
+        _controlledWeaponHandRecoilLocal.MakeIdentity();
+        _controlledWeaponHandRecoilWorldDeltaValid.fill(false);
+        _weaponHandRecoilResponseAccepted = false;
+
+        auto* const kickbackNode = _playerNodes ? _playerNodes->primaryWeaponKickbackRecoilNode : nullptr;
+        if (!kickbackNode ||
+            !isFiniteTransform(kickbackNode->local) ||
+            !kickbackNode->parent ||
+            !isFiniteTransform(kickbackNode->parent->world)) {
+            _controlledWeaponHandRecoilSmoothedValid = false;
+            return;
+        }
+        _weaponHandRecoilSample.nativeKickLocal = kickbackNode->local;
+
+        const auto resolution = api::resolveWeaponHandRecoil(_weaponHandRecoilSample);
+        if (!resolution.accepted) {
+            _controlledWeaponHandRecoilSmoothedValid = false;
+            return;
+        }
+
+        _weaponHandRecoilResponse = resolution.response;
+        _weaponHandRecoilResponseAccepted = true;
+        if (_weaponHandRecoilResponse.delivery == api::FRIKApi::RecoilDelivery::Damped) {
+            _controlledWeaponHandRecoilLocal =
+                dampenControlledWeaponHandRecoil(_weaponHandRecoilResponse.controlledKickLocal);
+        } else {
+            _controlledWeaponHandRecoilLocal = _weaponHandRecoilResponse.controlledKickLocal;
+            _controlledWeaponHandRecoilSmoothedValid = false;
+        }
+    }
+
+    bool Skeleton::buildControlledWeaponHandRecoilWorldDelta(
+        const bool isLeft,
+        RE::NiTransform& outWorldDelta)
+    {
+        auto* const kickbackNode = _playerNodes ? _playerNodes->primaryWeaponKickbackRecoilNode : nullptr;
+        const auto* const kickParent = kickbackNode ? kickbackNode->parent : nullptr;
+        if (!kickParent ||
+            !isFiniteTransform(kickParent->world) ||
+            !isFiniteTransform(_controlledWeaponHandRecoilLocal)) {
+            return false;
+        }
+
+        RE::NiTransform kickParentWorld = kickParent->world;
+        RE::NiTransform controlledKickLocal = _controlledWeaponHandRecoilLocal;
+
+        // The native kick is authored in the current game-primary wand frame.
+        // Mirror that rigid relation only when the selected physical hand is
+        // the current game-offhand (including ROCK's external-left carry).
+        const bool nativePrimaryIsLeft = isLeftHandedMode();
+        if (isLeft != nativePrimaryIsLeft) {
+            auto* const nativePrimaryWand = _playerNodes->primaryWandNode;
+            auto* const nativeOffhandWand = _playerNodes->SecondaryWandNode;
+            if (!nativePrimaryWand ||
+                !nativeOffhandWand ||
+                !isFiniteTransform(nativePrimaryWand->world) ||
+                !isFiniteTransform(nativeOffhandWand->world)) {
+                return false;
+            }
+
+            const RE::NiTransform kickParentInPrimaryWand = composeWorldFromFrameLocal(
+                invertFrameTransform(nativePrimaryWand->world),
+                kickParentWorld);
+            kickParentWorld = composeWorldFromFrameLocal(
+                nativeOffhandWand->world,
+                mirrorRecoilLocalAcrossSagittal(kickParentInPrimaryWand));
+            controlledKickLocal = mirrorRecoilLocalAcrossSagittal(controlledKickLocal);
+        }
+
+        outWorldDelta = composeWorldFromFrameLocal(
+            kickParentWorld,
+            composeWorldFromFrameLocal(
+                controlledKickLocal,
+                invertFrameTransform(kickParentWorld)));
+        return isFiniteTransform(outWorldDelta);
+    }
+
+    bool Skeleton::applyControlledWeaponHandRecoil(
+        const bool isLeft,
+        RE::NiTransform& target)
+    {
+        if (!_weaponHandRecoilResponseAccepted) {
+            return true;
+        }
+
+        const auto selectedRole = static_cast<std::uint32_t>(
+            isLeft == _weaponHandRecoilPhysicalPrimaryIsLeft
+                ? api::FRIKApi::RecoilHandMask::Primary
+                : api::FRIKApi::RecoilHandMask::Offhand);
+        if ((_weaponHandRecoilResponse.handMask & selectedRole) == 0) {
+            return true;
+        }
+
+        const std::size_t handIndex = isLeft ? 1u : 0u;
+        if (!_controlledWeaponHandRecoilWorldDeltaValid[handIndex]) {
+            if (!buildControlledWeaponHandRecoilWorldDelta(
+                    isLeft,
+                    _controlledWeaponHandRecoilWorldDeltas[handIndex])) {
+                return false;
+            }
+            _controlledWeaponHandRecoilWorldDeltaValid[handIndex] = true;
+        }
+
+        const RE::NiTransform controlledTarget = composeWorldFromFrameLocal(
+            _controlledWeaponHandRecoilWorldDeltas[handIndex],
+            target);
+        if (!isFiniteTransform(controlledTarget)) {
+            return false;
+        }
+
+        target = controlledTarget;
+        return true;
     }
 
     // This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
@@ -903,6 +1265,10 @@ namespace frik
         RE::NiNode* weaponNode = handleOffhand ? leftWeapon : rightWeapon;
         RE::NiNode* offsetNode = handleOffhand ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
 
+        if (isPrimaryWeaponNodeOwnershipBlocked() && !isLeftHandedMode()) {
+            weaponNode = handleOffhand ? rightWeapon : leftWeapon;
+        }
+
         if (handleOffhand) {
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local = _playerNodes->primaryWeaponOffsetNOde->local;
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate =
@@ -925,22 +1291,88 @@ namespace frik
             ? RE::NiPoint3(0, 0, 0)
             : RE::NiPoint3(4.389f, -1.899f, -3.133f);
 
-        dampenHand(offsetNode, isLeft);
+        {
+            ScopedKickbackNeutralizer neutralizeNativeKick(
+                _playerNodes->primaryWeaponKickbackRecoilNode,
+                _weaponHandRecoilResponseAccepted);
+            dampenHand(offsetNode, isLeft);
+            weaponNode->IncRefCount();
+            Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
+        }
 
-        weaponNode->IncRefCount();
-        Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
+        RE::NiTransform handWorldTarget = isLeft ? _leftHand->world : _rightHand->world;
+        (void)applyControlledWeaponHandRecoil(isLeft, handWorldTarget);
+        (void)solveArmToHandWorldTarget(isLeft, handWorldTarget, false, nullptr);
+    }
 
-        RE::NiPoint3 handPos = isLeft ? _leftHand->world.translate : _rightHand->world.translate;
-        RE::NiMatrix3 handRot = isLeft ? _leftHand->world.rotate : _rightHand->world.rotate;
+    RE::NiTransform Skeleton::dampenControlledWeaponHandRecoil(const RE::NiTransform& kick)
+    {
+        if (!g_config.dampenHands) {
+            _controlledWeaponHandRecoilSmoothedValid = false;
+            return kick;
+        }
+        const bool isInScopeMenu = g_frik.isInScopeMenu();
+        if (isInScopeMenu && !g_config.dampenHandsInVanillaScope) {
+            _controlledWeaponHandRecoilSmoothedValid = false;
+            return kick;
+        }
+        if (!_controlledWeaponHandRecoilSmoothedValid) {
+            _controlledWeaponHandRecoilSmoothedLocal.MakeIdentity();
+            _controlledWeaponHandRecoilSmoothedValid = true;
+        }
+        const float rotationFactor = isInScopeMenu ? g_config.dampenHandsRotationInVanillaScope : g_config.dampenHandsRotation;
+        const float translationFactor = isInScopeMenu ? g_config.dampenHandsTranslationInVanillaScope : g_config.dampenHandsTranslation;
+
+        Quaternion smoothedRotation, targetRotation;
+        smoothedRotation.fromMatrix(_controlledWeaponHandRecoilSmoothedLocal.rotate);
+        targetRotation.fromMatrix(kick.rotate);
+        smoothedRotation.slerp(1 - rotationFactor, targetRotation);
+
+        RE::NiTransform smoothed = kick;
+        smoothed.rotate = smoothedRotation.getMatrix();
+        smoothed.translate = kick.translate - (kick.translate - _controlledWeaponHandRecoilSmoothedLocal.translate) * translationFactor;
+        _controlledWeaponHandRecoilSmoothedLocal = smoothed;
+        return smoothed;
+    }
+
+    void Skeleton::restoreArmNodesToDefault(const bool isLeft)
+    {
+        const ArmNodes arm = isLeft ? _leftArm : _rightArm;
+        const std::array<RE::NiAVObject*, 7> armChain{ arm.shoulder, arm.upper, arm.upperT1, arm.forearm1, arm.forearm2, arm.forearm3, arm.hand };
+
+        for (auto* armNode : armChain) {
+            if (!armNode) {
+                continue;
+            }
+            for (const auto& [boneNode, resetTransform] : _skeletonNodesToDefaultTransforms) {
+                if (boneNode == armNode) {
+                    armNode->local = resetTransform;
+                    break;
+                }
+            }
+        }
+    }
+
+    bool Skeleton::solveArmToHandWorldTarget(const bool isLeft, const RE::NiTransform& handWorldTarget, const bool externalAuthority, const char* ignoredChildNodeName)
+    {
+        if (!isFiniteTransform(handWorldTarget)) {
+            return false;
+        }
+
+        RE::NiPoint3 handPos = handWorldTarget.translate;
+        RE::NiMatrix3 handRot = handWorldTarget.rotate;
 
         const auto arm = isLeft ? _leftArm : _rightArm;
+        if (!arm.shoulder || !arm.upper || !arm.forearm1 || !arm.hand || (!_inPowerArmor && (!arm.forearm2 || !arm.forearm3))) {
+            return false;
+        }
 
         // Detect if the 1st person hand position is invalid. This can happen when a controller loses tracking.
         // If it is, do not handle IK and let Fallout use its normal animations for that arm instead.
         if (isnan(handPos.x) || isnan(handPos.y) || isnan(handPos.z) ||
             isinf(handPos.x) || isinf(handPos.y) || isinf(handPos.z) ||
             MatrixUtils::vec3Len(arm.upper->world.translate - handPos) > 200.0) {
-            return;
+            return false;
         }
 
         float adjustedArmLength = g_config.armLength / 36.74f;
@@ -959,7 +1391,7 @@ namespace frik
         RE::NiMatrix3 result = MatrixUtils::getMatrixFromRotateVectorVec(sLocalDir, RE::NiPoint3(1, 0, 0)) * arm.shoulder->local.rotate;
         arm.shoulder->local.rotate = result;
 
-        updateDown(arm.shoulder, true);
+        updateDown(arm.shoulder, true, ignoredChildNodeName);
 
         // The bend of the arm depends on its distance to the body.  Its distance as well as the lengths of
         // the upper arm and forearm define the sides of a triangle:
@@ -994,7 +1426,7 @@ namespace frik
         float hsLen = (std::max)(MatrixUtils::vec3Len(handToShoulder), 0.1f);
 
         if (hsLen > (upperLen + forearmLen) * 2.25f) {
-            return;
+            return false;
         }
 
         // Stretch the upper arm and forearm proportionally when the hand distance exceeds the arm length
@@ -1030,7 +1462,9 @@ namespace frik
         //		logger::info("final angle %2f", rads_to_degrees(twistAngle));
 
         // Smooth out sudden changes in the twist angle over time to reduce elbow shake
-        static std::array<float, 2> prevAngle = { 0, 0 };
+        static std::array<float, 2> prevControllerAngle = { 0, 0 };
+        static std::array<float, 2> prevExternalAngle = { 0, 0 };
+        auto& prevAngle = externalAuthority ? prevExternalAngle : prevControllerAngle;
         twistAngle = prevAngle[isLeft ? 0 : 1] + (twistAngle - prevAngle[isLeft ? 0 : 1]) * 0.25f;
         prevAngle[isLeft ? 0 : 1] = twistAngle;
 
@@ -1180,6 +1614,7 @@ namespace frik
             arm.forearm3->local.translate *= forearmRatio;
         }
         arm.hand->local.translate *= forearmRatio;
+        return true;
     }
 
     void Skeleton::hideHands() const

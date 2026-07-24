@@ -7,6 +7,7 @@
 #include <Windows.h>
 
 #include "RE/NetImmerse/NiPoint.h"
+#include "RE/NetImmerse/NiTransform.h"
 
 // ----------------------------------------------------------------------------------------
 // EXAMPLE USAGE:
@@ -45,7 +46,7 @@ namespace frik::api
 #define FRIK_CALL __cdecl
 
     // API version for compatibility checking
-    inline constexpr std::uint32_t FRIK_API_VERSION = 4;
+    inline constexpr std::uint32_t FRIK_API_VERSION = 5;
 
     struct FRIKApi
     {
@@ -74,15 +75,18 @@ namespace frik::api
         enum class HandPoseKind : std::uint8_t
         {
             // no specific pose is set
-            Unset,
+            Unset = 0,
             // pose set with custom finger positions
-            Custom,
-            Open,
-            Pointing,
-            HoldingWeapon,
-            OffhandGrip,
-            Attaboy,
-            ThumbsUp,
+            Custom = 1,
+            Open = 2,
+            Pointing = 3,
+            HoldingWeapon = 4,
+            OffhandGrip = 5,
+            Attaboy = 6,
+            ThumbsUp = 7,
+
+            HoldingGun = 9,
+            HoldingMelee = 10,
         };
 
         /**
@@ -193,6 +197,86 @@ namespace frik::api
             const char* buttonIconNifPath;
             const char* callbackReceiverName;
             std::uint32_t callbackMessageType;
+        };
+
+        struct FingerLocalTransformOverride
+        {
+            std::uint16_t enabledMask = 0;
+            std::uint16_t reserved[3] = {};
+            RE::NiTransform localTransforms[15] = {};
+        };
+
+        enum class RecoilDelivery : std::uint32_t
+        {
+            Damped = 0,
+            Direct = 1,
+        };
+
+        enum class RecoilHandMask : std::uint32_t
+        {
+            None = 0,
+            Primary = 1u << 0,
+            Offhand = 1u << 1,
+        };
+
+        /**
+         * Immutable native recoil sampled immediately before hFRIK neutralizes
+         * the game kickback node and solves both arms for the current frame.
+         *
+         * nativeKickLocal is expressed in the native PrimaryWeaponKickbackRecoil
+         * node's local frame. General game state is intentionally not mirrored
+         * through this contract; controllers obtain it directly from FO4VR.
+         */
+        struct RecoilSample
+        {
+            std::uint32_t structSize = 0;
+            std::uint32_t reserved0[3] = {};
+            RE::NiTransform nativeKickLocal{};
+            std::uint32_t reserved[8] = {};
+        };
+
+        /**
+         * Controlled visual hand/arm recoil returned by an external controller.
+         *
+         * Returning true from the callback consumes hFRIK's native hand-recoil
+         * contribution for that frame. controlledKickLocal uses the same local
+         * frame as RecoilSample::nativeKickLocal. A zero handMask intentionally
+         * suppresses hand recoil. This does not alter gameplay recoil, spread,
+         * camera shake, or the engine's visual kickback node.
+         */
+        struct RecoilResponse
+        {
+            std::uint32_t structSize = 0;
+            std::uint32_t handMask = static_cast<std::uint32_t>(RecoilHandMask::Primary);
+            RecoilDelivery delivery = RecoilDelivery::Direct;
+            std::uint32_t reserved0 = 0;
+            RE::NiTransform controlledKickLocal{};
+            std::uint32_t reserved[8] = {};
+        };
+
+        /**
+         * Called synchronously on hFRIK's game update thread at most once per
+         * skeleton frame, after the native kick node and its parent frame have
+         * been validated. The callback must be noexcept, bounded, nonblocking,
+         * must not mutate scene nodes, and must not re-enter recoil registration
+         * APIs.
+         *
+         * Return true to consume native hand recoil and use outResponse.
+         * Return false to decline ownership for the frame; hFRIK tries the next
+         * registered controller and finally falls back to its regular recoil.
+         */
+        using WeaponHandRecoilController = bool(FRIK_CALL*)(
+            const RecoilSample* sample,
+            RecoilResponse* outResponse,
+            void* userData) noexcept;
+
+        static_assert(sizeof(RecoilSample) == 112, "RecoilSample ABI changed");
+        static_assert(sizeof(RecoilResponse) == 112, "RecoilResponse ABI changed");
+
+        enum class LifecycleEvent : std::uint32_t
+        {
+            kSkeletonReady = 100,
+            kSkeletonDestroying = 101,
         };
 
         /**
@@ -329,6 +413,47 @@ namespace frik::api
          */
         bool (FRIK_CALL*setHandPoseCustom)(const char* tag, Hand hand, const HandPoseData& handPose, bool forceTop);
 
+        bool (FRIK_CALL*setHandPoseWithPriority)(const char* tag, Hand hand, HandPoseKind handPose, int priority);
+
+        bool (FRIK_CALL*setHandPoseCustomWithPriority)(const char* tag, Hand hand, const HandPoseData& handPose, int priority);
+
+        bool (FRIK_CALL*applyExternalHandWorldTransform)(const char* tag, Hand hand, const RE::NiTransform& worldTarget, int priority);
+
+        bool (FRIK_CALL*clearExternalHandWorldTransform)(const char* tag, Hand hand);
+
+        bool (FRIK_CALL*setHandPoseCustomLocalTransformsWithPriority)(const char* tag, Hand hand, const FingerLocalTransformOverride* overrideData, int priority);
+
+        bool (FRIK_CALL*getHandPoseLocalTransformsForPose)(Hand hand, const HandPoseData& handPose, FingerLocalTransformOverride* outTransforms);
+
+        // While blocked, FRIK yields every built-in primary weapon hand-pose
+        // contributor, including its per-weapon primary-hand grip rotation.
+        bool (FRIK_CALL*blockPrimaryHandWeaponPose)(const char* tag, bool block);
+
+        bool (FRIK_CALL*blockPrimaryWeaponNodeOwnership)(const char* tag, bool block);
+
+        /**
+         * Part of the current rolling FRIK API v5 contract.
+         * Register or replace a tagged visual hand-recoil controller.
+         *
+         * Controllers are considered in descending priority and newest-first
+         * order. A controller that returns false declines only the current frame,
+         * allowing the next controller to respond. Registrations are cleared on
+         * skeleton destruction and must be republished after SkeletonReady.
+         * Register and unregister on the game update thread; callbacks execute
+         * synchronously on that same thread.
+         */
+        bool (FRIK_CALL*registerWeaponHandRecoilController)(
+            const char* tag,
+            WeaponHandRecoilController controller,
+            void* userData,
+            int priority);
+
+        /**
+         * Part of the current rolling FRIK API v5 contract.
+         * Remove a tagged recoil controller. Removing a missing tag is idempotent.
+         */
+        bool (FRIK_CALL*unregisterWeaponHandRecoilController)(const char* tag);
+
         /**
          * Supported since FRIK API v1.
          * Initialize the FRIK API object.
@@ -341,6 +466,7 @@ namespace frik::api
          * 2 - No FRIKAPI_GetApi API found
          * 3 - Failed FRIKAPI_GetApi call
          * 4 - FRIK API version is older than the minimal required version
+         * 5 - Loaded rolling API contract does not exactly match this header
          */
         [[nodiscard]] static int initialize(const uint32_t minVersion = FRIK_API_VERSION)
         {
@@ -352,6 +478,11 @@ namespace frik::api
             const auto frikDll = GetModuleHandleA("FRIK.dll");
             if (!frikDll) {
                 return 1;
+            }
+
+            const auto getApiStructSize = reinterpret_cast<std::uint32_t (FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_GetApiStructSize"));
+            if (!getApiStructSize || getApiStructSize() != sizeof(FRIKApi)) {
+                return 5;
             }
 
             const auto getApi = reinterpret_cast<const FRIKApi* (FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_GetApi"));
@@ -379,4 +510,13 @@ namespace frik::api
          */
         inline static const FRIKApi* inst = nullptr;
     };
+
+    /*
+     * Bidirectional physical-hand mirror. Kept outside the v5 function table
+     * so consumers can feature-detect it without changing the table ABI.
+     * sourceHand must be Hand::Left or Hand::Right.
+     */
+    FRIK_API bool FRIK_CALL FRIKAPI_MirrorFingerLocalTransforms(FRIKApi::Hand sourceHand,
+        const FRIKApi::FingerLocalTransformOverride* sourceTransforms,
+        FRIKApi::FingerLocalTransformOverride* outTargetTransforms);
 }

@@ -1,10 +1,12 @@
 #pragma once
 
+#include <array>
 #include <map>
 
 #include "CullGeometryHandler.h"
 #include "HandPose.h"
 #include "SelfieHandler.h"
+#include "api/FRIKApi.h"
 #include "common/CommonUtils.h"
 #include "f4vr/PlayerNodes.h"
 #include "vrcf/VRControllersManager.h"
@@ -13,13 +15,13 @@ namespace frik
 {
     struct ArmNodes
     {
-        RE::NiAVObject* shoulder;
-        RE::NiAVObject* upper;
-        RE::NiAVObject* upperT1;
-        RE::NiAVObject* forearm1;
-        RE::NiAVObject* forearm2;
-        RE::NiAVObject* forearm3;
-        RE::NiAVObject* hand;
+        RE::NiAVObject* shoulder = nullptr;
+        RE::NiAVObject* upper = nullptr;
+        RE::NiAVObject* upperT1 = nullptr;
+        RE::NiAVObject* forearm1 = nullptr;
+        RE::NiAVObject* forearm2 = nullptr;
+        RE::NiAVObject* forearm3 = nullptr;
+        RE::NiAVObject* hand = nullptr;
     };
 
     class Skeleton
@@ -30,8 +32,10 @@ namespace frik
         {
             _curentPosition = RE::NiPoint3(0, 0, 0);
             _walkingState = 0;
-            initializeNodes();
+            _initialized = initializeNodes();
         }
+
+        bool isInitialized() const { return _initialized; }
 
         ArmNodes getLeftArm() const
         {
@@ -45,11 +49,24 @@ namespace frik
 
         static float getAdjustedPlayerHMDOffset();
 
+        static bool blockPrimaryWeaponNodeOwnership(std::string_view tag, bool block);
+        static bool isPrimaryWeaponNodeOwnershipBlocked();
+        static void clearPrimaryWeaponNodeOwnershipBlocks();
+
         void onFrameUpdate();
+
+        bool applyExternalHandWorldTransform(bool isLeft, const RE::NiTransform& worldTarget);
+        bool restoreTrackedHandAfterExternalAuthority(bool isLeft);
+        void refreshExternalHandAfterAuthority(bool isLeft);
+        bool mirrorFingerLocalTransforms(bool sourceIsLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& sourceTransforms, std::uint16_t sourceEnabledMask,
+            std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask) const
+        {
+            return _handPose.mirrorFingerLocalTransforms(sourceIsLeft, sourceTransforms, sourceEnabledMask, outTargetTransforms, outTargetEnabledMask);
+        }
 
     private:
         // initialization
-        void initializeNodes();
+        bool initializeNodes();
         void initArmsNodes();
         void initSkeletonNodesDefaults();
         void setBodyLen();
@@ -64,7 +81,13 @@ namespace frik
         void walk();
         void setSingleLeg(bool isLeft) const;
         void handleLeftHandedWeaponNodesSwitch();
+        void prepareWeaponHandRecoilFrame();
         void setArms(bool isLeft);
+        RE::NiTransform dampenControlledWeaponHandRecoil(const RE::NiTransform& kick);
+        bool buildControlledWeaponHandRecoilWorldDelta(bool isLeft, RE::NiTransform& outWorldDelta);
+        bool applyControlledWeaponHandRecoil(bool isLeft, RE::NiTransform& target);
+        void restoreArmNodesToDefault(bool isLeft);
+        bool solveArmToHandWorldTarget(bool isLeft, const RE::NiTransform& handWorldTarget, bool externalAuthority, const char* ignoredChildNodeName);
         void dampenHand(RE::NiNode* node, bool isLeft);
         void hide3rdPersonWeapon() const;
         void hideFistHelpers() const;
@@ -81,6 +104,7 @@ namespace frik
         // root node and is in power armor define the Skeleton instance
         RE::NiNode* _root;
         bool _inPowerArmor;
+        bool _initialized = false;
 
         // ???
         LARGE_INTEGER _freqCounter;
@@ -141,6 +165,17 @@ namespace frik
 
         RE::NiTransform _rightHandPrevFrame;
         RE::NiTransform _leftHandPrevFrame;
+
+        api::FRIKApi::RecoilSample _weaponHandRecoilSample{};
+        api::FRIKApi::RecoilResponse _weaponHandRecoilResponse{};
+        RE::NiTransform _controlledWeaponHandRecoilLocal{};
+        std::array<RE::NiTransform, 2> _controlledWeaponHandRecoilWorldDeltas{};
+        std::array<bool, 2> _controlledWeaponHandRecoilWorldDeltaValid{};
+        bool _weaponHandRecoilPhysicalPrimaryIsLeft = false;
+        bool _weaponHandRecoilResponseAccepted = false;
+
+        RE::NiTransform _controlledWeaponHandRecoilSmoothedLocal{};
+        bool _controlledWeaponHandRecoilSmoothedValid = false;
 
         HandPose _handPose;
 

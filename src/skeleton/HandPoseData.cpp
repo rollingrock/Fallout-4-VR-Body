@@ -28,7 +28,7 @@ namespace
         FingerPose{ 0.0f, 0.5f, 0.7f },
         0.0f,
         0.0f,
-        HandPoseKind::HoldingWeapon
+        HandPoseKind::HoldingGun
     };
 
     constexpr HandFingersPose MELEE_GRIP_POSE{
@@ -39,7 +39,7 @@ namespace
         FingerPose{ 0.0f, 0.4f, 0.9f },
         0.0f,
         0.0f,
-        HandPoseKind::HoldingWeapon
+        HandPoseKind::HoldingMelee
     };
 
     constexpr HandFingersPose POINTING_POSE{
@@ -94,7 +94,7 @@ namespace
         FingerPose{ 0.0f, 0.0f, 0.0f },
         0.0f,
         0.0f,
-        HandPoseKind::HoldingWeapon
+        HandPoseKind::Fist
     };
 
     const std::array<HandBonePoseData, 30> HAND_BONE_DATA = { {

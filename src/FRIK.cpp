@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "GameHooks.h"
 #include "PapyrusApi.h"
+#include "api/FRIKApi.h"
 #include "utils.h"
 #include "config-mode/ConfigurationMode.h"
 #include "f4vr/DebugDump.h"
@@ -18,6 +19,11 @@
 
 using namespace common;
 
+namespace frik::api
+{
+    void clearExternalHandAuthorityStateForSkeletonRelease();
+}
+
 // This is the entry point to the mod.
 extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* a_skse, F4SE::PluginInfo* a_info)
 {
@@ -32,6 +38,11 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface* a_f
 
 namespace frik
 {
+    namespace
+    {
+        constexpr std::uint32_t kSkeletonInitDelayFramesAfterRelease = 1;
+    }
+
     /**
      * TODO: think about it, is it the best way to handle this dependency indirection.
      */
@@ -123,6 +134,7 @@ namespace frik
             releaseSkeleton();
         }
 
+        _smoothMovement.reset();
         configureGameVars();
 
         _playerControlsHandler.reset();
@@ -150,11 +162,23 @@ namespace frik
         }
 
         if (!_skelly) {
+            if (_gameMenusHandler.isLoadingMenuOpen()) {
+                return;
+            }
+
+            if (_skeletonInitDelayFrames > 0) {
+                --_skeletonInitDelayFrames;
+                return;
+            }
+
             if (!isGameReadyForSkeletonInitialization()) {
                 return;
             }
 
             initSkeleton();
+            if (!_skelly) {
+                return;
+            }
         }
 
         logger::trace("Update Skeleton...");
@@ -180,6 +204,11 @@ namespace frik
         _configurationMode->onFrameUpdate();
 
         updateWorldFinal();
+
+        if (!_skeletonReadyPublished) {
+            _skeletonReadyPublished = true;
+            broadcastMessage(static_cast<std::uint32_t>(frik::api::FRIKApi::LifecycleEvent::kSkeletonReady), nullptr, 0);
+        }
     }
 
     void FRIK::smoothMovement()
@@ -191,9 +220,23 @@ namespace frik
         }
     }
 
+    void FRIK::refreshAfterExternalHandAuthority(const bool isLeft)
+    {
+        if (!_skelly) {
+            return;
+        }
+
+        _skelly->refreshExternalHandAfterAuthority(isLeft);
+        updateWorldFinal();
+        if (_pipboy) {
+            _pipboy->syncAfterExternalHandAuthority(isLeft);
+        }
+    }
+
     void FRIK::initSkeleton()
     {
         _inPowerArmor = f4vr::isInPowerArmor();
+        _skeletonInitDelayFrames = 0;
 
         const auto player = f4vr::getPlayer();
         logger::info("Initialize Skeleton ({}) ; Nodes: Player={}, Data={}, Root={}, Skeleton={}, Common={}",
@@ -206,7 +249,17 @@ namespace frik
 
         // init skeleton
         _workingRootNode = f4vr::getRootNode();
-        _skelly = new Skeleton(f4vr::getRootNode(), _inPowerArmor);
+        _skeletonReadyPublished = false;
+
+        auto* skelly = new Skeleton(f4vr::getRootNode(), _inPowerArmor);
+        if (!skelly->isInitialized()) {
+            logger::warn("Skeleton initialization failed after readiness checks; retrying later.");
+            delete skelly;
+            _workingRootNode = nullptr;
+            _skeletonInitDelayFrames = kSkeletonInitDelayFramesAfterRelease;
+            return;
+        }
+        _skelly = skelly;
 
         // init handlers depending on skeleton
         _pipboy = new Pipboy(_skelly);
@@ -222,31 +275,52 @@ namespace frik
     bool FRIK::isGameReadyForSkeletonInitialization()
     {
         const auto player = f4vr::getPlayer();
-        if (!player || !player->loadedData) {
-            logger::sample(3000, "Player global not set yet!");
+        if (!player) {
             return false;
         }
-        if (!player->loadedData->data3D || !f4vr::getRootNode() || !f4vr::getWorldRootNode()) {
-            logger::sample("Player root nodes not set yet!");
+
+        const auto playerData = player->loadedData;
+        if (!playerData) {
             return false;
         }
-        if (!f4vr::getCommonNode() || !f4vr::getPlayerNodes() || !f4vr::getFlattenedBoneTree()) {
-            logger::sample("Common or Player nodes not set yet!");
-            return false;
-        }
-        if (!f4vr::findNode(f4vr::getFirstPersonSkeleton(), "RArm_Hand")) {
-            logger::sample("Arm node not set yet!");
-            return false;
-        }
-        if (!f4vr::getWeaponNode()) {
-            logger::sample("Weapon node not set yet!");
-            return false;
-        }
+
+        const auto playerRootNode = playerData->data3D.get();
+        const auto rootNode = f4vr::getRootNode();
+        const auto worldRootNode = f4vr::getWorldRootNode();
+        const auto commonNode = f4vr::getCommonNode();
+        const auto playerNodes = f4vr::getPlayerNodes();
+        const auto flattenedTree = f4vr::getFlattenedBoneTree();
+        const auto firstPersonSkeleton = f4vr::getFirstPersonSkeleton();
+        const auto rightHand = firstPersonSkeleton ? f4vr::findNode(firstPersonSkeleton, "RArm_Hand") : nullptr;
+        const auto leftHand = firstPersonSkeleton ? f4vr::findNode(firstPersonSkeleton, "LArm_Hand") : nullptr;
+        const auto weaponNode = f4vr::getWeaponNode();
         const auto camera = f4vr::getPlayerCamera();
-        if (!camera || !camera->cameraRoot) {
-            logger::sample("Camera node not set yet!");
+        const auto cameraRoot = camera && camera->cameraRoot ? camera->cameraRoot.get() : nullptr;
+
+        if (!playerRootNode || !rootNode || !worldRootNode) {
             return false;
         }
+
+        if (!rootNode->parent) {
+            return false;
+        }
+
+        if (!commonNode || !playerNodes || !flattenedTree) {
+            return false;
+        }
+
+        if (!rightHand || !leftHand) {
+            return false;
+        }
+
+        if (!weaponNode) {
+            return false;
+        }
+
+        if (!camera || !cameraRoot) {
+            return false;
+        }
+
         return true;
     }
 
@@ -290,7 +364,17 @@ namespace frik
      */
     void FRIK::releaseSkeleton()
     {
+        if (_skelly && _skeletonReadyPublished) {
+            broadcastMessage(static_cast<std::uint32_t>(frik::api::FRIKApi::LifecycleEvent::kSkeletonDestroying), nullptr, 0);
+        }
+        _skeletonReadyPublished = false;
+        frik::api::clearExternalHandAuthorityStateForSkeletonRelease();
+
         _workingRootNode = nullptr;
+        _skeletonInitDelayFrames = kSkeletonInitDelayFramesAfterRelease;
+
+        _playerControlsHandler.reset();
+        _smoothMovement.reset();
 
         delete _skelly;
         _skelly = nullptr;
@@ -305,7 +389,7 @@ namespace frik
         _weaponPosition = nullptr;
 
         _inPowerArmor = false;
-        _dynamicCameraHeight = false;
+        _dynamicCameraHeight = 0.0f;
     }
 
     /**
@@ -370,6 +454,11 @@ namespace frik
     void FRIK::dispatchMessageToExternalMod(const std::string& receivingModName, const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const
     {
         _messaging->Dispatch(messageType, data, dataLen, receivingModName.c_str());
+    }
+
+    void FRIK::broadcastMessage(const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const
+    {
+        _messaging->Dispatch(messageType, data, dataLen, nullptr);
     }
 
     void FRIK::onBetterScopesMessage(F4SE::MessagingInterface::Message* msg)

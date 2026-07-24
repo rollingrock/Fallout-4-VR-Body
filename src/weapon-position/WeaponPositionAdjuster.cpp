@@ -147,6 +147,15 @@ namespace frik
             return;
         }
 
+        if (Skeleton::isPrimaryWeaponNodeOwnershipBlocked()) {
+            if (_configMode) {
+                _configMode->onFrameUpdate(nullptr);
+            }
+            checkEquippedWeaponChanged(weapon);
+            getBackOfHandUINode()->local = _backOfHandUIOffsetTransform;
+            return;
+        }
+
         // store original weapon transform in case we need it later
         _weaponOriginalTransform = weapon->local;
         _weaponOriginalWorldTransform = weapon->world;
@@ -380,7 +389,11 @@ namespace frik
      */
     void WeaponPositionAdjuster::handlePrimaryHandGripOffsetAdjustment(const RE::NiNode* weapon) const
     {
-        if (_hasPrimaryHandOffset) {
+        // The tagged primary-weapon-pose block transfers the complete hand
+        // pose to an external owner. Applying this legacy per-weapon wrist
+        // rotation after that transfer would contaminate the controller hand
+        // basis used by the external alignment solve.
+        if (_hasPrimaryHandOffset && !HandPose::isPrimaryWeaponPoseBlocked()) {
             const auto primaryHand = f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
             primaryHand->local.rotate = _primaryHandOffsetRot * primaryHand->local.rotate;
             f4vr::updateTransformsDown(primaryHand, true, weapon->name.c_str());

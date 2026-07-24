@@ -42,6 +42,23 @@ namespace frik
      */
     inline void PlayerControlsHandler::reset()
     {
+        if (_weaponHidden) {
+            if (const auto weaponNode = f4vr::getWeaponNode()) {
+                if (const auto weaponVisual = f4vr::get1StChildNode(weaponNode)) {
+                    f4vr::setNodeVisibility(weaponVisual, true);
+                }
+            }
+        }
+
+        if (_disabledInput) {
+            if (const auto player = RE::PlayerCharacter::GetSingleton()) {
+                f4vr::SetActorRestrained(player, false);
+            }
+            if (const auto inputManager = RE::BSInputEnableManager::GetSingleton()) {
+                inputManager->forceEnableInputUserEventsFlags = _lastFlags;
+            }
+        }
+
         _disabledInput = false;
         _weaponHidden = false;
         // Fix: Reset thumbstick controls to enabled state on game session load

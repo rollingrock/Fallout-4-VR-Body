@@ -36,6 +36,9 @@ namespace frik::skeleton::data
         OffhandGrip,
         Attaboy,
         ThumbsUp,
+        Fist,
+        HoldingGun,
+        HoldingMelee,
     };
 }
 

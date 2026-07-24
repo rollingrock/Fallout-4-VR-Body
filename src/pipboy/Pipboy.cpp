@@ -191,6 +191,23 @@ namespace frik
         }
     }
 
+    void Pipboy::syncAfterExternalHandAuthority(const bool isLeft)
+    {
+        const bool pipboyArmIsLeft = !g_config.leftHandedPipBoy;
+        if (isLeft != pipboyArmIsLeft || g_config.dampenPipboyScreenMode != DampenPipboyScreenMode::Movement) {
+            return;
+        }
+
+        const auto playerNodes = f4vr::getPlayerNodes();
+        const auto pipboyScreen = playerNodes ? playerNodes->ScreenNode : nullptr;
+        if (!pipboyScreen) {
+            return;
+        }
+
+        _pipboyScreenPrevFrame.clear();
+        _pipboyScreenStableFrame = pipboyScreen->world;
+    }
+
     /**
      * There is a bug that when existing Power Armor you can't open the main menu.
      * But it only happens if the Pipboy is on-wrist setting (others are fine).
