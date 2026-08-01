@@ -58,7 +58,7 @@ namespace frik
         void onFrameUpdate();
 
         bool applyExternalHandWorldTransform(bool isLeft, const RE::NiTransform& worldTarget);
-        bool restoreTrackedHandAfterExternalAuthority(bool isLeft, std::string_view releasedTag);
+        bool preserveHandPoseForTrackedAuthorityHandoff(bool isLeft, std::string_view releasedTag);
         void completeTrackedHandAuthorityRestoreTrace(bool isLeft);
         void refreshExternalHandAfterAuthority(bool isLeft);
         bool mirrorFingerLocalTransforms(bool sourceIsLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& sourceTransforms, std::uint16_t sourceEnabledMask,

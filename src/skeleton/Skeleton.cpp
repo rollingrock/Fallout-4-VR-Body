@@ -225,7 +225,7 @@ namespace frik
         return true;
     }
 
-    bool Skeleton::restoreTrackedHandAfterExternalAuthority(const bool isLeft, const std::string_view releasedTag)
+    bool Skeleton::preserveHandPoseForTrackedAuthorityHandoff(const bool isLeft, const std::string_view releasedTag)
     {
         if (getFirstPersonSkeleton() == nullptr) {
             return false;
@@ -255,13 +255,15 @@ namespace frik
             trace.awaitingImmediateCapture = true;
         }
 
-        setArms(isLeft);
+        // The final external pose already owns the rendered frame. Solving the tracked arm here would consume
+        // externally modified arm locals before the normal frame pass restores defaults, briefly resurrecting a
+        // stale constrained pose. Preserve the final pose; onFrameUpdate restores defaults and solves tracking once.
         const ArmNodes arm = isLeft ? _leftArm : _rightArm;
-        const bool restored = arm.hand && isFiniteTransform(arm.hand->world);
-        if (!restored && beginTrace) {
+        const bool preserved = arm.hand && isFiniteTransform(arm.hand->world);
+        if (!preserved && beginTrace) {
             trace.awaitingImmediateCapture = false;
         }
-        return restored;
+        return preserved;
     }
 
     void Skeleton::completeTrackedHandAuthorityRestoreTrace(const bool isLeft)
