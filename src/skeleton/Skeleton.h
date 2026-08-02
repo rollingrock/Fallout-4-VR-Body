@@ -58,8 +58,7 @@ namespace frik
         void onFrameUpdate();
 
         bool applyExternalHandWorldTransform(bool isLeft, const RE::NiTransform& worldTarget);
-        bool preserveHandPoseForTrackedAuthorityHandoff(bool isLeft, std::string_view releasedTag);
-        void completeTrackedHandAuthorityRestoreTrace(bool isLeft);
+        bool preserveHandPoseForTrackedAuthorityHandoff(bool isLeft);
         void refreshExternalHandAfterAuthority(bool isLeft);
         bool mirrorFingerLocalTransforms(bool sourceIsLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& sourceTransforms, std::uint16_t sourceEnabledMask,
             std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask) const
@@ -91,7 +90,6 @@ namespace frik
         bool applyControlledWeaponHandRecoil(bool isLeft, RE::NiTransform& target);
         void restoreArmNodesToDefault(bool isLeft);
         bool solveArmToHandWorldTarget(bool isLeft, const RE::NiTransform& handWorldTarget, bool externalAuthority, const char* ignoredChildNodeName);
-        void emitTrackedHandAuthorityRestoreTrace(bool isLeft);
         void dampenHand(RE::NiNode* node, bool isLeft);
         void hide3rdPersonWeapon() const;
         void hideFistHelpers() const;
@@ -169,44 +167,6 @@ namespace frik
 
         RE::NiTransform _rightHandPrevFrame;
         RE::NiTransform _leftHandPrevFrame;
-
-        struct ArmSolveTraceSample
-        {
-            RE::NiTransform worldTarget{};
-            float rawTwistRadians = 0.0f;
-            float smoothedTwistRadians = 0.0f;
-            std::uint64_t generation = 0;
-            bool valid = false;
-        };
-
-        struct ArmWorldTraceSnapshot
-        {
-            RE::NiTransform upper{};
-            RE::NiTransform forearm{};
-            RE::NiTransform hand{};
-            bool valid = false;
-        };
-
-        struct TrackedHandAuthorityRestoreTrace
-        {
-            ArmWorldTraceSnapshot beforeClear{};
-            ArmWorldTraceSnapshot immediateRestore{};
-            ArmSolveTraceSample externalBefore{};
-            ArmSolveTraceSample controllerBefore{};
-            ArmSolveTraceSample controllerImmediate{};
-            std::array<char, 64> releasedTag{};
-            std::uint64_t sequence = 0;
-            std::uint64_t nextAllowedFrame = 0;
-            bool awaitingImmediateCapture = false;
-            bool awaitingNextFrame = false;
-            bool tagTruncated = false;
-        };
-
-        std::array<ArmSolveTraceSample, 2> _controllerArmSolveTraceSamples{};
-        std::array<ArmSolveTraceSample, 2> _externalArmSolveTraceSamples{};
-        std::array<TrackedHandAuthorityRestoreTrace, 2> _trackedHandAuthorityRestoreTraces{};
-        std::uint64_t _frameSerial = 0;
-        std::uint64_t _trackedHandAuthorityRestoreSequence = 0;
 
         api::FRIKApi::RecoilSample _weaponHandRecoilSample{};
         api::FRIKApi::RecoilResponse _weaponHandRecoilResponse{};

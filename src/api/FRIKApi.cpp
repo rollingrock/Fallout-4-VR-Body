@@ -553,12 +553,11 @@ namespace
         const auto oldSelected = selectExternalHandAuthority(entries);
         const auto newSelected = selectExternalHandAuthority(updatedEntries);
         if (!newSelected.entry) {
-            if (!skelly->preserveHandPoseForTrackedAuthorityHandoff(isLeft, *normalizedTag)) {
+            if (!skelly->preserveHandPoseForTrackedAuthorityHandoff(isLeft)) {
                 return false;
             }
             entries = std::move(updatedEntries);
             g_frik.refreshAfterExternalHandAuthority(isLeft);
-            skelly->completeTrackedHandAuthorityRestoreTrace(isLeft);
             return true;
         }
 

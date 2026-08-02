@@ -123,23 +123,6 @@ namespace
         return snapshot;
     }
 
-    float transformTranslationDelta(const RE::NiTransform& from, const RE::NiTransform& to)
-    {
-        return MatrixUtils::vec3Len(to.translate - from.translate);
-    }
-
-    float transformRotationDeltaDegrees(const RE::NiTransform& from, const RE::NiTransform& to)
-    {
-        float rotationInnerProduct = 0.0f;
-        for (std::size_t row = 0; row < 3; ++row) {
-            for (std::size_t column = 0; column < 3; ++column) {
-                rotationInnerProduct += from.rotate.entry[row][column] * to.rotate.entry[row][column];
-            }
-        }
-
-        const float cosine = std::clamp((rotationInnerProduct - 1.0f) * 0.5f, -1.0f, 1.0f);
-        return MatrixUtils::radsToDegrees(std::acos(cosine));
-    }
 }
 
 namespace frik
@@ -225,65 +208,17 @@ namespace frik
         return true;
     }
 
-    bool Skeleton::preserveHandPoseForTrackedAuthorityHandoff(const bool isLeft, const std::string_view releasedTag)
+    bool Skeleton::preserveHandPoseForTrackedAuthorityHandoff(const bool isLeft)
     {
         if (getFirstPersonSkeleton() == nullptr) {
             return false;
-        }
-
-        const std::size_t handIndex = isLeft ? 1u : 0u;
-        auto& trace = _trackedHandAuthorityRestoreTraces[handIndex];
-        const bool beginTrace = !trace.awaitingImmediateCapture && !trace.awaitingNextFrame && _frameSerial >= trace.nextAllowedFrame;
-        if (beginTrace) {
-            const ArmNodes arm = isLeft ? _leftArm : _rightArm;
-            trace = {};
-            trace.sequence = ++_trackedHandAuthorityRestoreSequence;
-            trace.nextAllowedFrame = _frameSerial;
-            trace.externalBefore = _externalArmSolveTraceSamples[handIndex];
-            trace.controllerBefore = _controllerArmSolveTraceSamples[handIndex];
-            trace.beforeClear = {
-                .upper = arm.upper ? arm.upper->world : RE::NiTransform{},
-                .forearm = arm.forearm1 ? arm.forearm1->world : RE::NiTransform{},
-                .hand = arm.hand ? arm.hand->world : RE::NiTransform{},
-                .valid = arm.upper && arm.forearm1 && arm.hand && isFiniteTransform(arm.upper->world) && isFiniteTransform(arm.forearm1->world) && isFiniteTransform(arm.hand->world),
-            };
-
-            const std::size_t copyLength = (std::min)(releasedTag.size(), trace.releasedTag.size() - 1);
-            std::copy_n(releasedTag.data(), copyLength, trace.releasedTag.data());
-            trace.releasedTag[copyLength] = '\0';
-            trace.tagTruncated = copyLength != releasedTag.size();
-            trace.awaitingImmediateCapture = true;
         }
 
         // The final external pose already owns the rendered frame. Solving the tracked arm here would consume
         // externally modified arm locals before the normal frame pass restores defaults, briefly resurrecting a
         // stale constrained pose. Preserve the final pose; onFrameUpdate restores defaults and solves tracking once.
         const ArmNodes arm = isLeft ? _leftArm : _rightArm;
-        const bool preserved = arm.hand && isFiniteTransform(arm.hand->world);
-        if (!preserved && beginTrace) {
-            trace.awaitingImmediateCapture = false;
-        }
-        return preserved;
-    }
-
-    void Skeleton::completeTrackedHandAuthorityRestoreTrace(const bool isLeft)
-    {
-        const std::size_t handIndex = isLeft ? 1u : 0u;
-        auto& trace = _trackedHandAuthorityRestoreTraces[handIndex];
-        if (!trace.awaitingImmediateCapture) {
-            return;
-        }
-
-        const ArmNodes arm = isLeft ? _leftArm : _rightArm;
-        trace.immediateRestore = {
-            .upper = arm.upper ? arm.upper->world : RE::NiTransform{},
-            .forearm = arm.forearm1 ? arm.forearm1->world : RE::NiTransform{},
-            .hand = arm.hand ? arm.hand->world : RE::NiTransform{},
-            .valid = arm.upper && arm.forearm1 && arm.hand && isFiniteTransform(arm.upper->world) && isFiniteTransform(arm.forearm1->world) && isFiniteTransform(arm.hand->world),
-        };
-        trace.controllerImmediate = _controllerArmSolveTraceSamples[handIndex];
-        trace.awaitingImmediateCapture = false;
-        trace.awaitingNextFrame = true;
+        return arm.hand && isFiniteTransform(arm.hand->world);
     }
 
     void Skeleton::refreshExternalHandAfterAuthority(const bool isLeft)
@@ -412,7 +347,6 @@ namespace frik
      */
     void Skeleton::onFrameUpdate()
     {
-        ++_frameSerial;
         setTime();
 
         // save last position at this time for anyone doing speed calculations
@@ -464,8 +398,6 @@ namespace frik
         setArms(false);
         setArms(true);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
-        emitTrackedHandAuthorityRestoreTrace(false);
-        emitTrackedHandAuthorityRestoreTrace(true);
 
         // Misc stuff to show/hide things
         logger::trace("Pipboy and Weapons...");
@@ -490,91 +422,6 @@ namespace frik
         if (_inPowerArmor) {
             fixArmor();
         }
-    }
-
-    void Skeleton::emitTrackedHandAuthorityRestoreTrace(const bool isLeft)
-    {
-        const std::size_t handIndex = isLeft ? 1u : 0u;
-        auto& trace = _trackedHandAuthorityRestoreTraces[handIndex];
-        if (!trace.awaitingNextFrame) {
-            return;
-        }
-
-        const ArmNodes arm = isLeft ? _leftArm : _rightArm;
-        const ArmWorldTraceSnapshot nextFrame{
-            .upper = arm.upper ? arm.upper->world : RE::NiTransform{},
-            .forearm = arm.forearm1 ? arm.forearm1->world : RE::NiTransform{},
-            .hand = arm.hand ? arm.hand->world : RE::NiTransform{},
-            .valid = arm.upper && arm.forearm1 && arm.hand && isFiniteTransform(arm.upper->world) && isFiniteTransform(arm.forearm1->world) && isFiniteTransform(arm.hand->world),
-        };
-        const ArmSolveTraceSample controllerNext = _controllerArmSolveTraceSamples[handIndex];
-
-        // This transition-only trace is removed after an in-game capture identifies the broken handoff invariant
-        // and the corrected transition has been validated against the same fields.
-        if (trace.beforeClear.valid && trace.immediateRestore.valid && nextFrame.valid) {
-            logger::info(
-                "FRIK_HANDOFF_TRACE pose seq:{} hand:{} tag:'{}' tagTruncated:{} pre>immediate hand:{:.4f}gu/{:.3f}deg forearm:{:.4f}gu/{:.3f}deg upper:{:.4f}gu/{:.3f}deg immediate>next hand:{:.4f}gu/{:.3f}deg forearm:{:.4f}gu/{:.3f}deg upper:{:.4f}gu/{:.3f}deg",
-                trace.sequence,
-                isLeft ? "left" : "right",
-                trace.releasedTag.data(),
-                trace.tagTruncated,
-                transformTranslationDelta(trace.beforeClear.hand, trace.immediateRestore.hand),
-                transformRotationDeltaDegrees(trace.beforeClear.hand, trace.immediateRestore.hand),
-                transformTranslationDelta(trace.beforeClear.forearm, trace.immediateRestore.forearm),
-                transformRotationDeltaDegrees(trace.beforeClear.forearm, trace.immediateRestore.forearm),
-                transformTranslationDelta(trace.beforeClear.upper, trace.immediateRestore.upper),
-                transformRotationDeltaDegrees(trace.beforeClear.upper, trace.immediateRestore.upper),
-                transformTranslationDelta(trace.immediateRestore.hand, nextFrame.hand),
-                transformRotationDeltaDegrees(trace.immediateRestore.hand, nextFrame.hand),
-                transformTranslationDelta(trace.immediateRestore.forearm, nextFrame.forearm),
-                transformRotationDeltaDegrees(trace.immediateRestore.forearm, nextFrame.forearm),
-                transformTranslationDelta(trace.immediateRestore.upper, nextFrame.upper),
-                transformRotationDeltaDegrees(trace.immediateRestore.upper, nextFrame.upper));
-        } else {
-            logger::info(
-                "FRIK_HANDOFF_TRACE pose seq:{} hand:{} tag:'{}' incomplete before:{} immediate:{} next:{}",
-                trace.sequence,
-                isLeft ? "left" : "right",
-                trace.releasedTag.data(),
-                trace.beforeClear.valid,
-                trace.immediateRestore.valid,
-                nextFrame.valid);
-        }
-
-        if (trace.externalBefore.valid && trace.controllerBefore.valid && trace.controllerImmediate.valid && controllerNext.valid) {
-            logger::info(
-                "FRIK_HANDOFF_TRACE solver seq:{} hand:{} target external>immediate:{:.4f}gu/{:.3f}deg immediate>next:{:.4f}gu/{:.3f}deg twistRawDeg external:{:.3f} controllerBefore:{:.3f} immediate:{:.3f} next:{:.3f} twistSmoothedDeg external:{:.3f} controllerBefore:{:.3f} immediate:{:.3f} next:{:.3f} generations external:{} controller:{}>{}>{}",
-                trace.sequence,
-                isLeft ? "left" : "right",
-                transformTranslationDelta(trace.externalBefore.worldTarget, trace.controllerImmediate.worldTarget),
-                transformRotationDeltaDegrees(trace.externalBefore.worldTarget, trace.controllerImmediate.worldTarget),
-                transformTranslationDelta(trace.controllerImmediate.worldTarget, controllerNext.worldTarget),
-                transformRotationDeltaDegrees(trace.controllerImmediate.worldTarget, controllerNext.worldTarget),
-                MatrixUtils::radsToDegrees(trace.externalBefore.rawTwistRadians),
-                MatrixUtils::radsToDegrees(trace.controllerBefore.rawTwistRadians),
-                MatrixUtils::radsToDegrees(trace.controllerImmediate.rawTwistRadians),
-                MatrixUtils::radsToDegrees(controllerNext.rawTwistRadians),
-                MatrixUtils::radsToDegrees(trace.externalBefore.smoothedTwistRadians),
-                MatrixUtils::radsToDegrees(trace.controllerBefore.smoothedTwistRadians),
-                MatrixUtils::radsToDegrees(trace.controllerImmediate.smoothedTwistRadians),
-                MatrixUtils::radsToDegrees(controllerNext.smoothedTwistRadians),
-                trace.externalBefore.generation,
-                trace.controllerBefore.generation,
-                trace.controllerImmediate.generation,
-                controllerNext.generation);
-        } else {
-            logger::info(
-                "FRIK_HANDOFF_TRACE solver seq:{} hand:{} incomplete external:{} controllerBefore:{} immediate:{} next:{}",
-                trace.sequence,
-                isLeft ? "left" : "right",
-                trace.externalBefore.valid,
-                trace.controllerBefore.valid,
-                trace.controllerImmediate.valid,
-                controllerNext.valid);
-        }
-
-        trace.awaitingNextFrame = false;
-        trace.nextAllowedFrame = _frameSerial + 30;
     }
 
     void Skeleton::setTime()
@@ -1611,7 +1458,6 @@ namespace frik
         float interpTwist = (std::clamp)((handBack.z + 0.866f) * 1.155f, 0.45f, 0.8f); // 0 to 1 as hand points 60 degrees down to horizontal
         //		logger::info("%2f %2f %2f", rads_to_degrees(twistAngle), rads_to_degrees(twistAngle2), interpTwist);
         twistAngle = twistAngle + interpTwist * (twistAngle2 - twistAngle);
-        const float rawTwistAngle = twistAngle;
         // Wonkiness is bad.  Interpolate twist angle towards zero to correct it when the angles are pointed a certain way.
         /*	float fixWonkiness1 = (std::clamp)(vec3_dot(handSide, vec3_norm(-sidewaysDir - forwardDir * 0.25f + RE::NiPoint3(0, 0, -0.25f))), 0.0f, 1.0f);
             float fixWonkiness2 = 1.0f - (std::clamp)(vec3_dot(handBack, vec3_norm(forwardDir + sidewaysDir)), 0.0f, 1.0f);
@@ -1773,13 +1619,6 @@ namespace frik
         }
         arm.hand->local.translate *= forearmRatio;
 
-        const std::size_t handIndex = isLeft ? 1u : 0u;
-        auto& traceSample = externalAuthority ? _externalArmSolveTraceSamples[handIndex] : _controllerArmSolveTraceSamples[handIndex];
-        traceSample.worldTarget = handWorldTarget;
-        traceSample.rawTwistRadians = rawTwistAngle;
-        traceSample.smoothedTwistRadians = twistAngle;
-        ++traceSample.generation;
-        traceSample.valid = true;
         return true;
     }
 
