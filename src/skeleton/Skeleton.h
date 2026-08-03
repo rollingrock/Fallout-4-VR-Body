@@ -39,7 +39,10 @@ namespace frik
             _initialized = initializeNodes();
         }
 
-        bool isInitialized() const { return _initialized; }
+        bool isInitialized() const
+        {
+            return _initialized;
+        }
 
         ArmNodes getLeftArm() const
         {
@@ -62,6 +65,7 @@ namespace frik
         bool applyExternalHandWorldTransform(bool isLeft, const RE::NiTransform& worldTarget);
         bool preserveHandPoseForTrackedAuthorityHandoff(bool isLeft);
         void refreshExternalHandAfterAuthority(bool isLeft);
+
         bool mirrorFingerLocalTransforms(bool sourceIsLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& sourceTransforms, std::uint16_t sourceEnabledMask,
             std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask) const
         {

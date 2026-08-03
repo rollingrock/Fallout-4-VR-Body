@@ -312,10 +312,7 @@ namespace frik::api
          * Return false to decline ownership for the frame; hFRIK tries the next
          * registered controller and finally falls back to its regular recoil.
          */
-        using WeaponHandRecoilController = bool(FRIK_CALL*)(
-            const RecoilSample* sample,
-            RecoilResponse* outResponse,
-            void* userData) noexcept;
+        using WeaponHandRecoilController = bool(FRIK_CALL*)(const RecoilSample* sample, RecoilResponse* outResponse, void* userData) noexcept;
 
         static_assert(sizeof(RecoilSample) == 112, "RecoilSample ABI changed");
         static_assert(sizeof(RecoilResponse) == 112, "RecoilResponse ABI changed");
@@ -558,11 +555,7 @@ namespace frik::api
          * Register and unregister on the game update thread; callbacks execute
          * synchronously on that same thread.
          */
-        bool(FRIK_CALL* registerWeaponHandRecoilController)(
-            const char* tag,
-            WeaponHandRecoilController controller,
-            void* userData,
-            int priority);
+        bool(FRIK_CALL* registerWeaponHandRecoilController)(const char* tag, WeaponHandRecoilController controller, void* userData, int priority);
 
         /**
          * Part of the current FRIK API v5 contract.
@@ -596,12 +589,12 @@ namespace frik::api
                 return 1;
             }
 
-            const auto getApiStructSize = reinterpret_cast<std::uint32_t (FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_GetApiStructSize"));
+            const auto getApiStructSize = reinterpret_cast<std::uint32_t(FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_GetApiStructSize"));
             if (!getApiStructSize || getApiStructSize() != sizeof(FRIKApi)) {
                 return 5;
             }
 
-            const auto getApi = reinterpret_cast<const FRIKApi* (FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_GetApi"));
+            const auto getApi = reinterpret_cast<const FRIKApi*(FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_GetApi"));
             if (!getApi) {
                 return 2;
             }
@@ -638,7 +631,6 @@ namespace frik::api
      * so consumers can feature-detect it without changing the table ABI.
      * sourceHand must be Hand::Left or Hand::Right.
      */
-    FRIK_API bool FRIK_CALL FRIKAPI_MirrorFingerLocalTransforms(FRIKApi::Hand sourceHand,
-        const FRIKApi::FingerLocalTransformOverride* sourceTransforms,
+    FRIK_API bool FRIK_CALL FRIKAPI_MirrorFingerLocalTransforms(FRIKApi::Hand sourceHand, const FRIKApi::FingerLocalTransformOverride* sourceTransforms,
         FRIKApi::FingerLocalTransformOverride* outTargetTransforms);
 }

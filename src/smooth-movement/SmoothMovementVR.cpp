@@ -97,7 +97,12 @@ namespace frik
         if (MatrixUtils::distanceNoSqrt(curPos, _smoothedPos) > kTeleportResetDistanceSquared) {
             // don't smooth if values are way off
             logger::sample("[SmoothMovement] Values exceed normal; curPos:({:.2f}, {:.2f}, {:.2f}), SmoothPos:({:.2f}, {:.2f}, {:.2f})",
-                curPos.x, curPos.y, curPos.z, _smoothedPos.x, _smoothedPos.y, _smoothedPos.z);
+                curPos.x,
+                curPos.y,
+                curPos.z,
+                _smoothedPos.x,
+                _smoothedPos.y,
+                _smoothedPos.z);
             seedCurrentPosition(curPos);
             playerNodes->playerworldnode->local.translate = zeroPoint();
             playerNodes->playerworldnode->local.translate.z += Skeleton::getAdjustedPlayerHMDOffset();
@@ -131,7 +136,12 @@ namespace frik
             seedCurrentPosition(curPos);
             playerLocalTransformPos = zeroPoint();
             logger::sample("[SmoothMovement] Not moving values exceed normal; curPos:({:.2f}, {:.2f}), newPos:({:.2f}, {:.2f}), lastApplied:({:.2f}, {:.2f})",
-                curPos.x, curPos.y, newPos.x, newPos.y, _lastAppliedLocalX, _lastAppliedLocalY);
+                curPos.x,
+                curPos.y,
+                newPos.x,
+                newPos.y,
+                _lastAppliedLocalX,
+                _lastAppliedLocalY);
         } else {
             playerLocalTransformPos = newPos - curPos;
             _lastAppliedLocalX = playerLocalTransformPos.x;
@@ -158,7 +168,6 @@ namespace frik
             // don't smooth if in interior cell and smoothing is disabled for it
             return curPos;
         }
-
 
         auto newPos = RE::NiPoint3(curPos.x, curPos.y, curPos.z);
         if (fNotEqual(g_config.dampingMultiplierHorizontal, 0) && fNotEqual(g_config.smoothingAmountHorizontal, 0)) {

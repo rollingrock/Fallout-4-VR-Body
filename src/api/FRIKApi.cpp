@@ -49,7 +49,10 @@ namespace
     std::array<std::vector<ExternalHandAuthorityEntry>, 2> g_externalHandAuthorities;
     std::uint64_t g_externalHandAuthorityGeneration = 0;
 
-    std::size_t handAuthorityIndex(const bool isLeft) { return isLeft ? 1U : 0U; }
+    std::size_t handAuthorityIndex(const bool isLeft)
+    {
+        return isLeft ? 1U : 0U;
+    }
 
     SelectedExternalHandAuthority selectExternalHandAuthority(const std::vector<ExternalHandAuthorityEntry>& entries)
     {
@@ -138,21 +141,17 @@ namespace
 
     HandFingersPose makeHandPoseFromApiData(const FRIKApi::HandPoseData& handPose, const HandPoseKind kind = HandPoseKind::Custom)
     {
-        return HandFingersPose{
-            FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
+        return HandFingersPose{ FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
             FingerPose{ handPose.index.prox, handPose.index.mid, handPose.index.dist, handPose.index.splay },
             FingerPose{ handPose.middle.prox, handPose.middle.mid, handPose.middle.dist, handPose.middle.splay },
             FingerPose{ handPose.ring.prox, handPose.ring.mid, handPose.ring.dist, handPose.ring.splay },
             FingerPose{ handPose.pinky.prox, handPose.pinky.mid, handPose.pinky.dist, handPose.pinky.splay },
             handPose.palmPitch,
             handPose.palmYaw,
-            kind
-        };
+            kind };
     }
 
-    void copyLocalTransformsToApiData(
-        const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms,
-        const std::uint16_t enabledMask,
+    void copyLocalTransformsToApiData(const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms, const std::uint16_t enabledMask,
         FRIKApi::FingerLocalTransformOverride& outTransforms)
     {
         outTransforms = {};
@@ -569,7 +568,9 @@ namespace
         auto& entries = g_externalHandAuthorities[handAuthorityIndex(isLeft)];
         auto updatedEntries = entries;
         const auto nextGeneration = g_externalHandAuthorityGeneration + 1;
-        auto it = std::ranges::find_if(updatedEntries, [&](const ExternalHandAuthorityEntry& entry) { return entry.tag == *normalizedTag; });
+        auto it = std::ranges::find_if(updatedEntries, [&](const ExternalHandAuthorityEntry& entry) {
+            return entry.tag == *normalizedTag;
+        });
         if (it == updatedEntries.end()) {
             updatedEntries.push_back(ExternalHandAuthorityEntry{
                 .tag = *normalizedTag,
@@ -606,10 +607,7 @@ namespace
         return true;
     }
 
-    bool FRIK_CALL setHandPoseCustomLocalTransformsWithPriority(
-        const char* tag,
-        const FRIKApi::Hand hand,
-        const FRIKApi::FingerLocalTransformOverride* overrideData,
+    bool FRIK_CALL setHandPoseCustomLocalTransformsWithPriority(const char* tag, const FRIKApi::Hand hand, const FRIKApi::FingerLocalTransformOverride* overrideData,
         const int priority)
     {
         const auto normalizedTag = getNormalizedTag(tag);
@@ -622,18 +620,10 @@ namespace
             localTransforms[i] = overrideData->localTransforms[i];
         }
 
-        return HandPose::setHandPoseLocalTransformsWithPriority(
-            getIsLeftForHandEnum(hand),
-            *normalizedTag,
-            localTransforms,
-            overrideData->enabledMask,
-            priority);
+        return HandPose::setHandPoseLocalTransformsWithPriority(getIsLeftForHandEnum(hand), *normalizedTag, localTransforms, overrideData->enabledMask, priority);
     }
 
-    bool FRIK_CALL getHandPoseLocalTransformsForPose(
-        const FRIKApi::Hand hand,
-        const FRIKApi::HandPoseData& handPose,
-        FRIKApi::FingerLocalTransformOverride* outTransforms)
+    bool FRIK_CALL getHandPoseLocalTransformsForPose(const FRIKApi::Hand hand, const FRIKApi::HandPoseData& handPose, FRIKApi::FingerLocalTransformOverride* outTransforms)
     {
         if (!outTransforms) {
             return false;
@@ -661,7 +651,11 @@ namespace
         auto& entries = g_externalHandAuthorities[handAuthorityIndex(isLeft)];
         auto updatedEntries = entries;
         const auto oldSize = updatedEntries.size();
-        updatedEntries.erase(std::remove_if(updatedEntries.begin(), updatedEntries.end(), [&](const ExternalHandAuthorityEntry& entry) { return entry.tag == *normalizedTag; }),
+        updatedEntries.erase(std::remove_if(updatedEntries.begin(),
+                                 updatedEntries.end(),
+                                 [&](const ExternalHandAuthorityEntry& entry) {
+                                     return entry.tag == *normalizedTag;
+                                 }),
             updatedEntries.end());
         if (updatedEntries.size() == oldSize) {
             return true;
@@ -696,8 +690,7 @@ namespace
         return true;
     }
 
-    constexpr FRIKApi FRIK_API_FUNCTIONS_TABLE{
-        .getVersion = &getVersion,
+    constexpr FRIKApi FRIK_API_FUNCTIONS_TABLE{ .getVersion = &getVersion,
         .getModVersion = &getModVersion,
         .isSkeletonReady = &isSkeletonReady,
         .isConfigOpen = &isConfigOpen,
@@ -731,8 +724,7 @@ namespace
         .blockPrimaryHandWeaponPose = &blockPrimaryHandWeaponPose,
         .blockPrimaryWeaponNodeOwnership = &blockPrimaryWeaponNodeOwnership,
         .registerWeaponHandRecoilController = &frik::api::registerWeaponHandRecoilController,
-        .unregisterWeaponHandRecoilController = &frik::api::unregisterWeaponHandRecoilController
-    };
+        .unregisterWeaponHandRecoilController = &frik::api::unregisterWeaponHandRecoilController };
 }
 
 namespace frik::api
@@ -758,8 +750,7 @@ namespace frik::api
         return sizeof(FRIKApi);
     }
 
-    FRIK_API bool FRIK_CALL FRIKAPI_MirrorFingerLocalTransforms(const FRIKApi::Hand sourceHand,
-        const FRIKApi::FingerLocalTransformOverride* sourceTransforms,
+    FRIK_API bool FRIK_CALL FRIKAPI_MirrorFingerLocalTransforms(const FRIKApi::Hand sourceHand, const FRIKApi::FingerLocalTransformOverride* sourceTransforms,
         FRIKApi::FingerLocalTransformOverride* outTargetTransforms)
     {
         if ((sourceHand != FRIKApi::Hand::Left && sourceHand != FRIKApi::Hand::Right) || !sourceTransforms || !outTargetTransforms) {

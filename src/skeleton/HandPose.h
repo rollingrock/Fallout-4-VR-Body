@@ -1,8 +1,8 @@
 #pragma once
 
 #include <array>
-#include <map>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -22,12 +22,8 @@ namespace frik
 
         static void setHandPoseOverride(bool isLeft, std::string_view tag, const HandFingersPose& pose, bool forceTop);
         static void setHandPoseOverrideWithPriority(bool isLeft, std::string_view tag, const HandFingersPose& pose, int priority);
-        static bool setHandPoseLocalTransformsWithPriority(
-            bool isLeft,
-            std::string_view tag,
-            const std::array<RE::NiTransform, FINGER_BONE_COUNT>& localTransforms,
-            std::uint16_t enabledMask,
-            int priority);
+        static bool setHandPoseLocalTransformsWithPriority(bool isLeft, std::string_view tag, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& localTransforms,
+            std::uint16_t enabledMask, int priority);
         static void clearHandPoseOverride(bool isLeft, std::string_view tag);
         static skeleton::data::HandPoseOverrideTagState getHandPoseSetTagState(bool isLeft, std::string_view tag);
         static skeleton::data::HandPoseKind getCurrentHandPoseKind(bool isLeft);
@@ -35,10 +31,7 @@ namespace frik
         static bool isPrimaryWeaponPoseBlocked();
         static void clearPrimaryWeaponPoseBlocks();
         static const HandFingersPose& getFixedPrimaryWeaponPose();
-        static bool buildFingerLocalTransformsForPose(
-            bool isLeft,
-            const HandFingersPose& pose,
-            std::array<RE::NiTransform, FINGER_BONE_COUNT>& outTransforms,
+        static bool buildFingerLocalTransformsForPose(bool isLeft, const HandFingersPose& pose, std::array<RE::NiTransform, FINGER_BONE_COUNT>& outTransforms,
             std::uint16_t& outEnabledMask);
 
         /*
@@ -104,7 +97,8 @@ namespace frik
         RE::NiMatrix3 blendBoneRotation(const std::string& boneName, float flex, float splay) const;
         float inverseBlendFlex(const std::string& boneName, const RE::NiMatrix3& animatedRotation) const;
         void measureAnimatedFlexSplay(const std::string& sourceBoneName, const RE::NiMatrix3& animatedRotation, float& outFlex, float& outSplay) const;
-        bool tryTransferMirroredThumbBase(const std::string& sourceBoneName, const std::string& targetBoneName, const RE::NiMatrix3& animatedRotation, RE::NiMatrix3& outRotation) const;
+        bool tryTransferMirroredThumbBase(const std::string& sourceBoneName, const std::string& targetBoneName, const RE::NiMatrix3& animatedRotation,
+            RE::NiMatrix3& outRotation) const;
         static const RE::NiTransform* getLocalTransformOverride(const TaggedHandPoseOverride* activeOverride, const std::string& boneName);
         static bool shouldUsePointingPose(bool isLeft);
         static bool shouldUseThumbsUpPose(bool isLeft);

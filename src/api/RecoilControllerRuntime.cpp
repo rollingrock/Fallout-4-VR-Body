@@ -99,27 +99,20 @@ namespace
 
     float dotRows(const RE::NiMatrix3& rotation, const int lhs, const int rhs)
     {
-        return rotation.entry[lhs][0] * rotation.entry[rhs][0] +
-            rotation.entry[lhs][1] * rotation.entry[rhs][1] +
-            rotation.entry[lhs][2] * rotation.entry[rhs][2];
+        return rotation.entry[lhs][0] * rotation.entry[rhs][0] + rotation.entry[lhs][1] * rotation.entry[rhs][1] + rotation.entry[lhs][2] * rotation.entry[rhs][2];
     }
 
     float rotationDeterminant(const RE::NiMatrix3& rotation)
     {
-        return
-            rotation.entry[0][0] * (rotation.entry[1][1] * rotation.entry[2][2] - rotation.entry[1][2] * rotation.entry[2][1]) -
-            rotation.entry[0][1] * (rotation.entry[1][0] * rotation.entry[2][2] - rotation.entry[1][2] * rotation.entry[2][0]) +
-            rotation.entry[0][2] * (rotation.entry[1][0] * rotation.entry[2][1] - rotation.entry[1][1] * rotation.entry[2][0]);
+        return rotation.entry[0][0] * (rotation.entry[1][1] * rotation.entry[2][2] - rotation.entry[1][2] * rotation.entry[2][1]) -
+               rotation.entry[0][1] * (rotation.entry[1][0] * rotation.entry[2][2] - rotation.entry[1][2] * rotation.entry[2][0]) +
+               rotation.entry[0][2] * (rotation.entry[1][0] * rotation.entry[2][1] - rotation.entry[1][1] * rotation.entry[2][0]);
     }
 
     bool isPlausibleRigidTransform(const RE::NiTransform& transform)
     {
-        if (!std::isfinite(transform.translate.x) ||
-            !std::isfinite(transform.translate.y) ||
-            !std::isfinite(transform.translate.z) ||
-            !std::isfinite(transform.scale) ||
-            std::abs(transform.scale - 1.0f) > RECOIL_SCALE_TOLERANCE ||
-            common::MatrixUtils::vec3Len(transform.translate) > MAX_RECOIL_TRANSLATION) {
+        if (!std::isfinite(transform.translate.x) || !std::isfinite(transform.translate.y) || !std::isfinite(transform.translate.z) || !std::isfinite(transform.scale) ||
+            std::abs(transform.scale - 1.0f) > RECOIL_SCALE_TOLERANCE || common::MatrixUtils::vec3Len(transform.translate) > MAX_RECOIL_TRANSLATION) {
             return false;
         }
 
@@ -134,8 +127,7 @@ namespace
             }
         }
 
-        if (std::abs(dotRows(transform.rotate, 0, 1)) > ROTATION_ORTHOGONAL_TOLERANCE ||
-            std::abs(dotRows(transform.rotate, 0, 2)) > ROTATION_ORTHOGONAL_TOLERANCE ||
+        if (std::abs(dotRows(transform.rotate, 0, 1)) > ROTATION_ORTHOGONAL_TOLERANCE || std::abs(dotRows(transform.rotate, 0, 2)) > ROTATION_ORTHOGONAL_TOLERANCE ||
             std::abs(dotRows(transform.rotate, 1, 2)) > ROTATION_ORTHOGONAL_TOLERANCE) {
             return false;
         }
@@ -145,25 +137,17 @@ namespace
 
     bool isValidResponse(const Api::RecoilResponse& response)
     {
-        constexpr auto supportedHandMask =
-            static_cast<std::uint32_t>(Api::RecoilHandMask::Primary) |
-            static_cast<std::uint32_t>(Api::RecoilHandMask::Offhand);
+        constexpr auto supportedHandMask = static_cast<std::uint32_t>(Api::RecoilHandMask::Primary) | static_cast<std::uint32_t>(Api::RecoilHandMask::Offhand);
 
-        return response.structSize >= sizeof(Api::RecoilResponse) &&
-            (response.handMask & ~supportedHandMask) == 0 &&
-            (response.delivery == Api::RecoilDelivery::Damped || response.delivery == Api::RecoilDelivery::Direct) &&
-            isPlausibleRigidTransform(response.controlledKickLocal);
+        return response.structSize >= sizeof(Api::RecoilResponse) && (response.handMask & ~supportedHandMask) == 0 &&
+               (response.delivery == Api::RecoilDelivery::Damped || response.delivery == Api::RecoilDelivery::Direct) && isPlausibleRigidTransform(response.controlledKickLocal);
     }
 
 }
 
 namespace frik::api
 {
-    bool FRIK_CALL registerWeaponHandRecoilController(
-        const char* const tag,
-        const FRIKApi::WeaponHandRecoilController controller,
-        void* const userData,
-        const int priority)
+    bool FRIK_CALL registerWeaponHandRecoilController(const char* const tag, const FRIKApi::WeaponHandRecoilController controller, void* const userData, const int priority)
     {
         const auto normalizedTag = normalizeTag(tag);
         if (g_invokingRecoilController || !normalizedTag || !controller || priority < 0) {
@@ -216,8 +200,7 @@ namespace frik::api
             }
         }
         std::sort(ordered.begin(), ordered.begin() + count, [](const RecoilControllerEntry* const lhs, const RecoilControllerEntry* const rhs) {
-            return lhs->priority > rhs->priority ||
-                (lhs->priority == rhs->priority && lhs->generation > rhs->generation);
+            return lhs->priority > rhs->priority || (lhs->priority == rhs->priority && lhs->generation > rhs->generation);
         });
 
         g_invokingRecoilController = true;

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdint>
 #include <Version.h>
+#include <cstdint>
 
 #include "Config.h"
 #include "ModBase.h"
