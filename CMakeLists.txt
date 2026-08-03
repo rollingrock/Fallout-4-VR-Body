@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 4.2)
 # >>> Project
 set(NAME "FRIK")
 set(FRIENDLY_NAME "FRIK")
-set(VERSION 0.77.12)
+set(VERSION 0.78.1)
 
 message(">>> Start build for '${NAME}' v${VERSION}")
 
@@ -107,6 +107,17 @@ add_library(${PROJECT_NAME} SHARED
   ${BUILD_DIR}/resources.rc
   "${ROOT_DIR}/.clang-format"
   "${ROOT_DIR}/.editorconfig"
+)
+
+# Keep the FO4VR loader contract enforced in the normal build path.
+add_custom_command(
+  TARGET ${PROJECT_NAME}
+  PRE_BUILD
+  COMMAND ${CMAKE_COMMAND}
+          -DFRIK_SOURCE=${SOURCE_DIR}/FRIK.cpp
+          -P ${ROOT_DIR}/cmake/verify_fo4vr_query.cmake
+  COMMENT "Verifying FO4VR F4SE Query compatibility"
+  VERBATIM
 )
 
 # >>> C++ standard & defs

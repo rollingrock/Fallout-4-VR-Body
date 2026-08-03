@@ -1,16 +1,20 @@
 #pragma once
 
-#include <optional>
 #include <Version.h>
+#include <optional>
 
 #include "ConfigBase.h"
-#include "resources.h"
 #include "common/CommonUtils.h"
+#include "f4vr/WandActivationSphere.h"
+#include "resources.h"
+#include "vrcf/VRControllersManager.h"
 
 namespace frik
 {
     constexpr auto INI_SECTION_MAIN = "Fallout4VRBody";
     constexpr auto INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
+    // Activation-sphere section for the Fallout London VR Attaboy grab gesture.
+    constexpr auto INI_SECTION_ATTABOY_GRAB = "FRIK_AttaboyActivationSphere";
 
     static const auto BASE_PATH = common::getRelativePathInDocuments(R"(\My Games\Fallout4VR\FRIK_Config)");
     static const auto FRIK_INI_PATH = BASE_PATH + R"(\FRIK.ini)";
@@ -64,8 +68,9 @@ namespace frik
     class Config : public ConfigBase
     {
     public:
-        explicit Config() :
-            ConfigBase(Version::PROJECT, FRIK_INI_PATH, IDR_FRIK_INI) {}
+        explicit Config()
+            : ConfigBase(Version::PROJECT, FRIK_INI_PATH, IDR_FRIK_INI)
+        {}
 
         virtual void load() override;
         void loadIniOnly();
@@ -75,6 +80,7 @@ namespace frik
         void toggleIsHoloPipboy();
         void toggleDampenPipboyScreen();
         void togglePipBoyOpenWhenLookAt();
+        void togglePipBoyCloseWhenLookAway();
         void savePipboyScale(float scale);
         void saveIsPlayingSeated(bool iIsPlayingSeated);
         void saveHideHeadEquipment(bool hide);
@@ -91,6 +97,7 @@ namespace frik
 
         static void openInNotepad();
         RE::NiTransform getPipboyOffset();
+        RE::NiTransform getDefaultPipboyOffset();
         bool savePipboyOffset(const RE::NiTransform& transform);
         std::optional<RE::NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA) const;
         bool saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
@@ -108,9 +115,21 @@ namespace frik
         bool hideHead = false;
         bool hideHeadEquipment = false;
         bool hideSkin = false;
-        const std::vector<std::string>& faceGeometry() const { return _faceGeometry; }
-        const std::vector<std::string>& skinGeometry() const { return _skinGeometry; }
-        const std::vector<int>& hideEquipSlotIndexes() const { return _hideEquipSlotIndexes; }
+
+        const std::vector<std::string>& faceGeometry() const
+        {
+            return _faceGeometry;
+        }
+
+        const std::vector<std::string>& skinGeometry() const
+        {
+            return _skinGeometry;
+        }
+
+        const std::vector<int>& hideEquipSlotIndexes() const
+        {
+            return _hideEquipSlotIndexes;
+        }
 
         // is the player playing standing or sitting
         bool isPlayingSeated = false;
@@ -142,31 +161,39 @@ namespace frik
         float pipBoyScale = 0;
         bool hidePipboy = false;
         bool isHoloPipboy = false;
+        bool holoPipboyKeepWristModel = false;
         bool leftHandedPipBoy = false;
         bool enablePrimaryControllerPipboyUse = false;
         bool pipboyOpenWhenLookAt = false;
+        bool pipboyOpenWithButtonOnlyWhenLookingAt = false;
         bool pipboyCloseWhenLookAway = false;
         bool pipboyCloseWhenMovingWhileLookingAway = false;
         bool pipboyHolsterWeaponForOperation = false;
         float pipboyLookAtThreshold = 0;
         float pipboyLookAwayThreshold = 0;
+        float pipboyButtonLookAtThreshold = 0;
         float pipboyOperationFingerDetectionRange = 0;
         int pipBoyOnDelay = 0;
         int pipBoyOffDelay = 0;
-        int pipBoyButtonArm = 0;
-        int pipBoyButtonID = 0;
-        int pipBoyButtonOffArm = 0;
-        int pipBoyButtonOffID = 0;
+        // Controller input that opens / closes the Pipboy.
+        vrcf::InputBinding pipboyOpenBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_SteamVR_Trigger };
+        vrcf::InputBinding pipboyCloseBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
+        // Controller input that must be held to move the holo Pipboy screen (see DampenPipboyScreenMode::HoldInPlace).
+        vrcf::InputBinding holdPipboyScreenBinding;
+        // Controller input that enters the wrist-Pipboy configuration mode (long-press the favorites button).
+        vrcf::InputBinding enterPipboyConfigBinding;
 
         // Pipboy Torch/Flashlight
         bool removeFlashlight = false;
         bool flashlightEnabled = false;
         FlashlightLocation flashlightLocation = FlashlightLocation::Head;
-        int switchTorchButton = 2;
+        // Switch the torch between head and hand: tapped on whichever hand is near the head (one binding per hand).
+        vrcf::InputBinding switchTorchLeftBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
+        vrcf::InputBinding switchTorchRightBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
 
-        // Fallout London VR support
-        int attaboyGrabButtonId = 0;
-        float attaboyGrabActivationDistance = 0;
+        // Fallout London VR support: grab the Attaboy off the belt (a proximity gesture) to toggle the Pipboy.
+        // Loaded from the [AttaboyGrab] activation-sphere section; disable by setting sPrimaryBinding = none.
+        f4vr::WandActivationConfig attaboyGrab;
 
         // Weapon offhand grip
         bool enableOffHandGripping = false;
@@ -174,7 +201,10 @@ namespace frik
         bool enableGripButtonToLetGo = false;
         bool onePressGripButton = false;
         float gripLetGoThreshold = 0;
-        int gripButtonID = 0;
+        // Offhand input that grips / releases a two-handed weapon (press = grab and release toggle, modes 2/3/4).
+        vrcf::InputBinding offhandGripBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Press, vr::k_EButton_Grip };
+        // Offhand input that must stay held to keep gripping (mode 3 releases the grip when this is no longer held).
+        vrcf::InputBinding offhandGripHoldBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::HoldDown, vr::k_EButton_Grip };
 
         // Dampen hands
         bool dampenHands = false;
@@ -193,8 +223,12 @@ namespace frik
         bool showPAHUD = false;
         float selfieOutFrontDistance = 0;
         bool selfieIgnoreHideFlags = false;
+        // Controller input that toggles selfie mode (only when the Pipboy is off, as it shares the button).
+        vrcf::InputBinding toggleSelfieBinding;
         float scopeAdjustDistance = 0;
-        float openConfigurationModePressDelay = 0;
+        // Controller input that opens the in-VR configuration menu. Default: long-press both thumbsticks
+        // (primary thumbstick held past the duration while the offhand thumbstick is also held).
+        vrcf::InputBinding openMainConfigBinding;
 
         // Smooth Movement
         bool disableSmoothMovement = false;

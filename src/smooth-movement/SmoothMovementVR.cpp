@@ -2,6 +2,7 @@
 
 #include "Config.h"
 #include "FRIK.h"
+#include "common/PerfMonitor.h"
 
 using namespace common;
 
@@ -67,6 +68,9 @@ namespace frik
 
     void SmoothMovementVR::onFrameUpdate()
     {
+        static PerfMonitor perf("SmoothMovementVR::onFrameUpdate");
+        const auto timer = perf.scope();
+
         if (g_config.disableSmoothMovement) {
             return;
         }
@@ -155,16 +159,17 @@ namespace frik
             return curPos;
         }
 
+
         auto newPos = RE::NiPoint3(curPos.x, curPos.y, curPos.z);
         if (fNotEqual(g_config.dampingMultiplierHorizontal, 0) && fNotEqual(g_config.smoothingAmountHorizontal, 0)) {
             // DO smoothing
             const float absValX = min(50, max(0.1f, abs(curPos.x - prevPos.x)));
-            newPos.x = prevPos.x + _frameTime * ((curPos.x - prevPos.x) /
-                (g_config.smoothingAmountHorizontal * (g_config.dampingMultiplierHorizontal / absValX) * (_notMoving ? g_config.stoppingMultiplierHorizontal : 1.0f)));
+            newPos.x = prevPos.x + _frameTime * ((curPos.x - prevPos.x) / (g_config.smoothingAmountHorizontal * (g_config.dampingMultiplierHorizontal / absValX) *
+                                                                              (_notMoving ? g_config.stoppingMultiplierHorizontal : 1.0f)));
 
             const float absValY = min(50, max(0.1f, abs(curPos.y - prevPos.y)));
-            newPos.y = prevPos.y + _frameTime * ((curPos.y - prevPos.y) /
-                (g_config.smoothingAmountHorizontal * (g_config.dampingMultiplierHorizontal / absValY) * (_notMoving ? g_config.stoppingMultiplierHorizontal : 1.0f)));
+            newPos.y = prevPos.y + _frameTime * ((curPos.y - prevPos.y) / (g_config.smoothingAmountHorizontal * (g_config.dampingMultiplierHorizontal / absValY) *
+                                                                              (_notMoving ? g_config.stoppingMultiplierHorizontal : 1.0f)));
         } else {
             logger::sample("shouldn't be here!");
         }
@@ -173,7 +178,7 @@ namespace frik
         if (!f4vr::isJumpingOrInAir() && fNotEqual(g_config.dampingMultiplier, 0) && fNotEqual(g_config.smoothingAmount, 0)) {
             const float absVal = min(50, max(0.1f, abs(curPos.z - prevPos.z)));
             newPos.z = prevPos.z + _frameTime * ((curPos.z - prevPos.z) /
-                (g_config.smoothingAmount * (g_config.dampingMultiplier / absVal) * (_notMoving ? g_config.stoppingMultiplier : 1.0f)));
+                                                    (g_config.smoothingAmount * (g_config.dampingMultiplier / absVal) * (_notMoving ? g_config.stoppingMultiplier : 1.0f)));
         }
 
         return newPos;

@@ -2,6 +2,7 @@
 
 #include "Flashlight.h"
 #include "PipboyPhysicalHandler.h"
+#include "f4vr/WandActivationSphere.h"
 
 namespace frik
 {
@@ -19,10 +20,21 @@ namespace frik
         explicit Pipboy(Skeleton* skelly);
 
         static bool isPlayerLookingAtPipboy(bool isPipboyOpen);
+        static bool isPlayerLookingAtPipboy(float threshold);
 
-        bool isOpen() const { return _isOpen; }
-        bool isOperatingWithFinger() const { return _physicalHandler.isOperating(); }
+        bool isOpen() const
+        {
+            return _isOpen;
+        }
+
+        bool isOperatingWithFinger() const
+        {
+            return _physicalHandler.isOperating();
+        }
+
         void openClose(bool open);
+
+        void resetOnDisable();
 
         void swapModel();
 
@@ -40,7 +52,7 @@ namespace frik
         static void detachReplacedPipboyRootNif();
 
         void checkTurningOnByButton();
-        bool checkAttaboyActivation();
+        void checkAttaboyGrab();
         void checkTurningOffByButton();
         void checkTurningOnByLookingAt();
         void checkTurningOffByLookingAway();
@@ -60,7 +72,6 @@ namespace frik
         PipboyPhysicalHandler _physicalHandler;
 
         bool _isOpen = false;
-        bool _attaboyGrabHapticActivated = false;
 
         // see exitPowerArmorBugFixHack method
         bool _exitPowerArmorFixFirstFrame = true;
@@ -74,7 +85,9 @@ namespace frik
         RE::NiTransform _pipboyScreenStableFrame;
 
         // Fallout London VR Attaboy handling of grabbing from the belt
-        RE::NiNode* _attaboyOnBeltNode;
+        RE::NiNode* _attaboyOnBeltNode = nullptr;
+        // Proximity gesture around the on-belt Attaboy that toggles the Pipboy when grabbed.
+        f4vr::WandActivationSphere _attaboyGrabSphere{ "frik_attaboy_grab" };
 
         // static field to preserve the last pipboy page when existing PA
         inline static PipboyPage _lastPipboyPage = PipboyPage::STATUS;

@@ -77,15 +77,15 @@ namespace frik::api
     // Finger pose related APIs
     static void setFingerPositionScalar2(std::monostate, const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
-        logger::info("Papyrus: Set Finger Position Scalar '{}' ({:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f})",
-            isLeft ? "Left" : "Right", thumb, index, middle, ring, pinky);
-        HandPose::setHandPoseOverride(isLeft, "frik.papyrus", HandFingersPose{
-            FingerPose{ thumb, thumb, thumb },
-            FingerPose{ index, index, index },
-            FingerPose{ middle, middle, middle },
-            FingerPose{ ring, ring, ring },
-            FingerPose{ pinky, pinky, pinky }
-        }, false);
+        logger::info("Papyrus: Set Finger Position Scalar '{}' ({:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f})", isLeft ? "Left" : "Right", thumb, index, middle, ring, pinky);
+        HandPose::setHandPoseOverride(isLeft,
+            "frik.papyrus",
+            HandFingersPose{ FingerPose{ thumb, thumb, thumb },
+                FingerPose{ index, index, index },
+                FingerPose{ middle, middle, middle },
+                FingerPose{ ring, ring, ring },
+                FingerPose{ pinky, pinky, pinky } },
+            false);
     }
 
     static void restoreFingerPoseControl2(std::monostate, const bool isLeft)

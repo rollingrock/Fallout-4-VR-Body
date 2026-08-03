@@ -2,6 +2,7 @@
 #include "FRIKApi.h"
 #include "RecoilControllerRuntime.h"
 
+#include "Config.h"
 #include "FRIK.h"
 #include "common/CommonUtils.h"
 #include "f4vr/F4VRSkelly.h"
@@ -74,6 +75,34 @@ namespace
         return lhs.entry->tag == rhs.entry->tag && lhs.entry->priority == rhs.entry->priority && lhs.entry->generation == rhs.entry->generation;
     }
 
+    /**
+     * Per-feature sets of external tags blocking each FRIK subsystem (see blockFeature).
+     * A feature stays disabled while at least one tag is still blocking it. Indexed by FRIKApi::Feature.
+     */
+    constexpr std::size_t FEATURE_COUNT = 4;
+    std::array<std::unordered_set<std::string>, FEATURE_COUNT> g_featureBlockingTags;
+
+    /**
+     * Apply the resolved enabled state of a feature to its FRIK subsystem.
+     */
+    void applyFeatureEnabled(const FRIKApi::Feature feature, const bool enabled)
+    {
+        switch (feature) {
+        case FRIKApi::Feature::Flashlight:
+            g_frik.setFlashlightEnabled(enabled);
+            break;
+        case FRIKApi::Feature::WeaponPositioning:
+            g_frik.setWeaponPositionEnabled(enabled);
+            break;
+        case FRIKApi::Feature::Pipboy:
+            g_frik.setPipboyEnabled(enabled);
+            break;
+        case FRIKApi::Feature::SmoothMovement:
+            g_frik.setSmoothMovementEnabled(enabled);
+            break;
+        }
+    }
+
     bool getIsLeftForHandEnum(const FRIKApi::Hand hand)
     {
         switch (hand) {
@@ -100,13 +129,11 @@ namespace
 
     HandFingersPose makeUniformFingerPose(const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
-        return HandFingersPose{
-            FingerPose{ thumb, thumb, thumb },
+        return HandFingersPose{ FingerPose{ thumb, thumb, thumb },
             FingerPose{ index, index, index },
             FingerPose{ middle, middle, middle },
             FingerPose{ ring, ring, ring },
-            FingerPose{ pinky, pinky, pinky }
-        };
+            FingerPose{ pinky, pinky, pinky } };
     }
 
     HandFingersPose makeHandPoseFromApiData(const FRIKApi::HandPoseData& handPose, const HandPoseKind kind = HandPoseKind::Custom)
@@ -269,11 +296,7 @@ namespace
         }
 
         const std::string normalizedTag = f4cf::common::trim(tag);
-        if (!HandPose::blockPrimaryWeaponPose(normalizedTag, block)) {
-            return false;
-        }
-
-        return true;
+        return HandPose::blockPrimaryWeaponPose(normalizedTag, block);
     }
 
     bool FRIK_CALL blockPrimaryWeaponNodeOwnership(const char* tag, const bool block)
@@ -283,11 +306,53 @@ namespace
         }
 
         const std::string normalizedTag = f4cf::common::trim(tag);
-        if (!Skeleton::blockPrimaryWeaponNodeOwnership(normalizedTag, block)) {
+        return Skeleton::blockPrimaryWeaponNodeOwnership(normalizedTag, block);
+    }
+
+    /**
+     * Enable/disable a FRIK subsystem for a specific external tag.
+     * The feature remains disabled while at least one tag is still blocking it.
+     */
+    bool FRIK_CALL blockFeature(const char* tag, const FRIKApi::Feature feature, const bool block)
+    {
+        if (!f4cf::common::hasNonWhitespaceText(tag)) {
             return false;
         }
 
+        const auto featureIndex = static_cast<std::size_t>(feature);
+        if (featureIndex >= g_featureBlockingTags.size()) {
+            return false;
+        }
+
+        const std::string normalizedTag = f4cf::common::trim(tag);
+        auto& blockingTags = g_featureBlockingTags[featureIndex];
+        if (block) {
+            blockingTags.emplace(normalizedTag);
+        } else {
+            blockingTags.erase(normalizedTag);
+        }
+
+        logger::info("API blockFeature tag:'{}' - feature:{}, block:{}, activeBlocks:{}", normalizedTag, featureIndex, block, blockingTags.size());
+        applyFeatureEnabled(feature, blockingTags.empty());
         return true;
+    }
+
+    /**
+     * Check whether a FRIK subsystem is currently disabled (blocked by any tag).
+     */
+    bool FRIK_CALL isFeatureBlocked(const FRIKApi::Feature feature)
+    {
+        switch (feature) {
+        case FRIKApi::Feature::Flashlight:
+            return !g_frik.isFlashlightEnabled();
+        case FRIKApi::Feature::WeaponPositioning:
+            return !g_frik.isWeaponPositionEnabled();
+        case FRIKApi::Feature::Pipboy:
+            return !g_frik.isPipboyEnabled();
+        case FRIKApi::Feature::SmoothMovement:
+            return !g_frik.isSmoothMovementEnabled();
+        }
+        return false;
     }
 
     bool FRIK_CALL isWristPipboyOpen()
@@ -337,6 +402,7 @@ namespace
             return false;
         }
 
+        logger::sample("API setHandPose tag:'{}' hand={} pose={}", *normalizedTag, FRIKApi::handName(hand), static_cast<int>(handPose));
         HandPose::setHandPoseOverride(isLeft, *normalizedTag, *pose, false);
         return true;
     }
@@ -349,6 +415,7 @@ namespace
             return false;
         }
 
+        logger::sample("API setHandPoseCustomFingerPositions tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
         HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag, makeUniformFingerPose(thumb, index, middle, ring, pinky), false);
         return true;
     }
@@ -360,6 +427,7 @@ namespace
             return false;
         }
 
+        logger::sample("API setHandPoseCustom tag:'{}' hand={} forceTop={}", *normalizedTag, FRIKApi::handName(hand), forceTop);
         HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag, makeHandPoseFromApiData(handPose), forceTop);
         return true;
     }
@@ -382,18 +450,75 @@ namespace
             return false;
         }
 
+        logger::sample("API clearHandPose tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
         HandPose::clearHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag);
         return true;
     }
 
     void FRIK_CALL setHandPoseFingerPositions(const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
+        logger::sample("API [DEPRECATED] setHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
         HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG, makeUniformFingerPose(thumb, index, middle, ring, pinky), false);
     }
 
     void FRIK_CALL clearHandPoseFingerPositions(const FRIKApi::Hand hand)
     {
+        logger::sample("API [DEPRECATED] clearHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
         HandPose::clearHandPoseOverride(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG);
+    }
+
+    /**
+     * Read the current effective config value (override, else on-disk, else default) into outBuf.
+     */
+    int FRIK_CALL getConfigValue(const char* /*caller*/, const char* section, const char* key, char* outBuf, const int bufLen, const char* defaultValue)
+    {
+        if (!section || !key) {
+            if (outBuf && bufLen > 0) {
+                outBuf[0] = '\0';
+            }
+            return 0;
+        }
+
+        const std::string value = g_config.getConfigValue(section, key, defaultValue);
+        if (outBuf && bufLen > 0) {
+            const auto copied = value.copy(outBuf, static_cast<std::size_t>(bufLen) - 1);
+            outBuf[copied] = '\0';
+        }
+        return static_cast<int>(value.size());
+    }
+
+    /**
+     * Check whether a session override is currently set for a config section/key.
+     */
+    bool FRIK_CALL hasConfigValueOverride(const char* /*caller*/, const char* section, const char* key)
+    {
+        return section && key && g_config.hasConfigOverride(section, key);
+    }
+
+    /**
+     * Set a session-only override for a config section/key (string parsed by the type-appropriate reader).
+     */
+    bool FRIK_CALL setConfigValueOverride(const char* caller, const char* section, const char* key, const char* value)
+    {
+        if (!section || !key || !value) {
+            return false;
+        }
+        logger::sample("API setConfigValueOverride caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
+        g_config.setConfigOverride(section, key, value);
+        return true;
+    }
+
+    /**
+     * Remove a previously set session override for a config section/key.
+     */
+    bool FRIK_CALL clearConfigValueOverride(const char* caller, const char* section, const char* key)
+    {
+        if (!section || !key || !g_config.hasConfigOverride(section, key)) {
+            return false;
+        }
+        logger::sample("API clearConfigValueOverride caller:'{}' {}.{}", caller ? caller : "?", section, key);
+        g_config.clearConfigOverride(section, key);
+        return true;
     }
 
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApi::OpenExternalModConfigData& data)
@@ -401,11 +526,8 @@ namespace
         if (!data.buttonIconNifPath || !data.callbackReceiverName) {
             return false;
         }
-        g_frik.registerOpenSettingButton({
-            .buttonIconNifPath = data.buttonIconNifPath,
-            .callbackReceiverName = data.callbackReceiverName,
-            .callbackMessageType = data.callbackMessageType
-        });
+        g_frik.registerOpenSettingButton(
+            { .buttonIconNifPath = data.buttonIconNifPath, .callbackReceiverName = data.callbackReceiverName, .callbackMessageType = data.callbackMessageType });
         return true;
     }
 
@@ -594,6 +716,12 @@ namespace
         .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig,
         .blockOffHandWeaponGripping = &blockOffHandWeaponGripping,
         .setHandPoseCustom = &setHandPoseCustom,
+        .blockFeature = &blockFeature,
+        .isFeatureBlocked = &isFeatureBlocked,
+        .getConfigValue = &getConfigValue,
+        .hasConfigValueOverride = &hasConfigValueOverride,
+        .setConfigValueOverride = &setConfigValueOverride,
+        .clearConfigValueOverride = &clearConfigValueOverride,
         .setHandPoseWithPriority = &setHandPoseWithPriority,
         .setHandPoseCustomWithPriority = &setHandPoseCustomWithPriority,
         .applyExternalHandWorldTransform = &applyExternalHandWorldTransform,

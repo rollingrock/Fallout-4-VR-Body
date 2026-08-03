@@ -29,8 +29,10 @@ namespace frik
             debugSphere = nullptr;
         }
 
-        BoneSphere(const float a_radius, RE::NiNode* a_bone, const RE::NiPoint3 a_offset) :
-            radius(a_radius), bone(a_bone), offset(a_offset)
+        BoneSphere(const float a_radius, RE::NiNode* a_bone, const RE::NiPoint3 a_offset)
+            : radius(a_radius),
+              bone(a_bone),
+              offset(a_offset)
         {
             stickyRight = false;
             stickyLeft = false;
@@ -50,7 +52,10 @@ namespace frik
     class BoneSpheresHandler
     {
     public:
-        virtual ~BoneSpheresHandler() { _instance = nullptr; }
+        virtual ~BoneSpheresHandler()
+        {
+            _instance = nullptr;
+        }
 
         void init();
         void onFrameUpdate();

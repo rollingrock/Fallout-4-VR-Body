@@ -2,9 +2,10 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "utils.h"
 #include "common/MatrixUtils.h"
 #include "skeleton/Skeleton.h"
+#include "utils.h"
+#include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 #include "vrui/UIButton.h"
 #include "vrui/UIContainer.h"
@@ -60,11 +61,9 @@ namespace frik
         RE::NiTransform transform;
         transform.scale = originalTransform.scale;
         transform.rotate = originalTransform.rotate;
-        transform.translate = f4vr::isLeftHandedMode()
-            ? (inPA ? RE::NiPoint3(-2.5f, 7.5f, -1) : RE::NiPoint3(-3, 4, 0))
-            : inPA
-            ? RE::NiPoint3(-0.5f, 6, 2)
-            : RE::NiPoint3(-2, 3, 1);
+        transform.translate = f4vr::isLeftHandedMode() ? (inPA ? RE::NiPoint3(-2.5f, 7.5f, -1) : RE::NiPoint3(-3, 4, 0))
+                              : inPA                   ? RE::NiPoint3(-0.5f, 6, 2)
+                                                       : RE::NiPoint3(-2, 3, 1);
         return transform;
     }
 
@@ -116,7 +115,7 @@ namespace frik
 
         // save
         if (vrcf::VRControllers.isLongPressed(vrcf::Hand::Primary, vr::EVRButtonId::k_EButton_A)) {
-            vrcf::VRControllers.triggerHaptic(vrcf::Hand::Primary, .6f, .5f);
+            vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Success);
             saveConfig();
         }
     }
@@ -199,8 +198,7 @@ namespace frik
             transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
         } else if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = MatrixUtils::getMatrixFromEulerAngles(
-                -MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisY, 5)),
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisY, 5)),
                 -MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisX, 3)),
                 MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisX, 5)));
             transform.rotate = rot * transform.rotate;
@@ -225,9 +223,10 @@ namespace frik
         const auto [axisX, axisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
             const auto rot = vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)
-                ? MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)), 0, 0)
-                : MatrixUtils::getMatrixFromEulerAngles(0, -MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)),
-                    -MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 3)));
+                                 ? MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)), 0, 0)
+                                 : MatrixUtils::getMatrixFromEulerAngles(0,
+                                       -MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 2)),
+                                       -MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 3)));
             _adjuster->_primaryHandOffsetRot = rot * _adjuster->_primaryHandOffsetRot;
             _adjuster->_hasPrimaryHandOffset = true;
         }
@@ -241,7 +240,8 @@ namespace frik
         // Update the offset position by player thumbstick.
         const auto [axisX, axisY] = vrcf::VRControllers.getThumbstickValue(vrcf::Hand::Primary);
         if (axisX != 0.f || axisY != 0.f) {
-            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 5)), 0,
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(axisY, 5)),
+                0,
                 MatrixUtils::degreesToRads(correctAdjustmentValue(axisX, 5)));
             _adjuster->_offhandOffsetRot = rot * _adjuster->_offhandOffsetRot;
         }
@@ -273,8 +273,7 @@ namespace frik
             transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
         } else if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = MatrixUtils::getMatrixFromEulerAngles(
-                MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisY, 6)),
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisY, 6)),
                 MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisX, 6)),
                 MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisX, 6)));
             transform.rotate = rot * transform.rotate;
@@ -311,8 +310,7 @@ namespace frik
             transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
         } else if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_Grip)) {
             // pitch and yaw rotation by primary stick, roll rotation by secondary stick
-            const auto rot = MatrixUtils::getMatrixFromEulerAngles(
-                -MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisY, 6)),
+            const auto rot = MatrixUtils::getMatrixFromEulerAngles(-MatrixUtils::degreesToRads(correctAdjustmentValue(secAxisY, 6)),
                 -MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisX, 6)),
                 -MatrixUtils::degreesToRads(correctAdjustmentValue(primAxisY, 6)));
             transform.rotate = rot * transform.rotate;
@@ -343,7 +341,7 @@ namespace frik
 
     void WeaponPositionConfigMode::resetConfig() const
     {
-        logger::info("Reset Reposition Config for target: {}, Weapon: {}", static_cast<int>(_repositionTarget), _adjuster->_currentWeapon.c_str());
+        logger::info("Reset Reposition Config for target: {}, Weapon: {}", static_cast<int>(_repositionTarget), _adjuster->_equippedWeapon.weaponName().c_str());
         switch (_repositionTarget) {
         case RepositionTarget::Weapon:
             resetWeaponConfig();
@@ -368,7 +366,7 @@ namespace frik
 
     void WeaponPositionConfigMode::saveConfig() const
     {
-        logger::info("Save Reposition Config for target: {}, Weapon: {}", static_cast<int>(_repositionTarget), _adjuster->_currentWeapon.c_str());
+        logger::info("Save Reposition Config for target: {}, Weapon: {}", static_cast<int>(_repositionTarget), _adjuster->_equippedWeapon.weaponName().c_str());
         switch (_repositionTarget) {
         case RepositionTarget::Weapon:
             saveWeaponConfig();
@@ -394,15 +392,16 @@ namespace frik
     void WeaponPositionConfigMode::resetWeaponConfig() const
     {
         f4vr::showNotification("Reset Weapon Position to Default");
-        _adjuster->_weaponOffsetTransform = f4vr::isMeleeWeaponEquipped()
-            ? getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform)
-            : _adjuster->_weaponOriginalTransform;
-        g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA, true);
+        _adjuster->_weaponOffsetTransform = f4vr::isMeleeWeaponDrawn() ? getMeleeWeaponDefaultAdjustment(_adjuster->_weaponOriginalTransform) : _adjuster->_weaponOriginalTransform;
+        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::Weapon, _adjuster->_equippedWeapon.inPowerArmor(), true);
     }
 
     void WeaponPositionConfigMode::saveWeaponConfig() const
     {
-        const bool success = g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_weaponOffsetTransform, WeaponOffsetsMode::Weapon, _adjuster->_currentlyInPA);
+        const bool success = g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.weaponName(),
+            _adjuster->_weaponOffsetTransform,
+            WeaponOffsetsMode::Weapon,
+            _adjuster->_equippedWeapon.inPowerArmor());
         f4vr::showNotification(success ? "Successfully saved Weapon Position" : "Failed to save Weapon Position - see FRIK.log");
     }
 
@@ -410,7 +409,7 @@ namespace frik
     {
         f4vr::showNotification("Reset Primary Hand Position to Default");
         _adjuster->_primaryHandOffsetRot = MatrixUtils::getIdentityMatrix();
-        g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::PrimaryHand, _adjuster->_currentlyInPA, true);
+        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::PrimaryHand, _adjuster->_equippedWeapon.inPowerArmor(), true);
     }
 
     void WeaponPositionConfigMode::savePrimaryHandConfig() const
@@ -419,7 +418,8 @@ namespace frik
         transform.scale = 1;
         transform.translate = RE::NiPoint3(0, 0, 0);
         transform.rotate = _adjuster->_primaryHandOffsetRot;
-        const bool success = g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::PrimaryHand, _adjuster->_currentlyInPA);
+        const bool success =
+            g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), transform, WeaponOffsetsMode::PrimaryHand, _adjuster->_equippedWeapon.inPowerArmor());
         f4vr::showNotification(success ? "Successfully saved Primary Hand Position" : "Failed to save Primary Hand Position - see FRIK.log");
     }
 
@@ -427,7 +427,7 @@ namespace frik
     {
         f4vr::showNotification("Reset Offhand Position to Default");
         _adjuster->_offhandOffsetRot = MatrixUtils::getIdentityMatrix();
-        g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA, true);
+        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::OffHand, _adjuster->_equippedWeapon.inPowerArmor(), true);
     }
 
     void WeaponPositionConfigMode::saveOffhandConfig() const
@@ -436,7 +436,7 @@ namespace frik
         transform.scale = 1;
         transform.translate = RE::NiPoint3(0, 0, 0);
         transform.rotate = _adjuster->_offhandOffsetRot;
-        const bool success = g_config.saveWeaponOffsets(_adjuster->_currentWeapon, transform, WeaponOffsetsMode::OffHand, _adjuster->_currentlyInPA);
+        const bool success = g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), transform, WeaponOffsetsMode::OffHand, _adjuster->_equippedWeapon.inPowerArmor());
         f4vr::showNotification(success ? "Successfully saved Offhand Position" : "Failed to save Offhand Position - see FRIK.log");
     }
 
@@ -444,28 +444,33 @@ namespace frik
     {
         f4vr::showNotification("Reset Throwable Weapon Position to Default");
         _adjuster->_throwableWeaponOffsetTransform = _adjuster->_throwableWeaponOriginalTransform;
-        g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA, true);
+        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::Throwable, _adjuster->_equippedWeapon.inPowerArmor(), true);
     }
 
     void WeaponPositionConfigMode::saveThrowableConfig() const
     {
-        const bool success = g_config.saveWeaponOffsets(
-            _adjuster->_currentThrowableWeaponName, _adjuster->_throwableWeaponOffsetTransform, WeaponOffsetsMode::Throwable, _adjuster->_currentlyInPA);
+        const bool success = g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.throwableName(),
+            _adjuster->_throwableWeaponOffsetTransform,
+            WeaponOffsetsMode::Throwable,
+            _adjuster->_equippedWeapon.inPowerArmor());
         f4vr::showNotification(success ? "Successfully saved Throwable Weapon Position" : "Failed to save Throwable Weapon Position - see FRIK.log");
     }
 
     void WeaponPositionConfigMode::resetBackOfHandUIConfig() const
     {
         f4vr::showNotification("Reset Back of Hand UI Position to Default");
-        _adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_currentlyInPA);
+        _adjuster->_backOfHandUIOffsetTransform = getBackOfHandUIDefaultAdjustment(_adjuster->_backOfHandUIOffsetTransform, _adjuster->_equippedWeapon.inPowerArmor());
         WeaponPositionAdjuster::getBackOfHandUINode()->local = _adjuster->_backOfHandUIOffsetTransform;
-        g_config.removeWeaponOffsets(_adjuster->_currentWeapon, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA, true);
+        g_config.removeWeaponOffsets(_adjuster->_equippedWeapon.weaponName(), WeaponOffsetsMode::BackOfHandUI, _adjuster->_equippedWeapon.inPowerArmor(), true);
     }
 
     void WeaponPositionConfigMode::saveBackOfHandUIConfig() const
     {
         f4vr::showNotification("Saving Back of Hand UI Position");
-        g_config.saveWeaponOffsets(_adjuster->_currentWeapon, _adjuster->_backOfHandUIOffsetTransform, WeaponOffsetsMode::BackOfHandUI, _adjuster->_currentlyInPA);
+        g_config.saveWeaponOffsets(_adjuster->_equippedWeapon.weaponName(),
+            _adjuster->_backOfHandUIOffsetTransform,
+            WeaponOffsetsMode::BackOfHandUI,
+            _adjuster->_equippedWeapon.inPowerArmor());
     }
 
     void WeaponPositionConfigMode::resetBetterScopesConfig()
@@ -487,21 +492,31 @@ namespace frik
      */
     void WeaponPositionConfigMode::createConfigUI()
     {
-        _weaponModeButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_weapon.nif");
+        _weaponModeButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-weapon.nif");
         _weaponModeButton->setToggleState(true);
-        _weaponModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Weapon; });
+        _weaponModeButton->setOnToggleHandler([this](UIWidget*, bool) {
+            _repositionTarget = RepositionTarget::Weapon;
+        });
 
-        _primaryHandModeButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_primary_hand.nif");
-        _primaryHandModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::PrimaryHand; });
+        _primaryHandModeButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-primary-hand.nif");
+        _primaryHandModeButton->setOnToggleHandler([this](UIWidget*, bool) {
+            _repositionTarget = RepositionTarget::PrimaryHand;
+        });
 
-        _offhandModeButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_offhand.nif");
-        _offhandModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Offhand; });
+        _offhandModeButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-offhand.nif");
+        _offhandModeButton->setOnToggleHandler([this](UIWidget*, bool) {
+            _repositionTarget = RepositionTarget::Offhand;
+        });
 
-        _throwableUIButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_throwable.nif");
-        _throwableUIButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::Throwable; });
+        _throwableUIButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-throwable.nif");
+        _throwableUIButton->setOnToggleHandler([this](UIWidget*, bool) {
+            _repositionTarget = RepositionTarget::Throwable;
+        });
 
-        const auto backOfHandUIButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_back_of_hand_ui.nif");
-        backOfHandUIButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::BackOfHandUI; });
+        const auto backOfHandUIButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-back-of-hand-ui.nif");
+        backOfHandUIButton->setOnToggleHandler([this](UIWidget*, bool) {
+            _repositionTarget = RepositionTarget::BackOfHandUI;
+        });
 
         const auto firstRowContainerInner = std::make_shared<UIToggleGroupContainer>("Row1Inner", UIContainerLayout::HorizontalCenter, 0.3f);
         firstRowContainerInner->addElement(_weaponModeButton);
@@ -511,27 +526,35 @@ namespace frik
         firstRowContainerInner->addElement(backOfHandUIButton);
 
         if (isBetterScopesVRModLoaded()) {
-            _betterScopesModeButton = std::make_shared<UIToggleButton>("FRIK\\UI_Weapon_Config\\btn_better_scopes_vr.nif");
-            _betterScopesModeButton->setOnToggleHandler([this](UIWidget*, bool) { _repositionTarget = RepositionTarget::BetterScopes; });
+            _betterScopesModeButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-better-scopes-vr.nif");
+            _betterScopesModeButton->setOnToggleHandler([this](UIWidget*, bool) {
+                _repositionTarget = RepositionTarget::BetterScopes;
+            });
             firstRowContainerInner->addElement(_betterScopesModeButton);
         }
 
-        _emptyHandsMessageBox = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\msg_empty_hands.nif");
+        _emptyHandsMessageBox = std::make_shared<UIWidget>("ui-config-weapon\\msg-empty-hands.nif", 1.5f);
 
         const auto firstRowContainer = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.3f);
         firstRowContainer->addElement(_emptyHandsMessageBox);
         firstRowContainer->addElement(firstRowContainerInner);
 
-        _saveButton = std::make_shared<UIButton>("FRIK\\UI_Common\\btn_save.nif");
-        _saveButton->setOnPressHandler([this](UIWidget*) { saveConfig(); });
+        _saveButton = std::make_shared<UIButton>("ui-common\\btn-save.nif");
+        _saveButton->setOnPressHandler([this](UIWidget*) {
+            saveConfig();
+        });
 
-        _resetButton = std::make_shared<UIButton>("FRIK\\UI_Common\\btn_reset.nif");
-        _resetButton->setOnPressHandler([this](UIWidget*) { resetConfig(); });
+        _resetButton = std::make_shared<UIButton>("ui-common\\btn-reset.nif");
+        _resetButton->setOnPressHandler([this](UIWidget*) {
+            resetConfig();
+        });
 
-        const auto exitButton = std::make_shared<UIButton>("FRIK\\UI_Common\\btn_exit.nif");
-        exitButton->setOnPressHandler([this](UIWidget*) { _adjuster->toggleWeaponRepositionMode(); });
+        const auto exitButton = std::make_shared<UIButton>("ui-common\\btn-exit.nif");
+        exitButton->setOnPressHandler([this](UIWidget*) {
+            _adjuster->toggleWeaponRepositionMode();
+        });
 
-        _throwableNotEquippedMessageBox = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\msg_throwable_empty_hands.nif");
+        _throwableNotEquippedMessageBox = std::make_shared<UIWidget>("ui-config-weapon\\msg-throwable-empty-hands.nif", 1.5f);
 
         const auto secondRowContainer = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
         secondRowContainer->addElement(_saveButton);
@@ -539,10 +562,10 @@ namespace frik
         secondRowContainer->addElement(_throwableNotEquippedMessageBox);
         secondRowContainer->addElement(exitButton);
 
-        const auto header = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\title.nif", 0.5f);
-        _complexAdjustFooter = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\msg_footer.nif", 0.7f);
-        _throwableAdjustFooter = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\msg_footer_throwable.nif", 0.7f);
-        _simpleAdjustFooter = std::make_shared<UIWidget>("FRIK\\UI_Weapon_Config\\msg_footer_simple.nif", 0.7f);
+        const auto header = std::make_shared<UIWidget>("ui-config-weapon\\title.nif", 1.7f);
+        _complexAdjustFooter = std::make_shared<UIWidget>("ui-config-weapon\\msg-footer.nif");
+        _throwableAdjustFooter = std::make_shared<UIWidget>("ui-config-weapon\\msg-footer-throwable.nif");
+        _simpleAdjustFooter = std::make_shared<UIWidget>("ui-config-weapon\\msg-footer-simple.nif");
         _simpleAdjustFooter->setVisibility(false);
 
         const auto mainContainer = std::make_shared<UIContainer>("Main", UIContainerLayout::VerticalCenter, 0.3f);
@@ -552,7 +575,7 @@ namespace frik
         mainContainer->addElement(_throwableAdjustFooter);
         mainContainer->addElement(_simpleAdjustFooter);
 
-        _configUI = std::make_shared<UIContainer>("WeaponConfig", UIContainerLayout::VerticalDown, 0.4f, 1.5f);
+        _configUI = std::make_shared<UIContainer>("WeaponConfig", UIContainerLayout::VerticalDown, 0.35f, 1.6f);
         _configUI->addElement(header);
         _configUI->addElement(mainContainer);
 

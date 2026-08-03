@@ -26,9 +26,9 @@ namespace frik
      */
     class WeaponPositionConfigMode
     {
-    public :
-        explicit WeaponPositionConfigMode(WeaponPositionAdjuster* adjuster) :
-            _adjuster(adjuster)
+    public:
+        explicit WeaponPositionConfigMode(WeaponPositionAdjuster* adjuster)
+            : _adjuster(adjuster)
         {
             createConfigUI();
         }

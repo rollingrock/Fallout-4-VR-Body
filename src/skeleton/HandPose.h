@@ -51,8 +51,6 @@ namespace frik
 
         static void setPipboyHandPose();
         static void disablePipboyHandPose();
-        static void setConfigModeHandPose();
-        static void disableConfigModePose();
         static void setForceHandPointingPose(bool primaryHand, bool forcePointing);
         static void setOffhandGripHandPose(bool toSet);
         static void setAttaboyHandPose(bool toSet);
@@ -108,6 +106,7 @@ namespace frik
         void measureAnimatedFlexSplay(const std::string& sourceBoneName, const RE::NiMatrix3& animatedRotation, float& outFlex, float& outSplay) const;
         bool tryTransferMirroredThumbBase(const std::string& sourceBoneName, const std::string& targetBoneName, const RE::NiMatrix3& animatedRotation, RE::NiMatrix3& outRotation) const;
         static const RE::NiTransform* getLocalTransformOverride(const TaggedHandPoseOverride* activeOverride, const std::string& boneName);
+        static bool shouldUsePointingPose(bool isLeft);
         static bool shouldUseThumbsUpPose(bool isLeft);
         static void setHandPoseOverrideIntr(bool isLeft, std::string_view tag, const HandFingersPose& pose, int priority);
         static void clearHandPoseOverrideIntr(bool isLeft, std::string_view tag);
