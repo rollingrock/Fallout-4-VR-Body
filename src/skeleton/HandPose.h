@@ -18,6 +18,20 @@ namespace frik
     public:
         static constexpr std::size_t FINGER_BONE_COUNT = 15;
 
+        /**
+         * Priority given to an external override that does not name one.
+         * This is the canonical definition of the scale; the published API
+         * surfaces mirror it and static_assert against it.
+         */
+        static constexpr int PRIORITY_EXTERNAL_DEFAULT = 50;
+
+        /**
+         * Priority FRIK's own interaction poses use (Pip-Boy pointing, forced
+         * pointing, offhand grip, Attaboy). An external override must exceed
+         * this to outrank FRIK itself.
+         */
+        static constexpr int PRIORITY_FRIK_INTERNAL = 90;
+
         explicit HandPose(bool inPowerArmor);
 
         static void setHandPoseOverride(bool isLeft, std::string_view tag, const HandFingersPose& pose, bool forceTop);

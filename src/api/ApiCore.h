@@ -52,16 +52,11 @@ namespace frik::api::core
     inline constexpr std::size_t FEATURE_COUNT = 4;
 
     /**
-     * Priority given to an external hand-pose override that does not name one.
+     * The hand-pose priority scale. HandPose owns the ordering, so these alias
+     * its constants rather than restating the values.
      */
-    inline constexpr int HAND_POSE_PRIORITY_DEFAULT = 50;
-
-    /**
-     * Priority FRIK's own interaction poses use (Pip-Boy pointing, forced
-     * pointing, offhand grip, Attaboy). An external override must exceed this
-     * to outrank FRIK itself.
-     */
-    inline constexpr int HAND_POSE_PRIORITY_FRIK_INTERNAL = 90;
+    inline constexpr int HAND_POSE_PRIORITY_DEFAULT = HandPose::PRIORITY_EXTERNAL_DEFAULT;
+    inline constexpr int HAND_POSE_PRIORITY_FRIK_INTERNAL = HandPose::PRIORITY_FRIK_INTERNAL;
 
     /**
      * Tag used by the deprecated tagless v1 hand-pose functions.

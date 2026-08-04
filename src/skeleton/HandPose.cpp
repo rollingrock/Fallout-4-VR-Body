@@ -60,6 +60,10 @@ namespace
         return bone[bone.size() - 2] - '1';
     }
 
+    /**
+     * Convert a finger bone name into its flat index across all 15 finger bones.
+     * Laid out as 3 joints (prox, mid, dist) per finger, thumb first.
+     */
     int boneToFlexIndex(const std::string& bone)
     {
         return boneToFingerIndex(bone) * 3 + (bone.back() - '1');
@@ -162,16 +166,22 @@ namespace
     constexpr std::string_view OFFHAND_GRIP_HAND_POSE_TAG = "frik.offhand_grip";
     constexpr std::string_view ATTABOY_HAND_POSE_TAG = "frik.attaboy";
 
-    constexpr int EXTERNAL_HAND_POSE_PRIORITY = 50;
-    constexpr int FORCED_HAND_POSE_PRIORITY = 90;
-
-    int priorityFromForceTop(const bool forceTop)
+    /**
+     * Map the legacy force-to-top flag onto the priority scale owned by HandPose.
+     */
+    constexpr int priorityFromForceTop(const bool forceTop)
     {
-        return forceTop ? FORCED_HAND_POSE_PRIORITY : EXTERNAL_HAND_POSE_PRIORITY;
+        return forceTop ? frik::HandPose::PRIORITY_FRIK_INTERNAL : frik::HandPose::PRIORITY_EXTERNAL_DEFAULT;
     }
 
+    /**
+     * All 15 finger bones enabled, one bit per flat bone index.
+     */
     constexpr std::uint16_t FULL_LOCAL_TRANSFORM_MASK = 0x7FFF;
 
+    /**
+     * Return whether every element of a rotation matrix is a finite number.
+     */
     bool isFiniteRotation(const RE::NiMatrix3& rotation)
     {
         for (int row = 0; row < 3; ++row) {
@@ -184,12 +194,24 @@ namespace
         return true;
     }
 
+    /**
+     * Return whether a transform is safe to feed into the scene graph: every
+     * component finite, and a scale far enough from zero to stay invertible.
+     */
     bool isFiniteTransform(const RE::NiTransform& transform)
     {
         return isFiniteRotation(transform.rotate) && std::isfinite(transform.translate.x) && std::isfinite(transform.translate.y) && std::isfinite(transform.translate.z) &&
                std::isfinite(transform.scale) && std::abs(transform.scale) > 0.0001f;
     }
 
+    /**
+     * Build the local transform one bone would take under an authored pose.
+     *
+     * Interpolates the authored closed rotation toward the open one by the bone's
+     * flex value, then applies proximal splay on the first joint of each finger,
+     * mirrored per hand. Translation comes from the open pose, in the power-armor
+     * variant when applicable, since posing never moves a bone off its rest offset.
+     */
     RE::NiTransform buildPoseBoneLocalTransform(const frik::skeleton::data::HandBonePoseData& boneData, const frik::HandFingersPose& pose, const bool inPowerArmor)
     {
         RE::NiTransform openTransform{};
@@ -289,11 +311,28 @@ namespace frik
         setHandPoseOverrideIntr(isLeft, tag, pose, priorityFromForceTop(forceTop));
     }
 
+    /**
+     * Activate an explicit pose override for one hand at an explicit priority.
+     *
+     * Overrides are ordered by priority, and within one priority by registration
+     * order, so a caller can layer several of its own tags deterministically.
+     * See PRIORITY_EXTERNAL_DEFAULT and PRIORITY_FRIK_INTERNAL for the scale.
+     */
     void HandPose::setHandPoseOverrideWithPriority(const bool isLeft, const std::string_view tag, const HandFingersPose& pose, const int priority)
     {
         setHandPoseOverrideIntr(isLeft, tag, pose, priority);
     }
 
+    /**
+     * Replace the explicit per-bone finger transforms of an existing override.
+     *
+     * Only bones whose bit is set in enabledMask are taken; the rest keep falling
+     * back to the tag's authored pose. The tag must already hold an override, and
+     * any later setHandPoseOverride* call on it drops these transforms again, so
+     * callers that refresh their pose must republish the transforms with it.
+     *
+     * @return false if the tag holds no override or the priority is negative.
+     */
     bool HandPose::setHandPoseLocalTransformsWithPriority(const bool isLeft, const std::string_view tag, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& localTransforms,
         const std::uint16_t enabledMask, const int priority)
     {
@@ -369,6 +408,16 @@ namespace frik
         return HandPoseKind::Unset;
     }
 
+    /**
+     * Block FRIK's built-in primary weapon hand pose for one external tag.
+     *
+     * While at least one tag is blocking, resolveHandPoseSource yields every
+     * built-in weapon-driven contributor so an external system can own the hand.
+     * Guarded by a lock because registration arrives from client mods, while the
+     * per-frame read goes through the lock-free isPrimaryWeaponPoseBlocked.
+     *
+     * @return false if the tag is empty.
+     */
     bool HandPose::blockPrimaryWeaponPose(const std::string_view tag, const bool block)
     {
         if (tag.empty()) {
@@ -385,11 +434,19 @@ namespace frik
         return true;
     }
 
+    /**
+     * Return whether any tag is currently blocking the primary weapon hand pose.
+     * Read once per hand per frame, so it uses the atomic count rather than the lock.
+     */
     bool HandPose::isPrimaryWeaponPoseBlocked()
     {
         return g_primaryWeaponPoseBlockingTagCount.load(std::memory_order_acquire) != 0;
     }
 
+    /**
+     * Drop every primary weapon pose block when the skeleton is released.
+     * Clients must republish their block after the next skeleton-ready event.
+     */
     void HandPose::clearPrimaryWeaponPoseBlocks()
     {
         std::lock_guard lock(g_primaryWeaponPoseBlockingTagsLock);
@@ -405,6 +462,17 @@ namespace frik
         return isUnarmedWeaponDrawn() ? getFistPose() : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
     }
 
+    /**
+     * Resolve the per-bone local transforms one hand would take under an authored
+     * pose, without applying anything to the skeleton.
+     *
+     * Lets an external system read FRIK's authored poses as explicit transforms,
+     * adjust them, and publish the result back through setHandPoseLocalTransformsWithPriority.
+     * Accounts for power armor, which changes the rest translations.
+     *
+     * @return true only if all 15 bones resolved; on failure the outputs are zeroed
+     * so a partial pose can never be published.
+     */
     bool HandPose::buildFingerLocalTransformsForPose(const bool isLeft, const HandFingersPose& pose, std::array<RE::NiTransform, FINGER_BONE_COUNT>& outTransforms,
         std::uint16_t& outEnabledMask)
     {
@@ -439,6 +507,22 @@ namespace frik
         return outEnabledMask == FULL_LOCAL_TRANSFORM_MASK;
     }
 
+    /**
+     * Convert a complete finger pose on one hand into the opposite hand's anatomical pose.
+     *
+     * The two hands do not share a bind pose, so this cannot mirror rotations
+     * geometrically. Instead each source bone is measured back into flex/splay
+     * against its own authored open/closed pair, and those values are re-applied
+     * against the target bone's pair. The thumb base is special-cased through
+     * tryTransferMirroredThumbBase, whose rotation axis does not decompose cleanly
+     * into flex and splay.
+     *
+     * Instance-owned rather than static because the bind transforms it measures
+     * against differ between normal and power armor.
+     *
+     * @return true only if all 15 bones mirrored; a partial source mask is rejected
+     * outright and any failure zeroes the outputs.
+     */
     bool HandPose::mirrorFingerLocalTransforms(const bool sourceIsLeft, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& sourceTransforms,
         const std::uint16_t sourceEnabledMask, std::array<RE::NiTransform, FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask) const
     {
@@ -503,7 +587,7 @@ namespace frik
      */
     void HandPose::setPipboyHandPose()
     {
-        setHandPoseOverrideIntr(g_config.leftHandedPipBoy, PIPBOY_HAND_POSE_TAG, getPointingPose(), FORCED_HAND_POSE_PRIORITY);
+        setHandPoseOverrideIntr(g_config.leftHandedPipBoy, PIPBOY_HAND_POSE_TAG, getPointingPose(), HandPose::PRIORITY_FRIK_INTERNAL);
     }
 
     /**
@@ -520,7 +604,7 @@ namespace frik
     void HandPose::setForceHandPointingPose(const bool primaryHand, const bool forcePointing)
     {
         if (forcePointing) {
-            setHandPoseOverrideIntr(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG, getPointingPose(), FORCED_HAND_POSE_PRIORITY);
+            setHandPoseOverrideIntr(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG, getPointingPose(), HandPose::PRIORITY_FRIK_INTERNAL);
         } else {
             clearHandPoseOverrideIntr(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG);
         }
@@ -532,7 +616,7 @@ namespace frik
     void HandPose::setOffhandGripHandPose(const bool toSet)
     {
         if (toSet) {
-            setHandPoseOverrideIntr(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG, getOffhandWeaponGripPose(), FORCED_HAND_POSE_PRIORITY);
+            setHandPoseOverrideIntr(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG, getOffhandWeaponGripPose(), HandPose::PRIORITY_FRIK_INTERNAL);
         } else {
             clearHandPoseOverrideIntr(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG);
         }
@@ -544,7 +628,7 @@ namespace frik
     void HandPose::setAttaboyHandPose(const bool toSet)
     {
         if (toSet) {
-            setHandPoseOverrideIntr(true, ATTABOY_HAND_POSE_TAG, getAttaboyPose(), FORCED_HAND_POSE_PRIORITY);
+            setHandPoseOverrideIntr(true, ATTABOY_HAND_POSE_TAG, getAttaboyPose(), HandPose::PRIORITY_FRIK_INTERNAL);
         } else {
             clearHandPoseOverrideIntr(true, ATTABOY_HAND_POSE_TAG);
         }
@@ -618,8 +702,13 @@ namespace frik
      *
      * Source priority matches the existing runtime behavior:
      * 1. primary weapon pose for the dominant hand while a weapon is drawn
-     * 2. explicit hand override, then implicit thumbs-up
+     * 2. explicit hand override, then implicit pointing, then implicit thumbs-up
      * 3. dynamic controller-driven curl
+     *
+     * Both weapon-pose paths yield entirely while an external system blocks them via
+     * blockPrimaryWeaponPose. Separately, when an external system owns the weapon node
+     * (isPrimaryWeaponNodeOwnershipBlocked) the off-side hand in right-handed mode also
+     * follows the first-person weapon hand, so a two-handed grip stays consistent.
      *
      * The returned source may intentionally have `pose == nullptr` when the active source is the
      * right-handed primary weapon path. In that case, finger bones should copy the first-person hand
@@ -690,7 +779,7 @@ namespace frik
         blendPalmAxisToward(blendState.pitch, targetPalmPitch, frameTime);
         blendPalmAxisToward(blendState.yaw, targetPalmYaw, frameTime);
 
-        if (blendState.pitch == 0.0f && blendState.yaw == 0.0f) {
+        if (fEqual(blendState.pitch, 0.0f) && fEqual(blendState.yaw, 0.0f)) {
             return;
         }
 
@@ -737,13 +826,24 @@ namespace frik
             bone.scale = 1.0f;
         } else {
             const auto fpTree = getFirstPersonBoneTree();
-            const int pos = fpTree->GetBoneIndex(boneName);
+            const int pos = fpTree ? fpTree->GetBoneIndex(boneName) : -1;
             if (pos >= 0) {
                 _handBones[boneName] = fpTree->transforms[pos].refNode ? fpTree->transforms[pos].refNode->local : fpTree->transforms[pos].local;
             }
         }
     }
 
+    /**
+     * Recover the flex value that would reproduce an observed bone rotation.
+     *
+     * The inverse of blendBoneRotation's slerp: it projects the closed-to-animated
+     * rotation onto the closed-to-open arc and returns how far along that arc the
+     * animation sits. Used to read a game-animated hand back into pose values.
+     *
+     * Returns the same -1..2 range blendBoneRotation accepts, so hyperextension and
+     * overcurl past the authored poses survive a round trip. Degenerate bones whose
+     * open and closed rotations nearly coincide report fully open.
+     */
     float HandPose::inverseBlendFlex(const std::string& boneName, const RE::NiMatrix3& animatedRotation) const
     {
         Quaternion qOpen, qClosed, qAnimated;
@@ -781,6 +881,19 @@ namespace frik
         return std::clamp(angleAlongArc / arcAngle, -1.0f, 2.0f);
     }
 
+    /**
+     * Decompose an animated bone rotation into the flex and splay that produced it.
+     *
+     * Flex is measured first, then whatever rotation remains after removing the
+     * pure-flex result is read as lateral splay about the Y axis. Only the proximal
+     * joint of each finger carries splay, so other bones report zero. Once splay is
+     * known it is removed and flex is re-measured, since the first pass absorbed
+     * some of the lateral rotation into its arc projection.
+     *
+     * Splay is returned in the hand's own convention (mirrored for the left hand).
+     * A residual that is not finite or is implausibly large for an authored pose is
+     * discarded rather than propagated.
+     */
     void HandPose::measureAnimatedFlexSplay(const std::string& sourceBoneName, const RE::NiMatrix3& animatedRotation, float& outFlex, float& outSplay) const
     {
         outFlex = inverseBlendFlex(sourceBoneName, animatedRotation);
@@ -814,6 +927,19 @@ namespace frik
         outFlex = inverseBlendFlex(sourceBoneName, desplayed);
     }
 
+    /**
+     * Mirror the thumb base rotation from one hand onto the other.
+     *
+     * The thumb's proximal joint rotates about an axis that is neither pure flex nor
+     * pure splay, so measureAnimatedFlexSplay cannot describe it and the generic path
+     * distorts the pose. Instead this builds an orthonormal basis around each hand's
+     * own closed-to-open rotation axis, maps the source rotation between those bases,
+     * and negates the vector part to flip handedness.
+     *
+     * @return false when either arc axis is too close to vertical to build a stable
+     * basis from, or the result is not finite - callers fall back to the generic
+     * flex/splay path.
+     */
     bool HandPose::tryTransferMirroredThumbBase(const std::string& sourceBoneName, const std::string& targetBoneName, const RE::NiMatrix3& animatedRotation,
         RE::NiMatrix3& outRotation) const
     {
@@ -949,8 +1075,7 @@ namespace frik
     RE::NiMatrix3 HandPose::getPoseBoneRotation(const std::string& boneName, const HandFingersPose& pose) const
     {
         const int fingerIndex = boneToFingerIndex(boneName);
-        const int boneToFlexIndex = fingerIndex * 3 + (boneName.back() - '1');
-        const float flex = std::clamp(pose.getFlexAt(boneToFlexIndex), -1.0f, 2.0f);
+        const float flex = std::clamp(pose.getFlexAt(boneToFlexIndex(boneName)), -1.0f, 2.0f);
         const float splay = boneName.back() == '1' ? pose.getFingerAt(fingerIndex).splay : 0.0f;
         return blendBoneRotation(boneName, flex, splay);
     }
@@ -969,6 +1094,13 @@ namespace frik
         currentBone.rotate = qc.getMatrix();
     }
 
+    /**
+     * Smoothly blend a runtime bone toward a full target transform for this frame.
+     *
+     * Only the rotation is eased; translation and scale are taken directly, since an
+     * explicit per-bone override supplies exact rest offsets that must not be
+     * interpolated away.
+     */
     void HandPose::blendBoneTowardTransform(const std::string& boneName, const RE::NiTransform& targetTransform, const float frameTime)
     {
         blendBoneTowardRotation(boneName, targetTransform.rotate, frameTime);
@@ -987,13 +1119,21 @@ namespace frik
         qOpen.fromMatrix(_handOpen.at(boneName).rotate);
         qClosed.fromMatrix(_handClosed.at(boneName).rotate);
         qClosed.slerp(flex, qOpen);
-        if (splay == 0.0f) {
+        if (fEqual(splay, 0.0f)) {
             return qClosed.getMatrix();
         }
         const float sign = isLeftHandBone(boneName) ? -1.0f : 1.0f;
         return MatrixUtils::getMatrixFromEulerAngles(0, sign * splay, 0) * qClosed.getMatrix();
     }
 
+    /**
+     * Return the explicit local transform an override supplies for one bone, if any.
+     *
+     * Yields nullptr when there is no override, the bone is not in its enabled mask,
+     * or the stored transform is not finite - in every case the caller falls back to
+     * the tag's authored pose, so a bad transform degrades instead of corrupting the
+     * scene graph.
+     */
     const RE::NiTransform* HandPose::getLocalTransformOverride(const TaggedHandPoseOverride* const activeOverride, const std::string& boneName)
     {
         if (!activeOverride) {
@@ -1015,7 +1155,8 @@ namespace frik
     }
 
     /**
-     * Return the current override list for one hand, ordered from oldest to newest.
+     * Return the current override list for one hand, kept sorted by sortHandOverrides
+     * so the winning override is always at the front.
      */
     std::vector<HandPose::TaggedHandPoseOverride>& HandPose::getHandOverrides(const bool isLeft)
     {
@@ -1023,7 +1164,8 @@ namespace frik
     }
 
     /**
-     * Return the newest explicit override for one hand, if any.
+     * Return the winning explicit override for one hand, if any: the highest
+     * priority, and among equals the one that registered first.
      */
     const HandPose::TaggedHandPoseOverride* HandPose::getActiveHandPoseOverride(const bool isLeft)
     {
