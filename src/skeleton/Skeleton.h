@@ -8,7 +8,7 @@
 #include "CullGeometryHandler.h"
 #include "HandPose.h"
 #include "SelfieHandler.h"
-#include "api/FRIKApi.h"
+#include "api/FRIKApiV2.h"
 #include "common/CommonUtils.h"
 #include "f4vr/PlayerNodes.h"
 #include "vrcf/VRControllersManager.h"
@@ -174,8 +174,8 @@ namespace frik
         RE::NiTransform _rightHandPrevFrame;
         RE::NiTransform _leftHandPrevFrame;
 
-        api::FRIKApi::RecoilSample _weaponHandRecoilSample{};
-        api::FRIKApi::RecoilResponse _weaponHandRecoilResponse{};
+        api::FRIKApiV2::RecoilSample _weaponHandRecoilSample{};
+        api::FRIKApiV2::RecoilResponse _weaponHandRecoilResponse{};
         RE::NiTransform _controlledWeaponHandRecoilLocal{};
         std::array<RE::NiTransform, 2> _controlledWeaponHandRecoilWorldDeltas{};
         std::array<bool, 2> _controlledWeaponHandRecoilWorldDeltaValid{};

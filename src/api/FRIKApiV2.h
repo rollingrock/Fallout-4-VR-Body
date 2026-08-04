@@ -2,59 +2,88 @@
 
 #include <Windows.h>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string_view>
 #include <type_traits>
 
 #include "RE/NetImmerse/NiPoint.h"
+#include "RE/NetImmerse/NiTransform.h"
 
 // ----------------------------------------------------------------------------------------
 // EXAMPLE USAGE:
 // Copy this whole file into your project AS IS
-// Use the code below as a reference of FRIK API use
+// Use the code below as a reference of FRIK API v2 use
 // Call initialize in GameLoaded event
 
 // {
-//     const int err = frik::api::FRIKApi::initialize();
+//     const int err = frik::api::FRIKApiV2::initialize();
 //     if (err != 0) {
-//         logger::error("FRIK API init failed with error: {}!", err);
+//         logger::error("FRIK API v2 init failed with error: {}!", err);
 //     }
-//     logger::info("FRIK (v{}) API (v{}) init successful!", frik::api::FRIKApi::inst->getModVersion(), frik::api::FRIKApi::inst->getVersion());
+//     logger::info("FRIK (v{}) API v2 (v{}) init successful!", frik::api::FRIKApiV2::inst->getModVersion(), frik::api::FRIKApiV2::inst->getVersion());
 //
 //     // later...
-//     if (!frik::api::FRIKApi::inst->isSkeletonReady())
+//     if (!frik::api::FRIKApiV2::inst->isSkeletonReady())
 //         return;
 //
-//     RE::NiPoint3 tip = frik::api::FRIKApi::inst->getIndexFingerTipPosition(frik::api::FRIKApi::Hand::Left);
+//     RE::NiPoint3 tip = frik::api::FRIKApiV2::inst->getIndexFingerTipPosition(frik::api::FRIKApiV2::Hand::Left);
 //
-//     // Override left hand pose
-//     frik::api::FRIKApi::inst->setHandPose("MyMod_Interaction", frik::api::FRIKApi::Hand::Primary, frik::api::FRIKApi::HandPoseKind::Pointing);
+//     // Override the primary hand, tagged so it never clobbers another system
+//     frik::api::FRIKApiV2::inst->setHandPose("MyMod_Interaction",
+//         frik::api::FRIKApiV2::Hand::Primary,
+//         frik::api::FRIKApiV2::HandPoseKind::Pointing,
+//         frik::api::FRIKApiV2::HAND_POSE_PRIORITY_DEFAULT);
 //
 //     // Later:
-//     frik::api::FRIKApi::inst->clearHandPose("MyMod_Interaction", frik::api::FRIKApi::Hand::Primary);
+//     frik::api::FRIKApiV2::inst->clearHandPose("MyMod_Interaction", frik::api::FRIKApiV2::Hand::Primary);
 // }
 
 namespace frik::api
 {
+#ifndef FRIK_API
 #if defined(FRIK_API_EXPORTS)
 #define FRIK_API extern "C" __declspec(dllexport)
 #else
 #define FRIK_API extern "C" __declspec(dllimport)
 #endif
+#endif
 
+#ifndef FRIK_CALL
 #define FRIK_CALL __cdecl
+#endif
 
-    // API version for compatibility checking
-    inline constexpr std::uint32_t FRIK_API_VERSION = 4;
+    /**
+     * Version of the FRIK API v2 contract, independent of the v1-v4 table.
+     * A v2 client never reads the older table and vice versa.
+     */
+    inline constexpr std::uint32_t FRIK_API_V2_VERSION = 1;
 
-    struct FRIKApi
+    struct FRIKApiV2
     {
         /**
          * The name of FRIK mod as registered in F4SE used to be able to send/receive messages from to FRIK.
          * Example:
-         * _messaging->RegisterListener(onFRIKMessage, frik::api::FRIKApi::FRIK_F4SE_MOD_NAME);
+         * _messaging->RegisterListener(onFRIKMessage, frik::api::FRIKApiV2::FRIK_F4SE_MOD_NAME);
          */
         static constexpr auto FRIK_F4SE_MOD_NAME = "F4VRBody";
+
+        /**
+         * Priority for a hand-pose override with no stronger claim.
+         * This is the level every unprioritized FRIK API v1-v4 client sits at.
+         */
+        static constexpr int HAND_POSE_PRIORITY_DEFAULT = 50;
+
+        /**
+         * Priority FRIK's own interaction poses use - Pip-Boy pointing, forced
+         * pointing, offhand grip, and Attaboy. Match it to tie with FRIK
+         * (newest set wins); exceed it to reliably outrank FRIK itself.
+         *
+         * Outranking FRIK means FRIK cannot reclaim the hand for its own
+         * interactions, so prefer blockFeature for wholesale takeover.
+         */
+        static constexpr int HAND_POSE_PRIORITY_FRIK_INTERNAL = 90;
 
         /**
          * The player hand to act on with support of left-handed if needed.
@@ -70,16 +99,16 @@ namespace frik::api
         /**
          * Readable name of a hand enum for logging (scoped enums are not directly formattable).
          */
-        static std::string_view handName(const FRIKApi::Hand hand)
+        static std::string_view handName(const Hand hand)
         {
             switch (hand) {
-            case FRIKApi::Hand::Primary:
+            case Hand::Primary:
                 return "Primary";
-            case FRIKApi::Hand::Offhand:
+            case Hand::Offhand:
                 return "Offhand";
-            case FRIKApi::Hand::Right:
+            case Hand::Right:
                 return "Right";
-            case FRIKApi::Hand::Left:
+            case Hand::Left:
                 return "Left";
             }
             return "?";
@@ -92,15 +121,18 @@ namespace frik::api
         enum class HandPoseKind : std::uint8_t
         {
             // no specific pose is set
-            Unset,
+            Unset = 0,
             // pose set with custom finger positions
-            Custom,
-            Open,
-            Pointing,
-            HoldingWeapon,
-            OffhandGrip,
-            Attaboy,
-            ThumbsUp,
+            Custom = 1,
+            Open = 2,
+            Pointing = 3,
+            HoldingWeapon = 4,
+            OffhandGrip = 5,
+            Attaboy = 6,
+            ThumbsUp = 7,
+
+            HoldingGun = 9,
+            HoldingMelee = 10,
         };
 
         /**
@@ -242,122 +274,222 @@ namespace frik::api
         };
 
         /**
-         * Supported since FRIK API v1.
-         * Get the API version number.
+         * Explicit per-bone local transforms for the 15 finger bones of one hand.
+         * Only bones whose bit is set in enabledMask are read.
+         */
+        struct FingerLocalTransformOverride
+        {
+            std::uint16_t enabledMask = 0;
+            std::uint16_t reserved[3] = {};
+            RE::NiTransform localTransforms[15] = {};
+        };
+
+        /**
+         * How a controlled recoil response should be applied.
+         */
+        enum class RecoilDelivery : std::uint32_t
+        {
+            Damped = 0,
+            Direct = 1,
+        };
+
+        /**
+         * Which hands a recoil response applies to.
+         */
+        enum class RecoilHandMask : std::uint32_t
+        {
+            None = 0,
+            Primary = 1u << 0,
+            Offhand = 1u << 1,
+        };
+
+        /**
+         * Immutable native recoil sampled immediately before FRIK neutralizes
+         * the game kickback node and solves both arms for the current frame.
+         *
+         * nativeKickLocal is expressed in the native PrimaryWeaponKickbackRecoil
+         * node's local frame. General game state is intentionally not mirrored
+         * through this contract; controllers obtain it directly from FO4VR.
+         */
+        struct RecoilSample
+        {
+            std::uint32_t structSize = 0;
+            std::uint32_t reserved0[3] = {};
+            RE::NiTransform nativeKickLocal{};
+            std::uint32_t reserved[8] = {};
+        };
+
+        /**
+         * Controlled visual hand/arm recoil returned by an external controller.
+         *
+         * Returning true from the callback consumes FRIK's native hand-recoil
+         * contribution for that frame. controlledKickLocal uses the same local
+         * frame as RecoilSample::nativeKickLocal. A zero handMask intentionally
+         * suppresses hand recoil. This does not alter gameplay recoil, spread,
+         * camera shake, or the engine's visual kickback node.
+         */
+        struct RecoilResponse
+        {
+            std::uint32_t structSize = 0;
+            std::uint32_t handMask = static_cast<std::uint32_t>(RecoilHandMask::Primary);
+            RecoilDelivery delivery = RecoilDelivery::Direct;
+            std::uint32_t reserved0 = 0;
+            RE::NiTransform controlledKickLocal{};
+            std::uint32_t reserved[8] = {};
+        };
+
+        /**
+         * Called synchronously on FRIK's game update thread at most once per
+         * skeleton frame, after the native kick node and its parent frame have
+         * been validated. The callback must be noexcept, bounded, nonblocking,
+         * must not mutate scene nodes, and must not re-enter recoil registration
+         * APIs.
+         *
+         * Return true to consume native hand recoil and use outResponse.
+         * Return false to decline ownership for the frame; FRIK tries the next
+         * registered controller and finally falls back to its regular recoil.
+         */
+        using WeaponHandRecoilController = bool(FRIK_CALL*)(const RecoilSample* sample, RecoilResponse* outResponse, void* userData) noexcept;
+
+        static_assert(sizeof(RecoilSample) == 112, "RecoilSample ABI changed");
+        static_assert(sizeof(RecoilResponse) == 112, "RecoilResponse ABI changed");
+
+        /**
+         * F4SE message types FRIK broadcasts over FRIK_F4SE_MOD_NAME.
+         */
+        enum class LifecycleEvent : std::uint32_t
+        {
+            kSkeletonReady = 100,
+            kSkeletonDestroying = 101,
+        };
+
+        /**
+         * Get the API v2 version number.
          * Use this to check compatibility before calling other functions.
          */
         std::uint32_t(FRIK_CALL* getVersion)();
 
         /**
-         * Supported since FRIK API v2.
-         * Get the mod version string. i.e. "0.12.5"
+         * Get the mod version string. i.e. "0.78.0"
          */
         const char*(FRIK_CALL* getModVersion)();
 
         /**
-         * Supported since FRIK API v1.
          * Check if FRIK is ready and the skeleton is initialized.
          */
         bool(FRIK_CALL* isSkeletonReady)();
 
         /**
-         * Supported since FRIK API v2.
-         * Is any of the FRIK config UI is open (main, Pipboy, weapon adjustment)
+         * Is any of the FRIK config UI open (main, Pipboy, weapon adjustment).
          */
         bool(FRIK_CALL* isConfigOpen)();
 
         /**
-         * Supported since FRIK API v2.
-         * Is FRIK selfie mode is currently on or off.
+         * Is FRIK selfie mode currently on or off.
          */
         bool(FRIK_CALL* isSelfieModeOn)();
 
         /**
-         * Supported since FRIK API v2.
          * Set FRIK selfie mode on or off.
          */
         void(FRIK_CALL* setSelfieModeOn)(bool setOn);
 
         /**
-         * Supported since FRIK API v2.
          * Is the player currently holding the weapon with two hands. i.e. offhand is holding the weapon.
          */
         bool(FRIK_CALL* isOffHandGrippingWeapon)();
 
         /**
-         * Supported since FRIK API v2.
          * Is the player currently have the FRIK Pipboy open.
          */
         bool(FRIK_CALL* isWristPipboyOpen)();
 
         /**
-         * Supported since FRIK API v1.
-         * Get the world position of the index fingertip .
+         * Get the world position of the index fingertip.
          */
         RE::NiPoint3(FRIK_CALL* getIndexFingerTipPosition)(Hand hand);
 
         /**
-         * Supported since FRIK API v2.
          * Get the current state of given hand pose tag to identify if it is active in FRIK.
-         * Can be used to identify if another system overriding the hand pose and your mod should react accordingly.
+         * Can be used to identify if another system is overriding the hand pose and your mod should react accordingly.
          */
         HandPoseTagState(FRIK_CALL* getHandPoseSetTagState)(const char* tag, Hand hand);
 
         /**
-         * Supported since FRIK API v2.
          * Get the current hand pose as active in FRIK.
-         * Uses the canonical API HandPoseKind values since FRIK API v4.
          */
         HandPoseKind(FRIK_CALL* getCurrentHandPose)(Hand hand);
 
         /**
-         * Supported since FRIK API v2.
-         * Set a predefined hand pose override.
-         * Use the tag to unique identify different systems using hand pose overrides.
-         * Use setHandPoseCustomFingerPositions for Custom.
+         * Set a predefined hand pose override at an explicit priority.
+         *
+         * Overrides are ordered by priority (highest wins); equal priorities are
+         * broken by the most recently set. Use HAND_POSE_PRIORITY_DEFAULT unless
+         * you have a reason not to, and see HAND_POSE_PRIORITY_FRIK_INTERNAL for
+         * where FRIK's own poses sit.
+         *
+         * Use the tag to uniquely identify different systems using hand pose overrides.
+         * Passing HandPoseKind::Unset clears this tag's override.
+         * Use setHandPoseCustom for HandPoseKind::Custom.
+         * @param priority must be >= 0.
          * @return true if successful.
          */
-        bool(FRIK_CALL* setHandPose)(const char* tag, Hand hand, HandPoseKind handPose);
+        bool(FRIK_CALL* setHandPose)(const char* tag, Hand hand, HandPoseKind handPose, int priority);
 
         /**
-         * Supported since FRIK API v2.
-         * Set a hand pose override to specific values for each finger.
-         * Use the tag to unique identify different systems using hand pose overrides.
-         * Each value is between 0 and 1 where 0 is bent and 1 is straight.
+         * Set a hand pose override to specific values for each finger, at an explicit priority.
+         * Each value is between 0 and 1 where 0 is bent and 1 is straight, applied
+         * uniformly across that finger's joints.
          * @return true if successful.
          */
-        bool(FRIK_CALL* setHandPoseCustomFingerPositions)(const char* tag, Hand hand, float thumb, float index, float middle, float ring, float pinky);
+        bool(FRIK_CALL* setHandPoseCustomFingerPositions)(const char* tag, Hand hand, float thumb, float index, float middle, float ring, float pinky, int priority);
 
         /**
-         * Supported since FRIK API v2.
-         * Clear the set values in "setHandPoseFingerPositions" for FRIK to have control over the hand pose.
+         * Set a full hand pose override with per-joint finger values, per-finger splay,
+         * and palm motion, at an explicit priority.
+         * Use clearHandPose to release the override.
+         * @return true if successful.
+         */
+        bool(FRIK_CALL* setHandPoseCustom)(const char* tag, Hand hand, const HandPoseData& handPose, int priority);
+
+        /**
+         * Replace the finger bone local transforms of an existing tagged override.
+         *
+         * The tag must already hold an override (set one of the setHandPose*
+         * functions first); this call fails if it does not. Any later setHandPose*
+         * call on the same tag clears these transforms, so republish them after
+         * every pose update.
+         * @return true if successful.
+         */
+        bool(FRIK_CALL* setHandPoseCustomLocalTransforms)(const char* tag, Hand hand, const FingerLocalTransformOverride* overrideData, int priority);
+
+        /**
+         * Resolve the finger bone local transforms FRIK would use for a given pose,
+         * without applying it. Accounts for power armor.
+         * @return true if every finger bone resolved.
+         */
+        bool(FRIK_CALL* getHandPoseLocalTransformsForPose)(Hand hand, const HandPoseData& handPose, FingerLocalTransformOverride* outTransforms);
+
+        /**
+         * Convert a complete physical-hand finger pose into the opposite hand's
+         * anatomical pose. sourceHand must be Hand::Left or Hand::Right.
+         * @return true if every finger bone mirrored.
+         */
+        bool(FRIK_CALL* mirrorFingerLocalTransforms)(Hand sourceHand, const FingerLocalTransformOverride* sourceTransforms, FingerLocalTransformOverride* outTargetTransforms);
+
+        /**
+         * Clear the hand pose override for this tag so FRIK regains control.
          * Only clears the specific tag hand pose override.
          * @return true if successful.
          */
         bool(FRIK_CALL* clearHandPose)(const char* tag, Hand hand);
 
         /**
-         * Supported since FRIK API v1.
-         * Deprecated since FRIK API v2.
-         * @deprecated Use setHandPoseCustomFingerPositions instead.
-         */
-        void(FRIK_CALL* setHandPoseFingerPositions)(Hand hand, float thumb, float index, float middle, float ring, float pinky);
-
-        /**
-         * Supported since FRIK API v1.
-         * Deprecated since FRIK API v2.
-         * @deprecated Use clearHandPose instead.
-         */
-        void(FRIK_CALL* clearHandPoseFingerPositions)(Hand hand);
-
-        /**
-         * Supported since FRIK API v2.
          * Adds a button to open external mod config via a button in FRIK main config UI.
          */
         bool(FRIK_CALL* registerOpenModSettingButtonToMainConfig)(const OpenExternalModConfigData& data);
 
         /**
-         * Supported since FRIK API v3.
          * Enable/disable FRIK offhand weapon gripping for a specific tag.
          * The tag must be unique per external system using this API.
          * FRIK keeps only the blocked state, so gripping remains disabled while any tag is blocking it.
@@ -366,17 +498,6 @@ namespace frik::api
         bool(FRIK_CALL* blockOffHandWeaponGripping)(const char* tag, bool block);
 
         /**
-         * Supported since FRIK API v4.
-         * Set a full hand pose override with per-joint finger values, per-finger splay, and palm motion.
-         * Use the tag to uniquely identify different systems using hand pose overrides.
-         * Avoid using forceTop=true as it may thrash with internal FRIK logic, provided here as extreme use-case option.
-         * Use clearHandPose to release the override.
-         * @return true if successful.
-         */
-        bool(FRIK_CALL* setHandPoseCustom)(const char* tag, Hand hand, const HandPoseData& handPose, bool forceTop);
-
-        /**
-         * Supported since FRIK API v4.
          * Enable/disable a FRIK subsystem/feature for a specific tag.
          * The tag must be unique per external system using this API.
          * FRIK keeps only the blocked state, so the feature stays disabled while any tag is still blocking it.
@@ -387,14 +508,27 @@ namespace frik::api
         bool(FRIK_CALL* blockFeature)(const char* tag, Feature feature, bool block);
 
         /**
-         * Supported since FRIK API v4.
          * Check whether a FRIK subsystem/feature is currently disabled (blocked by any tag).
          * @return true if the feature is currently blocked/disabled.
          */
         bool(FRIK_CALL* isFeatureBlocked)(Feature feature);
 
         /**
-         * Supported since FRIK API v4.
+         * Block FRIK's built-in primary weapon hand pose for a specific tag.
+         * While blocked, FRIK yields every built-in primary weapon hand-pose
+         * contributor, including its per-weapon primary-hand grip rotation.
+         * @return true if successful.
+         */
+        bool(FRIK_CALL* blockPrimaryHandWeaponPose)(const char* tag, bool block);
+
+        /**
+         * Block FRIK's ownership of the primary weapon scene node for a specific tag,
+         * so an external system can drive the weapon transform itself.
+         * @return true if successful.
+         */
+        bool(FRIK_CALL* blockPrimaryWeaponNodeOwnership)(const char* tag, bool block);
+
+        /**
          * Read the current effective value for a FRIK config section/key into the caller-provided buffer.
          * The value returned is the active session override if one is set (see setConfigValueOverride),
          * otherwise the on-disk FRIK.ini value, otherwise defaultValue. The value is returned as a raw
@@ -409,14 +543,12 @@ namespace frik::api
         int(FRIK_CALL* getConfigValue)(const char* caller, const char* section, const char* key, char* outBuf, int bufLen, const char* defaultValue);
 
         /**
-         * Supported since FRIK API v4.
          * Check whether a session override is currently set for a FRIK config section/key.
          * @param caller name of the calling mod, used only for FRIK logging.
          */
         bool(FRIK_CALL* hasConfigValueOverride)(const char* caller, const char* section, const char* key);
 
         /**
-         * Supported since FRIK API v4.
          * Set an in-memory override for a FRIK config section/key for the rest of this game session.
          * The override is re-applied on every config (re)load, so it survives FRIK.ini live-reload, and
          * is never written to disk (cleared on game restart). The value is given as a string and parsed
@@ -429,7 +561,6 @@ namespace frik::api
         bool(FRIK_CALL* setConfigValueOverride)(const char* caller, const char* section, const char* key, const char* value);
 
         /**
-         * Supported since FRIK API v4.
          * Remove a previously set session override for section/key; FRIK reloads so the value reverts to
          * its on-disk FRIK.ini value.
          * @param caller name of the calling mod, used only for FRIK logging.
@@ -438,19 +569,56 @@ namespace frik::api
         bool(FRIK_CALL* clearConfigValueOverride)(const char* caller, const char* section, const char* key);
 
         /**
-         * Supported since FRIK API v1.
-         * Initialize the FRIK API object.
+         * Publish an externally owned hand world transform for a specific tag.
+         * The highest-priority tag owns the hand; equal priorities are broken by
+         * the most recently published.
+         * Registrations are cleared on skeleton destruction and must be republished
+         * after LifecycleEvent::kSkeletonReady.
+         * @param priority must be >= 0.
+         * @return true if successful.
+         */
+        bool(FRIK_CALL* applyExternalHandWorldTransform)(const char* tag, Hand hand, const RE::NiTransform& worldTarget, int priority);
+
+        /**
+         * Release a tagged external hand transform, handing the hand back to FRIK
+         * (or to the next highest-priority tag).
+         * @return true if successful.
+         */
+        bool(FRIK_CALL* clearExternalHandWorldTransform)(const char* tag, Hand hand);
+
+        /**
+         * Register or replace a tagged visual hand-recoil controller.
+         *
+         * Controllers are considered in descending priority and newest-first
+         * order. A controller that returns false declines only the current frame,
+         * allowing the next controller to respond. Registrations are cleared on
+         * skeleton destruction and must be republished after kSkeletonReady.
+         * Register and unregister on the game update thread; callbacks execute
+         * synchronously on that same thread.
+         * @return true if successful.
+         */
+        bool(FRIK_CALL* registerWeaponHandRecoilController)(const char* tag, WeaponHandRecoilController controller, void* userData, int priority);
+
+        /**
+         * Remove a tagged recoil controller. Removing a missing tag is idempotent.
+         * @return true if successful.
+         */
+        bool(FRIK_CALL* unregisterWeaponHandRecoilController)(const char* tag);
+
+        /**
+         * Initialize the FRIK API v2 object.
          * NOTE: call after all mods have been loaded in the game (GameLoaded event).
          *
          * @param minVersion the minimal version required (default: the compiled against version)
          * @return error codes:
          * 0 - Successful
          * 1 - Failed to find FRIK.dll (trying to init too early?)
-         * 2 - No FRIKAPI_GetApi API found
-         * 3 - Failed FRIKAPI_GetApi call
-         * 4 - FRIK API version is older than the minimal required version
+         * 2 - No FRIKAPI_V2_GetApi API found
+         * 3 - Failed FRIKAPI_V2_GetApi call
+         * 4 - FRIK API v2 version is older than the minimal required version
+         * 5 - Loaded API v2 contract does not exactly match this header
          */
-        [[nodiscard]] static int initialize(const uint32_t minVersion = FRIK_API_VERSION)
+        [[nodiscard]] static int initialize(const uint32_t minVersion = FRIK_API_V2_VERSION)
         {
             if (inst) {
                 return 0;
@@ -462,7 +630,12 @@ namespace frik::api
                 return 1;
             }
 
-            const auto getApi = reinterpret_cast<const FRIKApi*(FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_GetApi"));
+            const auto getApiStructSize = reinterpret_cast<std::uint32_t(FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_V2_GetApiStructSize"));
+            if (!getApiStructSize || getApiStructSize() != sizeof(FRIKApiV2)) {
+                return 5;
+            }
+
+            const auto getApi = reinterpret_cast<const FRIKApiV2*(FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_V2_GetApi"));
             if (!getApi) {
                 return 2;
             }
@@ -482,9 +655,13 @@ namespace frik::api
         }
 
         /**
-         * The initialized instance of FRIK API interface.
+         * The initialized instance of FRIK API v2 interface.
          * Use after successful call to initialize.
          */
-        inline static const FRIKApi* inst = nullptr;
+        inline static const FRIKApiV2* inst = nullptr;
     };
+
+    inline constexpr std::size_t FRIK_API_V2_FUNCTION_POINTER_SIZE = sizeof(decltype(FRIKApiV2::getVersion));
+    static_assert(std::is_standard_layout_v<FRIKApiV2>, "FRIKApiV2 must remain standard-layout for its exported function table ABI");
+    static_assert(sizeof(FRIKApiV2) == 32 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
 }

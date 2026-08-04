@@ -3,7 +3,8 @@
 #include "Config.h"
 #include "GameHooks.h"
 #include "PapyrusApi.h"
-#include "api/FRIKApi.h"
+#include "api/ApiCore.h"
+#include "api/FRIKApiV2.h"
 #include "common/PerfMonitor.h"
 #include "config-mode/PipboyConfigMode.h"
 #include "f4vr/DebugDump.h"
@@ -19,11 +20,6 @@
 #include "vrui/UIModAdapter.h"
 
 using namespace common;
-
-namespace frik::api
-{
-    void clearExternalHandAuthorityStateForSkeletonRelease();
-}
 
 // This is the entry point to the mod.
 extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* a_skse, F4SE::PluginInfo* a_info)
@@ -218,7 +214,7 @@ namespace frik
 
         if (!_skeletonReadyPublished) {
             _skeletonReadyPublished = true;
-            broadcastMessage(static_cast<std::uint32_t>(frik::api::FRIKApi::LifecycleEvent::kSkeletonReady), nullptr, 0);
+            broadcastMessage(static_cast<std::uint32_t>(frik::api::FRIKApiV2::LifecycleEvent::kSkeletonReady), nullptr, 0);
         }
     }
 
@@ -379,10 +375,10 @@ namespace frik
     void FRIK::releaseSkeleton()
     {
         if (_skelly && _skeletonReadyPublished) {
-            broadcastMessage(static_cast<std::uint32_t>(frik::api::FRIKApi::LifecycleEvent::kSkeletonDestroying), nullptr, 0);
+            broadcastMessage(static_cast<std::uint32_t>(frik::api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying), nullptr, 0);
         }
         _skeletonReadyPublished = false;
-        frik::api::clearExternalHandAuthorityStateForSkeletonRelease();
+        frik::api::core::clearExternalStateForSkeletonRelease();
 
         _workingRootNode = nullptr;
         _skeletonInitDelayFrames = kSkeletonInitDelayFramesAfterRelease;

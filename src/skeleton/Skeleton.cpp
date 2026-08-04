@@ -1127,13 +1127,13 @@ namespace frik
     void Skeleton::prepareWeaponHandRecoilFrame()
     {
         _weaponHandRecoilSample = {};
-        _weaponHandRecoilSample.structSize = sizeof(api::FRIKApi::RecoilSample);
+        _weaponHandRecoilSample.structSize = sizeof(api::FRIKApiV2::RecoilSample);
         _weaponHandRecoilSample.nativeKickLocal.MakeIdentity();
 
         _weaponHandRecoilPhysicalPrimaryIsLeft = isLeftHandedMode() || isPrimaryWeaponNodeOwnershipBlocked();
 
         _weaponHandRecoilResponse = {};
-        _weaponHandRecoilResponse.structSize = sizeof(api::FRIKApi::RecoilResponse);
+        _weaponHandRecoilResponse.structSize = sizeof(api::FRIKApiV2::RecoilResponse);
         _weaponHandRecoilResponse.controlledKickLocal.MakeIdentity();
         _controlledWeaponHandRecoilLocal.MakeIdentity();
         _controlledWeaponHandRecoilWorldDeltaValid.fill(false);
@@ -1154,7 +1154,7 @@ namespace frik
 
         _weaponHandRecoilResponse = resolution.response;
         _weaponHandRecoilResponseAccepted = true;
-        if (_weaponHandRecoilResponse.delivery == api::FRIKApi::RecoilDelivery::Damped) {
+        if (_weaponHandRecoilResponse.delivery == api::FRIKApiV2::RecoilDelivery::Damped) {
             _controlledWeaponHandRecoilLocal = dampenControlledWeaponHandRecoil(_weaponHandRecoilResponse.controlledKickLocal);
         } else {
             _controlledWeaponHandRecoilLocal = _weaponHandRecoilResponse.controlledKickLocal;
@@ -1200,7 +1200,7 @@ namespace frik
         }
 
         const auto selectedRole =
-            static_cast<std::uint32_t>(isLeft == _weaponHandRecoilPhysicalPrimaryIsLeft ? api::FRIKApi::RecoilHandMask::Primary : api::FRIKApi::RecoilHandMask::Offhand);
+            static_cast<std::uint32_t>(isLeft == _weaponHandRecoilPhysicalPrimaryIsLeft ? api::FRIKApiV2::RecoilHandMask::Primary : api::FRIKApiV2::RecoilHandMask::Offhand);
         if ((_weaponHandRecoilResponse.handMask & selectedRole) == 0) {
             return true;
         }

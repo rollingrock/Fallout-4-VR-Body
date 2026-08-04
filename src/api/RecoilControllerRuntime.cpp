@@ -12,7 +12,7 @@
 
 namespace
 {
-    using Api = frik::api::FRIKApi;
+    using Api = frik::api::FRIKApiV2;
 
     constexpr std::size_t MAX_RECOIL_CONTROLLERS = 16;
     constexpr std::size_t RECOIL_CONTROLLER_TAG_CAPACITY = 64;
@@ -147,7 +147,7 @@ namespace
 
 namespace frik::api
 {
-    bool FRIK_CALL registerWeaponHandRecoilController(const char* const tag, const FRIKApi::WeaponHandRecoilController controller, void* const userData, const int priority)
+    bool FRIK_CALL registerWeaponHandRecoilController(const char* const tag, const FRIKApiV2::WeaponHandRecoilController controller, void* const userData, const int priority)
     {
         const auto normalizedTag = normalizeTag(tag);
         if (g_invokingRecoilController || !normalizedTag || !controller || priority < 0) {
@@ -186,10 +186,10 @@ namespace frik::api
         return true;
     }
 
-    RecoilControllerResolution resolveWeaponHandRecoil(const FRIKApi::RecoilSample& sample) noexcept
+    RecoilControllerResolution resolveWeaponHandRecoil(const FRIKApiV2::RecoilSample& sample) noexcept
     {
         RecoilControllerResolution resolution{};
-        resolution.response.structSize = sizeof(FRIKApi::RecoilResponse);
+        resolution.response.structSize = sizeof(FRIKApiV2::RecoilResponse);
         resolution.response.controlledKickLocal = makeIdentityTransform();
 
         std::array<RecoilControllerEntry*, MAX_RECOIL_CONTROLLERS> ordered{};
@@ -205,10 +205,10 @@ namespace frik::api
 
         g_invokingRecoilController = true;
         for (std::size_t index = 0; index < count; ++index) {
-            FRIKApi::RecoilResponse response{};
-            response.structSize = sizeof(FRIKApi::RecoilResponse);
-            response.handMask = static_cast<std::uint32_t>(FRIKApi::RecoilHandMask::Primary);
-            response.delivery = FRIKApi::RecoilDelivery::Direct;
+            FRIKApiV2::RecoilResponse response{};
+            response.structSize = sizeof(FRIKApiV2::RecoilResponse);
+            response.handMask = static_cast<std::uint32_t>(FRIKApiV2::RecoilHandMask::Primary);
+            response.delivery = FRIKApiV2::RecoilDelivery::Direct;
             response.controlledKickLocal = makeIdentityTransform();
 
             if (!ordered[index]->controller(&sample, &response, ordered[index]->userData)) {
