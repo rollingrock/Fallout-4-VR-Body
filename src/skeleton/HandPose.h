@@ -105,6 +105,7 @@ namespace frik
         static void setHandPoseOverrideIntr(bool isLeft, std::string_view tag, const HandFingersPose& pose, int priority);
         static void clearHandPoseOverrideIntr(bool isLeft, std::string_view tag);
         static std::vector<TaggedHandPoseOverride>& getHandOverrides(bool isLeft);
+        static void sortHandOverrides(std::vector<TaggedHandPoseOverride>& overrides);
         static const TaggedHandPoseOverride* getActiveHandPoseOverride(bool isLeft);
 
         std::map<std::string, RE::NiTransform> _handClosed;
