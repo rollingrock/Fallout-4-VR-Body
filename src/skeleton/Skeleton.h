@@ -8,7 +8,7 @@
 #include "CullGeometryHandler.h"
 #include "HandPose.h"
 #include "SelfieHandler.h"
-#include "api/FRIKApiV2.h"
+#include "WeaponHandRecoil.h"
 #include "common/CommonUtils.h"
 #include "f4vr/PlayerNodes.h"
 #include "vrcf/VRControllersManager.h"
@@ -89,11 +89,7 @@ namespace frik
         void walk();
         void setSingleLeg(bool isLeft) const;
         void handleLeftHandedWeaponNodesSwitch();
-        void prepareWeaponHandRecoilFrame();
         void setArms(bool isLeft);
-        RE::NiTransform dampenControlledWeaponHandRecoil(const RE::NiTransform& kick);
-        bool buildControlledWeaponHandRecoilWorldDelta(bool isLeft, RE::NiTransform& outWorldDelta);
-        bool applyControlledWeaponHandRecoil(bool isLeft, RE::NiTransform& target);
         void restoreArmNodesToDefault(bool isLeft);
         bool solveArmToHandWorldTarget(bool isLeft, const RE::NiTransform& handWorldTarget, bool externalAuthority, const char* ignoredChildNodeName);
         void dampenHand(RE::NiNode* node, bool isLeft);
@@ -174,16 +170,7 @@ namespace frik
         RE::NiTransform _rightHandPrevFrame;
         RE::NiTransform _leftHandPrevFrame;
 
-        api::FRIKApiV2::RecoilSample _weaponHandRecoilSample{};
-        api::FRIKApiV2::RecoilResponse _weaponHandRecoilResponse{};
-        RE::NiTransform _controlledWeaponHandRecoilLocal{};
-        std::array<RE::NiTransform, 2> _controlledWeaponHandRecoilWorldDeltas{};
-        std::array<bool, 2> _controlledWeaponHandRecoilWorldDeltaValid{};
-        bool _weaponHandRecoilPhysicalPrimaryIsLeft = false;
-        bool _weaponHandRecoilResponseAccepted = false;
-
-        RE::NiTransform _controlledWeaponHandRecoilSmoothedLocal{};
-        bool _controlledWeaponHandRecoilSmoothedValid = false;
+        WeaponHandRecoil _weaponHandRecoil;
 
         HandPose _handPose;
 

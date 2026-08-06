@@ -19,6 +19,7 @@
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
+#include "utils.h"
 #include "vrcf/VRControllersManager.h"
 
 using namespace common;
@@ -178,31 +179,6 @@ namespace
      * All 15 finger bones enabled, one bit per flat bone index.
      */
     constexpr std::uint16_t FULL_LOCAL_TRANSFORM_MASK = 0x7FFF;
-
-    /**
-     * Return whether every element of a rotation matrix is a finite number.
-     */
-    bool isFiniteRotation(const RE::NiMatrix3& rotation)
-    {
-        for (int row = 0; row < 3; ++row) {
-            for (int column = 0; column < 3; ++column) {
-                if (!std::isfinite(rotation.entry[row][column])) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Return whether a transform is safe to feed into the scene graph: every
-     * component finite, and a scale far enough from zero to stay invertible.
-     */
-    bool isFiniteTransform(const RE::NiTransform& transform)
-    {
-        return isFiniteRotation(transform.rotate) && std::isfinite(transform.translate.x) && std::isfinite(transform.translate.y) && std::isfinite(transform.translate.z) &&
-               std::isfinite(transform.scale) && std::abs(transform.scale) > 0.0001f;
-    }
 
     /**
      * Build the local transform one bone would take under an authored pose.

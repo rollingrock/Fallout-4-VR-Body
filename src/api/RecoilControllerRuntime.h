@@ -4,6 +4,13 @@
 
 namespace frik::api
 {
+    /**
+     * Outcome of offering one frame's native kick to the registered controllers.
+     *
+     * The response is only meaningful when accepted. Otherwise it carries neutral
+     * defaults and the caller should leave the game's own recoil untouched, which is
+     * what keeps vanilla behavior when no mod is driving recoil.
+     */
     struct RecoilControllerResolution
     {
         bool accepted = false;

@@ -10,13 +10,13 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "api/RecoilControllerRuntime.h"
 #include "common/MatrixUtils.h"
 #include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
+#include "utils.h"
 #include "vrcf/VRControllersManager.h"
 
 using namespace common;
@@ -38,57 +38,6 @@ namespace
     {
         return frik::g_config.comfortSneakHackStaticBodyPitchAngle > 0 && isComfortSneakMode() && isPlayerSneaking();
     }
-
-    bool isFiniteTransform(const RE::NiTransform& transform)
-    {
-        if (!std::isfinite(transform.translate.x) || !std::isfinite(transform.translate.y) || !std::isfinite(transform.translate.z) || !std::isfinite(transform.scale) ||
-            std::abs(transform.scale) <= 0.0001f) {
-            return false;
-        }
-
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 4; col++) {
-                if (!std::isfinite(transform.rotate.entry[row][col])) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    struct ScopedKickbackNeutralizer
-    {
-        explicit ScopedKickbackNeutralizer(RE::NiNode* const node, const bool enabled)
-            : _node(node)
-        {
-            if (!_node || !enabled || !isFiniteTransform(_node->local)) {
-                return;
-            }
-
-            _savedLocal = _node->local;
-            _node->local.MakeIdentity();
-            updateTransformsDown(_node, true);
-            _active = true;
-        }
-
-        ~ScopedKickbackNeutralizer()
-        {
-            if (!_active) {
-                return;
-            }
-            _node->local = _savedLocal;
-            updateTransformsDown(_node, true);
-        }
-
-        ScopedKickbackNeutralizer(const ScopedKickbackNeutralizer&) = delete;
-        ScopedKickbackNeutralizer& operator=(const ScopedKickbackNeutralizer&) = delete;
-
-    private:
-        RE::NiNode* _node = nullptr;
-        RE::NiTransform _savedLocal{};
-        bool _active = false;
-    };
 
     struct ArmLocalTransformSnapshot
     {
@@ -178,7 +127,7 @@ namespace frik
         }
 
         RE::NiTransform controlledWorldTarget = worldTarget;
-        (void)applyControlledWeaponHandRecoil(isLeft, controlledWorldTarget);
+        (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, controlledWorldTarget);
 
         const ArmNodes arm = isLeft ? _leftArm : _rightArm;
         if (!arm.shoulder || !arm.hand || !arm.upper || !arm.forearm1 || (!_inPowerArmor && (!arm.forearm2 || !arm.forearm3))) {
@@ -403,7 +352,7 @@ namespace frik
         // do arm IK - Right then Left
         logger::trace("Set Arms...");
         handleLeftHandedWeaponNodesSwitch();
-        prepareWeaponHandRecoilFrame();
+        _weaponHandRecoil.onFrameUpdate(_playerNodes, isLeftHandedMode() || isPrimaryWeaponNodeOwnershipBlocked());
         setArms(false);
         setArms(true);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
@@ -1093,135 +1042,6 @@ namespace frik
         }
     }
 
-    namespace
-    {
-        RE::NiTransform composeWorldFromFrameLocal(const RE::NiTransform& frame, const RE::NiTransform& local)
-        {
-            RE::NiTransform world;
-            world.rotate = local.rotate * frame.rotate;
-            world.translate = frame.translate + frame.rotate.Transpose() * (local.translate * frame.scale);
-            world.scale = frame.scale * local.scale;
-            return world;
-        }
-
-        RE::NiTransform invertFrameTransform(const RE::NiTransform& transform)
-        {
-            const float safeScale = transform.scale != 0.0f ? transform.scale : 1.0f;
-            RE::NiTransform inverse;
-            inverse.rotate = transform.rotate.Transpose();
-            inverse.translate = (transform.rotate * transform.translate) * (-1.0f / safeScale);
-            inverse.scale = 1.0f / safeScale;
-            return inverse;
-        }
-
-        RE::NiTransform mirrorRecoilLocalAcrossSagittal(const RE::NiTransform& local)
-        {
-            const RE::NiMatrix3 mx = MatrixUtils::getMatrix(-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-            RE::NiTransform mirrored = local;
-            mirrored.rotate = mx * local.rotate * mx;
-            mirrored.translate = RE::NiPoint3(-local.translate.x, local.translate.y, local.translate.z);
-            return mirrored;
-        }
-    }
-
-    void Skeleton::prepareWeaponHandRecoilFrame()
-    {
-        _weaponHandRecoilSample = {};
-        _weaponHandRecoilSample.structSize = sizeof(api::FRIKApiV2::RecoilSample);
-        _weaponHandRecoilSample.nativeKickLocal.MakeIdentity();
-
-        _weaponHandRecoilPhysicalPrimaryIsLeft = isLeftHandedMode() || isPrimaryWeaponNodeOwnershipBlocked();
-
-        _weaponHandRecoilResponse = {};
-        _weaponHandRecoilResponse.structSize = sizeof(api::FRIKApiV2::RecoilResponse);
-        _weaponHandRecoilResponse.controlledKickLocal.MakeIdentity();
-        _controlledWeaponHandRecoilLocal.MakeIdentity();
-        _controlledWeaponHandRecoilWorldDeltaValid.fill(false);
-        _weaponHandRecoilResponseAccepted = false;
-
-        auto* const kickbackNode = _playerNodes ? _playerNodes->primaryWeaponKickbackRecoilNode : nullptr;
-        if (!kickbackNode || !isFiniteTransform(kickbackNode->local) || !kickbackNode->parent || !isFiniteTransform(kickbackNode->parent->world)) {
-            _controlledWeaponHandRecoilSmoothedValid = false;
-            return;
-        }
-        _weaponHandRecoilSample.nativeKickLocal = kickbackNode->local;
-
-        const auto resolution = api::resolveWeaponHandRecoil(_weaponHandRecoilSample);
-        if (!resolution.accepted) {
-            _controlledWeaponHandRecoilSmoothedValid = false;
-            return;
-        }
-
-        _weaponHandRecoilResponse = resolution.response;
-        _weaponHandRecoilResponseAccepted = true;
-        if (_weaponHandRecoilResponse.delivery == api::FRIKApiV2::RecoilDelivery::Damped) {
-            _controlledWeaponHandRecoilLocal = dampenControlledWeaponHandRecoil(_weaponHandRecoilResponse.controlledKickLocal);
-        } else {
-            _controlledWeaponHandRecoilLocal = _weaponHandRecoilResponse.controlledKickLocal;
-            _controlledWeaponHandRecoilSmoothedValid = false;
-        }
-    }
-
-    bool Skeleton::buildControlledWeaponHandRecoilWorldDelta(const bool isLeft, RE::NiTransform& outWorldDelta)
-    {
-        auto* const kickbackNode = _playerNodes ? _playerNodes->primaryWeaponKickbackRecoilNode : nullptr;
-        const auto* const kickParent = kickbackNode ? kickbackNode->parent : nullptr;
-        if (!kickParent || !isFiniteTransform(kickParent->world) || !isFiniteTransform(_controlledWeaponHandRecoilLocal)) {
-            return false;
-        }
-
-        RE::NiTransform kickParentWorld = kickParent->world;
-        RE::NiTransform controlledKickLocal = _controlledWeaponHandRecoilLocal;
-
-        // The native kick is authored in the current game-primary wand frame.
-        // Mirror that rigid relation only when the selected physical hand is
-        // the current game-offhand (including ROCK's external-left carry).
-        const bool nativePrimaryIsLeft = isLeftHandedMode();
-        if (isLeft != nativePrimaryIsLeft) {
-            auto* const nativePrimaryWand = _playerNodes->primaryWandNode;
-            auto* const nativeOffhandWand = _playerNodes->SecondaryWandNode;
-            if (!nativePrimaryWand || !nativeOffhandWand || !isFiniteTransform(nativePrimaryWand->world) || !isFiniteTransform(nativeOffhandWand->world)) {
-                return false;
-            }
-
-            const RE::NiTransform kickParentInPrimaryWand = composeWorldFromFrameLocal(invertFrameTransform(nativePrimaryWand->world), kickParentWorld);
-            kickParentWorld = composeWorldFromFrameLocal(nativeOffhandWand->world, mirrorRecoilLocalAcrossSagittal(kickParentInPrimaryWand));
-            controlledKickLocal = mirrorRecoilLocalAcrossSagittal(controlledKickLocal);
-        }
-
-        outWorldDelta = composeWorldFromFrameLocal(kickParentWorld, composeWorldFromFrameLocal(controlledKickLocal, invertFrameTransform(kickParentWorld)));
-        return isFiniteTransform(outWorldDelta);
-    }
-
-    bool Skeleton::applyControlledWeaponHandRecoil(const bool isLeft, RE::NiTransform& target)
-    {
-        if (!_weaponHandRecoilResponseAccepted) {
-            return true;
-        }
-
-        const auto selectedRole =
-            static_cast<std::uint32_t>(isLeft == _weaponHandRecoilPhysicalPrimaryIsLeft ? api::FRIKApiV2::RecoilHandMask::Primary : api::FRIKApiV2::RecoilHandMask::Offhand);
-        if ((_weaponHandRecoilResponse.handMask & selectedRole) == 0) {
-            return true;
-        }
-
-        const std::size_t handIndex = isLeft ? 1u : 0u;
-        if (!_controlledWeaponHandRecoilWorldDeltaValid[handIndex]) {
-            if (!buildControlledWeaponHandRecoilWorldDelta(isLeft, _controlledWeaponHandRecoilWorldDeltas[handIndex])) {
-                return false;
-            }
-            _controlledWeaponHandRecoilWorldDeltaValid[handIndex] = true;
-        }
-
-        const RE::NiTransform controlledTarget = composeWorldFromFrameLocal(_controlledWeaponHandRecoilWorldDeltas[handIndex], target);
-        if (!isFiniteTransform(controlledTarget)) {
-            return false;
-        }
-
-        target = controlledTarget;
-        return true;
-    }
-
     // This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
     void Skeleton::setArms(bool isLeft)
     {
@@ -1271,45 +1091,15 @@ namespace frik
                                                          : RE::NiPoint3(4.389f, -1.899f, -3.133f);
 
         {
-            ScopedKickbackNeutralizer neutralizeNativeKick(_playerNodes->primaryWeaponKickbackRecoilNode, _weaponHandRecoilResponseAccepted);
+            const WeaponHandRecoil::ScopedNativeKickNeutralizer neutralizeNativeKick(_weaponHandRecoil);
             dampenHand(offsetNode, isLeft);
             weaponNode->IncRefCount();
             Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
         }
 
         RE::NiTransform handWorldTarget = isLeft ? _leftHand->world : _rightHand->world;
-        (void)applyControlledWeaponHandRecoil(isLeft, handWorldTarget);
+        (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, handWorldTarget);
         (void)solveArmToHandWorldTarget(isLeft, handWorldTarget, false, nullptr);
-    }
-
-    RE::NiTransform Skeleton::dampenControlledWeaponHandRecoil(const RE::NiTransform& kick)
-    {
-        if (!g_config.dampenHands) {
-            _controlledWeaponHandRecoilSmoothedValid = false;
-            return kick;
-        }
-        const bool isInScopeMenu = g_frik.isInScopeMenu();
-        if (isInScopeMenu && !g_config.dampenHandsInVanillaScope) {
-            _controlledWeaponHandRecoilSmoothedValid = false;
-            return kick;
-        }
-        if (!_controlledWeaponHandRecoilSmoothedValid) {
-            _controlledWeaponHandRecoilSmoothedLocal.MakeIdentity();
-            _controlledWeaponHandRecoilSmoothedValid = true;
-        }
-        const float rotationFactor = isInScopeMenu ? g_config.dampenHandsRotationInVanillaScope : g_config.dampenHandsRotation;
-        const float translationFactor = isInScopeMenu ? g_config.dampenHandsTranslationInVanillaScope : g_config.dampenHandsTranslation;
-
-        Quaternion smoothedRotation, targetRotation;
-        smoothedRotation.fromMatrix(_controlledWeaponHandRecoilSmoothedLocal.rotate);
-        targetRotation.fromMatrix(kick.rotate);
-        smoothedRotation.slerp(1 - rotationFactor, targetRotation);
-
-        RE::NiTransform smoothed = kick;
-        smoothed.rotate = smoothedRotation.getMatrix();
-        smoothed.translate = kick.translate - (kick.translate - _controlledWeaponHandRecoilSmoothedLocal.translate) * translationFactor;
-        _controlledWeaponHandRecoilSmoothedLocal = smoothed;
-        return smoothed;
     }
 
     void Skeleton::restoreArmNodesToDefault(const bool isLeft)
