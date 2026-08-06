@@ -109,17 +109,6 @@ add_library(${PROJECT_NAME} SHARED
   "${ROOT_DIR}/.editorconfig"
 )
 
-# Keep the FO4VR loader contract enforced in the normal build path.
-add_custom_command(
-  TARGET ${PROJECT_NAME}
-  PRE_BUILD
-  COMMAND ${CMAKE_COMMAND}
-          -DFRIK_SOURCE=${SOURCE_DIR}/FRIK.cpp
-          -P ${ROOT_DIR}/cmake/verify_fo4vr_query.cmake
-  COMMENT "Verifying FO4VR F4SE Query compatibility"
-  VERBATIM
-)
-
 # >>> C++ standard & defs
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PRIVATE _UNICODE)

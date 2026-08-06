@@ -2,7 +2,6 @@
 
 #include <Windows.h>
 #include <array>
-#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string_view>
@@ -176,11 +175,11 @@ namespace frik::api
             static HandPoseData fromFloats(std::span<const float, FLOAT_COUNT> v)
             {
                 return HandPoseData{
-                    .thumb = { v[0], v[1], v[2], v[3] },
-                    .index = { v[4], v[5], v[6], v[7] },
-                    .middle = { v[8], v[9], v[10], v[11] },
-                    .ring = { v[12], v[13], v[14], v[15] },
-                    .pinky = { v[16], v[17], v[18], v[19] },
+                    .thumb = { .prox = v[0], .mid = v[1], .dist = v[2], .splay = v[3] },
+                    .index = { .prox = v[4], .mid = v[5], .dist = v[6], .splay = v[7] },
+                    .middle = { .prox = v[8], .mid = v[9], .dist = v[10], .splay = v[11] },
+                    .ring = { .prox = v[12], .mid = v[13], .dist = v[14], .splay = v[15] },
+                    .pinky = { .prox = v[16], .mid = v[17], .dist = v[18], .splay = v[19] },
                     .palmPitch = v[20],
                     .palmYaw = v[21],
                 };
@@ -287,7 +286,7 @@ namespace frik::api
         /**
          * How a controlled recoil response should be applied.
          */
-        enum class RecoilDelivery : std::uint32_t
+        enum class RecoilDelivery : std::uint8_t
         {
             Damped = 0,
             Direct = 1,
@@ -296,7 +295,7 @@ namespace frik::api
         /**
          * Which hands a recoil response applies to.
          */
-        enum class RecoilHandMask : std::uint32_t
+        enum class RecoilHandMask : std::uint8_t
         {
             None = 0,
             Primary = 1u << 0,
@@ -357,7 +356,7 @@ namespace frik::api
         /**
          * F4SE message types FRIK broadcasts over FRIK_F4SE_MOD_NAME.
          */
-        enum class LifecycleEvent : std::uint32_t
+        enum class LifecycleEvent : std::uint8_t
         {
             kSkeletonReady = 100,
             kSkeletonDestroying = 101,
@@ -437,16 +436,9 @@ namespace frik::api
         bool(FRIK_CALL* setHandPose)(const char* tag, Hand hand, HandPoseKind handPose, int priority);
 
         /**
-         * Set a hand pose override to specific values for each finger, at an explicit priority.
-         * Each value is between 0 and 1 where 0 is bent and 1 is straight, applied
-         * uniformly across that finger's joints.
-         * @return true if successful.
-         */
-        bool(FRIK_CALL* setHandPoseCustomFingerPositions)(const char* tag, Hand hand, float thumb, float index, float middle, float ring, float pinky, int priority);
-
-        /**
          * Set a full hand pose override with per-joint finger values, per-finger splay,
          * and palm motion, at an explicit priority.
+         * For a uniform per-finger flex, set prox/mid/dist of each finger to the same value.
          * Use clearHandPose to release the override.
          * @return true if successful.
          */
@@ -630,11 +622,6 @@ namespace frik::api
                 return 1;
             }
 
-            const auto getApiStructSize = reinterpret_cast<std::uint32_t(FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_V2_GetApiStructSize"));
-            if (!getApiStructSize || getApiStructSize() != sizeof(FRIKApiV2)) {
-                return 5;
-            }
-
             const auto getApi = reinterpret_cast<const FRIKApiV2*(FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_V2_GetApi"));
             if (!getApi) {
                 return 2;
@@ -650,6 +637,11 @@ namespace frik::api
                 return 4;
             }
 
+            const auto getApiStructSize = reinterpret_cast<std::uint32_t(FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_V2_GetApiStructSize"));
+            if (!getApiStructSize || getApiStructSize() != sizeof(FRIKApiV2)) {
+                return 5;
+            }
+
             inst = frikApi;
             return 0;
         }
@@ -663,5 +655,5 @@ namespace frik::api
 
     inline constexpr std::size_t FRIK_API_V2_FUNCTION_POINTER_SIZE = sizeof(decltype(FRIKApiV2::getVersion));
     static_assert(std::is_standard_layout_v<FRIKApiV2>, "FRIKApiV2 must remain standard-layout for its exported function table ABI");
-    static_assert(sizeof(FRIKApiV2) == 32 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
+    static_assert(sizeof(FRIKApiV2) == 31 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Version.h>
-#include <cstdint>
 
 #include "Config.h"
 #include "ModBase.h"
@@ -97,7 +96,7 @@ namespace frik
             }
         }
 
-        void refreshAfterExternalHandAuthority(bool isLeft);
+        void refreshAfterExternalHandAuthority(bool isLeft) const;
 
         void closePipboy() const
         {
@@ -158,12 +157,12 @@ namespace frik
             return _weaponPosition && _weaponPosition->isOffHandGrippingWeapon();
         }
 
-        bool isOffHandGrippingEnabled() const
+        static bool isOffHandGrippingEnabled()
         {
             return WeaponPositionAdjuster::isOffHandGrippingEnabled();
         }
 
-        void setOffHandGrippingEnabled(const bool enabled)
+        static void setOffHandGrippingEnabled(const bool enabled)
         {
             WeaponPositionAdjuster::setOffHandGrippingEnabled(enabled);
         }

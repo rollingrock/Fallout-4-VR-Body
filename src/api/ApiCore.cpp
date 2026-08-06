@@ -334,7 +334,7 @@ namespace frik::api::core
     bool mirrorFingerLocalTransforms(const bool sourceIsLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& sourceTransforms,
         const std::uint16_t sourceEnabledMask, std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask)
     {
-        auto* skeleton = g_frik.getSkeleton();
+        const auto* skeleton = g_frik.getSkeleton();
         if (!skeleton) {
             return false;
         }

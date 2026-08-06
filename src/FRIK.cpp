@@ -28,13 +28,13 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* a
         return false;
     }
 
-    return f4cf::g_mod->onF4SEPluginQuery(a_skse, a_info);
+    return g_mod->onF4SEPluginQuery(a_skse, a_info);
 }
 
 // This is the entry point to the mod.
 extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface* a_f4se)
 {
-    return f4cf::g_mod->onF4SEPluginLoad(a_f4se);
+    return g_mod->onF4SEPluginLoad(a_f4se);
 }
 
 namespace frik
@@ -214,7 +214,7 @@ namespace frik
 
         if (!_skeletonReadyPublished) {
             _skeletonReadyPublished = true;
-            broadcastMessage(static_cast<std::uint32_t>(frik::api::FRIKApiV2::LifecycleEvent::kSkeletonReady), nullptr, 0);
+            broadcastMessage(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonReady), nullptr, 0);
         }
     }
 
@@ -230,7 +230,7 @@ namespace frik
         }
     }
 
-    void FRIK::refreshAfterExternalHandAuthority(const bool isLeft)
+    void FRIK::refreshAfterExternalHandAuthority(const bool isLeft) const
     {
         if (!_skelly) {
             return;
@@ -375,10 +375,10 @@ namespace frik
     void FRIK::releaseSkeleton()
     {
         if (_skelly && _skeletonReadyPublished) {
-            broadcastMessage(static_cast<std::uint32_t>(frik::api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying), nullptr, 0);
+            broadcastMessage(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying), nullptr, 0);
         }
         _skeletonReadyPublished = false;
-        frik::api::core::clearExternalStateForSkeletonRelease();
+        api::core::clearExternalStateForSkeletonRelease();
 
         _workingRootNode = nullptr;
         _skeletonInitDelayFrames = kSkeletonInitDelayFramesAfterRelease;

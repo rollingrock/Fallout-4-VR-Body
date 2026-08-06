@@ -184,19 +184,6 @@ namespace
         return true;
     }
 
-    bool FRIK_CALL setHandPoseCustomFingerPositions(const char* tag, const FRIKApiV2::Hand hand, const float thumb, const float index, const float middle, const float ring,
-        const float pinky, const int priority)
-    {
-        const auto normalizedTag = core::normalizeTag(tag);
-        if (!normalizedTag || priority < 0) {
-            return false;
-        }
-
-        logger::sample("APIv2 setHandPoseCustomFingerPositions tag:'{}' hand={} priority={}", *normalizedTag, FRIKApiV2::handName(hand), priority);
-        core::setHandPose(*normalizedTag, isLeftForHand(hand), core::makeUniformFingerPose(thumb, index, middle, ring, pinky), priority);
-        return true;
-    }
-
     bool FRIK_CALL setHandPoseCustom(const char* tag, const FRIKApiV2::Hand hand, const FRIKApiV2::HandPoseData& handPose, const int priority)
     {
         const auto normalizedTag = core::normalizeTag(tag);
@@ -328,7 +315,6 @@ namespace
         .getHandPoseSetTagState = &getHandPoseSetTagState,
         .getCurrentHandPose = &getCurrentHandPose,
         .setHandPose = &setHandPose,
-        .setHandPoseCustomFingerPositions = &setHandPoseCustomFingerPositions,
         .setHandPoseCustom = &setHandPoseCustom,
         .setHandPoseCustomLocalTransforms = &setHandPoseCustomLocalTransforms,
         .getHandPoseLocalTransformsForPose = &getHandPoseLocalTransformsForPose,
