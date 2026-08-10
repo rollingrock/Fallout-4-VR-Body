@@ -2,16 +2,13 @@
 
 #include <array>
 #include <cstdint>
-#include <map>
 #include <string_view>
 
 #include "CullGeometryHandler.h"
 #include "HandPose.h"
 #include "SelfieHandler.h"
 #include "WeaponHandRecoil.h"
-#include "common/CommonUtils.h"
 #include "f4vr/PlayerNodes.h"
-#include "vrcf/VRControllersManager.h"
 
 namespace frik
 {

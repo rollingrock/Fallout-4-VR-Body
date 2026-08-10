@@ -40,24 +40,22 @@ namespace frik
     inline void PlayerControlsHandler::reset()
     {
         if (_weaponHidden) {
-            if (const auto weaponNode = f4vr::getWeaponNode()) {
-                if (const auto weaponVisual = f4vr::get1StChildNode(weaponNode)) {
-                    f4vr::setNodeVisibility(weaponVisual, true);
-                }
-            }
+            _weaponHidden = false;
+            logger::info("PlayerControlsHandler: reset weapon visibility for Pipboy operation with finger");
+            f4vr::setNodeVisibility(f4vr::get1StChildNode(f4vr::getWeaponNode()), true);
         }
 
         if (_disabledInput) {
+            logger::info("PlayerControlsHandler: reset disable player input");
             if (const auto player = RE::PlayerCharacter::GetSingleton()) {
                 f4vr::SetActorRestrained(player, false);
             }
             if (const auto inputManager = RE::BSInputEnableManager::GetSingleton()) {
                 inputManager->forceEnableInputUserEventsFlags = _lastFlags;
             }
+            _disabledInput = false;
         }
 
-        _disabledInput = false;
-        _weaponHidden = false;
         // Fix: Reset thumbstick controls to enabled state on game session load
         // Without this, if controls were disabled when the previous session ended,
         // the thumbstick deadzone remains at 1.0 preventing sprint from working
