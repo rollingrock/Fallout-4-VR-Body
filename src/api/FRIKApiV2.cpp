@@ -263,6 +263,26 @@ namespace
         return true;
     }
 
+    bool FRIK_CALL setHandTransform(const char* tag, const FRIKApiV2::Hand hand, const RE::NiTransform& worldTransform, const int priority)
+    {
+        const auto normalizedTag = core::normalizeTag(tag);
+        if (!normalizedTag || priority < 0) {
+            return false;
+        }
+
+        return core::setHandTransform(*normalizedTag, isLeftForHand(hand), worldTransform, priority);
+    }
+
+    bool FRIK_CALL clearHandTransform(const char* tag, const FRIKApiV2::Hand hand)
+    {
+        const auto normalizedTag = core::normalizeTag(tag);
+        if (!normalizedTag) {
+            return false;
+        }
+
+        return core::clearHandTransform(*normalizedTag, isLeftForHand(hand));
+    }
+
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApiV2::OpenExternalModConfigData& data)
     {
         return core::registerOpenModSettingButtonToMainConfig(data.buttonIconNifPath, data.callbackReceiverName, data.callbackMessageType);
@@ -283,26 +303,6 @@ namespace
         return core::isFeatureBlocked(static_cast<core::Feature>(feature));
     }
 
-    bool FRIK_CALL applyExternalHandWorldTransform(const char* tag, const FRIKApiV2::Hand hand, const RE::NiTransform& worldTarget, const int priority)
-    {
-        const auto normalizedTag = core::normalizeTag(tag);
-        if (!normalizedTag || priority < 0) {
-            return false;
-        }
-
-        return core::applyExternalHandWorldTransform(*normalizedTag, isLeftForHand(hand), worldTarget, priority);
-    }
-
-    bool FRIK_CALL clearExternalHandWorldTransform(const char* tag, const FRIKApiV2::Hand hand)
-    {
-        const auto normalizedTag = core::normalizeTag(tag);
-        if (!normalizedTag) {
-            return false;
-        }
-
-        return core::clearExternalHandWorldTransform(*normalizedTag, isLeftForHand(hand));
-    }
-
     constexpr FRIKApiV2 FRIK_API_V2_FUNCTIONS_TABLE{ .getVersion = &getVersion,
         .getModVersion = &core::getModVersion,
         .isSkeletonReady = &core::isSkeletonReady,
@@ -320,6 +320,8 @@ namespace
         .getHandPoseLocalTransformsForPose = &getHandPoseLocalTransformsForPose,
         .mirrorFingerLocalTransforms = &mirrorFingerLocalTransforms,
         .clearHandPose = &clearHandPose,
+        .setHandTransform = &setHandTransform,
+        .clearHandTransform = &clearHandTransform,
         .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig,
         .blockOffHandWeaponGripping = &core::blockOffHandWeaponGripping,
         .blockFeature = &blockFeature,
@@ -330,8 +332,6 @@ namespace
         .hasConfigValueOverride = &core::hasConfigValueOverride,
         .setConfigValueOverride = &core::setConfigValueOverride,
         .clearConfigValueOverride = &core::clearConfigValueOverride,
-        .applyExternalHandWorldTransform = &applyExternalHandWorldTransform,
-        .clearExternalHandWorldTransform = &clearExternalHandWorldTransform,
         .registerWeaponHandRecoilController = &frik::api::registerWeaponHandRecoilController,
         .unregisterWeaponHandRecoilController = &frik::api::unregisterWeaponHandRecoilController };
 }

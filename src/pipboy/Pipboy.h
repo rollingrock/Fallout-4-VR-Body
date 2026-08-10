@@ -39,7 +39,6 @@ namespace frik
         void swapModel();
 
         void onFrameUpdate();
-        void syncAfterExternalHandAuthority(bool isLeft);
 
     private:
         void exitPowerArmorBugFixHack(bool set);

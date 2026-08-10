@@ -4,9 +4,11 @@
 #include <array>
 #include <atomic>
 #include <cmath>
+#include <cstdint>
 #include <mutex>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "Config.h"
 #include "FRIK.h"
@@ -39,38 +41,26 @@ namespace
         return frik::g_config.comfortSneakHackStaticBodyPitchAngle > 0 && isComfortSneakMode() && isPlayerSneaking();
     }
 
-    struct ArmLocalTransformSnapshot
+    /**
+     * A hand world transform published by an external mod through the API, replacing the tracked
+     * controller as the target the arm is solved to.
+     * Tags let several mods register at once without clobbering each other, exactly like hand-pose overrides.
+     */
+    struct HandTransformOverride
     {
-        std::array<std::pair<RE::NiAVObject*, RE::NiTransform>, 7> locals{};
-        std::size_t count = 0;
-
-        void add(RE::NiAVObject* const node)
-        {
-            if (!node) {
-                return;
-            }
-            locals[count++] = { node, node->local };
-        }
-
-        void restore() const
-        {
-            for (std::size_t i = 0; i < count; ++i) {
-                locals[i].first->local = locals[i].second;
-            }
-        }
+        std::string tag;
+        RE::NiTransform worldTransform;
+        int priority = 0;
+        std::uint64_t sequence = 0;
     };
 
-    ArmLocalTransformSnapshot captureArmLocalTransforms(const frik::ArmNodes& arm)
+    // Indexed by hand: 0 is right, 1 is left.
+    std::array<std::vector<HandTransformOverride>, 2> g_handTransformOverrides;
+    std::uint64_t g_nextHandTransformOverrideSequence = 0;
+
+    std::vector<HandTransformOverride>& getHandTransformOverrides(const bool isLeft)
     {
-        ArmLocalTransformSnapshot snapshot;
-        snapshot.add(arm.shoulder);
-        snapshot.add(arm.upper);
-        snapshot.add(arm.upperT1);
-        snapshot.add(arm.forearm1);
-        snapshot.add(arm.forearm2);
-        snapshot.add(arm.forearm3);
-        snapshot.add(arm.hand);
-        return snapshot;
+        return g_handTransformOverrides[isLeft ? 1 : 0];
     }
 
 }
@@ -120,69 +110,84 @@ namespace frik
         g_primaryWeaponNodeOwnershipTagCount.store(0, std::memory_order_release);
     }
 
-    bool Skeleton::applyExternalHandWorldTransform(const bool isLeft, const RE::NiTransform& worldTarget)
+    /**
+     * Publish a tagged world transform for one hand.
+     *
+     * This only records the transform; setArms consumes it on the next skeleton frame, so the arm is
+     * always solved exactly once per frame from whichever source owns the hand. The transform stays in
+     * effect until it is cleared, so a client that owns a hand for a while does not have to republish.
+     * The highest priority tag owns the hand and equal priorities are broken by the most recently
+     * published. Call on the game update thread.
+     *
+     * @return false if the tag is empty, the priority is negative, or the transform is not finite.
+     */
+    bool Skeleton::setHandTransformOverride(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTransform, const int priority)
     {
-        if (!isFiniteTransform(worldTarget)) {
+        if (tag.empty() || priority < 0 || !isFiniteTransform(worldTransform)) {
             return false;
         }
 
-        RE::NiTransform controlledWorldTarget = worldTarget;
-        (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, controlledWorldTarget);
-
-        const ArmNodes arm = isLeft ? _leftArm : _rightArm;
-        if (!arm.shoulder || !arm.hand || !arm.upper || !arm.forearm1 || (!_inPowerArmor && (!arm.forearm2 || !arm.forearm3))) {
-            return false;
-        }
-
-        const auto weaponNode = f4vr::getWeaponNode();
-        const char* ignoredChildNodeName = weaponNode ? weaponNode->name.c_str() : nullptr;
-        const auto armSnapshot = captureArmLocalTransforms(arm);
-        const auto restoreArmSnapshot = [&]() {
-            armSnapshot.restore();
-            f4vr::updateTransformsDown(arm.shoulder, true, ignoredChildNodeName);
-        };
-
-        restoreArmNodesToDefault(isLeft);
-        f4vr::updateTransformsDown(arm.shoulder, true, ignoredChildNodeName);
-
-        if (!solveArmToHandWorldTarget(isLeft, controlledWorldTarget, true, ignoredChildNodeName)) {
-            restoreArmSnapshot();
-            return false;
-        }
-
-        f4vr::updateTransformsDown(arm.shoulder, true, ignoredChildNodeName);
-        if (!isFiniteTransform(arm.hand->world)) {
-            restoreArmSnapshot();
-            return false;
+        auto& overrides = getHandTransformOverrides(isLeft);
+        const auto overrideIt = std::ranges::find_if(overrides, [tag](const HandTransformOverride& overrideEntry) {
+            return overrideEntry.tag == tag;
+        });
+        if (overrideIt == overrides.end()) {
+            overrides.push_back(HandTransformOverride{
+                .tag = std::string(tag),
+                .worldTransform = worldTransform,
+                .priority = priority,
+                .sequence = ++g_nextHandTransformOverrideSequence,
+            });
+        } else {
+            overrideIt->worldTransform = worldTransform;
+            overrideIt->priority = priority;
+            overrideIt->sequence = ++g_nextHandTransformOverrideSequence;
         }
         return true;
     }
 
-    bool Skeleton::preserveHandPoseForTrackedAuthorityHandoff(const bool isLeft)
+    /**
+     * Release a tagged hand transform, handing the hand back on the next frame to the next
+     * highest-priority tag, or to FRIK's own tracked arm solve when no tag is left.
+     *
+     * @return false if the tag is empty.
+     */
+    bool Skeleton::clearHandTransformOverride(const std::string_view tag, const bool isLeft)
     {
-        if (getFirstPersonSkeleton() == nullptr) {
+        if (tag.empty()) {
             return false;
         }
 
-        // The final external pose already owns the rendered frame. Solving the tracked arm here would consume
-        // externally modified arm locals before the normal frame pass restores defaults, briefly resurrecting a
-        // stale constrained pose. Preserve the final pose; onFrameUpdate restores defaults and solves tracking once.
-        const ArmNodes arm = isLeft ? _leftArm : _rightArm;
-        return arm.hand && isFiniteTransform(arm.hand->world);
+        std::erase_if(getHandTransformOverrides(isLeft), [tag](const HandTransformOverride& overrideEntry) {
+            return overrideEntry.tag == tag;
+        });
+        return true;
     }
 
-    void Skeleton::refreshExternalHandAfterAuthority(const bool isLeft)
+    /**
+     * Drop every hand transform override when the skeleton is released.
+     * Clients must republish after the next skeleton-ready event.
+     */
+    void Skeleton::clearHandTransformOverrides()
     {
-        _handPose.onFrameUpdate(_root, _frameTime);
-
-        const ArmNodes arm = isLeft ? _leftArm : _rightArm;
-        if (!arm.hand) {
-            return;
+        for (auto& overrides : g_handTransformOverrides) {
+            overrides.clear();
         }
+        g_nextHandTransformOverrideSequence = 0;
+    }
 
-        const auto weaponNode = f4vr::getWeaponNode();
-        const char* ignoredChildNodeName = weaponNode ? weaponNode->name.c_str() : nullptr;
-        f4vr::updateTransformsDown(arm.hand, true, ignoredChildNodeName);
+    /**
+     * Get the transform owning one hand this frame, or nullptr to let the tracked hand drive the arm.
+     */
+    const RE::NiTransform* Skeleton::getHandTransformOverride(const bool isLeft)
+    {
+        const HandTransformOverride* owner = nullptr;
+        for (const auto& overrideEntry : getHandTransformOverrides(isLeft)) {
+            if (!owner || overrideEntry.priority > owner->priority || (overrideEntry.priority == owner->priority && overrideEntry.sequence > owner->sequence)) {
+                owner = &overrideEntry;
+            }
+        }
+        return owner ? &owner->worldTransform : nullptr;
     }
 
     /**
@@ -1097,11 +1102,29 @@ namespace frik
             Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
         }
 
-        RE::NiTransform handWorldTarget = isLeft ? _leftHand->world : _rightHand->world;
+        // An external mod can own the hand instead of the tracked controller, but only as the target
+        // handed to the same solver, so everything downstream of the arm sees one consistent result.
+        const auto* transformOverride = getHandTransformOverride(isLeft);
+        RE::NiTransform handWorldTarget = transformOverride ? *transformOverride : (isLeft ? _leftHand->world : _rightHand->world);
         (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, handWorldTarget);
-        (void)solveArmToHandWorldTarget(isLeft, handWorldTarget, false, nullptr);
+        if (solveArmToHandWorldTarget(isLeft, handWorldTarget) || !transformOverride) {
+            return;
+        }
+
+        // An unreachable target makes the solver bail after it has already rotated the collarbone. For the
+        // tracked hand that only ever happens on a dropped frame of tracking and the next frame reset clears
+        // it, but an override holds its target until the client clears it, so the arm would stay half solved
+        // for as long as it is set. Solve to the tracked hand instead, as if no tag owned this hand.
+        restoreArmNodesToDefault(isLeft);
+        RE::NiTransform trackedHandTarget = isLeft ? _leftHand->world : _rightHand->world;
+        (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, trackedHandTarget);
+        (void)solveArmToHandWorldTarget(isLeft, trackedHandTarget);
     }
 
+    /**
+     * Reset one arm chain to its default local transforms and refresh the world transforms below it,
+     * undoing a partial solve so the arm can be solved again from a clean state.
+     */
     void Skeleton::restoreArmNodesToDefault(const bool isLeft)
     {
         const ArmNodes arm = isLeft ? _leftArm : _rightArm;
@@ -1118,9 +1141,10 @@ namespace frik
                 }
             }
         }
+        updateDown(arm.shoulder, true);
     }
 
-    bool Skeleton::solveArmToHandWorldTarget(const bool isLeft, const RE::NiTransform& handWorldTarget, const bool externalAuthority, const char* ignoredChildNodeName)
+    bool Skeleton::solveArmToHandWorldTarget(const bool isLeft, const RE::NiTransform& handWorldTarget)
     {
         if (!isFiniteTransform(handWorldTarget)) {
             return false;
@@ -1157,7 +1181,7 @@ namespace frik
         RE::NiMatrix3 result = MatrixUtils::getMatrixFromRotateVectorVec(sLocalDir, RE::NiPoint3(1, 0, 0)) * arm.shoulder->local.rotate;
         arm.shoulder->local.rotate = result;
 
-        updateDown(arm.shoulder, true, ignoredChildNodeName);
+        updateDown(arm.shoulder, true);
 
         // The bend of the arm depends on its distance to the body.  Its distance as well as the lengths of
         // the upper arm and forearm define the sides of a triangle:
@@ -1228,9 +1252,7 @@ namespace frik
         //		logger::info("final angle %2f", rads_to_degrees(twistAngle));
 
         // Smooth out sudden changes in the twist angle over time to reduce elbow shake
-        static std::array<float, 2> prevControllerAngle = { 0, 0 };
-        static std::array<float, 2> prevExternalAngle = { 0, 0 };
-        auto& prevAngle = externalAuthority ? prevExternalAngle : prevControllerAngle;
+        static std::array<float, 2> prevAngle = { 0, 0 };
         twistAngle = prevAngle[isLeft ? 0 : 1] + (twistAngle - prevAngle[isLeft ? 0 : 1]) * 0.25f;
         prevAngle[isLeft ? 0 : 1] = twistAngle;
 

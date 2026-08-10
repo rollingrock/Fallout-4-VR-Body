@@ -57,11 +57,11 @@ namespace frik
         static bool isPrimaryWeaponNodeOwnershipBlocked();
         static void clearPrimaryWeaponNodeOwnershipBlocks();
 
-        void onFrameUpdate();
+        static bool setHandTransformOverride(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority);
+        static bool clearHandTransformOverride(std::string_view tag, bool isLeft);
+        static void clearHandTransformOverrides();
 
-        bool applyExternalHandWorldTransform(bool isLeft, const RE::NiTransform& worldTarget);
-        bool preserveHandPoseForTrackedAuthorityHandoff(bool isLeft);
-        void refreshExternalHandAfterAuthority(bool isLeft);
+        void onFrameUpdate();
 
         bool mirrorFingerLocalTransforms(bool sourceIsLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& sourceTransforms, std::uint16_t sourceEnabledMask,
             std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask) const
@@ -87,8 +87,9 @@ namespace frik
         void setSingleLeg(bool isLeft) const;
         void handleLeftHandedWeaponNodesSwitch();
         void setArms(bool isLeft);
+        static const RE::NiTransform* getHandTransformOverride(bool isLeft);
         void restoreArmNodesToDefault(bool isLeft);
-        bool solveArmToHandWorldTarget(bool isLeft, const RE::NiTransform& handWorldTarget, bool externalAuthority, const char* ignoredChildNodeName);
+        bool solveArmToHandWorldTarget(bool isLeft, const RE::NiTransform& handWorldTarget);
         void dampenHand(RE::NiNode* node, bool isLeft);
         void hide3rdPersonWeapon() const;
         void hideFistHelpers() const;

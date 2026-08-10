@@ -8,9 +8,7 @@
 #include "f4vr/F4VRUtils.h"
 #include "skeleton/Skeleton.h"
 
-#include <algorithm>
 #include <unordered_set>
-#include <vector>
 
 using namespace frik::skeleton::data;
 
@@ -30,51 +28,6 @@ namespace
      * A feature stays disabled while at least one tag is still blocking it.
      */
     std::array<std::unordered_set<std::string>, FEATURE_COUNT> g_featureBlockingTags;
-
-    struct ExternalHandAuthorityEntry
-    {
-        std::string tag;
-        RE::NiTransform worldTarget;
-        int priority = 0;
-        std::uint64_t generation = 0;
-    };
-
-    struct SelectedExternalHandAuthority
-    {
-        const ExternalHandAuthorityEntry* entry = nullptr;
-    };
-
-    std::array<std::vector<ExternalHandAuthorityEntry>, 2> g_externalHandAuthorities;
-    std::uint64_t g_externalHandAuthorityGeneration = 0;
-
-    std::size_t handAuthorityIndex(const bool isLeft)
-    {
-        return isLeft ? 1U : 0U;
-    }
-
-    SelectedExternalHandAuthority selectExternalHandAuthority(const std::vector<ExternalHandAuthorityEntry>& entries)
-    {
-        const ExternalHandAuthorityEntry* best = nullptr;
-        for (const auto& entry : entries) {
-            if (!best || entry.priority > best->priority || (entry.priority == best->priority && entry.generation > best->generation)) {
-                best = &entry;
-            }
-        }
-
-        if (!best) {
-            return {};
-        }
-        return SelectedExternalHandAuthority{ .entry = best };
-    }
-
-    bool isSameExternalHandAuthoritySelection(const SelectedExternalHandAuthority& lhs, const SelectedExternalHandAuthority& rhs)
-    {
-        if (!lhs.entry || !rhs.entry) {
-            return lhs.entry == rhs.entry;
-        }
-
-        return lhs.entry->tag == rhs.entry->tag && lhs.entry->priority == rhs.entry->priority && lhs.entry->generation == rhs.entry->generation;
-    }
 
     /**
      * Apply the resolved enabled state of a feature to its FRIK subsystem.
@@ -319,6 +272,25 @@ namespace frik::api::core
         HandPose::clearHandPoseOverride(isLeft, tag);
     }
 
+    /**
+     * Publish a world transform for one hand, consumed by the skeleton's arm solve every frame until
+     * it is cleared. Rejected while there is no skeleton, because the registration would be dropped
+     * by the skeleton release that follows.
+     */
+    bool setHandTransform(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTransform, const int priority)
+    {
+        if (!g_frik.getSkeleton()) {
+            return false;
+        }
+
+        return Skeleton::setHandTransformOverride(tag, isLeft, worldTransform, priority);
+    }
+
+    bool clearHandTransform(const std::string_view tag, const bool isLeft)
+    {
+        return Skeleton::clearHandTransformOverride(tag, isLeft);
+    }
+
     bool setHandPoseLocalTransforms(const std::string_view tag, const bool isLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms,
         const std::uint16_t enabledMask, const int priority)
     {
@@ -393,109 +365,9 @@ namespace frik::api::core
         return true;
     }
 
-    bool applyExternalHandWorldTransform(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTarget, const int priority)
-    {
-        auto* skelly = g_frik.getSkeleton();
-        if (tag.empty() || priority < 0 || !skelly) {
-            return false;
-        }
-
-        auto& entries = g_externalHandAuthorities[handAuthorityIndex(isLeft)];
-        auto updatedEntries = entries;
-        const auto nextGeneration = g_externalHandAuthorityGeneration + 1;
-        const auto it = std::ranges::find_if(updatedEntries, [tag](const ExternalHandAuthorityEntry& entry) {
-            return entry.tag == tag;
-        });
-        if (it == updatedEntries.end()) {
-            updatedEntries.push_back(ExternalHandAuthorityEntry{
-                .tag = std::string(tag),
-                .worldTarget = worldTarget,
-                .priority = priority,
-                .generation = nextGeneration,
-            });
-        } else {
-            it->worldTarget = worldTarget;
-            it->priority = priority;
-            it->generation = nextGeneration;
-        }
-
-        const auto oldSelected = selectExternalHandAuthority(entries);
-        const auto newSelected = selectExternalHandAuthority(updatedEntries);
-        if (!newSelected.entry) {
-            return false;
-        }
-
-        const bool selectionChanged = !isSameExternalHandAuthoritySelection(oldSelected, newSelected);
-        if (!selectionChanged) {
-            entries = std::move(updatedEntries);
-            g_externalHandAuthorityGeneration = nextGeneration;
-            return true;
-        }
-
-        if (!skelly->applyExternalHandWorldTransform(isLeft, newSelected.entry->worldTarget)) {
-            return false;
-        }
-
-        entries = std::move(updatedEntries);
-        g_externalHandAuthorityGeneration = nextGeneration;
-        g_frik.refreshAfterExternalHandAuthority(isLeft);
-        return true;
-    }
-
-    bool clearExternalHandWorldTransform(const std::string_view tag, const bool isLeft)
-    {
-        if (tag.empty()) {
-            return false;
-        }
-
-        auto& entries = g_externalHandAuthorities[handAuthorityIndex(isLeft)];
-        auto updatedEntries = entries;
-        const auto oldSize = updatedEntries.size();
-        updatedEntries.erase(std::remove_if(updatedEntries.begin(),
-                                 updatedEntries.end(),
-                                 [tag](const ExternalHandAuthorityEntry& entry) {
-                                     return entry.tag == tag;
-                                 }),
-            updatedEntries.end());
-        if (updatedEntries.size() == oldSize) {
-            return true;
-        }
-
-        auto* skelly = g_frik.getSkeleton();
-        if (!skelly) {
-            return false;
-        }
-
-        const auto oldSelected = selectExternalHandAuthority(entries);
-        const auto newSelected = selectExternalHandAuthority(updatedEntries);
-        if (!newSelected.entry) {
-            if (!skelly->preserveHandPoseForTrackedAuthorityHandoff(isLeft)) {
-                return false;
-            }
-            entries = std::move(updatedEntries);
-            g_frik.refreshAfterExternalHandAuthority(isLeft);
-            return true;
-        }
-
-        if (!isSameExternalHandAuthoritySelection(oldSelected, newSelected)) {
-            if (!skelly->applyExternalHandWorldTransform(isLeft, newSelected.entry->worldTarget)) {
-                return false;
-            }
-            entries = std::move(updatedEntries);
-            g_frik.refreshAfterExternalHandAuthority(isLeft);
-            return true;
-        }
-
-        entries = std::move(updatedEntries);
-        return true;
-    }
-
     void clearExternalStateForSkeletonRelease()
     {
-        for (auto& entries : g_externalHandAuthorities) {
-            entries.clear();
-        }
-        g_externalHandAuthorityGeneration = 0;
+        Skeleton::clearHandTransformOverrides();
         HandPose::clearPrimaryWeaponPoseBlocks();
         Skeleton::clearPrimaryWeaponNodeOwnershipBlocks();
         clearWeaponHandRecoilControllersForSkeletonRelease();

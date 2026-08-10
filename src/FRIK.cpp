@@ -230,19 +230,6 @@ namespace frik
         }
     }
 
-    void FRIK::refreshAfterExternalHandAuthority(const bool isLeft) const
-    {
-        if (!_skelly) {
-            return;
-        }
-
-        _skelly->refreshExternalHandAfterAuthority(isLeft);
-        updateWorldFinal();
-        if (_pipboy) {
-            _pipboy->syncAfterExternalHandAuthority(isLeft);
-        }
-    }
-
     void FRIK::initSkeleton()
     {
         _inPowerArmor = f4vr::isInPowerArmor();

@@ -96,8 +96,6 @@ namespace frik
             }
         }
 
-        void refreshAfterExternalHandAuthority(bool isLeft) const;
-
         void closePipboy() const
         {
             if (_pipboy) {

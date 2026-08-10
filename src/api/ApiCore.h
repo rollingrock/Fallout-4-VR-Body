@@ -126,6 +126,9 @@ namespace frik::api::core
     void setHandPose(std::string_view tag, bool isLeft, const HandFingersPose& pose, int priority);
     void clearHandPose(std::string_view tag, bool isLeft);
 
+    bool setHandTransform(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority);
+    bool clearHandTransform(std::string_view tag, bool isLeft);
+
     bool setHandPoseLocalTransforms(std::string_view tag, bool isLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms, std::uint16_t enabledMask,
         int priority);
 
@@ -139,9 +142,6 @@ namespace frik::api::core
     bool isFeatureBlocked(Feature feature);
 
     bool registerOpenModSettingButtonToMainConfig(const char* buttonIconNifPath, const char* callbackReceiverName, std::uint32_t callbackMessageType);
-
-    bool applyExternalHandWorldTransform(std::string_view tag, bool isLeft, const RE::NiTransform& worldTarget, int priority);
-    bool clearExternalHandWorldTransform(std::string_view tag, bool isLeft);
 
     /**
      * Drop every external-authority registration when the skeleton is released.

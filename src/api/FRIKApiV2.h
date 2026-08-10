@@ -477,6 +477,39 @@ namespace frik::api
         bool(FRIK_CALL* clearHandPose)(const char* tag, Hand hand);
 
         /**
+         * Take over where a hand is placed for a specific tag, giving FRIK the world
+         * transform to solve the arm to instead of the tracked controller. This is
+         * independent of the hand pose functions above, which own the fingers: a tag
+         * can set either, both, or neither.
+         * The highest-priority tag owns the hand; equal priorities are broken by
+         * the most recently published.
+         *
+         * The transform is consumed by FRIK's arm solve on its next skeleton frame
+         * rather than applied during this call, so the arm is solved exactly once per
+         * frame and everything FRIK derives from the hand stays consistent with it.
+         * A published transform keeps owning the hand until it is cleared, so a client
+         * holding a hand steady does not have to republish every frame; a client
+         * tracking a moving target republishes whenever the target changes.
+         * Call on the game update thread.
+         *
+         * Registrations are cleared on skeleton destruction and must be republished
+         * after LifecycleEvent::kSkeletonReady.
+         * @param worldTransform the wrist transform in world space, not hand-local space.
+         * @param priority must be >= 0.
+         * @return true if the transform was accepted. This reports validation only -
+         * whether the arm can reach the target is decided per frame by the solver,
+         * which falls back to FRIK's own posing for a frame it cannot solve.
+         */
+        bool(FRIK_CALL* setHandTransform)(const char* tag, Hand hand, const RE::NiTransform& worldTransform, int priority);
+
+        /**
+         * Clear the hand transform for this tag, handing the hand back on the next
+         * frame to FRIK (or to the next highest-priority tag).
+         * @return true if successful.
+         */
+        bool(FRIK_CALL* clearHandTransform)(const char* tag, Hand hand);
+
+        /**
          * Adds a button to open external mod config via a button in FRIK main config UI.
          */
         bool(FRIK_CALL* registerOpenModSettingButtonToMainConfig)(const OpenExternalModConfigData& data);
@@ -559,24 +592,6 @@ namespace frik::api
          * @return true if an override was set for that key and has been removed.
          */
         bool(FRIK_CALL* clearConfigValueOverride)(const char* caller, const char* section, const char* key);
-
-        /**
-         * Publish an externally owned hand world transform for a specific tag.
-         * The highest-priority tag owns the hand; equal priorities are broken by
-         * the most recently published.
-         * Registrations are cleared on skeleton destruction and must be republished
-         * after LifecycleEvent::kSkeletonReady.
-         * @param priority must be >= 0.
-         * @return true if successful.
-         */
-        bool(FRIK_CALL* applyExternalHandWorldTransform)(const char* tag, Hand hand, const RE::NiTransform& worldTarget, int priority);
-
-        /**
-         * Release a tagged external hand transform, handing the hand back to FRIK
-         * (or to the next highest-priority tag).
-         * @return true if successful.
-         */
-        bool(FRIK_CALL* clearExternalHandWorldTransform)(const char* tag, Hand hand);
 
         /**
          * Register or replace a tagged visual hand-recoil controller.
