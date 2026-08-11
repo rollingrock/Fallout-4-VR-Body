@@ -261,8 +261,6 @@ namespace frik
         _handClosed.clear();
         _handOpen.clear();
         _handBones.clear();
-        _leftHandOverrides.clear();
-        _rightHandOverrides.clear();
 
         for (const auto& boneData : getHandBoneData()) {
             copyRotationIntoTransform(boneData.closedRotation, _handClosed[boneData.boneName]);
@@ -271,6 +269,23 @@ namespace frik
         }
 
         _handBones = _handOpen;
+    }
+
+    /**
+     * Drop every tagged pose override when the skeleton is released, FRIK's own interaction poses
+     * along with the external ones, because the bones they were resolved against are going away.
+     * Clients must republish after the next skeleton-ready event, and FRIK's own poses are re-set by
+     * the subsystems that own them once the new skeleton starts updating.
+     *
+     * The overrides outlive any single HandPose instance, so this is deliberately driven by the
+     * release path rather than by the next HandPose constructor: resetting shared state as a
+     * side effect of building the next instance would also discard anything published in between.
+     */
+    void HandPose::clearHandPoseOverridesForSkeletonRelease()
+    {
+        _leftHandOverrides.clear();
+        _rightHandOverrides.clear();
+        _nextOverrideSequence = 0;
     }
 
     /**

@@ -430,6 +430,9 @@ namespace frik::api
          * Use the tag to uniquely identify different systems using hand pose overrides.
          * Passing HandPoseKind::Unset clears this tag's override.
          * Use setHandPoseCustom for HandPoseKind::Custom.
+         *
+         * Overrides are cleared on skeleton destruction and must be republished
+         * after LifecycleEvent::kSkeletonReady.
          * @param priority must be >= 0.
          * @return true if successful.
          */
@@ -440,6 +443,9 @@ namespace frik::api
          * and palm motion, at an explicit priority.
          * For a uniform per-finger flex, set prox/mid/dist of each finger to the same value.
          * Use clearHandPose to release the override.
+         *
+         * Overrides are cleared on skeleton destruction and must be republished
+         * after LifecycleEvent::kSkeletonReady.
          * @return true if successful.
          */
         bool(FRIK_CALL* setHandPoseCustom)(const char* tag, Hand hand, const HandPoseData& handPose, int priority);

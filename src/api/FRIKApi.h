@@ -315,6 +315,8 @@ namespace frik::api
          * Set a predefined hand pose override.
          * Use the tag to unique identify different systems using hand pose overrides.
          * Use setHandPoseCustomFingerPositions for Custom.
+         * Overrides are cleared on skeleton destruction and must be republished
+         * once isSkeletonReady returns true again.
          * @return true if successful.
          */
         bool(FRIK_CALL* setHandPose)(const char* tag, Hand hand, HandPoseKind handPose);
@@ -324,6 +326,8 @@ namespace frik::api
          * Set a hand pose override to specific values for each finger.
          * Use the tag to unique identify different systems using hand pose overrides.
          * Each value is between 0 and 1 where 0 is bent and 1 is straight.
+         * Overrides are cleared on skeleton destruction and must be republished
+         * once isSkeletonReady returns true again.
          * @return true if successful.
          */
         bool(FRIK_CALL* setHandPoseCustomFingerPositions)(const char* tag, Hand hand, float thumb, float index, float middle, float ring, float pinky);

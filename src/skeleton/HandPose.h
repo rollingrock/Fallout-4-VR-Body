@@ -34,6 +34,8 @@ namespace frik
 
         explicit HandPose(bool inPowerArmor);
 
+        static void clearHandPoseOverridesForSkeletonRelease();
+
         static void setHandPoseOverride(bool isLeft, std::string_view tag, const HandFingersPose& pose, bool forceTop);
         static void setHandPoseOverrideWithPriority(bool isLeft, std::string_view tag, const HandFingersPose& pose, int priority);
         static bool setHandPoseLocalTransformsWithPriority(bool isLeft, std::string_view tag, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& localTransforms,

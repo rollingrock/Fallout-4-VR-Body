@@ -368,9 +368,10 @@ namespace frik
         }
         _skeletonReadyPublished = false;
 
-        // Every external registration was published against nodes that are about to go away, so both
-        // registries drop theirs here and clients republish after the next skeleton-ready event.
+        // Every registration was published against nodes that are about to go away, so each registry
+        // drops its own here and clients republish after the next skeleton-ready event.
         g_externalAuthority.clearForSkeletonRelease();
+        HandPose::clearHandPoseOverridesForSkeletonRelease();
         api::clearWeaponHandRecoilControllersForSkeletonRelease();
 
         _workingRootNode = nullptr;
