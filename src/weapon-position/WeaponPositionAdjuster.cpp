@@ -31,8 +31,10 @@ namespace frik
     }
 
     /**
-     * Reset transient state when weapon positioning is disabled via API so nothing stays stuck:
+     * Reset transient state when this adjuster stops driving the weapon so nothing stays stuck:
      * release an active offhand grip (and its hand pose) and exit reposition mode.
+     * Called both when weapon positioning is disabled via API and when an external mod takes
+     * ownership of the primary weapon node.
      * The weapon node itself self-heals as the game re-applies its animation transform each frame.
      */
     void WeaponPositionAdjuster::resetOnDisable()
@@ -72,6 +74,14 @@ namespace frik
      */
     void WeaponPositionAdjuster::onFrameUpdate()
     {
+        // An external node owner skips checkIfOffhandIsGripping, the only thing that clears a grip,
+        // so release transient state as the block engages - here, to catch a holstered weapon too.
+        const bool nodeOwnershipBlocked = g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
+        if (nodeOwnershipBlocked && !_nodeOwnershipBlockedLastFrame) {
+            resetOnDisable();
+        }
+        _nodeOwnershipBlockedLastFrame = nodeOwnershipBlocked;
+
         // handle throwable first as it's independent of weapon
         handleThrowableWeapon();
 

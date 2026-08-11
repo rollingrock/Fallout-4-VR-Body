@@ -164,18 +164,22 @@ namespace
     /**
      * Vet a filled-in response before it is allowed to win the frame.
      *
-     * structSize must cover the struct FRIK knows. FRIK owns and pre-fills the buffer, so
-     * this is the version gate: a client built against an older, shorter header is caught
-     * here rather than having FRIK read fields it never knew to write. Unknown hand mask
-     * bits and unknown delivery modes are refused rather than guessed at, so a response
-     * written for a future API cannot be silently misread as one of today's.
+     * structSize is deliberately not checked. FRIK owns this buffer and pre-fills that field
+     * itself, so it can never carry information about the client: it either still holds the
+     * value FRIK just wrote, or the controller built a RecoilResponse locally and assigned it
+     * wholesale, zeroing the field back to its header default. Gating on it only punished that
+     * second, entirely reasonable client for nothing. Version skew is already refused exactly,
+     * and at load rather than per frame, by the FRIKAPI_V2_GetApiStructSize check in
+     * FRIKApiV2::initialize. Unknown hand mask bits and unknown delivery modes are still
+     * refused rather than guessed at, so a response written for a future API cannot be
+     * silently misread as one of today's.
      */
     bool isValidResponse(const Api::RecoilResponse& response)
     {
         constexpr auto supportedHandMask = static_cast<std::uint32_t>(Api::RecoilHandMask::Primary) | static_cast<std::uint32_t>(Api::RecoilHandMask::Offhand);
 
-        return response.structSize >= sizeof(Api::RecoilResponse) && (response.handMask & ~supportedHandMask) == 0 &&
-               (response.delivery == Api::RecoilDelivery::Damped || response.delivery == Api::RecoilDelivery::Direct) && isPlausibleRigidTransform(response.controlledKickLocal);
+        return (response.handMask & ~supportedHandMask) == 0 && (response.delivery == Api::RecoilDelivery::Damped || response.delivery == Api::RecoilDelivery::Direct) &&
+               isPlausibleRigidTransform(response.controlledKickLocal);
     }
 
 }

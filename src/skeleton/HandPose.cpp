@@ -679,7 +679,7 @@ namespace frik
 
     /**
      * Return the winning explicit override for one hand, if any: the highest
-     * priority, and among equals the one that registered first.
+     * priority, and among equals the one that registered most recently.
      */
     const HandPose::TaggedHandPoseOverride* HandPose::getActiveHandPoseOverride(const bool isLeft)
     {
@@ -712,7 +712,7 @@ namespace frik
 
     /**
      * Order overrides so the active one is at the front: highest priority first,
-     * and within one priority the tag that registered first stays ahead.
+     * and within one priority the tag that registered most recently stays ahead.
      */
     void HandPose::sortHandOverrides(std::vector<TaggedHandPoseOverride>& overrides)
     {
@@ -748,8 +748,9 @@ namespace frik
         updatedOverride.localTransforms = {};
         if (wasInserted) {
             // Sequence is the tiebreak between equal priorities and is assigned once,
-            // on registration. Refreshing an existing pose every frame must not walk
-            // the tag over an equal-priority peer that registered before it.
+            // on registration, so the newest registration takes a tie. Refreshing an
+            // existing pose every frame must not re-stamp it and walk the tag back over
+            // an equal-priority peer that registered after it.
             updatedOverride.sequence = ++_nextOverrideSequence;
             overrides.push_back(updatedOverride);
         } else {

@@ -77,7 +77,7 @@ namespace frik::api
         /**
          * Priority FRIK's own interaction poses use - Pip-Boy pointing, forced
          * pointing, offhand grip, and Attaboy. Match it to tie with FRIK
-         * (newest set wins); exceed it to reliably outrank FRIK itself.
+         * (newest registration wins); exceed it to reliably outrank FRIK itself.
          *
          * Outranking FRIK means FRIK cannot reclaim the hand for its own
          * interactions, so prefer blockFeature for wholesale takeover.
@@ -129,7 +129,7 @@ namespace frik::api
             OffhandGrip = 5,
             Attaboy = 6,
             ThumbsUp = 7,
-
+            Fist = 8,
             HoldingGun = 9,
             HoldingMelee = 10,
         };
@@ -321,6 +321,18 @@ namespace frik::api
         /**
          * Controlled visual hand/arm recoil returned by an external controller.
          *
+         * FRIK pre-fills this struct with neutral defaults before every callback -
+         * identity kick, Primary hand, Direct delivery - so the usual shape of a
+         * controller is to edit the fields it cares about through outResponse and
+         * leave the rest alone. structSize is FRIK's own bookkeeping, reported for
+         * your information only; it is ignored on the way back in, so you need
+         * neither set nor preserve it.
+         *
+         * If you would rather build a response locally and assign it wholesale,
+         * fill controlledKickLocal yourself even when you only mean to suppress
+         * recoil: a default-constructed RE::NiTransform carries a zero rotation
+         * matrix rather than identity, and is refused as non-rigid.
+         *
          * Returning true from the callback consumes FRIK's native hand-recoil
          * contribution for that frame. controlledKickLocal uses the same local
          * frame as RecoilSample::nativeKickLocal. A zero handMask intentionally
@@ -423,9 +435,12 @@ namespace frik::api
          * Set a predefined hand pose override at an explicit priority.
          *
          * Overrides are ordered by priority (highest wins); equal priorities are
-         * broken by the most recently set. Use HAND_POSE_PRIORITY_DEFAULT unless
-         * you have a reason not to, and see HAND_POSE_PRIORITY_FRIK_INTERNAL for
-         * where FRIK's own poses sit.
+         * broken by the most recently registered tag. Re-setting a tag you already
+         * hold updates its pose in place and keeps its original position in that
+         * order, so refreshing every frame never walks you past an equal-priority
+         * peer - clear the tag and set it again to claim the tie.
+         * Use HAND_POSE_PRIORITY_DEFAULT unless you have a reason not to, and see
+         * HAND_POSE_PRIORITY_FRIK_INTERNAL for where FRIK's own poses sit.
          *
          * Use the tag to uniquely identify different systems using hand pose overrides.
          * Passing HandPoseKind::Unset clears this tag's override.

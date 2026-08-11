@@ -9,6 +9,7 @@
 #include "common/MatrixUtils.h"
 #include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
+#include "f4vr/PlayerNodes.h"
 #include "utils.h"
 
 using namespace common;
@@ -16,6 +17,20 @@ using namespace frik::skeleton::data;
 
 namespace
 {
+    /**
+     * Which variant of the rest translations applies right now.
+     *
+     * Power armor is the one live read this file makes, and these functions are deliberately
+     * callable through the API before FRIK has a skeleton, so a missing player resolves to the
+     * normal variant instead of dereferencing null inside f4vr::isInPowerArmor.
+     *
+     * TODO: move the fix into f4vr::isInPowerArmor
+     */
+    bool isInPowerArmorSafe()
+    {
+        return f4vr::getPlayer() != nullptr && f4vr::isInPowerArmor();
+    }
+
     /**
      * Copy the authored 3x4 rotation rows from pose data into a runtime transform.
      */
@@ -162,7 +177,7 @@ namespace frik
         outTransforms = {};
         outEnabledMask = 0;
 
-        const bool inPowerArmor = f4vr::isInPowerArmor();
+        const bool inPowerArmor = isInPowerArmorSafe();
         std::array<RE::NiTransform, FINGER_BONE_COUNT> transforms{};
         std::uint16_t enabledMask = 0;
         for (const auto& boneData : getHandBoneData()) {
@@ -418,7 +433,7 @@ namespace frik
         }
 
         const char sourcePrefix = sourceIsLeft ? 'L' : 'R';
-        const bool inPowerArmor = f4vr::isInPowerArmor();
+        const bool inPowerArmor = isInPowerArmorSafe();
         std::array<RE::NiTransform, FINGER_BONE_COUNT> mirroredTransforms{};
         std::uint16_t mirroredMask = 0;
         for (const auto& boneData : getHandBoneData()) {

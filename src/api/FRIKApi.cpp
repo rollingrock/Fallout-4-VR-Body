@@ -82,6 +82,7 @@ namespace
         case HandPoseKind::HoldingWeapon:
         case HandPoseKind::HoldingGun:
         case HandPoseKind::HoldingMelee:
+        case HandPoseKind::Fist:
             return FRIKApi::HandPoseKind::HoldingWeapon;
         case HandPoseKind::OffhandGrip:
             return FRIKApi::HandPoseKind::OffhandGrip;
@@ -89,8 +90,6 @@ namespace
             return FRIKApi::HandPoseKind::Attaboy;
         case HandPoseKind::ThumbsUp:
             return FRIKApi::HandPoseKind::ThumbsUp;
-        case HandPoseKind::Fist:
-            return FRIKApi::HandPoseKind::Unset;
         }
         return FRIKApi::HandPoseKind::Unset;
     }

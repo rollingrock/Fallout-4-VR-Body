@@ -57,6 +57,8 @@ namespace
             return HandPoseKind::Attaboy;
         case FRIKApiV2::HandPoseKind::ThumbsUp:
             return HandPoseKind::ThumbsUp;
+        case FRIKApiV2::HandPoseKind::Fist:
+            return HandPoseKind::Fist;
         case FRIKApiV2::HandPoseKind::HoldingGun:
             return HandPoseKind::HoldingGun;
         case FRIKApiV2::HandPoseKind::HoldingMelee:
@@ -65,9 +67,6 @@ namespace
         return HandPoseKind::Unset;
     }
 
-    /**
-     * Fist has no published equivalent, so it reports as Unset.
-     */
     FRIKApiV2::HandPoseKind toApiHandPoseKind(const HandPoseKind kind)
     {
         switch (kind) {
@@ -87,12 +86,12 @@ namespace
             return FRIKApiV2::HandPoseKind::Attaboy;
         case HandPoseKind::ThumbsUp:
             return FRIKApiV2::HandPoseKind::ThumbsUp;
+        case HandPoseKind::Fist:
+            return FRIKApiV2::HandPoseKind::Fist;
         case HandPoseKind::HoldingGun:
             return FRIKApiV2::HandPoseKind::HoldingGun;
         case HandPoseKind::HoldingMelee:
             return FRIKApiV2::HandPoseKind::HoldingMelee;
-        case HandPoseKind::Fist:
-            return FRIKApiV2::HandPoseKind::Unset;
         }
         return FRIKApiV2::HandPoseKind::Unset;
     }
