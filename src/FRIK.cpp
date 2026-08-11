@@ -52,9 +52,7 @@ namespace frik
     class FrameUpdateContext : public vrui::UIModAdapter
     {
     public:
-        explicit FrameUpdateContext(Skeleton* skelly)
-            : _skelly(skelly)
-        {}
+        explicit FrameUpdateContext() = default;
 
         virtual RE::NiPoint3 getInteractionBoneWorldPosition() override
         {
@@ -65,9 +63,6 @@ namespace frik
         {
             HandPose::setForceHandPointingPose(primaryHand, toPoint);
         }
-
-    private:
-        Skeleton* _skelly;
     };
 
     /**
@@ -195,7 +190,7 @@ namespace frik
         _boneSpheres.onFrameUpdate();
 
         logger::trace("Update player controls...");
-        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy, _weaponPosition, _pipboyConfigMode);
+        _playerControlsHandler.onFrameUpdate(_mainConfigMode, _pipboy.get(), _weaponPosition.get(), _pipboyConfigMode.get());
 
         if (_weaponPositionEnabled) {
             logger::trace("Update Weapon Position...");
@@ -205,7 +200,7 @@ namespace frik
         logger::trace("Update Pipboy...");
         _pipboy->onFrameUpdate();
 
-        FrameUpdateContext context(_skelly);
+        FrameUpdateContext context;
         vrui::g_uiManager->onFrameUpdate(&context);
 
         _mainConfigMode.onFrameUpdate();
@@ -250,20 +245,19 @@ namespace frik
         _workingRootNode = f4vr::getRootNode();
         _skeletonReadyPublished = false;
 
-        auto* skelly = new Skeleton(f4vr::getRootNode(), _inPowerArmor);
-        if (!skelly->isInitialized()) {
+        auto skelly = Skeleton::create(f4vr::getRootNode(), _inPowerArmor);
+        if (!skelly) {
             logger::warn("Skeleton initialization failed after readiness checks; retrying later.");
-            delete skelly;
             _workingRootNode = nullptr;
             _skeletonInitDelayFrames = kSkeletonInitDelayFramesAfterRelease;
             return;
         }
-        _skelly = skelly;
+        _skelly = std::move(skelly);
 
         // init handlers depending on skeleton
-        _pipboy = new Pipboy(_skelly);
-        _pipboyConfigMode = new PipboyConfigMode(_skelly);
-        _weaponPosition = new WeaponPositionAdjuster(_skelly);
+        _pipboy = std::make_unique<Pipboy>(_skelly.get());
+        _pipboyConfigMode = std::make_unique<PipboyConfigMode>(_skelly.get());
+        _weaponPosition = std::make_unique<WeaponPositionAdjuster>(_skelly.get());
     }
 
     /**
@@ -380,17 +374,11 @@ namespace frik
         _playerControlsHandler.reset();
         _smoothMovement.reset();
 
-        delete _skelly;
-        _skelly = nullptr;
-
-        delete _pipboy;
-        _pipboy = nullptr;
-
-        delete _pipboyConfigMode;
-        _pipboyConfigMode = nullptr;
-
-        delete _weaponPosition;
-        _weaponPosition = nullptr;
+        // release the dependents before the skeleton they observe
+        _pipboy.reset();
+        _pipboyConfigMode.reset();
+        _weaponPosition.reset();
+        _skelly.reset();
 
         _inPowerArmor = false;
         _dynamicCameraHeight = 0.0f;

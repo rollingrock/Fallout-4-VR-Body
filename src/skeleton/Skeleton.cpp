@@ -37,6 +37,17 @@ namespace
 namespace frik
 {
     /**
+     * Create a fully initialized skeleton, or nullptr if the game nodes required by the skeleton
+     * are not available yet. Guarantees that an existing Skeleton instance is always usable.
+     */
+    std::unique_ptr<Skeleton> Skeleton::create(RE::NiNode* rootNode, const bool inPowerArmor)
+    {
+        // not using make_unique as the constructor is private
+        std::unique_ptr<Skeleton> skeleton(new Skeleton(rootNode, inPowerArmor));
+        return skeleton->initializeNodes() ? std::move(skeleton) : nullptr;
+    }
+
+    /**
      * Get the player camera height offset adjusted for power armor, sneaking, and dynamic height from external API.
      * The height needs to be adjusted for comfort sneaking because the player physical height doesn't change but
      * the player avatar does. So the camera offset has to be reduced by the same amount as the game changes the height

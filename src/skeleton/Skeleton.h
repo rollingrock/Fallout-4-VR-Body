@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 
 #include "CullGeometryHandler.h"
 #include "HandPose.h"
@@ -25,20 +26,11 @@ namespace frik
     class Skeleton
     {
     public:
-        Skeleton(RE::NiNode* rootNode, const bool inPowerArmor)
-            : _root(rootNode),
-              _inPowerArmor(inPowerArmor),
-              _handPose(inPowerArmor)
-        {
-            _curentPosition = RE::NiPoint3(0, 0, 0);
-            _walkingState = 0;
-            _initialized = initializeNodes();
-        }
-
-        bool isInitialized() const
-        {
-            return _initialized;
-        }
+        /**
+         * Create a fully initialized skeleton, or nullptr if the game nodes required by the skeleton
+         * are not available yet. Guarantees that an existing Skeleton instance is always usable.
+         */
+        static std::unique_ptr<Skeleton> create(RE::NiNode* rootNode, bool inPowerArmor);
 
         ArmNodes getLeftArm() const
         {
@@ -61,6 +53,15 @@ namespace frik
         }
 
     private:
+        Skeleton(RE::NiNode* rootNode, const bool inPowerArmor)
+            : _root(rootNode),
+              _inPowerArmor(inPowerArmor),
+              _handPose(inPowerArmor)
+        {
+            _curentPosition = RE::NiPoint3(0, 0, 0);
+            _walkingState = 0;
+        }
+
         // initialization
         bool initializeNodes();
         void initArmsNodes();
@@ -96,7 +97,6 @@ namespace frik
         // root node and is in power armor define the Skeleton instance
         RE::NiNode* _root;
         bool _inPowerArmor;
-        bool _initialized = false;
 
         // ???
         LARGE_INTEGER _freqCounter;

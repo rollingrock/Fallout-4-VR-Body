@@ -222,7 +222,7 @@ namespace frik::api::core
 
     void setHandPose(const std::string_view tag, const bool isLeft, const HandFingersPose& pose, const int priority)
     {
-        HandPose::setHandPoseOverrideWithPriority(isLeft, tag, pose, priority);
+        HandPose::setHandPoseOverride(isLeft, tag, pose, priority);
     }
 
     void clearHandPose(const std::string_view tag, const bool isLeft)
@@ -237,7 +237,7 @@ namespace frik::api::core
      */
     bool setHandWorldTransform(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTransform, const int priority)
     {
-        if (!g_frik.getSkeleton()) {
+        if (!g_frik.isSkeletonReady()) {
             return false;
         }
 
@@ -252,7 +252,7 @@ namespace frik::api::core
     bool setHandPoseLocalTransforms(const std::string_view tag, const bool isLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms,
         const std::uint16_t enabledMask, const int priority)
     {
-        return HandPose::setHandPoseLocalTransformsWithPriority(isLeft, tag, localTransforms, enabledMask, priority);
+        return HandPose::setHandPoseOverrideLocalTransforms(isLeft, tag, localTransforms, enabledMask, priority);
     }
 
     bool getHandPoseLocalTransformsForPose(const bool isLeft, const HandFingersPose& pose, std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& outTransforms,

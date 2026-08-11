@@ -85,7 +85,7 @@ namespace frik::api
                 FingerPose{ middle, middle, middle },
                 FingerPose{ ring, ring, ring },
                 FingerPose{ pinky, pinky, pinky } },
-            false);
+            HandPose::PRIORITY_EXTERNAL_DEFAULT);
     }
 
     static void restoreFingerPoseControl2(std::monostate, const bool isLeft)

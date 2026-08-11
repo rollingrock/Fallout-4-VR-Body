@@ -36,9 +36,8 @@ namespace frik
 
         static void clearHandPoseOverridesForSkeletonRelease();
 
-        static void setHandPoseOverride(bool isLeft, std::string_view tag, const HandFingersPose& pose, bool forceTop);
-        static void setHandPoseOverrideWithPriority(bool isLeft, std::string_view tag, const HandFingersPose& pose, int priority);
-        static bool setHandPoseLocalTransformsWithPriority(bool isLeft, std::string_view tag, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& localTransforms,
+        static void setHandPoseOverride(bool isLeft, std::string_view tag, const HandFingersPose& pose, int priority);
+        static bool setHandPoseOverrideLocalTransforms(bool isLeft, std::string_view tag, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& localTransforms,
             std::uint16_t enabledMask, int priority);
         static void clearHandPoseOverride(bool isLeft, std::string_view tag);
         static skeleton::data::HandPoseOverrideTagState getHandPoseSetTagState(bool isLeft, std::string_view tag);

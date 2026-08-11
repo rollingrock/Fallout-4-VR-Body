@@ -162,14 +162,6 @@ namespace
     constexpr std::string_view ATTABOY_HAND_POSE_TAG = "frik.attaboy";
 
     /**
-     * Map the legacy force-to-top flag onto the priority scale owned by HandPose.
-     */
-    constexpr int priorityFromForceTop(const bool forceTop)
-    {
-        return forceTop ? frik::HandPose::PRIORITY_FRIK_INTERNAL : frik::HandPose::PRIORITY_EXTERNAL_DEFAULT;
-    }
-
-    /**
      * All 15 finger bones enabled, one bit per flat bone index.
      */
     constexpr std::uint16_t FULL_LOCAL_TRANSFORM_MASK = 0x7FFF;
@@ -289,21 +281,13 @@ namespace frik
     }
 
     /**
-     * Activate an explicit pose override for one hand.
-     */
-    void HandPose::setHandPoseOverride(const bool isLeft, const std::string_view tag, const HandFingersPose& pose, const bool forceTop = false)
-    {
-        setHandPoseOverrideIntr(isLeft, tag, pose, priorityFromForceTop(forceTop));
-    }
-
-    /**
      * Activate an explicit pose override for one hand at an explicit priority.
      *
      * Overrides are ordered by priority, and within one priority by registration
      * order, so a caller can layer several of its own tags deterministically.
      * See PRIORITY_EXTERNAL_DEFAULT and PRIORITY_FRIK_INTERNAL for the scale.
      */
-    void HandPose::setHandPoseOverrideWithPriority(const bool isLeft, const std::string_view tag, const HandFingersPose& pose, const int priority)
+    void HandPose::setHandPoseOverride(const bool isLeft, const std::string_view tag, const HandFingersPose& pose, const int priority)
     {
         setHandPoseOverrideIntr(isLeft, tag, pose, priority);
     }
@@ -318,7 +302,7 @@ namespace frik
      *
      * @return false if the tag holds no override or the priority is negative.
      */
-    bool HandPose::setHandPoseLocalTransformsWithPriority(const bool isLeft, const std::string_view tag, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& localTransforms,
+    bool HandPose::setHandPoseOverrideLocalTransforms(const bool isLeft, const std::string_view tag, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& localTransforms,
         const std::uint16_t enabledMask, const int priority)
     {
         if (tag.empty() || priority < 0) {
@@ -406,7 +390,7 @@ namespace frik
      * pose, without applying anything to the skeleton.
      *
      * Lets an external system read FRIK's authored poses as explicit transforms,
-     * adjust them, and publish the result back through setHandPoseLocalTransformsWithPriority.
+     * adjust them, and publish the result back through setHandPoseOverrideLocalTransforms.
      * Accounts for power armor, which changes the rest translations.
      *
      * @return true only if all 15 bones resolved; on failure the outputs are zeroed

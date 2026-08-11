@@ -2,6 +2,8 @@
 
 #include <Version.h>
 
+#include <memory>
+
 #include "Config.h"
 #include "ModBase.h"
 #include "PlayerControlsHandler.h"
@@ -167,7 +169,7 @@ namespace frik
 
         Skeleton* getSkeleton() const
         {
-            return _skelly;
+            return _skelly.get();
         }
 
         bool inWeaponRepositionMode() const
@@ -273,11 +275,13 @@ namespace frik
         // the currently root node used in skeleton
         RE::NiNode* _workingRootNode = nullptr;
 
-        Skeleton* _skelly = nullptr;
-        Pipboy* _pipboy = nullptr;
+        // owned by FRIK, created together in initSkeleton and released together in releaseSkeleton.
+        // Everything else in the codebase holds these as non-owning raw pointers.
+        std::unique_ptr<Skeleton> _skelly;
+        std::unique_ptr<Pipboy> _pipboy;
         MainConfigMode _mainConfigMode;
-        PipboyConfigMode* _pipboyConfigMode = nullptr;
-        WeaponPositionAdjuster* _weaponPosition = nullptr;
+        std::unique_ptr<PipboyConfigMode> _pipboyConfigMode;
+        std::unique_ptr<WeaponPositionAdjuster> _weaponPosition;
 
         // handler for the interaction spheres around the skeleton
         BoneSpheresHandler _boneSpheres;
