@@ -88,10 +88,15 @@ namespace frik::api::core
     bool FRIK_CORE_CALL blockOffHandWeaponGripping(const char* tag, bool block);
     bool FRIK_CORE_CALL blockPrimaryHandWeaponPose(const char* tag, bool block);
     bool FRIK_CORE_CALL blockPrimaryWeaponNodeOwnership(const char* tag, bool block);
-    int FRIK_CORE_CALL getConfigValue(const char* caller, const char* section, const char* key, char* outBuf, int bufLen, const char* defaultValue);
-    bool FRIK_CORE_CALL hasConfigValueOverride(const char* caller, const char* section, const char* key);
+    int FRIK_CORE_CALL getConfigValue(const char* section, const char* key, char* outBuf, int bufLen, const char* defaultValue);
+    bool FRIK_CORE_CALL hasConfigValueOverride(const char* section, const char* key);
     bool FRIK_CORE_CALL setConfigValueOverride(const char* caller, const char* section, const char* key, const char* value);
     bool FRIK_CORE_CALL clearConfigValueOverride(const char* caller, const char* section, const char* key);
+
+    /**
+     * Record which client module acquired an exported API table, once per module per table.
+     */
+    void logApiAcquired(std::string_view apiName, std::uint32_t apiVersion, std::size_t tableSize, const void* returnAddress);
 
     // ------------------------------------------------------------------
     // Neutral-typed operations. Each API major converts its own enums and

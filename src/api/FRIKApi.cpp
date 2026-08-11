@@ -3,6 +3,7 @@
 
 #include "ApiCore.h"
 
+#include <intrin.h>
 #include <optional>
 #include <string>
 
@@ -199,8 +200,27 @@ namespace
         return true;
     }
 
+    /**
+     * Say once, at warn, that a deprecated entry point is in use.
+     *
+     * The sampled lines below report activity; this reports the deprecation itself, which is a
+     * one-time fact about the client and would otherwise only ever live in the header where the
+     * person reading a log will not see it.
+     */
+    void warnDeprecatedOnce(bool& alreadyWarned, const char* apiFunction, const char* replacement)
+    {
+        if (alreadyWarned) {
+            return;
+        }
+        alreadyWarned = true;
+        logger::warn("API: a mod is using deprecated '{}' - the supported replacement is '{}'", apiFunction, replacement);
+    }
+
     void FRIK_CALL setHandPoseFingerPositions(const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
+        static bool warned = false;
+        warnDeprecatedOnce(warned, "setHandPoseFingerPositions", "setHandPoseCustomFingerPositions");
+
         logger::sample("API [DEPRECATED] setHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
         core::setHandPose(core::LEGACY_API_HAND_POSE_TAG,
             core::isLeftForHand(hand),
@@ -214,6 +234,9 @@ namespace
 
     void FRIK_CALL clearHandPoseFingerPositions(const FRIKApi::Hand hand)
     {
+        static bool warned = false;
+        warnDeprecatedOnce(warned, "clearHandPoseFingerPositions", "clearHandPose");
+
         logger::sample("API [DEPRECATED] clearHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
         core::clearHandPose(core::LEGACY_API_HAND_POSE_TAG, core::isLeftForHand(hand));
     }
@@ -269,6 +292,7 @@ namespace frik::api
 {
     FRIK_API const FRIKApi* FRIK_CALL FRIKAPI_GetApi()
     {
+        core::logApiAcquired("FRIK API v1.*", FRIK_API_VERSION, sizeof(FRIKApi), _ReturnAddress());
         return &FRIK_API_FUNCTIONS_TABLE;
     }
 }

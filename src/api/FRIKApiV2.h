@@ -567,17 +567,15 @@ namespace frik::api
          * Always null-terminates outBuf when bufLen > 0; writes at most bufLen-1 characters plus the null.
          * Note: when the key is absent from the .ini the caller's defaultValue is returned, which may
          * differ from FRIK's own built-in default for that key.
-         * @param caller name of the calling mod, used only for FRIK logging.
          * @param defaultValue value returned when the key is missing; may be null (treated as empty).
          * @return the full value length excluding the null terminator; if >= bufLen the value was truncated.
          */
-        int(FRIK_CALL* getConfigValue)(const char* caller, const char* section, const char* key, char* outBuf, int bufLen, const char* defaultValue);
+        int(FRIK_CALL* getConfigValue)(const char* section, const char* key, char* outBuf, int bufLen, const char* defaultValue);
 
         /**
          * Check whether a session override is currently set for a FRIK config section/key.
-         * @param caller name of the calling mod, used only for FRIK logging.
          */
-        bool(FRIK_CALL* hasConfigValueOverride)(const char* caller, const char* section, const char* key);
+        bool(FRIK_CALL* hasConfigValueOverride)(const char* section, const char* key);
 
         /**
          * Set an in-memory override for a FRIK config section/key for the rest of this game session.

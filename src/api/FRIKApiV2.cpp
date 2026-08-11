@@ -4,6 +4,7 @@
 #include "ApiCore.h"
 #include "RecoilControllerRuntime.h"
 
+#include <intrin.h>
 #include <optional>
 #include <string>
 
@@ -323,6 +324,7 @@ namespace frik::api
 {
     FRIK_API const FRIKApiV2* FRIK_CALL FRIKAPI_V2_GetApi()
     {
+        core::logApiAcquired("FRIK API v2.*", FRIK_API_V2_VERSION, sizeof(FRIKApiV2), _ReturnAddress());
         return &FRIK_API_V2_FUNCTIONS_TABLE;
     }
 

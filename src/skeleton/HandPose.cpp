@@ -190,9 +190,14 @@ namespace frik
      */
     void HandPose::clearHandPoseOverridesForSkeletonRelease()
     {
+        const auto dropped = _leftHandOverrides.size() + _rightHandOverrides.size();
         _leftHandOverrides.clear();
         _rightHandOverrides.clear();
         _nextOverrideSequence = 0;
+
+        if (dropped > 0) {
+            logger::info("Skeleton release: dropped {} hand pose override(s), FRIK's own and external alike", dropped);
+        }
     }
 
     /**

@@ -36,11 +36,12 @@ namespace frik
         /**
          * Add or remove one tag's claim on the primary weapon node.
          *
+         * @param outChanged optional; see TagBlockSet::setBlocked.
          * @return false if the tag is empty, which cannot identify a claimant.
          */
-        bool blockPrimaryWeaponNodeOwnership(const std::string_view tag, const bool block)
+        bool blockPrimaryWeaponNodeOwnership(const std::string_view tag, const bool block, bool* const outChanged = nullptr)
         {
-            return _primaryWeaponNodeOwnershipBlocks.setBlocked(tag, block);
+            return _primaryWeaponNodeOwnershipBlocks.setBlocked(tag, block, outChanged);
         }
 
         /**
@@ -54,11 +55,12 @@ namespace frik
         /**
          * Add or remove one tag's block on the primary weapon hand pose.
          *
+         * @param outChanged optional; see TagBlockSet::setBlocked.
          * @return false if the tag is empty, which cannot identify a blocker.
          */
-        bool blockPrimaryWeaponPose(const std::string_view tag, const bool block)
+        bool blockPrimaryWeaponPose(const std::string_view tag, const bool block, bool* const outChanged = nullptr)
         {
-            return _primaryWeaponPoseBlocks.setBlocked(tag, block);
+            return _primaryWeaponPoseBlocks.setBlocked(tag, block, outChanged);
         }
 
         /**

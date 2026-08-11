@@ -155,15 +155,15 @@ A narrower, dedicated block for just the offhand two-handed grip (e.g. for a vir
 
 ## Reading and overriding config
 
-Read FRIK config values, or set session-only overrides that survive `FRIK.ini` live-reload but are never written to disk (and are cleared on game restart). All take a `caller` name used only for FRIK's logging.
+Read FRIK config values, or set session-only overrides that survive `FRIK.ini` live-reload but are never written to disk (and are cleared on game restart). The two override setters take a `caller` name used only for FRIK's logging.
 
-`int getConfigValue(caller, section, key, char* outBuf, int bufLen, defaultValue)` — *(since v4)*
+`int getConfigValue(section, key, char* outBuf, int bufLen, defaultValue)` — *(since v4)*
 
 Writes the effective value (session override → on-disk value → `defaultValue`) into `outBuf` as a **raw string** that you parse yourself (e.g. `std::strtof` / `std::atoi`). Always null-terminates when `bufLen > 0`. Returns the full value length excluding the null terminator; a return `>= bufLen` means the value was truncated.
 
 | Function | Description |
 | --- | --- |
-| `bool hasConfigValueOverride(caller, section, key)` | Whether a session override is currently set. |
+| `bool hasConfigValueOverride(section, key)` | Whether a session override is currently set. |
 | `bool setConfigValueOverride(caller, section, key, value)` | Set a session override (string, parsed by FRIK's type-appropriate reader; works for bool/int/float/string and compound transform/binding/pose values). FRIK reloads immediately. |
 | `bool clearConfigValueOverride(caller, section, key)` | Remove a session override; the value reverts to the on-disk `FRIK.ini` value. |
 

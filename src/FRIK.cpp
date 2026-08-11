@@ -211,6 +211,7 @@ namespace frik
 
         if (!_skeletonReadyPublished) {
             _skeletonReadyPublished = true;
+            logger::info("Broadcasting API lifecycle event: kSkeletonReady");
             broadcastMessage(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonReady), nullptr, 0);
         }
     }
@@ -358,6 +359,7 @@ namespace frik
     void FRIK::releaseSkeleton()
     {
         if (_skelly && _skeletonReadyPublished) {
+            logger::info("Broadcasting API lifecycle event: kSkeletonDestroying");
             broadcastMessage(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying), nullptr, 0);
         }
         _skeletonReadyPublished = false;

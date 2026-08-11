@@ -1,5 +1,10 @@
 #include "ApiCore.h"
 
+#include <Windows.h>
+#include <filesystem>
+#include <format>
+#include <unordered_set>
+
 #include "Config.h"
 #include "ExternalAuthority.h"
 #include "FRIK.h"
@@ -24,6 +29,34 @@ namespace
      * Per-feature tags blocking each FRIK subsystem (see blockFeature).
      */
     std::array<TagBlockSet, FEATURE_COUNT> g_featureBlocks;
+
+    /**
+     * Client modules already reported per API table, so a mod that re-acquires - the published
+     * initialize() is idempotent but nothing stops a client calling the export directly - is
+     * logged once instead of on every call.
+     *
+     * Unsynchronized, unlike the rest of the API's cross-mod state: a client acquires the table
+     * while initializing on the game thread, so two acquisitions never overlap.
+     */
+    std::unordered_set<std::string> g_reportedApiClients;
+
+    /**
+     * File name of the module owning an address, used to name the mod that called into us.
+     */
+    std::string moduleNameForAddress(const void* address)
+    {
+        HMODULE module = nullptr;
+        if (!address || !GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, static_cast<LPCSTR>(address), &module) ||
+            !module) {
+            return "<unknown>";
+        }
+
+        char path[1024] = {};
+        if (GetModuleFileNameA(module, path, static_cast<DWORD>(std::size(path))) == 0) {
+            return "<unknown>";
+        }
+        return std::filesystem::path(path).filename().string();
+    }
 
     /**
      * Apply the resolved enabled state of a feature to its FRIK subsystem.
@@ -97,9 +130,16 @@ namespace frik::api::core
             return false;
         }
 
-        g_offHandGripBlocks.setBlocked(*normalizedTag, block);
+        // A block is an edge, not a per-frame state, so every block logs at info and only on a real
+        // transition. logger::sample would be wrong here twice over: it keys on the format string,
+        // so two mods toggling within the same second lose a line, and a client repeating a call it
+        // already made would keep the bucket warm without ever having changed anything.
+        bool changed = false;
+        g_offHandGripBlocks.setBlocked(*normalizedTag, block, &changed);
+        if (changed) {
+            logger::info("API blockOffHandWeaponGripping tag:'{}' block:{} activeBlocks:{}", *normalizedTag, block, g_offHandGripBlocks.blockingCount());
+        }
 
-        logger::sample("API blockOffHandWeaponGripping tag:'{}' block:{} activeBlocks:{}", *normalizedTag, block, g_offHandGripBlocks.blockingCount());
         g_frik.setOffHandGrippingEnabled(!g_offHandGripBlocks.isBlocked());
         return true;
     }
@@ -111,8 +151,12 @@ namespace frik::api::core
             return false;
         }
 
-        logger::sample("API blockPrimaryHandWeaponPose tag:'{}' block:{}", *normalizedTag, block);
-        return g_externalAuthority.blockPrimaryWeaponPose(*normalizedTag, block);
+        bool changed = false;
+        const bool set = g_externalAuthority.blockPrimaryWeaponPose(*normalizedTag, block, &changed);
+        if (changed) {
+            logger::info("API blockPrimaryHandWeaponPose tag:'{}' block:{}", *normalizedTag, block);
+        }
+        return set;
     }
 
     bool FRIK_CORE_CALL blockPrimaryWeaponNodeOwnership(const char* tag, const bool block)
@@ -122,14 +166,18 @@ namespace frik::api::core
             return false;
         }
 
-        logger::sample("API blockPrimaryWeaponNodeOwnership tag:'{}' block:{}", *normalizedTag, block);
-        return g_externalAuthority.blockPrimaryWeaponNodeOwnership(*normalizedTag, block);
+        bool changed = false;
+        const bool set = g_externalAuthority.blockPrimaryWeaponNodeOwnership(*normalizedTag, block, &changed);
+        if (changed) {
+            logger::info("API blockPrimaryWeaponNodeOwnership tag:'{}' block:{}", *normalizedTag, block);
+        }
+        return set;
     }
 
     /**
      * Read the current effective config value (override, else on-disk, else default) into outBuf.
      */
-    int FRIK_CORE_CALL getConfigValue(const char* /*caller*/, const char* section, const char* key, char* outBuf, const int bufLen, const char* defaultValue)
+    int FRIK_CORE_CALL getConfigValue(const char* section, const char* key, char* outBuf, const int bufLen, const char* defaultValue)
     {
         if (!section || !key) {
             if (outBuf && bufLen > 0) {
@@ -149,7 +197,7 @@ namespace frik::api::core
     /**
      * Check whether a session override is currently set for a config section/key.
      */
-    bool FRIK_CORE_CALL hasConfigValueOverride(const char* /*caller*/, const char* section, const char* key)
+    bool FRIK_CORE_CALL hasConfigValueOverride(const char* section, const char* key)
     {
         return section && key && g_config.hasConfigOverride(section, key);
     }
@@ -178,6 +226,18 @@ namespace frik::api::core
         logger::sample("API clearConfigValueOverride caller:'{}' {}.{}", caller ? caller : "?", section, key);
         g_config.clearConfigOverride(section, key);
         return true;
+    }
+
+    void logApiAcquired(const std::string_view apiName, const std::uint32_t apiVersion, const std::size_t tableSize, const void* returnAddress)
+    {
+        const auto moduleName = moduleNameForAddress(returnAddress);
+        if (!g_reportedApiClients.emplace(std::format("{}|{}", apiName, moduleName)).second) {
+            return;
+        }
+
+        // The table size is what a client's own size check compares against, so logging it turns
+        // a client-side "contract mismatch" bail into something diagnosable from FRIK's log alone.
+        logger::info("API: '{}' acquired {} (contract v{}, table {} bytes)", moduleName, apiName, apiVersion, tableSize);
     }
 
     std::optional<std::string> normalizeTag(const char* tag)
@@ -236,22 +296,40 @@ namespace frik::api::core
      */
     bool setHandWorldTransform(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTransform, const int priority)
     {
+        // Taking over a hand is the strongest thing a client can do, and both refusals below hand
+        // back a bare false that a client cannot tell apart. Sampled rather than logged outright
+        // because a client that registers too early typically retries every frame.
         if (!g_frik.isSkeletonReady()) {
+            logger::sample("API setHandWorldTransform REJECTED tag:'{}' - skeleton not ready, publish after kSkeletonReady", tag);
             return false;
         }
 
-        return g_externalAuthority.setHandWorldTransform(tag, isLeft, worldTransform, priority);
+        // Tag and priority were validated by the version shim, so a refusal here is the transform.
+        if (!g_externalAuthority.setHandWorldTransform(tag, isLeft, worldTransform, priority)) {
+            logger::sample("API setHandWorldTransform REJECTED tag:'{}' - world transform is not finite", tag);
+            return false;
+        }
+
+        logger::sample("API setHandWorldTransform tag:'{}' hand={} priority={}", tag, isLeft ? "Left" : "Right", priority);
+        return true;
     }
 
     bool clearHandWorldTransform(const std::string_view tag, const bool isLeft)
     {
+        logger::sample("API clearHandWorldTransform tag:'{}' hand={}", tag, isLeft ? "Left" : "Right");
         return g_externalAuthority.clearHandWorldTransform(tag, isLeft);
     }
 
     bool setHandPoseLocalTransforms(const std::string_view tag, const bool isLeft, const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& localTransforms,
         const std::uint16_t enabledMask, const int priority)
     {
-        return HandPose::setHandPoseOverrideLocalTransforms(isLeft, tag, localTransforms, enabledMask, priority);
+        if (!HandPose::setHandPoseOverrideLocalTransforms(isLeft, tag, localTransforms, enabledMask, priority)) {
+            logger::sample("API setHandPoseCustomLocalTransforms REJECTED tag:'{}' - tag holds no pose override, set one with a setHandPose* call first", tag);
+            return false;
+        }
+
+        logger::sample("API setHandPoseCustomLocalTransforms tag:'{}' hand={} enabledMask=0x{:04x} priority={}", tag, isLeft ? "Left" : "Right", enabledMask, priority);
+        return true;
     }
 
     bool getHandPoseLocalTransformsForPose(const bool isLeft, const HandFingersPose& pose, std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& outTransforms,
@@ -278,11 +356,14 @@ namespace frik::api::core
         }
 
         auto& blocks = g_featureBlocks[featureIndex];
-        if (!blocks.setBlocked(tag, block)) {
+        bool changed = false;
+        if (!blocks.setBlocked(tag, block, &changed)) {
             return false;
         }
 
-        logger::info("API blockFeature tag:'{}' - feature:{}, block:{}, activeBlocks:{}", tag, featureIndex, block, blocks.blockingCount());
+        if (changed) {
+            logger::info("API blockFeature tag:'{}' - feature:{}, block:{}, activeBlocks:{}", tag, featureIndex, block, blocks.blockingCount());
+        }
         applyFeatureEnabled(feature, !blocks.isBlocked());
         return true;
     }
@@ -308,9 +389,12 @@ namespace frik::api::core
     bool registerOpenModSettingButtonToMainConfig(const char* buttonIconNifPath, const char* callbackReceiverName, const std::uint32_t callbackMessageType)
     {
         if (!buttonIconNifPath || !callbackReceiverName) {
+            logger::warn("API registerOpenModSettingButtonToMainConfig REJECTED - buttonIconNifPath or callbackReceiverName is null");
             return false;
         }
 
+        // A button showing up in FRIK's own config menu should never be anonymous in the log.
+        logger::info("API registerOpenModSettingButtonToMainConfig receiver:'{}' messageType:{} icon:'{}'", callbackReceiverName, callbackMessageType, buttonIconNifPath);
         g_frik.registerOpenSettingButton({ .buttonIconNifPath = buttonIconNifPath, .callbackReceiverName = callbackReceiverName, .callbackMessageType = callbackMessageType });
         return true;
     }

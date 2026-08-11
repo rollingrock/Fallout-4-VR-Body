@@ -96,13 +96,23 @@ namespace frik
      */
     void ExternalAuthority::clearForSkeletonRelease()
     {
+        // From a client's side its registrations simply evaporate here, so say what was dropped and
+        // tie the two ends of that contract together in the log. Silent when nothing was registered,
+        // which is every release in a game running without API clients.
+        const auto droppedBlocks = _primaryWeaponNodeOwnershipBlocks.blockingCount() + _primaryWeaponPoseBlocks.blockingCount();
         _primaryWeaponNodeOwnershipBlocks.clear();
         _primaryWeaponPoseBlocks.clear();
 
         std::lock_guard lock(_handWorldTransformsLock);
+        std::size_t droppedClaims = 0;
         for (auto& claims : _handWorldTransforms) {
+            droppedClaims += claims.size();
             claims.clear();
         }
         _nextHandWorldTransformSequence = 0;
+
+        if (droppedBlocks > 0 || droppedClaims > 0) {
+            logger::info("Skeleton release: dropped {} external weapon block(s) and {} hand transform claim(s), clients must republish", droppedBlocks, droppedClaims);
+        }
     }
 }

@@ -25,21 +25,22 @@ namespace frik
         /**
          * Add or remove one tag's block.
          *
+         * @param outChanged optional; whether this call actually changed the set, so a caller can
+         * log the transition and stay silent when a client simply repeats a call it already made.
          * @return false if the tag is empty, which cannot identify a blocker.
          */
-        bool setBlocked(const std::string_view tag, const bool blocked)
+        bool setBlocked(const std::string_view tag, const bool blocked, bool* const outChanged = nullptr)
         {
             if (tag.empty()) {
                 return false;
             }
 
             std::lock_guard lock(_lock);
-            if (blocked) {
-                _tags.emplace(tag);
-            } else {
-                _tags.erase(std::string(tag));
-            }
+            const bool changed = blocked ? _tags.emplace(tag).second : _tags.erase(std::string(tag)) > 0;
             _count.store(static_cast<std::uint32_t>(_tags.size()), std::memory_order_release);
+            if (outChanged) {
+                *outChanged = changed;
+            }
             return true;
         }
 
