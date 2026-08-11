@@ -1,8 +1,8 @@
 #include "ApiCore.h"
 
 #include "Config.h"
+#include "ExternalAuthority.h"
 #include "FRIK.h"
-#include "RecoilControllerRuntime.h"
 #include "TagBlockSet.h"
 #include "common/CommonUtils.h"
 #include "f4vr/F4VRSkelly.h"
@@ -113,7 +113,7 @@ namespace frik::api::core
         }
 
         logger::sample("API blockPrimaryHandWeaponPose tag:'{}' block:{}", *normalizedTag, block);
-        return HandPose::blockPrimaryWeaponPose(*normalizedTag, block);
+        return g_externalAuthority.blockPrimaryWeaponPose(*normalizedTag, block);
     }
 
     bool FRIK_CORE_CALL blockPrimaryWeaponNodeOwnership(const char* tag, const bool block)
@@ -124,7 +124,7 @@ namespace frik::api::core
         }
 
         logger::sample("API blockPrimaryWeaponNodeOwnership tag:'{}' block:{}", *normalizedTag, block);
-        return Skeleton::blockPrimaryWeaponNodeOwnership(*normalizedTag, block);
+        return g_externalAuthority.blockPrimaryWeaponNodeOwnership(*normalizedTag, block);
     }
 
     /**
@@ -241,12 +241,12 @@ namespace frik::api::core
             return false;
         }
 
-        return Skeleton::setHandWorldTransformOverride(tag, isLeft, worldTransform, priority);
+        return g_externalAuthority.setHandWorldTransform(tag, isLeft, worldTransform, priority);
     }
 
     bool clearHandWorldTransform(const std::string_view tag, const bool isLeft)
     {
-        return Skeleton::clearHandWorldTransformOverride(tag, isLeft);
+        return g_externalAuthority.clearHandWorldTransform(tag, isLeft);
     }
 
     bool setHandPoseLocalTransforms(const std::string_view tag, const bool isLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms,
@@ -321,11 +321,4 @@ namespace frik::api::core
         return true;
     }
 
-    void clearExternalStateForSkeletonRelease()
-    {
-        Skeleton::clearHandWorldTransformOverrides();
-        HandPose::clearPrimaryWeaponPoseBlocks();
-        Skeleton::clearPrimaryWeaponNodeOwnershipBlocks();
-        clearWeaponHandRecoilControllersForSkeletonRelease();
-    }
 }

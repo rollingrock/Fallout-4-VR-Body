@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "Config.h"
+#include "ExternalAuthority.h"
 #include "FRIK.h"
-#include "TagBlockSet.h"
 #include "common/MatrixUtils.h"
 #include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
@@ -23,8 +23,6 @@ using namespace vrcf;
 
 namespace
 {
-    frik::TagBlockSet g_primaryWeaponNodeOwnershipBlocks;
-
     /**
      * Hack to handle comfort sneak affecting the height of the player without real-world body change.
      * By setting static body pitch the body position doesn't change, making it easier to handle skeleton
@@ -34,29 +32,6 @@ namespace
     {
         return frik::g_config.comfortSneakHackStaticBodyPitchAngle > 0 && isComfortSneakMode() && isPlayerSneaking();
     }
-
-    /**
-     * A hand world transform published by an external mod through the API, replacing the tracked
-     * controller as the target the arm is solved to.
-     * Tags let several mods register at once without clobbering each other, exactly like hand-pose overrides.
-     */
-    struct HandTransformOverride
-    {
-        std::string tag;
-        RE::NiTransform worldTransform;
-        int priority = 0;
-        std::uint64_t sequence = 0;
-    };
-
-    // Indexed by hand: 0 is right, 1 is left.
-    std::array<std::vector<HandTransformOverride>, 2> g_handWorldTransformOverrides;
-    std::uint64_t g_nextHandTransformOverrideSequence = 0;
-
-    std::vector<HandTransformOverride>& getHandTransformOverrides(const bool isLeft)
-    {
-        return g_handWorldTransformOverrides[isLeft ? 1 : 0];
-    }
-
 }
 
 namespace frik
@@ -74,101 +49,6 @@ namespace frik
             offset *= _comfortSneakCameraOffsetAdjustment;
         }
         return offset;
-    }
-
-    bool Skeleton::blockPrimaryWeaponNodeOwnership(const std::string_view tag, const bool block)
-    {
-        return g_primaryWeaponNodeOwnershipBlocks.setBlocked(tag, block);
-    }
-
-    bool Skeleton::isPrimaryWeaponNodeOwnershipBlocked()
-    {
-        return g_primaryWeaponNodeOwnershipBlocks.isBlocked();
-    }
-
-    void Skeleton::clearPrimaryWeaponNodeOwnershipBlocks()
-    {
-        g_primaryWeaponNodeOwnershipBlocks.clear();
-    }
-
-    /**
-     * Publish a tagged world transform for one hand.
-     *
-     * This only records the transform; setArms consumes it on the next skeleton frame, so the arm is
-     * always solved exactly once per frame from whichever source owns the hand. The transform stays in
-     * effect until it is cleared, so a client that owns a hand for a while does not have to republish.
-     * The highest priority tag owns the hand and equal priorities are broken by the most recently
-     * published. Call on the game update thread.
-     *
-     * @return false if the tag is empty, the priority is negative, or the transform is not finite.
-     */
-    bool Skeleton::setHandWorldTransformOverride(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTransform, const int priority)
-    {
-        if (tag.empty() || priority < 0 || !isFiniteTransform(worldTransform)) {
-            return false;
-        }
-
-        auto& overrides = getHandTransformOverrides(isLeft);
-        const auto overrideIt = std::ranges::find_if(overrides, [tag](const HandTransformOverride& overrideEntry) {
-            return overrideEntry.tag == tag;
-        });
-        if (overrideIt == overrides.end()) {
-            overrides.push_back(HandTransformOverride{
-                .tag = std::string(tag),
-                .worldTransform = worldTransform,
-                .priority = priority,
-                .sequence = ++g_nextHandTransformOverrideSequence,
-            });
-        } else {
-            overrideIt->worldTransform = worldTransform;
-            overrideIt->priority = priority;
-            overrideIt->sequence = ++g_nextHandTransformOverrideSequence;
-        }
-        return true;
-    }
-
-    /**
-     * Release a tagged hand transform, handing the hand back on the next frame to the next
-     * highest-priority tag, or to FRIK's own tracked arm solve when no tag is left.
-     *
-     * @return false if the tag is empty.
-     */
-    bool Skeleton::clearHandWorldTransformOverride(const std::string_view tag, const bool isLeft)
-    {
-        if (tag.empty()) {
-            return false;
-        }
-
-        std::erase_if(getHandTransformOverrides(isLeft), [tag](const HandTransformOverride& overrideEntry) {
-            return overrideEntry.tag == tag;
-        });
-        return true;
-    }
-
-    /**
-     * Drop every hand transform override when the skeleton is released.
-     * Clients must republish after the next skeleton-ready event.
-     */
-    void Skeleton::clearHandWorldTransformOverrides()
-    {
-        for (auto& overrides : g_handWorldTransformOverrides) {
-            overrides.clear();
-        }
-        g_nextHandTransformOverrideSequence = 0;
-    }
-
-    /**
-     * Get the transform owning one hand this frame, or nullptr to let the tracked hand drive the arm.
-     */
-    const RE::NiTransform* Skeleton::getHandTransformOverride(const bool isLeft)
-    {
-        const HandTransformOverride* owner = nullptr;
-        for (const auto& overrideEntry : getHandTransformOverrides(isLeft)) {
-            if (!owner || overrideEntry.priority > owner->priority || (overrideEntry.priority == owner->priority && overrideEntry.sequence > owner->sequence)) {
-                owner = &overrideEntry;
-            }
-        }
-        return owner ? &owner->worldTransform : nullptr;
     }
 
     /**
@@ -338,7 +218,7 @@ namespace frik
         // do arm IK - Right then Left
         logger::trace("Set Arms...");
         handleLeftHandedWeaponNodesSwitch();
-        _weaponHandRecoil.onFrameUpdate(_playerNodes, isLeftHandedMode() || isPrimaryWeaponNodeOwnershipBlocked());
+        _weaponHandRecoil.onFrameUpdate(_playerNodes, isLeftHandedMode() || g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked());
         setArms(false);
         setArms(true);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
@@ -996,7 +876,7 @@ namespace frik
      */
     void Skeleton::handleLeftHandedWeaponNodesSwitch()
     {
-        const bool effectiveLeftHanded = isLeftHandedMode() || isPrimaryWeaponNodeOwnershipBlocked();
+        const bool effectiveLeftHanded = isLeftHandedMode() || g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
         if (_lastLeftHandedModeSwitch == effectiveLeftHanded) {
             return;
         }
@@ -1053,7 +933,7 @@ namespace frik
         RE::NiNode* weaponNode = handleOffhand ? leftWeapon : rightWeapon;
         RE::NiNode* offsetNode = handleOffhand ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
 
-        if (isPrimaryWeaponNodeOwnershipBlocked() && !isLeftHandedMode()) {
+        if (g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked() && !isLeftHandedMode()) {
             weaponNode = handleOffhand ? rightWeapon : leftWeapon;
         }
 
@@ -1085,10 +965,13 @@ namespace frik
 
         // An external mod can own the hand instead of the tracked controller, but only as the target
         // handed to the same solver, so everything downstream of the arm sees one consistent result.
-        const auto* transformOverride = getHandTransformOverride(isLeft);
-        RE::NiTransform handWorldTarget = transformOverride ? *transformOverride : (isLeft ? _leftHand->world : _rightHand->world);
+        RE::NiTransform handWorldTarget;
+        const bool hasTransformOverride = g_externalAuthority.getHandWorldTransform(isLeft, handWorldTarget);
+        if (!hasTransformOverride) {
+            handWorldTarget = isLeft ? _leftHand->world : _rightHand->world;
+        }
         (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, handWorldTarget);
-        if (solveArmToHandWorldTarget(isLeft, handWorldTarget) || !transformOverride) {
+        if (solveArmToHandWorldTarget(isLeft, handWorldTarget) || !hasTransformOverride) {
             return;
         }
 

@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cstdint>
-#include <string_view>
 
 #include "CullGeometryHandler.h"
 #include "HandPose.h"
@@ -53,14 +52,6 @@ namespace frik
 
         static float getAdjustedPlayerHMDOffset();
 
-        static bool blockPrimaryWeaponNodeOwnership(std::string_view tag, bool block);
-        static bool isPrimaryWeaponNodeOwnershipBlocked();
-        static void clearPrimaryWeaponNodeOwnershipBlocks();
-
-        static bool setHandWorldTransformOverride(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority);
-        static bool clearHandWorldTransformOverride(std::string_view tag, bool isLeft);
-        static void clearHandWorldTransformOverrides();
-
         void onFrameUpdate();
 
         bool mirrorFingerLocalTransforms(bool sourceIsLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& sourceTransforms, std::uint16_t sourceEnabledMask,
@@ -87,7 +78,6 @@ namespace frik
         void setSingleLeg(bool isLeft) const;
         void handleLeftHandedWeaponNodesSwitch();
         void setArms(bool isLeft);
-        static const RE::NiTransform* getHandTransformOverride(bool isLeft);
         void restoreArmNodesToDefault(bool isLeft);
         bool solveArmToHandWorldTarget(bool isLeft, const RE::NiTransform& handWorldTarget);
         void dampenHand(RE::NiNode* node, bool isLeft);

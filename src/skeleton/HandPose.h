@@ -41,9 +41,6 @@ namespace frik
         static void clearHandPoseOverride(bool isLeft, std::string_view tag);
         static skeleton::data::HandPoseOverrideTagState getHandPoseSetTagState(bool isLeft, std::string_view tag);
         static skeleton::data::HandPoseKind getCurrentHandPoseKind(bool isLeft);
-        static bool blockPrimaryWeaponPose(std::string_view tag, bool block);
-        static bool isPrimaryWeaponPoseBlocked();
-        static void clearPrimaryWeaponPoseBlocks();
         static const HandFingersPose& getFixedPrimaryWeaponPose();
         static bool buildFingerLocalTransformsForPose(bool isLeft, const HandFingersPose& pose, std::array<RE::NiTransform, FINGER_BONE_COUNT>& outTransforms,
             std::uint16_t& outEnabledMask);

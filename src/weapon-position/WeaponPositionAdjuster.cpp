@@ -1,6 +1,7 @@
 #include "WeaponPositionAdjuster.h"
 
 #include "Config.h"
+#include "ExternalAuthority.h"
 #include "FRIK.h"
 #include "common/Quaternion.h"
 #include "f4vr/DebugDump.h"
@@ -120,7 +121,7 @@ namespace frik
             return;
         }
 
-        if (Skeleton::isPrimaryWeaponNodeOwnershipBlocked()) {
+        if (g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked()) {
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
             }
@@ -374,7 +375,7 @@ namespace frik
         // pose to an external owner. Applying this legacy per-weapon wrist
         // rotation after that transfer would contaminate the controller hand
         // basis used by the external alignment solve.
-        if (_hasPrimaryHandOffset && !HandPose::isPrimaryWeaponPoseBlocked()) {
+        if (_hasPrimaryHandOffset && !g_externalAuthority.isPrimaryWeaponPoseBlocked()) {
             const auto primaryHand = f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
             primaryHand->local.rotate = _primaryHandOffsetRot * primaryHand->local.rotate;
             f4vr::updateTransformsDown(primaryHand, true, weapon->name.c_str());

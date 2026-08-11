@@ -163,10 +163,4 @@ namespace frik::api::core
     bool isFeatureBlocked(Feature feature);
 
     bool registerOpenModSettingButtonToMainConfig(const char* buttonIconNifPath, const char* callbackReceiverName, std::uint32_t callbackMessageType);
-
-    /**
-     * Drop every external-authority registration when the skeleton is released.
-     * Clients must republish after the next skeleton-ready event.
-     */
-    void clearExternalStateForSkeletonRelease();
 }

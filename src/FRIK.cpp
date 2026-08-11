@@ -1,10 +1,12 @@
 #include "FRIK.h"
 
 #include "Config.h"
+#include "ExternalAuthority.h"
 #include "GameHooks.h"
 #include "PapyrusApi.h"
 #include "api/ApiCore.h"
 #include "api/FRIKApiV2.h"
+#include "api/RecoilControllerRuntime.h"
 #include "common/PerfMonitor.h"
 #include "config-mode/PipboyConfigMode.h"
 #include "f4vr/DebugDump.h"
@@ -365,7 +367,11 @@ namespace frik
             broadcastMessage(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying), nullptr, 0);
         }
         _skeletonReadyPublished = false;
-        api::core::clearExternalStateForSkeletonRelease();
+
+        // Every external registration was published against nodes that are about to go away, so both
+        // registries drop theirs here and clients republish after the next skeleton-ready event.
+        g_externalAuthority.clearForSkeletonRelease();
+        api::clearWeaponHandRecoilControllersForSkeletonRelease();
 
         _workingRootNode = nullptr;
         _skeletonInitDelayFrames = kSkeletonInitDelayFramesAfterRelease;

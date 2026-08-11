@@ -7,10 +7,10 @@
 #include <string_view>
 
 #include "Config.h"
+#include "ExternalAuthority.h"
 #include "FRIK.h"
 #include "HandPoseData.h"
 #include "Skeleton.h"
-#include "TagBlockSet.h"
 #include "common/MatrixUtils.h"
 #include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
@@ -27,8 +27,6 @@ using namespace frik::skeleton::data;
 
 namespace
 {
-    frik::TagBlockSet g_primaryWeaponPoseBlocks;
-
     /**
      * Copy the authored 3x4 rotation rows from pose data into a runtime transform.
      */
@@ -381,36 +379,6 @@ namespace frik
     }
 
     /**
-     * Block FRIK's built-in primary weapon hand pose for one external tag.
-     *
-     * While at least one tag is blocking, resolveHandPoseSource yields every
-     * built-in weapon-driven contributor so an external system can own the hand.
-     *
-     * @return false if the tag is empty.
-     */
-    bool HandPose::blockPrimaryWeaponPose(const std::string_view tag, const bool block)
-    {
-        return g_primaryWeaponPoseBlocks.setBlocked(tag, block);
-    }
-
-    /**
-     * Return whether any tag is currently blocking the primary weapon hand pose.
-     */
-    bool HandPose::isPrimaryWeaponPoseBlocked()
-    {
-        return g_primaryWeaponPoseBlocks.isBlocked();
-    }
-
-    /**
-     * Drop every primary weapon pose block when the skeleton is released.
-     * Clients must republish their block after the next skeleton-ready event.
-     */
-    void HandPose::clearPrimaryWeaponPoseBlocks()
-    {
-        g_primaryWeaponPoseBlocks.clear();
-    }
-
-    /**
      * Return the fixed authored weapon pose used when runtime hand posing cannot copy the first-person hand.
      */
     const HandFingersPose& HandPose::getFixedPrimaryWeaponPose()
@@ -673,15 +641,16 @@ namespace frik
     HandPose::HandPoseSource HandPose::resolveHandPoseSource(const bool isLeft)
     {
         const bool isPrimaryHand = isLeft == isLeftHandedMode();
-        const bool shouldUseWeaponPoseForPrimaryHand = isWeaponDrawn() && !isPrimaryWeaponPoseBlocked() && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
+        const bool shouldUseWeaponPoseForPrimaryHand =
+            isWeaponDrawn() && !g_externalAuthority.isPrimaryWeaponPoseBlocked() && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
 
         if (shouldUseWeaponPoseForPrimaryHand && isLeftHandedMode() && isUnarmedWeaponDrawn()) {
             // Left-handed unarmed is a special authored fist case that applies to both hands.
             return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = &getFistPose() };
         }
 
-        if (isLeft && !isLeftHandedMode() && isWeaponDrawn() && !g_frik.isPipboyOperatingWithFinger() && Skeleton::isPrimaryWeaponNodeOwnershipBlocked() &&
-            !isPrimaryWeaponPoseBlocked()) {
+        if (isLeft && !isLeftHandedMode() && isWeaponDrawn() && !g_frik.isPipboyOperatingWithFinger() && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked() &&
+            !g_externalAuthority.isPrimaryWeaponPoseBlocked()) {
             return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = nullptr };
         }
 
@@ -1008,7 +977,7 @@ namespace frik
             constexpr float DYNAMIC_CURL_ON_TOUCH = 0.35f;
             const auto button = getTrackedButton(boneName);
             const bool rightTriggerIdentityRemapped =
-                boneHand == Hand::Right && button == k_EButton_SteamVR_Trigger && !isLeftHandedMode() && Skeleton::isPrimaryWeaponNodeOwnershipBlocked();
+                boneHand == Hand::Right && button == k_EButton_SteamVR_Trigger && !isLeftHandedMode() && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
             if (!rightTriggerIdentityRemapped) {
                 const auto axis = getTrackedButtonAxis(button);
                 const float axisVal = axis ? VRControllers.getAxisValue(boneHand, *axis).x : 0.0f;
