@@ -1,18 +1,16 @@
 #include "HandPose.h"
 
 #include <algorithm>
-#include <atomic>
 #include <cmath>
-#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 
 #include "Config.h"
 #include "FRIK.h"
 #include "HandPoseData.h"
 #include "Skeleton.h"
+#include "TagBlockSet.h"
 #include "common/MatrixUtils.h"
 #include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
@@ -29,9 +27,7 @@ using namespace frik::skeleton::data;
 
 namespace
 {
-    std::mutex g_primaryWeaponPoseBlockingTagsLock;
-    std::unordered_set<std::string> g_primaryWeaponPoseBlockingTags;
-    std::atomic<std::uint32_t> g_primaryWeaponPoseBlockingTagCount{ 0 };
+    frik::TagBlockSet g_primaryWeaponPoseBlocks;
 
     /**
      * Copy the authored 3x4 rotation rows from pose data into a runtime transform.
@@ -389,34 +385,20 @@ namespace frik
      *
      * While at least one tag is blocking, resolveHandPoseSource yields every
      * built-in weapon-driven contributor so an external system can own the hand.
-     * Guarded by a lock because registration arrives from client mods, while the
-     * per-frame read goes through the lock-free isPrimaryWeaponPoseBlocked.
      *
      * @return false if the tag is empty.
      */
     bool HandPose::blockPrimaryWeaponPose(const std::string_view tag, const bool block)
     {
-        if (tag.empty()) {
-            return false;
-        }
-
-        std::lock_guard lock(g_primaryWeaponPoseBlockingTagsLock);
-        if (block) {
-            g_primaryWeaponPoseBlockingTags.emplace(std::string(tag));
-        } else {
-            g_primaryWeaponPoseBlockingTags.erase(std::string(tag));
-        }
-        g_primaryWeaponPoseBlockingTagCount.store(static_cast<std::uint32_t>(g_primaryWeaponPoseBlockingTags.size()), std::memory_order_release);
-        return true;
+        return g_primaryWeaponPoseBlocks.setBlocked(tag, block);
     }
 
     /**
      * Return whether any tag is currently blocking the primary weapon hand pose.
-     * Read once per hand per frame, so it uses the atomic count rather than the lock.
      */
     bool HandPose::isPrimaryWeaponPoseBlocked()
     {
-        return g_primaryWeaponPoseBlockingTagCount.load(std::memory_order_acquire) != 0;
+        return g_primaryWeaponPoseBlocks.isBlocked();
     }
 
     /**
@@ -425,9 +407,7 @@ namespace frik
      */
     void HandPose::clearPrimaryWeaponPoseBlocks()
     {
-        std::lock_guard lock(g_primaryWeaponPoseBlockingTagsLock);
-        g_primaryWeaponPoseBlockingTags.clear();
-        g_primaryWeaponPoseBlockingTagCount.store(0, std::memory_order_release);
+        g_primaryWeaponPoseBlocks.clear();
     }
 
     /**

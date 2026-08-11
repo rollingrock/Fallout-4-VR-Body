@@ -57,9 +57,9 @@ namespace frik
         static bool isPrimaryWeaponNodeOwnershipBlocked();
         static void clearPrimaryWeaponNodeOwnershipBlocks();
 
-        static bool setHandTransformOverride(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority);
-        static bool clearHandTransformOverride(std::string_view tag, bool isLeft);
-        static void clearHandTransformOverrides();
+        static bool setHandWorldTransformOverride(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority);
+        static bool clearHandWorldTransformOverride(std::string_view tag, bool isLeft);
+        static void clearHandWorldTransformOverrides();
 
         void onFrameUpdate();
 

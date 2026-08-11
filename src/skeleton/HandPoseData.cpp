@@ -277,6 +277,36 @@ namespace frik::skeleton::data
         return FIST_POSE;
     }
 
+    /**
+     * HoldingWeapon is not a fixed pose - it resolves against the drawn weapon, so
+     * it goes through HandPose rather than naming one of the poses above.
+     */
+    const HandFingersPose* getPoseForKind(const HandPoseKind kind)
+    {
+        switch (kind) {
+        case HandPoseKind::Open:
+            return &getOpenPose();
+        case HandPoseKind::Pointing:
+            return &getPointingPose();
+        case HandPoseKind::HoldingWeapon:
+            return &frik::HandPose::getFixedPrimaryWeaponPose();
+        case HandPoseKind::OffhandGrip:
+            return &getOffhandWeaponGripPose();
+        case HandPoseKind::Attaboy:
+            return &getAttaboyPose();
+        case HandPoseKind::ThumbsUp:
+            return &getThumbsUpPose();
+        case HandPoseKind::Fist:
+            return &getFistPose();
+        case HandPoseKind::HoldingGun:
+            return &getGunGripPose();
+        case HandPoseKind::HoldingMelee:
+            return &getMeleeGripPose();
+        default:
+            return nullptr;
+        }
+    }
+
     const std::array<HandBonePoseData, 30>& getHandBoneData() noexcept
     {
         return HAND_BONE_DATA;

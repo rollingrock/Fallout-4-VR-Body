@@ -107,27 +107,48 @@ namespace frik::api::core
      */
     bool isLeftForHand(Hand hand);
 
+    /**
+     * Same, for a published version's own hand selector. Every major declares its
+     * enumerators with the same values as core's and static_asserts it, so this
+     * casts rather than switching and no version needs its own shim.
+     */
+    template <typename ApiHand>
+    bool isLeftForHand(const ApiHand hand)
+    {
+        return isLeftForHand(static_cast<Hand>(hand));
+    }
+
+    /**
+     * Convert a published version's hand-pose payload into the internal pose.
+     *
+     * Templated on the version's struct rather than named outright, because this
+     * header must not include a public API header. Every major's HandPoseData has
+     * carried the same members since v1, so they all bind here; a major that
+     * changes the payload simply stops matching and needs its own conversion.
+     */
+    template <typename ApiHandPoseData>
+    HandFingersPose makeHandPoseFromApiData(const ApiHandPoseData& handPose)
+    {
+        return HandFingersPose{ FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
+            FingerPose{ handPose.index.prox, handPose.index.mid, handPose.index.dist, handPose.index.splay },
+            FingerPose{ handPose.middle.prox, handPose.middle.mid, handPose.middle.dist, handPose.middle.splay },
+            FingerPose{ handPose.ring.prox, handPose.ring.mid, handPose.ring.dist, handPose.ring.splay },
+            FingerPose{ handPose.pinky.prox, handPose.pinky.mid, handPose.pinky.dist, handPose.pinky.splay },
+            handPose.palmPitch,
+            handPose.palmYaw,
+            skeleton::data::HandPoseKind::Custom };
+    }
+
     RE::NiPoint3 getIndexFingerTipPosition(Hand hand);
 
     skeleton::data::HandPoseOverrideTagState getHandPoseSetTagState(std::string_view tag, bool isLeft);
     skeleton::data::HandPoseKind getCurrentHandPoseKind(bool isLeft);
 
-    /**
-     * Build the authored pose backing a predefined pose kind.
-     * Returns nullopt for kinds that carry no authored pose (Unset / Custom).
-     */
-    std::optional<HandFingersPose> makePredefinedHandPose(skeleton::data::HandPoseKind kind);
-
-    /**
-     * Build a pose whose joints all share one flex value per finger.
-     */
-    HandFingersPose makeUniformFingerPose(float thumb, float index, float middle, float ring, float pinky);
-
     void setHandPose(std::string_view tag, bool isLeft, const HandFingersPose& pose, int priority);
     void clearHandPose(std::string_view tag, bool isLeft);
 
-    bool setHandTransform(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority);
-    bool clearHandTransform(std::string_view tag, bool isLeft);
+    bool setHandWorldTransform(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority);
+    bool clearHandWorldTransform(std::string_view tag, bool isLeft);
 
     bool setHandPoseLocalTransforms(std::string_view tag, bool isLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms, std::uint16_t enabledMask,
         int priority);

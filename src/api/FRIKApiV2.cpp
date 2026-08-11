@@ -37,11 +37,6 @@ namespace
     static_assert(FRIKApiV2::HAND_POSE_PRIORITY_DEFAULT == core::HAND_POSE_PRIORITY_DEFAULT);
     static_assert(FRIKApiV2::HAND_POSE_PRIORITY_FRIK_INTERNAL == core::HAND_POSE_PRIORITY_FRIK_INTERNAL);
 
-    bool isLeftForHand(const FRIKApiV2::Hand hand)
-    {
-        return core::isLeftForHand(static_cast<core::Hand>(hand));
-    }
-
     HandPoseKind toCoreHandPoseKind(const FRIKApiV2::HandPoseKind kind)
     {
         switch (kind) {
@@ -114,18 +109,6 @@ namespace
         return FRIKApiV2::HandPoseTagState::None;
     }
 
-    HandFingersPose makeHandPoseFromApiData(const FRIKApiV2::HandPoseData& handPose)
-    {
-        return HandFingersPose{ FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
-            FingerPose{ handPose.index.prox, handPose.index.mid, handPose.index.dist, handPose.index.splay },
-            FingerPose{ handPose.middle.prox, handPose.middle.mid, handPose.middle.dist, handPose.middle.splay },
-            FingerPose{ handPose.ring.prox, handPose.ring.mid, handPose.ring.dist, handPose.ring.splay },
-            FingerPose{ handPose.pinky.prox, handPose.pinky.mid, handPose.pinky.dist, handPose.pinky.splay },
-            handPose.palmPitch,
-            handPose.palmYaw,
-            HandPoseKind::Custom };
-    }
-
     void copyLocalTransformsToApiData(const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms, const std::uint16_t enabledMask,
         FRIKApiV2::FingerLocalTransformOverride& outTransforms)
     {
@@ -153,12 +136,12 @@ namespace
             return FRIKApiV2::HandPoseTagState::None;
         }
 
-        return toApiHandPoseTagState(core::getHandPoseSetTagState(*normalizedTag, isLeftForHand(hand)));
+        return toApiHandPoseTagState(core::getHandPoseSetTagState(*normalizedTag, core::isLeftForHand(hand)));
     }
 
     FRIKApiV2::HandPoseKind FRIK_CALL getCurrentHandPose(const FRIKApiV2::Hand hand)
     {
-        return toApiHandPoseKind(core::getCurrentHandPoseKind(isLeftForHand(hand)));
+        return toApiHandPoseKind(core::getCurrentHandPoseKind(core::isLeftForHand(hand)));
     }
 
     bool FRIK_CALL setHandPose(const char* tag, const FRIKApiV2::Hand hand, const FRIKApiV2::HandPoseKind handPose, const int priority)
@@ -168,13 +151,13 @@ namespace
             return false;
         }
 
-        const bool isLeft = isLeftForHand(hand);
+        const bool isLeft = core::isLeftForHand(hand);
         if (handPose == FRIKApiV2::HandPoseKind::Unset) {
             core::clearHandPose(*normalizedTag, isLeft);
             return true;
         }
 
-        const auto pose = core::makePredefinedHandPose(toCoreHandPoseKind(handPose));
+        const auto* pose = getPoseForKind(toCoreHandPoseKind(handPose));
         if (!pose) {
             return false;
         }
@@ -192,7 +175,7 @@ namespace
         }
 
         logger::sample("APIv2 setHandPoseCustom tag:'{}' hand={} priority={}", *normalizedTag, FRIKApiV2::handName(hand), priority);
-        core::setHandPose(*normalizedTag, isLeftForHand(hand), makeHandPoseFromApiData(handPose), priority);
+        core::setHandPose(*normalizedTag, core::isLeftForHand(hand), core::makeHandPoseFromApiData(handPose), priority);
         return true;
     }
 
@@ -208,7 +191,7 @@ namespace
             localTransforms[i] = overrideData->localTransforms[i];
         }
 
-        return core::setHandPoseLocalTransforms(*normalizedTag, isLeftForHand(hand), localTransforms, overrideData->enabledMask, priority);
+        return core::setHandPoseLocalTransforms(*normalizedTag, core::isLeftForHand(hand), localTransforms, overrideData->enabledMask, priority);
     }
 
     bool FRIK_CALL getHandPoseLocalTransformsForPose(const FRIKApiV2::Hand hand, const FRIKApiV2::HandPoseData& handPose, FRIKApiV2::FingerLocalTransformOverride* outTransforms)
@@ -219,7 +202,7 @@ namespace
 
         std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT> localTransforms{};
         std::uint16_t enabledMask = 0;
-        if (!core::getHandPoseLocalTransformsForPose(isLeftForHand(hand), makeHandPoseFromApiData(handPose), localTransforms, enabledMask)) {
+        if (!core::getHandPoseLocalTransformsForPose(core::isLeftForHand(hand), core::makeHandPoseFromApiData(handPose), localTransforms, enabledMask)) {
             *outTransforms = {};
             return false;
         }
@@ -259,28 +242,28 @@ namespace
         }
 
         logger::sample("APIv2 clearHandPose tag:'{}' hand={}", *normalizedTag, FRIKApiV2::handName(hand));
-        core::clearHandPose(*normalizedTag, isLeftForHand(hand));
+        core::clearHandPose(*normalizedTag, core::isLeftForHand(hand));
         return true;
     }
 
-    bool FRIK_CALL setHandTransform(const char* tag, const FRIKApiV2::Hand hand, const RE::NiTransform& worldTransform, const int priority)
+    bool FRIK_CALL setHandWorldTransform(const char* tag, const FRIKApiV2::Hand hand, const RE::NiTransform& worldTransform, const int priority)
     {
         const auto normalizedTag = core::normalizeTag(tag);
         if (!normalizedTag || priority < 0) {
             return false;
         }
 
-        return core::setHandTransform(*normalizedTag, isLeftForHand(hand), worldTransform, priority);
+        return core::setHandWorldTransform(*normalizedTag, core::isLeftForHand(hand), worldTransform, priority);
     }
 
-    bool FRIK_CALL clearHandTransform(const char* tag, const FRIKApiV2::Hand hand)
+    bool FRIK_CALL clearHandWorldTransform(const char* tag, const FRIKApiV2::Hand hand)
     {
         const auto normalizedTag = core::normalizeTag(tag);
         if (!normalizedTag) {
             return false;
         }
 
-        return core::clearHandTransform(*normalizedTag, isLeftForHand(hand));
+        return core::clearHandWorldTransform(*normalizedTag, core::isLeftForHand(hand));
     }
 
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApiV2::OpenExternalModConfigData& data)
@@ -320,8 +303,8 @@ namespace
         .getHandPoseLocalTransformsForPose = &getHandPoseLocalTransformsForPose,
         .mirrorFingerLocalTransforms = &mirrorFingerLocalTransforms,
         .clearHandPose = &clearHandPose,
-        .setHandTransform = &setHandTransform,
-        .clearHandTransform = &clearHandTransform,
+        .setHandWorldTransform = &setHandWorldTransform,
+        .clearHandWorldTransform = &clearHandWorldTransform,
         .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig,
         .blockOffHandWeaponGripping = &core::blockOffHandWeaponGripping,
         .blockFeature = &blockFeature,

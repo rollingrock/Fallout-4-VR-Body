@@ -112,5 +112,13 @@ namespace frik::skeleton::data
     const HandFingersPose& getThumbsUpPose() noexcept;
     const HandFingersPose& getFistPose() noexcept;
 
+    /**
+     * Return the authored pose backing a predefined pose kind, so a new kind only
+     * has to be wired up here rather than at every place that resolves one.
+     *
+     * @return null for kinds that carry no authored pose (Unset / Custom).
+     */
+    const HandFingersPose* getPoseForKind(HandPoseKind kind);
+
     const std::array<HandBonePoseData, 30>& getHandBoneData() noexcept;
 }

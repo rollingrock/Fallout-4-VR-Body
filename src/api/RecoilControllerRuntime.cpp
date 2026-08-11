@@ -6,21 +6,24 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <string_view>
 
+#include "ApiCore.h"
 #include "common/MatrixUtils.h"
 
 namespace
 {
     using Api = frik::api::FRIKApiV2;
 
+    namespace core = frik::api::core;
+
     /**
-     * The registry is a fixed array of slots and tags are copied into fixed buffers, so
-     * registration from a client mod never allocates and the per-frame walk touches no
-     * heap. Registration simply fails once either bound is reached.
+     * The registry is a fixed array of slots, so the per-frame walk is a bounded scan
+     * over contiguous memory however many mods have registered, and registration simply
+     * fails once the array is full.
      */
     constexpr std::size_t MAX_RECOIL_CONTROLLERS = 16;
-    constexpr std::size_t RECOIL_CONTROLLER_TAG_CAPACITY = 64;
 
     /**
      * Bounds a response must respect to be believed (see isPlausibleRigidTransform).
@@ -39,8 +42,7 @@ namespace
      */
     struct RecoilControllerEntry
     {
-        std::array<char, RECOIL_CONTROLLER_TAG_CAPACITY> tag{};
-        std::size_t tagLength = 0;
+        std::string tag;
         Api::WeaponHandRecoilController controller = nullptr;
         void* userData = nullptr;
         int priority = 0;
@@ -70,50 +72,13 @@ namespace
     }
 
     /**
-     * Trim a client-supplied tag and reject what cannot identify a slot.
-     *
-     * @return nullopt for a null, blank, or over-long tag. The view borrows the caller's
-     * buffer, so it is only good until the API call that produced it returns.
-     */
-    std::optional<std::string_view> normalizeTag(const char* const tag)
-    {
-        if (!tag) {
-            return std::nullopt;
-        }
-
-        std::string_view normalized(tag);
-        const auto isWhitespace = [](const char value) {
-            return value == ' ' || value == '\t' || value == '\r' || value == '\n' || value == '\f' || value == '\v';
-        };
-        while (!normalized.empty() && isWhitespace(normalized.front())) {
-            normalized.remove_prefix(1);
-        }
-        while (!normalized.empty() && isWhitespace(normalized.back())) {
-            normalized.remove_suffix(1);
-        }
-
-        if (normalized.empty() || normalized.size() >= RECOIL_CONTROLLER_TAG_CAPACITY) {
-            return std::nullopt;
-        }
-        return normalized;
-    }
-
-    /**
-     * View over a slot's own copy of its tag, which is not null-terminated.
-     */
-    std::string_view entryTag(const RecoilControllerEntry& entry)
-    {
-        return std::string_view(entry.tag.data(), entry.tagLength);
-    }
-
-    /**
      * Find the live slot holding a tag, or null. Tags are unique, so re-registering an
      * existing tag replaces that slot rather than consuming a second one.
      */
     RecoilControllerEntry* findEntry(const std::string_view tag)
     {
         const auto it = std::ranges::find_if(g_recoilControllers, [&](const RecoilControllerEntry& entry) {
-            return entry.active && entryTag(entry) == tag;
+            return entry.active && entry.tag == tag;
         });
         return it == g_recoilControllers.end() ? nullptr : &*it;
     }
@@ -232,7 +197,7 @@ namespace frik::api
      */
     bool FRIK_CALL registerWeaponHandRecoilController(const char* const tag, const FRIKApiV2::WeaponHandRecoilController controller, void* const userData, const int priority)
     {
-        const auto normalizedTag = normalizeTag(tag);
+        const auto normalizedTag = core::normalizeTag(tag);
         if (g_invokingRecoilController || !normalizedTag || !controller || priority < 0) {
             return false;
         }
@@ -246,8 +211,7 @@ namespace frik::api
         }
 
         *entry = {};
-        std::copy(normalizedTag->begin(), normalizedTag->end(), entry->tag.begin());
-        entry->tagLength = normalizedTag->size();
+        entry->tag = *normalizedTag;
         entry->controller = controller;
         entry->userData = userData;
         entry->priority = priority;
@@ -266,7 +230,7 @@ namespace frik::api
      */
     bool FRIK_CALL unregisterWeaponHandRecoilController(const char* const tag)
     {
-        const auto normalizedTag = normalizeTag(tag);
+        const auto normalizedTag = core::normalizeTag(tag);
         if (g_invokingRecoilController || !normalizedTag) {
             return false;
         }
@@ -322,7 +286,7 @@ namespace frik::api
                 continue;
             }
             if (!isValidResponse(response)) {
-                logger::sample("Rejected invalid weapon-hand recoil response from controller '{}'", entryTag(*ordered[index]));
+                logger::sample("Rejected invalid weapon-hand recoil response from controller '{}'", ordered[index]->tag);
                 continue;
             }
 

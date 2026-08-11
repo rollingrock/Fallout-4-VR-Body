@@ -3,12 +3,11 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "RecoilControllerRuntime.h"
+#include "TagBlockSet.h"
 #include "common/CommonUtils.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "skeleton/Skeleton.h"
-
-#include <unordered_set>
 
 using namespace frik::skeleton::data;
 
@@ -19,15 +18,13 @@ namespace
 
     /**
      * External tags blocking offhand gripping, so client mods cannot clobber each other.
-     * The tag values are not meaningful to FRIK, only whether at least one tag is blocking.
      */
-    std::unordered_set<std::string> g_offHandGripBlockingTags;
+    TagBlockSet g_offHandGripBlocks;
 
     /**
-     * Per-feature sets of external tags blocking each FRIK subsystem (see blockFeature).
-     * A feature stays disabled while at least one tag is still blocking it.
+     * Per-feature tags blocking each FRIK subsystem (see blockFeature).
      */
-    std::array<std::unordered_set<std::string>, FEATURE_COUNT> g_featureBlockingTags;
+    std::array<TagBlockSet, FEATURE_COUNT> g_featureBlocks;
 
     /**
      * Apply the resolved enabled state of a feature to its FRIK subsystem.
@@ -101,14 +98,10 @@ namespace frik::api::core
             return false;
         }
 
-        if (block) {
-            g_offHandGripBlockingTags.emplace(*normalizedTag);
-        } else {
-            g_offHandGripBlockingTags.erase(*normalizedTag);
-        }
+        g_offHandGripBlocks.setBlocked(*normalizedTag, block);
 
-        logger::sample("API blockOffHandWeaponGripping tag:'{}' block:{} activeBlocks:{}", *normalizedTag, block, g_offHandGripBlockingTags.size());
-        g_frik.setOffHandGrippingEnabled(g_offHandGripBlockingTags.empty());
+        logger::sample("API blockOffHandWeaponGripping tag:'{}' block:{} activeBlocks:{}", *normalizedTag, block, g_offHandGripBlocks.blockingCount());
+        g_frik.setOffHandGrippingEnabled(!g_offHandGripBlocks.isBlocked());
         return true;
     }
 
@@ -227,41 +220,6 @@ namespace frik::api::core
         return HandPose::getCurrentHandPoseKind(isLeft);
     }
 
-    std::optional<HandFingersPose> makePredefinedHandPose(const HandPoseKind kind)
-    {
-        switch (kind) {
-        case HandPoseKind::Open:
-            return getOpenPose();
-        case HandPoseKind::Pointing:
-            return getPointingPose();
-        case HandPoseKind::HoldingWeapon:
-            return HandPose::getFixedPrimaryWeaponPose();
-        case HandPoseKind::OffhandGrip:
-            return getOffhandWeaponGripPose();
-        case HandPoseKind::Attaboy:
-            return getAttaboyPose();
-        case HandPoseKind::ThumbsUp:
-            return getThumbsUpPose();
-        case HandPoseKind::Fist:
-            return getFistPose();
-        case HandPoseKind::HoldingGun:
-            return getGunGripPose();
-        case HandPoseKind::HoldingMelee:
-            return getMeleeGripPose();
-        default:
-            return std::nullopt;
-        }
-    }
-
-    HandFingersPose makeUniformFingerPose(const float thumb, const float index, const float middle, const float ring, const float pinky)
-    {
-        return HandFingersPose{ FingerPose{ thumb, thumb, thumb },
-            FingerPose{ index, index, index },
-            FingerPose{ middle, middle, middle },
-            FingerPose{ ring, ring, ring },
-            FingerPose{ pinky, pinky, pinky } };
-    }
-
     void setHandPose(const std::string_view tag, const bool isLeft, const HandFingersPose& pose, const int priority)
     {
         HandPose::setHandPoseOverrideWithPriority(isLeft, tag, pose, priority);
@@ -277,18 +235,18 @@ namespace frik::api::core
      * it is cleared. Rejected while there is no skeleton, because the registration would be dropped
      * by the skeleton release that follows.
      */
-    bool setHandTransform(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTransform, const int priority)
+    bool setHandWorldTransform(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTransform, const int priority)
     {
         if (!g_frik.getSkeleton()) {
             return false;
         }
 
-        return Skeleton::setHandTransformOverride(tag, isLeft, worldTransform, priority);
+        return Skeleton::setHandWorldTransformOverride(tag, isLeft, worldTransform, priority);
     }
 
-    bool clearHandTransform(const std::string_view tag, const bool isLeft)
+    bool clearHandWorldTransform(const std::string_view tag, const bool isLeft)
     {
-        return Skeleton::clearHandTransformOverride(tag, isLeft);
+        return Skeleton::clearHandWorldTransformOverride(tag, isLeft);
     }
 
     bool setHandPoseLocalTransforms(const std::string_view tag, const bool isLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms,
@@ -321,19 +279,17 @@ namespace frik::api::core
     bool blockFeature(const std::string_view tag, const Feature feature, const bool block)
     {
         const auto featureIndex = static_cast<std::size_t>(feature);
-        if (tag.empty() || featureIndex >= g_featureBlockingTags.size()) {
+        if (featureIndex >= g_featureBlocks.size()) {
             return false;
         }
 
-        auto& blockingTags = g_featureBlockingTags[featureIndex];
-        if (block) {
-            blockingTags.emplace(tag);
-        } else {
-            blockingTags.erase(std::string(tag));
+        auto& blocks = g_featureBlocks[featureIndex];
+        if (!blocks.setBlocked(tag, block)) {
+            return false;
         }
 
-        logger::info("API blockFeature tag:'{}' - feature:{}, block:{}, activeBlocks:{}", tag, featureIndex, block, blockingTags.size());
-        applyFeatureEnabled(feature, blockingTags.empty());
+        logger::info("API blockFeature tag:'{}' - feature:{}, block:{}, activeBlocks:{}", tag, featureIndex, block, blocks.blockingCount());
+        applyFeatureEnabled(feature, !blocks.isBlocked());
         return true;
     }
 
@@ -367,7 +323,7 @@ namespace frik::api::core
 
     void clearExternalStateForSkeletonRelease()
     {
-        Skeleton::clearHandTransformOverrides();
+        Skeleton::clearHandWorldTransformOverrides();
         HandPose::clearPrimaryWeaponPoseBlocks();
         Skeleton::clearPrimaryWeaponNodeOwnershipBlocks();
         clearWeaponHandRecoilControllersForSkeletonRelease();

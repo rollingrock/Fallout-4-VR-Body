@@ -500,14 +500,14 @@ namespace frik::api
          * whether the arm can reach the target is decided per frame by the solver,
          * which falls back to FRIK's own posing for a frame it cannot solve.
          */
-        bool(FRIK_CALL* setHandTransform)(const char* tag, Hand hand, const RE::NiTransform& worldTransform, int priority);
+        bool(FRIK_CALL* setHandWorldTransform)(const char* tag, Hand hand, const RE::NiTransform& worldTransform, int priority);
 
         /**
          * Clear the hand transform for this tag, handing the hand back on the next
          * frame to FRIK (or to the next highest-priority tag).
          * @return true if successful.
          */
-        bool(FRIK_CALL* clearHandTransform)(const char* tag, Hand hand);
+        bool(FRIK_CALL* clearHandWorldTransform)(const char* tag, Hand hand);
 
         /**
          * Adds a button to open external mod config via a button in FRIK main config UI.

@@ -33,11 +33,6 @@ namespace
     static_assert(static_cast<int>(FRIKApi::Feature::Pipboy) == static_cast<int>(core::Feature::Pipboy));
     static_assert(static_cast<int>(FRIKApi::Feature::SmoothMovement) == static_cast<int>(core::Feature::SmoothMovement));
 
-    bool isLeftForHand(const FRIKApi::Hand hand)
-    {
-        return core::isLeftForHand(static_cast<core::Hand>(hand));
-    }
-
     /**
      * Translate this version's pose kind into the internal one.
      * v4 has no Fist/HoldingGun/HoldingMelee, so those never arrive here.
@@ -112,18 +107,6 @@ namespace
         return FRIKApi::HandPoseTagState::None;
     }
 
-    HandFingersPose makeHandPoseFromApiData(const FRIKApi::HandPoseData& handPose)
-    {
-        return HandFingersPose{ FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
-            FingerPose{ handPose.index.prox, handPose.index.mid, handPose.index.dist, handPose.index.splay },
-            FingerPose{ handPose.middle.prox, handPose.middle.mid, handPose.middle.dist, handPose.middle.splay },
-            FingerPose{ handPose.ring.prox, handPose.ring.mid, handPose.ring.dist, handPose.ring.splay },
-            FingerPose{ handPose.pinky.prox, handPose.pinky.mid, handPose.pinky.dist, handPose.pinky.splay },
-            handPose.palmPitch,
-            handPose.palmYaw,
-            HandPoseKind::Custom };
-    }
-
     std::uint32_t FRIK_CALL getVersion()
     {
         return FRIK_API_VERSION;
@@ -141,12 +124,12 @@ namespace
             return FRIKApi::HandPoseTagState::None;
         }
 
-        return toApiHandPoseTagState(core::getHandPoseSetTagState(*normalizedTag, isLeftForHand(hand)));
+        return toApiHandPoseTagState(core::getHandPoseSetTagState(*normalizedTag, core::isLeftForHand(hand)));
     }
 
     FRIKApi::HandPoseKind FRIK_CALL getCurrentHandPose(const FRIKApi::Hand hand)
     {
-        return toApiHandPoseKind(core::getCurrentHandPoseKind(isLeftForHand(hand)));
+        return toApiHandPoseKind(core::getCurrentHandPoseKind(core::isLeftForHand(hand)));
     }
 
     bool FRIK_CALL setHandPose(const char* tag, const FRIKApi::Hand hand, const FRIKApi::HandPoseKind handPose)
@@ -156,13 +139,13 @@ namespace
             return false;
         }
 
-        const bool isLeft = isLeftForHand(hand);
+        const bool isLeft = core::isLeftForHand(hand);
         if (handPose == FRIKApi::HandPoseKind::Unset) {
             core::clearHandPose(*normalizedTag, isLeft);
             return true;
         }
 
-        const auto pose = core::makePredefinedHandPose(toCoreHandPoseKind(handPose));
+        const auto* pose = getPoseForKind(toCoreHandPoseKind(handPose));
         if (!pose) {
             return false;
         }
@@ -181,7 +164,14 @@ namespace
         }
 
         logger::sample("API setHandPoseCustomFingerPositions tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
-        core::setHandPose(*normalizedTag, isLeftForHand(hand), core::makeUniformFingerPose(thumb, index, middle, ring, pinky), core::HAND_POSE_PRIORITY_DEFAULT);
+        core::setHandPose(*normalizedTag,
+            core::isLeftForHand(hand),
+            HandFingersPose{ FingerPose{ thumb, thumb, thumb },
+                FingerPose{ index, index, index },
+                FingerPose{ middle, middle, middle },
+                FingerPose{ ring, ring, ring },
+                FingerPose{ pinky, pinky, pinky } },
+            core::HAND_POSE_PRIORITY_DEFAULT);
         return true;
     }
 
@@ -193,7 +183,7 @@ namespace
         }
 
         logger::sample("API setHandPoseCustom tag:'{}' hand={} forceTop={}", *normalizedTag, FRIKApi::handName(hand), forceTop);
-        core::setHandPose(*normalizedTag, isLeftForHand(hand), makeHandPoseFromApiData(handPose), core::priorityFromForceTop(forceTop));
+        core::setHandPose(*normalizedTag, core::isLeftForHand(hand), core::makeHandPoseFromApiData(handPose), core::priorityFromForceTop(forceTop));
         return true;
     }
 
@@ -205,20 +195,27 @@ namespace
         }
 
         logger::sample("API clearHandPose tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
-        core::clearHandPose(*normalizedTag, isLeftForHand(hand));
+        core::clearHandPose(*normalizedTag, core::isLeftForHand(hand));
         return true;
     }
 
     void FRIK_CALL setHandPoseFingerPositions(const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
         logger::sample("API [DEPRECATED] setHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
-        core::setHandPose(core::LEGACY_API_HAND_POSE_TAG, isLeftForHand(hand), core::makeUniformFingerPose(thumb, index, middle, ring, pinky), core::HAND_POSE_PRIORITY_DEFAULT);
+        core::setHandPose(core::LEGACY_API_HAND_POSE_TAG,
+            core::isLeftForHand(hand),
+            HandFingersPose{ FingerPose{ thumb, thumb, thumb },
+                FingerPose{ index, index, index },
+                FingerPose{ middle, middle, middle },
+                FingerPose{ ring, ring, ring },
+                FingerPose{ pinky, pinky, pinky } },
+            core::HAND_POSE_PRIORITY_DEFAULT);
     }
 
     void FRIK_CALL clearHandPoseFingerPositions(const FRIKApi::Hand hand)
     {
         logger::sample("API [DEPRECATED] clearHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
-        core::clearHandPose(core::LEGACY_API_HAND_POSE_TAG, isLeftForHand(hand));
+        core::clearHandPose(core::LEGACY_API_HAND_POSE_TAG, core::isLeftForHand(hand));
     }
 
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApi::OpenExternalModConfigData& data)

@@ -2,16 +2,13 @@
 
 #include <algorithm>
 #include <array>
-#include <atomic>
 #include <cmath>
-#include <cstdint>
-#include <mutex>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 #include "Config.h"
 #include "FRIK.h"
+#include "TagBlockSet.h"
 #include "common/MatrixUtils.h"
 #include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
@@ -19,7 +16,6 @@
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "utils.h"
-#include "vrcf/VRControllersManager.h"
 
 using namespace common;
 using namespace f4vr;
@@ -27,9 +23,7 @@ using namespace vrcf;
 
 namespace
 {
-    std::mutex g_primaryWeaponNodeOwnershipTagsLock;
-    std::unordered_set<std::string> g_primaryWeaponNodeOwnershipTags;
-    std::atomic<std::uint32_t> g_primaryWeaponNodeOwnershipTagCount{ 0 };
+    frik::TagBlockSet g_primaryWeaponNodeOwnershipBlocks;
 
     /**
      * Hack to handle comfort sneak affecting the height of the player without real-world body change.
@@ -55,12 +49,12 @@ namespace
     };
 
     // Indexed by hand: 0 is right, 1 is left.
-    std::array<std::vector<HandTransformOverride>, 2> g_handTransformOverrides;
+    std::array<std::vector<HandTransformOverride>, 2> g_handWorldTransformOverrides;
     std::uint64_t g_nextHandTransformOverrideSequence = 0;
 
     std::vector<HandTransformOverride>& getHandTransformOverrides(const bool isLeft)
     {
-        return g_handTransformOverrides[isLeft ? 1 : 0];
+        return g_handWorldTransformOverrides[isLeft ? 1 : 0];
     }
 
 }
@@ -84,30 +78,17 @@ namespace frik
 
     bool Skeleton::blockPrimaryWeaponNodeOwnership(const std::string_view tag, const bool block)
     {
-        if (tag.empty()) {
-            return false;
-        }
-
-        std::lock_guard lock(g_primaryWeaponNodeOwnershipTagsLock);
-        if (block) {
-            g_primaryWeaponNodeOwnershipTags.emplace(std::string(tag));
-        } else {
-            g_primaryWeaponNodeOwnershipTags.erase(std::string(tag));
-        }
-        g_primaryWeaponNodeOwnershipTagCount.store(static_cast<std::uint32_t>(g_primaryWeaponNodeOwnershipTags.size()), std::memory_order_release);
-        return true;
+        return g_primaryWeaponNodeOwnershipBlocks.setBlocked(tag, block);
     }
 
     bool Skeleton::isPrimaryWeaponNodeOwnershipBlocked()
     {
-        return g_primaryWeaponNodeOwnershipTagCount.load(std::memory_order_acquire) != 0;
+        return g_primaryWeaponNodeOwnershipBlocks.isBlocked();
     }
 
     void Skeleton::clearPrimaryWeaponNodeOwnershipBlocks()
     {
-        std::lock_guard lock(g_primaryWeaponNodeOwnershipTagsLock);
-        g_primaryWeaponNodeOwnershipTags.clear();
-        g_primaryWeaponNodeOwnershipTagCount.store(0, std::memory_order_release);
+        g_primaryWeaponNodeOwnershipBlocks.clear();
     }
 
     /**
@@ -121,7 +102,7 @@ namespace frik
      *
      * @return false if the tag is empty, the priority is negative, or the transform is not finite.
      */
-    bool Skeleton::setHandTransformOverride(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTransform, const int priority)
+    bool Skeleton::setHandWorldTransformOverride(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTransform, const int priority)
     {
         if (tag.empty() || priority < 0 || !isFiniteTransform(worldTransform)) {
             return false;
@@ -152,7 +133,7 @@ namespace frik
      *
      * @return false if the tag is empty.
      */
-    bool Skeleton::clearHandTransformOverride(const std::string_view tag, const bool isLeft)
+    bool Skeleton::clearHandWorldTransformOverride(const std::string_view tag, const bool isLeft)
     {
         if (tag.empty()) {
             return false;
@@ -168,9 +149,9 @@ namespace frik
      * Drop every hand transform override when the skeleton is released.
      * Clients must republish after the next skeleton-ready event.
      */
-    void Skeleton::clearHandTransformOverrides()
+    void Skeleton::clearHandWorldTransformOverrides()
     {
-        for (auto& overrides : g_handTransformOverrides) {
+        for (auto& overrides : g_handWorldTransformOverrides) {
             overrides.clear();
         }
         g_nextHandTransformOverrideSequence = 0;
