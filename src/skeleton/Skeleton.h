@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
 #include <memory>
 
@@ -45,12 +44,6 @@ namespace frik
         static float getAdjustedPlayerHMDOffset();
 
         void onFrameUpdate();
-
-        bool mirrorFingerLocalTransforms(bool sourceIsLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& sourceTransforms, std::uint16_t sourceEnabledMask,
-            std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask) const
-        {
-            return _handPose.mirrorFingerLocalTransforms(sourceIsLeft, sourceTransforms, sourceEnabledMask, outTargetTransforms, outTargetEnabledMask);
-        }
 
     private:
         Skeleton(RE::NiNode* rootNode, const bool inPowerArmor)

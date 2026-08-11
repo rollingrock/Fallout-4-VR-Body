@@ -167,11 +167,6 @@ namespace frik
             WeaponPositionAdjuster::setOffHandGrippingEnabled(enabled);
         }
 
-        Skeleton* getSkeleton() const
-        {
-            return _skelly.get();
-        }
-
         bool inWeaponRepositionMode() const
         {
             return _weaponPosition && _weaponPosition->inWeaponRepositionMode();

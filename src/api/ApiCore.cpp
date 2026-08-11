@@ -7,7 +7,6 @@
 #include "common/CommonUtils.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
-#include "skeleton/Skeleton.h"
 
 using namespace frik::skeleton::data;
 
@@ -249,27 +248,22 @@ namespace frik::api::core
         return g_externalAuthority.clearHandWorldTransform(tag, isLeft);
     }
 
-    bool setHandPoseLocalTransforms(const std::string_view tag, const bool isLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms,
+    bool setHandPoseLocalTransforms(const std::string_view tag, const bool isLeft, const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& localTransforms,
         const std::uint16_t enabledMask, const int priority)
     {
         return HandPose::setHandPoseOverrideLocalTransforms(isLeft, tag, localTransforms, enabledMask, priority);
     }
 
-    bool getHandPoseLocalTransformsForPose(const bool isLeft, const HandFingersPose& pose, std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& outTransforms,
+    bool getHandPoseLocalTransformsForPose(const bool isLeft, const HandFingersPose& pose, std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& outTransforms,
         std::uint16_t& outEnabledMask)
     {
-        return HandPose::buildFingerLocalTransformsForPose(isLeft, pose, outTransforms, outEnabledMask);
+        return HandPoseMath::buildFingerLocalTransformsForPose(isLeft, pose, outTransforms, outEnabledMask);
     }
 
-    bool mirrorFingerLocalTransforms(const bool sourceIsLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& sourceTransforms,
-        const std::uint16_t sourceEnabledMask, std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask)
+    bool mirrorFingerLocalTransforms(const bool sourceIsLeft, const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& sourceTransforms,
+        const std::uint16_t sourceEnabledMask, std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask)
     {
-        const auto* skeleton = g_frik.getSkeleton();
-        if (!skeleton) {
-            return false;
-        }
-
-        return skeleton->mirrorFingerLocalTransforms(sourceIsLeft, sourceTransforms, sourceEnabledMask, outTargetTransforms, outTargetEnabledMask);
+        return HandPoseMath::mirrorFingerLocalTransforms(sourceIsLeft, sourceTransforms, sourceEnabledMask, outTargetTransforms, outTargetEnabledMask);
     }
 
     /**

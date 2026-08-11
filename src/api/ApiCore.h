@@ -10,6 +10,7 @@
 #include "RE/NetImmerse/NiTransform.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/HandPoseData.h"
+#include "skeleton/HandPoseMath.h"
 
 /**
  * Internal implementation shared by every published FRIK API major version.
@@ -150,14 +151,14 @@ namespace frik::api::core
     bool setHandWorldTransform(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority);
     bool clearHandWorldTransform(std::string_view tag, bool isLeft);
 
-    bool setHandPoseLocalTransforms(std::string_view tag, bool isLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms, std::uint16_t enabledMask,
-        int priority);
+    bool setHandPoseLocalTransforms(std::string_view tag, bool isLeft, const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& localTransforms,
+        std::uint16_t enabledMask, int priority);
 
-    bool getHandPoseLocalTransformsForPose(bool isLeft, const HandFingersPose& pose, std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& outTransforms,
+    bool getHandPoseLocalTransformsForPose(bool isLeft, const HandFingersPose& pose, std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& outTransforms,
         std::uint16_t& outEnabledMask);
 
-    bool mirrorFingerLocalTransforms(bool sourceIsLeft, const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& sourceTransforms, std::uint16_t sourceEnabledMask,
-        std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask);
+    bool mirrorFingerLocalTransforms(bool sourceIsLeft, const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& sourceTransforms, std::uint16_t sourceEnabledMask,
+        std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask);
 
     bool blockFeature(std::string_view tag, Feature feature, bool block);
     bool isFeatureBlocked(Feature feature);

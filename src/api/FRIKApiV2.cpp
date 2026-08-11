@@ -109,7 +109,7 @@ namespace
         return FRIKApiV2::HandPoseTagState::None;
     }
 
-    void copyLocalTransformsToApiData(const std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT>& localTransforms, const std::uint16_t enabledMask,
+    void copyLocalTransformsToApiData(const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& localTransforms, const std::uint16_t enabledMask,
         FRIKApiV2::FingerLocalTransformOverride& outTransforms)
     {
         outTransforms = {};
@@ -186,7 +186,7 @@ namespace
             return false;
         }
 
-        std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT> localTransforms{};
+        std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT> localTransforms{};
         for (std::size_t i = 0; i < localTransforms.size(); ++i) {
             localTransforms[i] = overrideData->localTransforms[i];
         }
@@ -200,7 +200,7 @@ namespace
             return false;
         }
 
-        std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT> localTransforms{};
+        std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT> localTransforms{};
         std::uint16_t enabledMask = 0;
         if (!core::getHandPoseLocalTransformsForPose(core::isLeftForHand(hand), core::makeHandPoseFromApiData(handPose), localTransforms, enabledMask)) {
             *outTransforms = {};
@@ -219,12 +219,12 @@ namespace
         }
         *outTargetTransforms = {};
 
-        std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT> source{};
+        std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT> source{};
         for (std::size_t index = 0; index < source.size(); ++index) {
             source[index] = sourceTransforms->localTransforms[index];
         }
 
-        std::array<RE::NiTransform, HandPose::FINGER_BONE_COUNT> target{};
+        std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT> target{};
         std::uint16_t targetMask = 0;
         if (!core::mirrorFingerLocalTransforms(sourceHand == FRIKApiV2::Hand::Left, source, sourceTransforms->enabledMask, target, targetMask)) {
             return false;

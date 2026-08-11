@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -13,11 +14,15 @@
 
 namespace frik
 {
+    /**
+     * The runtime side of hand posing: the tagged override registry that decides which pose wins,
+     * and the per-frame blend of the winning pose into the skeleton's bone tree.
+     *
+     * The geometry itself lives in HandPoseMath, which this depends on.
+     */
     class HandPose
     {
     public:
-        static constexpr std::size_t FINGER_BONE_COUNT = 15;
-
         /**
          * Priority given to an external override that does not name one.
          * This is the canonical definition of the scale; the published API
@@ -37,22 +42,12 @@ namespace frik
         static void clearHandPoseOverridesForSkeletonRelease();
 
         static void setHandPoseOverride(bool isLeft, std::string_view tag, const HandFingersPose& pose, int priority);
-        static bool setHandPoseOverrideLocalTransforms(bool isLeft, std::string_view tag, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& localTransforms,
+        static bool setHandPoseOverrideLocalTransforms(bool isLeft, std::string_view tag, const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& localTransforms,
             std::uint16_t enabledMask, int priority);
         static void clearHandPoseOverride(bool isLeft, std::string_view tag);
         static skeleton::data::HandPoseOverrideTagState getHandPoseSetTagState(bool isLeft, std::string_view tag);
         static skeleton::data::HandPoseKind getCurrentHandPoseKind(bool isLeft);
         static const HandFingersPose& getFixedPrimaryWeaponPose();
-        static bool buildFingerLocalTransformsForPose(bool isLeft, const HandFingersPose& pose, std::array<RE::NiTransform, FINGER_BONE_COUNT>& outTransforms,
-            std::uint16_t& outEnabledMask);
-
-        /*
-         * Convert a complete physical-hand finger pose into the opposite
-         * hand's anatomical pose. This is instance-owned because its
-         * bind/reference transforms differ between normal and power armor.
-         */
-        bool mirrorFingerLocalTransforms(bool sourceIsLeft, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& sourceTransforms, std::uint16_t sourceEnabledMask,
-            std::array<RE::NiTransform, FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask) const;
 
         static void setPipboyHandPose();
         static void disablePipboyHandPose();
@@ -81,7 +76,7 @@ namespace frik
             int priority = 50;
             std::uint64_t sequence = 0;
             std::uint16_t localTransformMask = 0;
-            std::array<RE::NiTransform, FINGER_BONE_COUNT> localTransforms{};
+            std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT> localTransforms{};
         };
 
         struct HandPoseSource
@@ -105,12 +100,6 @@ namespace frik
         void applyOverrideHandPose(const std::string& boneName, const HandFingersPose* activePose, const TaggedHandPoseOverride* activeOverride, float frameTime);
         void blendBoneTowardRotation(const std::string& boneName, const RE::NiMatrix3& targetRotation, float frameTime);
         void blendBoneTowardTransform(const std::string& boneName, const RE::NiTransform& targetTransform, float frameTime);
-        RE::NiMatrix3 getPoseBoneRotation(const std::string& boneName, const HandFingersPose& pose) const;
-        RE::NiMatrix3 blendBoneRotation(const std::string& boneName, float flex, float splay) const;
-        float inverseBlendFlex(const std::string& boneName, const RE::NiMatrix3& animatedRotation) const;
-        void measureAnimatedFlexSplay(const std::string& sourceBoneName, const RE::NiMatrix3& animatedRotation, float& outFlex, float& outSplay) const;
-        bool tryTransferMirroredThumbBase(const std::string& sourceBoneName, const std::string& targetBoneName, const RE::NiMatrix3& animatedRotation,
-            RE::NiMatrix3& outRotation) const;
         static const RE::NiTransform* getLocalTransformOverride(const TaggedHandPoseOverride* activeOverride, const std::string& boneName);
         static bool shouldUsePointingPose(bool isLeft);
         static bool shouldUseThumbsUpPose(bool isLeft);
@@ -120,8 +109,9 @@ namespace frik
         static void sortHandOverrides(std::vector<TaggedHandPoseOverride>& overrides);
         static const TaggedHandPoseOverride* getActiveHandPoseOverride(bool isLeft);
 
-        std::map<std::string, RE::NiTransform> _handClosed;
+        // The authored open pose resolved against this skeleton's rest translations.
         std::map<std::string, RE::NiTransform> _handOpen;
+        // The live per-bone transforms this instance blends toward the resolved pose each frame.
         std::map<std::string, RE::NiTransform> _handBones;
         PalmBlendState _leftPalmBlend;
         PalmBlendState _rightPalmBlend;

@@ -87,6 +87,11 @@ namespace frik::skeleton::data
 {
     using RotationData = std::array<float, 12>;
 
+    /**
+     * The finger bones of a single hand: 3 joints (prox, mid, dist) for each of the 5 fingers.
+     */
+    constexpr std::size_t FINGER_BONE_COUNT = 15;
+
     enum class HandPoseOverrideTagState : std::uint8_t
     {
         None,

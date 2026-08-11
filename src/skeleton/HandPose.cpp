@@ -1,7 +1,6 @@
 #include "HandPose.h"
 
 #include <algorithm>
-#include <cmath>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -10,7 +9,7 @@
 #include "ExternalAuthority.h"
 #include "FRIK.h"
 #include "HandPoseData.h"
-#include "Skeleton.h"
+#include "HandPoseMath.h"
 #include "common/MatrixUtils.h"
 #include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
@@ -28,49 +27,12 @@ using namespace frik::skeleton::data;
 namespace
 {
     /**
-     * Copy the authored 3x4 rotation rows from pose data into a runtime transform.
-     */
-    void copyRotationIntoTransform(const RotationData& rotationData, RE::NiTransform& transform)
-    {
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 4; col++) {
-                transform.rotate.entry[row][col] = rotationData[row * 4 + col];
-            }
-        }
-    }
-
-    /**
-     * Return whether a hand bone belongs to the left hand based on its name prefix.
-     */
-    bool isLeftHandBone(const std::string& boneName)
-    {
-        return boneName[0] == 'L';
-    }
-
-    /**
-     * Convert a finger bone name like Finger31 into a zero-based finger index.
-     */
-    int boneToFingerIndex(const std::string& bone)
-    {
-        return bone[bone.size() - 2] - '1';
-    }
-
-    /**
-     * Convert a finger bone name into its flat index across all 15 finger bones.
-     * Laid out as 3 joints (prox, mid, dist) per finger, thumb first.
-     */
-    int boneToFlexIndex(const std::string& bone)
-    {
-        return boneToFingerIndex(bone) * 3 + (bone.back() - '1');
-    }
-
-    /**
      * Map a (non-thumb) finger to the controller button that should drive its dynamic curl.
      * The index finger follows the trigger; the bottom three fingers (middle, ring, pinky) follow the grip.
      */
     VRButtonId getTrackedButton(const std::string& bone)
     {
-        return boneToFingerIndex(bone) == 1 ? k_EButton_SteamVR_Trigger : k_EButton_Grip;
+        return frik::HandPoseMath::boneToFingerIndex(bone) == 1 ? k_EButton_SteamVR_Trigger : k_EButton_Grip;
     }
 
     /**
@@ -161,45 +123,6 @@ namespace
     constexpr std::string_view OFFHAND_GRIP_HAND_POSE_TAG = "frik.offhand_grip";
     constexpr std::string_view ATTABOY_HAND_POSE_TAG = "frik.attaboy";
 
-    /**
-     * All 15 finger bones enabled, one bit per flat bone index.
-     */
-    constexpr std::uint16_t FULL_LOCAL_TRANSFORM_MASK = 0x7FFF;
-
-    /**
-     * Build the local transform one bone would take under an authored pose.
-     *
-     * Interpolates the authored closed rotation toward the open one by the bone's
-     * flex value, then applies proximal splay on the first joint of each finger,
-     * mirrored per hand. Translation comes from the open pose, in the power-armor
-     * variant when applicable, since posing never moves a bone off its rest offset.
-     */
-    RE::NiTransform buildPoseBoneLocalTransform(const frik::skeleton::data::HandBonePoseData& boneData, const frik::HandFingersPose& pose, const bool inPowerArmor)
-    {
-        RE::NiTransform openTransform{};
-        RE::NiTransform closedTransform{};
-        copyRotationIntoTransform(boneData.openRotation, openTransform);
-        copyRotationIntoTransform(boneData.closedRotation, closedTransform);
-
-        openTransform.translate = inPowerArmor ? boneData.openTranslationInPowerArmor : boneData.openTranslation;
-        closedTransform.translate = openTransform.translate;
-        openTransform.scale = 1.0f;
-        closedTransform.scale = 1.0f;
-
-        Quaternion qOpen;
-        Quaternion qClosed;
-        qOpen.fromMatrix(openTransform.rotate);
-        qClosed.fromMatrix(closedTransform.rotate);
-        qClosed.slerp(std::clamp(pose.getFlexAt(boneToFlexIndex(boneData.boneName)), -1.0f, 2.0f), qOpen);
-
-        RE::NiTransform result = openTransform;
-        result.rotate = qClosed.getMatrix();
-        if (std::string_view(boneData.boneName).back() == '1') {
-            const float sign = boneData.boneName[0] == 'L' ? -1.0f : 1.0f;
-            result.rotate = MatrixUtils::getMatrixFromEulerAngles(0.0f, sign * pose.getFingerAt(boneToFingerIndex(boneData.boneName)).splay, 0.0f) * result.rotate;
-        }
-        return result;
-    }
 }
 
 namespace frik
@@ -246,20 +169,12 @@ namespace frik
     // -- Lifecycle ----------------------------------------------------------------------
 
     /**
-     * Build the authored open/closed reference transforms used to drive hand posing.
+     * Resolve the authored open transforms against this skeleton's rest translations, which is the
+     * only part of the reference data that depends on whether the player is in power armor.
      */
     HandPose::HandPose(const bool inPowerArmor)
     {
-        _handClosed.clear();
-        _handOpen.clear();
-        _handBones.clear();
-
-        for (const auto& boneData : getHandBoneData()) {
-            copyRotationIntoTransform(boneData.closedRotation, _handClosed[boneData.boneName]);
-            copyRotationIntoTransform(boneData.openRotation, _handOpen[boneData.boneName]);
-            _handOpen[boneData.boneName].translate = inPowerArmor ? boneData.openTranslationInPowerArmor : boneData.openTranslation;
-        }
-
+        _handOpen = HandPoseMath::buildOpenPoseTransforms(inPowerArmor);
         _handBones = _handOpen;
     }
 
@@ -302,8 +217,8 @@ namespace frik
      *
      * @return false if the tag holds no override or the priority is negative.
      */
-    bool HandPose::setHandPoseOverrideLocalTransforms(const bool isLeft, const std::string_view tag, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& localTransforms,
-        const std::uint16_t enabledMask, const int priority)
+    bool HandPose::setHandPoseOverrideLocalTransforms(const bool isLeft, const std::string_view tag,
+        const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& localTransforms, const std::uint16_t enabledMask, const int priority)
     {
         if (tag.empty() || priority < 0) {
             return false;
@@ -320,7 +235,7 @@ namespace frik
         // Sequence is deliberately left alone: it records registration order, and
         // this call reorders through the explicit priority it was given.
         overrideIt->priority = priority;
-        overrideIt->localTransformMask = static_cast<std::uint16_t>(enabledMask & FULL_LOCAL_TRANSFORM_MASK);
+        overrideIt->localTransformMask = static_cast<std::uint16_t>(enabledMask & HandPoseMath::FULL_LOCAL_TRANSFORM_MASK);
         overrideIt->localTransforms = localTransforms;
 
         sortHandOverrides(overrides);
@@ -383,126 +298,6 @@ namespace frik
     const HandFingersPose& HandPose::getFixedPrimaryWeaponPose()
     {
         return isUnarmedWeaponDrawn() ? getFistPose() : (g_frik.isMeleeWeaponDrawn() ? getMeleeGripPose() : getGunGripPose());
-    }
-
-    /**
-     * Resolve the per-bone local transforms one hand would take under an authored
-     * pose, without applying anything to the skeleton.
-     *
-     * Lets an external system read FRIK's authored poses as explicit transforms,
-     * adjust them, and publish the result back through setHandPoseOverrideLocalTransforms.
-     * Accounts for power armor, which changes the rest translations.
-     *
-     * @return true only if all 15 bones resolved; on failure the outputs are zeroed
-     * so a partial pose can never be published.
-     */
-    bool HandPose::buildFingerLocalTransformsForPose(const bool isLeft, const HandFingersPose& pose, std::array<RE::NiTransform, FINGER_BONE_COUNT>& outTransforms,
-        std::uint16_t& outEnabledMask)
-    {
-        outTransforms = {};
-        outEnabledMask = 0;
-
-        const bool inPowerArmor = f4vr::isInPowerArmor();
-        for (const auto& boneData : getHandBoneData()) {
-            if (isLeft != (boneData.boneName[0] == 'L')) {
-                continue;
-            }
-
-            const int flatBoneIndex = boneToFlexIndex(boneData.boneName);
-            if (flatBoneIndex < 0 || flatBoneIndex >= static_cast<int>(FINGER_BONE_COUNT)) {
-                outTransforms = {};
-                outEnabledMask = 0;
-                return false;
-            }
-
-            const auto transform = buildPoseBoneLocalTransform(boneData, pose, inPowerArmor);
-            if (!isFiniteTransform(transform)) {
-                outTransforms = {};
-                outEnabledMask = 0;
-                return false;
-            }
-
-            outTransforms[flatBoneIndex] = transform;
-            outEnabledMask = static_cast<std::uint16_t>(outEnabledMask | (1U << flatBoneIndex));
-        }
-
-        outEnabledMask = static_cast<std::uint16_t>(outEnabledMask & FULL_LOCAL_TRANSFORM_MASK);
-        return outEnabledMask == FULL_LOCAL_TRANSFORM_MASK;
-    }
-
-    /**
-     * Convert a complete finger pose on one hand into the opposite hand's anatomical pose.
-     *
-     * The two hands do not share a bind pose, so this cannot mirror rotations
-     * geometrically. Instead each source bone is measured back into flex/splay
-     * against its own authored open/closed pair, and those values are re-applied
-     * against the target bone's pair. The thumb base is special-cased through
-     * tryTransferMirroredThumbBase, whose rotation axis does not decompose cleanly
-     * into flex and splay.
-     *
-     * Instance-owned rather than static because the bind transforms it measures
-     * against differ between normal and power armor.
-     *
-     * @return true only if all 15 bones mirrored; a partial source mask is rejected
-     * outright and any failure zeroes the outputs.
-     */
-    bool HandPose::mirrorFingerLocalTransforms(const bool sourceIsLeft, const std::array<RE::NiTransform, FINGER_BONE_COUNT>& sourceTransforms,
-        const std::uint16_t sourceEnabledMask, std::array<RE::NiTransform, FINGER_BONE_COUNT>& outTargetTransforms, std::uint16_t& outTargetEnabledMask) const
-    {
-        outTargetTransforms = {};
-        outTargetEnabledMask = 0;
-        if ((sourceEnabledMask & FULL_LOCAL_TRANSFORM_MASK) != FULL_LOCAL_TRANSFORM_MASK) {
-            return false;
-        }
-
-        const char sourcePrefix = sourceIsLeft ? 'L' : 'R';
-        const char targetPrefix = sourceIsLeft ? 'R' : 'L';
-        for (const auto& boneData : getHandBoneData()) {
-            if (!boneData.boneName || boneData.boneName[0] != sourcePrefix) {
-                continue;
-            }
-
-            const std::string sourceBoneName{ boneData.boneName };
-            const int flatBoneIndex = boneToFlexIndex(sourceBoneName);
-            if (flatBoneIndex < 0 || flatBoneIndex >= static_cast<int>(FINGER_BONE_COUNT) || !isFiniteTransform(sourceTransforms[static_cast<std::size_t>(flatBoneIndex)])) {
-                outTargetTransforms = {};
-                outTargetEnabledMask = 0;
-                return false;
-            }
-
-            std::string targetBoneName = sourceBoneName;
-            targetBoneName[0] = targetPrefix;
-            const auto openTarget = _handOpen.find(targetBoneName);
-            if (openTarget == _handOpen.end()) {
-                outTargetTransforms = {};
-                outTargetEnabledMask = 0;
-                return false;
-            }
-
-            const auto& animatedSource = sourceTransforms[static_cast<std::size_t>(flatBoneIndex)];
-            RE::NiTransform mirroredTarget = openTarget->second;
-            RE::NiMatrix3 thumbRotation{};
-            if (sourceBoneName.ends_with("Arm_Finger11") && tryTransferMirroredThumbBase(sourceBoneName, targetBoneName, animatedSource.rotate, thumbRotation)) {
-                mirroredTarget.rotate = thumbRotation;
-            } else {
-                float flex = 1.0f;
-                float splay = 0.0f;
-                measureAnimatedFlexSplay(sourceBoneName, animatedSource.rotate, flex, splay);
-                mirroredTarget.rotate = blendBoneRotation(targetBoneName, flex, splay);
-            }
-            mirroredTarget.scale = 1.0f;
-            if (!isFiniteTransform(mirroredTarget)) {
-                outTargetTransforms = {};
-                outTargetEnabledMask = 0;
-                return false;
-            }
-
-            outTargetTransforms[static_cast<std::size_t>(flatBoneIndex)] = mirroredTarget;
-            outTargetEnabledMask = static_cast<std::uint16_t>(outTargetEnabledMask | (1U << flatBoneIndex));
-        }
-
-        outTargetEnabledMask = static_cast<std::uint16_t>(outTargetEnabledMask & FULL_LOCAL_TRANSFORM_MASK);
-        return outTargetEnabledMask == FULL_LOCAL_TRANSFORM_MASK;
     }
 
     /**
@@ -591,7 +386,7 @@ namespace frik
                 continue;
             }
 
-            const bool leftHandBone = isLeftHandBone(boneName);
+            const bool leftHandBone = HandPoseMath::isLeftHandBone(boneName);
             const auto& source = leftHandBone ? leftHandSource : rightHandSource;
             if (source.kind == HandPoseSourceKind::PrimaryWeaponPose) {
                 applyPrimaryWeaponHandPose(boneName, source);
@@ -727,9 +522,9 @@ namespace frik
     {
         if (source.pose) {
             auto& bone = _handBones[boneName];
-            bone.rotate = getPoseBoneRotation(boneName, *source.pose);
+            bone.rotate = HandPoseMath::getPoseBoneRotation(boneName, *source.pose);
             bone.scale = 1.0f;
-        } else if (isLeftHandBone(boneName)) {
+        } else if (HandPoseMath::isLeftHandBone(boneName)) {
             const auto fpTree = getFirstPersonBoneTree();
             const std::string rightBoneName = "RArm_" + boneName.substr(5);
             const int pos = fpTree ? fpTree->GetBoneIndex(rightBoneName) : -1;
@@ -737,16 +532,12 @@ namespace frik
                 return;
             }
             const RE::NiTransform& animated = fpTree->transforms[pos].refNode ? fpTree->transforms[pos].refNode->local : fpTree->transforms[pos].local;
-            auto& bone = _handBones[boneName];
-            RE::NiMatrix3 thumbRotation;
-            if (rightBoneName == "RArm_Finger11" && tryTransferMirroredThumbBase(rightBoneName, boneName, animated.rotate, thumbRotation)) {
-                bone.rotate = thumbRotation;
-            } else {
-                float flex = 1.0f;
-                float splay = 0.0f;
-                measureAnimatedFlexSplay(rightBoneName, animated.rotate, flex, splay);
-                bone.rotate = blendBoneRotation(boneName, flex, splay);
+            const auto mirroredRotation = HandPoseMath::mirrorBoneRotation(rightBoneName, boneName, animated.rotate);
+            if (!mirroredRotation) {
+                return;
             }
+            auto& bone = _handBones[boneName];
+            bone.rotate = *mirroredRotation;
             bone.scale = 1.0f;
         } else {
             const auto fpTree = getFirstPersonBoneTree();
@@ -755,185 +546,6 @@ namespace frik
                 _handBones[boneName] = fpTree->transforms[pos].refNode ? fpTree->transforms[pos].refNode->local : fpTree->transforms[pos].local;
             }
         }
-    }
-
-    /**
-     * Recover the flex value that would reproduce an observed bone rotation.
-     *
-     * The inverse of blendBoneRotation's slerp: it projects the closed-to-animated
-     * rotation onto the closed-to-open arc and returns how far along that arc the
-     * animation sits. Used to read a game-animated hand back into pose values.
-     *
-     * Returns the same -1..2 range blendBoneRotation accepts, so hyperextension and
-     * overcurl past the authored poses survive a round trip. Degenerate bones whose
-     * open and closed rotations nearly coincide report fully open.
-     */
-    float HandPose::inverseBlendFlex(const std::string& boneName, const RE::NiMatrix3& animatedRotation) const
-    {
-        Quaternion qOpen, qClosed, qAnimated;
-        qOpen.fromMatrix(_handOpen.at(boneName).rotate);
-        qClosed.fromMatrix(_handClosed.at(boneName).rotate);
-        qAnimated.fromMatrix(animatedRotation);
-
-        const auto relativeFrom = [](const Quaternion& from, Quaternion to) {
-            if (from.dot(to) < 0.0f) {
-                to *= -1.0f;
-            }
-            return from.conjugate() * to;
-        };
-        const auto axisAngle = [](const Quaternion& q, RE::NiPoint3& axis) {
-            const float w = std::clamp(q.w, -1.0f, 1.0f);
-            const float sinHalf = std::sqrt((std::max)(0.0f, 1.0f - w * w));
-            if (sinHalf < 1e-6f) {
-                axis = RE::NiPoint3(0, 0, 0);
-                return 0.0f;
-            }
-            axis = RE::NiPoint3(q.x / sinHalf, q.y / sinHalf, q.z / sinHalf);
-            return 2.0f * std::acos(w);
-        };
-
-        RE::NiPoint3 arcAxis;
-        const float arcAngle = axisAngle(relativeFrom(qClosed, qOpen), arcAxis);
-        constexpr float kMinArcAngle = 0.001f;
-        if (arcAngle < kMinArcAngle) {
-            return 1.0f;
-        }
-
-        RE::NiPoint3 animatedAxis;
-        const float animatedAngle = axisAngle(relativeFrom(qClosed, qAnimated), animatedAxis);
-        const float angleAlongArc = animatedAngle * MatrixUtils::vec3Dot(animatedAxis, arcAxis);
-        return std::clamp(angleAlongArc / arcAngle, -1.0f, 2.0f);
-    }
-
-    /**
-     * Decompose an animated bone rotation into the flex and splay that produced it.
-     *
-     * Flex is measured first, then whatever rotation remains after removing the
-     * pure-flex result is read as lateral splay about the Y axis. Only the proximal
-     * joint of each finger carries splay, so other bones report zero. Once splay is
-     * known it is removed and flex is re-measured, since the first pass absorbed
-     * some of the lateral rotation into its arc projection.
-     *
-     * Splay is returned in the hand's own convention (mirrored for the left hand).
-     * A residual that is not finite or is implausibly large for an authored pose is
-     * discarded rather than propagated.
-     */
-    void HandPose::measureAnimatedFlexSplay(const std::string& sourceBoneName, const RE::NiMatrix3& animatedRotation, float& outFlex, float& outSplay) const
-    {
-        outFlex = inverseBlendFlex(sourceBoneName, animatedRotation);
-        outSplay = 0.0f;
-        if (sourceBoneName.back() != '1') {
-            return;
-        }
-
-        const RE::NiMatrix3 flexOnly = blendBoneRotation(sourceBoneName, outFlex, 0.0f);
-        const RE::NiMatrix3 residual = animatedRotation * flexOnly.Transpose();
-        Quaternion residualQ;
-        residualQ.fromMatrix(residual);
-        if (residualQ.w < 0.0f) {
-            residualQ *= -1.0f;
-        }
-        const float w = std::clamp(residualQ.w, -1.0f, 1.0f);
-        const float sinHalf = std::sqrt((std::max)(0.0f, 1.0f - w * w));
-        if (sinHalf < 1e-6f) {
-            return;
-        }
-        const float residualAngle = 2.0f * std::acos(w);
-        const float splayCandidate = residualAngle * (residualQ.y / sinHalf);
-        constexpr float kMaxAuthoredSplayRadians = 0.6f;
-        if (!std::isfinite(splayCandidate) || std::fabs(splayCandidate) > kMaxAuthoredSplayRadians) {
-            return;
-        }
-        const bool sourceIsLeft = isLeftHandBone(sourceBoneName);
-        outSplay = sourceIsLeft ? -splayCandidate : splayCandidate;
-
-        const RE::NiMatrix3 desplayed = MatrixUtils::getMatrixFromEulerAngles(0, sourceIsLeft ? outSplay : -outSplay, 0) * animatedRotation;
-        outFlex = inverseBlendFlex(sourceBoneName, desplayed);
-    }
-
-    /**
-     * Mirror the thumb base rotation from one hand onto the other.
-     *
-     * The thumb's proximal joint rotates about an axis that is neither pure flex nor
-     * pure splay, so measureAnimatedFlexSplay cannot describe it and the generic path
-     * distorts the pose. Instead this builds an orthonormal basis around each hand's
-     * own closed-to-open rotation axis, maps the source rotation between those bases,
-     * and negates the vector part to flip handedness.
-     *
-     * @return false when either arc axis is too close to vertical to build a stable
-     * basis from, or the result is not finite - callers fall back to the generic
-     * flex/splay path.
-     */
-    bool HandPose::tryTransferMirroredThumbBase(const std::string& sourceBoneName, const std::string& targetBoneName, const RE::NiMatrix3& animatedRotation,
-        RE::NiMatrix3& outRotation) const
-    {
-        const RE::NiMatrix3& closedSource = _handClosed.at(sourceBoneName).rotate;
-        const RE::NiMatrix3& openSource = _handOpen.at(sourceBoneName).rotate;
-        const RE::NiMatrix3& closedTarget = _handClosed.at(targetBoneName).rotate;
-        const RE::NiMatrix3& openTarget = _handOpen.at(targetBoneName).rotate;
-
-        const auto parentDeltaAxis = [](const RE::NiMatrix3& open, const RE::NiMatrix3& closed, RE::NiPoint3& outAxis) {
-            Quaternion q;
-            q.fromMatrix(open * closed.Transpose());
-            if (q.w < 0.0f) {
-                q *= -1.0f;
-            }
-            const float w = std::clamp(q.w, -1.0f, 1.0f);
-            const float sinHalf = std::sqrt((std::max)(0.0f, 1.0f - w * w));
-            if (sinHalf < 1e-4f) {
-                return false;
-            }
-            outAxis = RE::NiPoint3(q.x / sinHalf, q.y / sinHalf, q.z / sinHalf);
-            return true;
-        };
-        RE::NiPoint3 sourceArcAxis{}, targetArcAxis{};
-        if (!parentDeltaAxis(openSource, closedSource, sourceArcAxis) || !parentDeltaAxis(openTarget, closedTarget, targetArcAxis)) {
-            return false;
-        }
-
-        const RE::NiPoint3 y{ 0.0f, 1.0f, 0.0f };
-        const RE::NiPoint3 mirroredTargetArc{ -targetArcAxis.x, -targetArcAxis.y, -targetArcAxis.z };
-        RE::NiPoint3 sourcePerpendicular{ sourceArcAxis.x, 0.0f, sourceArcAxis.z };
-        RE::NiPoint3 targetPerpendicular{ mirroredTargetArc.x, 0.0f, mirroredTargetArc.z };
-        constexpr float kMinPerpComponent = 0.05f;
-        if (MatrixUtils::vec3Len(sourcePerpendicular) < kMinPerpComponent || MatrixUtils::vec3Len(targetPerpendicular) < kMinPerpComponent) {
-            return false;
-        }
-        sourcePerpendicular = MatrixUtils::vec3Norm(sourcePerpendicular);
-        targetPerpendicular = MatrixUtils::vec3Norm(targetPerpendicular);
-        const RE::NiPoint3 sourceCross = MatrixUtils::vec3Cross(y, sourcePerpendicular);
-        const RE::NiPoint3 targetCrossFlipped = MatrixUtils::vec3Cross(y, targetPerpendicular) * -1.0f;
-
-        RE::NiMatrix3 sourceBasis, targetBasis;
-        for (int row = 0; row < 3; ++row) {
-            const float* yv = &y.x;
-            sourceBasis.entry[row][0] = yv[row];
-            sourceBasis.entry[row][1] = (&sourcePerpendicular.x)[row];
-            sourceBasis.entry[row][2] = (&sourceCross.x)[row];
-            targetBasis.entry[row][0] = yv[row];
-            targetBasis.entry[row][1] = (&targetPerpendicular.x)[row];
-            targetBasis.entry[row][2] = (&targetCrossFlipped.x)[row];
-        }
-        const RE::NiMatrix3 mirrorMap = targetBasis * sourceBasis.Transpose();
-
-        Quaternion deltaQ;
-        deltaQ.fromMatrix(animatedRotation * closedSource.Transpose());
-        if (deltaQ.w < 0.0f) {
-            deltaQ *= -1.0f;
-        }
-        const RE::NiPoint3 v{ deltaQ.x, deltaQ.y, deltaQ.z };
-        const RE::NiPoint3 mv = mirrorMap * v;
-        Quaternion mirroredDelta{ -mv.x, -mv.y, -mv.z, deltaQ.w };
-        mirroredDelta.normalize();
-        outRotation = mirroredDelta.getMatrix() * closedTarget;
-        for (int row = 0; row < 3; ++row) {
-            for (int col = 0; col < 3; ++col) {
-                if (!std::isfinite(outRotation.entry[row][col])) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     /**
@@ -950,7 +562,7 @@ namespace frik
         auto& bone = _handBones.at(boneName);
         bone.translate = _handOpen.at(boneName).translate;
         bone.scale = 1.0f;
-        const auto targetRotation = getPoseBoneRotation(boneName, *activePose);
+        const auto targetRotation = HandPoseMath::getPoseBoneRotation(boneName, *activePose);
         blendBoneTowardRotation(boneName, targetRotation, frameTime);
     }
 
@@ -964,11 +576,11 @@ namespace frik
      */
     void HandPose::applyDynamicHandPose(const std::string& boneName, const float frameTime)
     {
-        const auto boneHand = isLeftHandBone(boneName) ? Hand::Left : Hand::Right;
+        const auto boneHand = HandPoseMath::isLeftHandBone(boneName) ? Hand::Left : Hand::Right;
 
         float curl = 0.0f; // 0 = open, 1 = fully closed
         float splay = 0.0f;
-        if (boneToFingerIndex(boneName) == 0) {
+        if (HandPoseMath::boneToFingerIndex(boneName) == 0) {
             const auto thumb = resolveDynamicThumbCurl(boneHand);
             curl = thumb.curl;
             splay = boneName.back() == '1' ? thumb.splay : 0.0f;
@@ -990,18 +602,7 @@ namespace frik
             }
         }
 
-        blendBoneTowardRotation(boneName, blendBoneRotation(boneName, 1.0f - curl, splay), frameTime);
-    }
-
-    /**
-     * Resolve the target rotation for one bone from a full hand pose definition.
-     */
-    RE::NiMatrix3 HandPose::getPoseBoneRotation(const std::string& boneName, const HandFingersPose& pose) const
-    {
-        const int fingerIndex = boneToFingerIndex(boneName);
-        const float flex = std::clamp(pose.getFlexAt(boneToFlexIndex(boneName)), -1.0f, 2.0f);
-        const float splay = boneName.back() == '1' ? pose.getFingerAt(fingerIndex).splay : 0.0f;
-        return blendBoneRotation(boneName, flex, splay);
+        blendBoneTowardRotation(boneName, HandPoseMath::blendBoneRotation(boneName, 1.0f - curl, splay), frameTime);
     }
 
     /**
@@ -1035,22 +636,6 @@ namespace frik
     }
 
     /**
-     * Blend between the authored closed/open rotations and optionally apply proximal splay.
-     */
-    RE::NiMatrix3 HandPose::blendBoneRotation(const std::string& boneName, const float flex, const float splay) const
-    {
-        Quaternion qOpen, qClosed;
-        qOpen.fromMatrix(_handOpen.at(boneName).rotate);
-        qClosed.fromMatrix(_handClosed.at(boneName).rotate);
-        qClosed.slerp(flex, qOpen);
-        if (fEqual(splay, 0.0f)) {
-            return qClosed.getMatrix();
-        }
-        const float sign = isLeftHandBone(boneName) ? -1.0f : 1.0f;
-        return MatrixUtils::getMatrixFromEulerAngles(0, sign * splay, 0) * qClosed.getMatrix();
-    }
-
-    /**
      * Return the explicit local transform an override supplies for one bone, if any.
      *
      * Yields nullptr when there is no override, the bone is not in its enabled mask,
@@ -1064,8 +649,8 @@ namespace frik
             return nullptr;
         }
 
-        const int flatBoneIndex = boneToFlexIndex(boneName);
-        if (flatBoneIndex < 0 || flatBoneIndex >= static_cast<int>(FINGER_BONE_COUNT)) {
+        const int flatBoneIndex = HandPoseMath::boneToFlexIndex(boneName);
+        if (flatBoneIndex < 0 || flatBoneIndex >= static_cast<int>(skeleton::data::FINGER_BONE_COUNT)) {
             return nullptr;
         }
 
