@@ -255,6 +255,8 @@ namespace frik
         static void initForFalloutLondonVR();
 
         bool _inPowerArmor = false;
+        // consecutive frames the game reported a power armor state different from _inPowerArmor
+        std::uint32_t _powerArmorChangeFrames = 0;
         bool _isLookingThroughScope = false;
         float _dynamicCameraHeight = 0;
         bool _selfieMode = false;

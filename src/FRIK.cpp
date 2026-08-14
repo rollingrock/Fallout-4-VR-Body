@@ -44,6 +44,10 @@ namespace frik
     namespace
     {
         constexpr std::uint32_t kSkeletonInitDelayFramesAfterRelease = 1;
+
+        // The game can report a transient power armor state during enter/exit transitions, require the
+        // new state to hold for a few frames before paying the cost of rebuilding the whole skeleton.
+        constexpr std::uint32_t kPowerArmorChangeConfirmFrames = 3;
     }
 
     /**
@@ -158,8 +162,15 @@ namespace frik
                 logger::warn("Root node released, reset skelly... PowerArmorChange?({})", _inPowerArmor != f4vr::isInPowerArmor());
                 releaseSkeleton();
             } else if (_inPowerArmor != f4vr::isInPowerArmor()) {
-                logger::info("Power Armor state changed, reset skeleton...");
-                releaseSkeleton();
+                if (++_powerArmorChangeFrames >= kPowerArmorChangeConfirmFrames) {
+                    logger::info("Power Armor state changed for {} frames, reset skeleton...", _powerArmorChangeFrames);
+                    releaseSkeleton();
+                }
+            } else {
+                if (_powerArmorChangeFrames > 0) {
+                    logger::info("Power Armor state stabilized after {} frames", _powerArmorChangeFrames);
+                }
+                _powerArmorChangeFrames = 0;
             }
         }
 
@@ -231,6 +242,7 @@ namespace frik
     void FRIK::initSkeleton()
     {
         _inPowerArmor = f4vr::isInPowerArmor();
+        _powerArmorChangeFrames = 0;
         _skeletonInitDelayFrames = 0;
 
         const auto player = f4vr::getPlayer();
@@ -383,6 +395,7 @@ namespace frik
         _skelly.reset();
 
         _inPowerArmor = false;
+        _powerArmorChangeFrames = 0;
         _dynamicCameraHeight = 0.0f;
     }
 
