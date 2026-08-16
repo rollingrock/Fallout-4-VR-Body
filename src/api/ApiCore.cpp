@@ -137,7 +137,7 @@ namespace frik::api::core
         bool changed = false;
         g_offHandGripBlocks.setBlocked(*normalizedTag, block, &changed);
         if (changed) {
-            logger::info("API blockOffHandWeaponGripping tag:'{}' block:{} activeBlocks:{}", *normalizedTag, block, g_offHandGripBlocks.blockingCount());
+            logger::info("blockOffHandWeaponGripping tag:'{}' block:{} activeBlocks:{}", *normalizedTag, block, g_offHandGripBlocks.blockingCount());
         }
 
         g_frik.setOffHandGrippingEnabled(!g_offHandGripBlocks.isBlocked());
@@ -154,7 +154,7 @@ namespace frik::api::core
         bool changed = false;
         const bool set = g_externalAuthority.blockPrimaryWeaponPose(*normalizedTag, block, &changed);
         if (changed) {
-            logger::info("API blockPrimaryHandWeaponPose tag:'{}' block:{}", *normalizedTag, block);
+            logger::info("blockPrimaryHandWeaponPose tag:'{}' block:{}", *normalizedTag, block);
         }
         return set;
     }
@@ -169,7 +169,7 @@ namespace frik::api::core
         bool changed = false;
         const bool set = g_externalAuthority.blockPrimaryWeaponNodeOwnership(*normalizedTag, block, &changed);
         if (changed) {
-            logger::info("API blockPrimaryWeaponNodeOwnership tag:'{}' block:{}", *normalizedTag, block);
+            logger::info("blockPrimaryWeaponNodeOwnership tag:'{}' block:{}", *normalizedTag, block);
         }
         return set;
     }
@@ -210,7 +210,7 @@ namespace frik::api::core
         if (!section || !key || !value) {
             return false;
         }
-        logger::sample("API setConfigValueOverride caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
+        logger::sample("setConfigValueOverride caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
         g_config.setConfigOverride(section, key, value);
         return true;
     }
@@ -223,7 +223,7 @@ namespace frik::api::core
         if (!section || !key || !g_config.hasConfigOverride(section, key)) {
             return false;
         }
-        logger::sample("API clearConfigValueOverride caller:'{}' {}.{}", caller ? caller : "?", section, key);
+        logger::sample("clearConfigValueOverride caller:'{}' {}.{}", caller ? caller : "?", section, key);
         g_config.clearConfigOverride(section, key);
         return true;
     }
@@ -237,7 +237,7 @@ namespace frik::api::core
 
         // The table size is what a client's own size check compares against, so logging it turns
         // a client-side "contract mismatch" bail into something diagnosable from FRIK's log alone.
-        logger::info("API: '{}' acquired {} (contract v{}, table {} bytes)", moduleName, apiName, apiVersion, tableSize);
+        logger::info("'{}' acquired {} (contract v{}, table {} bytes)", moduleName, apiName, apiVersion, tableSize);
     }
 
     std::optional<std::string> normalizeTag(const char* tag)
@@ -300,23 +300,23 @@ namespace frik::api::core
         // back a bare false that a client cannot tell apart. Sampled rather than logged outright
         // because a client that registers too early typically retries every frame.
         if (!g_frik.isSkeletonReady()) {
-            logger::sample("API setHandWorldTransform REJECTED tag:'{}' - skeleton not ready, publish after kSkeletonReady", tag);
+            logger::sample("setHandWorldTransform REJECTED tag:'{}' - skeleton not ready, publish after kSkeletonReady", tag);
             return false;
         }
 
         // Tag and priority were validated by the version shim, so a refusal here is the transform.
         if (!g_externalAuthority.setHandWorldTransform(tag, isLeft, worldTransform, priority)) {
-            logger::sample("API setHandWorldTransform REJECTED tag:'{}' - world transform is not finite", tag);
+            logger::sample("setHandWorldTransform REJECTED tag:'{}' - world transform is not finite", tag);
             return false;
         }
 
-        logger::sample("API setHandWorldTransform tag:'{}' hand={} priority={}", tag, isLeft ? "Left" : "Right", priority);
+        logger::sample("setHandWorldTransform tag:'{}' hand={} priority={}", tag, isLeft ? "Left" : "Right", priority);
         return true;
     }
 
     bool clearHandWorldTransform(const std::string_view tag, const bool isLeft)
     {
-        logger::sample("API clearHandWorldTransform tag:'{}' hand={}", tag, isLeft ? "Left" : "Right");
+        logger::sample("clearHandWorldTransform tag:'{}' hand={}", tag, isLeft ? "Left" : "Right");
         return g_externalAuthority.clearHandWorldTransform(tag, isLeft);
     }
 
@@ -324,11 +324,11 @@ namespace frik::api::core
         const std::uint16_t enabledMask, const int priority)
     {
         if (!HandPose::setHandPoseOverrideLocalTransforms(isLeft, tag, localTransforms, enabledMask, priority)) {
-            logger::sample("API setHandPoseCustomLocalTransforms REJECTED tag:'{}' - tag holds no pose override, set one with a setHandPose* call first", tag);
+            logger::sample("setHandPoseCustomLocalTransforms REJECTED tag:'{}' - tag holds no pose override, set one with a setHandPose* call first", tag);
             return false;
         }
 
-        logger::sample("API setHandPoseCustomLocalTransforms tag:'{}' hand={} enabledMask=0x{:04x} priority={}", tag, isLeft ? "Left" : "Right", enabledMask, priority);
+        logger::sample("setHandPoseCustomLocalTransforms tag:'{}' hand={} enabledMask=0x{:04x} priority={}", tag, isLeft ? "Left" : "Right", enabledMask, priority);
         return true;
     }
 
@@ -362,7 +362,7 @@ namespace frik::api::core
         }
 
         if (changed) {
-            logger::info("API blockFeature tag:'{}' - feature:{}, block:{}, activeBlocks:{}", tag, featureIndex, block, blocks.blockingCount());
+            logger::info("blockFeature tag:'{}' - feature:{}, block:{}, activeBlocks:{}", tag, featureIndex, block, blocks.blockingCount());
         }
         applyFeatureEnabled(feature, !blocks.isBlocked());
         return true;
@@ -389,12 +389,12 @@ namespace frik::api::core
     bool registerOpenModSettingButtonToMainConfig(const char* buttonIconNifPath, const char* callbackReceiverName, const std::uint32_t callbackMessageType)
     {
         if (!buttonIconNifPath || !callbackReceiverName) {
-            logger::warn("API registerOpenModSettingButtonToMainConfig REJECTED - buttonIconNifPath or callbackReceiverName is null");
+            logger::warn("registerOpenModSettingButtonToMainConfig REJECTED - buttonIconNifPath or callbackReceiverName is null");
             return false;
         }
 
         // A button showing up in FRIK's own config menu should never be anonymous in the log.
-        logger::info("API registerOpenModSettingButtonToMainConfig receiver:'{}' messageType:{} icon:'{}'", callbackReceiverName, callbackMessageType, buttonIconNifPath);
+        logger::info("registerOpenModSettingButtonToMainConfig receiver:'{}' messageType:{} icon:'{}'", callbackReceiverName, callbackMessageType, buttonIconNifPath);
         g_frik.registerOpenSettingButton({ .buttonIconNifPath = buttonIconNifPath, .callbackReceiverName = callbackReceiverName, .callbackMessageType = callbackMessageType });
         return true;
     }

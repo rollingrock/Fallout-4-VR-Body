@@ -41,12 +41,12 @@ namespace frik
     {
         if (_weaponHidden) {
             _weaponHidden = false;
-            logger::info("PlayerControlsHandler: reset weapon visibility for Pipboy operation with finger");
+            logger::info("reset weapon visibility for Pipboy operation with finger");
             f4vr::setNodeVisibility(f4vr::get1StChildNode(f4vr::getWeaponNode()), true);
         }
 
         if (_disabledInput) {
-            logger::info("PlayerControlsHandler: reset disable player input");
+            logger::info("reset disable player input");
             if (const auto player = RE::PlayerCharacter::GetSingleton()) {
                 f4vr::SetActorRestrained(player, false);
             }

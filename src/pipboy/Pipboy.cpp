@@ -681,7 +681,7 @@ namespace frik
         if (arm.forearm3) {
             return arm.forearm3->IsNode();
         }
-        logger::warn("Pipboy: inconsistant state, no Pipboy model on arm found");
+        logger::warn("inconsistant state, no Pipboy model on arm found");
         return nullptr;
     }
 }

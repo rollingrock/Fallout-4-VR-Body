@@ -27,57 +27,57 @@ namespace frik::api
 
     static std::uint32_t getWeaponRepositionMode(std::monostate)
     {
-        logger::info("Papyrus: Get Weapon Reposition Mode");
+        logger::info("Get Weapon Reposition Mode");
         return g_frik.inWeaponRepositionMode() ? 1 : 0;
     }
 
     static std::uint32_t toggleWeaponRepositionMode(std::monostate)
     {
-        logger::info("Papyrus: Toggle Weapon Reposition Mode: {}", !g_frik.inWeaponRepositionMode() ? "ON" : "OFF");
+        logger::info("Toggle Weapon Reposition Mode: {}", !g_frik.inWeaponRepositionMode() ? "ON" : "OFF");
         g_frik.toggleWeaponRepositionMode();
         return g_frik.inWeaponRepositionMode() ? 1 : 0;
     }
 
     static bool isLeftHandedMode(std::monostate)
     {
-        logger::info("Papyrus: Is Left Handed Mode");
+        logger::info("Is Left Handed Mode");
         return f4vr::isLeftHandedMode();
     }
 
     static void setSelfieMode(std::monostate, const bool isSelfieMode)
     {
-        logger::info("Papyrus: Set Selfie Mode: {}", isSelfieMode ? "ON" : "OFF");
+        logger::info("Set Selfie Mode: {}", isSelfieMode ? "ON" : "OFF");
         g_frik.setSelfieMode(isSelfieMode);
     }
 
     static void toggleSelfieMode(std::monostate)
     {
-        logger::info("Papyrus: toggle selfie mode");
+        logger::info("toggle selfie mode");
         g_frik.setSelfieMode(!g_frik.isSelfieModeOn());
     }
 
     static void moveForward(std::monostate)
     {
-        logger::info("Papyrus: Move Forward");
+        logger::info("Move Forward");
         g_config.setPlayerBodyOffsetForward(g_config.getPlayerBodyOffsetForward() + 1.0f);
     }
 
     static void moveBackward(std::monostate)
     {
-        logger::info("Papyrus: Move Backward");
+        logger::info("Move Backward");
         g_config.setPlayerBodyOffsetForward(g_config.getPlayerBodyOffsetForward() - 1.0f);
     }
 
     static void setDynamicCameraHeight(std::monostate, const float dynamicCameraHeight)
     {
-        logger::info("Papyrus: Set Dynamic Camera Height: {}", dynamicCameraHeight);
+        logger::info("Set Dynamic Camera Height: {}", dynamicCameraHeight);
         g_frik.setDynamicCameraHeight(dynamicCameraHeight);
     }
 
     // Finger pose related APIs
     static void setFingerPositionScalar2(std::monostate, const bool isLeft, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
-        logger::info("Papyrus: Set Finger Position Scalar '{}' ({:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f})", isLeft ? "Left" : "Right", thumb, index, middle, ring, pinky);
+        logger::info("Set Finger Position Scalar '{}' ({:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f})", isLeft ? "Left" : "Right", thumb, index, middle, ring, pinky);
         HandPose::setHandPoseOverride(isLeft,
             "frik.papyrus",
             HandFingersPose{ FingerPose{ thumb, thumb, thumb },
@@ -90,7 +90,7 @@ namespace frik::api
 
     static void restoreFingerPoseControl2(std::monostate, const bool isLeft)
     {
-        logger::info("Papyrus: Restore Finger Pose Control '{}'", isLeft ? "Left" : "Right");
+        logger::info("Restore Finger Pose Control '{}'", isLeft ? "Left" : "Right");
         HandPose::clearHandPoseOverride(isLeft, "frik.papyrus");
     }
 

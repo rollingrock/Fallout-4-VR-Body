@@ -96,7 +96,7 @@ namespace frik
 
         if (MatrixUtils::distanceNoSqrt(curPos, _smoothedPos) > kTeleportResetDistanceSquared) {
             // don't smooth if values are way off
-            logger::sample("[SmoothMovement] Values exceed normal; curPos:({:.2f}, {:.2f}, {:.2f}), SmoothPos:({:.2f}, {:.2f}, {:.2f})",
+            logger::sample("Values exceed normal; curPos:({:.2f}, {:.2f}, {:.2f}), SmoothPos:({:.2f}, {:.2f}, {:.2f})",
                 curPos.x,
                 curPos.y,
                 curPos.z,
@@ -135,7 +135,7 @@ namespace frik
         if (_notMoving && MatrixUtils::distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, _lastAppliedLocalX, _lastAppliedLocalY) > kNotMovingResetDistanceSquared) {
             seedCurrentPosition(curPos);
             playerLocalTransformPos = zeroPoint();
-            logger::sample("[SmoothMovement] Not moving values exceed normal; curPos:({:.2f}, {:.2f}), newPos:({:.2f}, {:.2f}), lastApplied:({:.2f}, {:.2f})",
+            logger::sample("Not moving values exceed normal; curPos:({:.2f}, {:.2f}), newPos:({:.2f}, {:.2f}), lastApplied:({:.2f}, {:.2f})",
                 curPos.x,
                 curPos.y,
                 newPos.x,
@@ -148,7 +148,7 @@ namespace frik
             _lastAppliedLocalY = playerLocalTransformPos.y;
         }
 
-        // logger::sample("[SmoothMovement] curPos:({:.2f}, {:.2f}, {:.2f}), newPos:({:.2f}, {:.2f}, {:.2f}), appliedPos:({:.2f}, {:.2f}, {:.2f})",
+        // logger::sample("curPos:({:.2f}, {:.2f}, {:.2f}), newPos:({:.2f}, {:.2f}, {:.2f}), appliedPos:({:.2f}, {:.2f}, {:.2f})",
         // 	curPos.x, curPos.y, curPos.z, newPos.x, newPos.y, newPos.z, playerLocalTransformPos.x, playerLocalTransformPos.y, playerLocalTransformPos.z);
 
         playerLocalTransformPos.z += Skeleton::getAdjustedPlayerHMDOffset();

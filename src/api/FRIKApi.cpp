@@ -150,7 +150,7 @@ namespace
             return false;
         }
 
-        logger::sample("API setHandPose tag:'{}' hand={} pose={}", *normalizedTag, FRIKApi::handName(hand), static_cast<int>(handPose));
+        logger::sample("setHandPose tag:'{}' hand={} pose={}", *normalizedTag, FRIKApi::handName(hand), static_cast<int>(handPose));
         core::setHandPose(*normalizedTag, isLeft, *pose, core::HAND_POSE_PRIORITY_DEFAULT);
         return true;
     }
@@ -163,7 +163,7 @@ namespace
             return false;
         }
 
-        logger::sample("API setHandPoseCustomFingerPositions tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
+        logger::sample("setHandPoseCustomFingerPositions tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
         core::setHandPose(*normalizedTag,
             core::isLeftForHand(hand),
             HandFingersPose{ FingerPose{ thumb, thumb, thumb },
@@ -182,7 +182,7 @@ namespace
             return false;
         }
 
-        logger::sample("API setHandPoseCustom tag:'{}' hand={} forceTop={}", *normalizedTag, FRIKApi::handName(hand), forceTop);
+        logger::sample("setHandPoseCustom tag:'{}' hand={} forceTop={}", *normalizedTag, FRIKApi::handName(hand), forceTop);
         core::setHandPose(*normalizedTag, core::isLeftForHand(hand), core::makeHandPoseFromApiData(handPose), core::priorityFromForceTop(forceTop));
         return true;
     }
@@ -194,7 +194,7 @@ namespace
             return false;
         }
 
-        logger::sample("API clearHandPose tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
+        logger::sample("clearHandPose tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
         core::clearHandPose(*normalizedTag, core::isLeftForHand(hand));
         return true;
     }
@@ -212,7 +212,7 @@ namespace
             return;
         }
         alreadyWarned = true;
-        logger::warn("API: a mod is using deprecated '{}' - the supported replacement is '{}'", apiFunction, replacement);
+        logger::warn("a mod is using deprecated '{}' - the supported replacement is '{}'", apiFunction, replacement);
     }
 
     void FRIK_CALL setHandPoseFingerPositions(const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring, const float pinky)
@@ -220,7 +220,7 @@ namespace
         static bool warned = false;
         warnDeprecatedOnce(warned, "setHandPoseFingerPositions", "setHandPoseCustomFingerPositions");
 
-        logger::sample("API [DEPRECATED] setHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
+        logger::sample("[DEPRECATED] setHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
         core::setHandPose(core::LEGACY_API_HAND_POSE_TAG,
             core::isLeftForHand(hand),
             HandFingersPose{ FingerPose{ thumb, thumb, thumb },
@@ -236,7 +236,7 @@ namespace
         static bool warned = false;
         warnDeprecatedOnce(warned, "clearHandPoseFingerPositions", "clearHandPose");
 
-        logger::sample("API [DEPRECATED] clearHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
+        logger::sample("[DEPRECATED] clearHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
         core::clearHandPose(core::LEGACY_API_HAND_POSE_TAG, core::isLeftForHand(hand));
     }
 

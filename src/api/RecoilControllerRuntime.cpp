@@ -204,19 +204,19 @@ namespace frik::api
         // Five separate causes used to collapse into one bare false, leaving a client with no way
         // to tell "you called me from inside your own callback" from "the registry is full".
         if (g_invokingRecoilController) {
-            logger::sample("API registerWeaponHandRecoilController REJECTED tag:'{}' - called from inside a controller callback", normalizedTag.value_or("?"));
+            logger::sample("registerWeaponHandRecoilController REJECTED tag:'{}' - called from inside a controller callback", normalizedTag.value_or("?"));
             return false;
         }
         if (!normalizedTag) {
-            logger::sample("API registerWeaponHandRecoilController REJECTED - tag is null or blank");
+            logger::sample("registerWeaponHandRecoilController REJECTED - tag is null or blank");
             return false;
         }
         if (!controller) {
-            logger::sample("API registerWeaponHandRecoilController REJECTED tag:'{}' - controller is null", *normalizedTag);
+            logger::sample("registerWeaponHandRecoilController REJECTED tag:'{}' - controller is null", *normalizedTag);
             return false;
         }
         if (priority < 0) {
-            logger::sample("API registerWeaponHandRecoilController REJECTED tag:'{}' - priority {} is negative", *normalizedTag, priority);
+            logger::sample("registerWeaponHandRecoilController REJECTED tag:'{}' - priority {} is negative", *normalizedTag, priority);
             return false;
         }
 
@@ -226,11 +226,11 @@ namespace frik::api
             entry = findFreeEntry();
         }
         if (!entry) {
-            logger::sample("API registerWeaponHandRecoilController REJECTED tag:'{}' - registry is full at {} controllers", *normalizedTag, MAX_RECOIL_CONTROLLERS);
+            logger::sample("registerWeaponHandRecoilController REJECTED tag:'{}' - registry is full at {} controllers", *normalizedTag, MAX_RECOIL_CONTROLLERS);
             return false;
         }
 
-        logger::info("API {} weapon-hand recoil controller tag:'{}' priority:{}", replacing ? "replaced" : "registered", *normalizedTag, priority);
+        logger::info("{} weapon-hand recoil controller tag:'{}' priority:{}", replacing ? "replaced" : "registered", *normalizedTag, priority);
 
         *entry = {};
         entry->tag = *normalizedTag;
@@ -254,17 +254,17 @@ namespace frik::api
     {
         const auto normalizedTag = core::normalizeTag(tag);
         if (g_invokingRecoilController) {
-            logger::sample("API unregisterWeaponHandRecoilController REJECTED tag:'{}' - called from inside a controller callback", normalizedTag.value_or("?"));
+            logger::sample("unregisterWeaponHandRecoilController REJECTED tag:'{}' - called from inside a controller callback", normalizedTag.value_or("?"));
             return false;
         }
         if (!normalizedTag) {
-            logger::sample("API unregisterWeaponHandRecoilController REJECTED - tag is null or blank");
+            logger::sample("unregisterWeaponHandRecoilController REJECTED - tag is null or blank");
             return false;
         }
 
         // Removing an unknown tag still succeeds, so only a real removal is worth a line.
         if (auto* entry = findEntry(*normalizedTag)) {
-            logger::info("API unregistered weapon-hand recoil controller tag:'{}'", *normalizedTag);
+            logger::info("unregistered weapon-hand recoil controller tag:'{}'", *normalizedTag);
             *entry = {};
         }
         return true;
