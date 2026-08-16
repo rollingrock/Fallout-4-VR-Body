@@ -270,6 +270,7 @@ namespace frik
     /**
      * Reset the current config adjusting value to the default in the embedded config.
      * Use a small hack to load ONLY the embedded config into a temp config object.
+     * The value is only applied live, keep the target selected so Save stays enabled to persist it.
      */
     void BodyAdjustmentSubConfigMode::resetConfig()
     {
@@ -301,8 +302,6 @@ namespace frik
             f4vr::showNotification("Please select body adjustment to reset");
             break;
         }
-
-        clearConfigTarget();
     }
 
     void BodyAdjustmentSubConfigMode::clearConfigTarget()
