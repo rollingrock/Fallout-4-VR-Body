@@ -13,6 +13,7 @@ namespace frik
     public:
         PlayerControlsHandler();
         void reset();
+        void hardReset();
         void checkWeaponHideForPipboyOperationWIthFinger(const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition);
         void onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition,
             const PipboyConfigMode* pipboyConfigurationMode);
@@ -35,7 +36,9 @@ namespace frik
     }
 
     /**
-     * Reset the disable input state if game state changed externally like loading a save.
+     * Undo only the input restrictions FRIK itself applied.
+     * Used on skeleton release (power armor change, root node release) where anything we didn't
+     * set ourselves belongs to someone else and must be left alone.
      */
     inline void PlayerControlsHandler::reset()
     {
@@ -60,6 +63,20 @@ namespace frik
         // Without this, if controls were disabled when the previous session ended,
         // the thumbstick deadzone remains at 1.0 preventing sprint from working
         f4vr::F4VRThumbstickControls::setControlsThumbstickEnableState(true);
+    }
+
+    /**
+     * Force-clear player input restrictions on game session load.
+     * Restraint is persisted in the save, so it can be active even when we never disabled the
+     * controls ourselves and "_disabledInput" is false.
+     */
+    inline void PlayerControlsHandler::hardReset()
+    {
+        reset();
+
+        if (const auto player = RE::PlayerCharacter::GetSingleton()) {
+            f4vr::SetActorRestrained(player, false);
+        }
     }
 
     /**

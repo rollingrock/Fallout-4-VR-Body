@@ -145,7 +145,7 @@ namespace frik
         _smoothMovement.reset();
         configureGameVars();
 
-        _playerControlsHandler.reset();
+        _playerControlsHandler.hardReset();
     }
 
     /**
