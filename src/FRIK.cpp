@@ -132,6 +132,11 @@ namespace frik
      */
     void FRIK::onGameSessionLoaded()
     {
+        // Any config left open belongs to the previous session and is attached to nodes that are about to be
+        // replaced. Main config is owned by FRIK so it must be closed explicitly, the Pipboy and weapon
+        // reposition configs are released together with the skeleton they observe.
+        _mainConfigMode.closeConfigMode();
+
         if (_skelly) {
             logger::info("Resetting skeleton for new game session...");
             releaseSkeleton();

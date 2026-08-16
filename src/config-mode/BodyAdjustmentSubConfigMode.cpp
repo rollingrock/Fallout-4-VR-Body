@@ -29,6 +29,23 @@ namespace frik
         createConfigUI();
     }
 
+    /**
+     * All the cleanup is done on destruction so dropping this sub-config (exit button, game session
+     * load, etc.) always reverts unsaved values and removes the UI.
+     */
+    BodyAdjustmentSubConfigMode::~BodyAdjustmentSubConfigMode()
+    {
+        // reload config to revert unsaved values
+        g_config.loadIniOnly();
+
+        // redo VR Scale if changed
+        updateVRScaleGameConfig();
+
+        if (_configUI) {
+            g_uiManager->detachElement(_configUI, true);
+        }
+    }
+
     void BodyAdjustmentSubConfigMode::onFrameUpdate() const
     {
         _configUI->setPosition(0, 0, f4vr::isNodeVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
@@ -174,21 +191,11 @@ namespace frik
     }
 
     /**
-     * On close of the body adjustment UI we clear unsaved config, cleanup, and close.
+     * On close of the body adjustment UI notify the parent config, which drops this sub-config.
+     * The actual cleanup happens in the destructor.
      */
     void BodyAdjustmentSubConfigMode::closeConfig()
     {
-        // reload config to revert unsaved values
-        g_config.loadIniOnly();
-
-        // redo VR Scale if changed
-        updateVRScaleGameConfig();
-
-        // close the UI
-        g_uiManager->detachElement(_configUI, true);
-        _configUI.reset();
-
-        // notify parent
         _onClose();
     }
 

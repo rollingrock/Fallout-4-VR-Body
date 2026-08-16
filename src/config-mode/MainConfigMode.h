@@ -25,6 +25,7 @@ namespace frik
     public:
         int isOpen() const;
         void openConfigMode();
+        void closeConfigMode();
         void onFrameUpdate();
         bool isBodyAdjustOpen() const;
         void registerOpenExternalModSettingButton(const OpenExternalModConfigData& data);
@@ -41,7 +42,6 @@ namespace frik
         void openExternalModConfig(const OpenExternalModConfigData& data);
         static void openAdvancedConfig();
         static void openHelpWiki();
-        void closeMainConfigMode();
 
         // configuration UI
         std::shared_ptr<vrui::UIContainer> _configUI;

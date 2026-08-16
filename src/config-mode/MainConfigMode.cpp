@@ -24,6 +24,19 @@ namespace frik
     }
 
     /**
+     * Close the main config UI and the body adjustment sub-config if it is open.
+     * The sub-config reverts its unsaved values and removes its own UI on destruction.
+     */
+    void MainConfigMode::closeConfigMode()
+    {
+        _bodyAdjustmentSubConfig.reset();
+        if (_configUI) {
+            g_uiManager->detachElement(_configUI, true);
+            _configUI.reset();
+        }
+    }
+
+    /**
      * Handle main config on every frame update.
      */
     void MainConfigMode::onFrameUpdate()
@@ -155,7 +168,7 @@ namespace frik
 
         const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-exit.nif");
         exitBtn->setOnPressHandler([this](UIWidget*) {
-            closeMainConfigMode();
+            closeConfigMode();
         });
 
         const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
@@ -303,20 +316,20 @@ namespace frik
 
     void MainConfigMode::openPipboyConfigUI()
     {
-        closeMainConfigMode();
+        closeConfigMode();
         g_frik.openPipboyConfigurationModeActive();
     }
 
     void MainConfigMode::openWeaponAdjustConfigUI()
     {
-        closeMainConfigMode();
+        closeConfigMode();
         g_frik.toggleWeaponRepositionMode();
     }
 
     void MainConfigMode::openExternalModConfig(const OpenExternalModConfigData& data)
     {
         logger::info("Open external mod config for mod: '{}', messageType:{}", data.callbackReceiverName, data.callbackMessageType);
-        closeMainConfigMode();
+        closeConfigMode();
         g_frik.dispatchMessageToExternalMod(data.callbackReceiverName, data.callbackMessageType, nullptr, 0);
     }
 
@@ -340,11 +353,5 @@ namespace frik
         // Launch the URL via explorer.exe rather than passing it directly to ShellExecute: in the game process the shell's
         // protocol-association lookup needs COM initialized on this thread and fails silently, but a direct exe launch works.
         ShellExecuteA(nullptr, "open", "explorer.exe", "https://github.com/rollingrock/Fallout-4-VR-Body/blob/main/docs/README.md", nullptr, SW_SHOWNORMAL);
-    }
-
-    void MainConfigMode::closeMainConfigMode()
-    {
-        g_uiManager->detachElement(_configUI, true);
-        _configUI.reset();
     }
 }

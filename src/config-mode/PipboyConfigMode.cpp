@@ -25,11 +25,14 @@ namespace frik
 
     /**
      * On release, detach the UI from the global manager if it is still attached.
+     * The config can be dropped mid-adjust (skeleton release, game session load), so also stop
+     * suppressing the controllers or the game would never see them again.
      */
     PipboyConfigMode::~PipboyConfigMode()
     {
         if (_configUI) {
             g_uiManager->detachElement(_configUI, true);
+            vrcf::VRControllersSuppress.release(PIPBOY_CONFIG_SUPPRESS_KEY);
         }
     }
 
