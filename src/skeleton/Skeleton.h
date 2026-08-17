@@ -1,39 +1,35 @@
 #pragma once
 
-#include <map>
+#include <cstdint>
+#include <memory>
 
 #include "CullGeometryHandler.h"
 #include "HandPose.h"
 #include "SelfieHandler.h"
-#include "common/CommonUtils.h"
+#include "WeaponHandRecoil.h"
 #include "f4vr/PlayerNodes.h"
-#include "vrcf/VRControllersManager.h"
 
 namespace frik
 {
     struct ArmNodes
     {
-        RE::NiAVObject* shoulder;
-        RE::NiAVObject* upper;
-        RE::NiAVObject* upperT1;
-        RE::NiAVObject* forearm1;
-        RE::NiAVObject* forearm2;
-        RE::NiAVObject* forearm3;
-        RE::NiAVObject* hand;
+        RE::NiAVObject* shoulder = nullptr;
+        RE::NiAVObject* upper = nullptr;
+        RE::NiAVObject* upperT1 = nullptr;
+        RE::NiAVObject* forearm1 = nullptr;
+        RE::NiAVObject* forearm2 = nullptr;
+        RE::NiAVObject* forearm3 = nullptr;
+        RE::NiAVObject* hand = nullptr;
     };
 
     class Skeleton
     {
     public:
-        Skeleton(RE::NiNode* rootNode, const bool inPowerArmor)
-            : _root(rootNode),
-              _inPowerArmor(inPowerArmor),
-              _handPose(inPowerArmor)
-        {
-            _curentPosition = RE::NiPoint3(0, 0, 0);
-            _walkingState = 0;
-            initializeNodes();
-        }
+        /**
+         * Create a fully initialized skeleton, or nullptr if the game nodes required by the skeleton
+         * are not available yet. Guarantees that an existing Skeleton instance is always usable.
+         */
+        static std::unique_ptr<Skeleton> create(RE::NiNode* rootNode, bool inPowerArmor);
 
         ArmNodes getLeftArm() const
         {
@@ -50,8 +46,17 @@ namespace frik
         void onFrameUpdate();
 
     private:
+        Skeleton(RE::NiNode* rootNode, const bool inPowerArmor)
+            : _root(rootNode),
+              _inPowerArmor(inPowerArmor),
+              _handPose(inPowerArmor)
+        {
+            _curentPosition = RE::NiPoint3(0, 0, 0);
+            _walkingState = 0;
+        }
+
         // initialization
-        void initializeNodes();
+        bool initializeNodes();
         void initArmsNodes();
         void initSkeletonNodesDefaults();
         void setBodyLen();
@@ -67,6 +72,8 @@ namespace frik
         void setSingleLeg(bool isLeft) const;
         void handleLeftHandedWeaponNodesSwitch();
         void setArms(bool isLeft);
+        void restoreArmNodesToDefault(bool isLeft);
+        bool solveArmToHandWorldTarget(bool isLeft, const RE::NiTransform& handWorldTarget);
         void dampenHand(RE::NiNode* node, bool isLeft);
         void hide3rdPersonWeapon() const;
         void hideFistHelpers() const;
@@ -143,6 +150,8 @@ namespace frik
 
         RE::NiTransform _rightHandPrevFrame;
         RE::NiTransform _leftHandPrevFrame;
+
+        WeaponHandRecoil _weaponHandRecoil;
 
         HandPose _handPose;
 

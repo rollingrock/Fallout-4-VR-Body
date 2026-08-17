@@ -1,8 +1,13 @@
 #include "Skeleton.h"
 
+#include <algorithm>
 #include <array>
+#include <cmath>
+#include <string>
+#include <vector>
 
 #include "Config.h"
+#include "ExternalAuthority.h"
 #include "FRIK.h"
 #include "common/MatrixUtils.h"
 #include "common/PerfMonitor.h"
@@ -10,7 +15,7 @@
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
-#include "vrcf/VRControllersManager.h"
+#include "utils.h"
 
 using namespace common;
 using namespace f4vr;
@@ -32,6 +37,17 @@ namespace
 namespace frik
 {
     /**
+     * Create a fully initialized skeleton, or nullptr if the game nodes required by the skeleton
+     * are not available yet. Guarantees that an existing Skeleton instance is always usable.
+     */
+    std::unique_ptr<Skeleton> Skeleton::create(RE::NiNode* rootNode, const bool inPowerArmor)
+    {
+        // not using make_unique as the constructor is private
+        std::unique_ptr<Skeleton> skeleton(new Skeleton(rootNode, inPowerArmor));
+        return skeleton->initializeNodes() ? std::move(skeleton) : nullptr;
+    }
+
+    /**
      * Get the player camera height offset adjusted for power armor, sneaking, and dynamic height from external API.
      * The height needs to be adjusted for comfort sneaking because the player physical height doesn't change but
      * the player avatar does. So the camera offset has to be reduced by the same amount as the game changes the height
@@ -50,7 +66,7 @@ namespace frik
      * Initialize all the skeleton nodes for quick access during frame update.
      * Setup known defaults where relevant.
      */
-    void Skeleton::initializeNodes()
+    bool Skeleton::initializeNodes()
     {
         QueryPerformanceFrequency(&_freqCounter);
         QueryPerformanceCounter(&_timer);
@@ -58,16 +74,40 @@ namespace frik
         _prevSpeed = 0.0;
 
         _playerNodes = getPlayerNodes();
+        if (!_playerNodes || !_root) {
+            logger::warn("Skeleton initialization failed: missing player nodes or root. playerNodes={} root={}",
+                static_cast<const void*>(_playerNodes),
+                static_cast<const void*>(_root));
+            return false;
+        }
 
         const auto fpSkeleton = getFirstPersonSkeleton();
+        if (!fpSkeleton) {
+            logger::warn("Skeleton initialization failed: missing first-person skeleton.");
+            return false;
+        }
+
         _rightHand = findNode(fpSkeleton, "RArm_Hand");
         _leftHand = findNode(fpSkeleton, "LArm_Hand");
+        if (!_rightHand || !_leftHand) {
+            logger::warn("Skeleton initialization failed: missing first-person hand nodes. right={} left={}",
+                static_cast<const void*>(_rightHand),
+                static_cast<const void*>(_leftHand));
+            return false;
+        }
         _rightHandPrevFrame = _rightHand->world;
         _leftHandPrevFrame = _leftHand->world;
 
         _head = findNode(_root, "Head");
         _spine = findNode(_root, "SPINE2");
         _chest = findNode(_root, "Chest");
+        if (!_head || !_spine || !_chest) {
+            logger::warn("Skeleton initialization failed: missing body nodes. head={} spine={} chest={}",
+                static_cast<const void*>(_head),
+                static_cast<const void*>(_spine),
+                static_cast<const void*>(_chest));
+            return false;
+        }
 
         // Setup Arms
         initArmsNodes();
@@ -79,6 +119,7 @@ namespace frik
         setBodyLen();
 
         _comfortSneakCameraOffsetAdjustment = getIniSetting("fComfortSneakHeight:VR")->GetFloat();
+        return true;
     }
 
     void Skeleton::initArmsNodes()
@@ -188,6 +229,7 @@ namespace frik
         // do arm IK - Right then Left
         logger::trace("Set Arms...");
         handleLeftHandedWeaponNodesSwitch();
+        _weaponHandRecoil.onFrameUpdate(_playerNodes, isLeftHandedMode() || g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked());
         setArms(false);
         setArms(true);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
@@ -845,12 +887,10 @@ namespace frik
      */
     void Skeleton::handleLeftHandedWeaponNodesSwitch()
     {
-        if (_lastLeftHandedModeSwitch == isLeftHandedMode()) {
+        const bool effectiveLeftHanded = isLeftHandedMode() || g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
+        if (_lastLeftHandedModeSwitch == effectiveLeftHanded) {
             return;
         }
-
-        _lastLeftHandedModeSwitch = isLeftHandedMode();
-        logger::warn("Left-handed mode weapon nodes switch (LeftHanded:{})", _lastLeftHandedModeSwitch);
 
         RE::NiNode* rightWeapon = getWeaponNode();
         RE::NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
@@ -859,16 +899,18 @@ namespace frik
 
         if (!rightWeapon || !rHand || !leftWeapon || !lHand) {
             logger::sample("Cannot set up weapon nodes for left-handed mode switch");
-            _lastLeftHandedModeSwitch = isLeftHandedMode();
             return;
         }
+
+        _lastLeftHandedModeSwitch = effectiveLeftHanded;
+        logger::warn("Left-handed mode weapon nodes switch (EffectiveLeftHanded:{}, GameSetting:{})", effectiveLeftHanded, isLeftHandedMode());
 
         rHand->DetachChild(rightWeapon);
         rHand->DetachChild(leftWeapon);
         lHand->DetachChild(rightWeapon);
         lHand->DetachChild(leftWeapon);
 
-        if (isLeftHandedMode()) {
+        if (effectiveLeftHanded) {
             rHand->AttachChild(leftWeapon, true);
             lHand->AttachChild(rightWeapon, true);
         } else {
@@ -902,6 +944,10 @@ namespace frik
         RE::NiNode* weaponNode = handleOffhand ? leftWeapon : rightWeapon;
         RE::NiNode* offsetNode = handleOffhand ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
 
+        if (g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked() && !isLeftHandedMode()) {
+            weaponNode = handleOffhand ? rightWeapon : leftWeapon;
+        }
+
         if (handleOffhand) {
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local = _playerNodes->primaryWeaponOffsetNOde->local;
             _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate =
@@ -921,21 +967,77 @@ namespace frik
                                       : isLeft           ? RE::NiPoint3(0, 0, 0)
                                                          : RE::NiPoint3(4.389f, -1.899f, -3.133f);
 
-        dampenHand(offsetNode, isLeft);
+        {
+            const WeaponHandRecoil::ScopedNativeKickNeutralizer neutralizeNativeKick(_weaponHandRecoil);
+            dampenHand(offsetNode, isLeft);
+            weaponNode->IncRefCount();
+            Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
+        }
 
-        weaponNode->IncRefCount();
-        Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
+        // An external mod can own the hand instead of the tracked controller, but only as the target
+        // handed to the same solver, so everything downstream of the arm sees one consistent result.
+        RE::NiTransform handWorldTarget;
+        const bool hasTransformOverride = g_externalAuthority.getHandWorldTransform(isLeft, handWorldTarget);
+        if (!hasTransformOverride) {
+            handWorldTarget = isLeft ? _leftHand->world : _rightHand->world;
+        }
+        (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, handWorldTarget);
+        if (solveArmToHandWorldTarget(isLeft, handWorldTarget) || !hasTransformOverride) {
+            return;
+        }
 
-        RE::NiPoint3 handPos = isLeft ? _leftHand->world.translate : _rightHand->world.translate;
-        RE::NiMatrix3 handRot = isLeft ? _leftHand->world.rotate : _rightHand->world.rotate;
+        // An unreachable target makes the solver bail after it has already rotated the collarbone. For the
+        // tracked hand that only ever happens on a dropped frame of tracking and the next frame reset clears
+        // it, but an override holds its target until the client clears it, so the arm would stay half solved
+        // for as long as it is set. Solve to the tracked hand instead, as if no tag owned this hand.
+        restoreArmNodesToDefault(isLeft);
+        RE::NiTransform trackedHandTarget = isLeft ? _leftHand->world : _rightHand->world;
+        (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, trackedHandTarget);
+        (void)solveArmToHandWorldTarget(isLeft, trackedHandTarget);
+    }
+
+    /**
+     * Reset one arm chain to its default local transforms and refresh the world transforms below it,
+     * undoing a partial solve so the arm can be solved again from a clean state.
+     */
+    void Skeleton::restoreArmNodesToDefault(const bool isLeft)
+    {
+        const ArmNodes arm = isLeft ? _leftArm : _rightArm;
+        const std::array<RE::NiAVObject*, 7> armChain{ arm.shoulder, arm.upper, arm.upperT1, arm.forearm1, arm.forearm2, arm.forearm3, arm.hand };
+
+        for (auto* armNode : armChain) {
+            if (!armNode) {
+                continue;
+            }
+            for (const auto& [boneNode, resetTransform] : _skeletonNodesToDefaultTransforms) {
+                if (boneNode == armNode) {
+                    armNode->local = resetTransform;
+                    break;
+                }
+            }
+        }
+        updateDown(arm.shoulder, true);
+    }
+
+    bool Skeleton::solveArmToHandWorldTarget(const bool isLeft, const RE::NiTransform& handWorldTarget)
+    {
+        if (!isFiniteTransform(handWorldTarget)) {
+            return false;
+        }
+
+        RE::NiPoint3 handPos = handWorldTarget.translate;
+        RE::NiMatrix3 handRot = handWorldTarget.rotate;
 
         const auto arm = isLeft ? _leftArm : _rightArm;
+        if (!arm.shoulder || !arm.upper || !arm.forearm1 || !arm.hand || (!_inPowerArmor && (!arm.forearm2 || !arm.forearm3))) {
+            return false;
+        }
 
         // Detect if the 1st person hand position is invalid. This can happen when a controller loses tracking.
         // If it is, do not handle IK and let Fallout use its normal animations for that arm instead.
         if (isnan(handPos.x) || isnan(handPos.y) || isnan(handPos.z) || isinf(handPos.x) || isinf(handPos.y) || isinf(handPos.z) ||
             MatrixUtils::vec3Len(arm.upper->world.translate - handPos) > 200.0) {
-            return;
+            return false;
         }
 
         float adjustedArmLength = g_config.armLength / 36.74f;
@@ -989,7 +1091,7 @@ namespace frik
         float hsLen = (std::max)(MatrixUtils::vec3Len(handToShoulder), 0.1f);
 
         if (hsLen > (upperLen + forearmLen) * 2.25f) {
-            return;
+            return false;
         }
 
         // Stretch the upper arm and forearm proportionally when the hand distance exceeds the arm length
@@ -1175,6 +1277,8 @@ namespace frik
             arm.forearm3->local.translate *= forearmRatio;
         }
         arm.hand->local.translate *= forearmRatio;
+
+        return true;
     }
 
     void Skeleton::hideHands() const

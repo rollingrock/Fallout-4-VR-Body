@@ -1,6 +1,7 @@
 #include "WeaponPositionAdjuster.h"
 
 #include "Config.h"
+#include "ExternalAuthority.h"
 #include "FRIK.h"
 #include "common/Quaternion.h"
 #include "f4vr/DebugDump.h"
@@ -30,8 +31,10 @@ namespace frik
     }
 
     /**
-     * Reset transient state when weapon positioning is disabled via API so nothing stays stuck:
+     * Reset transient state when this adjuster stops driving the weapon so nothing stays stuck:
      * release an active offhand grip (and its hand pose) and exit reposition mode.
+     * Called both when weapon positioning is disabled via API and when an external mod takes
+     * ownership of the primary weapon node.
      * The weapon node itself self-heals as the game re-applies its animation transform each frame.
      */
     void WeaponPositionAdjuster::resetOnDisable()
@@ -71,6 +74,14 @@ namespace frik
      */
     void WeaponPositionAdjuster::onFrameUpdate()
     {
+        // An external node owner skips checkIfOffhandIsGripping, the only thing that clears a grip,
+        // so release transient state as the block engages - here, to catch a holstered weapon too.
+        const bool nodeOwnershipBlocked = g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
+        if (nodeOwnershipBlocked && !_nodeOwnershipBlockedLastFrame) {
+            resetOnDisable();
+        }
+        _nodeOwnershipBlockedLastFrame = nodeOwnershipBlocked;
+
         // handle throwable first as it's independent of weapon
         handleThrowableWeapon();
 
@@ -112,6 +123,15 @@ namespace frik
     {
         const auto weapon = f4vr::getWeaponNode();
         if (!f4vr::isNodeVisible(weapon)) {
+            if (_configMode) {
+                _configMode->onFrameUpdate(nullptr);
+            }
+            checkEquippedWeaponChanged();
+            getBackOfHandUINode()->local = _backOfHandUIOffsetTransform;
+            return;
+        }
+
+        if (g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked()) {
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
             }
@@ -361,7 +381,11 @@ namespace frik
      */
     void WeaponPositionAdjuster::handlePrimaryHandGripOffsetAdjustment(const RE::NiNode* weapon) const
     {
-        if (_hasPrimaryHandOffset) {
+        // The tagged primary-weapon-pose block transfers the complete hand
+        // pose to an external owner. Applying this legacy per-weapon wrist
+        // rotation after that transfer would contaminate the controller hand
+        // basis used by the external alignment solve.
+        if (_hasPrimaryHandOffset && !g_externalAuthority.isPrimaryWeaponPoseBlocked()) {
             const auto primaryHand = f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
             primaryHand->local.rotate = _primaryHandOffsetRot * primaryHand->local.rotate;
             f4vr::updateTransformsDown(primaryHand, true, weapon->name.c_str());

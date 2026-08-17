@@ -382,12 +382,11 @@ namespace frik
         pn->ScreenNode = newScreen;
 
         // attach where the 3rd-person Pipboy is on the arm
-        const auto pipboyAttachNode = g_config.isFalloutLondonVR ? _skelly->getLeftArm().hand->IsNode() : getPipboyModelOnArmNode();
-        pipboyAttachNode->AttachChild(newPipboyRootNifOnlyNode, false);
-
-        _newPipboyRootNifOnlyNode = newPipboyRootNifOnlyNode;
-
-        logger::info("Pipboy root nif replaced!");
+        if (const auto pipboyAttachNode = g_config.isFalloutLondonVR ? _skelly->getLeftArm().hand->IsNode() : getPipboyModelOnArmNode()) {
+            pipboyAttachNode->AttachChild(newPipboyRootNifOnlyNode, false);
+            _newPipboyRootNifOnlyNode = newPipboyRootNifOnlyNode;
+            logger::info("Pipboy root nif replaced!");
+        }
     }
 
     /**
@@ -676,7 +675,13 @@ namespace frik
             return nullptr;
         }
         const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-        const auto boneNode = arm.forearm3 ? f4vr::findAVObject(arm.forearm3, "PipboyBone") : nullptr;
-        return boneNode ? boneNode->IsNode() : arm.forearm3->IsNode();
+        if (const auto boneNode = arm.forearm3 ? f4vr::findAVObject(arm.forearm3, "PipboyBone") : nullptr) {
+            return boneNode->IsNode();
+        }
+        if (arm.forearm3) {
+            return arm.forearm3->IsNode();
+        }
+        logger::warn("inconsistant state, no Pipboy model on arm found");
+        return nullptr;
     }
 }

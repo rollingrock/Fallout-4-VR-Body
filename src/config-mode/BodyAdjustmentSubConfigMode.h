@@ -23,6 +23,8 @@ namespace frik
     public:
         explicit BodyAdjustmentSubConfigMode(const std::function<void()>& onClose);
 
+        ~BodyAdjustmentSubConfigMode();
+
         void onFrameUpdate() const;
 
         static void updateLegSlack(const float skeletonLegSlack)

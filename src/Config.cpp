@@ -3,6 +3,7 @@
 #include "Config.h"
 
 #include <filesystem>
+#include <format>
 
 #include "common/CommonUtils.h"
 #include "f4vr/F4VRUtils.h"
@@ -12,6 +13,34 @@ using namespace common;
 
 namespace frik
 {
+    namespace
+    {
+        /**
+         * Map an old numeric button config value to its token in the InputBinding string format.
+         * Pre-v17 keys ("GripButtonID = 2") held raw OpenVR button ids. Returns nullptr for any id
+         * without a token, including the old "99 = unbound" value.
+         */
+        const char* oldButtonIdToBindingToken(const int buttonId)
+        {
+            switch (buttonId) {
+            case vrcf::VRButtonId::k_EButton_System:
+                return "system";
+            case vrcf::VRButtonId::k_EButton_ApplicationMenu:
+                return "b";
+            case vrcf::VRButtonId::k_EButton_Grip:
+                return "grip";
+            case vrcf::VRButtonId::k_EButton_A:
+                return "a";
+            case vrcf::VRButtonId::k_EButton_SteamVR_Touchpad:
+                return "thumbstick";
+            case vrcf::VRButtonId::k_EButton_SteamVR_Trigger:
+                return "trigger";
+            default:
+                return nullptr;
+            }
+        }
+    }
+
     /**
      * Load the FRIK.ini config, hide meshes, and weapon offsets.
      * Handle creating the FRIK.ini file if it doesn't exist.
@@ -584,6 +613,71 @@ namespace frik
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\slots.ini)", MESH_HIDE_SLOTS_INI_PATH);
         moveAllFilesInFolderSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets)", WEAPONS_OFFSETS_PATH);
+    }
+
+    /**
+     * Migrate old config keys that were replaced rather than renamed, which the generic key-by-key
+     * migration in ConfigBase can't carry over as it only copies keys that still exist by name.
+     * Runs after the generic migration, so it can also correct what the generic pass copied.
+     *
+     * v17 replaced every numeric button setting ("GripButtonID = 2") with an InputBinding line
+     * ("sGripButton = offhand press grip"), and v18 replaced the Attaboy grab keys with an activation
+     * sphere. Without this every button rebound in a pre-v17 FRIK.ini (i.e. anything up to the v0.77.12
+     * release) silently reverts to default on upgrade. Some old settings drove more than one activation
+     * in code and so fan out into more than one binding key.
+     *
+     * Only the button bindings are migrated. "OperatePipboyWithButtonArm" / "...OffArm" were loaded
+     * but never used, the Pipboy buttons were always read from the offhand. The timings and distances
+     * ("fOpenConfigurationModePressDelay", "fAttaboyGrabActivationDistance") are left to their new
+     * defaults as those were retuned, and the debug scratch values are throwaway by nature.
+     *
+     * Everything here landed in v18 or earlier, so a config already at v18 must be left alone by any
+     * later migration. Note the log pattern reset below reads the new config, so without this gate it
+     * would keep firing on every future version bump and undo a deliberate choice of the old pattern.
+     */
+    void Config::updateIniConfigToLatestVersionCustom(const int currentVersion, int, const CSimpleIniA& oldIni, CSimpleIniA& newIni) const
+    {
+        if (currentVersion >= 18) {
+            return;
+        }
+
+        // Rewrite one binding key from an old numeric button setting, if that setting exists in the old config.
+        // "prefix" is the hand and activation type the old code used, "suffix" any duration / suppress flag.
+        const auto migrateButton =
+            [&](const char* oldKey, const char* newKey, const std::string_view prefix, const std::string_view suffix = "", const char* newSection = INI_SECTION_MAIN) {
+                if (!oldIni.GetValue(INI_SECTION_MAIN, oldKey, nullptr)) {
+                    return;
+                }
+                const auto* button = oldButtonIdToBindingToken(static_cast<int>(oldIni.GetLongValue(INI_SECTION_MAIN, oldKey)));
+                const auto binding = button ? std::format("{} {}{}", prefix, button, suffix) : "none";
+                logger::info("Migrating {} to {}.{} = {}", oldKey, newSection, newKey, binding);
+                newIni.SetValue(newSection, newKey, binding.c_str());
+            };
+
+        // Pipboy open / close, was isReleasedShort(Offhand, id); the close button held also moved the holo screen
+        migrateButton("OperatePipboyWithButtonID", "sPipboyOpenButton", "offhand tap");
+        migrateButton("OperatePipboyWithButtonOffID", "sPipboyCloseButton", "offhand tap");
+        migrateButton("OperatePipboyWithButtonOffID", "sHoldPipboyScreenButton", "offhand holddown", " 0.3");
+
+        // Two-handed offhand grip, was isPressed(Offhand, id) to grip and isPressHeldDown(Offhand, id) to keep gripping
+        migrateButton("GripButtonID", "sGripButton", "offhand press");
+        migrateButton("GripButtonID", "sGripHoldButton", "offhand hold");
+
+        // Flashlight head/hand switch, was isReleasedShort on both hands with the same id
+        migrateButton("SwitchTorchButton", "sSwitchTorchLeftButton", "left tap");
+        migrateButton("SwitchTorchButton", "sSwitchTorchRightButton", "right tap");
+
+        // Fallout London VR Attaboy grab, was isReleasedShort(Left, id) while inside the grab distance.
+        // "suppress" keeps the grab button from also firing its normal action while the hand is in the zone.
+        migrateButton("iAttaboyGrabButtonId", "sPrimaryBinding", "left tap", " suppress", INI_SECTION_ATTABOY_GRAB);
+
+        // The log pattern gained the "%k" logging-class column, but the generic migration copies the old
+        // pattern over it. Reset it to the current default unless the player customized it.
+        const auto* logPattern = newIni.GetValue(INI_SECTION_DEBUG, "sLogPattern", nullptr);
+        if (logPattern && (logPattern == "%H:%M:%S.%e %l: %v"sv || logPattern == "%H:%M:%S.%e %L: %v"sv)) {
+            logger::info("Migrating {}.sLogPattern to the current default", INI_SECTION_DEBUG);
+            newIni.SetValue(INI_SECTION_DEBUG, "sLogPattern", "%H:%M:%S.%e %L [%-20!k] %v");
+        }
     }
 
     /**

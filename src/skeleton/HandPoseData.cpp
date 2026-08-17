@@ -25,7 +25,7 @@ namespace
         FingerPose{ 0.0f, 0.5f, 0.7f },
         0.0f,
         0.0f,
-        HandPoseKind::HoldingWeapon };
+        HandPoseKind::HoldingGun };
 
     constexpr HandFingersPose MELEE_GRIP_POSE{ FingerPose{ 0.7f, 0.5f, 0.8f },
         FingerPose{ 0.4f, 0.3f, 0.9f },
@@ -34,7 +34,7 @@ namespace
         FingerPose{ 0.0f, 0.4f, 0.9f },
         0.0f,
         0.0f,
-        HandPoseKind::HoldingWeapon };
+        HandPoseKind::HoldingMelee };
 
     constexpr HandFingersPose POINTING_POSE{ FingerPose{ 0.0f, 0.0f, 0.0f },
         FingerPose{ 1.0f, 1.0f, 1.0f },
@@ -79,7 +79,7 @@ namespace
         FingerPose{ 0.0f, 0.0f, 0.0f },
         0.0f,
         0.0f,
-        HandPoseKind::HoldingWeapon };
+        HandPoseKind::Fist };
 
     const std::array<HandBonePoseData, 30> HAND_BONE_DATA = { {
         HandBonePoseData{ .boneName = "LArm_Finger11",
@@ -275,6 +275,36 @@ namespace frik::skeleton::data
     const HandFingersPose& getFistPose() noexcept
     {
         return FIST_POSE;
+    }
+
+    /**
+     * HoldingWeapon is not a fixed pose - it resolves against the drawn weapon, so
+     * it goes through HandPose rather than naming one of the poses above.
+     */
+    const HandFingersPose* getPoseForKind(const HandPoseKind kind)
+    {
+        switch (kind) {
+        case HandPoseKind::Open:
+            return &getOpenPose();
+        case HandPoseKind::Pointing:
+            return &getPointingPose();
+        case HandPoseKind::HoldingWeapon:
+            return &frik::HandPose::getFixedPrimaryWeaponPose();
+        case HandPoseKind::OffhandGrip:
+            return &getOffhandWeaponGripPose();
+        case HandPoseKind::Attaboy:
+            return &getAttaboyPose();
+        case HandPoseKind::ThumbsUp:
+            return &getThumbsUpPose();
+        case HandPoseKind::Fist:
+            return &getFistPose();
+        case HandPoseKind::HoldingGun:
+            return &getGunGripPose();
+        case HandPoseKind::HoldingMelee:
+            return &getMeleeGripPose();
+        default:
+            return nullptr;
+        }
     }
 
     const std::array<HandBonePoseData, 30>& getHandBoneData() noexcept

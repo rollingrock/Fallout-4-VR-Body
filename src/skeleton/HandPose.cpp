@@ -6,14 +6,17 @@
 #include <string_view>
 
 #include "Config.h"
+#include "ExternalAuthority.h"
 #include "FRIK.h"
 #include "HandPoseData.h"
+#include "HandPoseMath.h"
 #include "common/MatrixUtils.h"
 #include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
+#include "utils.h"
 #include "vrcf/VRControllersManager.h"
 
 using namespace common;
@@ -24,40 +27,12 @@ using namespace frik::skeleton::data;
 namespace
 {
     /**
-     * Copy the authored 3x4 rotation rows from pose data into a runtime transform.
-     */
-    void copyRotationIntoTransform(const RotationData& rotationData, RE::NiTransform& transform)
-    {
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 4; col++) {
-                transform.rotate.entry[row][col] = rotationData[row * 4 + col];
-            }
-        }
-    }
-
-    /**
-     * Return whether a hand bone belongs to the left hand based on its name prefix.
-     */
-    bool isLeftHandBone(const std::string& boneName)
-    {
-        return boneName[0] == 'L';
-    }
-
-    /**
-     * Convert a finger bone name like Finger31 into a zero-based finger index.
-     */
-    int boneToFingerIndex(const std::string& bone)
-    {
-        return bone[bone.size() - 2] - '1';
-    }
-
-    /**
      * Map a (non-thumb) finger to the controller button that should drive its dynamic curl.
      * The index finger follows the trigger; the bottom three fingers (middle, ring, pinky) follow the grip.
      */
     VRButtonId getTrackedButton(const std::string& bone)
     {
-        return boneToFingerIndex(bone) == 1 ? k_EButton_SteamVR_Trigger : k_EButton_Grip;
+        return frik::HandPoseMath::boneToFingerIndex(bone) == 1 ? k_EButton_SteamVR_Trigger : k_EButton_Grip;
     }
 
     /**
@@ -147,6 +122,7 @@ namespace
     constexpr std::string_view FORCE_POINTING_HAND_POSE_TAG = "frik.force_pointing";
     constexpr std::string_view OFFHAND_GRIP_HAND_POSE_TAG = "frik.offhand_grip";
     constexpr std::string_view ATTABOY_HAND_POSE_TAG = "frik.attaboy";
+
 }
 
 namespace frik
@@ -193,31 +169,83 @@ namespace frik
     // -- Lifecycle ----------------------------------------------------------------------
 
     /**
-     * Build the authored open/closed reference transforms used to drive hand posing.
+     * Resolve the authored open transforms against this skeleton's rest translations, which is the
+     * only part of the reference data that depends on whether the player is in power armor.
      */
     HandPose::HandPose(const bool inPowerArmor)
     {
-        _handClosed.clear();
-        _handOpen.clear();
-        _handBones.clear();
-        _leftHandOverrides.clear();
-        _rightHandOverrides.clear();
-
-        for (const auto& boneData : getHandBoneData()) {
-            copyRotationIntoTransform(boneData.closedRotation, _handClosed[boneData.boneName]);
-            copyRotationIntoTransform(boneData.openRotation, _handOpen[boneData.boneName]);
-            _handOpen[boneData.boneName].translate = inPowerArmor ? boneData.openTranslationInPowerArmor : boneData.openTranslation;
-        }
-
+        _handOpen = HandPoseMath::buildOpenPoseTransforms(inPowerArmor);
         _handBones = _handOpen;
     }
 
     /**
-     * Activate an explicit pose override for one hand.
+     * Drop every tagged pose override when the skeleton is released, FRIK's own interaction poses
+     * along with the external ones, because the bones they were resolved against are going away.
+     * Clients must republish after the next skeleton-ready event, and FRIK's own poses are re-set by
+     * the subsystems that own them once the new skeleton starts updating.
+     *
+     * The overrides outlive any single HandPose instance, so this is deliberately driven by the
+     * release path rather than by the next HandPose constructor: resetting shared state as a
+     * side effect of building the next instance would also discard anything published in between.
      */
-    void HandPose::setHandPoseOverride(const bool isLeft, const std::string_view tag, const HandFingersPose& pose, const bool forceTop = false)
+    void HandPose::clearHandPoseOverridesForSkeletonRelease()
     {
-        setHandPoseOverrideIntr(isLeft, tag, pose, forceTop);
+        const auto dropped = _leftHandOverrides.size() + _rightHandOverrides.size();
+        _leftHandOverrides.clear();
+        _rightHandOverrides.clear();
+        _nextOverrideSequence = 0;
+
+        if (dropped > 0) {
+            logger::info("Skeleton release: dropped {} hand pose override(s), FRIK's own and external alike", dropped);
+        }
+    }
+
+    /**
+     * Activate an explicit pose override for one hand at an explicit priority.
+     *
+     * Overrides are ordered by priority, and within one priority by registration
+     * order, so a caller can layer several of its own tags deterministically.
+     * See PRIORITY_EXTERNAL_DEFAULT and PRIORITY_FRIK_INTERNAL for the scale.
+     */
+    void HandPose::setHandPoseOverride(const bool isLeft, const std::string_view tag, const HandFingersPose& pose, const int priority)
+    {
+        setHandPoseOverrideIntr(isLeft, tag, pose, priority);
+    }
+
+    /**
+     * Replace the explicit per-bone finger transforms of an existing override.
+     *
+     * Only bones whose bit is set in enabledMask are taken; the rest keep falling
+     * back to the tag's authored pose. The tag must already hold an override, and
+     * any later setHandPoseOverride* call on it drops these transforms again, so
+     * callers that refresh their pose must republish the transforms with it.
+     *
+     * @return false if the tag holds no override or the priority is negative.
+     */
+    bool HandPose::setHandPoseOverrideLocalTransforms(const bool isLeft, const std::string_view tag,
+        const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& localTransforms, const std::uint16_t enabledMask, const int priority)
+    {
+        if (tag.empty() || priority < 0) {
+            return false;
+        }
+
+        auto& overrides = getHandOverrides(isLeft);
+        const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) {
+            return overrideEntry.tag == tag;
+        });
+        if (overrideIt == overrides.end()) {
+            return false;
+        }
+
+        // Sequence is deliberately left alone: it records registration order, and
+        // this call reorders through the explicit priority it was given.
+        overrideIt->priority = priority;
+        overrideIt->localTransformMask = static_cast<std::uint16_t>(enabledMask & HandPoseMath::FULL_LOCAL_TRANSFORM_MASK);
+        overrideIt->localTransforms = localTransforms;
+
+        sortHandOverrides(overrides);
+
+        return true;
     }
 
     /**
@@ -259,7 +287,7 @@ namespace frik
     {
         const auto source = resolveHandPoseSource(isLeft);
         if (source.kind == HandPoseSourceKind::PrimaryWeaponPose) {
-            return HandPoseKind::HoldingWeapon;
+            return source.pose ? source.pose->kind : HandPoseKind::HoldingWeapon;
         }
 
         if (source.kind == HandPoseSourceKind::OverridePose && source.pose) {
@@ -282,7 +310,7 @@ namespace frik
      */
     void HandPose::setPipboyHandPose()
     {
-        setHandPoseOverrideIntr(g_config.leftHandedPipBoy, PIPBOY_HAND_POSE_TAG, getPointingPose(), true);
+        setHandPoseOverrideIntr(g_config.leftHandedPipBoy, PIPBOY_HAND_POSE_TAG, getPointingPose(), HandPose::PRIORITY_FRIK_INTERNAL);
     }
 
     /**
@@ -299,7 +327,7 @@ namespace frik
     void HandPose::setForceHandPointingPose(const bool primaryHand, const bool forcePointing)
     {
         if (forcePointing) {
-            setHandPoseOverrideIntr(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG, getPointingPose(), true);
+            setHandPoseOverrideIntr(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG, getPointingPose(), HandPose::PRIORITY_FRIK_INTERNAL);
         } else {
             clearHandPoseOverrideIntr(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG);
         }
@@ -311,7 +339,7 @@ namespace frik
     void HandPose::setOffhandGripHandPose(const bool toSet)
     {
         if (toSet) {
-            setHandPoseOverrideIntr(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG, getOffhandWeaponGripPose(), true);
+            setHandPoseOverrideIntr(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG, getOffhandWeaponGripPose(), HandPose::PRIORITY_FRIK_INTERNAL);
         } else {
             clearHandPoseOverrideIntr(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG);
         }
@@ -323,7 +351,7 @@ namespace frik
     void HandPose::setAttaboyHandPose(const bool toSet)
     {
         if (toSet) {
-            setHandPoseOverrideIntr(true, ATTABOY_HAND_POSE_TAG, getAttaboyPose(), true);
+            setHandPoseOverrideIntr(true, ATTABOY_HAND_POSE_TAG, getAttaboyPose(), HandPose::PRIORITY_FRIK_INTERNAL);
         } else {
             clearHandPoseOverrideIntr(true, ATTABOY_HAND_POSE_TAG);
         }
@@ -363,18 +391,27 @@ namespace frik
                 continue;
             }
 
-            const bool leftHandBone = isLeftHandBone(boneName);
+            const bool leftHandBone = HandPoseMath::isLeftHandBone(boneName);
             const auto& source = leftHandBone ? leftHandSource : rightHandSource;
             if (source.kind == HandPoseSourceKind::PrimaryWeaponPose) {
                 applyPrimaryWeaponHandPose(boneName, source);
             } else if (source.kind == HandPoseSourceKind::OverridePose) {
-                applyOverrideHandPose(boneName, source.pose, frameTime);
+                applyOverrideHandPose(boneName, source.pose, source.overrideEntry, frameTime);
             } else {
                 applyDynamicHandPose(boneName, frameTime);
             }
 
             rt->transforms[pos].local.rotate = handBoneIt->second.rotate;
-            rt->transforms[pos].local.translate = _handOpen.at(boneName).translate;
+            rt->transforms[pos].local.scale = handBoneIt->second.scale;
+            if (source.kind == HandPoseSourceKind::OverridePose) {
+                if (const auto* localTransform = getLocalTransformOverride(source.overrideEntry, boneName)) {
+                    rt->transforms[pos].local.translate = localTransform->translate;
+                } else {
+                    rt->transforms[pos].local.translate = _handOpen.at(boneName).translate;
+                }
+            } else {
+                rt->transforms[pos].local.translate = _handOpen.at(boneName).translate;
+            }
             refreshFlattenedBoneTransform(rt, pos);
         }
     }
@@ -388,8 +425,13 @@ namespace frik
      *
      * Source priority matches the existing runtime behavior:
      * 1. primary weapon pose for the dominant hand while a weapon is drawn
-     * 2. explicit hand override, then implicit thumbs-up
+     * 2. explicit hand override, then implicit pointing, then implicit thumbs-up
      * 3. dynamic controller-driven curl
+     *
+     * Both weapon-pose paths yield entirely while an external system blocks them via
+     * blockPrimaryWeaponPose. Separately, when an external system owns the weapon node
+     * (isPrimaryWeaponNodeOwnershipBlocked) the off-side hand in right-handed mode also
+     * follows the first-person weapon hand, so a two-handed grip stays consistent.
      *
      * The returned source may intentionally have `pose == nullptr` when the active source is the
      * right-handed primary weapon path. In that case, finger bones should copy the first-person hand
@@ -397,14 +439,20 @@ namespace frik
      */
     HandPose::HandPoseSource HandPose::resolveHandPoseSource(const bool isLeft)
     {
-        const bool shouldUseWeaponPoseForPrimaryHand = isWeaponDrawn() && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
+        const bool isPrimaryHand = isLeft == isLeftHandedMode();
+        const bool shouldUseWeaponPoseForPrimaryHand =
+            isWeaponDrawn() && !g_externalAuthority.isPrimaryWeaponPoseBlocked() && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
 
         if (shouldUseWeaponPoseForPrimaryHand && isLeftHandedMode() && isUnarmedWeaponDrawn()) {
             // Left-handed unarmed is a special authored fist case that applies to both hands.
             return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = &getFistPose() };
         }
 
-        const bool isPrimaryHand = isLeft == isLeftHandedMode();
+        if (isLeft && !isLeftHandedMode() && isWeaponDrawn() && !g_frik.isPipboyOperatingWithFinger() && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked() &&
+            !g_externalAuthority.isPrimaryWeaponPoseBlocked()) {
+            return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = nullptr };
+        }
+
         if (isPrimaryHand && shouldUseWeaponPoseForPrimaryHand) {
             // Right-handed mode can copy the first-person hand transform directly. Left-handed mode
             // cannot, so it uses the fixed authored weapon pose instead.
@@ -413,7 +461,7 @@ namespace frik
 
         if (const auto* activeOverride = getActiveHandPoseOverride(isLeft)) {
             // Explicit mod/API override wins over gesture-driven posing.
-            return HandPoseSource{ .kind = HandPoseSourceKind::OverridePose, .pose = &activeOverride->pose };
+            return HandPoseSource{ .kind = HandPoseSourceKind::OverridePose, .pose = &activeOverride->pose, .overrideEntry = activeOverride };
         }
 
         if (shouldUsePointingPose(isLeft)) {
@@ -455,7 +503,7 @@ namespace frik
         blendPalmAxisToward(blendState.pitch, targetPalmPitch, frameTime);
         blendPalmAxisToward(blendState.yaw, targetPalmYaw, frameTime);
 
-        if (blendState.pitch == 0.0f && blendState.yaw == 0.0f) {
+        if (fEqual(blendState.pitch, 0.0f) && fEqual(blendState.yaw, 0.0f)) {
             return;
         }
 
@@ -478,10 +526,27 @@ namespace frik
     void HandPose::applyPrimaryWeaponHandPose(const std::string& boneName, const HandPoseSource& source)
     {
         if (source.pose) {
-            _handBones[boneName].rotate = getPoseBoneRotation(boneName, *source.pose);
+            auto& bone = _handBones[boneName];
+            bone.rotate = HandPoseMath::getPoseBoneRotation(boneName, *source.pose);
+            bone.scale = 1.0f;
+        } else if (HandPoseMath::isLeftHandBone(boneName)) {
+            const auto fpTree = getFirstPersonBoneTree();
+            const std::string rightBoneName = "RArm_" + boneName.substr(5);
+            const int pos = fpTree ? fpTree->GetBoneIndex(rightBoneName) : -1;
+            if (pos < 0) {
+                return;
+            }
+            const RE::NiTransform& animated = fpTree->transforms[pos].refNode ? fpTree->transforms[pos].refNode->local : fpTree->transforms[pos].local;
+            const auto mirroredRotation = HandPoseMath::mirrorBoneRotation(rightBoneName, boneName, animated.rotate);
+            if (!mirroredRotation) {
+                return;
+            }
+            auto& bone = _handBones[boneName];
+            bone.rotate = *mirroredRotation;
+            bone.scale = 1.0f;
         } else {
             const auto fpTree = getFirstPersonBoneTree();
-            const int pos = fpTree->GetBoneIndex(boneName);
+            const int pos = fpTree ? fpTree->GetBoneIndex(boneName) : -1;
             if (pos >= 0) {
                 _handBones[boneName] = fpTree->transforms[pos].refNode ? fpTree->transforms[pos].refNode->local : fpTree->transforms[pos].local;
             }
@@ -491,9 +556,18 @@ namespace frik
     /**
      * Apply hand pose by the current active hand pose override from external source.
      */
-    void HandPose::applyOverrideHandPose(const std::string& boneName, const HandFingersPose* const activePose, const float frameTime)
+    void HandPose::applyOverrideHandPose(const std::string& boneName, const HandFingersPose* const activePose, const TaggedHandPoseOverride* const activeOverride,
+        const float frameTime)
     {
-        const auto targetRotation = getPoseBoneRotation(boneName, *activePose);
+        if (const auto* localTransform = getLocalTransformOverride(activeOverride, boneName)) {
+            blendBoneTowardTransform(boneName, *localTransform, frameTime);
+            return;
+        }
+
+        auto& bone = _handBones.at(boneName);
+        bone.translate = _handOpen.at(boneName).translate;
+        bone.scale = 1.0f;
+        const auto targetRotation = HandPoseMath::getPoseBoneRotation(boneName, *activePose);
         blendBoneTowardRotation(boneName, targetRotation, frameTime);
     }
 
@@ -507,41 +581,33 @@ namespace frik
      */
     void HandPose::applyDynamicHandPose(const std::string& boneName, const float frameTime)
     {
-        const auto boneHand = isLeftHandBone(boneName) ? Hand::Left : Hand::Right;
+        const auto boneHand = HandPoseMath::isLeftHandBone(boneName) ? Hand::Left : Hand::Right;
 
         float curl = 0.0f; // 0 = open, 1 = fully closed
         float splay = 0.0f;
-        if (boneToFingerIndex(boneName) == 0) {
+        if (HandPoseMath::boneToFingerIndex(boneName) == 0) {
             const auto thumb = resolveDynamicThumbCurl(boneHand);
             curl = thumb.curl;
             splay = boneName.back() == '1' ? thumb.splay : 0.0f;
         } else {
             constexpr float DYNAMIC_CURL_ON_TOUCH = 0.35f;
             const auto button = getTrackedButton(boneName);
-            const auto axis = getTrackedButtonAxis(button);
-            const float axisVal = axis ? VRControllers.getAxisValue(boneHand, *axis).x : 0.0f;
-            if (axisVal > 0.1f) {
-                // Past the deadzone the analog axis drives curl from the touch baseline up to a full fist.
-                curl = DYNAMIC_CURL_ON_TOUCH + (1.0f - DYNAMIC_CURL_ON_TOUCH) * std::clamp(axisVal, 0.0f, 1.0f);
-            } else if (axisVal > 0.001f || VRControllers.isTouching(boneHand, button)) {
-                // Resting on or lightly holding the control curls to the baseline only.
-                curl = DYNAMIC_CURL_ON_TOUCH;
+            const bool rightTriggerIdentityRemapped =
+                boneHand == Hand::Right && button == k_EButton_SteamVR_Trigger && !isLeftHandedMode() && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
+            if (!rightTriggerIdentityRemapped) {
+                const auto axis = getTrackedButtonAxis(button);
+                const float axisVal = axis ? VRControllers.getAxisValue(boneHand, *axis).x : 0.0f;
+                if (axisVal > 0.1f) {
+                    // Past the deadzone the analog axis drives curl from the touch baseline up to a full fist.
+                    curl = DYNAMIC_CURL_ON_TOUCH + (1.0f - DYNAMIC_CURL_ON_TOUCH) * std::clamp(axisVal, 0.0f, 1.0f);
+                } else if (axisVal > 0.001f || VRControllers.isTouching(boneHand, button)) {
+                    // Resting on or lightly holding the control curls to the baseline only.
+                    curl = DYNAMIC_CURL_ON_TOUCH;
+                }
             }
         }
 
-        blendBoneTowardRotation(boneName, blendBoneRotation(boneName, 1.0f - curl, splay), frameTime);
-    }
-
-    /**
-     * Resolve the target rotation for one bone from a full hand pose definition.
-     */
-    RE::NiMatrix3 HandPose::getPoseBoneRotation(const std::string& boneName, const HandFingersPose& pose) const
-    {
-        const int fingerIndex = boneToFingerIndex(boneName);
-        const int boneToFlexIndex = fingerIndex * 3 + (boneName.back() - '1');
-        const float flex = std::clamp(pose.getFlexAt(boneToFlexIndex), -1.0f, 2.0f);
-        const float splay = boneName.back() == '1' ? pose.getFingerAt(fingerIndex).splay : 0.0f;
-        return blendBoneRotation(boneName, flex, splay);
+        blendBoneTowardRotation(boneName, HandPoseMath::blendBoneRotation(boneName, 1.0f - curl, splay), frameTime);
     }
 
     /**
@@ -559,23 +625,52 @@ namespace frik
     }
 
     /**
-     * Blend between the authored closed/open rotations and optionally apply proximal splay.
+     * Smoothly blend a runtime bone toward a full target transform for this frame.
+     *
+     * Only the rotation is eased; translation and scale are taken directly, since an
+     * explicit per-bone override supplies exact rest offsets that must not be
+     * interpolated away.
      */
-    RE::NiMatrix3 HandPose::blendBoneRotation(const std::string& boneName, const float flex, const float splay) const
+    void HandPose::blendBoneTowardTransform(const std::string& boneName, const RE::NiTransform& targetTransform, const float frameTime)
     {
-        Quaternion qOpen, qClosed;
-        qOpen.fromMatrix(_handOpen.at(boneName).rotate);
-        qClosed.fromMatrix(_handClosed.at(boneName).rotate);
-        qClosed.slerp(flex, qOpen);
-        if (splay == 0.0f) {
-            return qClosed.getMatrix();
-        }
-        const float sign = isLeftHandBone(boneName) ? -1.0f : 1.0f;
-        return MatrixUtils::getMatrixFromEulerAngles(0, sign * splay, 0) * qClosed.getMatrix();
+        blendBoneTowardRotation(boneName, targetTransform.rotate, frameTime);
+
+        auto& currentBone = _handBones.at(boneName);
+        currentBone.translate = targetTransform.translate;
+        currentBone.scale = targetTransform.scale;
     }
 
     /**
-     * Return the current override list for one hand, ordered from oldest to newest.
+     * Return the explicit local transform an override supplies for one bone, if any.
+     *
+     * Yields nullptr when there is no override, the bone is not in its enabled mask,
+     * or the stored transform is not finite - in every case the caller falls back to
+     * the tag's authored pose, so a bad transform degrades instead of corrupting the
+     * scene graph.
+     */
+    const RE::NiTransform* HandPose::getLocalTransformOverride(const TaggedHandPoseOverride* const activeOverride, const std::string& boneName)
+    {
+        if (!activeOverride) {
+            return nullptr;
+        }
+
+        const int flatBoneIndex = HandPoseMath::boneToFlexIndex(boneName);
+        if (flatBoneIndex < 0 || flatBoneIndex >= static_cast<int>(skeleton::data::FINGER_BONE_COUNT)) {
+            return nullptr;
+        }
+
+        const std::uint16_t bit = static_cast<std::uint16_t>(1U << flatBoneIndex);
+        if ((activeOverride->localTransformMask & bit) == 0) {
+            return nullptr;
+        }
+
+        const auto& localTransform = activeOverride->localTransforms[flatBoneIndex];
+        return isFiniteTransform(localTransform) ? &localTransform : nullptr;
+    }
+
+    /**
+     * Return the current override list for one hand, kept sorted by sortHandOverrides
+     * so the winning override is always at the front.
      */
     std::vector<HandPose::TaggedHandPoseOverride>& HandPose::getHandOverrides(const bool isLeft)
     {
@@ -583,12 +678,13 @@ namespace frik
     }
 
     /**
-     * Return the newest explicit override for one hand, if any.
+     * Return the winning explicit override for one hand, if any: the highest
+     * priority, and among equals the one that registered most recently.
      */
     const HandPose::TaggedHandPoseOverride* HandPose::getActiveHandPoseOverride(const bool isLeft)
     {
         const auto& overrides = getHandOverrides(isLeft);
-        return overrides.empty() ? nullptr : &overrides.back();
+        return overrides.empty() ? nullptr : &overrides.front();
     }
 
     /**
@@ -615,41 +711,63 @@ namespace frik
     }
 
     /**
+     * Order overrides so the active one is at the front: highest priority first,
+     * and within one priority the tag that registered most recently stays ahead.
+     */
+    void HandPose::sortHandOverrides(std::vector<TaggedHandPoseOverride>& overrides)
+    {
+        std::ranges::sort(overrides, [](const TaggedHandPoseOverride& lhs, const TaggedHandPoseOverride& rhs) {
+            if (lhs.priority != rhs.priority) {
+                return lhs.priority > rhs.priority;
+            }
+            return lhs.sequence > rhs.sequence;
+        });
+    }
+
+    /**
      * Set, update, or promote one tagged explicit hand pose override.
      */
-    void HandPose::setHandPoseOverrideIntr(const bool isLeft, const std::string_view tag, const HandFingersPose& pose, const bool forceTop)
+    void HandPose::setHandPoseOverrideIntr(const bool isLeft, const std::string_view tag, const HandFingersPose& pose, const int priority)
     {
         if (tag.empty()) {
             return;
         }
 
         auto& overrides = getHandOverrides(isLeft);
-        const auto previousTopTag = overrides.empty() ? "---" : overrides.back().tag;
+        const std::string previousTopTag = overrides.empty() ? "---" : overrides.front().tag;
         const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) {
             return overrideEntry.tag == tag;
         });
+        const bool wasInserted = overrideIt == overrides.end();
 
-        if (overrideIt == overrides.end()) {
-            overrides.push_back(TaggedHandPoseOverride{ .tag = std::string(tag), .pose = pose });
-
-            logger::debug("Hand pose: Insert top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
-                tag,
-                isLeft ? "Left" : "Right",
-                previousTopTag,
-                overrides.size());
-        } else if (forceTop && std::next(overrideIt) != overrides.end()) {
-            auto updatedOverride = *overrideIt;
-            updatedOverride.pose = pose;
-            overrides.erase(overrideIt);
-            overrides.push_back(std::move(updatedOverride));
-
-            logger::debug("Hand pose: Forced to top override tag:'{}' for '{}' hand (previous top tag:'{}', depth {})",
-                tag,
-                isLeft ? "Left" : "Right",
-                previousTopTag,
-                overrides.size());
+        TaggedHandPoseOverride updatedOverride = wasInserted ? TaggedHandPoseOverride{} : *overrideIt;
+        updatedOverride.tag = std::string(tag);
+        updatedOverride.pose = pose;
+        updatedOverride.priority = priority;
+        updatedOverride.localTransformMask = 0;
+        updatedOverride.localTransforms = {};
+        if (wasInserted) {
+            // Sequence is the tiebreak between equal priorities and is assigned once,
+            // on registration, so the newest registration takes a tie. Refreshing an
+            // existing pose every frame must not re-stamp it and walk the tag back over
+            // an equal-priority peer that registered after it.
+            updatedOverride.sequence = ++_nextOverrideSequence;
+            overrides.push_back(updatedOverride);
         } else {
-            overrideIt->pose = pose;
+            *overrideIt = updatedOverride;
+        }
+
+        sortHandOverrides(overrides);
+
+        if (wasInserted || overrides.front().tag != previousTopTag) {
+            logger::debug("Hand pose: {} override tag:'{}' priority:{} for '{}' hand (top tag:'{}' -> '{}', depth {})",
+                wasInserted ? "Insert" : "Update",
+                tag,
+                priority,
+                isLeft ? "Left" : "Right",
+                previousTopTag,
+                overrides.front().tag,
+                overrides.size());
         }
     }
 
@@ -663,6 +781,7 @@ namespace frik
         }
 
         auto& overrides = getHandOverrides(isLeft);
+        const std::string previousTopTag = overrides.empty() ? "---" : overrides.front().tag;
         const auto overrideIt = std::ranges::find_if(overrides, [tag](const TaggedHandPoseOverride& overrideEntry) {
             return overrideEntry.tag == tag;
         });
@@ -670,15 +789,13 @@ namespace frik
             return;
         }
 
-        const bool wasTop = std::next(overrideIt) == overrides.end();
-
         overrides.erase(overrideIt);
 
-        logger::debug("Hand pose: Cleared override tag:'{}' for '{}' hand (was top '{}', new top tag:'{}', remaining {})",
+        logger::debug("Hand pose: Clear override tag:'{}' for '{}' hand (top tag:'{}' -> '{}', depth {})",
             tag,
             isLeft ? "Left" : "Right",
-            wasTop ? "yes" : "no",
-            overrides.empty() ? "---" : overrides.back().tag,
+            previousTopTag,
+            overrides.empty() ? "---" : overrides.front().tag,
             overrides.size());
     }
 }

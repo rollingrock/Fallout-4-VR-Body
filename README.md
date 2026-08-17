@@ -65,7 +65,8 @@ See the **[documentation](docs/README.md)** for shortcuts, body and Pip-Boy conf
 - [Weapon Adjustment Guide](docs/weapon-adjustment-guide.md)
 - [Screenshots and Videos](docs/screenshots-videos.md)
 - [Changelog](docs/changelog.md)
-- [FRIK API for mod developers](docs/frik-api.md)
+- [FRIK API v2 for mod developers](docs/frik-api-v2.md)
+- [FRIK API v1.\* for mod developers](docs/frik-api.md)
 
 ## Development
 

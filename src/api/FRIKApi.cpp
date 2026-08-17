@@ -1,109 +1,74 @@
 #define FRIK_API_EXPORTS
-#include "FRIKAPI.h"
+#include "FRIKApi.h"
 
-#include "Config.h"
-#include "FRIK.h"
-#include "common/CommonUtils.h"
-#include "f4vr/F4VRSkelly.h"
-#include "f4vr/F4VRUtils.h"
-#include "skeleton/HandPose.h"
-#include "skeleton/HandPoseData.h"
+#include "ApiCore.h"
 
-#include <array>
+#include <intrin.h>
 #include <optional>
 #include <string>
-#include <string_view>
-#include <unordered_set>
 
+/**
+ * FRIK API v1-v4: the published, stable function table.
+ *
+ * This file holds no logic and no state - every entry either points straight at
+ * a shared core function (when the signature mentions no version-specific type)
+ * or is a thin shim that converts this version's enums and structs and calls
+ * core. See ApiCore.h for the shared implementation.
+ */
 namespace
 {
     using namespace frik;
     using namespace frik::api;
     using namespace frik::skeleton::data;
 
-    /**
-     * Used to keep track of external tags blocking offhand gripping to prevent conflicts between client mods.
-     * The actual tag values are not relevant to FRIK, only the fact that there is at least one tag blocking it.
-     */
-    std::unordered_set<std::string> g_offHandGripBlockingTags;
-    constexpr std::string_view LEGACY_API_HAND_POSE_TAG = "frik.api.legacy";
+    namespace core = frik::api::core;
+
+    // The hand and feature selectors are value-identical to core's, so the shims
+    // cast instead of switching. These keep that assumption honest.
+    static_assert(static_cast<int>(FRIKApi::Hand::Primary) == static_cast<int>(core::Hand::Primary));
+    static_assert(static_cast<int>(FRIKApi::Hand::Offhand) == static_cast<int>(core::Hand::Offhand));
+    static_assert(static_cast<int>(FRIKApi::Hand::Right) == static_cast<int>(core::Hand::Right));
+    static_assert(static_cast<int>(FRIKApi::Hand::Left) == static_cast<int>(core::Hand::Left));
+    static_assert(static_cast<int>(FRIKApi::Feature::Flashlight) == static_cast<int>(core::Feature::Flashlight));
+    static_assert(static_cast<int>(FRIKApi::Feature::WeaponPositioning) == static_cast<int>(core::Feature::WeaponPositioning));
+    static_assert(static_cast<int>(FRIKApi::Feature::Pipboy) == static_cast<int>(core::Feature::Pipboy));
+    static_assert(static_cast<int>(FRIKApi::Feature::SmoothMovement) == static_cast<int>(core::Feature::SmoothMovement));
 
     /**
-     * Per-feature sets of external tags blocking each FRIK subsystem (see blockFeature).
-     * A feature stays disabled while at least one tag is still blocking it. Indexed by FRIKApi::Feature.
+     * Translate this version's pose kind into the internal one.
+     * v4 has no Fist/HoldingGun/HoldingMelee, so those never arrive here.
      */
-    constexpr std::size_t FEATURE_COUNT = 4;
-    std::array<std::unordered_set<std::string>, FEATURE_COUNT> g_featureBlockingTags;
+    HandPoseKind toCoreHandPoseKind(const FRIKApi::HandPoseKind kind)
+    {
+        switch (kind) {
+        case FRIKApi::HandPoseKind::Unset:
+            return HandPoseKind::Unset;
+        case FRIKApi::HandPoseKind::Custom:
+            return HandPoseKind::Custom;
+        case FRIKApi::HandPoseKind::Open:
+            return HandPoseKind::Open;
+        case FRIKApi::HandPoseKind::Pointing:
+            return HandPoseKind::Pointing;
+        case FRIKApi::HandPoseKind::HoldingWeapon:
+            return HandPoseKind::HoldingWeapon;
+        case FRIKApi::HandPoseKind::OffhandGrip:
+            return HandPoseKind::OffhandGrip;
+        case FRIKApi::HandPoseKind::Attaboy:
+            return HandPoseKind::Attaboy;
+        case FRIKApi::HandPoseKind::ThumbsUp:
+            return HandPoseKind::ThumbsUp;
+        }
+        return HandPoseKind::Unset;
+    }
 
     /**
-     * Apply the resolved enabled state of a feature to its FRIK subsystem.
+     * Translate the internal pose kind into the eight kinds a v4 client knows.
+     *
+     * Kinds introduced after v4 (Fist, HoldingGun, HoldingMelee) are folded down
+     * to their nearest v4 equivalent, so a client compiled against this header
+     * can never receive an enumerator that does not exist in it.
      */
-    void applyFeatureEnabled(const FRIKApi::Feature feature, const bool enabled)
-    {
-        switch (feature) {
-        case FRIKApi::Feature::Flashlight:
-            g_frik.setFlashlightEnabled(enabled);
-            break;
-        case FRIKApi::Feature::WeaponPositioning:
-            g_frik.setWeaponPositionEnabled(enabled);
-            break;
-        case FRIKApi::Feature::Pipboy:
-            g_frik.setPipboyEnabled(enabled);
-            break;
-        case FRIKApi::Feature::SmoothMovement:
-            g_frik.setSmoothMovementEnabled(enabled);
-            break;
-        }
-    }
-
-    bool getIsLeftForHandEnum(const FRIKApi::Hand hand)
-    {
-        switch (hand) {
-        case FRIKApi::Hand::Primary:
-            return f4vr::isLeftHandedMode();
-        case FRIKApi::Hand::Offhand:
-            return !f4vr::isLeftHandedMode();
-        case FRIKApi::Hand::Right:
-            return false;
-        case FRIKApi::Hand::Left:
-            return true;
-        }
-        return false;
-    }
-
-    std::optional<std::string> getNormalizedTag(const char* tag)
-    {
-        if (!f4cf::common::hasNonWhitespaceText(tag)) {
-            return std::nullopt;
-        }
-
-        return f4cf::common::trim(tag);
-    }
-
-    HandFingersPose makeUniformFingerPose(const float thumb, const float index, const float middle, const float ring, const float pinky)
-    {
-        return HandFingersPose{ FingerPose{ thumb, thumb, thumb },
-            FingerPose{ index, index, index },
-            FingerPose{ middle, middle, middle },
-            FingerPose{ ring, ring, ring },
-            FingerPose{ pinky, pinky, pinky } };
-    }
-
-    FRIKApi::HandPoseTagState toApiHandPoseTagState(const HandPoseOverrideTagState state)
-    {
-        switch (state) {
-        case HandPoseOverrideTagState::None:
-            return FRIKApi::HandPoseTagState::None;
-        case HandPoseOverrideTagState::Active:
-            return FRIKApi::HandPoseTagState::Active;
-        case HandPoseOverrideTagState::Overridden:
-            return FRIKApi::HandPoseTagState::Overriden;
-        default:
-            return FRIKApi::HandPoseTagState::None;
-        }
-    }
-
-    FRIKApi::HandPoseKind toApiHandPoseKind(const frik::skeleton::data::HandPoseKind kind)
+    FRIKApi::HandPoseKind toApiHandPoseKind(const HandPoseKind kind)
     {
         switch (kind) {
         case HandPoseKind::Unset:
@@ -115,6 +80,9 @@ namespace
         case HandPoseKind::Pointing:
             return FRIKApi::HandPoseKind::Pointing;
         case HandPoseKind::HoldingWeapon:
+        case HandPoseKind::HoldingGun:
+        case HandPoseKind::HoldingMelee:
+        case HandPoseKind::Fist:
             return FRIKApi::HandPoseKind::HoldingWeapon;
         case HandPoseKind::OffhandGrip:
             return FRIKApi::HandPoseKind::OffhandGrip;
@@ -122,9 +90,21 @@ namespace
             return FRIKApi::HandPoseKind::Attaboy;
         case HandPoseKind::ThumbsUp:
             return FRIKApi::HandPoseKind::ThumbsUp;
-        default:
-            return FRIKApi::HandPoseKind::Unset;
         }
+        return FRIKApi::HandPoseKind::Unset;
+    }
+
+    FRIKApi::HandPoseTagState toApiHandPoseTagState(const HandPoseOverrideTagState state)
+    {
+        switch (state) {
+        case HandPoseOverrideTagState::None:
+            return FRIKApi::HandPoseTagState::None;
+        case HandPoseOverrideTagState::Active:
+            return FRIKApi::HandPoseTagState::Active;
+        case HandPoseOverrideTagState::Overridden:
+            return FRIKApi::HandPoseTagState::Overriden;
+        }
+        return FRIKApi::HandPoseTagState::None;
     }
 
     std::uint32_t FRIK_CALL getVersion()
@@ -132,301 +112,162 @@ namespace
         return FRIK_API_VERSION;
     }
 
-    const char* FRIK_CALL getModVersion()
-    {
-        // Safe to return pointer to static data
-        static_assert(Version::NAME.back() != '\0' || true, "Version must be backed by a string literal");
-        return Version::NAME.data();
-    }
-
-    bool FRIK_CALL isSkeletonReady()
-    {
-        return g_frik.isSkeletonReady();
-    }
-
-    bool FRIK_CALL isConfigOpen()
-    {
-        return g_frik.isMainConfigurationModeActive() || g_frik.isPipboyConfigurationModeActive() || g_frik.inWeaponRepositionMode();
-    }
-
-    bool FRIK_CALL isSelfieModeOn()
-    {
-        return g_frik.isSelfieModeOn();
-    }
-
-    void FRIK_CALL setSelfieModeOn(const bool setOn)
-    {
-        g_frik.setSelfieMode(setOn);
-    }
-
-    bool FRIK_CALL isOffHandGrippingWeapon()
-    {
-        return g_frik.isOffHandGrippingWeapon();
-    }
-
-    /**
-     * Enable/disable FRIK offhand weapon gripping for a specific external tag.
-     * Offhand gripping remains disabled while at least one tag is still blocking it.
-     */
-    bool FRIK_CALL blockOffHandWeaponGripping(const char* tag, const bool block)
-    {
-        if (!f4cf::common::hasNonWhitespaceText(tag)) {
-            return false;
-        }
-
-        const std::string normalizedTag = f4cf::common::trim(tag);
-        if (block) {
-            g_offHandGripBlockingTags.emplace(normalizedTag);
-        } else {
-            g_offHandGripBlockingTags.erase(normalizedTag);
-        }
-
-        logger::sample("API blockOffHandWeaponGripping tag:'{}' block:{} activeBlocks:{}", normalizedTag, block, g_offHandGripBlockingTags.size());
-        g_frik.setOffHandGrippingEnabled(g_offHandGripBlockingTags.empty());
-        return true;
-    }
-
-    /**
-     * Enable/disable a FRIK subsystem for a specific external tag.
-     * The feature remains disabled while at least one tag is still blocking it.
-     */
-    bool FRIK_CALL blockFeature(const char* tag, const FRIKApi::Feature feature, const bool block)
-    {
-        if (!f4cf::common::hasNonWhitespaceText(tag)) {
-            return false;
-        }
-
-        const auto featureIndex = static_cast<std::size_t>(feature);
-        if (featureIndex >= g_featureBlockingTags.size()) {
-            return false;
-        }
-
-        const std::string normalizedTag = f4cf::common::trim(tag);
-        auto& blockingTags = g_featureBlockingTags[featureIndex];
-        if (block) {
-            blockingTags.emplace(normalizedTag);
-        } else {
-            blockingTags.erase(normalizedTag);
-        }
-
-        logger::info("API blockFeature tag:'{}' - feature:{}, block:{}, activeBlocks:{}", normalizedTag, featureIndex, block, blockingTags.size());
-        applyFeatureEnabled(feature, blockingTags.empty());
-        return true;
-    }
-
-    /**
-     * Check whether a FRIK subsystem is currently disabled (blocked by any tag).
-     */
-    bool FRIK_CALL isFeatureBlocked(const FRIKApi::Feature feature)
-    {
-        switch (feature) {
-        case FRIKApi::Feature::Flashlight:
-            return !g_frik.isFlashlightEnabled();
-        case FRIKApi::Feature::WeaponPositioning:
-            return !g_frik.isWeaponPositionEnabled();
-        case FRIKApi::Feature::Pipboy:
-            return !g_frik.isPipboyEnabled();
-        case FRIKApi::Feature::SmoothMovement:
-            return !g_frik.isSmoothMovementEnabled();
-        }
-        return false;
-    }
-
-    bool FRIK_CALL isWristPipboyOpen()
-    {
-        return g_frik.isPipboyOn();
-    }
-
     RE::NiPoint3 FRIK_CALL getIndexFingerTipPosition(const FRIKApi::Hand hand)
     {
-        return f4vr::Skelly::getIndexFingerTipWorldPosition(static_cast<vrcf::Hand>(hand));
+        return core::getIndexFingerTipPosition(static_cast<core::Hand>(hand));
     }
 
     FRIKApi::HandPoseTagState FRIK_CALL getHandPoseSetTagState(const char* tag, const FRIKApi::Hand hand)
     {
-        const auto normalizedTag = getNormalizedTag(tag);
+        const auto normalizedTag = core::normalizeTag(tag);
         if (!normalizedTag) {
             return FRIKApi::HandPoseTagState::None;
         }
 
-        return toApiHandPoseTagState(HandPose::getHandPoseSetTagState(getIsLeftForHandEnum(hand), *normalizedTag));
+        return toApiHandPoseTagState(core::getHandPoseSetTagState(*normalizedTag, core::isLeftForHand(hand)));
     }
 
     FRIKApi::HandPoseKind FRIK_CALL getCurrentHandPose(const FRIKApi::Hand hand)
     {
-        return toApiHandPoseKind(HandPose::getCurrentHandPoseKind(getIsLeftForHandEnum(hand)));
+        return toApiHandPoseKind(core::getCurrentHandPoseKind(core::isLeftForHand(hand)));
     }
 
     bool FRIK_CALL setHandPose(const char* tag, const FRIKApi::Hand hand, const FRIKApi::HandPoseKind handPose)
     {
-        const auto normalizedTag = getNormalizedTag(tag);
+        const auto normalizedTag = core::normalizeTag(tag);
         if (!normalizedTag) {
             return false;
         }
 
-        const bool isLeft = getIsLeftForHandEnum(hand);
+        const bool isLeft = core::isLeftForHand(hand);
         if (handPose == FRIKApi::HandPoseKind::Unset) {
-            HandPose::clearHandPoseOverride(isLeft, *normalizedTag);
+            core::clearHandPose(*normalizedTag, isLeft);
             return true;
         }
 
-        if (handPose == FRIKApi::HandPoseKind::Custom) {
+        const auto* pose = getPoseForKind(toCoreHandPoseKind(handPose));
+        if (!pose) {
             return false;
         }
 
-        const HandFingersPose* pose;
-        if (handPose == FRIKApi::HandPoseKind::Open) {
-            pose = &getOpenPose();
-        } else if (handPose == FRIKApi::HandPoseKind::Pointing) {
-            pose = &getPointingPose();
-        } else if (handPose == FRIKApi::HandPoseKind::HoldingWeapon) {
-            pose = &HandPose::getFixedPrimaryWeaponPose();
-        } else if (handPose == FRIKApi::HandPoseKind::OffhandGrip) {
-            pose = &getOffhandWeaponGripPose();
-        } else if (handPose == FRIKApi::HandPoseKind::Attaboy) {
-            pose = &getAttaboyPose();
-        } else if (handPose == FRIKApi::HandPoseKind::ThumbsUp) {
-            pose = &getThumbsUpPose();
-        } else {
-            return false;
-        }
-
-        logger::sample("API setHandPose tag:'{}' hand={} pose={}", *normalizedTag, FRIKApi::handName(hand), static_cast<int>(handPose));
-        HandPose::setHandPoseOverride(isLeft, *normalizedTag, *pose, false);
+        logger::sample("setHandPose tag:'{}' hand={} pose={}", *normalizedTag, FRIKApi::handName(hand), static_cast<int>(handPose));
+        core::setHandPose(*normalizedTag, isLeft, *pose, core::HAND_POSE_PRIORITY_DEFAULT);
         return true;
     }
 
     bool FRIK_CALL setHandPoseCustomFingerPositions(const char* tag, const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring,
         const float pinky)
     {
-        const auto normalizedTag = getNormalizedTag(tag);
+        const auto normalizedTag = core::normalizeTag(tag);
         if (!normalizedTag) {
             return false;
         }
 
-        logger::sample("API setHandPoseCustomFingerPositions tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
-        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag, makeUniformFingerPose(thumb, index, middle, ring, pinky), false);
+        logger::sample("setHandPoseCustomFingerPositions tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
+        core::setHandPose(*normalizedTag,
+            core::isLeftForHand(hand),
+            HandFingersPose{ FingerPose{ thumb, thumb, thumb },
+                FingerPose{ index, index, index },
+                FingerPose{ middle, middle, middle },
+                FingerPose{ ring, ring, ring },
+                FingerPose{ pinky, pinky, pinky } },
+            core::HAND_POSE_PRIORITY_DEFAULT);
         return true;
     }
 
     bool FRIK_CALL setHandPoseCustom(const char* tag, const FRIKApi::Hand hand, const FRIKApi::HandPoseData& handPose, const bool forceTop)
     {
-        const auto normalizedTag = getNormalizedTag(tag);
+        const auto normalizedTag = core::normalizeTag(tag);
         if (!normalizedTag) {
             return false;
         }
 
-        logger::sample("API setHandPoseCustom tag:'{}' hand={} forceTop={}", *normalizedTag, FRIKApi::handName(hand), forceTop);
-        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand),
-            *normalizedTag,
-            HandFingersPose{ FingerPose{ handPose.thumb.prox, handPose.thumb.mid, handPose.thumb.dist, handPose.thumb.splay },
-                FingerPose{ handPose.index.prox, handPose.index.mid, handPose.index.dist, handPose.index.splay },
-                FingerPose{ handPose.middle.prox, handPose.middle.mid, handPose.middle.dist, handPose.middle.splay },
-                FingerPose{ handPose.ring.prox, handPose.ring.mid, handPose.ring.dist, handPose.ring.splay },
-                FingerPose{ handPose.pinky.prox, handPose.pinky.mid, handPose.pinky.dist, handPose.pinky.splay },
-                handPose.palmPitch,
-                handPose.palmYaw,
-                HandPoseKind::Custom },
-            forceTop);
+        logger::sample("setHandPoseCustom tag:'{}' hand={} forceTop={}", *normalizedTag, FRIKApi::handName(hand), forceTop);
+        core::setHandPose(*normalizedTag, core::isLeftForHand(hand), core::makeHandPoseFromApiData(handPose), core::priorityFromForceTop(forceTop));
         return true;
     }
 
     bool FRIK_CALL clearHandPose(const char* tag, const FRIKApi::Hand hand)
     {
-        const auto normalizedTag = getNormalizedTag(tag);
+        const auto normalizedTag = core::normalizeTag(tag);
         if (!normalizedTag) {
             return false;
         }
 
-        logger::sample("API clearHandPose tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
-        HandPose::clearHandPoseOverride(getIsLeftForHandEnum(hand), *normalizedTag);
+        logger::sample("clearHandPose tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
+        core::clearHandPose(*normalizedTag, core::isLeftForHand(hand));
         return true;
+    }
+
+    /**
+     * Say once, at warn, that a deprecated entry point is in use.
+     *
+     * The sampled lines below report activity; this reports the deprecation itself, which is a
+     * one-time fact about the client and would otherwise only ever live in the header where the
+     * person reading a log will not see it.
+     */
+    void warnDeprecatedOnce(bool& alreadyWarned, const char* apiFunction, const char* replacement)
+    {
+        if (alreadyWarned) {
+            return;
+        }
+        alreadyWarned = true;
+        logger::warn("a mod is using deprecated '{}' - the supported replacement is '{}'", apiFunction, replacement);
     }
 
     void FRIK_CALL setHandPoseFingerPositions(const FRIKApi::Hand hand, const float thumb, const float index, const float middle, const float ring, const float pinky)
     {
-        logger::sample("API [DEPRECATED] setHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
-        HandPose::setHandPoseOverride(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG, makeUniformFingerPose(thumb, index, middle, ring, pinky), false);
+        static bool warned = false;
+        warnDeprecatedOnce(warned, "setHandPoseFingerPositions", "setHandPoseCustomFingerPositions");
+
+        logger::sample("[DEPRECATED] setHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
+        core::setHandPose(core::LEGACY_API_HAND_POSE_TAG,
+            core::isLeftForHand(hand),
+            HandFingersPose{ FingerPose{ thumb, thumb, thumb },
+                FingerPose{ index, index, index },
+                FingerPose{ middle, middle, middle },
+                FingerPose{ ring, ring, ring },
+                FingerPose{ pinky, pinky, pinky } },
+            core::HAND_POSE_PRIORITY_DEFAULT);
     }
 
     void FRIK_CALL clearHandPoseFingerPositions(const FRIKApi::Hand hand)
     {
-        logger::sample("API [DEPRECATED] clearHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
-        HandPose::clearHandPoseOverride(getIsLeftForHandEnum(hand), LEGACY_API_HAND_POSE_TAG);
-    }
+        static bool warned = false;
+        warnDeprecatedOnce(warned, "clearHandPoseFingerPositions", "clearHandPose");
 
-    /**
-     * Read the current effective config value (override, else on-disk, else default) into outBuf.
-     */
-    int FRIK_CALL getConfigValue(const char* /*caller*/, const char* section, const char* key, char* outBuf, const int bufLen, const char* defaultValue)
-    {
-        if (!section || !key) {
-            if (outBuf && bufLen > 0) {
-                outBuf[0] = '\0';
-            }
-            return 0;
-        }
-
-        const std::string value = g_config.getConfigValue(section, key, defaultValue);
-        if (outBuf && bufLen > 0) {
-            const auto copied = value.copy(outBuf, static_cast<std::size_t>(bufLen) - 1);
-            outBuf[copied] = '\0';
-        }
-        return static_cast<int>(value.size());
-    }
-
-    /**
-     * Check whether a session override is currently set for a config section/key.
-     */
-    bool FRIK_CALL hasConfigValueOverride(const char* /*caller*/, const char* section, const char* key)
-    {
-        return section && key && g_config.hasConfigOverride(section, key);
-    }
-
-    /**
-     * Set a session-only override for a config section/key (string parsed by the type-appropriate reader).
-     */
-    bool FRIK_CALL setConfigValueOverride(const char* caller, const char* section, const char* key, const char* value)
-    {
-        if (!section || !key || !value) {
-            return false;
-        }
-        logger::sample("API setConfigValueOverride caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
-        g_config.setConfigOverride(section, key, value);
-        return true;
-    }
-
-    /**
-     * Remove a previously set session override for a config section/key.
-     */
-    bool FRIK_CALL clearConfigValueOverride(const char* caller, const char* section, const char* key)
-    {
-        if (!section || !key || !g_config.hasConfigOverride(section, key)) {
-            return false;
-        }
-        logger::sample("API clearConfigValueOverride caller:'{}' {}.{}", caller ? caller : "?", section, key);
-        g_config.clearConfigOverride(section, key);
-        return true;
+        logger::sample("[DEPRECATED] clearHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
+        core::clearHandPose(core::LEGACY_API_HAND_POSE_TAG, core::isLeftForHand(hand));
     }
 
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApi::OpenExternalModConfigData& data)
     {
-        if (!data.buttonIconNifPath || !data.callbackReceiverName) {
+        return core::registerOpenModSettingButtonToMainConfig(data.buttonIconNifPath, data.callbackReceiverName, data.callbackMessageType);
+    }
+
+    bool FRIK_CALL blockFeature(const char* tag, const FRIKApi::Feature feature, const bool block)
+    {
+        const auto normalizedTag = core::normalizeTag(tag);
+        if (!normalizedTag) {
             return false;
         }
-        g_frik.registerOpenSettingButton(
-            { .buttonIconNifPath = data.buttonIconNifPath, .callbackReceiverName = data.callbackReceiverName, .callbackMessageType = data.callbackMessageType });
-        return true;
+
+        return core::blockFeature(*normalizedTag, static_cast<core::Feature>(feature), block);
+    }
+
+    bool FRIK_CALL isFeatureBlocked(const FRIKApi::Feature feature)
+    {
+        return core::isFeatureBlocked(static_cast<core::Feature>(feature));
     }
 
     constexpr FRIKApi FRIK_API_FUNCTIONS_TABLE{ .getVersion = &getVersion,
-        .getModVersion = &getModVersion,
-        .isSkeletonReady = &isSkeletonReady,
-        .isConfigOpen = &isConfigOpen,
-        .isSelfieModeOn = &isSelfieModeOn,
-        .setSelfieModeOn = &setSelfieModeOn,
-        .isOffHandGrippingWeapon = &isOffHandGrippingWeapon,
-        .isWristPipboyOpen = &isWristPipboyOpen,
+        .getModVersion = &core::getModVersion,
+        .isSkeletonReady = &core::isSkeletonReady,
+        .isConfigOpen = &core::isConfigOpen,
+        .isSelfieModeOn = &core::isSelfieModeOn,
+        .setSelfieModeOn = &core::setSelfieModeOn,
+        .isOffHandGrippingWeapon = &core::isOffHandGrippingWeapon,
+        .isWristPipboyOpen = &core::isWristPipboyOpen,
         .getIndexFingerTipPosition = &getIndexFingerTipPosition,
         .getHandPoseSetTagState = &getHandPoseSetTagState,
         .getCurrentHandPose = &getCurrentHandPose,
@@ -436,20 +277,21 @@ namespace
         .setHandPoseFingerPositions = &setHandPoseFingerPositions,
         .clearHandPoseFingerPositions = &clearHandPoseFingerPositions,
         .registerOpenModSettingButtonToMainConfig = &registerOpenModSettingButtonToMainConfig,
-        .blockOffHandWeaponGripping = &blockOffHandWeaponGripping,
+        .blockOffHandWeaponGripping = &core::blockOffHandWeaponGripping,
         .setHandPoseCustom = &setHandPoseCustom,
         .blockFeature = &blockFeature,
         .isFeatureBlocked = &isFeatureBlocked,
-        .getConfigValue = &getConfigValue,
-        .hasConfigValueOverride = &hasConfigValueOverride,
-        .setConfigValueOverride = &setConfigValueOverride,
-        .clearConfigValueOverride = &clearConfigValueOverride };
+        .getConfigValue = &core::getConfigValue,
+        .hasConfigValueOverride = &core::hasConfigValueOverride,
+        .setConfigValueOverride = &core::setConfigValueOverride,
+        .clearConfigValueOverride = &core::clearConfigValueOverride };
 }
 
 namespace frik::api
 {
     FRIK_API const FRIKApi* FRIK_CALL FRIKAPI_GetApi()
     {
+        core::logApiAcquired("FRIK API v1.*", FRIK_API_VERSION, sizeof(FRIKApi), _ReturnAddress());
         return &FRIK_API_FUNCTIONS_TABLE;
     }
 }

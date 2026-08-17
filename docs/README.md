@@ -12,7 +12,7 @@ FRIK brings the full player body to life in VR! Inspired by VRIK from Skyrim VR,
 - **Power-armor-style flashlight** — switch it between hand and head in-game.
 - **Full left-handed mode** — complete left-handed support.
 - **In-VR configuration** — simple in-game config UI, plus selfie mode to see and fine-tune your body.
-- **Modder APIs** — C++ and Papyrus APIs, see the [FRIK API](frik-api.md).
+- **Modder APIs** — C++ and Papyrus APIs, see the [FRIK API v2](frik-api-v2.md).
 
 ## Quick Links
 
@@ -23,7 +23,8 @@ FRIK brings the full player body to life in VR! Inspired by VRIK from Skyrim VR,
 - [Weapon Adjustment Guide](weapon-adjustment-guide.md)
 - [Screenshots and Videos](screenshots-videos.md)
 - [Changelog](changelog.md)
-- [FRIK API (for mod developers)](frik-api.md)
+- [FRIK API v2 (for mod developers)](frik-api-v2.md)
+- [FRIK API v1.\* (for mod developers)](frik-api.md)
 
 ## Shortcuts
 

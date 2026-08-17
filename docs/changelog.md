@@ -1,11 +1,15 @@
 ## v0.78
 
+- Support for ROCK mod.
 - Hands: Fingers now curl dynamically from controller touch and the trigger/grip analog axis, with pointing and thumbs-up gestures.
 - Hands: Added smoothly blended palm pitch/yaw offsets for authored hand poses.
 - Hands: Fixed the left-handed unarmed fist pose and improved open-hand accuracy.
 - Hands: Made the left and right hand poses match by mirroring the bone data (open/close differed slightly per hand).
 - Weapon: Fixed the offhand getting stuck in a curled grip/fist pose after switching weapons.
+- Body: Fixed player input and weapon visibility staying stuck in some scenarios. Like save created while operating Pipboy.
+- Body: Smooth movement state is reset on save load, body rebuild, and teleport, so a leftover offset can't carry into the new location.
 - Pip-Boy: No longer opens with the button while gripping a weapon two-handed, plus a new `PipBoyOpenWithButtonOnlyWhenLookingAt` option.
+- Pip-Boy: Fixed a crash when the player skeleton has no Pip-Boy bone. Happened when PA core drained. Thanks gumby187.
 - Pip-Boy: Reworked Pip-Boy in-VR config UI.
 - Pip-Boy: Reworked the Fallout London VR Attaboy belt-grab into a configurable activation sphere with configurable visible sphere indicator and haptics.
 - Config: Added FRIK.ini options for customizing input binding button, hand, and press style.
@@ -17,7 +21,12 @@
 - Config: All buttons use auto-packed sprite atlases for easy development.
 - API: Added functions to read any FRIK config value and override it for the session without writing to disk.
 - API: Added an API for mods to disable FRIK subsystems they replace (Flashlight, Weapon Positioning, Pip-Boy, Smooth Movement).
-- API: Expanded the hand-pose API with a tagged override stack, full custom poses, finger splay, and a force-to-top flag.
+- API: Expanded the hand-pose API with a tagged override stack, full custom poses, finger splay, and priority.
+- API: Added **FRIK API v2** (`FRIKAPI_V2_GetApi`) mostly with features for ROCK mod.
+- API: Added external hand control - a mod can place a hand in world space and FRIK solves the skeleton to it.
+- API: Added weapon authority - a mod can take ownership of the primary weapon node and block FRIK's primary-hand weapon pose.
+- API: Added a weapon recoil controller so a mod can drive full recoil (position and rotation) on either or both hands.
+- API: FRIK broadcasts skeleton-ready / skeleton-destroying lifecycle events; all API registrations are dropped when the body is released and must be republished afterwards.
 
 ## v0.77
 

@@ -94,6 +94,9 @@ namespace frik
         // is offhand (secondary hand) gripping the weapon barrel
         bool _offHandGripping = false;
 
+        // last frame's external primary-weapon-node ownership block, to release transient state as it engages
+        bool _nodeOwnershipBlockedLastFrame = false;
+
         // allow to disable offhand gripping feature without disabling the whole mod features, for external mods to control it (static to persist over recreation)
         inline static bool _offHandGrippingEnabled = true;
 

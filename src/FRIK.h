@@ -2,6 +2,8 @@
 
 #include <Version.h>
 
+#include <memory>
+
 #include "Config.h"
 #include "ModBase.h"
 #include "PlayerControlsHandler.h"
@@ -155,12 +157,12 @@ namespace frik
             return _weaponPosition && _weaponPosition->isOffHandGrippingWeapon();
         }
 
-        bool isOffHandGrippingEnabled() const
+        static bool isOffHandGrippingEnabled()
         {
             return WeaponPositionAdjuster::isOffHandGrippingEnabled();
         }
 
-        void setOffHandGrippingEnabled(const bool enabled)
+        static void setOffHandGrippingEnabled(const bool enabled)
         {
             WeaponPositionAdjuster::setOffHandGrippingEnabled(enabled);
         }
@@ -229,6 +231,7 @@ namespace frik
         }
 
         void dispatchMessageToExternalMod(const std::string& receivingModName, std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
+        void broadcastMessage(std::uint32_t messageType, void* data, std::uint32_t dataLen) const;
 
         void smoothMovement();
 
@@ -252,9 +255,13 @@ namespace frik
         static void initForFalloutLondonVR();
 
         bool _inPowerArmor = false;
+        // consecutive frames the game reported a power armor state different from _inPowerArmor
+        std::uint32_t _powerArmorChangeFrames = 0;
         bool _isLookingThroughScope = false;
         float _dynamicCameraHeight = 0;
         bool _selfieMode = false;
+        std::uint32_t _skeletonInitDelayFrames = 0;
+        bool _skeletonReadyPublished = false;
 
         // Feature enable/disable flags toggled via the public API (see blockFeature). Default: enabled.
         bool _flashlightEnabled = true;
@@ -265,11 +272,13 @@ namespace frik
         // the currently root node used in skeleton
         RE::NiNode* _workingRootNode = nullptr;
 
-        Skeleton* _skelly = nullptr;
-        Pipboy* _pipboy = nullptr;
+        // owned by FRIK, created together in initSkeleton and released together in releaseSkeleton.
+        // Everything else in the codebase holds these as non-owning raw pointers.
+        std::unique_ptr<Skeleton> _skelly;
+        std::unique_ptr<Pipboy> _pipboy;
         MainConfigMode _mainConfigMode;
-        PipboyConfigMode* _pipboyConfigMode = nullptr;
-        WeaponPositionAdjuster* _weaponPosition = nullptr;
+        std::unique_ptr<PipboyConfigMode> _pipboyConfigMode;
+        std::unique_ptr<WeaponPositionAdjuster> _weaponPosition;
 
         // handler for the interaction spheres around the skeleton
         BoneSpheresHandler _boneSpheres;
