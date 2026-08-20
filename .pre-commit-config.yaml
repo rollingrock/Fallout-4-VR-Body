@@ -11,6 +11,10 @@ repos:
       - id: clang-format
         types_or: [c++, c]
         args: [--style=file]
+        # Vendored third-party sources are carried verbatim so they can be diffed
+        # against upstream. Reformatting them would make every upstream sync a
+        # whole-file conflict.
+        exclude: '^src/devbench/DevBenchAPI\.(h|cpp)$'
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
