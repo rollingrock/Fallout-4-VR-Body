@@ -8,6 +8,7 @@
 - Weapon: Fixed the offhand getting stuck in a curled grip/fist pose after switching weapons.
 - Body: Fixed player input and weapon visibility staying stuck in some scenarios. Like save created while operating Pipboy.
 - Body: Smooth movement state is reset on save load, body rebuild, and teleport, so a leftover offset can't carry into the new location.
+- Body: A player restraint persisted in a save is force-cleared on session load, so movement can't stay locked after loading.
 - Pip-Boy: No longer opens with the button while gripping a weapon two-handed, plus a new `PipBoyOpenWithButtonOnlyWhenLookingAt` option.
 - Pip-Boy: Fixed a crash when the player skeleton has no Pip-Boy bone. Happened when PA core drained. Thanks gumby187.
 - Pip-Boy: Reworked Pip-Boy in-VR config UI.
@@ -19,6 +20,9 @@
 - Config: Main config buttons now wrap into balanced rows (max 5 each) as more mods register their own buttons.
 - Config: Fixed the Pip-Boy config opening when just holding the primary thumbstick without the wrist Pip-Boy.
 - Config: All buttons use auto-packed sprite atlases for easy development.
+- Config: Button bindings from a pre-v18 config are migrated automatically on upgrade.
+- Config: An open config UI is now closed when a save is loaded.
+- Config: The body adjustment target stays selected after a reset.
 - API: Added functions to read any FRIK config value and override it for the session without writing to disk.
 - API: Added an API for mods to disable FRIK subsystems they replace (Flashlight, Weapon Positioning, Pip-Boy, Smooth Movement).
 - API: Expanded the hand-pose API with a tagged override stack, full custom poses, finger splay, and priority.

@@ -244,6 +244,9 @@ namespace frik
 
     private:
         void initSkeleton();
+        // The real frame update. onFrameUpdate wraps it so the devbench bridge drains
+        // commands before it and publishes a snapshot after it on EVERY exit path.
+        void onFrameUpdateInner();
         void onGameMenuOpened(const std::string& name, bool isOpened);
         void releaseSkeleton();
         static void updateWorldFinal();

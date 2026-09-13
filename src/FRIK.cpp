@@ -9,6 +9,7 @@
 #include "api/RecoilControllerRuntime.h"
 #include "common/PerfMonitor.h"
 #include "config-mode/PipboyConfigMode.h"
+#include "devbench/DevBenchBridge.h"
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
@@ -107,6 +108,12 @@ namespace frik
             _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
             _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
         }
+
+        // Registered here rather than at kPostPostLoad: F4SE keeps one listener per plugin
+        // per sender and ModBase already owns FRIK's, so a second RegisterListener is
+        // rejected. kGameLoaded is strictly later than devbench's own kPostLoad setup, so
+        // the interface is always there by now.
+        devbench::g_devBenchBridge.registerWithDevBench();
     }
 
     /**
@@ -153,6 +160,18 @@ namespace frik
      * This is where all the magic happens by updating game state and nodes.
      */
     void FRIK::onFrameUpdate()
+    {
+        // Before anything reads state this frame, so a queued config override applies to it.
+        devbench::g_devBenchBridge.drainCommands();
+
+        onFrameUpdateInner();
+
+        // After every exit path of the inner update, including its early returns: a snapshot
+        // frozen at its last good value through a loading screen would be a lie.
+        devbench::g_devBenchBridge.publishSnapshot();
+    }
+
+    void FRIK::onFrameUpdateInner()
     {
         static PerfMonitor perf("FRIK::onFrameUpdate");
         const auto timer = perf.scope();
@@ -249,6 +268,8 @@ namespace frik
         _inPowerArmor = f4vr::isInPowerArmor();
         _powerArmorChangeFrames = 0;
         _skeletonInitDelayFrames = 0;
+
+        devbench::g_devBenchBridge.bumpSkeletonGeneration();
 
         const auto player = f4vr::getPlayer();
         logger::info("Initialize Skeleton ({}) ; Nodes: Player={}, Data={}, Root={}, Skeleton={}, Common={}",
@@ -386,6 +407,7 @@ namespace frik
         g_externalAuthority.clearForSkeletonRelease();
         HandPose::clearHandPoseOverridesForSkeletonRelease();
         api::clearWeaponHandRecoilControllersForSkeletonRelease();
+        devbench::g_devBenchBridge.bumpSkeletonGeneration();
 
         _workingRootNode = nullptr;
         _skeletonInitDelayFrames = kSkeletonInitDelayFramesAfterRelease;

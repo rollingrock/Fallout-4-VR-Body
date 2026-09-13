@@ -52,7 +52,7 @@ Then read `build_output.txt`. Release builds also produce a versioned `.7z` pack
 5. `WeaponPositionAdjuster::onFrameUpdate` — weapon offsets, offhand grip, reposition mode
 6. `Pipboy::onFrameUpdate` — wrist Pipboy logic, finger interaction, flashlight
 7. `vrui::g_uiManager->onFrameUpdate` — VR UI widgets (driven by `FrameUpdateContext` adapter that exposes the offhand index-finger tip and hand-pointing pose)
-8. `MainConfigMode` + `ConfigurationMode` — config UI rendering
+8. `MainConfigMode` + `PipboyConfigMode` — config UI rendering
 9. `updateWorldFinal` — three engine-level scene-graph updates (`BSFadeNode_MergeWorldBounds`, `BSFlattenedBoneTree_UpdateBoneArray`, `BSFadeNode_UpdateGeomArray`) needed for cull geometry, finger position, and Pipboy interaction to work correctly
 
 `FRIK::smoothMovement` is invoked from a separate hook (not from `onFrameUpdate`).
@@ -66,8 +66,8 @@ Then read `build_output.txt`. Release builds also produce a versioned `.7z` pack
 | Pipboy | [src/pipboy/](src/pipboy/) | Wrist & holo Pipboy, physical (finger-touch) interaction, flashlight |
 | Weapon positioning | [src/weapon-position/](src/weapon-position/) | Per-weapon offsets, offhand-grip two-handed mode, in-game reposition tool |
 | Smooth movement | [src/smooth-movement/](src/smooth-movement/) | Reduce VR motion sickness on locomotion |
-| Config UI | [src/config-mode/](src/config-mode/) | In-VR config menus (`MainConfigMode`, `ConfigurationMode`, `BodyAdjustmentSubConfigMode`) |
-| Reload | [src/reload/](src/reload/) | Two-handed gun reload interaction |
+| Config UI | [src/config-mode/](src/config-mode/) | In-VR config menus (`MainConfigMode`, `PipboyConfigMode`, `BodyAdjustmentSubConfigMode`) |
+| Reload | [src/reload/](src/reload/) | Two-handed gun reload interaction — **dead code**: both files and their hooks in `GameHooks.cpp` are fully commented out |
 | Public API | [src/api/](src/api/) | Two C ABI majors (`FRIKApi` v1.\*, `FRIKApiV2`) over a shared `ApiCore`, loaded by other mods via `GetProcAddress` |
 | External mod state | [src/ExternalAuthority.h](src/ExternalAuthority.h), [src/TagBlockSet.h](src/TagBlockSet.h) | Weapon node ownership, weapon pose blocks, tagged hand world transforms; `TagBlockSet` is the shared "blocked while any tag holds it" registry |
 | Papyrus API | [src/PapyrusApi.h](src/PapyrusApi.h) | Native functions for in-game scripts |
@@ -76,7 +76,7 @@ Then read `build_output.txt`. Release builds also produce a versioned `.7z` pack
 
 [src/Config.h](src/Config.h) / [src/Config.cpp](src/Config.cpp) extends `f4cf::ConfigBase`. Files live under `%USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config\`:
 - `FRIK.ini` — main settings (also embedded as RCDATA `IDR_FRIK_INI`, extracted on first run)
-- `FRIK_FOLVR.ini` — Fallout London VR overrides, merged on top when that mod is detected
+- `FRIK_FOLVR.ini` — Fallout London VR settings. `Config::reloadForFalloutLondonVR()` **swaps** `_iniFilePath` to this file and reloads; it is not merged over `FRIK.ini`, so any key absent from it falls back to the hardcoded default in `Config.cpp`, not to the user's `FRIK.ini` value. The file is not shipped in `data/` and is not an embedded resource
 - `Mesh_Hide/face.ini`, `skins.ini`, `slots.ini` — geometry hide lists
 - `Pipboy_Offsets/*.json` — per-Pipboy-style world offsets
 - `Weapons_Offsets/*.json` — per-weapon offsets, by mode (`WeaponOffsetsMode`: Weapon / PrimaryHand / OffHand / Throwable / BackOfHandUI) with `_PA` and `_left` suffix variants
@@ -85,7 +85,7 @@ Then read `build_output.txt`. Release builds also produce a versioned `.7z` pack
 
 ### Public C API for other mods
 
-FRIK publishes **two independent C ABI majors**, both exported from [src/exports.def](src/exports.def). Other mods copy one header into their project as-is, call `initialize()`, and use `inst->...`. Both majors sit on the same internal state, so a client of either arbitrates with the other by tag.
+FRIK publishes **two independent C ABI majors**. Both are exported with `__declspec(dllexport)` — `DLLEXPORT` ([src/PCH.h](src/PCH.h)) and `FRIK_API` ([src/api/FRIKApiV2.h](src/api/FRIKApiV2.h)). [src/exports.def](src/exports.def) lists only `F4SEPlugin_Query`/`F4SEPlugin_Load` and is **not referenced by the build**. Other mods copy one header into their project as-is, call `initialize()`, and use `inst->...`. Both majors sit on the same internal state, so a client of either arbitrates with the other by tag.
 
 | Major | Header | Exports | Versioning rule |
 |-------|--------|---------|-----------------|
