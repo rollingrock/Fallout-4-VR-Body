@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "ExternalAuthority.h"
 #include "FRIK.h"
+#include "ScopeAuthority.h"
 #include "common/Quaternion.h"
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
@@ -137,6 +138,8 @@ namespace frik
             }
             checkEquippedWeaponChanged();
             getBackOfHandUINode()->local = _backOfHandUIOffsetTransform;
+            // the owner drives the weapon, the scope camera still follows wherever it left it
+            alignScopeCameraToWeapon(weapon);
             return;
         }
 
@@ -264,16 +267,20 @@ namespace frik
     }
 
     /**
-     * Update the vanilla scope camera node to match weapon reposition.
-     * Offset is a simple adjustment of the diff between original and offset transform.
-     * Rotation is calculated by using weapon forward vector and the diff between it and straight in scope camera orientation.
+     * Update the vanilla scope camera node to match the weapon's final placement.
+     * Offset is a simple adjustment of the diff between original and final local transform (offset plus any grip pivot shift).
+     * Rotation aligns the camera with the weapon's world forward vector, so the two-handed re-aim is followed too.
      */
     void WeaponPositionAdjuster::handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const
     {
+        if (g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera)) {
+            return;
+        }
+
         const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
 
         // Apply the position offset is weird because of different coordinate system
-        const auto weaponPosDiff = _weaponOffsetTransform.translate - _weaponOriginalTransform.translate;
+        const auto weaponPosDiff = weapon->local.translate - _weaponOriginalTransform.translate;
         scopeCamera->local.translate = RE::NiPoint3(weaponPosDiff.y, weaponPosDiff.x, -weaponPosDiff.z);
 
         // SUPER HACK adjustment because position offset adjustment in one axis is casing small drift in other axes!
@@ -281,16 +288,25 @@ namespace frik
         scopeCamera->local.translate.z += (weaponPosDiff.y > 0 ? 0.12f : 0.04f) * weaponPosDiff.y + (weaponPosDiff.x > 0 ? 0.14f : 0.04f) * weaponPosDiff.x;
         scopeCamera->local.translate.x += (weaponPosDiff.x > 0 ? -0.1f : -0.11f) * weaponPosDiff.x + (weaponPosDiff.z > 0 ? 0.05f : 0.06f) * weaponPosDiff.z;
 
-        if (_offHandGripping) {
-            // if offhand is gripping it overrides the rotation adjustment
+        alignScopeCameraToWeapon(weapon);
+    }
+
+    /**
+     * Rotate the scope camera so its local X (the view direction) matches the weapon's world forward vector (direction of the bullets).
+     * Rotation only, so it also serves a weapon node another mod is driving.
+     */
+    void WeaponPositionAdjuster::alignScopeCameraToWeapon(const RE::NiNode* weapon) const
+    {
+        if (g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera)) {
             return;
         }
+
+        const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
 
         // need to update default transform for later world rotation use
         scopeCamera->local.rotate = _scopeCameraBaseMatrix;
         f4vr::updateTransforms(scopeCamera);
 
-        // get the "forward" vector of the weapon (direction of the bullets)
         const auto weaponForwardVec = RE::NiPoint3(weapon->world.rotate.entry[1][0], weapon->world.rotate.entry[1][1], weapon->world.rotate.entry[1][2]);
 
         // Calculate the rotation adjustment using quaternion by diff between scope camera vector and straight
@@ -426,14 +442,6 @@ namespace frik
         // Compose into final local transform
         weapon->local.rotate = rotAdjust.getMatrix() * _weaponOffsetTransform.rotate;
 
-        // -- Handle Scope:
-        if (g_frik.isInScopeMenu()) {
-            handleWeaponScopeCameraGrippingRotationAdjustment(weapon, rotAdjust, adjustedWeaponVec);
-
-            // no need to move weapon/hands if we don't see them, and it's hard to calculate scope after more weapon adjustments
-            return;
-        }
-
         // -- Handle offset pivot:
 
         // Pivot in local space (point where weapon touches primary hand)
@@ -463,34 +471,6 @@ namespace frik
 
         // update all the fingers to match the hand rotation
         f4vr::updateTransformsDown(primaryHand, true, weapon->name.c_str());
-    }
-
-    /**
-     * To handle scope we move the calculated two-handed vector from weapon space to world space and then into scope space to
-     * adjust the scope. Yeah, it's a bit weird, but it works.
-     */
-    void WeaponPositionAdjuster::handleWeaponScopeCameraGrippingRotationAdjustment(const RE::NiNode* weapon, Quaternion rotAdjust, const RE::NiPoint3 adjustedWeaponVec) const
-    {
-        const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
-
-        // Adjust the position after all the calculation above using consistent coordinate system
-        // Use the same coordinate transformation as the main scope function: (y, x, -z)
-        const auto weaponPosDiff = weapon->local.translate - _weaponOriginalTransform.translate;
-        scopeCamera->local.translate = RE::NiPoint3(weaponPosDiff.y, weaponPosDiff.x, -weaponPosDiff.z);
-
-        // Set base camera matrix first (remaps axes from weapon to scope system)
-        scopeCamera->local.rotate = _scopeCameraBaseMatrix;
-        f4vr::updateTransforms(scopeCamera);
-
-        // Transform the offhand offset adjusted vector from weapon space to world space so we can adjust it into scope space
-        const auto adjustedWeaponVecWorld = weapon->world.rotate.Transpose() * ((adjustedWeaponVec * weapon->world.scale));
-
-        // Convert it into scope space
-        const auto scopeLocalVec = scopeCamera->world.rotate * (adjustedWeaponVecWorld / scopeCamera->world.scale);
-
-        // Compute scope rotation: align local X with this direction
-        rotAdjust.vec2Vec(scopeLocalVec, RE::NiPoint3(1, 0, 0));
-        scopeCamera->local.rotate = rotAdjust.getMatrix() * _scopeCameraBaseMatrix;
     }
 
     /**
