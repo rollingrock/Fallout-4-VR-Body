@@ -507,8 +507,10 @@ namespace frik
         }
 
         if (msg->type == 15) {
-            logger::info("BetterScopesVR looking through scopes: {}", msg->dataLen);
-            g_frik.setLookingThroughScope(static_cast<bool>(msg->data));
+            // BetterScopesVR sends the bool as the pointer value itself, not as pointed-to data
+            const bool lookingThroughScope = msg->data != nullptr;
+            logger::info("BetterScopesVR looking through scopes: {}", lookingThroughScope);
+            g_frik.setLookingThroughScope(lookingThroughScope);
         }
     }
 

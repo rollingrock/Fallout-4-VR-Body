@@ -28,6 +28,15 @@
 
 #if defined(DEVBENCHAPI_GAME_FALLOUT4)
 #	include <F4SE/F4SE.h>
+// The load-order fallback below calls the raw Win32 loader API. CommonLibF4 deliberately
+// does not pull in Windows.h, so a consumer without it in a PCH would fail to compile.
+#	ifndef WIN32_LEAN_AND_MEAN
+#		define WIN32_LEAN_AND_MEAN
+#	endif
+#	ifndef NOMINMAX
+#		define NOMINMAX
+#	endif
+#	include <Windows.h>
 #else
 #	include <SKSE/SKSE.h>
 #endif
@@ -60,8 +69,26 @@ namespace DevBenchAPI
 		DevBenchMessage message;
 		messaging->Dispatch(DevBenchMessage::kMessage_GetInterface, &message,
 			sizeof(DevBenchMessage*), DevBenchPluginName);
+		if (!message.GetApiFunction) {
+#if defined(DEVBENCHAPI_GAME_FALLOUT4)
+			// FALLBACK (2026-08-26, FO4VR): the messaging handshake requires the
+			// provider's any-sender listener to be present in THIS plugin's
+			// listener slot, and F4SEVR's RegisterListener de-dupes by handle -
+			// a provider that loaded earlier can be unreachable by message
+			// forever (its kPostLoad re-register is a global no-op). The DLL
+			// export is load-order-proof; same GetApi either way.
+			if (const auto mod = ::GetModuleHandleW(L"devbench.dll")) {
+				if (const auto entry = reinterpret_cast<void* (*)()>(
+						::GetProcAddress(mod, "DevBench_GetApiFunction"))) {
+					message.GetApiFunction =
+						reinterpret_cast<decltype(message.GetApiFunction)>(entry());
+				}
+			}
+#endif
+		}
 		if (!message.GetApiFunction)
 			return nullptr;
+
 
 		g_devBenchInterface = static_cast<IDevBenchInterface001*>(message.GetApiFunction(1));
 		return g_devBenchInterface;

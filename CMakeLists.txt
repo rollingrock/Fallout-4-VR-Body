@@ -182,6 +182,13 @@ target_link_options(${PROJECT_NAME}
 # >>> fix a warning with /Ob2 being overridden with /Ob3
 string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
+# >>> Unit tests (pure logic only, no game dependency)
+option(FRIK_BUILD_TESTS "Build the FRIK unit tests" ON)
+if(FRIK_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
+
 # >>> Post build command to copy plugins (supports multiple paths separated by ';')
 if(POST_BUILD_COPY_PLUGIN)
   if(DEFINED COPY_PLUGIN_BASE_PATH)
