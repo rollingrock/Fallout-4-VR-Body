@@ -67,7 +67,7 @@ namespace frik::api
      * newer FRIK. Check getVersion() against the version that introduced an entry
      * before calling it.
      */
-    inline constexpr std::uint32_t FRIK_API_V3_VERSION = 2;
+    inline constexpr std::uint32_t FRIK_API_V3_VERSION = 3;
 
     struct FRIKApiV3
     {
@@ -382,6 +382,24 @@ namespace frik::api
         {
             kSkeletonReady = 100,
             kSkeletonDestroying = 101,
+            // The looking-through-scope state flipped (no payload). Since v3.3.
+            kScopeEnter = 102,
+            kScopeExit = 103,
+        };
+
+        /**
+         * What a scope provider takes over from FRIK while the player looks through a scope. Since v3.3.
+         */
+        enum class ScopeCapability : std::uint32_t
+        {
+            // The body root is never hidden while scoped; the provider renders the main view with the body in it.
+            KeepsBodyVisible = 1u << 0,
+            // FRIK leaves the primaryWeaponScopeCamera node alone.
+            OwnsScopeCamera = 1u << 1,
+            // setLookingThroughScope from this provider replaces the vanilla ScopeMenu state as the looking-through signal.
+            PublishesLookingThrough = 1u << 2,
+            // FRIK does not dampen hands or recoil while scoped; the provider smooths its own view.
+            OwnsDamping = 1u << 3,
         };
 
         /**
@@ -673,6 +691,35 @@ namespace frik::api
          */
         bool(FRIK_CALL* isInPowerArmor)();
 
+        // ---- Added in v3.3 ----
+
+        /**
+         * Register or replace a scope provider with the ScopeCapability bits it takes over.
+         * Providers survive skeleton rebuilds; capabilities are the union over registered tags.
+         * Call once after FRIK has loaded (the GameLoaded event). Since v3.3.
+         * @return false for an empty tag or unknown capability bits.
+         */
+        bool(FRIK_CALL* setScopeProvider)(const char* tag, std::uint32_t capabilities);
+
+        /**
+         * Drop a scope provider. Removing an unknown tag is idempotent. Since v3.3.
+         */
+        bool(FRIK_CALL* clearScopeProvider)(const char* tag);
+
+        /**
+         * Publish whether the player is looking through the scope. Only a provider registered with
+         * PublishesLookingThrough may; publish on the game update thread whenever the state changes.
+         * FRIK keys body hiding, hand and recoil damping, Pip-Boy interaction and two-handed grip
+         * release on it, and broadcasts kScopeEnter / kScopeExit when it flips. Since v3.3.
+         */
+        bool(FRIK_CALL* setLookingThroughScope)(const char* tag, bool lookingThrough);
+
+        /**
+         * The looking-through-scope state FRIK is keying on this frame: a publishing provider's flag,
+         * else whether the vanilla ScopeMenu is open. Since v3.3.
+         */
+        bool(FRIK_CALL* isLookingThroughScope)();
+
         /**
          * Initialize the FRIK API v3 object.
          * NOTE: call after all mods have been loaded in the game (GameLoaded event).
@@ -731,5 +778,5 @@ namespace frik::api
 
     inline constexpr std::size_t FRIK_API_V3_FUNCTION_POINTER_SIZE = sizeof(decltype(FRIKApiV3::getVersion));
     static_assert(std::is_standard_layout_v<FRIKApiV3>, "FRIKApiV3 must remain standard-layout for its exported function table ABI");
-    static_assert(sizeof(FRIKApiV3) == 33 * FRIK_API_V3_FUNCTION_POINTER_SIZE, "FRIK API v3 function table layout changed");
+    static_assert(sizeof(FRIKApiV3) == 37 * FRIK_API_V3_FUNCTION_POINTER_SIZE, "FRIK API v3 function table layout changed");
 }

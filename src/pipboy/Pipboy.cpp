@@ -202,7 +202,7 @@ namespace frik
 
         updateSetupPipboyNodes();
 
-        if (g_frik.isPauseMenuOpen() || g_frik.isInScopeMenu()) {
+        if (g_frik.isPauseMenuOpen() || g_frik.isLookingThroughScope()) {
             // prevent interacting with Pipboy when we shouldn't
             return;
         }

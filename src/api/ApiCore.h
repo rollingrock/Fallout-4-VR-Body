@@ -145,6 +145,10 @@ namespace frik::api::core
     bool FRIK_CORE_CALL isSkeletonReady();
     std::uint32_t FRIK_CORE_CALL getSkeletonGeneration();
     bool FRIK_CORE_CALL isInPowerArmor();
+    bool FRIK_CORE_CALL setScopeProvider(const char* tag, std::uint32_t capabilities);
+    bool FRIK_CORE_CALL clearScopeProvider(const char* tag);
+    bool FRIK_CORE_CALL setLookingThroughScope(const char* tag, bool lookingThrough);
+    bool FRIK_CORE_CALL isLookingThroughScope();
     bool FRIK_CORE_CALL isConfigOpen();
     bool FRIK_CORE_CALL isSelfieModeOn();
     void FRIK_CORE_CALL setSelfieModeOn(bool setOn);

@@ -7,6 +7,7 @@
 #include "Config.h"
 #include "ModBase.h"
 #include "PlayerControlsHandler.h"
+#include "ScopeAuthority.h"
 #include "config-mode/MainConfigMode.h"
 #include "config-mode/PipboyConfigMode.h"
 #include "f4vr/GameMenusHandler.h"
@@ -82,14 +83,16 @@ namespace frik
             _dynamicCameraHeight = dynamicCameraHeight;
         }
 
-        bool isLookingThroughScope() const
+        // The looking-through-scope state every scope behaviour keys on: a provider's published flag, else the vanilla ScopeMenu
+        bool isLookingThroughScope()
         {
-            return _isLookingThroughScope;
+            return g_scopeAuthority.isLookingThroughScope(isInScopeMenu());
         }
 
-        void setLookingThroughScope(const bool isLookingThroughScope)
+        // Hide the body root while scoped, unless a provider keeps it visible or the user opted out
+        bool shouldHideBodyInScope()
         {
-            _isLookingThroughScope = isLookingThroughScope;
+            return isLookingThroughScope() && g_config.hideBodyInVanillaScope && !g_scopeAuthority.hasCapability(ScopeCapability::KeepsBodyVisible);
         }
 
         bool isPipboyOn() const
@@ -261,6 +264,7 @@ namespace frik
         void onGameMenuOpened(const std::string& name, bool isOpened);
         void releaseSkeleton();
         void broadcastSkeletonLifecycle(std::uint32_t messageType) const;
+        void broadcastScopeEvents();
         static void updateWorldFinal();
         static void configureGameVars();
         static bool isGameReadyForSkeletonInitialization();
@@ -272,7 +276,7 @@ namespace frik
         bool _inPowerArmor = false;
         // consecutive frames the game reported a power armor state different from _inPowerArmor
         std::uint32_t _powerArmorChangeFrames = 0;
-        bool _isLookingThroughScope = false;
+        bool _lookingThroughScopeLastFrame = false;
         float _dynamicCameraHeight = 0;
         bool _selfieMode = false;
         std::uint32_t _skeletonInitDelayFrames = 0;

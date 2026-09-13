@@ -105,7 +105,7 @@ For mods that want a button in FRIK's main config menu: they call `registerOpenM
 
 ### External mod integrations
 
-- **BetterScopesVR** — registers as a message listener at startup; messages of type 15 update `_isLookingThroughScope`, which gates dampening behavior.
+- **Scope providers** — `ScopeAuthority` (`src/ScopeAuthority.h`) holds the registered scope provider capabilities and the looking-through-scope state that every scope behaviour keys on (`FRIK::isLookingThroughScope`). **BetterScopesVR** is registered by FRIK as a legacy `PublishesLookingThrough` provider fed by its message type 15; True Scopes registers itself through API v3.
 - **Fallout London VR** — detected via `isFalloutLondonVRModLoaded()`; loads `FRIK_FOLVR.ini` overrides and switches Pipboy to "Attaboy" mode. Can be force-disabled with `ignoreFalloutLondonVR`.
 - **Immersive Flashlight VR** — if loaded, FRIK skips its embedded flashlight to avoid conflict.
 

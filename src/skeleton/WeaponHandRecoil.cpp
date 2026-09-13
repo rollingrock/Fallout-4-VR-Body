@@ -241,8 +241,8 @@ namespace frik
             _smoothedValid = false;
             return kick;
         }
-        const bool isInScopeMenu = g_frik.isInScopeMenu();
-        if (isInScopeMenu && !g_config.dampenHandsInVanillaScope) {
+        const bool isInScopeMenu = g_frik.isLookingThroughScope();
+        if (isInScopeMenu && (!g_config.dampenHandsInVanillaScope || g_scopeAuthority.hasCapability(ScopeCapability::OwnsDamping))) {
             _smoothedValid = false;
             return kick;
         }

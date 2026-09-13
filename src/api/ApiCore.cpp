@@ -8,6 +8,7 @@
 #include "Config.h"
 #include "ExternalAuthority.h"
 #include "FRIK.h"
+#include "ScopeAuthority.h"
 #include "TagBlockSet.h"
 #include "common/CommonUtils.h"
 #include "f4vr/F4VRSkelly.h"
@@ -102,6 +103,53 @@ namespace frik::api::core
     bool FRIK_CORE_CALL isInPowerArmor()
     {
         return g_frik.isInPowerArmor();
+    }
+
+    bool FRIK_CORE_CALL setScopeProvider(const char* tag, const std::uint32_t capabilities)
+    {
+        const auto normalizedTag = normalizeTag(tag);
+        if (!normalizedTag) {
+            return false;
+        }
+        bool changed = false;
+        if (!g_scopeAuthority.setProvider(*normalizedTag, capabilities, &changed)) {
+            logger::warn("setScopeProvider REJECTED tag:'{}' - unknown capability bits 0x{:X}", *normalizedTag, capabilities);
+            return false;
+        }
+        logger::info("setScopeProvider tag:'{}' capabilities:0x{:X} changed:{}", *normalizedTag, capabilities, changed);
+        return true;
+    }
+
+    bool FRIK_CORE_CALL clearScopeProvider(const char* tag)
+    {
+        const auto normalizedTag = normalizeTag(tag);
+        if (!normalizedTag) {
+            return false;
+        }
+        bool changed = false;
+        g_scopeAuthority.clearProvider(*normalizedTag, &changed);
+        if (changed) {
+            logger::info("clearScopeProvider tag:'{}'", *normalizedTag);
+        }
+        return true;
+    }
+
+    bool FRIK_CORE_CALL setLookingThroughScope(const char* tag, const bool lookingThrough)
+    {
+        const auto normalizedTag = normalizeTag(tag);
+        if (!normalizedTag) {
+            return false;
+        }
+        if (!g_scopeAuthority.setLookingThroughScope(*normalizedTag, lookingThrough)) {
+            logger::sample("setLookingThroughScope REJECTED tag:'{}' - not a provider with PublishesLookingThrough", *normalizedTag);
+            return false;
+        }
+        return true;
+    }
+
+    bool FRIK_CORE_CALL isLookingThroughScope()
+    {
+        return g_frik.isLookingThroughScope();
     }
 
     bool FRIK_CORE_CALL isConfigOpen()

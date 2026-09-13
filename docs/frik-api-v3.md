@@ -59,9 +59,33 @@ The `kSkeletonReady` and `kSkeletonDestroying` messages now carry a `SkeletonLif
 
 The same two values are also available at any time through `getSkeletonGeneration()` and `isInPowerArmor()`. v2 clients receive the same messages and can keep ignoring the payload.
 
+## Scope providers (v3.3)
+
+FRIK keys every scope behaviour on one **looking-through-scope** state: whether the body root is hidden, the separate hand and recoil damping factors, Pip-Boy interaction, and the two-handed grip release rule. Without a provider that state is the vanilla `ScopeMenu`; a scope renderer registers itself and publishes the state directly.
+
+`bool setScopeProvider(const char* tag, std::uint32_t capabilities)`
+`bool clearScopeProvider(const char* tag)`
+
+| `ScopeCapability` | FRIK's behaviour while registered |
+| --- | --- |
+| `KeepsBodyVisible` | The body root is never hidden while scoped (the user's `HideBodyInVanillaScope` no longer applies). |
+| `OwnsScopeCamera` | FRIK leaves the `primaryWeaponScopeCamera` node alone. |
+| `PublishesLookingThrough` | This provider's `setLookingThroughScope` replaces the vanilla `ScopeMenu` state. |
+| `OwnsDamping` | FRIK does not dampen hands or recoil while scoped. |
+
+Providers survive skeleton rebuilds, like feature blocks, and capabilities are the union over registered tags. Register once on the game-loaded event.
+
+`bool setLookingThroughScope(const char* tag, bool lookingThrough)`
+`bool isLookingThroughScope()`
+
+Publish on the game update thread whenever the state changes; only a provider registered with `PublishesLookingThrough` may. `isLookingThroughScope` returns the state FRIK keyed on this frame. When it flips FRIK broadcasts `kScopeEnter` (`102`) / `kScopeExit` (`103`) with no payload.
+
+BetterScopesVR is registered by FRIK itself as a `PublishesLookingThrough` provider when its plugin is detected, mapping its legacy message onto this state.
+
 ## Version history
 
 | `FRIK_API_V3_VERSION` | FRIK | Added |
 | --- | --- | --- |
 | `1` | 0.79 | The v2 surface as of v2.1 (31 entries). |
 | `2` | 0.79 | `getSkeletonGeneration`, `isInPowerArmor`; lifecycle messages carry `SkeletonLifecycleData`. |
+| `3` | 0.79 | `setScopeProvider`, `clearScopeProvider`, `setLookingThroughScope`, `isLookingThroughScope`; `kScopeEnter` / `kScopeExit` events. |

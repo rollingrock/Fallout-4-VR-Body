@@ -3,6 +3,7 @@
 
 #include "ApiCore.h"
 #include "RecoilControllerRuntime.h"
+#include "ScopeAuthority.h"
 
 #include <cstddef>
 #include <intrin.h>
@@ -48,6 +49,11 @@ namespace
     static_assert(static_cast<int>(FRIKApiV3::HandPoseTagState::None) == static_cast<int>(HandPoseOverrideTagState::None));
     static_assert(static_cast<int>(FRIKApiV3::HandPoseTagState::Active) == static_cast<int>(HandPoseOverrideTagState::Active));
     static_assert(static_cast<int>(FRIKApiV3::HandPoseTagState::Overridden) == static_cast<int>(HandPoseOverrideTagState::Overridden));
+
+    static_assert(static_cast<int>(FRIKApiV3::ScopeCapability::KeepsBodyVisible) == static_cast<int>(ScopeCapability::KeepsBodyVisible));
+    static_assert(static_cast<int>(FRIKApiV3::ScopeCapability::OwnsScopeCamera) == static_cast<int>(ScopeCapability::OwnsScopeCamera));
+    static_assert(static_cast<int>(FRIKApiV3::ScopeCapability::PublishesLookingThrough) == static_cast<int>(ScopeCapability::PublishesLookingThrough));
+    static_assert(static_cast<int>(FRIKApiV3::ScopeCapability::OwnsDamping) == static_cast<int>(ScopeCapability::OwnsDamping));
 
     // The published priority scale must stay in step with the internal one.
     static_assert(FRIKApiV3::HAND_POSE_PRIORITY_DEFAULT == core::HAND_POSE_PRIORITY_DEFAULT);
@@ -285,7 +291,11 @@ namespace
         .registerWeaponHandRecoilController = &registerRecoilController,
         .unregisterWeaponHandRecoilController = &frik::api::unregisterWeaponHandRecoilController,
         .getSkeletonGeneration = &core::getSkeletonGeneration,
-        .isInPowerArmor = &core::isInPowerArmor };
+        .isInPowerArmor = &core::isInPowerArmor,
+        .setScopeProvider = &core::setScopeProvider,
+        .clearScopeProvider = &core::clearScopeProvider,
+        .setLookingThroughScope = &core::setLookingThroughScope,
+        .isLookingThroughScope = &core::isLookingThroughScope };
 }
 
 namespace frik::api

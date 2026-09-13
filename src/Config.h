@@ -209,6 +209,7 @@ namespace frik
         // Dampen hands
         bool dampenHands = false;
         bool dampenHandsInVanillaScope = false;
+        bool hideBodyInVanillaScope = true;
         float dampenHandsRotation = 0;
         float dampenHandsTranslation = 0;
         float dampenHandsRotationInVanillaScope = 0;
