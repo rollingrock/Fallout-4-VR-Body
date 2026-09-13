@@ -45,7 +45,7 @@ Manual setup, including the required `Fallout4Custom.ini` edits, is covered in t
 
 ### Compatibility
 
-- **True Scopes** - supported through the FRIK API v3 scope provider: the body stays visible and posed while looking through the scope.
+- **True Scopes** - supported through the FRIK API v2.2 scope provider: the body stays visible and posed while looking through the scope.
 - **BetterScopesVR** - supported (legacy path); FRIK repositions scope reticles and adjusts dampening while looking through a scope.
 - **Fallout London VR** - detected automatically; swaps the Pip-Boy for the Attaboy and loads `FRIK_FOLVR.ini` overrides.
 - **Immersive Flashlight VR** - compatible; FRIK disables its embedded flashlight to avoid conflicts.
@@ -66,7 +66,6 @@ See the **[documentation](docs/README.md)** for shortcuts, body and Pip-Boy conf
 - [Weapon Adjustment Guide](docs/weapon-adjustment-guide.md)
 - [Screenshots and Videos](docs/screenshots-videos.md)
 - [Changelog](docs/changelog.md)
-- [FRIK API v3 for mod developers](docs/frik-api-v3.md)
 - [FRIK API v2 for mod developers](docs/frik-api-v2.md)
 - [FRIK API v1.\* for mod developers](docs/frik-api.md)
 

@@ -3,6 +3,7 @@
 
 #include "ApiCore.h"
 #include "RecoilControllerRuntime.h"
+#include "ScopeAuthority.h"
 
 #include <cstddef>
 #include <intrin.h>
@@ -10,7 +11,7 @@
 #include <string>
 
 /**
- * FRIK API v2: the current function table.
+ * FRIK API v2: the current function table, append-only since v2.2.
  *
  * Like the v1-v4 table, this file holds no logic and no state - entries either
  * point straight at a shared core function or convert this version's enums and
@@ -34,6 +35,16 @@ namespace
     static_assert(static_cast<int>(FRIKApiV2::Feature::WeaponPositioning) == static_cast<int>(core::Feature::WeaponPositioning));
     static_assert(static_cast<int>(FRIKApiV2::Feature::Pipboy) == static_cast<int>(core::Feature::Pipboy));
     static_assert(static_cast<int>(FRIKApiV2::Feature::SmoothMovement) == static_cast<int>(core::Feature::SmoothMovement));
+
+    static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::KeepsBodyVisible) == static_cast<int>(ScopeCapability::KeepsBodyVisible));
+    static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::OwnsScopeCamera) == static_cast<int>(ScopeCapability::OwnsScopeCamera));
+    static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::PublishesLookingThrough) == static_cast<int>(ScopeCapability::PublishesLookingThrough));
+    static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::OwnsDamping) == static_cast<int>(ScopeCapability::OwnsDamping));
+
+    static_assert(sizeof(FRIKApiV2::SkeletonLifecycleData) == sizeof(core::SkeletonLifecycleData));
+    static_assert(offsetof(FRIKApiV2::SkeletonLifecycleData, generation) == offsetof(core::SkeletonLifecycleData, generation));
+    static_assert(offsetof(FRIKApiV2::SkeletonLifecycleData, rootNode) == offsetof(core::SkeletonLifecycleData, rootNode));
+    static_assert(offsetof(FRIKApiV2::SkeletonLifecycleData, inPowerArmor) == offsetof(core::SkeletonLifecycleData, inPowerArmor));
 
     // The published priority scale must stay in step with the internal one.
     static_assert(FRIKApiV2::HAND_POSE_PRIORITY_DEFAULT == core::HAND_POSE_PRIORITY_DEFAULT);
@@ -335,7 +346,13 @@ namespace
         .setConfigValueOverride = &core::setConfigValueOverride,
         .clearConfigValueOverride = &core::clearConfigValueOverride,
         .registerWeaponHandRecoilController = &registerRecoilController,
-        .unregisterWeaponHandRecoilController = &frik::api::unregisterWeaponHandRecoilController };
+        .unregisterWeaponHandRecoilController = &frik::api::unregisterWeaponHandRecoilController,
+        .getSkeletonGeneration = &core::getSkeletonGeneration,
+        .isInPowerArmor = &core::isInPowerArmor,
+        .setScopeProvider = &core::setScopeProvider,
+        .clearScopeProvider = &core::clearScopeProvider,
+        .setLookingThroughScope = &core::setLookingThroughScope,
+        .isLookingThroughScope = &core::isLookingThroughScope };
 }
 
 namespace frik::api

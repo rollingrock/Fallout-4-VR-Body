@@ -5,7 +5,7 @@
 #include "GameHooks.h"
 #include "PapyrusApi.h"
 #include "api/ApiCore.h"
-#include "api/FRIKApiV3.h"
+#include "api/FRIKApiV2.h"
 #include "api/RecoilControllerRuntime.h"
 #include "common/PerfMonitor.h"
 #include "config-mode/PipboyConfigMode.h"
@@ -251,7 +251,7 @@ namespace frik
         if (!_skeletonReadyPublished) {
             _skeletonReadyPublished = true;
             logger::info("Broadcasting API lifecycle event: kSkeletonReady (generation {})", _skeletonGeneration);
-            broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV3::LifecycleEvent::kSkeletonReady));
+            broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonReady));
         }
     }
 
@@ -401,7 +401,7 @@ namespace frik
     {
         if (_skelly && _skeletonReadyPublished) {
             logger::info("Broadcasting API lifecycle event: kSkeletonDestroying (generation {})", _skeletonGeneration);
-            broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV3::LifecycleEvent::kSkeletonDestroying));
+            broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying));
         }
         _skeletonReadyPublished = false;
 
@@ -508,7 +508,7 @@ namespace frik
         }
         _lookingThroughScopeLastFrame = lookingThrough;
         logger::info("Broadcasting API lifecycle event: {}", lookingThrough ? "kScopeEnter" : "kScopeExit");
-        broadcastMessage(static_cast<std::uint32_t>(lookingThrough ? api::FRIKApiV3::LifecycleEvent::kScopeEnter : api::FRIKApiV3::LifecycleEvent::kScopeExit), nullptr, 0);
+        broadcastMessage(static_cast<std::uint32_t>(lookingThrough ? api::FRIKApiV2::LifecycleEvent::kScopeEnter : api::FRIKApiV2::LifecycleEvent::kScopeExit), nullptr, 0);
     }
 
     /**

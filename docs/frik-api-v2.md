@@ -2,7 +2,7 @@
 
 FRIK API v2 is the current **C ABI** for F4SE plugins that integrate with FRIK. It covers everything the older [v1.\* API](frik-api.md) does, plus external control of where a hand is placed, ownership of the primary weapon node, and visual weapon recoil.
 
-The API is defined in a single header, [src/api/FRIKApiV2.h](../src/api/FRIKApiV2.h). Copy that header into your project **as-is** and call into FRIK through the exported `FRIKAPI_V2_GetApi` function. No linking against FRIK is required — the header resolves everything at runtime via `GetModuleHandle` / `GetProcAddress`.
+The API is defined in a single header, [src/api/FRIKApiV2.h](../src/api/FRIKApiV2.h). Copy that header into your project **as-is** and call into FRIK through the exported `FRIKAPI_V2_GetApi` function. No linking against FRIK is required — the header resolves everything at runtime via `GetModuleHandle` / `GetProcAddress`. The header uses CommonLibF4's `RE::NiPoint3`, `RE::NiTransform` and `RE::NiNode` types, so include it where CommonLibF4 is already in scope.
 
 > **Which API should I use?** Use v2 for new integrations. The v1.\* API is still exported and fully supported for existing mods, and the two can be used side by side — both sit on the same internal state, so a v1.\* client and a v2 client arbitrate through the same tags instead of fighting invisibly. There is no need to migrate a working v1.\* mod unless you want something only v2 offers.
 
@@ -62,13 +62,20 @@ void onFrame()
 | `2` | `FRIKAPI_V2_GetApi` not exported — FRIK build without API v2. |
 | `3` | `FRIKAPI_V2_GetApi` returned null. |
 | `4` | FRIK's API v2 version is older than `minVersion`. |
-| `5` | The loaded v2 table does not exactly match your header — update your copy of `FRIKApiV2.h`. |
+| `5` | FRIK's v2 table is smaller than `minVersion` requires — FRIK is older than the version you asked for. |
 
 ## Versioning and compatibility
 
-`FRIK_API_V2_VERSION` (currently **1**) identifies the v2 contract — this page documents v2.1. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
+`FRIK_API_V2_VERSION` (currently **2**) identifies the v2 contract — this page documents v2.2. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
 
-Unlike v1.\*, **v2 is not append-only**: `initialize()` requires the struct size FRIK exports to match your header exactly (code `5`). This trades tolerance for certainty — a mismatched header is refused at load rather than misreading the table at runtime. When FRIK's v2 table changes, recopy the header and rebuild.
+Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end and bumps `FRIK_API_V2_VERSION`, so a header you copied today keeps working against every newer FRIK. `initialize(minVersion)` checks `getVersion() >= minVersion` and that FRIK's table is at least as large as `minVersion` implies (code `5` otherwise). To also run against an older FRIK, pass the oldest version you can live with and gate every newer entry on `getVersion()`; each entry below is documented with the version that introduced it.
+
+| `FRIK_API_V2_VERSION` | FRIK | Added |
+| --- | --- | --- |
+| `1` | 0.78 | The original 31-entry table (exact-size check at `initialize()`). |
+| `2` | 0.79 | Append-only rule; `getSkeletonGeneration`, `isInPowerArmor`; lifecycle messages carry `SkeletonLifecycleData`; scope providers: `setScopeProvider`, `clearScopeProvider`, `setLookingThroughScope`, `isLookingThroughScope`; `kScopeEnter` / `kScopeExit` events. |
+
+> A client built against the v2.1 header refuses any FRIK from 0.79 on (its exact-size check fails with code `5`). Recopy the header once; after that no further recopy is ever forced.
 
 - `getVersion()` returns the v2 contract version FRIK was built with; `getModVersion()` returns the FRIK mod version string (e.g. `"0.78.1"`).
 
@@ -82,6 +89,18 @@ FRIK broadcasts these as F4SE messages under `FRIK_F4SE_MOD_NAME`:
 | --- | --- | --- |
 | `kSkeletonReady` | `100` | A new skeleton is built and spatial calls are valid. Republish here. |
 | `kSkeletonDestroying` | `101` | The skeleton is about to go away; your registrations are being dropped. |
+| `kScopeEnter` | `102` | The looking-through-scope state turned on (v2.2, no payload; see [Scope providers](#scope-providers-v22)). |
+| `kScopeExit` | `103` | The looking-through-scope state turned off (v2.2, no payload). |
+
+Since v2.2 the two skeleton messages carry a `SkeletonLifecycleData` payload in `msg->data` (`msg->dataLen == sizeof`):
+
+| Field | Meaning |
+| --- | --- |
+| `generation` | Skeleton builds this session, `1` for the first. A different value than the one you measured against means the body was rebuilt. |
+| `rootNode` | The skeleton root `RE::NiNode*`, valid for the duration of the message. |
+| `inPowerArmor` | Whether this skeleton is the power armor rig. FRIK debounces the game's transient power-armor state before rebuilding, so this only changes together with `generation`. |
+
+The same two values are available at any time through `getSkeletonGeneration()` and `isInPowerArmor()` (v2.2).
 
 ```cpp
 F4SE::GetMessagingInterface()->RegisterListener(onFrikMessage, FRIKApiV2::FRIK_F4SE_MOD_NAME);
@@ -270,6 +289,29 @@ Responses crossing the C ABI are validated as plausible rigid transforms (finite
 
 Registration fails (and logs the reason) on a reentrant call, an empty tag, a null controller, a negative priority, or a full registry. Register and unregister on the game update thread, and republish after `kSkeletonReady`.
 
+## Scope providers (v2.2)
+
+FRIK keys every scope behaviour on one **looking-through-scope** state: whether the body root is hidden, the separate hand and recoil damping factors, Pip-Boy interaction, and the two-handed grip release rule. Without a provider that state is the vanilla `ScopeMenu`; a scope renderer registers itself and publishes the state directly.
+
+`bool setScopeProvider(const char* tag, std::uint32_t capabilities)`
+`bool clearScopeProvider(const char* tag)`
+
+| `ScopeCapability` | FRIK's behaviour while registered |
+| --- | --- |
+| `KeepsBodyVisible` | The body root is never hidden while scoped (the user's `HideBodyInVanillaScope` no longer applies). |
+| `OwnsScopeCamera` | FRIK leaves the `primaryWeaponScopeCamera` node alone. |
+| `PublishesLookingThrough` | This provider's `setLookingThroughScope` replaces the vanilla `ScopeMenu` state. |
+| `OwnsDamping` | FRIK does not dampen hands or recoil while scoped. |
+
+Providers survive skeleton rebuilds, like feature blocks, and capabilities are the union over registered tags. Register once on the game-loaded event.
+
+`bool setLookingThroughScope(const char* tag, bool lookingThrough)`
+`bool isLookingThroughScope()`
+
+Publish on the game update thread whenever the state changes; only a provider registered with `PublishesLookingThrough` may. `isLookingThroughScope` returns the state FRIK keyed on this frame. When it flips FRIK broadcasts `kScopeEnter` / `kScopeExit`.
+
+BetterScopesVR is registered by FRIK itself as a `PublishesLookingThrough` provider when its plugin is detected, mapping its legacy message onto this state.
+
 ## State queries
 
 All return current FRIK state. Check `isSkeletonReady()` before relying on spatial data.
@@ -355,7 +397,7 @@ If you're porting an existing integration:
 | `setHandPoseCustomFingerPositions(tag, hand, thumb, index, middle, ring, pinky)` | Use `setHandPoseCustom` with `prox` / `mid` / `dist` set to the same value per finger. |
 | `setHandPoseFingerPositions` / `clearHandPoseFingerPositions` (deprecated, tagless) | Removed. Use the tagged calls. |
 | `getConfigValue(caller, ...)`, `hasConfigValueOverride(caller, ...)` | No `caller` parameter — neither function logs. |
-| Append-only struct, version-checked with `>=` | Exact struct-size match required at `initialize()`. |
+| Append-only struct, version-checked with `>=` | Same rule since v2.2 (v2.1 required an exact struct-size match). |
 | — | `setHandWorldTransform`, `blockPrimaryWeaponNodeOwnership`, `blockPrimaryHandWeaponPose`, recoil controllers, per-bone finger transforms, `LifecycleEvent` broadcasts. |
 
 ## Best practices
