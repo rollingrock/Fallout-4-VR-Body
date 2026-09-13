@@ -52,6 +52,48 @@ namespace frik::api::core
 
     inline constexpr std::size_t FEATURE_COUNT = 4;
 
+    // ------------------------------------------------------------------
+    // Weapon hand recoil C ABI. Every published major mirrors these
+    // byte-for-byte and static_asserts it, so the recoil registry never
+    // depends on a version header.
+    // ------------------------------------------------------------------
+
+    enum class RecoilDelivery : std::uint8_t
+    {
+        Damped = 0,
+        Direct = 1,
+    };
+
+    enum class RecoilHandMask : std::uint8_t
+    {
+        None = 0,
+        Primary = 1u << 0,
+        Offhand = 1u << 1,
+    };
+
+    struct RecoilSample
+    {
+        std::uint32_t structSize = 0;
+        std::uint32_t reserved0[3] = {};
+        RE::NiTransform nativeKickLocal{};
+        std::uint32_t reserved[8] = {};
+    };
+
+    struct RecoilResponse
+    {
+        std::uint32_t structSize = 0;
+        std::uint32_t handMask = static_cast<std::uint32_t>(RecoilHandMask::Primary);
+        RecoilDelivery delivery = RecoilDelivery::Direct;
+        std::uint32_t reserved0 = 0;
+        RE::NiTransform controlledKickLocal{};
+        std::uint32_t reserved[8] = {};
+    };
+
+    using WeaponHandRecoilController = bool(FRIK_CORE_CALL*)(const RecoilSample* sample, RecoilResponse* outResponse, void* userData) noexcept;
+
+    static_assert(sizeof(RecoilSample) == 112, "RecoilSample ABI changed");
+    static_assert(sizeof(RecoilResponse) == 112, "RecoilResponse ABI changed");
+
     /**
      * The hand-pose priority scale. HandPose owns the ordering, so these alias
      * its constants rather than restating the values.

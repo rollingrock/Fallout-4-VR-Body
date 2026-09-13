@@ -4,6 +4,7 @@
 #include "ApiCore.h"
 #include "RecoilControllerRuntime.h"
 
+#include <cstddef>
 #include <intrin.h>
 #include <optional>
 #include <string>
@@ -37,6 +38,19 @@ namespace
     // The published priority scale must stay in step with the internal one.
     static_assert(FRIKApiV2::HAND_POSE_PRIORITY_DEFAULT == core::HAND_POSE_PRIORITY_DEFAULT);
     static_assert(FRIKApiV2::HAND_POSE_PRIORITY_FRIK_INTERNAL == core::HAND_POSE_PRIORITY_FRIK_INTERNAL);
+
+    // The recoil ABI is byte-identical to core's, so a v2 controller pointer is passed straight through.
+    static_assert(sizeof(FRIKApiV2::RecoilSample) == sizeof(core::RecoilSample));
+    static_assert(sizeof(FRIKApiV2::RecoilResponse) == sizeof(core::RecoilResponse));
+    static_assert(offsetof(FRIKApiV2::RecoilSample, nativeKickLocal) == offsetof(core::RecoilSample, nativeKickLocal));
+    static_assert(offsetof(FRIKApiV2::RecoilResponse, handMask) == offsetof(core::RecoilResponse, handMask));
+    static_assert(offsetof(FRIKApiV2::RecoilResponse, delivery) == offsetof(core::RecoilResponse, delivery));
+    static_assert(offsetof(FRIKApiV2::RecoilResponse, controlledKickLocal) == offsetof(core::RecoilResponse, controlledKickLocal));
+    static_assert(static_cast<int>(FRIKApiV2::RecoilDelivery::Damped) == static_cast<int>(core::RecoilDelivery::Damped));
+    static_assert(static_cast<int>(FRIKApiV2::RecoilDelivery::Direct) == static_cast<int>(core::RecoilDelivery::Direct));
+    static_assert(static_cast<int>(FRIKApiV2::RecoilHandMask::None) == static_cast<int>(core::RecoilHandMask::None));
+    static_assert(static_cast<int>(FRIKApiV2::RecoilHandMask::Primary) == static_cast<int>(core::RecoilHandMask::Primary));
+    static_assert(static_cast<int>(FRIKApiV2::RecoilHandMask::Offhand) == static_cast<int>(core::RecoilHandMask::Offhand));
 
     HandPoseKind toCoreHandPoseKind(const FRIKApiV2::HandPoseKind kind)
     {
@@ -286,6 +300,11 @@ namespace
         return core::isFeatureBlocked(static_cast<core::Feature>(feature));
     }
 
+    bool FRIK_CALL registerRecoilController(const char* tag, const FRIKApiV2::WeaponHandRecoilController controller, void* userData, const int priority)
+    {
+        return frik::api::registerWeaponHandRecoilController(tag, reinterpret_cast<core::WeaponHandRecoilController>(controller), userData, priority);
+    }
+
     constexpr FRIKApiV2 FRIK_API_V2_FUNCTIONS_TABLE{ .getVersion = &getVersion,
         .getModVersion = &core::getModVersion,
         .isSkeletonReady = &core::isSkeletonReady,
@@ -315,7 +334,7 @@ namespace
         .hasConfigValueOverride = &core::hasConfigValueOverride,
         .setConfigValueOverride = &core::setConfigValueOverride,
         .clearConfigValueOverride = &core::clearConfigValueOverride,
-        .registerWeaponHandRecoilController = &frik::api::registerWeaponHandRecoilController,
+        .registerWeaponHandRecoilController = &registerRecoilController,
         .unregisterWeaponHandRecoilController = &frik::api::unregisterWeaponHandRecoilController };
 }
 
