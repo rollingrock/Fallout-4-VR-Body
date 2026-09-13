@@ -85,12 +85,13 @@ Then read `build_output.txt`. Release builds also produce a versioned `.7z` pack
 
 ### Public C API for other mods
 
-FRIK publishes **two independent C ABI majors**. Both are exported with `__declspec(dllexport)` — `DLLEXPORT` ([src/PCH.h](src/PCH.h)) and `FRIK_API` ([src/api/FRIKApiV2.h](src/api/FRIKApiV2.h)). [src/exports.def](src/exports.def) lists only `F4SEPlugin_Query`/`F4SEPlugin_Load` and is **not referenced by the build**. Other mods copy one header into their project as-is, call `initialize()`, and use `inst->...`. Both majors sit on the same internal state, so a client of either arbitrates with the other by tag.
+FRIK publishes **three independent C ABI majors**. All are exported with `__declspec(dllexport)` — `DLLEXPORT` ([src/PCH.h](src/PCH.h)) and `FRIK_API` ([src/api/FRIKApiV2.h](src/api/FRIKApiV2.h)). [src/exports.def](src/exports.def) lists only `F4SEPlugin_Query`/`F4SEPlugin_Load` and is **not referenced by the build**. Other mods copy one header into their project as-is, call `initialize()`, and use `inst->...`. All majors sit on the same internal state, so clients of different majors arbitrate with each other by tag.
 
 | Major | Header | Exports | Versioning rule |
 |-------|--------|---------|-----------------|
 | v1.\* | [src/api/FRIKApi.h](src/api/FRIKApi.h) | `FRIKAPI_GetApi` | Append-only. **Bump `FRIK_API_VERSION` whenever you change the struct layout** — clients check `>=`. Never reshape an existing entry or enum: a shipped client's header cannot gain enumerators, so new pose kinds must fold down to something v1.\* already knows. |
-| v2 | [src/api/FRIKApiV2.h](src/api/FRIKApiV2.h) | `FRIKAPI_V2_GetApi`, `FRIKAPI_V2_GetApiStructSize` | Exact match. A client is refused at `initialize()` unless `sizeof(FRIKApiV2)` agrees, so entries may move; bump `FRIK_API_V2_VERSION` for semantic changes. |
+| v2 | [src/api/FRIKApiV2.h](src/api/FRIKApiV2.h) | `FRIKAPI_V2_GetApi`, `FRIKAPI_V2_GetApiStructSize` | Frozen. A client is refused at `initialize()` unless `sizeof(FRIKApiV2)` agrees exactly, so the table must not change at all. |
+| v3 | [src/api/FRIKApiV3.h](src/api/FRIKApiV3.h) | `FRIKAPI_V3_GetApi`, `FRIKAPI_V3_GetApiStructSize` | Append-only. Clients require `structSize >= sizeof(FRIKApiV3)`; add entries at the end and **bump `FRIK_API_V3_VERSION`**, and document the version that introduced each entry. |
 
 Both are thin shims over [src/api/ApiCore.h](src/api/ApiCore.h), which owns the version-agnostic implementation and speaks FRIK's own vocabulary — it never includes a public API header. **Put new shared logic in `ApiCore`, not in a major.** Entries whose signatures mention no version-specific type are literally the same function pointer in both tables; the rest are shims that `static_assert` their enum parity with core.
 
@@ -98,7 +99,7 @@ Cross-mod state that must outlive the skeleton lives in [src/ExternalAuthority.h
 
 Hand poses, hand world transforms, and recoil controllers are all keyed by a string `tag` plus an `int priority`: highest wins, equal priorities break by newest registration, and re-setting a tag keeps its original place in that order.
 
-Public docs are [docs/frik-api-v2.md](docs/frik-api-v2.md) and [docs/frik-api.md](docs/frik-api.md) — update them whenever you change a published table.
+Public docs are [docs/frik-api-v3.md](docs/frik-api-v3.md), [docs/frik-api-v2.md](docs/frik-api-v2.md) and [docs/frik-api.md](docs/frik-api.md) — update them whenever you change a published table.
 
 For mods that want a button in FRIK's main config menu: they call `registerOpenModSettingButtonToMainConfig`; FRIK dispatches an F4SE message back to them when the button is clicked. Sender name is `F4VRBody` (also exposed as `BETTER_SCOPES_VR_MOD_NAME`/`FRIK_F4SE_MOD_NAME`).
 
