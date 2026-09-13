@@ -94,6 +94,16 @@ namespace frik::api::core
         return g_frik.isSkeletonReady();
     }
 
+    std::uint32_t FRIK_CORE_CALL getSkeletonGeneration()
+    {
+        return g_frik.getSkeletonGeneration();
+    }
+
+    bool FRIK_CORE_CALL isInPowerArmor()
+    {
+        return g_frik.isInPowerArmor();
+    }
+
     bool FRIK_CORE_CALL isConfigOpen()
     {
         return g_frik.isMainConfigurationModeActive() || g_frik.isPipboyConfigurationModeActive() || g_frik.inWeaponRepositionMode();

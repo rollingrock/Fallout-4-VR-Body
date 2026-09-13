@@ -47,8 +47,21 @@ void onGameLoaded()
 | `4` | FRIK's API v3 version is older than `minVersion`. |
 | `5` | FRIK's v3 table is smaller than your header. FRIK is older than the header you compiled against. |
 
+## Skeleton lifecycle payload (v3.2)
+
+The `kSkeletonReady` and `kSkeletonDestroying` messages now carry a `SkeletonLifecycleData` payload in `msg->data` (`msg->dataLen == sizeof`):
+
+| Field | Meaning |
+| --- | --- |
+| `generation` | Skeleton builds this session, `1` for the first. A different value than the one you measured against means the body was rebuilt. |
+| `rootNode` | The skeleton root `RE::NiNode*`, valid for the duration of the message. |
+| `inPowerArmor` | Whether this skeleton is the power armor rig. FRIK debounces the game's transient power-armor state before rebuilding, so this only changes together with `generation`. |
+
+The same two values are also available at any time through `getSkeletonGeneration()` and `isInPowerArmor()`. v2 clients receive the same messages and can keep ignoring the payload.
+
 ## Version history
 
 | `FRIK_API_V3_VERSION` | FRIK | Added |
 | --- | --- | --- |
 | `1` | 0.79 | The v2 surface as of v2.1 (31 entries). |
+| `2` | 0.79 | `getSkeletonGeneration`, `isInPowerArmor`; lifecycle messages carry `SkeletonLifecycleData`. |

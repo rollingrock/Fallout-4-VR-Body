@@ -246,8 +246,8 @@ namespace frik
 
         if (!_skeletonReadyPublished) {
             _skeletonReadyPublished = true;
-            logger::info("Broadcasting API lifecycle event: kSkeletonReady");
-            broadcastMessage(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonReady), nullptr, 0);
+            logger::info("Broadcasting API lifecycle event: kSkeletonReady (generation {})", _skeletonGeneration);
+            broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonReady));
         }
     }
 
@@ -268,8 +268,7 @@ namespace frik
         _inPowerArmor = f4vr::isInPowerArmor();
         _powerArmorChangeFrames = 0;
         _skeletonInitDelayFrames = 0;
-
-        devbench::g_devBenchBridge.bumpSkeletonGeneration();
+        ++_skeletonGeneration;
 
         const auto player = f4vr::getPlayer();
         logger::info("Initialize Skeleton ({}) ; Nodes: Player={}, Data={}, Root={}, Skeleton={}, Common={}",
@@ -397,8 +396,8 @@ namespace frik
     void FRIK::releaseSkeleton()
     {
         if (_skelly && _skeletonReadyPublished) {
-            logger::info("Broadcasting API lifecycle event: kSkeletonDestroying");
-            broadcastMessage(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying), nullptr, 0);
+            logger::info("Broadcasting API lifecycle event: kSkeletonDestroying (generation {})", _skeletonGeneration);
+            broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying));
         }
         _skeletonReadyPublished = false;
 
@@ -407,7 +406,6 @@ namespace frik
         g_externalAuthority.clearForSkeletonRelease();
         HandPose::clearHandPoseOverridesForSkeletonRelease();
         api::clearWeaponHandRecoilControllersForSkeletonRelease();
-        devbench::g_devBenchBridge.bumpSkeletonGeneration();
 
         _workingRootNode = nullptr;
         _skeletonInitDelayFrames = kSkeletonInitDelayFramesAfterRelease;
@@ -493,6 +491,19 @@ namespace frik
     void FRIK::dispatchMessageToExternalMod(const std::string& receivingModName, const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const
     {
         _messaging->Dispatch(messageType, data, dataLen, receivingModName.c_str());
+    }
+
+    /**
+     * Broadcast a skeleton lifecycle event with its payload; the message is delivered synchronously so a stack struct is fine.
+     */
+    void FRIK::broadcastSkeletonLifecycle(const std::uint32_t messageType) const
+    {
+        api::core::SkeletonLifecycleData data{};
+        data.structSize = sizeof(data);
+        data.generation = _skeletonGeneration;
+        data.rootNode = _workingRootNode;
+        data.inPowerArmor = _inPowerArmor;
+        broadcastMessage(messageType, &data, sizeof(data));
     }
 
     void FRIK::broadcastMessage(const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const

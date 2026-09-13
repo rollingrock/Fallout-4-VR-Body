@@ -12,6 +12,11 @@
 #include "skeleton/HandPoseData.h"
 #include "skeleton/HandPoseMath.h"
 
+namespace RE
+{
+    class NiNode;
+}
+
 /**
  * Internal implementation shared by every published FRIK API major version.
  *
@@ -95,6 +100,22 @@ namespace frik::api::core
     static_assert(sizeof(RecoilResponse) == 112, "RecoilResponse ABI changed");
 
     /**
+     * Payload of the kSkeletonReady / kSkeletonDestroying lifecycle messages.
+     * generation counts skeleton builds this session, so a client can tell a rebuild from the body it measured.
+     */
+    struct SkeletonLifecycleData
+    {
+        std::uint32_t structSize = 0;
+        std::uint32_t generation = 0;
+        RE::NiNode* rootNode = nullptr;
+        bool inPowerArmor = false;
+        std::uint8_t reserved0[7] = {};
+        std::uint32_t reserved[4] = {};
+    };
+
+    static_assert(sizeof(SkeletonLifecycleData) == 40, "SkeletonLifecycleData ABI changed");
+
+    /**
      * The hand-pose priority scale. HandPose owns the ordering, so these alias
      * its constants rather than restating the values.
      */
@@ -122,6 +143,8 @@ namespace frik::api::core
 
     const char* FRIK_CORE_CALL getModVersion();
     bool FRIK_CORE_CALL isSkeletonReady();
+    std::uint32_t FRIK_CORE_CALL getSkeletonGeneration();
+    bool FRIK_CORE_CALL isInPowerArmor();
     bool FRIK_CORE_CALL isConfigOpen();
     bool FRIK_CORE_CALL isSelfieModeOn();
     void FRIK_CORE_CALL setSelfieModeOn(bool setOn);

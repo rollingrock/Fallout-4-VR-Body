@@ -31,6 +31,17 @@ namespace frik
             return _skelly != nullptr;
         }
 
+        // Number of skeletons built this session; 0 before the first, +1 on every rebuild
+        std::uint32_t getSkeletonGeneration() const
+        {
+            return _skeletonGeneration;
+        }
+
+        bool isInPowerArmor() const
+        {
+            return _inPowerArmor;
+        }
+
         bool isInScopeMenu()
         {
             return _gameMenusHandler.isInScopeMenu();
@@ -249,6 +260,7 @@ namespace frik
         void onFrameUpdateInner();
         void onGameMenuOpened(const std::string& name, bool isOpened);
         void releaseSkeleton();
+        void broadcastSkeletonLifecycle(std::uint32_t messageType) const;
         static void updateWorldFinal();
         static void configureGameVars();
         static bool isGameReadyForSkeletonInitialization();
@@ -265,6 +277,7 @@ namespace frik
         bool _selfieMode = false;
         std::uint32_t _skeletonInitDelayFrames = 0;
         bool _skeletonReadyPublished = false;
+        std::uint32_t _skeletonGeneration = 0;
 
         // Feature enable/disable flags toggled via the public API (see blockFeature). Default: enabled.
         bool _flashlightEnabled = true;

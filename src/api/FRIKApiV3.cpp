@@ -66,6 +66,11 @@ namespace
     static_assert(static_cast<int>(FRIKApiV3::RecoilHandMask::Primary) == static_cast<int>(core::RecoilHandMask::Primary));
     static_assert(static_cast<int>(FRIKApiV3::RecoilHandMask::Offhand) == static_cast<int>(core::RecoilHandMask::Offhand));
 
+    static_assert(sizeof(FRIKApiV3::SkeletonLifecycleData) == sizeof(core::SkeletonLifecycleData));
+    static_assert(offsetof(FRIKApiV3::SkeletonLifecycleData, generation) == offsetof(core::SkeletonLifecycleData, generation));
+    static_assert(offsetof(FRIKApiV3::SkeletonLifecycleData, rootNode) == offsetof(core::SkeletonLifecycleData, rootNode));
+    static_assert(offsetof(FRIKApiV3::SkeletonLifecycleData, inPowerArmor) == offsetof(core::SkeletonLifecycleData, inPowerArmor));
+
     void copyLocalTransformsToApiData(const std::array<RE::NiTransform, FINGER_BONE_COUNT>& localTransforms, const std::uint16_t enabledMask,
         FRIKApiV3::FingerLocalTransformOverride& outTransforms)
     {
@@ -278,7 +283,9 @@ namespace
         .setConfigValueOverride = &core::setConfigValueOverride,
         .clearConfigValueOverride = &core::clearConfigValueOverride,
         .registerWeaponHandRecoilController = &registerRecoilController,
-        .unregisterWeaponHandRecoilController = &frik::api::unregisterWeaponHandRecoilController };
+        .unregisterWeaponHandRecoilController = &frik::api::unregisterWeaponHandRecoilController,
+        .getSkeletonGeneration = &core::getSkeletonGeneration,
+        .isInPowerArmor = &core::isInPowerArmor };
 }
 
 namespace frik::api

@@ -10,6 +10,11 @@
 #include "RE/NetImmerse/NiPoint.h"
 #include "RE/NetImmerse/NiTransform.h"
 
+namespace RE
+{
+    class NiNode;
+}
+
 // ----------------------------------------------------------------------------------------
 // EXAMPLE USAGE:
 // Copy this whole file into your project AS IS
@@ -62,7 +67,7 @@ namespace frik::api
      * newer FRIK. Check getVersion() against the version that introduced an entry
      * before calling it.
      */
-    inline constexpr std::uint32_t FRIK_API_V3_VERSION = 1;
+    inline constexpr std::uint32_t FRIK_API_V3_VERSION = 2;
 
     struct FRIKApiV3
     {
@@ -380,6 +385,24 @@ namespace frik::api
         };
 
         /**
+         * Payload carried by kSkeletonReady and kSkeletonDestroying (msg->data, msg->dataLen == sizeof).
+         * generation counts skeleton builds this session (1 for the first), so a client can tell a
+         * rebuild from the body it measured. rootNode is the skeleton root and is valid for the
+         * duration of the message. Since v3.2.
+         */
+        struct SkeletonLifecycleData
+        {
+            std::uint32_t structSize = 0;
+            std::uint32_t generation = 0;
+            RE::NiNode* rootNode = nullptr;
+            bool inPowerArmor = false;
+            std::uint8_t reserved0[7] = {};
+            std::uint32_t reserved[4] = {};
+        };
+
+        static_assert(sizeof(SkeletonLifecycleData) == 40, "SkeletonLifecycleData ABI changed");
+
+        /**
          * Get the API v3 version number.
          * Use this to check compatibility before calling other functions.
          */
@@ -636,6 +659,20 @@ namespace frik::api
          */
         bool(FRIK_CALL* unregisterWeaponHandRecoilController)(const char* tag);
 
+        // ---- Added in v3.2 ----
+
+        /**
+         * Number of skeletons FRIK has built this session: 0 before the first, +1 on every rebuild.
+         * Matches SkeletonLifecycleData::generation of the latest lifecycle message. Since v3.2.
+         */
+        std::uint32_t(FRIK_CALL* getSkeletonGeneration)();
+
+        /**
+         * Whether the current skeleton is the power armor rig. FRIK debounces the game's transient
+         * power-armor state before rebuilding, so this only flips together with the generation. Since v3.2.
+         */
+        bool(FRIK_CALL* isInPowerArmor)();
+
         /**
          * Initialize the FRIK API v3 object.
          * NOTE: call after all mods have been loaded in the game (GameLoaded event).
@@ -694,5 +731,5 @@ namespace frik::api
 
     inline constexpr std::size_t FRIK_API_V3_FUNCTION_POINTER_SIZE = sizeof(decltype(FRIKApiV3::getVersion));
     static_assert(std::is_standard_layout_v<FRIKApiV3>, "FRIKApiV3 must remain standard-layout for its exported function table ABI");
-    static_assert(sizeof(FRIKApiV3) == 31 * FRIK_API_V3_FUNCTION_POINTER_SIZE, "FRIK API v3 function table layout changed");
+    static_assert(sizeof(FRIKApiV3) == 33 * FRIK_API_V3_FUNCTION_POINTER_SIZE, "FRIK API v3 function table layout changed");
 }

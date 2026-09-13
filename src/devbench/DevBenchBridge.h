@@ -38,7 +38,7 @@ namespace frik::devbench
     {
         // ----- liveness. Read these before believing anything below them. -----
         std::uint64_t frame = 0; // bridge counter, ++ every published frame. NOT the engine's.
-        std::uint64_t skeletonGeneration = 0; // ++ on every initSkeleton and releaseSkeleton
+        std::uint64_t skeletonGeneration = 0; // FRIK's skeleton build counter; with state it tells a rebuild apart
         std::int64_t publishedAtMs = 0; // steady_clock ms since the bridge was constructed
         SkeletonState state = SkeletonState::Unknown;
 
@@ -109,13 +109,6 @@ namespace frik::devbench
         /// through a loading screen is exactly the lie this is built to avoid.
         void publishSnapshot();
 
-        /// ++ whenever the skeleton is created or released, so a reader can tell that the body
-        /// it measured is not the body it is now looking at.
-        void bumpSkeletonGeneration()
-        {
-            _skeletonGeneration.fetch_add(1, std::memory_order_relaxed);
-        }
-
         /// Listener thread. Null until the first frame has been published.
         [[nodiscard]] std::shared_ptr<const Snapshot> readSnapshot() const
         {
@@ -150,7 +143,6 @@ namespace frik::devbench
         std::atomic<bool> _armed{ false };
         std::atomic<bool> _registered{ false };
         std::atomic<std::uint64_t> _frame{ 0 };
-        std::atomic<std::uint64_t> _skeletonGeneration{ 0 };
         std::atomic<std::uint32_t> _pendingCommands{ 0 };
 
         mutable std::mutex _commandsLock;
