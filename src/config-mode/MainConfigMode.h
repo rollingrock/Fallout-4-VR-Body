@@ -31,6 +31,7 @@ namespace frik
         void registerOpenExternalModSettingButton(const OpenExternalModConfigData& data);
 
     private:
+        void tryCreateMainConfigUI();
         void createMainConfigUI();
         static std::shared_ptr<vrui::UIContainer> createBalancedButtonRows(const std::string& name, const std::vector<std::shared_ptr<vrui::UIElement>>& buttons);
         void openBodyAdjustmentSubConfigUI();
