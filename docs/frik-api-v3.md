@@ -4,6 +4,8 @@ FRIK API v3 is the **append-only C ABI** for F4SE plugins that integrate with FR
 
 The API is defined in a single header, [src/api/FRIKApiV3.h](../src/api/FRIKApiV3.h). Copy it into your project **as-is** and call into FRIK through the exported `FRIKAPI_V3_GetApi` function. No linking against FRIK is required.
 
+The header uses CommonLibF4's `RE::NiPoint3`, `RE::NiTransform` and `RE::NiNode` types, so include it from a translation unit that already has CommonLibF4 in scope. A plugin without CommonLibF4 must provide layout-identical definitions of those three types itself.
+
 > **Which API should I use?** Use v3 for new integrations. v2 stays exported and frozen for the mods already built on it, and v1.\* is still there for older mods. All three sit on the same internal state, so clients of different majors arbitrate through the same tags instead of fighting invisibly.
 
 ## How it differs from v2
