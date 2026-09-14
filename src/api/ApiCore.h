@@ -146,6 +146,17 @@ namespace frik::api::core
     static_assert(sizeof(ArmChainTransforms) == 480, "ArmChainTransforms ABI changed");
 
     /**
+     * How a hand was solved this frame; every published major mirrors the values.
+     */
+    enum class HandSolveState : std::uint8_t
+    {
+        SkeletonNotReady = 0,
+        NoClaim = 1,
+        Consumed = 2,
+        Unreachable = 3,
+    };
+
+    /**
      * The hand-pose priority scale. HandPose owns the ordering, so these alias
      * its constants rather than restating the values.
      */
@@ -254,6 +265,7 @@ namespace frik::api::core
 
     bool getTrackedHandTransform(bool isLeft, TrackedHandKind kind, RE::NiTransform& outTransform);
     bool getArmChain(bool isLeft, ArmChainTransforms& outChain);
+    HandSolveState getHandSolveResult(bool isLeft, RE::NiTransform& outWrist);
 
     RE::NiPoint3 getIndexFingerTipPosition(Hand hand);
 

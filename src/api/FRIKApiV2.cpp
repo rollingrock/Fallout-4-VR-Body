@@ -60,6 +60,10 @@ namespace
     static_assert(offsetof(FRIKApiV2::ArmChainTransforms, validMask) == offsetof(core::ArmChainTransforms, validMask));
     static_assert(offsetof(FRIKApiV2::ArmChainTransforms, shoulder) == offsetof(core::ArmChainTransforms, shoulder));
     static_assert(offsetof(FRIKApiV2::ArmChainTransforms, hand) == offsetof(core::ArmChainTransforms, hand));
+    static_assert(static_cast<int>(FRIKApiV2::HandSolveState::SkeletonNotReady) == static_cast<int>(core::HandSolveState::SkeletonNotReady));
+    static_assert(static_cast<int>(FRIKApiV2::HandSolveState::NoClaim) == static_cast<int>(core::HandSolveState::NoClaim));
+    static_assert(static_cast<int>(FRIKApiV2::HandSolveState::Consumed) == static_cast<int>(core::HandSolveState::Consumed));
+    static_assert(static_cast<int>(FRIKApiV2::HandSolveState::Unreachable) == static_cast<int>(core::HandSolveState::Unreachable));
 
     static_assert(sizeof(FRIKApiV2::SkeletonLifecycleData) == sizeof(core::SkeletonLifecycleData));
     static_assert(offsetof(FRIKApiV2::SkeletonLifecycleData, generation) == offsetof(core::SkeletonLifecycleData, generation));
@@ -327,6 +331,16 @@ namespace
         return core::getArmChain(core::isLeftForHand(hand), *reinterpret_cast<core::ArmChainTransforms*>(outChain));
     }
 
+    FRIKApiV2::HandSolveState FRIK_CALL getHandSolveResult(const FRIKApiV2::Hand hand, RE::NiTransform* outWrist)
+    {
+        RE::NiTransform wrist;
+        const auto state = core::getHandSolveResult(core::isLeftForHand(hand), wrist);
+        if (outWrist) {
+            *outWrist = wrist;
+        }
+        return static_cast<FRIKApiV2::HandSolveState>(state);
+    }
+
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApiV2::OpenExternalModConfigData& data)
     {
         return core::registerOpenModSettingButtonToMainConfig(data.buttonIconNifPath, data.callbackReceiverName, data.callbackMessageType);
@@ -393,7 +407,8 @@ namespace
         .unregisterFrameCallback = &core::unregisterFrameCallback,
         .getTrackedHandTransform = &getTrackedHandTransform,
         .getBoneWorldTransform = &core::getBoneWorldTransform,
-        .getArmChain = &getArmChain };
+        .getArmChain = &getArmChain,
+        .getHandSolveResult = &getHandSolveResult };
 }
 
 namespace frik::api

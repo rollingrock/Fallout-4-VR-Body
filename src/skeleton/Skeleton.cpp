@@ -201,6 +201,7 @@ namespace frik
         setWandsVisibility(false, false);
 
         logger::trace("Restore locals of skeleton");
+        _twistAnglePrevFrame = _twistAngleThisFrame;
         restoreNodesToDefault();
         updateDownFromRoot();
 
@@ -1006,6 +1007,8 @@ namespace frik
             handWorldTarget = isLeft ? _leftHand->world : _rightHand->world;
         }
         (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, handWorldTarget);
+        auto& solveState = _handSolveState[isLeft ? 0 : 1];
+        solveState = hasTransformOverride ? HandSolveState::Consumed : HandSolveState::NoClaim;
         if (solveArmToHandWorldTarget(isLeft, handWorldTarget) || !hasTransformOverride) {
             return;
         }
@@ -1014,10 +1017,20 @@ namespace frik
         // tracked hand that only ever happens on a dropped frame of tracking and the next frame reset clears
         // it, but an override holds its target until the client clears it, so the arm would stay half solved
         // for as long as it is set. Solve to the tracked hand instead, as if no tag owned this hand.
+        solveState = HandSolveState::Unreachable;
         restoreArmNodesToDefault(isLeft);
         RE::NiTransform trackedHandTarget = isLeft ? _leftHand->world : _rightHand->world;
         (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, trackedHandTarget);
         (void)solveArmToHandWorldTarget(isLeft, trackedHandTarget);
+    }
+
+    void Skeleton::latchRenderedWrists()
+    {
+        for (const bool isLeft : { true, false }) {
+            if (const auto* hand = getArm(isLeft).hand) {
+                _renderedWrist[isLeft ? 0 : 1] = hand->world;
+            }
+        }
     }
 
     /**
@@ -1165,9 +1178,9 @@ namespace frik
         //		logger::info("final angle %2f", rads_to_degrees(twistAngle));
 
         // Smooth out sudden changes in the twist angle over time to reduce elbow shake
-        static std::array<float, 2> prevAngle = { 0, 0 };
-        twistAngle = prevAngle[isLeft ? 0 : 1] + (twistAngle - prevAngle[isLeft ? 0 : 1]) * 0.25f;
-        prevAngle[isLeft ? 0 : 1] = twistAngle;
+        const auto side = isLeft ? 0 : 1;
+        twistAngle = _twistAnglePrevFrame[side] + (twistAngle - _twistAnglePrevFrame[side]) * 0.25f;
+        _twistAngleThisFrame[side] = twistAngle;
 
         // Calculate the hand's distance behind the body - It will increase the minimum elbow rotation angle
         float size = 1.0;

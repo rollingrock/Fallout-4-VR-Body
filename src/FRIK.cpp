@@ -250,6 +250,7 @@ namespace frik
 
         api::core::invokeFramePhase(FramePhase::BeforeWorldFinal);
         updateWorldFinal();
+        _skelly->latchRenderedWrists();
 
         if (!_skeletonReadyPublished) {
             _skeletonReadyPublished = true;

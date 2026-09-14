@@ -74,7 +74,7 @@ Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end 
 | --- | --- | --- |
 | `1` | 0.78 | The original 31-entry table (exact-size check at `initialize()`). |
 | `2` | 0.79 | Append-only rule; `getSkeletonGeneration`, `isInPowerArmor`; lifecycle messages carry `SkeletonLifecycleData`; scope providers: `setScopeProvider`, `clearScopeProvider`, `setLookingThroughScope`, `isLookingThroughScope`; `kScopeEnter` / `kScopeExit` events. |
-| `3` | 0.79 | Frame phases: `registerFrameCallback`, `unregisterFrameCallback`; a hand transform published in `BeforeArmSolve` is solved in the same frame. Body reads: `getTrackedHandTransform`, `getBoneWorldTransform`, `getArmChain`. |
+| `3` | 0.79 | Frame phases: `registerFrameCallback`, `unregisterFrameCallback`; a hand transform published in `BeforeArmSolve` is solved in the same frame. Body reads: `getTrackedHandTransform`, `getBoneWorldTransform`, `getArmChain`; `getHandSolveResult`. |
 
 > A client built against the v2.1 header refuses any FRIK from 0.79 on (its exact-size check fails with code `5`). Recopy the header once; after that no further recopy is ever forced.
 
@@ -237,7 +237,7 @@ Take over where a hand is placed, giving FRIK the world transform to solve the a
 
 - The transform is **consumed by FRIK's arm solve**, not applied during your call: published from a `BeforeArmSolve` [frame callback](#frame-phases-v23) it is solved in that same frame, published anywhere else it is solved on FRIK's next frame. The arm is solved exactly once per frame, so everything FRIK derives from the hand stays consistent with it.
 - A published transform **keeps owning the hand until cleared**. Holding a hand steady needs no per-frame republishing; tracking a moving target means republishing whenever the target changes.
-- The return value reports **validation only**. Whether the arm can actually reach the target is decided per frame by the solver, which falls back to FRIK's own posing for any frame it cannot solve.
+- The return value reports **validation only**. Whether the arm can actually reach the target is decided per frame by the solver, which falls back to FRIK's own posing for any frame it cannot solve. `getHandSolveResult(hand, &wrist)` (v2.3) reports that outcome for the frame: `Consumed`, `Unreachable` (fell back to the tracked hand), `NoClaim` or `SkeletonNotReady`, and fills the wrist world transform as rendered. It is latched once the frame's world transforms are final, so read it from `AfterWorldFinal` or the next frame.
 - Call on the **game update thread**. The call is pure data publication — it does not need to run mid-scene-graph mutation.
 - Registrations are cleared on skeleton destruction; see [Skeleton lifecycle](#skeleton-lifecycle).
 

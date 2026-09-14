@@ -11,6 +11,8 @@
 - API: Added the scope provider API (`setScopeProvider`, `setLookingThroughScope`) and `kScopeEnter` / `kScopeExit` events, broadcast at the start of FRIK's frame.
 - API: **FRIK API v2.3**. Frame phases: a mod registers callbacks at named points of FRIK's frame (`registerFrameCallback`); a hand transform published in `BeforeArmSolve` is solved in the same frame.
 - API: Added `getTrackedHandTransform`, `getBoneWorldTransform` and `getArmChain` so mods read the tracked inputs and solved bones FRIK uses instead of engine nodes.
+- API: Added `getHandSolveResult` reporting whether a published hand transform was solved or out of reach, with the rendered wrist.
+- Body: The elbow twist smoothing is committed once per frame, so solving an arm twice in a frame (unreachable fallback) no longer double-steps it.
 - Stability: Every game patch now verifies the original bytes before writing and is skipped with a log line on a mismatch.
 - Dev: Added a unit-test target run by CI, and a devbench `frik` tool exposing live state and config overrides.
 

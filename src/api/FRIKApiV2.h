@@ -482,6 +482,20 @@ namespace frik::api
         static_assert(sizeof(ArmChainTransforms) == 480, "ArmChainTransforms ABI changed");
 
         /**
+         * How a hand was solved this frame (getHandSolveResult). Since v2.3.
+         */
+        enum class HandSolveState : std::uint8_t
+        {
+            SkeletonNotReady = 0,
+            // No hand transform is published for this hand; solved to the tracked hand.
+            NoClaim = 1,
+            // Solved to the published hand transform.
+            Consumed = 2,
+            // The published target was out of reach; solved to the tracked hand for this frame instead.
+            Unreachable = 3,
+        };
+
+        /**
          * Get the API v2 version number.
          * Use this to check compatibility before calling other functions.
          */
@@ -817,11 +831,19 @@ namespace frik::api
         bool(FRIK_CALL* getArmChain)(Hand hand, ArmChainTransforms* outChain);
 
         /**
+         * How a hand was solved this frame and the wrist world transform rendered for it, latched once the
+         * frame's world transforms are final (so before AfterWorldFinal it holds the previous frame). A
+         * published target is Consumed when the arm solved to it and Unreachable when FRIK fell back to
+         * the tracked hand for that frame. Since v2.3.
+         */
+        HandSolveState(FRIK_CALL* getHandSolveResult)(Hand hand, RE::NiTransform* outWrist);
+
+        /**
          * Size of the table as published at a given contract version; the append-only rule keeps every older prefix intact.
          */
         static constexpr std::size_t tableSizeForVersion(const std::uint32_t version)
         {
-            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 42 };
+            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 43 };
             const auto index = version < std::size(functionCountByVersion) ? version : std::size(functionCountByVersion) - 1;
             return functionCountByVersion[index] * sizeof(void (*)());
         }
@@ -886,6 +908,6 @@ namespace frik::api
 
     inline constexpr std::size_t FRIK_API_V2_FUNCTION_POINTER_SIZE = sizeof(decltype(FRIKApiV2::getVersion));
     static_assert(std::is_standard_layout_v<FRIKApiV2>, "FRIKApiV2 must remain standard-layout for its exported function table ABI");
-    static_assert(sizeof(FRIKApiV2) == 42 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
+    static_assert(sizeof(FRIKApiV2) == 43 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
     static_assert(FRIKApiV2::tableSizeForVersion(FRIK_API_V2_VERSION) == sizeof(FRIKApiV2), "tableSizeForVersion is out of step with the table");
 }

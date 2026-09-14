@@ -256,6 +256,26 @@ namespace frik::api::core
         return true;
     }
 
+    HandSolveState getHandSolveResult(const bool isLeft, RE::NiTransform& outWrist)
+    {
+        const auto* skelly = g_frik.getSkeleton();
+        if (!skelly) {
+            outWrist.MakeIdentity();
+            return HandSolveState::SkeletonNotReady;
+        }
+        Skeleton::HandSolveState state{};
+        skelly->getHandSolveResult(isLeft, state, outWrist);
+        switch (state) {
+        case Skeleton::HandSolveState::Consumed:
+            return HandSolveState::Consumed;
+        case Skeleton::HandSolveState::Unreachable:
+            return HandSolveState::Unreachable;
+        case Skeleton::HandSolveState::NoClaim:
+            break;
+        }
+        return HandSolveState::NoClaim;
+    }
+
     bool getArmChain(const bool isLeft, ArmChainTransforms& outChain)
     {
         const auto* skelly = g_frik.getSkeleton();

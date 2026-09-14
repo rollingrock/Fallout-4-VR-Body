@@ -71,6 +71,28 @@ namespace frik
 
         bool getBoneWorldTransform(std::string_view boneName, RE::NiTransform& outTransform) const;
 
+        enum class HandSolveState : std::uint8_t
+        {
+            // no external hand transform was set; solved to the tracked hand
+            NoClaim,
+            // solved to the external hand transform
+            Consumed,
+            // the external target was out of reach; solved to the tracked hand instead
+            Unreachable,
+        };
+
+        /**
+         * How this hand was solved this frame and the wrist world transform rendered for it (latched after world final).
+         */
+        void getHandSolveResult(const bool isLeft, HandSolveState& outState, RE::NiTransform& outWrist) const
+        {
+            outState = _handSolveState[isLeft ? 0 : 1];
+            outWrist = _renderedWrist[isLeft ? 0 : 1];
+        }
+
+        // Called once the frame's world transforms are final
+        void latchRenderedWrists();
+
         static float getAdjustedPlayerHMDOffset();
 
         void onFrameUpdate();
@@ -183,6 +205,12 @@ namespace frik
 
         RE::NiTransform _rightHandPrevFrame;
         RE::NiTransform _leftHandPrevFrame;
+
+        // elbow twist smoothing: committed once per frame so a re-solve in the same frame gives the same answer
+        std::array<float, 2> _twistAnglePrevFrame = { 0, 0 };
+        std::array<float, 2> _twistAngleThisFrame = { 0, 0 };
+        std::array<HandSolveState, 2> _handSolveState = { HandSolveState::NoClaim, HandSolveState::NoClaim };
+        std::array<RE::NiTransform, 2> _renderedWrist = {};
 
         WeaponHandRecoil _weaponHandRecoil;
 
