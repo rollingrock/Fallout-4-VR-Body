@@ -174,6 +174,9 @@ namespace frik
 
         onFrameUpdateInner();
 
+        // always paired with FrameBegin, even when the inner update returned early
+        api::core::invokeFramePhase(FramePhase::FrameEnd);
+
         // After every exit path of the inner update, including its early returns: a snapshot
         // frozen at its last good value through a loading screen would be a lie.
         devbench::g_devBenchBridge.publishSnapshot();

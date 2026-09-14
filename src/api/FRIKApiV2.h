@@ -422,8 +422,8 @@ namespace frik::api
         static_assert(sizeof(SkeletonLifecycleData) == 40, "SkeletonLifecycleData ABI changed");
 
         /**
-         * Points in FRIK's frame where a registered callback runs, in frame order. All but FrameBegin only run
-         * while a skeleton exists. Since v2.3.
+         * Points in FRIK's frame where a registered callback runs, in frame order. All but FrameBegin and
+         * FrameEnd only run while a skeleton exists. Since v2.3.
          */
         enum class FramePhase : std::uint8_t
         {
@@ -443,6 +443,10 @@ namespace frik::api
             // The start of FRIK's frame, before the skeleton check: the only phase that also runs while no skeleton
             // exists (loading screens, rebuilds), for per-frame housekeeping. Runs after kScopeEnter / kScopeExit.
             FrameBegin = 9,
+            // The end of FRIK's frame, after AfterWorldFinal when a skeleton ran and right after FrameBegin's
+            // early return when none did; runs every frame like FrameBegin, so a FrameBegin/FrameEnd pair always
+            // brackets a frame even when the skeleton phases were skipped (release or rebuild mid-frame).
+            FrameEnd = 10,
         };
 
         /**

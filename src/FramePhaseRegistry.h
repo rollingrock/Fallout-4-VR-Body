@@ -28,9 +28,11 @@ namespace frik
         AfterWorldFinal = 8,
         // The start of FRIK's frame, before the skeleton check: the one phase that runs without a skeleton.
         FrameBegin = 9,
+        // The end of FRIK's frame; runs every frame like FrameBegin, whether or not the skeleton phases ran.
+        FrameEnd = 10,
     };
 
-    inline constexpr std::uint32_t FRAME_PHASE_COUNT = 10;
+    inline constexpr std::uint32_t FRAME_PHASE_COUNT = 11;
 
     using FrameCallback = void(__cdecl*)(std::uint32_t phase, void* userData) noexcept;
 

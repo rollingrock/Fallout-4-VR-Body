@@ -327,7 +327,7 @@ BetterScopesVR is registered by FRIK itself as a `PublishesLookingThrough` provi
 
 ## Frame phases (v2.3)
 
-FRIK's frame is a fixed sequence, and a mod can run at named points of it instead of hooking around FRIK. Register once after FRIK has loaded; registrations survive skeleton rebuilds and every phase except `FrameBegin` only runs while a skeleton exists.
+FRIK's frame is a fixed sequence, and a mod can run at named points of it instead of hooking around FRIK. Register once after FRIK has loaded; registrations survive skeleton rebuilds and every phase except `FrameBegin` and `FrameEnd` only runs while a skeleton exists.
 
 `bool registerFrameCallback(const char* tag, std::uint32_t phase, FrameCallback callback, void* userData, int priority)`
 `bool unregisterFrameCallback(const char* tag)`
@@ -346,6 +346,7 @@ FRIK's frame is a fixed sequence, and a mod can run at named points of it instea
 | `BeforeWorldFinal` | Before FRIK pushes the frame into the flattened bone array. |
 | `AfterWorldFinal` | The frame is complete; every bone world transform is final. On the first frame of a skeleton this runs after `kSkeletonReady`. |
 | `FrameBegin` | The start of FRIK's frame, after the scope events and before the skeleton check. The only phase that also runs while no skeleton exists (loading screens, rebuilds), so a mod can keep per-frame housekeeping and its own provider dispatch alive without hooking the game loop. Numbered 9 but runs first in FRIK's pass (after `NativeGraphOutput`, which the engine fires earlier in the game frame). |
+| `FrameEnd` | The end of FRIK's frame. Runs every frame like `FrameBegin`: after `AfterWorldFinal` when the skeleton phases ran, and right after FRIK's early return when they did not (no player, loading screen, skeleton released or rebuilt this frame). A `FrameBegin` / `FrameEnd` pair therefore always brackets a frame, so per-frame work that must not be skipped can run in `FrameEnd` when the skeleton phases did not fire. |
 
 All callbacks run on the game update thread inside FRIK's frame. Any API call is allowed from a callback except `registerFrameCallback` / `unregisterFrameCallback`.
 

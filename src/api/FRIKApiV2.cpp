@@ -51,7 +51,8 @@ namespace
     static_assert(static_cast<int>(FRIKApiV2::FramePhase::BeforeWorldFinal) == static_cast<int>(FramePhase::BeforeWorldFinal));
     static_assert(static_cast<int>(FRIKApiV2::FramePhase::AfterWorldFinal) == static_cast<int>(FramePhase::AfterWorldFinal));
     static_assert(static_cast<int>(FRIKApiV2::FramePhase::FrameBegin) == static_cast<int>(FramePhase::FrameBegin));
-    static_assert(static_cast<int>(FRIKApiV2::FramePhase::FrameBegin) + 1 == FRAME_PHASE_COUNT);
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::FrameEnd) == static_cast<int>(FramePhase::FrameEnd));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::FrameEnd) + 1 == FRAME_PHASE_COUNT);
     static_assert(std::is_same_v<FRIKApiV2::FrameCallback, FrameCallback>);
 
     static_assert(static_cast<int>(FRIKApiV2::TrackedHandKind::Wand) == static_cast<int>(core::TrackedHandKind::Wand));
