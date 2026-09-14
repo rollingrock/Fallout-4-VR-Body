@@ -131,7 +131,6 @@ namespace frik
         void hide3rdPersonWeapon() const;
         void hideFistHelpers() const;
         void showHidePAHud() const;
-        void hideHands() const;
         void fixArmor() const;
 
         // Utils - Body Positioning

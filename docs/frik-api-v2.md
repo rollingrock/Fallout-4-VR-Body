@@ -307,7 +307,7 @@ FRIK keys every scope behaviour on one **looking-through-scope** state: whether 
 
 | `ScopeCapability` | FRIK's behaviour while registered |
 | --- | --- |
-| `KeepsBodyVisible` | The body root is never hidden while scoped (the user's `HideBodyInVanillaScope` no longer applies). |
+| `KeepsBodyVisible` | The body is never hidden while scoped (the user's `HideBodyInVanillaScope` no longer applies). Without it FRIK culls the body geometry while scoped; since v2.3 it no longer collapses the root, so bone and hand transforms stay valid either way. |
 | `OwnsScopeCamera` | FRIK leaves the `primaryWeaponScopeCamera` node alone. |
 | `PublishesLookingThrough` | This provider's `setLookingThroughScope` replaces the vanilla `ScopeMenu` state. |
 | `OwnsDamping` | FRIK does not dampen hands or recoil while scoped. |

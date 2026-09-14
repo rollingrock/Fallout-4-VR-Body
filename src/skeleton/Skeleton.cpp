@@ -257,7 +257,7 @@ namespace frik
         showHidePAHud();
 
         logger::trace("Cull geometry...");
-        _cullGeometry.cullPlayerGeometry();
+        _cullGeometry.cullPlayerGeometry(g_frik.shouldHideBodyInScope());
 
         // project body out in front of the camera for debug purposes
         logger::trace("Selfie Time");
@@ -266,10 +266,6 @@ namespace frik
         logger::trace("Operate hands...");
         _handPose.onFrameUpdate(_root, _frameTime);
         api::core::invokeFramePhase(FramePhase::AfterHandPose);
-
-        if (g_frik.shouldHideBodyInScope()) {
-            hideHands();
-        }
 
         if (_inPowerArmor) {
             fixArmor();
@@ -1335,16 +1331,6 @@ namespace frik
         arm.hand->local.translate *= forearmRatio;
 
         return true;
-    }
-
-    void Skeleton::hideHands() const
-    {
-        const RE::NiPoint3 rwp = _rightArm.shoulder->world.translate;
-        _root->local.scale = 0.00001f;
-        updateTransforms(_root);
-        _root->world.translate += _forwardDir * -10.0f;
-        _root->world.translate.z = rwp.z;
-        updateDown(_root, false);
     }
 
     void Skeleton::dampenHand(RE::NiNode* node, const bool isLeft)

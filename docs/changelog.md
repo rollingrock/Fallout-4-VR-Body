@@ -6,6 +6,7 @@
 - Scopes: The scope camera now follows the two-handed aim in every case, fixing the scope view drifting off the barrel while gripping with both hands.
 - Scopes: Two-handed grip keeps the weapon pivot and primary hand correct while scoped instead of skipping them.
 - Config: Added `HideBodyInVanillaScope` to keep the body visible in the vanilla scope view.
+- Scopes: Hiding the body in the vanilla scope now culls its geometry instead of collapsing the skeleton root, so bone and hand positions stay valid for other mods while scoped.
 - API: **FRIK API v2.2**. The v2 table is append-only from now on; `initialize()` accepts any newer FRIK. Mods built against the v2.1 header must recopy `FRIKApiV2.h` once.
 - API: Skeleton lifecycle events carry the skeleton generation, power armor flag and root node; added `getSkeletonGeneration` and `isInPowerArmor`.
 - API: Added the scope provider API (`setScopeProvider`, `setLookingThroughScope`) and `kScopeEnter` / `kScopeExit` events, broadcast at the start of FRIK's frame.
