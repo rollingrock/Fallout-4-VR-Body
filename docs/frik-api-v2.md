@@ -237,7 +237,7 @@ Use `getHandPoseSetTagState` to detect when another system has taken over the po
 
 Take over where a hand is placed, giving FRIK the world transform to solve the arm to instead of the tracked controller. `worldTransform` is the **wrist transform in world space**, not hand-local space.
 
-- The transform is **consumed by FRIK's arm solve**, not applied during your call: published from a `BeforeArmSolve` [frame callback](#frame-phases-v23) it is solved in that same frame, published anywhere else it is solved on FRIK's next frame. The arm is solved exactly once per frame, so everything FRIK derives from the hand stays consistent with it.
+- The transform is **consumed by FRIK's arm solve**, not applied during your call: published from a `BeforeArmSolve` [frame callback](#frame-phases-v23) it is solved in that same frame, published from `AfterArmSolve` it is re-solved right there (second solve for that hand), published anywhere else it is solved on FRIK's next frame. The arm is solved exactly once per frame, so everything FRIK derives from the hand stays consistent with it.
 - A published transform **keeps owning the hand until cleared**. Holding a hand steady needs no per-frame republishing; tracking a moving target means republishing whenever the target changes.
 - The return value reports **validation only**. Whether the arm can actually reach the target is decided per frame by the solver, which falls back to FRIK's own posing for any frame it cannot solve. `getHandSolveResult(hand, &wrist)` (v2.3) reports that outcome for the frame: `Consumed`, `Unreachable` (fell back to the tracked hand), `NoClaim` or `SkeletonNotReady`, and fills the wrist world transform as rendered. It is latched once the frame's world transforms are final, so read it from `AfterWorldFinal` or the next frame.
 - Call on the **game update thread**. The call is pure data publication — it does not need to run mid-scene-graph mutation.
@@ -340,7 +340,7 @@ FRIK's frame is a fixed sequence, and a mod can run at named points of it instea
 | `BodyPlaced` | The body root is under the HMD and posture is set. |
 | `LegsSolved` | Legs and walking are solved. |
 | `BeforeArmSolve` | Before the arm solve. A `setHandWorldTransform` published here is solved in this same frame. |
-| `AfterArmSolve` | Both arms are solved to their targets. |
+| `AfterArmSolve` | Both arms are solved to their targets, so a callback can read the solved arm (`getArmChain`). A hand transform published or cleared inside this phase is re-solved before the frame continues, at the cost of a second solve for that hand; publish in `BeforeArmSolve` when you do not need the solved arm first. |
 | `AfterHandPose` | Finger poses are applied. |
 | `AfterWeaponPosition` | Weapon offsets, two-handed grip and the scope camera are applied; the primary hand is final. |
 | `BeforeWorldFinal` | Before FRIK pushes the frame into the flattened bone array. |

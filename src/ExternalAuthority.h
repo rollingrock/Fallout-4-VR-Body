@@ -74,6 +74,8 @@ namespace frik
         bool setHandWorldTransform(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority, bool* outInserted = nullptr);
         bool clearHandWorldTransform(std::string_view tag, bool isLeft, bool* outRemoved = nullptr);
         bool getHandWorldTransform(bool isLeft, RE::NiTransform& outWorldTransform) const;
+        // bumps whenever a hand's claims change (set or clear), so the frame can tell a claim published mid-frame
+        std::uint64_t getHandClaimRevision(bool isLeft) const;
 
         bool setOffHandGrip(std::string_view tag, bool active, bool supportIsLeft, const RE::NiTransform* supportWorld);
         bool isOffHandGripping() const;
@@ -131,6 +133,7 @@ namespace frik
         // Indexed by hand: 0 is right, 1 is left.
         std::array<std::vector<HandWorldTransformClaim>, 2> _handWorldTransforms;
         std::uint64_t _nextHandWorldTransformSequence = 0;
+        std::array<std::uint64_t, 2> _handClaimRevision = { 0, 0 };
 
         mutable std::mutex _offHandGripsLock;
         std::vector<OffHandGripClaim> _offHandGrips;

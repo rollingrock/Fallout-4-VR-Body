@@ -248,7 +248,22 @@ namespace frik
         solveArm(false);
         solveArm(true);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+
+        // A claim published or cleared inside AfterArmSolve (a mod that needs the solved arm first) is re-solved right here,
+        // before hand pose and weapon position run, so the rest of the frame still sees one consistent arm
+        const std::array<std::uint64_t, 2> claimRevisionBefore{ g_externalAuthority.getHandClaimRevision(false), g_externalAuthority.getHandClaimRevision(true) };
         api::core::invokeFramePhase(FramePhase::AfterArmSolve);
+        bool resolved = false;
+        for (const bool isLeft : { false, true }) {
+            if (g_externalAuthority.getHandClaimRevision(isLeft) != claimRevisionBefore[isLeft ? 1 : 0]) {
+                restoreArmNodesToDefault(isLeft);
+                solveArm(isLeft);
+                resolved = true;
+            }
+        }
+        if (resolved) {
+            updateDownFromRoot();
+        }
 
         // Misc stuff to show/hide things
         logger::trace("Pipboy and Weapons...");

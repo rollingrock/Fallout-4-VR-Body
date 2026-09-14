@@ -41,10 +41,17 @@ namespace frik
             claimIt->worldTransform = worldTransform;
             claimIt->priority = priority;
         }
+        ++_handClaimRevision[isLeft ? 1 : 0];
         if (outInserted) {
             *outInserted = inserted;
         }
         return true;
+    }
+
+    std::uint64_t ExternalAuthority::getHandClaimRevision(const bool isLeft) const
+    {
+        std::lock_guard lock(_handWorldTransformsLock);
+        return _handClaimRevision[isLeft ? 1 : 0];
     }
 
     /**
@@ -63,6 +70,9 @@ namespace frik
         const auto removed = std::erase_if(claimsForHand(isLeft), [tag](const HandWorldTransformClaim& claim) {
             return claim.tag == tag;
         });
+        if (removed > 0) {
+            ++_handClaimRevision[isLeft ? 1 : 0];
+        }
         if (outRemoved) {
             *outRemoved = removed > 0;
         }
