@@ -83,6 +83,13 @@ namespace frik
         }
         _nodeOwnershipBlockedLastFrame = nodeOwnershipBlocked;
 
+        if (_gripPoseRestorePending) {
+            _gripPoseRestorePending = false;
+            if (_grip.gripping) {
+                HandPose::setOffhandGripHandPose(true);
+            }
+        }
+
         // handle throwable first as it's independent of weapon
         handleThrowableWeapon();
 
