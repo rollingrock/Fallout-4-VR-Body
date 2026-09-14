@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GripDetection.h"
 #include "WeaponPositionConfigMode.h"
 #include "f4vr/EquippedWeaponHandler.h"
 #include "skeleton/Skeleton.h"
@@ -34,7 +35,7 @@ namespace frik
 
         bool isOffHandGrippingWeapon() const
         {
-            return _offHandGripping;
+            return _grip.gripping;
         }
 
         bool inWeaponRepositionMode() const
@@ -83,14 +84,8 @@ namespace frik
         // source of truth for the current weapon name, power-armor state, and melee state
         f4vr::EquippedWeaponHandler _equippedWeapon;
 
-        // is offhand (secondary hand) gripping the weapon barrel
-        bool _offHandGripping = false;
-
-        // the grip survived the weapon being hidden (holster, Pip-Boy, cell load); re-check the cone when it is back (#142)
-        bool _gripRevalidatePending = false;
-
-        // mode 2 released by button while still in the cone; do not auto-grip again until the hand leaves it
-        bool _gripRearmRequired = false;
+        // is offhand (secondary hand) gripping the weapon barrel, with its memory across hidden weapons and button let-go (GripDetection.h)
+        grip::GripLatch _grip;
 
         // last drawn weapon, so a hidden-and-back weapon is told apart from a real weapon change
         std::string _lastDrawnWeaponName;

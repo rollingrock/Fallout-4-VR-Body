@@ -40,7 +40,7 @@ namespace frik
      */
     void WeaponPositionAdjuster::resetOnDisable()
     {
-        if (_offHandGripping) {
+        if (_grip.gripping) {
             setOffhandGripping(false);
         }
         if (inWeaponRepositionMode()) {
@@ -198,15 +198,17 @@ namespace frik
 
         if (!_equippedWeapon.isDrawn()) {
             // hidden, not changed (holster, Pip-Boy, cell load): keep the grip and re-check it when the weapon is back (#142)
-            _gripRevalidatePending = _offHandGripping;
+            _grip.onWeaponHidden();
             loadStoredOffsets();
             return;
         }
 
-        if (_equippedWeapon.weaponName() != _lastDrawnWeaponName) {
-            _lastDrawnWeaponName = _equippedWeapon.weaponName();
-            // reset state; go through setOffhandGripping so the offhand grip hand-pose override is released too
-            setOffhandGripping(false);
+        const bool sameWeapon = _equippedWeapon.weaponName() == _lastDrawnWeaponName;
+        _lastDrawnWeaponName = _equippedWeapon.weaponName();
+        if (!sameWeapon) {
+            if (_grip.onWeaponDrawn(false)) {
+                HandPose::setOffhandGripHandPose(false);
+            }
             g_externalAuthority.clearOffHandGripsForWeaponChange();
         }
 
@@ -342,14 +344,11 @@ namespace frik
             return;
         }
 
-        if (_offHandGripping) {
-            if (_gripRevalidatePending) {
-                // the weapon is back after being hidden; keep the grip only if the hand is still on the barrel
-                _gripRevalidatePending = false;
-                if (!isOffhandCloseToBarrel(weapon, true)) {
-                    setOffhandGripping(false);
-                    return;
-                }
+        if (_grip.gripping) {
+            // the weapon is back after being hidden: keep the grip only if the hand is still on the barrel
+            if (!_grip.revalidate(isOffhandCloseToBarrel(weapon, true))) {
+                HandPose::setOffhandGripHandPose(false);
+                return;
             }
 
             if (g_config.onePressGripButton && !vrcf::VRControllers.check(g_config.offhandGripHoldBinding)) {
@@ -359,8 +358,8 @@ namespace frik
 
             if (g_config.enableGripButtonToLetGo && vrcf::VRControllers.check(g_config.offhandGripBinding)) {
                 // Mode 2,4 release grip on pressing the grip button again; mode 2 stays released until the hand leaves the cone
-                _gripRearmRequired = !g_config.enableGripButtonToGrap;
-                setOffhandGripping(false);
+                _grip.releaseByButton(!g_config.enableGripButtonToGrap);
+                HandPose::setOffhandGripHandPose(false);
             }
 
             if (!g_config.enableGripButtonToGrap && !g_config.enableGripButtonToLetGo && !g_frik.isLookingThroughScope() && isOffhandMovedFastAway()) {
@@ -378,14 +377,8 @@ namespace frik
             isOffhandMovedFastAway();
         }
 
-        if (_gripRearmRequired) {
-            // Mode 2 let go inside the cone: wait for the hand to leave it before auto-gripping again
-            _gripRearmRequired = isOffhandCloseToBarrel(weapon, true);
-            return;
-        }
-
-        if (!isOffhandCloseToBarrel(weapon)) {
-            // not close to barrel, no need to grip
+        // not on the barrel, or a mode 2 let-go still waiting for the hand to leave the cone
+        if (!_grip.mayAutoGrip(isOffhandCloseToBarrel(weapon), isOffhandCloseToBarrel(weapon, true))) {
             return;
         }
 
@@ -404,12 +397,15 @@ namespace frik
      */
     void WeaponPositionAdjuster::setOffhandGripping(const bool isGripping)
     {
-        if (_offHandGripping == isGripping) {
+        if (_grip.gripping == isGripping) {
             return;
         }
 
-        _offHandGripping = isGripping;
-        _gripRevalidatePending = false;
+        if (isGripping) {
+            _grip.grip();
+        } else {
+            _grip.release();
+        }
         HandPose::setOffhandGripHandPose(isGripping);
     }
 
@@ -445,7 +441,7 @@ namespace frik
      */
     void WeaponPositionAdjuster::handleWeaponGrippingRotationAdjustment(RE::NiNode* weapon) const
     {
-        if (!_offHandGripping) {
+        if (!_grip.gripping) {
             return;
         }
 
@@ -499,17 +495,12 @@ namespace frik
      */
     bool WeaponPositionAdjuster::isOffhandCloseToBarrel(const RE::NiNode* weapon, const bool exitCone) const
     {
-        // enter cone ~17 deg, exit cone ~26 deg so a grip does not flicker at the edge; range caps a hand that is nowhere near the barrel
-        constexpr float enterCosine = 0.955f;
-        constexpr float exitCosine = 0.90f;
-        constexpr float minDistance = 15.0f;
-        constexpr float maxDistance = 90.0f;
         const auto offhand2WeaponVec = getOffhandPosition() - getPrimaryHandPosition();
         const float distanceFromPrimaryHand = MatrixUtils::vec3Len(offhand2WeaponVec);
         const auto weaponLocalVec = weapon->world.rotate * (MatrixUtils::vec3Norm(offhand2WeaponVec) / weapon->world.scale);
         const auto adjustedWeaponVec = _offhandOffsetRot.Transpose() * (weaponLocalVec);
         const float angleDiffToWeaponVec = MatrixUtils::vec3Dot(MatrixUtils::vec3Norm(adjustedWeaponVec), RE::NiPoint3(0, 1, 0));
-        return angleDiffToWeaponVec > (exitCone ? exitCosine : enterCosine) && distanceFromPrimaryHand > minDistance && distanceFromPrimaryHand < maxDistance;
+        return grip::isInCone(angleDiffToWeaponVec, distanceFromPrimaryHand, exitCone);
     }
 
     /**
