@@ -26,9 +26,11 @@ namespace frik
         BeforeWorldFinal = 7,
         // The last phase of the frame; every bone world transform is final.
         AfterWorldFinal = 8,
+        // The start of FRIK's frame, before the skeleton check: the one phase that runs without a skeleton.
+        FrameBegin = 9,
     };
 
-    inline constexpr std::uint32_t FRAME_PHASE_COUNT = 9;
+    inline constexpr std::uint32_t FRAME_PHASE_COUNT = 10;
 
     using FrameCallback = void(__cdecl*)(std::uint32_t phase, void* userData) noexcept;
 

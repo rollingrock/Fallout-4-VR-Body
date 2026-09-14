@@ -169,6 +169,9 @@ namespace frik
         // Scope providers publish before this frame, so clients hear the flip before any phase runs
         broadcastScopeEvents();
 
+        // the one phase that runs with or without a skeleton
+        api::core::invokeFramePhase(FramePhase::FrameBegin);
+
         onFrameUpdateInner();
 
         // After every exit path of the inner update, including its early returns: a snapshot

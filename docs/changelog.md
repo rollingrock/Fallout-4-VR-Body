@@ -10,13 +10,14 @@
 - API: **FRIK API v2.2**. The v2 table is append-only from now on; `initialize()` accepts any newer FRIK. Mods built against the v2.1 header must recopy `FRIKApiV2.h` once.
 - API: Skeleton lifecycle events carry the skeleton generation, power armor flag and root node; added `getSkeletonGeneration` and `isInPowerArmor`.
 - API: Added the scope provider API (`setScopeProvider`, `setLookingThroughScope`) and `kScopeEnter` / `kScopeExit` events, broadcast at the start of FRIK's frame.
-- API: **FRIK API v2.3**. Frame phases: a mod registers callbacks at named points of FRIK's frame (`registerFrameCallback`); a hand transform published in `BeforeArmSolve` is solved in the same frame, and one published in `AfterArmSolve` is re-solved before the frame continues.
+- API: **FRIK API v2.3**. Frame phases: a mod registers callbacks at named points of FRIK's frame (`registerFrameCallback`); a hand transform published in `BeforeArmSolve` is solved in the same frame, and one published in `AfterArmSolve` is re-solved before the frame continues; `FrameBegin` runs every frame even without a skeleton.
 - API: Added `getTrackedHandTransform`, `getBoneWorldTransform` and `getArmChain` so mods read the tracked inputs and solved bones FRIK uses instead of engine nodes.
 - API: Added `getHandSolveResult` reporting whether a published hand transform was solved or out of reach, with the rendered wrist.
 - Body: The elbow twist smoothing is committed once per frame, so solving an arm twice in a frame (unreachable fallback) no longer double-steps it.
 - API: Added `setOffHandGripping` so a mod running its own two-handed grip is honoured by FRIK's grip consumers (Pip-Boy guards, `isOffHandGrippingWeapon`).
 - Weapon: The two-handed grip survives the weapon being hidden (Pip-Boy, holster, cell load) and is re-checked when it returns; it only drops on a real weapon change. Fixes #142.
 - Weapon: The two-handed grip cone has an exit margin and a range cap, and letting go by button in mode 2 no longer re-grips on the next frame.
+- API: Switching which hand the weapon node is parented under keeps the node's world transform, so an externally placed weapon does not jump on the switch frame.
 - Weapon: The primary hand now follows the two-handed re-aim by the weapon's exact rotation delta, replacing the hardcoded 6 and 7 degree correction.
 - API: Per-bone finger transforms (`setHandPoseCustomLocalTransforms`) now survive later pose updates of the same tag; re-publishing a hand transform keeps its place among equal priorities; hand transform publishes are logged only when a claim starts or ends.
 - API: While a mod owns the primary weapon node FRIK writes nothing to it (no per-frame re-glue to the hand); the muzzle flash fix keeps running. Added `setWeaponNodeParentHand` / `clearWeaponNodeParentHand` for an explicit left-carry; `blockPrimaryWeaponNodeOwnership` no longer flips the parent hand as a side effect.

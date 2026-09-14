@@ -913,6 +913,21 @@ namespace frik
      * Switch right and left weapon nodes if left-handed mode is enabled to correctly the hands.
      * Remember the setting to set back if settings change while game is running.
      */
+    /**
+     * Set a node's local so its world stays as given under its current parent (world = local * parent).
+     */
+    static void setLocalFromWorld(RE::NiAVObject* node, const RE::NiTransform& world)
+    {
+        if (!node || !node->parent) {
+            return;
+        }
+        const auto& parent = node->parent->world;
+        node->local.rotate = world.rotate * parent.rotate.Transpose();
+        node->local.translate = parent.rotate * ((world.translate - parent.translate) / parent.scale);
+        node->local.scale = world.scale / parent.scale;
+        node->world = world;
+    }
+
     void Skeleton::handleLeftHandedWeaponNodesSwitch()
     {
         const bool effectiveLeftHanded = g_frik.isWeaponInLeftHand();
@@ -933,6 +948,11 @@ namespace frik
         _lastLeftHandedModeSwitch = effectiveLeftHanded;
         logger::warn("Left-handed mode weapon nodes switch (EffectiveLeftHanded:{}, GameSetting:{})", effectiveLeftHanded, isLeftHandedMode());
 
+        // keep each weapon node where it is in the world across the reparent, so an external owner's placement
+        // (and the game's own) does not jump on the switch frame; FRIK's re-glue or the owner writes it afterwards
+        const RE::NiTransform rightWeaponWorld = rightWeapon->world;
+        const RE::NiTransform leftWeaponWorld = leftWeapon->world;
+
         rHand->DetachChild(rightWeapon);
         rHand->DetachChild(leftWeapon);
         lHand->DetachChild(rightWeapon);
@@ -945,6 +965,8 @@ namespace frik
             rHand->AttachChild(rightWeapon, true);
             lHand->AttachChild(leftWeapon, true);
         }
+        setLocalFromWorld(rightWeapon, rightWeaponWorld);
+        setLocalFromWorld(leftWeapon, leftWeaponWorld);
     }
 
     // Bring this hand's weapon and offset nodes and the first-person hand up to date for the frame (the target solveArm uses).

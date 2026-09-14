@@ -61,6 +61,8 @@ namespace frik::devbench
             RE::NiTransform lastTarget{};
             std::array<FrameRecord, 4> records{};
             std::size_t recordNext = 0;
+            // the frame the last claim was published in and the one after, latched so a slow reader still sees them
+            std::array<FrameRecord, 2> claimRecords{};
         };
 
         ProbeState g_probe;
@@ -114,6 +116,7 @@ namespace frik::devbench
             }
             g_probe.lastClaim = request;
             g_probe.lastClaimFrame = g_probe.frame;
+            g_probe.claimRecords = {};
         }
 
         void __cdecl probeCallback(const std::uint32_t phase, void*) noexcept
@@ -123,8 +126,8 @@ namespace frik::devbench
             }
             ++g_probe.counts[phase];
 
-            // a phase index not above the previous one starts a new frame's order list
-            if (g_probe.orderCurrentCount > 0 && phase <= g_probe.orderCurrent[g_probe.orderCurrentCount - 1]) {
+            // NativeGraphOutput opens a frame's order list (FrameBegin follows it, then 1..8)
+            if (g_probe.orderCurrentCount > 0 && phase == static_cast<std::uint32_t>(FramePhase::NativeGraphOutput)) {
                 g_probe.orderLast = g_probe.orderCurrent;
                 g_probe.orderLastCount = g_probe.orderCurrentCount;
                 g_probe.orderCurrentCount = 0;
@@ -145,6 +148,9 @@ namespace frik::devbench
                 record.frame = g_probe.frame;
                 for (const bool isLeft : { false, true }) {
                     record.state[isLeft ? 1 : 0] = core::getHandSolveResult(isLeft, record.wrist[isLeft ? 1 : 0]);
+                }
+                if (g_probe.lastClaim && g_probe.frame >= g_probe.lastClaimFrame && g_probe.frame <= g_probe.lastClaimFrame + 1) {
+                    g_probe.claimRecords[g_probe.frame - g_probe.lastClaimFrame] = record;
                 }
                 ++g_probe.frame;
             }
@@ -262,6 +268,7 @@ namespace frik::devbench
                 { "pending", g_probe.pending.has_value() },
                 { "target", transformJson(g_probe.lastTarget) },
                 { "records", records },
+                { "claimRecords", { recordJson(g_probe.claimRecords[0]), recordJson(g_probe.claimRecords[1]) } },
                 { "now", now }
             }.dump();
         }
@@ -311,11 +318,21 @@ namespace frik::devbench
 
         if (op == "scope") {
             const bool on = args.value("on", true);
+            // takeover: drop True Scopes' registration for the test so the no-provider (culling) path runs; restored on off
+            const bool takeover = args.value("takeover", false);
+            constexpr auto TRUE_SCOPES_TAG = "TrueScopes";
+            constexpr std::uint32_t TRUE_SCOPES_CAPABILITIES = 0x5;
             bool ok = true;
             if (on) {
+                if (takeover) {
+                    core::clearScopeProvider(TRUE_SCOPES_TAG);
+                }
                 ok = core::setScopeProvider(PROBE_TAG, static_cast<std::uint32_t>(ScopeCapability::PublishesLookingThrough)) && core::setLookingThroughScope(PROBE_TAG, true);
             } else {
                 ok = core::clearScopeProvider(PROBE_TAG);
+                if (takeover) {
+                    core::setScopeProvider(TRUE_SCOPES_TAG, TRUE_SCOPES_CAPABILITIES);
+                }
             }
             return json{ { "ok", ok }, { "lookingThroughScope", g_frik.isLookingThroughScope() }, { "hideBody", g_frik.shouldHideBodyInScope() } }.dump();
         }

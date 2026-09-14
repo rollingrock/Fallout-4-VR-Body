@@ -327,7 +327,7 @@ BetterScopesVR is registered by FRIK itself as a `PublishesLookingThrough` provi
 
 ## Frame phases (v2.3)
 
-FRIK's frame is a fixed sequence, and a mod can run at named points of it instead of hooking around FRIK. Register once after FRIK has loaded; registrations survive skeleton rebuilds and phases only run while a skeleton exists.
+FRIK's frame is a fixed sequence, and a mod can run at named points of it instead of hooking around FRIK. Register once after FRIK has loaded; registrations survive skeleton rebuilds and every phase except `FrameBegin` only runs while a skeleton exists.
 
 `bool registerFrameCallback(const char* tag, std::uint32_t phase, FrameCallback callback, void* userData, int priority)`
 `bool unregisterFrameCallback(const char* tag)`
@@ -345,6 +345,7 @@ FRIK's frame is a fixed sequence, and a mod can run at named points of it instea
 | `AfterWeaponPosition` | Weapon offsets, two-handed grip and the scope camera are applied; the primary hand is final. |
 | `BeforeWorldFinal` | Before FRIK pushes the frame into the flattened bone array. |
 | `AfterWorldFinal` | The frame is complete; every bone world transform is final. On the first frame of a skeleton this runs after `kSkeletonReady`. |
+| `FrameBegin` | The start of FRIK's frame, after the scope events and before the skeleton check. The only phase that also runs while no skeleton exists (loading screens, rebuilds), so a mod can keep per-frame housekeeping and its own provider dispatch alive without hooking the game loop. Numbered 9 but runs first in FRIK's pass (after `NativeGraphOutput`, which the engine fires earlier in the game frame). |
 
 All callbacks run on the game update thread inside FRIK's frame. Any API call is allowed from a callback except `registerFrameCallback` / `unregisterFrameCallback`.
 
