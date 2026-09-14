@@ -429,8 +429,8 @@ namespace frik
      * 3. dynamic controller-driven curl
      *
      * Both weapon-pose paths yield entirely while an external system blocks them via
-     * blockPrimaryWeaponPose. Separately, when an external system owns the weapon node
-     * (isPrimaryWeaponNodeOwnershipBlocked) the off-side hand in right-handed mode also
+     * blockPrimaryWeaponPose. Separately, when an external system parents the weapon node
+     * under the left hand (setWeaponNodeParentHand) the off-side hand in right-handed mode also
      * follows the first-person weapon hand, so a two-handed grip stays consistent.
      *
      * The returned source may intentionally have `pose == nullptr` when the active source is the
@@ -448,7 +448,7 @@ namespace frik
             return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = &getFistPose() };
         }
 
-        if (isLeft && !isLeftHandedMode() && isWeaponDrawn() && !g_frik.isPipboyOperatingWithFinger() && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked() &&
+        if (isLeft && !isLeftHandedMode() && isWeaponDrawn() && !g_frik.isPipboyOperatingWithFinger() && g_frik.isWeaponInLeftHand() &&
             !g_externalAuthority.isPrimaryWeaponPoseBlocked()) {
             return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = nullptr };
         }
@@ -592,8 +592,7 @@ namespace frik
         } else {
             constexpr float DYNAMIC_CURL_ON_TOUCH = 0.35f;
             const auto button = getTrackedButton(boneName);
-            const bool rightTriggerIdentityRemapped =
-                boneHand == Hand::Right && button == k_EButton_SteamVR_Trigger && !isLeftHandedMode() && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
+            const bool rightTriggerIdentityRemapped = boneHand == Hand::Right && button == k_EButton_SteamVR_Trigger && !isLeftHandedMode() && g_frik.isWeaponInLeftHand();
             if (!rightTriggerIdentityRemapped) {
                 const auto axis = getTrackedButtonAxis(button);
                 const float axisVal = axis ? VRControllers.getAxisValue(boneHand, *axis).x : 0.0f;

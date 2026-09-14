@@ -690,7 +690,9 @@ namespace frik::api
 
         /**
          * Block FRIK's ownership of the primary weapon scene node for a specific tag,
-         * so an external system can drive the weapon transform itself.
+         * so an external system can drive the weapon transform itself. While blocked FRIK writes
+         * nothing to the node (no offsets, no re-glue to the hand); since v2.3 it no longer changes
+         * which hand the node is parented under, see setWeaponNodeParentHand.
          * @return true if successful.
          */
         bool(FRIK_CALL* blockPrimaryWeaponNodeOwnership)(const char* tag, bool block);
@@ -848,11 +850,25 @@ namespace frik::api
         bool(FRIK_CALL* setOffHandGripping)(const char* tag, bool active, Hand supportHand, const RE::NiTransform* supportWorld);
 
         /**
+         * Parent the primary weapon node under a hand (left-carry), keyed by tag; the newest request wins.
+         * FRIK does the reparent plus its own bookkeeping (first-person arm source, weapon hand pose copy,
+         * recoil hand) and restores the game's left-handed setting when the tag clears or the skeleton
+         * rebuilds. Independent of blockPrimaryWeaponNodeOwnership, which since v2.3 only stops FRIK's
+         * writes to the node. Since v2.3.
+         */
+        bool(FRIK_CALL* setWeaponNodeParentHand)(const char* tag, Hand hand);
+
+        /**
+         * Drop a tag's weapon node parent request. Since v2.3.
+         */
+        bool(FRIK_CALL* clearWeaponNodeParentHand)(const char* tag);
+
+        /**
          * Size of the table as published at a given contract version; the append-only rule keeps every older prefix intact.
          */
         static constexpr std::size_t tableSizeForVersion(const std::uint32_t version)
         {
-            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 44 };
+            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 46 };
             const auto index = version < std::size(functionCountByVersion) ? version : std::size(functionCountByVersion) - 1;
             return functionCountByVersion[index] * sizeof(void (*)());
         }
@@ -917,6 +933,6 @@ namespace frik::api
 
     inline constexpr std::size_t FRIK_API_V2_FUNCTION_POINTER_SIZE = sizeof(decltype(FRIKApiV2::getVersion));
     static_assert(std::is_standard_layout_v<FRIKApiV2>, "FRIKApiV2 must remain standard-layout for its exported function table ABI");
-    static_assert(sizeof(FRIKApiV2) == 44 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
+    static_assert(sizeof(FRIKApiV2) == 46 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
     static_assert(FRIKApiV2::tableSizeForVersion(FRIK_API_V2_VERSION) == sizeof(FRIKApiV2), "tableSizeForVersion is out of step with the table");
 }

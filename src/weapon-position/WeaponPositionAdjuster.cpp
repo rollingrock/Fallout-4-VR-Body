@@ -138,8 +138,9 @@ namespace frik
             }
             checkEquippedWeaponChanged();
             getBackOfHandUINode()->local = _backOfHandUIOffsetTransform;
-            // the owner drives the weapon, the scope camera still follows wherever it left it
+            // the owner drives the weapon; the scope camera and muzzle flash still follow wherever it left it
             alignScopeCameraToWeapon(weapon);
+            fixMuzzleFlashPosition();
             return;
         }
 

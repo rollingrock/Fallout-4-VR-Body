@@ -172,6 +172,13 @@ namespace frik
             return _weaponPosition && _weaponPosition->isMeleeWeaponDrawn();
         }
 
+        // Which hand the primary weapon node is parented under: an external request (setWeaponNodeParentHand) else the game's left-handed setting
+        bool isWeaponInLeftHand() const
+        {
+            bool isLeft = false;
+            return g_externalAuthority.getWeaponNodeParentIsLeft(isLeft) ? isLeft : f4vr::isLeftHandedMode();
+        }
+
         // FRIK's own two-handed grip or one reported by an external mod (setOffHandGripping)
         bool isOffHandGrippingWeapon() const
         {

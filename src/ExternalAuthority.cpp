@@ -145,11 +145,56 @@ namespace frik
         }
     }
 
+    /**
+     * Ask FRIK to parent the primary weapon node under a hand (left-carry). Re-setting a tag moves it to the front.
+     */
+    bool ExternalAuthority::setWeaponNodeParentHand(const std::string_view tag, const bool isLeft)
+    {
+        if (tag.empty()) {
+            return false;
+        }
+        std::lock_guard lock(_weaponNodeParentLock);
+        std::erase_if(_weaponNodeParentRequests, [tag](const WeaponNodeParentRequest& request) {
+            return request.tag == tag;
+        });
+        _weaponNodeParentRequests.push_back(WeaponNodeParentRequest{ .tag = std::string(tag), .isLeft = isLeft });
+        return true;
+    }
+
+    bool ExternalAuthority::clearWeaponNodeParentHand(const std::string_view tag)
+    {
+        if (tag.empty()) {
+            return false;
+        }
+        std::lock_guard lock(_weaponNodeParentLock);
+        std::erase_if(_weaponNodeParentRequests, [tag](const WeaponNodeParentRequest& request) {
+            return request.tag == tag;
+        });
+        return true;
+    }
+
+    /**
+     * The hand the newest request wants the weapon node under; false when no tag asks, so the game setting stands.
+     */
+    bool ExternalAuthority::getWeaponNodeParentIsLeft(bool& outIsLeft) const
+    {
+        std::lock_guard lock(_weaponNodeParentLock);
+        if (_weaponNodeParentRequests.empty()) {
+            return false;
+        }
+        outIsLeft = _weaponNodeParentRequests.back().isLeft;
+        return true;
+    }
+
     void ExternalAuthority::clearForSkeletonRelease()
     {
         {
             std::lock_guard lock(_offHandGripsLock);
             _offHandGrips.clear();
+        }
+        {
+            std::lock_guard lock(_weaponNodeParentLock);
+            _weaponNodeParentRequests.clear();
         }
         // From a client's side its registrations simply evaporate here, so say what was dropped and
         // tie the two ends of that contract together in the log. Silent when nothing was registered,

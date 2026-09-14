@@ -17,6 +17,7 @@
 - Weapon: The two-handed grip survives the weapon being hidden (Pip-Boy, holster, cell load) and is re-checked when it returns; it only drops on a real weapon change. Fixes #142.
 - Weapon: The two-handed grip cone has an exit margin and a range cap, and letting go by button in mode 2 no longer re-grips on the next frame.
 - Weapon: The primary hand now follows the two-handed re-aim by the weapon's exact rotation delta, replacing the hardcoded 6 and 7 degree correction.
+- API: While a mod owns the primary weapon node FRIK writes nothing to it (no per-frame re-glue to the hand); the muzzle flash fix keeps running. Added `setWeaponNodeParentHand` / `clearWeaponNodeParentHand` for an explicit left-carry; `blockPrimaryWeaponNodeOwnership` no longer flips the parent hand as a side effect.
 - Stability: Every game patch now verifies the original bytes before writing and is skipped with a log line on a mismatch.
 - API: The body-pose reset patch is now a call detour that exposes the `NativeGraphOutput` frame phase; mods that chained on FRIK's NOP bytes there must register for the phase instead.
 - Dev: Added a unit-test target run by CI, and a devbench `frik` tool exposing live state and config overrides.

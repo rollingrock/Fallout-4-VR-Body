@@ -350,6 +350,15 @@ namespace
         return core::setOffHandGripping(*normalizedTag, active, core::isLeftForHand(supportHand), supportWorld);
     }
 
+    bool FRIK_CALL setWeaponNodeParentHand(const char* tag, const FRIKApiV2::Hand hand)
+    {
+        const auto normalizedTag = core::normalizeTag(tag);
+        if (!normalizedTag) {
+            return false;
+        }
+        return core::setWeaponNodeParentHand(*normalizedTag, core::isLeftForHand(hand));
+    }
+
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApiV2::OpenExternalModConfigData& data)
     {
         return core::registerOpenModSettingButtonToMainConfig(data.buttonIconNifPath, data.callbackReceiverName, data.callbackMessageType);
@@ -418,7 +427,9 @@ namespace
         .getBoneWorldTransform = &core::getBoneWorldTransform,
         .getArmChain = &getArmChain,
         .getHandSolveResult = &getHandSolveResult,
-        .setOffHandGripping = &setOffHandGripping };
+        .setOffHandGripping = &setOffHandGripping,
+        .setWeaponNodeParentHand = &setWeaponNodeParentHand,
+        .clearWeaponNodeParentHand = &core::clearWeaponNodeParentHand };
 }
 
 namespace frik::api

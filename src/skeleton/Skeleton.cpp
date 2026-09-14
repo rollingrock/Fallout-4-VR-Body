@@ -240,7 +240,7 @@ namespace frik
         // do arm IK - Right then Left
         logger::trace("Set Arms...");
         handleLeftHandedWeaponNodesSwitch();
-        _weaponHandRecoil.onFrameUpdate(_playerNodes, isLeftHandedMode() || g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked());
+        _weaponHandRecoil.onFrameUpdate(_playerNodes, g_frik.isWeaponInLeftHand());
         updateHandTarget(false);
         updateHandTarget(true);
         // Tracked hands are current here; hand transforms published in this phase are solved below, in the same frame
@@ -904,7 +904,7 @@ namespace frik
      */
     void Skeleton::handleLeftHandedWeaponNodesSwitch()
     {
-        const bool effectiveLeftHanded = isLeftHandedMode() || g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
+        const bool effectiveLeftHanded = g_frik.isWeaponInLeftHand();
         if (_lastLeftHandedModeSwitch == effectiveLeftHanded) {
             return;
         }
@@ -961,7 +961,8 @@ namespace frik
         RE::NiNode* weaponNode = handleOffhand ? leftWeapon : rightWeapon;
         RE::NiNode* offsetNode = handleOffhand ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
 
-        if (g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked() && !isLeftHandedMode()) {
+        if (g_frik.isWeaponInLeftHand() != isLeftHandedMode()) {
+            // the weapon node is parented under the other hand than the game setting says (external left-carry)
             weaponNode = handleOffhand ? rightWeapon : leftWeapon;
         }
 
@@ -973,16 +974,20 @@ namespace frik
             updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
 
-        weaponNode->local.rotate = !isLeftHandedMode() ? MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
-                                                       : MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
+        // an external owner of the primary weapon node gets no writes from FRIK, not even the re-glue to the hand
+        const bool ownedExternally = weaponNode == rightWeapon && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
+        if (!ownedExternally) {
+            weaponNode->local.rotate = !isLeftHandedMode() ? MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
+                                                           : MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
 
-        if (handleOffhand) {
-            weaponNode->local.rotate = weaponNode->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(isLeft ? 45.0f : -45.0f), 0);
+            if (handleOffhand) {
+                weaponNode->local.rotate = weaponNode->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(isLeft ? 45.0f : -45.0f), 0);
+            }
+
+            weaponNode->local.translate = isLeftHandedMode() ? (isLeft ? RE::NiPoint3(3.389f, -2.099f, 3.133f) : RE::NiPoint3(0, -4.8f, 0))
+                                          : isLeft           ? RE::NiPoint3(0, 0, 0)
+                                                             : RE::NiPoint3(4.389f, -1.899f, -3.133f);
         }
-
-        weaponNode->local.translate = isLeftHandedMode() ? (isLeft ? RE::NiPoint3(3.389f, -2.099f, 3.133f) : RE::NiPoint3(0, -4.8f, 0))
-                                      : isLeft           ? RE::NiPoint3(0, 0, 0)
-                                                         : RE::NiPoint3(4.389f, -1.899f, -3.133f);
 
         {
             const WeaponHandRecoil::ScopedNativeKickNeutralizer neutralizeNativeKick(_weaponHandRecoil);

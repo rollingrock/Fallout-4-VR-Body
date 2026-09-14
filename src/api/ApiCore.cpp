@@ -294,6 +294,31 @@ namespace frik::api::core
         return true;
     }
 
+    /**
+     * Parent the primary weapon node under a hand; FRIK does the reparent and its left-handed bookkeeping and
+     * restores the game setting when the tag clears or the skeleton rebuilds.
+     */
+    bool setWeaponNodeParentHand(const std::string_view tag, const bool isLeft)
+    {
+        if (!g_externalAuthority.setWeaponNodeParentHand(tag, isLeft)) {
+            logger::sample("setWeaponNodeParentHand REJECTED - tag is null or blank");
+            return false;
+        }
+        logger::info("setWeaponNodeParentHand tag:'{}' hand:{}", tag, isLeft ? "left" : "right");
+        return true;
+    }
+
+    bool FRIK_CORE_CALL clearWeaponNodeParentHand(const char* tag)
+    {
+        const auto normalizedTag = normalizeTag(tag);
+        if (!normalizedTag || !g_externalAuthority.clearWeaponNodeParentHand(*normalizedTag)) {
+            logger::sample("clearWeaponNodeParentHand REJECTED - tag is null or blank");
+            return false;
+        }
+        logger::info("clearWeaponNodeParentHand tag:'{}'", *normalizedTag);
+        return true;
+    }
+
     bool getArmChain(const bool isLeft, ArmChainTransforms& outChain)
     {
         const auto* skelly = g_frik.getSkeleton();

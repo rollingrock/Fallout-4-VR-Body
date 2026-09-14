@@ -79,6 +79,10 @@ namespace frik
         bool isOffHandGripping() const;
         void clearOffHandGripsForWeaponChange();
 
+        bool setWeaponNodeParentHand(std::string_view tag, bool isLeft);
+        bool clearWeaponNodeParentHand(std::string_view tag);
+        bool getWeaponNodeParentIsLeft(bool& outIsLeft) const;
+
         void clearForSkeletonRelease();
 
     private:
@@ -130,6 +134,18 @@ namespace frik
 
         mutable std::mutex _offHandGripsLock;
         std::vector<OffHandGripClaim> _offHandGrips;
+
+        /**
+         * Explicit requests for which hand the primary weapon node is parented under (left-carry); the newest wins.
+         */
+        struct WeaponNodeParentRequest
+        {
+            std::string tag;
+            bool isLeft = false;
+        };
+
+        mutable std::mutex _weaponNodeParentLock;
+        std::vector<WeaponNodeParentRequest> _weaponNodeParentRequests;
     };
 
     // Global singleton for easy access
