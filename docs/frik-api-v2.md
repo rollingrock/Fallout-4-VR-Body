@@ -66,7 +66,7 @@ void onFrame()
 
 ## Versioning and compatibility
 
-`FRIK_API_V2_VERSION` (currently **2**) identifies the v2 contract — this page documents v2.2. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
+`FRIK_API_V2_VERSION` (currently **3**) identifies the v2 contract — this page documents v2.3. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
 
 Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end and bumps `FRIK_API_V2_VERSION`, so a header you copied today keeps working against every newer FRIK. `initialize(minVersion)` checks `getVersion() >= minVersion` and that FRIK's table is at least as large as `minVersion` implies (code `5` otherwise). To also run against an older FRIK, pass the oldest version you can live with and gate every newer entry on `getVersion()`; each entry below is documented with the version that introduced it.
 
@@ -74,8 +74,11 @@ Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end 
 | --- | --- | --- |
 | `1` | 0.78 | The original 31-entry table (exact-size check at `initialize()`). |
 | `2` | 0.79 | Append-only rule; `getSkeletonGeneration`, `isInPowerArmor`; lifecycle messages carry `SkeletonLifecycleData`; scope providers: `setScopeProvider`, `clearScopeProvider`, `setLookingThroughScope`, `isLookingThroughScope`; `kScopeEnter` / `kScopeExit` events. |
+| `3` | 0.79 | Frame phases: `registerFrameCallback`, `unregisterFrameCallback`; a hand transform published in `BeforeArmSolve` is solved in the same frame. Body reads: `getTrackedHandTransform`, `getBoneWorldTransform`, `getArmChain`; `getHandSolveResult`; `setOffHandGripping`; `setWeaponNodeParentHand` / `clearWeaponNodeParentHand` (and `blockPrimaryWeaponNodeOwnership` no longer flips the parent hand). |
 
 > A client built against the v2.1 header refuses any FRIK from 0.79 on (its exact-size check fails with code `5`). Recopy the header once; after that no further recopy is ever forced.
+
+> **v2.3 compatibility note.** Two behaviours changed underneath existing entries, so a mod that relied on them must update in the same drop: (1) `blockPrimaryWeaponNodeOwnership` no longer parents the weapon node under the left hand as a side effect, nor flips the first-person arm source, the off-side hand pose copy and the recoil hand with it; a left-carry now also calls `setWeaponNodeParentHand`. A client that only blocks and reparents itself gets a right-hand pose and recoil on the wrong hand, with no error. (2) FRIK's patch at `0xF2F0A0` is a call detour now, so a mod that chained on the NOP bytes there must register for `NativeGraphOutput` instead. Neither is negotiable per client at runtime.
 
 - `getVersion()` returns the v2 contract version FRIK was built with; `getModVersion()` returns the FRIK mod version string (e.g. `"0.78.1"`).
 
@@ -215,7 +218,7 @@ Both resolver functions return `true` only if all 15 bones resolved, and zero th
 12..14 pinky
 ```
 
-> Any later `setHandPose*` call on the same tag clears these transforms, so republish them after every pose update.
+> Since v2.3 these transforms survive later `setHandPose*` updates of the same tag; `clearHandPose` or a new mask replaces them. (Before v2.3 every pose update cleared them.)
 
 ### Clearing and querying
 
@@ -234,9 +237,9 @@ Use `getHandPoseSetTagState` to detect when another system has taken over the po
 
 Take over where a hand is placed, giving FRIK the world transform to solve the arm to instead of the tracked controller. `worldTransform` is the **wrist transform in world space**, not hand-local space.
 
-- The transform is **consumed by FRIK's arm solve on its next skeleton frame**, not applied during your call. The arm is solved exactly once per frame, so everything FRIK derives from the hand stays consistent with it.
+- The transform is **consumed by FRIK's arm solve**, not applied during your call: published from a `BeforeArmSolve` [frame callback](#frame-phases-v23) it is solved in that same frame, published from `AfterArmSolve` it is re-solved right there (second solve for that hand), published anywhere else it is solved on FRIK's next frame. The arm is solved exactly once per frame, so everything FRIK derives from the hand stays consistent with it.
 - A published transform **keeps owning the hand until cleared**. Holding a hand steady needs no per-frame republishing; tracking a moving target means republishing whenever the target changes.
-- The return value reports **validation only**. Whether the arm can actually reach the target is decided per frame by the solver, which falls back to FRIK's own posing for any frame it cannot solve.
+- The return value reports **validation only**. Whether the arm can actually reach the target is decided per frame by the solver, which falls back to FRIK's own posing for any frame it cannot solve. `getHandSolveResult(hand, &wrist)` (v2.3) reports that outcome for the frame: `Consumed`, `Unreachable` (fell back to the tracked hand), `NoClaim` or `SkeletonNotReady`, and fills the wrist world transform as rendered. It is latched once the frame's world transforms are final, so read it from `AfterWorldFinal` or the next frame.
 - Call on the **game update thread**. The call is pure data publication — it does not need to run mid-scene-graph mutation.
 - Registrations are cleared on skeleton destruction; see [Skeleton lifecycle](#skeleton-lifecycle).
 
@@ -247,7 +250,15 @@ Take over where a hand is placed, giving FRIK the world transform to solve the a
 | `bool blockPrimaryWeaponNodeOwnership(tag, block)` | Release FRIK's ownership of the primary weapon scene node so your mod can drive the weapon transform itself. |
 | `bool blockPrimaryHandWeaponPose(tag, block)` | Stop FRIK's built-in primary weapon hand pose, including its per-weapon primary-hand grip rotation. |
 
-Both are reference-counted by tag, like `blockFeature`. Taking weapon node ownership also releases an active offhand two-handed grip, so the grip and its pose don't stay latched while you own the weapon.
+Both are reference-counted by tag, like `blockFeature`. Taking weapon node ownership also releases an active offhand two-handed grip, so the grip and its pose don't stay latched while you own the weapon. While the node is blocked FRIK writes nothing to it: no offsets, no re-glue to the hand each frame. The scope camera and the muzzle flash keep following wherever you put it; a mod that drives the scope camera itself registers as a scope provider with `OwnsScopeCamera` and FRIK leaves the camera alone in every path.
+
+`bool setWeaponNodeParentHand(const char* tag, Hand hand)` / `bool clearWeaponNodeParentHand(const char* tag)` (v2.3)
+
+Ask FRIK to parent the primary weapon node under a hand, for a left-carry. FRIK does the reparent and its own bookkeeping (which weapon node drives each first-person arm, the off-side weapon hand pose copy, the recoil hand) and restores the game's left-handed setting when the tag clears or the skeleton rebuilds. The newest request wins. Before v2.3 `blockPrimaryWeaponNodeOwnership` flipped this topology as a side effect; it no longer does, so a left-carry needs both calls.
+
+`bool setOffHandGripping(const char* tag, bool active, Hand supportHand, const RE::NiTransform* supportWorld)` (v2.3)
+
+Report your own two-handed grip so `isOffHandGrippingWeapon()` and every FRIK consumer of it (the Pip-Boy guards among them) treat the weapon as gripped. `supportHand` is the physical hand on the weapon, `supportWorld` its world transform or null. The grip is tied to the current weapon: FRIK drops it when the drawn weapon changes and on skeleton release, so re-report after `kSkeletonReady`. Pass `active = false` to release.
 
 ## Weapon hand recoil
 
@@ -298,7 +309,7 @@ FRIK keys every scope behaviour on one **looking-through-scope** state: whether 
 
 | `ScopeCapability` | FRIK's behaviour while registered |
 | --- | --- |
-| `KeepsBodyVisible` | The body root is never hidden while scoped (the user's `HideBodyInVanillaScope` no longer applies). |
+| `KeepsBodyVisible` | The body is never hidden while scoped (the user's `HideBodyInVanillaScope` no longer applies). Without it FRIK culls the body geometry while scoped; since v2.3 it no longer collapses the root, so bone and hand transforms stay valid either way. |
 | `OwnsScopeCamera` | FRIK leaves the `primaryWeaponScopeCamera` node alone. |
 | `PublishesLookingThrough` | This provider's `setLookingThroughScope` replaces the vanilla `ScopeMenu` state. |
 | `OwnsDamping` | FRIK does not dampen hands or recoil while scoped. |
@@ -311,6 +322,57 @@ Providers survive skeleton rebuilds, like feature blocks, and capabilities are t
 Publish on the game update thread whenever the state changes; only a provider registered with `PublishesLookingThrough` may. `isLookingThroughScope` returns the state FRIK keyed on this frame. When it flips FRIK broadcasts `kScopeEnter` / `kScopeExit`.
 
 BetterScopesVR is registered by FRIK itself as a `PublishesLookingThrough` provider when its plugin is detected, mapping its legacy message onto this state.
+
+`kScopeEnter` / `kScopeExit` are broadcast at the start of FRIK's frame, before any frame phase runs, so a callback in that frame already sees the new state.
+
+## Frame phases (v2.3)
+
+FRIK's frame is a fixed sequence, and a mod can run at named points of it instead of hooking around FRIK. Register once after FRIK has loaded; registrations survive skeleton rebuilds and every phase except `FrameBegin` and `FrameEnd` only runs while a skeleton exists.
+
+`bool registerFrameCallback(const char* tag, std::uint32_t phase, FrameCallback callback, void* userData, int priority)`
+`bool unregisterFrameCallback(const char* tag)`
+
+`FrameCallback` is `void(FRIK_CALL*)(std::uint32_t phase, void* userData) noexcept`. One tag may register several phases; `unregisterFrameCallback` drops them all. Within a phase, callbacks run by descending priority, then registration order, so at equal priority the newest registration runs last and its writes win. Re-registering a tag and phase replaces the callback in place. Registering or unregistering from inside a callback is refused. The registry holds 32 registrations.
+
+| `FramePhase` | When |
+| --- | --- |
+| `NativeGraphOutput` | The engine's animation graph output for the player, before FRIK touches the body. Runs from FRIK's detour of the player post-animation vfunc (`0xF2F0A0`), earlier in the game frame than the other phases; do not hook that site yourself. |
+| `BodyPlaced` | The body root is under the HMD and posture is set. |
+| `LegsSolved` | Legs and walking are solved. |
+| `BeforeArmSolve` | Before the arm solve. A `setHandWorldTransform` published here is solved in this same frame. |
+| `AfterArmSolve` | Both arms are solved to their targets, so a callback can read the solved arm (`getArmChain`). A hand transform published or cleared inside this phase is re-solved before the frame continues, at the cost of a second solve for that hand; publish in `BeforeArmSolve` when you do not need the solved arm first. |
+| `AfterHandPose` | Finger poses are applied. |
+| `AfterWeaponPosition` | Weapon offsets, two-handed grip and the scope camera are applied; the primary hand is final. |
+| `BeforeWorldFinal` | Before FRIK pushes the frame into the flattened bone array. |
+| `AfterWorldFinal` | The frame is complete; every bone world transform is final. On the first frame of a skeleton this runs after `kSkeletonReady`. |
+| `FrameBegin` | The start of FRIK's frame, after the scope events and before the skeleton check. The only phase that also runs while no skeleton exists (loading screens, rebuilds), so a mod can keep per-frame housekeeping and its own provider dispatch alive without hooking the game loop. Numbered 9 but runs first in FRIK's pass (after `NativeGraphOutput`, which the engine fires earlier in the game frame). |
+| `FrameEnd` | The end of FRIK's frame. Runs every frame like `FrameBegin`: after `AfterWorldFinal` when the skeleton phases ran, and right after FRIK's early return when they did not (no player, loading screen, skeleton released or rebuilt this frame). A `FrameBegin` / `FrameEnd` pair therefore always brackets a frame, so per-frame work that must not be skipped can run in `FrameEnd` when the skeleton phases did not fire. |
+
+All callbacks run on the game update thread inside FRIK's frame. Any API call is allowed from a callback except `registerFrameCallback` / `unregisterFrameCallback`.
+
+Register once per mod. A mod that fans a phase out to its own plugins (a provider API of its own) should be the only registrant, or the plugin's work runs twice. Use priority to order work within a phase: higher runs first, so a callback that only reads the pose registers above one that writes it.
+
+## Reading tracked hands and bones (v2.3)
+
+The inputs and outputs of FRIK's own solve, so a mod computes its claims from the same values FRIK uses instead of re-reading engine nodes.
+
+`bool getTrackedHandTransform(Hand hand, TrackedHandKind kind, RE::NiTransform* outTransform)`
+
+| `TrackedHandKind` | Value |
+| --- | --- |
+| `Wand` | The VR controller node for that hand. |
+| `WeaponOffset` | The weapon offset node FRIK dampens (the `DampenHands*` settings) and drives the first-person arm from. |
+| `FirstPersonHand` | The first-person hand FRIK solves the body arm to when no hand transform is published. |
+
+Current from `BeforeArmSolve` on; read earlier in the frame they still hold the previous frame. Returns false without a skeleton or when the node does not exist.
+
+`bool getBoneWorldTransform(const char* boneName, RE::NiTransform* outTransform)`
+
+World transform of any body bone by its skeleton name (`LArm_Hand`, `Spine2`, ...), read from the flattened bone tree. Final after `AfterWorldFinal`; earlier in the frame it holds the previous frame. Returns false for an unknown name or without a skeleton.
+
+`bool getArmChain(Hand hand, ArmChainTransforms* outChain)`
+
+World transforms of the live arm nodes, shoulder to hand, in `ArmChainTransforms`. Bit `i` of `validMask` is set when bone `i` exists; `forearm2` / `forearm3` do not in power armor and read as identity. Valid after `AfterArmSolve`, final after `AfterWorldFinal`.
 
 ## State queries
 

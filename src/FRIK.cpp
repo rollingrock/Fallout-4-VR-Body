@@ -166,9 +166,16 @@ namespace frik
         // Before anything reads state this frame, so a queued config override applies to it.
         devbench::g_devBenchBridge.drainCommands();
 
+        // Scope providers publish before this frame, so clients hear the flip before any phase runs
+        broadcastScopeEvents();
+
+        // the one phase that runs with or without a skeleton
+        api::core::invokeFramePhase(FramePhase::FrameBegin);
+
         onFrameUpdateInner();
 
-        broadcastScopeEvents();
+        // always paired with FrameBegin, even when the inner update returned early
+        api::core::invokeFramePhase(FramePhase::FrameEnd);
 
         // After every exit path of the inner update, including its early returns: a snapshot
         // frozen at its last good value through a loading screen would be a lie.
@@ -235,6 +242,7 @@ namespace frik
             logger::trace("Update Weapon Position...");
             _weaponPosition->onFrameUpdate();
         }
+        api::core::invokeFramePhase(FramePhase::AfterWeaponPosition);
 
         logger::trace("Update Pipboy...");
         _pipboy->onFrameUpdate();
@@ -246,13 +254,17 @@ namespace frik
 
         _pipboyConfigMode->onFrameUpdate();
 
+        api::core::invokeFramePhase(FramePhase::BeforeWorldFinal);
         updateWorldFinal();
+        _skelly->latchRenderedWrists();
 
         if (!_skeletonReadyPublished) {
             _skeletonReadyPublished = true;
             logger::info("Broadcasting API lifecycle event: kSkeletonReady (generation {})", _skeletonGeneration);
             broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonReady));
         }
+        // After the ready broadcast so a client never sees a phase of a skeleton it was not told about
+        api::core::invokeFramePhase(FramePhase::AfterWorldFinal);
     }
 
     void FRIK::smoothMovement()

@@ -9,6 +9,7 @@
 #include "Config.h"
 #include "ExternalAuthority.h"
 #include "FRIK.h"
+#include "api/ApiCore.h"
 #include "common/MatrixUtils.h"
 #include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
@@ -116,6 +117,13 @@ namespace frik
 
         Skelly::initBoneTreeMap();
 
+        _boneIndexByName.clear();
+        if (const auto* tree = getFlattenedBoneTree()) {
+            for (int i = 0; i < tree->numTransforms; ++i) {
+                _boneIndexByName.emplace(tree->transforms[i].name.c_str(), i);
+            }
+        }
+
         setBodyLen();
 
         _comfortSneakCameraOffsetAdjustment = getIniSetting("fComfortSneakHeight:VR")->GetFloat();
@@ -193,6 +201,7 @@ namespace frik
         setWandsVisibility(false, false);
 
         logger::trace("Restore locals of skeleton");
+        _twistAnglePrevFrame = _twistAngleThisFrame;
         restoreNodesToDefault();
         updateDownFromRoot();
 
@@ -212,6 +221,7 @@ namespace frik
         logger::trace("Set body posture...");
         setBodyPosture(neckPitch);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+        api::core::invokeFramePhase(FramePhase::BodyPlaced);
 
         logger::trace("Set knee posture...");
         setKneePos();
@@ -225,14 +235,35 @@ namespace frik
 
         // Do another update before setting arms
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+        api::core::invokeFramePhase(FramePhase::LegsSolved);
 
         // do arm IK - Right then Left
         logger::trace("Set Arms...");
         handleLeftHandedWeaponNodesSwitch();
-        _weaponHandRecoil.onFrameUpdate(_playerNodes, isLeftHandedMode() || g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked());
-        setArms(false);
-        setArms(true);
+        _weaponHandRecoil.onFrameUpdate(_playerNodes, g_frik.isWeaponInLeftHand());
+        updateHandTarget(false);
+        updateHandTarget(true);
+        // Tracked hands are current here; hand transforms published in this phase are solved below, in the same frame
+        api::core::invokeFramePhase(FramePhase::BeforeArmSolve);
+        solveArm(false);
+        solveArm(true);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+
+        // A claim published or cleared inside AfterArmSolve (a mod that needs the solved arm first) is re-solved right here,
+        // before hand pose and weapon position run, so the rest of the frame still sees one consistent arm
+        const std::array<std::uint64_t, 2> claimRevisionBefore{ g_externalAuthority.getHandClaimRevision(false), g_externalAuthority.getHandClaimRevision(true) };
+        api::core::invokeFramePhase(FramePhase::AfterArmSolve);
+        bool resolved = false;
+        for (const bool isLeft : { false, true }) {
+            if (g_externalAuthority.getHandClaimRevision(isLeft) != claimRevisionBefore[isLeft ? 1 : 0]) {
+                restoreArmNodesToDefault(isLeft);
+                solveArm(isLeft);
+                resolved = true;
+            }
+        }
+        if (resolved) {
+            updateDownFromRoot();
+        }
 
         // Misc stuff to show/hide things
         logger::trace("Pipboy and Weapons...");
@@ -241,7 +272,7 @@ namespace frik
         showHidePAHud();
 
         logger::trace("Cull geometry...");
-        _cullGeometry.cullPlayerGeometry();
+        _cullGeometry.cullPlayerGeometry(g_frik.shouldHideBodyInScope());
 
         // project body out in front of the camera for debug purposes
         logger::trace("Selfie Time");
@@ -249,10 +280,7 @@ namespace frik
 
         logger::trace("Operate hands...");
         _handPose.onFrameUpdate(_root, _frameTime);
-
-        if (g_frik.shouldHideBodyInScope()) {
-            hideHands();
-        }
+        api::core::invokeFramePhase(FramePhase::AfterHandPose);
 
         if (_inPowerArmor) {
             fixArmor();
@@ -885,9 +913,24 @@ namespace frik
      * Switch right and left weapon nodes if left-handed mode is enabled to correctly the hands.
      * Remember the setting to set back if settings change while game is running.
      */
+    /**
+     * Set a node's local so its world stays as given under its current parent (world = local * parent).
+     */
+    static void setLocalFromWorld(RE::NiAVObject* node, const RE::NiTransform& world)
+    {
+        if (!node || !node->parent) {
+            return;
+        }
+        const auto& parent = node->parent->world;
+        node->local.rotate = world.rotate * parent.rotate.Transpose();
+        node->local.translate = parent.rotate * ((world.translate - parent.translate) / parent.scale);
+        node->local.scale = world.scale / parent.scale;
+        node->world = world;
+    }
+
     void Skeleton::handleLeftHandedWeaponNodesSwitch()
     {
-        const bool effectiveLeftHanded = isLeftHandedMode() || g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
+        const bool effectiveLeftHanded = g_frik.isWeaponInLeftHand();
         if (_lastLeftHandedModeSwitch == effectiveLeftHanded) {
             return;
         }
@@ -905,6 +948,11 @@ namespace frik
         _lastLeftHandedModeSwitch = effectiveLeftHanded;
         logger::warn("Left-handed mode weapon nodes switch (EffectiveLeftHanded:{}, GameSetting:{})", effectiveLeftHanded, isLeftHandedMode());
 
+        // keep each weapon node where it is in the world across the reparent, so an external owner's placement
+        // (and the game's own) does not jump on the switch frame; FRIK's re-glue or the owner writes it afterwards
+        const RE::NiTransform rightWeaponWorld = rightWeapon->world;
+        const RE::NiTransform leftWeaponWorld = leftWeapon->world;
+
         rHand->DetachChild(rightWeapon);
         rHand->DetachChild(leftWeapon);
         lHand->DetachChild(rightWeapon);
@@ -917,10 +965,12 @@ namespace frik
             rHand->AttachChild(rightWeapon, true);
             lHand->AttachChild(leftWeapon, true);
         }
+        setLocalFromWorld(rightWeapon, rightWeaponWorld);
+        setLocalFromWorld(leftWeapon, leftWeaponWorld);
     }
 
-    // This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
-    void Skeleton::setArms(bool isLeft)
+    // Bring this hand's weapon and offset nodes and the first-person hand up to date for the frame (the target solveArm uses).
+    void Skeleton::updateHandTarget(bool isLeft)
     {
         // This first part is to handle the game calculating the first person hand based off two offset nodes
         // PrimaryWeaponOffset and PrimaryMeleeOffset
@@ -944,7 +994,8 @@ namespace frik
         RE::NiNode* weaponNode = handleOffhand ? leftWeapon : rightWeapon;
         RE::NiNode* offsetNode = handleOffhand ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
 
-        if (g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked() && !isLeftHandedMode()) {
+        if (g_frik.isWeaponInLeftHand() != isLeftHandedMode()) {
+            // the weapon node is parented under the other hand than the game setting says (external left-carry)
             weaponNode = handleOffhand ? rightWeapon : leftWeapon;
         }
 
@@ -956,22 +1007,34 @@ namespace frik
             updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
 
-        weaponNode->local.rotate = !isLeftHandedMode() ? MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
-                                                       : MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
+        // an external owner of the primary weapon node gets no writes from FRIK, not even the re-glue to the hand
+        const bool ownedExternally = weaponNode == rightWeapon && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
+        if (!ownedExternally) {
+            weaponNode->local.rotate = !isLeftHandedMode() ? MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
+                                                           : MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
 
-        if (handleOffhand) {
-            weaponNode->local.rotate = weaponNode->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(isLeft ? 45.0f : -45.0f), 0);
+            if (handleOffhand) {
+                weaponNode->local.rotate = weaponNode->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(isLeft ? 45.0f : -45.0f), 0);
+            }
+
+            weaponNode->local.translate = isLeftHandedMode() ? (isLeft ? RE::NiPoint3(3.389f, -2.099f, 3.133f) : RE::NiPoint3(0, -4.8f, 0))
+                                          : isLeft           ? RE::NiPoint3(0, 0, 0)
+                                                             : RE::NiPoint3(4.389f, -1.899f, -3.133f);
         }
-
-        weaponNode->local.translate = isLeftHandedMode() ? (isLeft ? RE::NiPoint3(3.389f, -2.099f, 3.133f) : RE::NiPoint3(0, -4.8f, 0))
-                                      : isLeft           ? RE::NiPoint3(0, 0, 0)
-                                                         : RE::NiPoint3(4.389f, -1.899f, -3.133f);
 
         {
             const WeaponHandRecoil::ScopedNativeKickNeutralizer neutralizeNativeKick(_weaponHandRecoil);
             dampenHand(offsetNode, isLeft);
             weaponNode->IncRefCount();
             Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
+        }
+    }
+
+    // This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
+    void Skeleton::solveArm(bool isLeft)
+    {
+        if (getFirstPersonSkeleton() == nullptr) {
+            return;
         }
 
         // An external mod can own the hand instead of the tracked controller, but only as the target
@@ -982,6 +1045,8 @@ namespace frik
             handWorldTarget = isLeft ? _leftHand->world : _rightHand->world;
         }
         (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, handWorldTarget);
+        auto& solveState = _handSolveState[isLeft ? 0 : 1];
+        solveState = hasTransformOverride ? HandSolveState::Consumed : HandSolveState::NoClaim;
         if (solveArmToHandWorldTarget(isLeft, handWorldTarget) || !hasTransformOverride) {
             return;
         }
@@ -990,10 +1055,34 @@ namespace frik
         // tracked hand that only ever happens on a dropped frame of tracking and the next frame reset clears
         // it, but an override holds its target until the client clears it, so the arm would stay half solved
         // for as long as it is set. Solve to the tracked hand instead, as if no tag owned this hand.
+        solveState = HandSolveState::Unreachable;
         restoreArmNodesToDefault(isLeft);
         RE::NiTransform trackedHandTarget = isLeft ? _leftHand->world : _rightHand->world;
         (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, trackedHandTarget);
         (void)solveArmToHandWorldTarget(isLeft, trackedHandTarget);
+    }
+
+    void Skeleton::latchRenderedWrists()
+    {
+        for (const bool isLeft : { true, false }) {
+            if (const auto* hand = getArm(isLeft).hand) {
+                _renderedWrist[isLeft ? 0 : 1] = hand->world;
+            }
+        }
+    }
+
+    /**
+     * World transform of a bone from the flattened bone tree, final after updateWorldFinal.
+     */
+    bool Skeleton::getBoneWorldTransform(const std::string_view boneName, RE::NiTransform& outTransform) const
+    {
+        const auto it = _boneIndexByName.find(std::string(boneName));
+        const auto* tree = getFlattenedBoneTree();
+        if (it == _boneIndexByName.end() || !tree || it->second < 0 || it->second >= tree->numTransforms) {
+            return false;
+        }
+        outTransform = tree->transforms[it->second].world;
+        return true;
     }
 
     /**
@@ -1127,9 +1216,9 @@ namespace frik
         //		logger::info("final angle %2f", rads_to_degrees(twistAngle));
 
         // Smooth out sudden changes in the twist angle over time to reduce elbow shake
-        static std::array<float, 2> prevAngle = { 0, 0 };
-        twistAngle = prevAngle[isLeft ? 0 : 1] + (twistAngle - prevAngle[isLeft ? 0 : 1]) * 0.25f;
-        prevAngle[isLeft ? 0 : 1] = twistAngle;
+        const auto side = isLeft ? 0 : 1;
+        twistAngle = _twistAnglePrevFrame[side] + (twistAngle - _twistAnglePrevFrame[side]) * 0.25f;
+        _twistAngleThisFrame[side] = twistAngle;
 
         // Calculate the hand's distance behind the body - It will increase the minimum elbow rotation angle
         float size = 1.0;
@@ -1279,16 +1368,6 @@ namespace frik
         arm.hand->local.translate *= forearmRatio;
 
         return true;
-    }
-
-    void Skeleton::hideHands() const
-    {
-        const RE::NiPoint3 rwp = _rightArm.shoulder->world.translate;
-        _root->local.scale = 0.00001f;
-        updateTransforms(_root);
-        _root->world.translate += _forwardDir * -10.0f;
-        _root->world.translate.z = rwp.z;
-        updateDown(_root, false);
     }
 
     void Skeleton::dampenHand(RE::NiNode* node, const bool isLeft)

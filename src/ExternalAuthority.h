@@ -71,13 +71,35 @@ namespace frik
             return _primaryWeaponPoseBlocks.isBlocked();
         }
 
-        bool setHandWorldTransform(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority);
-        bool clearHandWorldTransform(std::string_view tag, bool isLeft);
+        bool setHandWorldTransform(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority, bool* outInserted = nullptr);
+        bool clearHandWorldTransform(std::string_view tag, bool isLeft, bool* outRemoved = nullptr);
         bool getHandWorldTransform(bool isLeft, RE::NiTransform& outWorldTransform) const;
+        // bumps whenever a hand's claims change (set or clear), so the frame can tell a claim published mid-frame
+        std::uint64_t getHandClaimRevision(bool isLeft) const;
+
+        bool setOffHandGrip(std::string_view tag, bool active, bool supportIsLeft, const RE::NiTransform* supportWorld);
+        bool isOffHandGripping() const;
+        void clearOffHandGripsForWeaponChange();
+
+        bool setWeaponNodeParentHand(std::string_view tag, bool isLeft);
+        bool clearWeaponNodeParentHand(std::string_view tag);
+        bool getWeaponNodeParentIsLeft(bool& outIsLeft) const;
 
         void clearForSkeletonRelease();
 
     private:
+        /**
+         * A two-handed grip an external mod is running on the current weapon, so FRIK's grip consumers
+         * (Pip-Boy guards, the API query) see it as gripping. Cleared on weapon change and skeleton release.
+         */
+        struct OffHandGripClaim
+        {
+            std::string tag;
+            bool supportIsLeft = false;
+            bool hasSupportWorld = false;
+            RE::NiTransform supportWorld;
+        };
+
         /**
          * A hand world transform published by an external mod, replacing the tracked controller as the
          * target the arm is solved to. The transform stays in effect until it is cleared, so a client
@@ -111,6 +133,22 @@ namespace frik
         // Indexed by hand: 0 is right, 1 is left.
         std::array<std::vector<HandWorldTransformClaim>, 2> _handWorldTransforms;
         std::uint64_t _nextHandWorldTransformSequence = 0;
+        std::array<std::uint64_t, 2> _handClaimRevision = { 0, 0 };
+
+        mutable std::mutex _offHandGripsLock;
+        std::vector<OffHandGripClaim> _offHandGrips;
+
+        /**
+         * Explicit requests for which hand the primary weapon node is parented under (left-carry); the newest wins.
+         */
+        struct WeaponNodeParentRequest
+        {
+            std::string tag;
+            bool isLeft = false;
+        };
+
+        mutable std::mutex _weaponNodeParentLock;
+        std::vector<WeaponNodeParentRequest> _weaponNodeParentRequests;
     };
 
     // Global singleton for easy access

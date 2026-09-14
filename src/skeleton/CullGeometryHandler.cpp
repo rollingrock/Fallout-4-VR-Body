@@ -75,7 +75,7 @@ namespace frik
     /// Face is things like eyes, mouth, hair, etc.
     /// Equipment slots are things like helmet, glasses, etc.
     /// </summary>
-    void CullGeometryHandler::cullPlayerGeometry()
+    void CullGeometryHandler::cullPlayerGeometry(const bool hideAll)
     {
         if (g_frik.isSelfieModeOn() && g_config.selfieIgnoreHideFlags) {
             restoreGeometry();
@@ -86,6 +86,20 @@ namespace frik
         const auto rn = reinterpret_cast<RE::BSFadeNode*>(f4vr::getWorldRootNode());
         if (!rn) {
             return;
+        }
+
+        if (hideAll) {
+            // cull instead of collapsing the root, so bone world transforms stay valid for other mods while the body is unseen
+            _isAllCulled = true;
+            _isGeometryCulled = true;
+            for (auto& i : rn->geomArray) {
+                f4vr::setNodeVisibility(i.geometry.get(), false);
+            }
+            return;
+        }
+        if (_isAllCulled) {
+            _isAllCulled = false;
+            restoreGeometry();
         }
 
         // check for selfie mode to handle an edge-case where all hide setting are set to false but the geometries are not restored

@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "Config.h"
+#include "ExternalAuthority.h"
 #include "ModBase.h"
 #include "PlayerControlsHandler.h"
 #include "ScopeAuthority.h"
@@ -30,6 +31,11 @@ namespace frik
         bool isSkeletonReady() const
         {
             return _skelly != nullptr;
+        }
+
+        const Skeleton* getSkeleton() const
+        {
+            return _skelly.get();
         }
 
         // Number of skeletons built this session; 0 before the first, +1 on every rebuild
@@ -166,9 +172,17 @@ namespace frik
             return _weaponPosition && _weaponPosition->isMeleeWeaponDrawn();
         }
 
+        // Which hand the primary weapon node is parented under: an external request (setWeaponNodeParentHand) else the game's left-handed setting
+        bool isWeaponInLeftHand() const
+        {
+            bool isLeft = false;
+            return g_externalAuthority.getWeaponNodeParentIsLeft(isLeft) ? isLeft : f4vr::isLeftHandedMode();
+        }
+
+        // FRIK's own two-handed grip or one reported by an external mod (setOffHandGripping)
         bool isOffHandGrippingWeapon() const
         {
-            return _weaponPosition && _weaponPosition->isOffHandGrippingWeapon();
+            return (_weaponPosition && _weaponPosition->isOffHandGrippingWeapon()) || g_externalAuthority.isOffHandGripping();
         }
 
         static bool isOffHandGrippingEnabled()

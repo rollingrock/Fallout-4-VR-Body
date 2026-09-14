@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 
+#include "FramePhaseRegistry.h"
 #include "RE/NetImmerse/NiPoint.h"
 #include "RE/NetImmerse/NiTransform.h"
 #include "skeleton/HandPose.h"
@@ -116,6 +117,46 @@ namespace frik::api::core
     static_assert(sizeof(SkeletonLifecycleData) == 40, "SkeletonLifecycleData ABI changed");
 
     /**
+     * Which tracked transform of a hand to read; the values FRIK itself uses this frame.
+     */
+    enum class TrackedHandKind : std::uint8_t
+    {
+        Wand = 0,
+        WeaponOffset = 1,
+        FirstPersonHand = 2,
+    };
+
+    /**
+     * World transforms of one arm chain. validMask bit i is set when bone i exists (forearm 2/3 do not in power armor).
+     */
+    struct ArmChainTransforms
+    {
+        std::uint32_t structSize = 0;
+        std::uint32_t validMask = 0;
+        RE::NiTransform shoulder{};
+        RE::NiTransform upperArm{};
+        RE::NiTransform upperArmTwist{};
+        RE::NiTransform forearm1{};
+        RE::NiTransform forearm2{};
+        RE::NiTransform forearm3{};
+        RE::NiTransform hand{};
+        std::uint32_t reserved[4] = {};
+    };
+
+    static_assert(sizeof(ArmChainTransforms) == 480, "ArmChainTransforms ABI changed");
+
+    /**
+     * How a hand was solved this frame; every published major mirrors the values.
+     */
+    enum class HandSolveState : std::uint8_t
+    {
+        SkeletonNotReady = 0,
+        NoClaim = 1,
+        Consumed = 2,
+        Unreachable = 3,
+    };
+
+    /**
      * The hand-pose priority scale. HandPose owns the ordering, so these alias
      * its constants rather than restating the values.
      */
@@ -149,6 +190,10 @@ namespace frik::api::core
     bool FRIK_CORE_CALL clearScopeProvider(const char* tag);
     bool FRIK_CORE_CALL setLookingThroughScope(const char* tag, bool lookingThrough);
     bool FRIK_CORE_CALL isLookingThroughScope();
+    bool FRIK_CORE_CALL registerFrameCallback(const char* tag, std::uint32_t phase, FrameCallback callback, void* userData, int priority);
+    bool FRIK_CORE_CALL unregisterFrameCallback(const char* tag);
+    bool FRIK_CORE_CALL getBoneWorldTransform(const char* boneName, RE::NiTransform* outTransform);
+    bool FRIK_CORE_CALL clearWeaponNodeParentHand(const char* tag);
     bool FRIK_CORE_CALL isConfigOpen();
     bool FRIK_CORE_CALL isSelfieModeOn();
     void FRIK_CORE_CALL setSelfieModeOn(bool setOn);
@@ -213,6 +258,17 @@ namespace frik::api::core
             handPose.palmYaw,
             skeleton::data::HandPoseKind::Custom };
     }
+
+    /**
+     * Run the callbacks registered for a phase; called by FRIK at each point of its frame.
+     */
+    void invokeFramePhase(FramePhase phase);
+
+    bool getTrackedHandTransform(bool isLeft, TrackedHandKind kind, RE::NiTransform& outTransform);
+    bool getArmChain(bool isLeft, ArmChainTransforms& outChain);
+    HandSolveState getHandSolveResult(bool isLeft, RE::NiTransform& outWrist);
+    bool setOffHandGripping(std::string_view tag, bool active, bool supportIsLeft, const RE::NiTransform* supportWorld);
+    bool setWeaponNodeParentHand(std::string_view tag, bool isLeft);
 
     RE::NiPoint3 getIndexFingerTipPosition(Hand hand);
 

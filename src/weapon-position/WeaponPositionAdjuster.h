@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GripDetection.h"
 #include "WeaponPositionConfigMode.h"
 #include "f4vr/EquippedWeaponHandler.h"
 #include "skeleton/Skeleton.h"
@@ -21,10 +22,9 @@ namespace frik
             _scopeCameraBaseMatrix.entry[0][1] = 1.0; // new Y = old X
             _scopeCameraBaseMatrix.entry[1][2] = 1.0; // new Z = old Y
 
-            // the angle was calculated by looking at the weapon in hand, seems to work for all weapons
-            const float sign = f4vr::isLeftHandedMode() ? -1.0f : 1.0f;
-            _twoHandedPrimaryHandManualAdjustment =
-                common::MatrixUtils::getMatrixFromEulerAngles(0, common::MatrixUtils::degreesToRads(-6 * sign), common::MatrixUtils::degreesToRads(7 * sign));
+            // the grip memory outlives the skeleton (cell load, PA): re-check the cone and re-apply the grip pose once we run
+            _grip.revalidatePending = _grip.gripping;
+            _gripPoseRestorePending = _grip.gripping;
         }
 
         bool isWeaponDrawn() const
@@ -39,7 +39,7 @@ namespace frik
 
         bool isOffHandGrippingWeapon() const
         {
-            return _offHandGripping;
+            return _grip.gripping;
         }
 
         bool inWeaponRepositionMode() const
@@ -70,7 +70,7 @@ namespace frik
         void setOffhandGripping(bool isGripping);
         void handlePrimaryHandGripOffsetAdjustment(const RE::NiNode* weapon) const;
         void handleWeaponGrippingRotationAdjustment(RE::NiNode* weapon) const;
-        bool isOffhandCloseToBarrel(const RE::NiNode* weapon) const;
+        bool isOffhandCloseToBarrel(const RE::NiNode* weapon, bool exitCone = false) const;
         static bool isOffhandMovedFastAway();
         RE::NiPoint3 getPrimaryHandPosition() const;
         static RE::NiPoint3 getOffhandPosition();
@@ -82,17 +82,21 @@ namespace frik
         // Define a basis remapping matrix to correct coordinate system for scope camera
         RE::NiMatrix3 _scopeCameraBaseMatrix;
 
-        // For unknown reason my primary hand calculation is off by specific angle
-        RE::NiMatrix3 _twoHandedPrimaryHandManualAdjustment;
-
         Skeleton* _skelly;
 
         // detects equipped-weapon / power-armor changes and resolves the weapon name; the single
         // source of truth for the current weapon name, power-armor state, and melee state
         f4vr::EquippedWeaponHandler _equippedWeapon;
 
-        // is offhand (secondary hand) gripping the weapon barrel
-        bool _offHandGripping = false;
+        // is offhand (secondary hand) gripping the weapon barrel, with its memory across hidden weapons and button let-go (GripDetection.h);
+        // static so a skeleton rebuild (cell load) keeps the grip (#142)
+        inline static grip::GripLatch _grip;
+
+        // last drawn weapon, so a hidden-and-back weapon is told apart from a real weapon change
+        inline static std::string _lastDrawnWeaponName;
+
+        // the hand pose overrides were dropped with the old skeleton; put the grip pose back on the first frame
+        bool _gripPoseRestorePending = false;
 
         // last frame's external primary-weapon-node ownership block, to release transient state as it engages
         bool _nodeOwnershipBlockedLastFrame = false;

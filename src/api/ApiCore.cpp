@@ -32,6 +32,11 @@ namespace
     std::array<TagBlockSet, FEATURE_COUNT> g_featureBlocks;
 
     /**
+     * Frame-phase callbacks. They hold no node references, so they outlive skeleton rebuilds like feature blocks.
+     */
+    FramePhaseRegistry g_framePhases;
+
+    /**
      * Client modules already reported per API table, so a mod that re-acquires - the published
      * initialize() is idempotent but nothing stops a client calling the export directly - is
      * logged once instead of on every call.
@@ -150,6 +155,191 @@ namespace frik::api::core
     bool FRIK_CORE_CALL isLookingThroughScope()
     {
         return g_frik.isLookingThroughScope();
+    }
+
+    /**
+     * Register or replace a callback for one frame phase. Registrations survive skeleton rebuilds; phases
+     * only run while a skeleton exists. Refused from inside a frame callback.
+     */
+    bool FRIK_CORE_CALL registerFrameCallback(const char* tag, const std::uint32_t phase, const FrameCallback callback, void* const userData, const int priority)
+    {
+        const auto normalizedTag = normalizeTag(tag);
+        const auto result = g_framePhases.set(normalizedTag.value_or(""), phase, callback, userData, priority);
+        switch (result) {
+        case FramePhaseRegistry::Result::Registered:
+        case FramePhaseRegistry::Result::Replaced:
+            logger::info("{} frame callback tag:'{}' phase:{} priority:{}",
+                result == FramePhaseRegistry::Result::Replaced ? "replaced" : "registered",
+                *normalizedTag,
+                phase,
+                priority);
+            return true;
+        case FramePhaseRegistry::Result::BadTag:
+            logger::sample("registerFrameCallback REJECTED - tag is null or blank");
+            return false;
+        case FramePhaseRegistry::Result::NullCallback:
+            logger::sample("registerFrameCallback REJECTED tag:'{}' - callback is null", *normalizedTag);
+            return false;
+        case FramePhaseRegistry::Result::BadPhase:
+            logger::sample("registerFrameCallback REJECTED tag:'{}' - unknown phase {}", *normalizedTag, phase);
+            return false;
+        case FramePhaseRegistry::Result::NegativePriority:
+            logger::sample("registerFrameCallback REJECTED tag:'{}' - priority {} is negative", *normalizedTag, priority);
+            return false;
+        case FramePhaseRegistry::Result::Full:
+            logger::sample("registerFrameCallback REJECTED tag:'{}' - registry is full at {} callbacks", *normalizedTag, FramePhaseRegistry::CAPACITY);
+            return false;
+        case FramePhaseRegistry::Result::Reentrant:
+            logger::sample("registerFrameCallback REJECTED tag:'{}' - called from inside a frame callback", normalizedTag.value_or("?"));
+            return false;
+        }
+        return false;
+    }
+
+    /**
+     * Drop every phase a tag registered. Unknown tags succeed.
+     */
+    bool FRIK_CORE_CALL unregisterFrameCallback(const char* tag)
+    {
+        const auto normalizedTag = normalizeTag(tag);
+        if (!normalizedTag) {
+            logger::sample("unregisterFrameCallback REJECTED - tag is null or blank");
+            return false;
+        }
+        std::size_t removed = 0;
+        if (!g_framePhases.remove(*normalizedTag, &removed)) {
+            logger::sample("unregisterFrameCallback REJECTED tag:'{}' - called from inside a frame callback", *normalizedTag);
+            return false;
+        }
+        if (removed > 0) {
+            logger::info("unregistered frame callback tag:'{}' ({} phase(s))", *normalizedTag, removed);
+        }
+        return true;
+    }
+
+    void invokeFramePhase(const FramePhase phase)
+    {
+        g_framePhases.invoke(static_cast<std::uint32_t>(phase));
+    }
+
+    bool FRIK_CORE_CALL getBoneWorldTransform(const char* boneName, RE::NiTransform* outTransform)
+    {
+        const auto* skelly = g_frik.getSkeleton();
+        if (!skelly || !boneName || !outTransform) {
+            return false;
+        }
+        return skelly->getBoneWorldTransform(boneName, *outTransform);
+    }
+
+    bool getTrackedHandTransform(const bool isLeft, const TrackedHandKind kind, RE::NiTransform& outTransform)
+    {
+        const auto* skelly = g_frik.getSkeleton();
+        if (!skelly) {
+            return false;
+        }
+        const RE::NiNode* node = nullptr;
+        switch (kind) {
+        case TrackedHandKind::Wand:
+            node = skelly->getWandNode(isLeft);
+            break;
+        case TrackedHandKind::WeaponOffset:
+            node = skelly->getWeaponOffsetNode(isLeft);
+            break;
+        case TrackedHandKind::FirstPersonHand:
+            node = skelly->getFirstPersonHandNode(isLeft);
+            break;
+        }
+        if (!node) {
+            return false;
+        }
+        outTransform = node->world;
+        return true;
+    }
+
+    HandSolveState getHandSolveResult(const bool isLeft, RE::NiTransform& outWrist)
+    {
+        const auto* skelly = g_frik.getSkeleton();
+        if (!skelly) {
+            outWrist.MakeIdentity();
+            return HandSolveState::SkeletonNotReady;
+        }
+        Skeleton::HandSolveState state{};
+        skelly->getHandSolveResult(isLeft, state, outWrist);
+        switch (state) {
+        case Skeleton::HandSolveState::Consumed:
+            return HandSolveState::Consumed;
+        case Skeleton::HandSolveState::Unreachable:
+            return HandSolveState::Unreachable;
+        case Skeleton::HandSolveState::NoClaim:
+            break;
+        }
+        return HandSolveState::NoClaim;
+    }
+
+    /**
+     * An external mod reports its two-handed grip so FRIK's grip consumers honour it. Rejected without a
+     * skeleton, since the grip is tied to the current weapon and dropped with the skeleton.
+     */
+    bool setOffHandGripping(const std::string_view tag, const bool active, const bool supportIsLeft, const RE::NiTransform* supportWorld)
+    {
+        if (!g_frik.getSkeleton()) {
+            logger::sample("setOffHandGripping REJECTED tag:'{}' - skeleton not ready", tag);
+            return false;
+        }
+        if (!g_externalAuthority.setOffHandGrip(tag, active, supportIsLeft, supportWorld)) {
+            logger::sample("setOffHandGripping REJECTED tag:'{}' - empty tag or non-finite support transform", tag);
+            return false;
+        }
+        logger::sample(1000, "setOffHandGripping tag:'{}' active:{} support:{}", tag, active, supportIsLeft ? "left" : "right");
+        return true;
+    }
+
+    /**
+     * Parent the primary weapon node under a hand; FRIK does the reparent and its left-handed bookkeeping and
+     * restores the game setting when the tag clears or the skeleton rebuilds.
+     */
+    bool setWeaponNodeParentHand(const std::string_view tag, const bool isLeft)
+    {
+        if (!g_externalAuthority.setWeaponNodeParentHand(tag, isLeft)) {
+            logger::sample("setWeaponNodeParentHand REJECTED - tag is null or blank");
+            return false;
+        }
+        logger::info("setWeaponNodeParentHand tag:'{}' hand:{}", tag, isLeft ? "left" : "right");
+        return true;
+    }
+
+    bool FRIK_CORE_CALL clearWeaponNodeParentHand(const char* tag)
+    {
+        const auto normalizedTag = normalizeTag(tag);
+        if (!normalizedTag || !g_externalAuthority.clearWeaponNodeParentHand(*normalizedTag)) {
+            logger::sample("clearWeaponNodeParentHand REJECTED - tag is null or blank");
+            return false;
+        }
+        logger::info("clearWeaponNodeParentHand tag:'{}'", *normalizedTag);
+        return true;
+    }
+
+    bool getArmChain(const bool isLeft, ArmChainTransforms& outChain)
+    {
+        const auto* skelly = g_frik.getSkeleton();
+        if (!skelly) {
+            return false;
+        }
+        const auto arm = skelly->getArm(isLeft);
+        const std::array<const RE::NiAVObject*, 7> nodes{ arm.shoulder, arm.upper, arm.upperT1, arm.forearm1, arm.forearm2, arm.forearm3, arm.hand };
+        const std::array<RE::NiTransform*, 7>
+            targets{ &outChain.shoulder, &outChain.upperArm, &outChain.upperArmTwist, &outChain.forearm1, &outChain.forearm2, &outChain.forearm3, &outChain.hand };
+        outChain.structSize = sizeof(ArmChainTransforms);
+        outChain.validMask = 0;
+        for (std::size_t i = 0; i < nodes.size(); ++i) {
+            if (nodes[i]) {
+                *targets[i] = nodes[i]->world;
+                outChain.validMask |= 1u << i;
+            } else {
+                targets[i]->MakeIdentity();
+            }
+        }
+        return true;
     }
 
     bool FRIK_CORE_CALL isConfigOpen()
@@ -363,19 +553,27 @@ namespace frik::api::core
         }
 
         // Tag and priority were validated by the version shim, so a refusal here is the transform.
-        if (!g_externalAuthority.setHandWorldTransform(tag, isLeft, worldTransform, priority)) {
+        bool inserted = false;
+        if (!g_externalAuthority.setHandWorldTransform(tag, isLeft, worldTransform, priority, &inserted)) {
             logger::sample("setHandWorldTransform REJECTED tag:'{}' - world transform is not finite", tag);
             return false;
         }
 
-        logger::sample("setHandWorldTransform tag:'{}' hand={} priority={}", tag, isLeft ? "Left" : "Right", priority);
+        // a claim is typically republished every frame, so only its start and end are logged
+        if (inserted) {
+            logger::info("setHandWorldTransform tag:'{}' hand={} priority={}", tag, isLeft ? "Left" : "Right", priority);
+        }
         return true;
     }
 
     bool clearHandWorldTransform(const std::string_view tag, const bool isLeft)
     {
-        logger::sample("clearHandWorldTransform tag:'{}' hand={}", tag, isLeft ? "Left" : "Right");
-        return g_externalAuthority.clearHandWorldTransform(tag, isLeft);
+        bool removed = false;
+        const bool ok = g_externalAuthority.clearHandWorldTransform(tag, isLeft, &removed);
+        if (removed) {
+            logger::info("clearHandWorldTransform tag:'{}' hand={}", tag, isLeft ? "Left" : "Right");
+        }
+        return ok;
     }
 
     bool setHandPoseLocalTransforms(const std::string_view tag, const bool isLeft, const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& localTransforms,

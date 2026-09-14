@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <memory>
+#include <string_view>
+#include <unordered_map>
 
 #include "CullGeometryHandler.h"
 #include "HandPose.h"
@@ -41,6 +43,56 @@ namespace frik
             return _rightArm;
         }
 
+        ArmNodes getArm(const bool isLeft) const
+        {
+            return isLeft ? _leftArm : _rightArm;
+        }
+
+        RE::NiNode* getWandNode(const bool isLeft) const
+        {
+            return isLeft ? f4vr::getLeftHandNode() : f4vr::getRightHandNode();
+        }
+
+        /**
+         * The weapon offset node FRIK dampens and drives the first-person arm from for this hand.
+         */
+        RE::NiNode* getWeaponOffsetNode(const bool isLeft) const
+        {
+            return (f4vr::isLeftHandedMode() ^ isLeft) ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
+        }
+
+        /**
+         * The first-person hand node FRIK solves the body arm to (before any external hand transform).
+         */
+        RE::NiNode* getFirstPersonHandNode(const bool isLeft) const
+        {
+            return isLeft ? _leftHand : _rightHand;
+        }
+
+        bool getBoneWorldTransform(std::string_view boneName, RE::NiTransform& outTransform) const;
+
+        enum class HandSolveState : std::uint8_t
+        {
+            // no external hand transform was set; solved to the tracked hand
+            NoClaim,
+            // solved to the external hand transform
+            Consumed,
+            // the external target was out of reach; solved to the tracked hand instead
+            Unreachable,
+        };
+
+        /**
+         * How this hand was solved this frame and the wrist world transform rendered for it (latched after world final).
+         */
+        void getHandSolveResult(const bool isLeft, HandSolveState& outState, RE::NiTransform& outWrist) const
+        {
+            outState = _handSolveState[isLeft ? 0 : 1];
+            outWrist = _renderedWrist[isLeft ? 0 : 1];
+        }
+
+        // Called once the frame's world transforms are final
+        void latchRenderedWrists();
+
         static float getAdjustedPlayerHMDOffset();
 
         void onFrameUpdate();
@@ -71,14 +123,14 @@ namespace frik
         void walk();
         void setSingleLeg(bool isLeft) const;
         void handleLeftHandedWeaponNodesSwitch();
-        void setArms(bool isLeft);
+        void updateHandTarget(bool isLeft);
+        void solveArm(bool isLeft);
         void restoreArmNodesToDefault(bool isLeft);
         bool solveArmToHandWorldTarget(bool isLeft, const RE::NiTransform& handWorldTarget);
         void dampenHand(RE::NiNode* node, bool isLeft);
         void hide3rdPersonWeapon() const;
         void hideFistHelpers() const;
         void showHidePAHud() const;
-        void hideHands() const;
         void fixArmor() const;
 
         // Utils - Body Positioning
@@ -121,6 +173,8 @@ namespace frik
         float _legLen;
         ArmNodes _rightArm;
         ArmNodes _leftArm;
+        // flattened bone tree index by bone name, for API bone reads
+        std::unordered_map<std::string, int> _boneIndexByName;
 
         // Default transform are used to reset the skeleton before each frame update to start from scratch
         std::vector<std::pair<RE::NiAVObject*, const RE::NiTransform>> _skeletonNodesToDefaultTransforms;
@@ -150,6 +204,12 @@ namespace frik
 
         RE::NiTransform _rightHandPrevFrame;
         RE::NiTransform _leftHandPrevFrame;
+
+        // elbow twist smoothing: committed once per frame so a re-solve in the same frame gives the same answer
+        std::array<float, 2> _twistAnglePrevFrame = { 0, 0 };
+        std::array<float, 2> _twistAngleThisFrame = { 0, 0 };
+        std::array<HandSolveState, 2> _handSolveState = { HandSolveState::NoClaim, HandSolveState::NoClaim };
+        std::array<RE::NiTransform, 2> _renderedWrist = {};
 
         WeaponHandRecoil _weaponHandRecoil;
 

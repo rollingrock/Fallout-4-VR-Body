@@ -68,7 +68,7 @@ namespace frik::api
      * number, so one header serves every FRIK from the minVersion you initialize with. Each entry
      * documents the version that introduced it; check getVersion() before calling a newer one.
      */
-    inline constexpr std::uint32_t FRIK_API_V2_VERSION = 2;
+    inline constexpr std::uint32_t FRIK_API_V2_VERSION = 3;
 
     struct FRIKApiV2
     {
@@ -422,6 +422,87 @@ namespace frik::api
         static_assert(sizeof(SkeletonLifecycleData) == 40, "SkeletonLifecycleData ABI changed");
 
         /**
+         * Points in FRIK's frame where a registered callback runs, in frame order. All but FrameBegin and
+         * FrameEnd only run while a skeleton exists. Since v2.3.
+         */
+        enum class FramePhase : std::uint8_t
+        {
+            // The engine's animation graph output for the player, before FRIK touches the body.
+            NativeGraphOutput = 0,
+            // The body root is placed under the HMD and posture is set.
+            BodyPlaced = 1,
+            LegsSolved = 2,
+            // A hand transform published here (setHandWorldTransform) is solved in this same frame.
+            BeforeArmSolve = 3,
+            AfterArmSolve = 4,
+            AfterHandPose = 5,
+            AfterWeaponPosition = 6,
+            BeforeWorldFinal = 7,
+            // The last phase of the frame; every bone world transform is final.
+            AfterWorldFinal = 8,
+            // The start of FRIK's frame, before the skeleton check: the only phase that also runs while no skeleton
+            // exists (loading screens, rebuilds), for per-frame housekeeping. Runs after kScopeEnter / kScopeExit.
+            FrameBegin = 9,
+            // The end of FRIK's frame, after AfterWorldFinal when a skeleton ran and right after FrameBegin's
+            // early return when none did; runs every frame like FrameBegin, so a FrameBegin/FrameEnd pair always
+            // brackets a frame even when the skeleton phases were skipped (release or rebuild mid-frame).
+            FrameEnd = 10,
+        };
+
+        /**
+         * Frame-phase callback. Runs on the game update thread inside FRIK's frame; must not register or
+         * unregister frame callbacks. Since v2.3.
+         */
+        using FrameCallback = void(FRIK_CALL*)(std::uint32_t phase, void* userData) noexcept;
+
+        /**
+         * Which tracked transform of a hand getTrackedHandTransform reads. Since v2.3.
+         */
+        enum class TrackedHandKind : std::uint8_t
+        {
+            // The VR controller node.
+            Wand = 0,
+            // The weapon offset node FRIK dampens and drives the first-person arm from.
+            WeaponOffset = 1,
+            // The first-person hand FRIK solves the body arm to when no hand transform is published.
+            FirstPersonHand = 2,
+        };
+
+        /**
+         * World transforms of one arm chain, shoulder to hand. validMask bit i is set when bone i exists
+         * (forearm2 / forearm3 do not in power armor); a missing bone reads as identity. Since v2.3.
+         */
+        struct ArmChainTransforms
+        {
+            std::uint32_t structSize = 0;
+            std::uint32_t validMask = 0;
+            RE::NiTransform shoulder{};
+            RE::NiTransform upperArm{};
+            RE::NiTransform upperArmTwist{};
+            RE::NiTransform forearm1{};
+            RE::NiTransform forearm2{};
+            RE::NiTransform forearm3{};
+            RE::NiTransform hand{};
+            std::uint32_t reserved[4] = {};
+        };
+
+        static_assert(sizeof(ArmChainTransforms) == 480, "ArmChainTransforms ABI changed");
+
+        /**
+         * How a hand was solved this frame (getHandSolveResult). Since v2.3.
+         */
+        enum class HandSolveState : std::uint8_t
+        {
+            SkeletonNotReady = 0,
+            // No hand transform is published for this hand; solved to the tracked hand.
+            NoClaim = 1,
+            // Solved to the published hand transform.
+            Consumed = 2,
+            // The published target was out of reach; solved to the tracked hand for this frame instead.
+            Unreachable = 3,
+        };
+
+        /**
          * Get the API v2 version number.
          * Use this to check compatibility before calling other functions.
          */
@@ -516,9 +597,9 @@ namespace frik::api
          * Replace the finger bone local transforms of an existing tagged override.
          *
          * The tag must already hold an override (set one of the setHandPose*
-         * functions first); this call fails if it does not. Any later setHandPose*
-         * call on the same tag clears these transforms, so republish them after
-         * every pose update.
+         * functions first); this call fails if it does not. Since v2.3 the transforms
+         * survive later setHandPose* updates of the tag (before, every pose update
+         * cleared them); clearHandPose or a new mask replaces them.
          * @return true if successful.
          */
         bool(FRIK_CALL* setHandPoseCustomLocalTransforms)(const char* tag, Hand hand, const FingerLocalTransformOverride* overrideData, int priority);
@@ -616,7 +697,9 @@ namespace frik::api
 
         /**
          * Block FRIK's ownership of the primary weapon scene node for a specific tag,
-         * so an external system can drive the weapon transform itself.
+         * so an external system can drive the weapon transform itself. While blocked FRIK writes
+         * nothing to the node (no offsets, no re-glue to the hand); since v2.3 it no longer changes
+         * which hand the node is parented under, see setWeaponNodeParentHand.
          * @return true if successful.
          */
         bool(FRIK_CALL* blockPrimaryWeaponNodeOwnership)(const char* tag, bool block);
@@ -719,12 +802,80 @@ namespace frik::api
          */
         bool(FRIK_CALL* isLookingThroughScope)();
 
+        // ---- Added in v2.3 ----
+
+        /**
+         * Register or replace a callback for one FramePhase, keyed by tag and phase. Callbacks run by descending
+         * priority, then registration order. Registrations survive skeleton rebuilds; call once after FRIK has
+         * loaded. Since v2.3.
+         * @return false for an empty tag, null callback, unknown phase, negative priority, a full registry, or
+         * when called from inside a frame callback.
+         */
+        bool(FRIK_CALL* registerFrameCallback)(const char* tag, std::uint32_t phase, FrameCallback callback, void* userData, int priority);
+
+        /**
+         * Drop every phase a tag registered. Removing an unknown tag is idempotent. Since v2.3.
+         */
+        bool(FRIK_CALL* unregisterFrameCallback)(const char* tag);
+
+        /**
+         * World transform of a tracked input for a hand, as FRIK uses it this frame. Current from
+         * BeforeArmSolve on; before that phase it still holds the previous frame. Since v2.3.
+         * @return false without a skeleton or when the node does not exist.
+         */
+        bool(FRIK_CALL* getTrackedHandTransform)(Hand hand, TrackedHandKind kind, RE::NiTransform* outTransform);
+
+        /**
+         * World transform of a body bone by name, read from the flattened bone tree. Final after
+         * AfterWorldFinal; earlier in the frame it holds the previous frame. Since v2.3.
+         * @return false without a skeleton or for an unknown bone name.
+         */
+        bool(FRIK_CALL* getBoneWorldTransform)(const char* boneName, RE::NiTransform* outTransform);
+
+        /**
+         * World transforms of the live arm chain nodes for a hand. Valid after AfterArmSolve, final
+         * after AfterWorldFinal. Since v2.3.
+         * @return false without a skeleton or a null out pointer.
+         */
+        bool(FRIK_CALL* getArmChain)(Hand hand, ArmChainTransforms* outChain);
+
+        /**
+         * How a hand was solved this frame and the wrist world transform rendered for it, latched once the
+         * frame's world transforms are final (so before AfterWorldFinal it holds the previous frame). A
+         * published target is Consumed when the arm solved to it and Unreachable when FRIK fell back to
+         * the tracked hand for that frame. Since v2.3.
+         */
+        HandSolveState(FRIK_CALL* getHandSolveResult)(Hand hand, RE::NiTransform* outWrist);
+
+        /**
+         * Report (active) or drop (inactive) your two-handed grip on the current weapon, keyed by tag, so
+         * isOffHandGrippingWeapon and every FRIK consumer of it (Pip-Boy guards, ...) see it as gripping.
+         * supportHand is the physical hand on the weapon; supportWorld, optional, its world transform.
+         * The grip is tied to the current weapon: FRIK drops it on a drawn weapon change and on skeleton
+         * release. Needs a skeleton. Since v2.3.
+         */
+        bool(FRIK_CALL* setOffHandGripping)(const char* tag, bool active, Hand supportHand, const RE::NiTransform* supportWorld);
+
+        /**
+         * Parent the primary weapon node under a hand (left-carry), keyed by tag; the newest request wins.
+         * FRIK does the reparent plus its own bookkeeping (first-person arm source, weapon hand pose copy,
+         * recoil hand) and restores the game's left-handed setting when the tag clears or the skeleton
+         * rebuilds. Independent of blockPrimaryWeaponNodeOwnership, which since v2.3 only stops FRIK's
+         * writes to the node. Since v2.3.
+         */
+        bool(FRIK_CALL* setWeaponNodeParentHand)(const char* tag, Hand hand);
+
+        /**
+         * Drop a tag's weapon node parent request. Since v2.3.
+         */
+        bool(FRIK_CALL* clearWeaponNodeParentHand)(const char* tag);
+
         /**
          * Size of the table as published at a given contract version; the append-only rule keeps every older prefix intact.
          */
         static constexpr std::size_t tableSizeForVersion(const std::uint32_t version)
         {
-            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37 };
+            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 46 };
             const auto index = version < std::size(functionCountByVersion) ? version : std::size(functionCountByVersion) - 1;
             return functionCountByVersion[index] * sizeof(void (*)());
         }
@@ -789,6 +940,6 @@ namespace frik::api
 
     inline constexpr std::size_t FRIK_API_V2_FUNCTION_POINTER_SIZE = sizeof(decltype(FRIKApiV2::getVersion));
     static_assert(std::is_standard_layout_v<FRIKApiV2>, "FRIKApiV2 must remain standard-layout for its exported function table ABI");
-    static_assert(sizeof(FRIKApiV2) == 37 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
+    static_assert(sizeof(FRIKApiV2) == 46 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
     static_assert(FRIKApiV2::tableSizeForVersion(FRIK_API_V2_VERSION) == sizeof(FRIKApiV2), "tableSizeForVersion is out of step with the table");
 }
