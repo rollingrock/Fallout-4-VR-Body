@@ -10,6 +10,7 @@
 - API: Skeleton lifecycle events carry the skeleton generation, power armor flag and root node; added `getSkeletonGeneration` and `isInPowerArmor`.
 - API: Added the scope provider API (`setScopeProvider`, `setLookingThroughScope`) and `kScopeEnter` / `kScopeExit` events, broadcast at the start of FRIK's frame.
 - API: **FRIK API v2.3**. Frame phases: a mod registers callbacks at named points of FRIK's frame (`registerFrameCallback`); a hand transform published in `BeforeArmSolve` is solved in the same frame.
+- API: Added `getTrackedHandTransform`, `getBoneWorldTransform` and `getArmChain` so mods read the tracked inputs and solved bones FRIK uses instead of engine nodes.
 - Stability: Every game patch now verifies the original bytes before writing and is skipped with a log line on a mismatch.
 - Dev: Added a unit-test target run by CI, and a devbench `frik` tool exposing live state and config overrides.
 

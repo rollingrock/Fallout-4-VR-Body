@@ -32,6 +32,11 @@ namespace frik
             return _skelly != nullptr;
         }
 
+        const Skeleton* getSkeleton() const
+        {
+            return _skelly.get();
+        }
+
         // Number of skeletons built this session; 0 before the first, +1 on every rebuild
         std::uint32_t getSkeletonGeneration() const
         {

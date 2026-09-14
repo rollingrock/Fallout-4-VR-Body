@@ -449,6 +449,39 @@ namespace frik::api
         using FrameCallback = void(FRIK_CALL*)(std::uint32_t phase, void* userData) noexcept;
 
         /**
+         * Which tracked transform of a hand getTrackedHandTransform reads. Since v2.3.
+         */
+        enum class TrackedHandKind : std::uint8_t
+        {
+            // The VR controller node.
+            Wand = 0,
+            // The weapon offset node FRIK dampens and drives the first-person arm from.
+            WeaponOffset = 1,
+            // The first-person hand FRIK solves the body arm to when no hand transform is published.
+            FirstPersonHand = 2,
+        };
+
+        /**
+         * World transforms of one arm chain, shoulder to hand. validMask bit i is set when bone i exists
+         * (forearm2 / forearm3 do not in power armor); a missing bone reads as identity. Since v2.3.
+         */
+        struct ArmChainTransforms
+        {
+            std::uint32_t structSize = 0;
+            std::uint32_t validMask = 0;
+            RE::NiTransform shoulder{};
+            RE::NiTransform upperArm{};
+            RE::NiTransform upperArmTwist{};
+            RE::NiTransform forearm1{};
+            RE::NiTransform forearm2{};
+            RE::NiTransform forearm3{};
+            RE::NiTransform hand{};
+            std::uint32_t reserved[4] = {};
+        };
+
+        static_assert(sizeof(ArmChainTransforms) == 480, "ArmChainTransforms ABI changed");
+
+        /**
          * Get the API v2 version number.
          * Use this to check compatibility before calling other functions.
          */
@@ -763,11 +796,32 @@ namespace frik::api
         bool(FRIK_CALL* unregisterFrameCallback)(const char* tag);
 
         /**
+         * World transform of a tracked input for a hand, as FRIK uses it this frame. Current from
+         * BeforeArmSolve on; before that phase it still holds the previous frame. Since v2.3.
+         * @return false without a skeleton or when the node does not exist.
+         */
+        bool(FRIK_CALL* getTrackedHandTransform)(Hand hand, TrackedHandKind kind, RE::NiTransform* outTransform);
+
+        /**
+         * World transform of a body bone by name, read from the flattened bone tree. Final after
+         * AfterWorldFinal; earlier in the frame it holds the previous frame. Since v2.3.
+         * @return false without a skeleton or for an unknown bone name.
+         */
+        bool(FRIK_CALL* getBoneWorldTransform)(const char* boneName, RE::NiTransform* outTransform);
+
+        /**
+         * World transforms of the live arm chain nodes for a hand. Valid after AfterArmSolve, final
+         * after AfterWorldFinal. Since v2.3.
+         * @return false without a skeleton or a null out pointer.
+         */
+        bool(FRIK_CALL* getArmChain)(Hand hand, ArmChainTransforms* outChain);
+
+        /**
          * Size of the table as published at a given contract version; the append-only rule keeps every older prefix intact.
          */
         static constexpr std::size_t tableSizeForVersion(const std::uint32_t version)
         {
-            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 39 };
+            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 42 };
             const auto index = version < std::size(functionCountByVersion) ? version : std::size(functionCountByVersion) - 1;
             return functionCountByVersion[index] * sizeof(void (*)());
         }
@@ -832,6 +886,6 @@ namespace frik::api
 
     inline constexpr std::size_t FRIK_API_V2_FUNCTION_POINTER_SIZE = sizeof(decltype(FRIKApiV2::getVersion));
     static_assert(std::is_standard_layout_v<FRIKApiV2>, "FRIKApiV2 must remain standard-layout for its exported function table ABI");
-    static_assert(sizeof(FRIKApiV2) == 39 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
+    static_assert(sizeof(FRIKApiV2) == 42 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
     static_assert(FRIKApiV2::tableSizeForVersion(FRIK_API_V2_VERSION) == sizeof(FRIKApiV2), "tableSizeForVersion is out of step with the table");
 }

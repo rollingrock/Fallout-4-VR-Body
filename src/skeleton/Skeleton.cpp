@@ -117,6 +117,13 @@ namespace frik
 
         Skelly::initBoneTreeMap();
 
+        _boneIndexByName.clear();
+        if (const auto* tree = getFlattenedBoneTree()) {
+            for (int i = 0; i < tree->numTransforms; ++i) {
+                _boneIndexByName.emplace(tree->transforms[i].name.c_str(), i);
+            }
+        }
+
         setBodyLen();
 
         _comfortSneakCameraOffsetAdjustment = getIniSetting("fComfortSneakHeight:VR")->GetFloat();
@@ -232,11 +239,13 @@ namespace frik
         // do arm IK - Right then Left
         logger::trace("Set Arms...");
         handleLeftHandedWeaponNodesSwitch();
-        // Hand transforms published in this phase are solved below, in the same frame
-        api::core::invokeFramePhase(FramePhase::BeforeArmSolve);
         _weaponHandRecoil.onFrameUpdate(_playerNodes, isLeftHandedMode() || g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked());
-        setArms(false);
-        setArms(true);
+        updateHandTarget(false);
+        updateHandTarget(true);
+        // Tracked hands are current here; hand transforms published in this phase are solved below, in the same frame
+        api::core::invokeFramePhase(FramePhase::BeforeArmSolve);
+        solveArm(false);
+        solveArm(true);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
         api::core::invokeFramePhase(FramePhase::AfterArmSolve);
 
@@ -926,8 +935,8 @@ namespace frik
         }
     }
 
-    // This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
-    void Skeleton::setArms(bool isLeft)
+    // Bring this hand's weapon and offset nodes and the first-person hand up to date for the frame (the target solveArm uses).
+    void Skeleton::updateHandTarget(bool isLeft)
     {
         // This first part is to handle the game calculating the first person hand based off two offset nodes
         // PrimaryWeaponOffset and PrimaryMeleeOffset
@@ -980,6 +989,14 @@ namespace frik
             weaponNode->IncRefCount();
             Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
         }
+    }
+
+    // This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
+    void Skeleton::solveArm(bool isLeft)
+    {
+        if (getFirstPersonSkeleton() == nullptr) {
+            return;
+        }
 
         // An external mod can own the hand instead of the tracked controller, but only as the target
         // handed to the same solver, so everything downstream of the arm sees one consistent result.
@@ -1001,6 +1018,20 @@ namespace frik
         RE::NiTransform trackedHandTarget = isLeft ? _leftHand->world : _rightHand->world;
         (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, trackedHandTarget);
         (void)solveArmToHandWorldTarget(isLeft, trackedHandTarget);
+    }
+
+    /**
+     * World transform of a bone from the flattened bone tree, final after updateWorldFinal.
+     */
+    bool Skeleton::getBoneWorldTransform(const std::string_view boneName, RE::NiTransform& outTransform) const
+    {
+        const auto it = _boneIndexByName.find(std::string(boneName));
+        const auto* tree = getFlattenedBoneTree();
+        if (it == _boneIndexByName.end() || !tree || it->second < 0 || it->second >= tree->numTransforms) {
+            return false;
+        }
+        outTransform = tree->transforms[it->second].world;
+        return true;
     }
 
     /**

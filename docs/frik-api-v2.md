@@ -74,7 +74,7 @@ Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end 
 | --- | --- | --- |
 | `1` | 0.78 | The original 31-entry table (exact-size check at `initialize()`). |
 | `2` | 0.79 | Append-only rule; `getSkeletonGeneration`, `isInPowerArmor`; lifecycle messages carry `SkeletonLifecycleData`; scope providers: `setScopeProvider`, `clearScopeProvider`, `setLookingThroughScope`, `isLookingThroughScope`; `kScopeEnter` / `kScopeExit` events. |
-| `3` | 0.79 | Frame phases: `registerFrameCallback`, `unregisterFrameCallback`; a hand transform published in `BeforeArmSolve` is solved in the same frame. |
+| `3` | 0.79 | Frame phases: `registerFrameCallback`, `unregisterFrameCallback`; a hand transform published in `BeforeArmSolve` is solved in the same frame. Body reads: `getTrackedHandTransform`, `getBoneWorldTransform`, `getArmChain`. |
 
 > A client built against the v2.1 header refuses any FRIK from 0.79 on (its exact-size check fails with code `5`). Recopy the header once; after that no further recopy is ever forced.
 
@@ -337,6 +337,28 @@ FRIK's frame is a fixed sequence, and a mod can run at named points of it instea
 | `AfterWorldFinal` | The frame is complete; every bone world transform is final. On the first frame of a skeleton this runs after `kSkeletonReady`. |
 
 All callbacks run on the game update thread inside FRIK's frame. Any API call is allowed from a callback except `registerFrameCallback` / `unregisterFrameCallback`.
+
+## Reading tracked hands and bones (v2.3)
+
+The inputs and outputs of FRIK's own solve, so a mod computes its claims from the same values FRIK uses instead of re-reading engine nodes.
+
+`bool getTrackedHandTransform(Hand hand, TrackedHandKind kind, RE::NiTransform* outTransform)`
+
+| `TrackedHandKind` | Value |
+| --- | --- |
+| `Wand` | The VR controller node for that hand. |
+| `WeaponOffset` | The weapon offset node FRIK dampens (the `DampenHands*` settings) and drives the first-person arm from. |
+| `FirstPersonHand` | The first-person hand FRIK solves the body arm to when no hand transform is published. |
+
+Current from `BeforeArmSolve` on; read earlier in the frame they still hold the previous frame. Returns false without a skeleton or when the node does not exist.
+
+`bool getBoneWorldTransform(const char* boneName, RE::NiTransform* outTransform)`
+
+World transform of any body bone by its skeleton name (`LArm_Hand`, `Spine2`, ...), read from the flattened bone tree. Final after `AfterWorldFinal`; earlier in the frame it holds the previous frame. Returns false for an unknown name or without a skeleton.
+
+`bool getArmChain(Hand hand, ArmChainTransforms* outChain)`
+
+World transforms of the live arm nodes, shoulder to hand, in `ArmChainTransforms`. Bit `i` of `validMask` is set when bone `i` exists; `forearm2` / `forearm3` do not in power armor and read as identity. Valid after `AfterArmSolve`, final after `AfterWorldFinal`.
 
 ## State queries
 

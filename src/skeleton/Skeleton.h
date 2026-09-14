@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <memory>
+#include <string_view>
+#include <unordered_map>
 
 #include "CullGeometryHandler.h"
 #include "HandPose.h"
@@ -41,6 +43,34 @@ namespace frik
             return _rightArm;
         }
 
+        ArmNodes getArm(const bool isLeft) const
+        {
+            return isLeft ? _leftArm : _rightArm;
+        }
+
+        RE::NiNode* getWandNode(const bool isLeft) const
+        {
+            return isLeft ? f4vr::getLeftHandNode() : f4vr::getRightHandNode();
+        }
+
+        /**
+         * The weapon offset node FRIK dampens and drives the first-person arm from for this hand.
+         */
+        RE::NiNode* getWeaponOffsetNode(const bool isLeft) const
+        {
+            return (f4vr::isLeftHandedMode() ^ isLeft) ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
+        }
+
+        /**
+         * The first-person hand node FRIK solves the body arm to (before any external hand transform).
+         */
+        RE::NiNode* getFirstPersonHandNode(const bool isLeft) const
+        {
+            return isLeft ? _leftHand : _rightHand;
+        }
+
+        bool getBoneWorldTransform(std::string_view boneName, RE::NiTransform& outTransform) const;
+
         static float getAdjustedPlayerHMDOffset();
 
         void onFrameUpdate();
@@ -71,7 +101,8 @@ namespace frik
         void walk();
         void setSingleLeg(bool isLeft) const;
         void handleLeftHandedWeaponNodesSwitch();
-        void setArms(bool isLeft);
+        void updateHandTarget(bool isLeft);
+        void solveArm(bool isLeft);
         void restoreArmNodesToDefault(bool isLeft);
         bool solveArmToHandWorldTarget(bool isLeft, const RE::NiTransform& handWorldTarget);
         void dampenHand(RE::NiNode* node, bool isLeft);
@@ -121,6 +152,8 @@ namespace frik
         float _legLen;
         ArmNodes _rightArm;
         ArmNodes _leftArm;
+        // flattened bone tree index by bone name, for API bone reads
+        std::unordered_map<std::string, int> _boneIndexByName;
 
         // Default transform are used to reset the skeleton before each frame update to start from scratch
         std::vector<std::pair<RE::NiAVObject*, const RE::NiTransform>> _skeletonNodesToDefaultTransforms;

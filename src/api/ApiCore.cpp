@@ -222,6 +222,63 @@ namespace frik::api::core
         g_framePhases.invoke(static_cast<std::uint32_t>(phase));
     }
 
+    bool FRIK_CORE_CALL getBoneWorldTransform(const char* boneName, RE::NiTransform* outTransform)
+    {
+        const auto* skelly = g_frik.getSkeleton();
+        if (!skelly || !boneName || !outTransform) {
+            return false;
+        }
+        return skelly->getBoneWorldTransform(boneName, *outTransform);
+    }
+
+    bool getTrackedHandTransform(const bool isLeft, const TrackedHandKind kind, RE::NiTransform& outTransform)
+    {
+        const auto* skelly = g_frik.getSkeleton();
+        if (!skelly) {
+            return false;
+        }
+        const RE::NiNode* node = nullptr;
+        switch (kind) {
+        case TrackedHandKind::Wand:
+            node = skelly->getWandNode(isLeft);
+            break;
+        case TrackedHandKind::WeaponOffset:
+            node = skelly->getWeaponOffsetNode(isLeft);
+            break;
+        case TrackedHandKind::FirstPersonHand:
+            node = skelly->getFirstPersonHandNode(isLeft);
+            break;
+        }
+        if (!node) {
+            return false;
+        }
+        outTransform = node->world;
+        return true;
+    }
+
+    bool getArmChain(const bool isLeft, ArmChainTransforms& outChain)
+    {
+        const auto* skelly = g_frik.getSkeleton();
+        if (!skelly) {
+            return false;
+        }
+        const auto arm = skelly->getArm(isLeft);
+        const std::array<const RE::NiAVObject*, 7> nodes{ arm.shoulder, arm.upper, arm.upperT1, arm.forearm1, arm.forearm2, arm.forearm3, arm.hand };
+        const std::array<RE::NiTransform*, 7>
+            targets{ &outChain.shoulder, &outChain.upperArm, &outChain.upperArmTwist, &outChain.forearm1, &outChain.forearm2, &outChain.forearm3, &outChain.hand };
+        outChain.structSize = sizeof(ArmChainTransforms);
+        outChain.validMask = 0;
+        for (std::size_t i = 0; i < nodes.size(); ++i) {
+            if (nodes[i]) {
+                *targets[i] = nodes[i]->world;
+                outChain.validMask |= 1u << i;
+            } else {
+                targets[i]->MakeIdentity();
+            }
+        }
+        return true;
+    }
+
     bool FRIK_CORE_CALL isConfigOpen()
     {
         return g_frik.isMainConfigurationModeActive() || g_frik.isPipboyConfigurationModeActive() || g_frik.inWeaponRepositionMode();
