@@ -216,9 +216,9 @@ namespace frik
      * Replace the explicit per-bone finger transforms of an existing override.
      *
      * Only bones whose bit is set in enabledMask are taken; the rest keep falling
-     * back to the tag's authored pose. The tag must already hold an override, and
-     * any later setHandPoseOverride* call on it drops these transforms again, so
-     * callers that refresh their pose must republish the transforms with it.
+     * back to the tag's authored pose. The tag must already hold an override. The
+     * transforms survive later setHandPoseOverride* updates of the tag; clearing
+     * the tag or setting a new mask replaces them.
      *
      * @return false if the tag holds no override or the priority is negative.
      */
@@ -739,12 +739,11 @@ namespace frik
         });
         const bool wasInserted = overrideIt == overrides.end();
 
+        // an update keeps the tag's explicit per-bone transforms; only clearing the tag or setting a new mask drops them
         TaggedHandPoseOverride updatedOverride = wasInserted ? TaggedHandPoseOverride{} : *overrideIt;
         updatedOverride.tag = std::string(tag);
         updatedOverride.pose = pose;
         updatedOverride.priority = priority;
-        updatedOverride.localTransformMask = 0;
-        updatedOverride.localTransforms = {};
         if (wasInserted) {
             // Sequence is the tiebreak between equal priorities and is assigned once,
             // on registration, so the newest registration takes a tie. Refreshing an

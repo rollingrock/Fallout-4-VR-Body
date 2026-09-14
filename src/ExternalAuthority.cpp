@@ -17,7 +17,7 @@ namespace frik
      *
      * @return false if the tag is empty, the priority is negative, or the transform is not finite.
      */
-    bool ExternalAuthority::setHandWorldTransform(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTransform, const int priority)
+    bool ExternalAuthority::setHandWorldTransform(const std::string_view tag, const bool isLeft, const RE::NiTransform& worldTransform, const int priority, bool* const outInserted)
     {
         if (tag.empty() || priority < 0 || !isFiniteTransform(worldTransform)) {
             return false;
@@ -28,7 +28,8 @@ namespace frik
         const auto claimIt = std::ranges::find_if(claims, [tag](const HandWorldTransformClaim& claim) {
             return claim.tag == tag;
         });
-        if (claimIt == claims.end()) {
+        const bool inserted = claimIt == claims.end();
+        if (inserted) {
             claims.push_back(HandWorldTransformClaim{
                 .tag = std::string(tag),
                 .worldTransform = worldTransform,
@@ -36,9 +37,12 @@ namespace frik
                 .sequence = ++_nextHandWorldTransformSequence,
             });
         } else {
+            // re-publishing keeps the tag's place among equal priorities, like hand pose overrides
             claimIt->worldTransform = worldTransform;
             claimIt->priority = priority;
-            claimIt->sequence = ++_nextHandWorldTransformSequence;
+        }
+        if (outInserted) {
+            *outInserted = inserted;
         }
         return true;
     }
@@ -49,16 +53,19 @@ namespace frik
      *
      * @return false if the tag is empty.
      */
-    bool ExternalAuthority::clearHandWorldTransform(const std::string_view tag, const bool isLeft)
+    bool ExternalAuthority::clearHandWorldTransform(const std::string_view tag, const bool isLeft, bool* const outRemoved)
     {
         if (tag.empty()) {
             return false;
         }
 
         std::lock_guard lock(_handWorldTransformsLock);
-        std::erase_if(claimsForHand(isLeft), [tag](const HandWorldTransformClaim& claim) {
+        const auto removed = std::erase_if(claimsForHand(isLeft), [tag](const HandWorldTransformClaim& claim) {
             return claim.tag == tag;
         });
+        if (outRemoved) {
+            *outRemoved = removed > 0;
+        }
         return true;
     }
 

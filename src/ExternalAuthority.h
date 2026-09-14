@@ -71,8 +71,8 @@ namespace frik
             return _primaryWeaponPoseBlocks.isBlocked();
         }
 
-        bool setHandWorldTransform(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority);
-        bool clearHandWorldTransform(std::string_view tag, bool isLeft);
+        bool setHandWorldTransform(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority, bool* outInserted = nullptr);
+        bool clearHandWorldTransform(std::string_view tag, bool isLeft, bool* outRemoved = nullptr);
         bool getHandWorldTransform(bool isLeft, RE::NiTransform& outWorldTransform) const;
 
         bool setOffHandGrip(std::string_view tag, bool active, bool supportIsLeft, const RE::NiTransform* supportWorld);

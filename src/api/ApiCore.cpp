@@ -553,19 +553,27 @@ namespace frik::api::core
         }
 
         // Tag and priority were validated by the version shim, so a refusal here is the transform.
-        if (!g_externalAuthority.setHandWorldTransform(tag, isLeft, worldTransform, priority)) {
+        bool inserted = false;
+        if (!g_externalAuthority.setHandWorldTransform(tag, isLeft, worldTransform, priority, &inserted)) {
             logger::sample("setHandWorldTransform REJECTED tag:'{}' - world transform is not finite", tag);
             return false;
         }
 
-        logger::sample("setHandWorldTransform tag:'{}' hand={} priority={}", tag, isLeft ? "Left" : "Right", priority);
+        // a claim is typically republished every frame, so only its start and end are logged
+        if (inserted) {
+            logger::info("setHandWorldTransform tag:'{}' hand={} priority={}", tag, isLeft ? "Left" : "Right", priority);
+        }
         return true;
     }
 
     bool clearHandWorldTransform(const std::string_view tag, const bool isLeft)
     {
-        logger::sample("clearHandWorldTransform tag:'{}' hand={}", tag, isLeft ? "Left" : "Right");
-        return g_externalAuthority.clearHandWorldTransform(tag, isLeft);
+        bool removed = false;
+        const bool ok = g_externalAuthority.clearHandWorldTransform(tag, isLeft, &removed);
+        if (removed) {
+            logger::info("clearHandWorldTransform tag:'{}' hand={}", tag, isLeft ? "Left" : "Right");
+        }
+        return ok;
     }
 
     bool setHandPoseLocalTransforms(const std::string_view tag, const bool isLeft, const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& localTransforms,

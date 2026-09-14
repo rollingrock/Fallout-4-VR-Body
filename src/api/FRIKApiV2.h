@@ -590,9 +590,9 @@ namespace frik::api
          * Replace the finger bone local transforms of an existing tagged override.
          *
          * The tag must already hold an override (set one of the setHandPose*
-         * functions first); this call fails if it does not. Any later setHandPose*
-         * call on the same tag clears these transforms, so republish them after
-         * every pose update.
+         * functions first); this call fails if it does not. Since v2.3 the transforms
+         * survive later setHandPose* updates of the tag (before, every pose update
+         * cleared them); clearHandPose or a new mask replaces them.
          * @return true if successful.
          */
         bool(FRIK_CALL* setHandPoseCustomLocalTransforms)(const char* tag, Hand hand, const FingerLocalTransformOverride* overrideData, int priority);

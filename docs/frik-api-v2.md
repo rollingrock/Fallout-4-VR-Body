@@ -216,7 +216,7 @@ Both resolver functions return `true` only if all 15 bones resolved, and zero th
 12..14 pinky
 ```
 
-> Any later `setHandPose*` call on the same tag clears these transforms, so republish them after every pose update.
+> Since v2.3 these transforms survive later `setHandPose*` updates of the same tag; `clearHandPose` or a new mask replaces them. (Before v2.3 every pose update cleared them.)
 
 ### Clearing and querying
 
