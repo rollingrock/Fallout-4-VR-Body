@@ -266,6 +266,7 @@ namespace frik::api::core
     bool getTrackedHandTransform(bool isLeft, TrackedHandKind kind, RE::NiTransform& outTransform);
     bool getArmChain(bool isLeft, ArmChainTransforms& outChain);
     HandSolveState getHandSolveResult(bool isLeft, RE::NiTransform& outWrist);
+    bool setOffHandGripping(std::string_view tag, bool active, bool supportIsLeft, const RE::NiTransform* supportWorld);
 
     RE::NiPoint3 getIndexFingerTipPosition(Hand hand);
 

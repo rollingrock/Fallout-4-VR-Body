@@ -839,11 +839,20 @@ namespace frik::api
         HandSolveState(FRIK_CALL* getHandSolveResult)(Hand hand, RE::NiTransform* outWrist);
 
         /**
+         * Report (active) or drop (inactive) your two-handed grip on the current weapon, keyed by tag, so
+         * isOffHandGrippingWeapon and every FRIK consumer of it (Pip-Boy guards, ...) see it as gripping.
+         * supportHand is the physical hand on the weapon; supportWorld, optional, its world transform.
+         * The grip is tied to the current weapon: FRIK drops it on a drawn weapon change and on skeleton
+         * release. Needs a skeleton. Since v2.3.
+         */
+        bool(FRIK_CALL* setOffHandGripping)(const char* tag, bool active, Hand supportHand, const RE::NiTransform* supportWorld);
+
+        /**
          * Size of the table as published at a given contract version; the append-only rule keeps every older prefix intact.
          */
         static constexpr std::size_t tableSizeForVersion(const std::uint32_t version)
         {
-            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 43 };
+            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 44 };
             const auto index = version < std::size(functionCountByVersion) ? version : std::size(functionCountByVersion) - 1;
             return functionCountByVersion[index] * sizeof(void (*)());
         }
@@ -908,6 +917,6 @@ namespace frik::api
 
     inline constexpr std::size_t FRIK_API_V2_FUNCTION_POINTER_SIZE = sizeof(decltype(FRIKApiV2::getVersion));
     static_assert(std::is_standard_layout_v<FRIKApiV2>, "FRIKApiV2 must remain standard-layout for its exported function table ABI");
-    static_assert(sizeof(FRIKApiV2) == 43 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
+    static_assert(sizeof(FRIKApiV2) == 44 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
     static_assert(FRIKApiV2::tableSizeForVersion(FRIK_API_V2_VERSION) == sizeof(FRIKApiV2), "tableSizeForVersion is out of step with the table");
 }

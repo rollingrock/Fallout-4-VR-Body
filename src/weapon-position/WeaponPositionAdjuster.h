@@ -20,11 +20,6 @@ namespace frik
             _scopeCameraBaseMatrix.entry[2][0] = 1.0; // new X = old Z
             _scopeCameraBaseMatrix.entry[0][1] = 1.0; // new Y = old X
             _scopeCameraBaseMatrix.entry[1][2] = 1.0; // new Z = old Y
-
-            // the angle was calculated by looking at the weapon in hand, seems to work for all weapons
-            const float sign = f4vr::isLeftHandedMode() ? -1.0f : 1.0f;
-            _twoHandedPrimaryHandManualAdjustment =
-                common::MatrixUtils::getMatrixFromEulerAngles(0, common::MatrixUtils::degreesToRads(-6 * sign), common::MatrixUtils::degreesToRads(7 * sign));
         }
 
         bool isWeaponDrawn() const
@@ -70,7 +65,7 @@ namespace frik
         void setOffhandGripping(bool isGripping);
         void handlePrimaryHandGripOffsetAdjustment(const RE::NiNode* weapon) const;
         void handleWeaponGrippingRotationAdjustment(RE::NiNode* weapon) const;
-        bool isOffhandCloseToBarrel(const RE::NiNode* weapon) const;
+        bool isOffhandCloseToBarrel(const RE::NiNode* weapon, bool exitCone = false) const;
         static bool isOffhandMovedFastAway();
         RE::NiPoint3 getPrimaryHandPosition() const;
         static RE::NiPoint3 getOffhandPosition();
@@ -82,9 +77,6 @@ namespace frik
         // Define a basis remapping matrix to correct coordinate system for scope camera
         RE::NiMatrix3 _scopeCameraBaseMatrix;
 
-        // For unknown reason my primary hand calculation is off by specific angle
-        RE::NiMatrix3 _twoHandedPrimaryHandManualAdjustment;
-
         Skeleton* _skelly;
 
         // detects equipped-weapon / power-armor changes and resolves the weapon name; the single
@@ -93,6 +85,15 @@ namespace frik
 
         // is offhand (secondary hand) gripping the weapon barrel
         bool _offHandGripping = false;
+
+        // the grip survived the weapon being hidden (holster, Pip-Boy, cell load); re-check the cone when it is back (#142)
+        bool _gripRevalidatePending = false;
+
+        // mode 2 released by button while still in the cone; do not auto-grip again until the hand leaves it
+        bool _gripRearmRequired = false;
+
+        // last drawn weapon, so a hidden-and-back weapon is told apart from a real weapon change
+        std::string _lastDrawnWeaponName;
 
         // last frame's external primary-weapon-node ownership block, to release transient state as it engages
         bool _nodeOwnershipBlockedLastFrame = false;

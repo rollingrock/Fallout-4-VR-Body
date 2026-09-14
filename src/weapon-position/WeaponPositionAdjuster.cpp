@@ -195,8 +195,19 @@ namespace frik
             return;
         }
 
-        // reset state; go through setOffhandGripping so the offhand grip hand-pose override is released too
-        setOffhandGripping(false);
+        if (!_equippedWeapon.isDrawn()) {
+            // hidden, not changed (holster, Pip-Boy, cell load): keep the grip and re-check it when the weapon is back (#142)
+            _gripRevalidatePending = _offHandGripping;
+            loadStoredOffsets();
+            return;
+        }
+
+        if (_equippedWeapon.weaponName() != _lastDrawnWeaponName) {
+            _lastDrawnWeaponName = _equippedWeapon.weaponName();
+            // reset state; go through setOffhandGripping so the offhand grip hand-pose override is released too
+            setOffhandGripping(false);
+            g_externalAuthority.clearOffHandGripsForWeaponChange();
+        }
 
         loadStoredOffsets();
     }
@@ -331,19 +342,24 @@ namespace frik
         }
 
         if (_offHandGripping) {
+            if (_gripRevalidatePending) {
+                // the weapon is back after being hidden; keep the grip only if the hand is still on the barrel
+                _gripRevalidatePending = false;
+                if (!isOffhandCloseToBarrel(weapon, true)) {
+                    setOffhandGripping(false);
+                    return;
+                }
+            }
+
             if (g_config.onePressGripButton && !vrcf::VRControllers.check(g_config.offhandGripHoldBinding)) {
                 // Mode 3 release grip when not holding the grip button
                 setOffhandGripping(false);
             }
 
             if (g_config.enableGripButtonToLetGo && vrcf::VRControllers.check(g_config.offhandGripBinding)) {
-                if (g_config.enableGripButtonToGrap || !isOffhandCloseToBarrel(weapon)) {
-                    // Mode 2,4 release grip on pressing the grip button again
-                    setOffhandGripping(false);
-                } else {
-                    // Mode 2 but close to barrel, so ignore un-grip as it will grip on next frame
-                    vrcf::VRHaptics.trigger(vrcf::Hand::Offhand, vrcf::HapticPattern::Click);
-                }
+                // Mode 2,4 release grip on pressing the grip button again; mode 2 stays released until the hand leaves the cone
+                _gripRearmRequired = !g_config.enableGripButtonToGrap;
+                setOffhandGripping(false);
             }
 
             if (!g_config.enableGripButtonToGrap && !g_config.enableGripButtonToLetGo && !g_frik.isLookingThroughScope() && isOffhandMovedFastAway()) {
@@ -359,6 +375,12 @@ namespace frik
             // mode 1 extra calculation for past 3 frames, annoying but only if mode 1 is in use
             // ReSharper disable once CppExpressionWithoutSideEffects
             isOffhandMovedFastAway();
+        }
+
+        if (_gripRearmRequired) {
+            // Mode 2 let go inside the cone: wait for the hand to leave it before auto-gripping again
+            _gripRearmRequired = isOffhandCloseToBarrel(weapon, true);
+            return;
         }
 
         if (!isOffhandCloseToBarrel(weapon)) {
@@ -386,6 +408,7 @@ namespace frik
         }
 
         _offHandGripping = isGripping;
+        _gripRevalidatePending = false;
         HandPose::setOffhandGripHandPose(isGripping);
     }
 
@@ -425,6 +448,9 @@ namespace frik
             return;
         }
 
+        // weapon world rotation before the re-aim; the primary hand keeps this relation to it (rigid delta below)
+        const auto weaponWorldRotBefore = weapon->world.rotate;
+
         Quaternion rotAdjust;
 
         // World-space vector from weapon to offhand
@@ -456,18 +482,11 @@ namespace frik
 
         // -- Handle primary hand rotation:
 
-        // Transform the offhand offset adjusted vector from weapon space to world space so we can adjust it into hand and scope space
-        const auto adjustedWeaponVecWorld = _weaponOriginalWorldTransform.rotate.Transpose() * ((adjustedWeaponVec * _weaponOriginalWorldTransform.scale));
-
-        // Rotate the primary hand so it will stay on the weapon stock
+        // Apply the same world rotation delta the weapon got to the primary hand, so the hand keeps its exact
+        // relation to the stock (world = local * parent, so hand-in-weapon is H * W^T and is preserved by H * W0^T * W1)
         const auto primaryHand = (f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand);
-        const auto handLocalVec = primaryHand->world.rotate * (adjustedWeaponVecWorld / primaryHand->world.scale);
-        rotAdjust.vec2Vec(handLocalVec, RE::NiPoint3(1, 0, 0));
-
-        // no fucking idea why it's off by specific angle
-        const auto rotAdjustWithManual = _twoHandedPrimaryHandManualAdjustment * rotAdjust.getMatrix();
-
-        primaryHand->local.rotate = rotAdjustWithManual * primaryHand->local.rotate;
+        const auto handWorldRot = primaryHand->world.rotate * weaponWorldRotBefore.Transpose() * weapon->world.rotate;
+        primaryHand->local.rotate = primaryHand->parent ? handWorldRot * primaryHand->parent->world.rotate.Transpose() : handWorldRot;
 
         // update all the fingers to match the hand rotation
         f4vr::updateTransformsDown(primaryHand, true, weapon->name.c_str());
@@ -477,14 +496,19 @@ namespace frik
      * Return true if the angle of offhand to weapon to grip is close to barrel but far in distance from main hand
      * to prevent grabbing when two hands are just close.
      */
-    bool WeaponPositionAdjuster::isOffhandCloseToBarrel(const RE::NiNode* weapon) const
+    bool WeaponPositionAdjuster::isOffhandCloseToBarrel(const RE::NiNode* weapon, const bool exitCone) const
     {
+        // enter cone ~17 deg, exit cone ~26 deg so a grip does not flicker at the edge; range caps a hand that is nowhere near the barrel
+        constexpr float enterCosine = 0.955f;
+        constexpr float exitCosine = 0.90f;
+        constexpr float minDistance = 15.0f;
+        constexpr float maxDistance = 90.0f;
         const auto offhand2WeaponVec = getOffhandPosition() - getPrimaryHandPosition();
         const float distanceFromPrimaryHand = MatrixUtils::vec3Len(offhand2WeaponVec);
         const auto weaponLocalVec = weapon->world.rotate * (MatrixUtils::vec3Norm(offhand2WeaponVec) / weapon->world.scale);
         const auto adjustedWeaponVec = _offhandOffsetRot.Transpose() * (weaponLocalVec);
         const float angleDiffToWeaponVec = MatrixUtils::vec3Dot(MatrixUtils::vec3Norm(adjustedWeaponVec), RE::NiPoint3(0, 1, 0));
-        return angleDiffToWeaponVec > 0.955 && distanceFromPrimaryHand > 15;
+        return angleDiffToWeaponVec > (exitCone ? exitCosine : enterCosine) && distanceFromPrimaryHand > minDistance && distanceFromPrimaryHand < maxDistance;
     }
 
     /**

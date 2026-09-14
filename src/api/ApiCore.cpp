@@ -276,6 +276,24 @@ namespace frik::api::core
         return HandSolveState::NoClaim;
     }
 
+    /**
+     * An external mod reports its two-handed grip so FRIK's grip consumers honour it. Rejected without a
+     * skeleton, since the grip is tied to the current weapon and dropped with the skeleton.
+     */
+    bool setOffHandGripping(const std::string_view tag, const bool active, const bool supportIsLeft, const RE::NiTransform* supportWorld)
+    {
+        if (!g_frik.getSkeleton()) {
+            logger::sample("setOffHandGripping REJECTED tag:'{}' - skeleton not ready", tag);
+            return false;
+        }
+        if (!g_externalAuthority.setOffHandGrip(tag, active, supportIsLeft, supportWorld)) {
+            logger::sample("setOffHandGripping REJECTED tag:'{}' - empty tag or non-finite support transform", tag);
+            return false;
+        }
+        logger::sample(1000, "setOffHandGripping tag:'{}' active:{} support:{}", tag, active, supportIsLeft ? "left" : "right");
+        return true;
+    }
+
     bool getArmChain(const bool isLeft, ArmChainTransforms& outChain)
     {
         const auto* skelly = g_frik.getSkeleton();

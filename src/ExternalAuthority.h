@@ -75,9 +75,25 @@ namespace frik
         bool clearHandWorldTransform(std::string_view tag, bool isLeft);
         bool getHandWorldTransform(bool isLeft, RE::NiTransform& outWorldTransform) const;
 
+        bool setOffHandGrip(std::string_view tag, bool active, bool supportIsLeft, const RE::NiTransform* supportWorld);
+        bool isOffHandGripping() const;
+        void clearOffHandGripsForWeaponChange();
+
         void clearForSkeletonRelease();
 
     private:
+        /**
+         * A two-handed grip an external mod is running on the current weapon, so FRIK's grip consumers
+         * (Pip-Boy guards, the API query) see it as gripping. Cleared on weapon change and skeleton release.
+         */
+        struct OffHandGripClaim
+        {
+            std::string tag;
+            bool supportIsLeft = false;
+            bool hasSupportWorld = false;
+            RE::NiTransform supportWorld;
+        };
+
         /**
          * A hand world transform published by an external mod, replacing the tracked controller as the
          * target the arm is solved to. The transform stays in effect until it is cleared, so a client
@@ -111,6 +127,9 @@ namespace frik
         // Indexed by hand: 0 is right, 1 is left.
         std::array<std::vector<HandWorldTransformClaim>, 2> _handWorldTransforms;
         std::uint64_t _nextHandWorldTransformSequence = 0;
+
+        mutable std::mutex _offHandGripsLock;
+        std::vector<OffHandGripClaim> _offHandGrips;
     };
 
     // Global singleton for easy access

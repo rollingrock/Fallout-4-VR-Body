@@ -94,8 +94,63 @@ namespace frik
      * Drop every external registration when the skeleton is released, because the nodes they were
      * published against are gone. Clients must republish after the next skeleton-ready event.
      */
+    /**
+     * Report or drop an external mod's two-handed grip on the current weapon. Re-setting a tag updates it in place.
+     *
+     * @return false if the tag is empty or the support transform is not finite.
+     */
+    bool ExternalAuthority::setOffHandGrip(const std::string_view tag, const bool active, const bool supportIsLeft, const RE::NiTransform* supportWorld)
+    {
+        if (tag.empty() || (supportWorld && !isFiniteTransform(*supportWorld))) {
+            return false;
+        }
+
+        std::lock_guard lock(_offHandGripsLock);
+        const auto it = std::ranges::find_if(_offHandGrips, [tag](const OffHandGripClaim& claim) {
+            return claim.tag == tag;
+        });
+        if (!active) {
+            if (it != _offHandGrips.end()) {
+                _offHandGrips.erase(it);
+            }
+            return true;
+        }
+        OffHandGripClaim claim{ .tag = std::string(tag), .supportIsLeft = supportIsLeft, .hasSupportWorld = supportWorld != nullptr };
+        if (supportWorld) {
+            claim.supportWorld = *supportWorld;
+        }
+        if (it == _offHandGrips.end()) {
+            _offHandGrips.push_back(std::move(claim));
+        } else {
+            *it = std::move(claim);
+        }
+        return true;
+    }
+
+    bool ExternalAuthority::isOffHandGripping() const
+    {
+        std::lock_guard lock(_offHandGripsLock);
+        return !_offHandGrips.empty();
+    }
+
+    /**
+     * A grip is tied to the weapon it was reported on, so a drawn weapon change drops every external grip.
+     */
+    void ExternalAuthority::clearOffHandGripsForWeaponChange()
+    {
+        std::lock_guard lock(_offHandGripsLock);
+        if (!_offHandGrips.empty()) {
+            logger::info("Weapon change: dropped {} external off-hand grip(s)", _offHandGrips.size());
+            _offHandGrips.clear();
+        }
+    }
+
     void ExternalAuthority::clearForSkeletonRelease()
     {
+        {
+            std::lock_guard lock(_offHandGripsLock);
+            _offHandGrips.clear();
+        }
         // From a client's side its registrations simply evaporate here, so say what was dropped and
         // tie the two ends of that contract together in the log. Silent when nothing was registered,
         // which is every release in a game running without API clients.

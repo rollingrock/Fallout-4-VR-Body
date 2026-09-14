@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "Config.h"
+#include "ExternalAuthority.h"
 #include "ModBase.h"
 #include "PlayerControlsHandler.h"
 #include "ScopeAuthority.h"
@@ -171,9 +172,10 @@ namespace frik
             return _weaponPosition && _weaponPosition->isMeleeWeaponDrawn();
         }
 
+        // FRIK's own two-handed grip or one reported by an external mod (setOffHandGripping)
         bool isOffHandGrippingWeapon() const
         {
-            return _weaponPosition && _weaponPosition->isOffHandGrippingWeapon();
+            return (_weaponPosition && _weaponPosition->isOffHandGrippingWeapon()) || g_externalAuthority.isOffHandGripping();
         }
 
         static bool isOffHandGrippingEnabled()

@@ -74,7 +74,7 @@ Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end 
 | --- | --- | --- |
 | `1` | 0.78 | The original 31-entry table (exact-size check at `initialize()`). |
 | `2` | 0.79 | Append-only rule; `getSkeletonGeneration`, `isInPowerArmor`; lifecycle messages carry `SkeletonLifecycleData`; scope providers: `setScopeProvider`, `clearScopeProvider`, `setLookingThroughScope`, `isLookingThroughScope`; `kScopeEnter` / `kScopeExit` events. |
-| `3` | 0.79 | Frame phases: `registerFrameCallback`, `unregisterFrameCallback`; a hand transform published in `BeforeArmSolve` is solved in the same frame. Body reads: `getTrackedHandTransform`, `getBoneWorldTransform`, `getArmChain`; `getHandSolveResult`. |
+| `3` | 0.79 | Frame phases: `registerFrameCallback`, `unregisterFrameCallback`; a hand transform published in `BeforeArmSolve` is solved in the same frame. Body reads: `getTrackedHandTransform`, `getBoneWorldTransform`, `getArmChain`; `getHandSolveResult`; `setOffHandGripping`. |
 
 > A client built against the v2.1 header refuses any FRIK from 0.79 on (its exact-size check fails with code `5`). Recopy the header once; after that no further recopy is ever forced.
 
@@ -249,6 +249,10 @@ Take over where a hand is placed, giving FRIK the world transform to solve the a
 | `bool blockPrimaryHandWeaponPose(tag, block)` | Stop FRIK's built-in primary weapon hand pose, including its per-weapon primary-hand grip rotation. |
 
 Both are reference-counted by tag, like `blockFeature`. Taking weapon node ownership also releases an active offhand two-handed grip, so the grip and its pose don't stay latched while you own the weapon.
+
+`bool setOffHandGripping(const char* tag, bool active, Hand supportHand, const RE::NiTransform* supportWorld)` (v2.3)
+
+Report your own two-handed grip so `isOffHandGrippingWeapon()` and every FRIK consumer of it (the Pip-Boy guards among them) treat the weapon as gripped. `supportHand` is the physical hand on the weapon, `supportWorld` its world transform or null. The grip is tied to the current weapon: FRIK drops it when the drawn weapon changes and on skeleton release, so re-report after `kSkeletonReady`. Pass `active = false` to release.
 
 ## Weapon hand recoil
 
