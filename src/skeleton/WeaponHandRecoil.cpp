@@ -118,8 +118,8 @@ namespace frik
             return;
         }
 
-        api::FRIKApiV2::RecoilSample sample{};
-        sample.structSize = sizeof(api::FRIKApiV2::RecoilSample);
+        api::core::RecoilSample sample{};
+        sample.structSize = sizeof(api::core::RecoilSample);
         sample.nativeKickLocal = kickbackNode->local;
 
         const auto resolution = api::resolveWeaponHandRecoil(sample);
@@ -131,7 +131,7 @@ namespace frik
         const auto& response = resolution.response;
         _responseAccepted = true;
         _handMask = response.handMask;
-        if (response.delivery == api::FRIKApiV2::RecoilDelivery::Damped) {
+        if (response.delivery == api::core::RecoilDelivery::Damped) {
             _controlledKickLocal = dampen(response.controlledKickLocal);
         } else {
             _controlledKickLocal = response.controlledKickLocal;
@@ -155,7 +155,7 @@ namespace frik
             return true;
         }
 
-        const auto selectedRole = static_cast<std::uint32_t>(isLeft == _physicalPrimaryIsLeft ? api::FRIKApiV2::RecoilHandMask::Primary : api::FRIKApiV2::RecoilHandMask::Offhand);
+        const auto selectedRole = static_cast<std::uint32_t>(isLeft == _physicalPrimaryIsLeft ? api::core::RecoilHandMask::Primary : api::core::RecoilHandMask::Offhand);
         if ((_handMask & selectedRole) == 0) {
             return true;
         }
@@ -241,8 +241,8 @@ namespace frik
             _smoothedValid = false;
             return kick;
         }
-        const bool isInScopeMenu = g_frik.isInScopeMenu();
-        if (isInScopeMenu && !g_config.dampenHandsInVanillaScope) {
+        const bool isInScopeMenu = g_frik.isLookingThroughScope();
+        if (isInScopeMenu && (!g_config.dampenHandsInVanillaScope || g_scopeAuthority.hasCapability(ScopeCapability::OwnsDamping))) {
             _smoothedValid = false;
             return kick;
         }

@@ -20,7 +20,20 @@ namespace frik
     void MainConfigMode::openConfigMode()
     {
         logger::info("Open main config by call...");
-        createMainConfigUI();
+        tryCreateMainConfigUI();
+    }
+
+    /**
+     * Build the config UI, logging instead of crashing the game when an asset is missing (a papyrus call has no other guard).
+     */
+    void MainConfigMode::tryCreateMainConfigUI()
+    {
+        try {
+            createMainConfigUI();
+        } catch (const std::exception& e) {
+            logger::error("Failed to open main config: {}", e.what());
+            closeConfigMode();
+        }
     }
 
     /**
@@ -48,7 +61,7 @@ namespace frik
                 f4vr::closeFavoriteMenu();
             }
             vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::RampUp);
-            createMainConfigUI();
+            tryCreateMainConfigUI();
         }
 
         if (!isOpen()) {

@@ -173,7 +173,7 @@ namespace frik::devbench
         }
 
         constexpr auto kDescriptor = R"({
-"description":"FRIK (Fallout 4 VR body IK) live state and config. 'state' returns the body, Pip-Boy, weapon-positioning, config-UI and subsystem flags as of the last rendered frame, with a 'liveness' block carrying frame, skeletonGeneration and ageMs - ALWAYS read liveness first: a stale or absent frame means the rest is not a measurement. 'health' answers even before FRIK has run a frame, so it distinguishes 'FRIK is loaded but idle' from 'FRIK is absent'. 'config' reads one FRIK.ini value; 'set' overrides one for the session without writing to disk; 'clear' drops the override. skeletonGeneration increments on every skeleton build AND release, so a change between two reads means the body you measured is not the body you are looking at now.",
+"description":"FRIK (Fallout 4 VR body IK) live state and config. 'state' returns the body, Pip-Boy, weapon-positioning, config-UI and subsystem flags as of the last rendered frame, with a 'liveness' block carrying frame, skeletonGeneration and ageMs - ALWAYS read liveness first: a stale or absent frame means the rest is not a measurement. 'health' answers even before FRIK has run a frame, so it distinguishes 'FRIK is loaded but idle' from 'FRIK is absent'. 'config' reads one FRIK.ini value; 'set' overrides one for the session without writing to disk; 'clear' drops the override. skeletonGeneration is FRIK's skeleton build counter (1 for the first body of the session), so together with state a change between two reads means the body you measured is not the body you are looking at now.",
 "readOnly":false,
 "inputSchema":{
  "type":"object",
@@ -259,7 +259,7 @@ namespace frik::devbench
 
         auto snapshot = std::make_shared<Snapshot>();
         snapshot->frame = _frame.fetch_add(1, std::memory_order_relaxed) + 1;
-        snapshot->skeletonGeneration = _skeletonGeneration.load(std::memory_order_relaxed);
+        snapshot->skeletonGeneration = g_frik.getSkeletonGeneration();
         snapshot->publishedAtMs = nowMs();
 
         snapshot->playerPresent = RE::PlayerCharacter::GetSingleton() != nullptr;

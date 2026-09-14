@@ -250,7 +250,7 @@ namespace frik
         logger::trace("Operate hands...");
         _handPose.onFrameUpdate(_root, _frameTime);
 
-        if (g_frik.isInScopeMenu()) {
+        if (g_frik.shouldHideBodyInScope()) {
             hideHands();
         }
 
@@ -1305,8 +1305,8 @@ namespace frik
             return;
         }
 
-        const bool isInScopeMenu = g_frik.isInScopeMenu();
-        if (isInScopeMenu && !g_config.dampenHandsInVanillaScope) {
+        const bool isInScopeMenu = g_frik.isLookingThroughScope();
+        if (isInScopeMenu && (!g_config.dampenHandsInVanillaScope || g_scopeAuthority.hasCapability(ScopeCapability::OwnsDamping))) {
             return;
         }
 

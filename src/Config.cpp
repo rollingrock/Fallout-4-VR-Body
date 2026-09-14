@@ -432,6 +432,7 @@ namespace frik
         // Dampen hands
         dampenHands = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHands", true);
         dampenHandsInVanillaScope = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHandsInVanillaScope", true);
+        hideBodyInVanillaScope = ini.GetBoolValue(INI_SECTION_MAIN, "HideBodyInVanillaScope", true);
         dampenHandsRotation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", 0.7f));
         dampenHandsTranslation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", 0.7f));
         dampenHandsRotationInVanillaScope = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotationInVanillaScope", 0.2f));

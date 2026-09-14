@@ -202,17 +202,22 @@ namespace frik
 
         updateSetupPipboyNodes();
 
-        if (g_frik.isPauseMenuOpen() || g_frik.isInScopeMenu()) {
-            // prevent interacting with Pipboy when we shouldn't
+        if (g_frik.isPauseMenuOpen()) {
             return;
         }
 
+        // while looking through a scope only the gesture paths are gated; a button press is explicit intent
+        const bool lookingThroughScope = g_frik.isLookingThroughScope();
         if (_attaboyOnBeltNode && g_config.attaboyGrab.primary.type != vrcf::ActivationType::Disabled) {
             // Fallout London VR: grabbing the Attaboy off the belt (a proximity gesture) toggles it open/closed.
-            checkAttaboyGrab();
+            if (!lookingThroughScope) {
+                checkAttaboyGrab();
+            }
         } else {
             // check by looking should be first to handle closing by button not opening it again by looking at Pipboy.
-            checkTurningOnByLookingAt();
+            if (!lookingThroughScope) {
+                checkTurningOnByLookingAt();
+            }
 
             checkTurningOnByButton();
             checkTurningOffByButton();

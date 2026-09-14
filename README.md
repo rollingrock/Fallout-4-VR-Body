@@ -45,7 +45,8 @@ Manual setup, including the required `Fallout4Custom.ini` edits, is covered in t
 
 ### Compatibility
 
-- **BetterScopesVR** - supported; FRIK repositions scope reticles and adjusts dampening while looking through a scope.
+- **True Scopes** - supported through the FRIK API v2.2 scope provider: the body stays visible and posed while looking through the scope.
+- **BetterScopesVR** - supported (legacy path); FRIK repositions scope reticles and adjusts dampening while looking through a scope.
 - **Fallout London VR** - detected automatically; swaps the Pip-Boy for the Attaboy and loads `FRIK_FOLVR.ini` overrides.
 - **Immersive Flashlight VR** - compatible; FRIK disables its embedded flashlight to avoid conflicts.
 - Mods that modify the player **skeleton** (body, heel, or pose mods) can conflict and cause crashes - run only what you need.

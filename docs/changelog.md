@@ -1,3 +1,17 @@
+## v0.79
+
+- Scopes: True Scopes support. A scope mod registers as a scope provider and FRIK keeps the body visible and fully posed while looking through the scope.
+- Config: Opening the config menu with a missing UI asset now logs an error instead of crashing.
+- Scopes: Every scope behavior (body hiding, hand and recoil dampening, Pip-Boy interaction, two-handed grip release) now keys on one looking-through-scope state, published by the scope mod or taken from the vanilla scope menu.
+- Scopes: The scope camera now follows the two-handed aim in every case, fixing the scope view drifting off the barrel while gripping with both hands.
+- Scopes: Two-handed grip keeps the weapon pivot and primary hand correct while scoped instead of skipping them.
+- Config: Added `HideBodyInVanillaScope` to keep the body visible in the vanilla scope view.
+- API: **FRIK API v2.2**. The v2 table is append-only from now on; `initialize()` accepts any newer FRIK. Mods built against the v2.1 header must recopy `FRIKApiV2.h` once.
+- API: Skeleton lifecycle events carry the skeleton generation, power armor flag and root node; added `getSkeletonGeneration` and `isInPowerArmor`.
+- API: Added the scope provider API (`setScopeProvider`, `setLookingThroughScope`) and `kScopeEnter` / `kScopeExit` events.
+- Stability: Every game patch now verifies the original bytes before writing and is skipped with a log line on a mismatch.
+- Dev: Added a unit-test target run by CI, and a devbench `frik` tool exposing live state and config overrides.
+
 ## v0.78
 
 - Support for ROCK mod.

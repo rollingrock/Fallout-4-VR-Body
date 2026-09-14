@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <array>
 #include <cstdint>
+#include <iterator>
 #include <span>
 #include <string_view>
 #include <type_traits>
@@ -10,11 +11,18 @@
 #include "RE/NetImmerse/NiPoint.h"
 #include "RE/NetImmerse/NiTransform.h"
 
+namespace RE
+{
+    class NiNode;
+}
+
 // ----------------------------------------------------------------------------------------
 // EXAMPLE USAGE:
 // Copy this whole file into your project AS IS
 // Use the code below as a reference of FRIK API v2 use
 // Call initialize in GameLoaded event
+// v2 is append-only since v2.2: a newer FRIK keeps serving this header, and entries added later are
+// documented with the version that introduced them.
 
 // {
 //     const int err = frik::api::FRIKApiV2::initialize();
@@ -56,8 +64,11 @@ namespace frik::api
     /**
      * Version of the FRIK API v2 contract, independent of the v1-v4 table.
      * A v2 client never reads the older table and vice versa.
+     * Since v2.2 the table is append-only: FRIK only ever adds entries at the end and bumps this
+     * number, so one header serves every FRIK from the minVersion you initialize with. Each entry
+     * documents the version that introduced it; check getVersion() before calling a newer one.
      */
-    inline constexpr std::uint32_t FRIK_API_V2_VERSION = 1;
+    inline constexpr std::uint32_t FRIK_API_V2_VERSION = 2;
 
     struct FRIKApiV2
     {
@@ -372,7 +383,43 @@ namespace frik::api
         {
             kSkeletonReady = 100,
             kSkeletonDestroying = 101,
+            // The looking-through-scope state flipped (no payload). Since v2.2.
+            kScopeEnter = 102,
+            kScopeExit = 103,
         };
+
+        /**
+         * What a scope provider takes over from FRIK while the player looks through a scope. Since v2.2.
+         */
+        enum class ScopeCapability : std::uint32_t
+        {
+            // The body root is never hidden while scoped; the provider renders the main view with the body in it.
+            KeepsBodyVisible = 1u << 0,
+            // FRIK leaves the primaryWeaponScopeCamera node alone.
+            OwnsScopeCamera = 1u << 1,
+            // setLookingThroughScope from this provider replaces the vanilla ScopeMenu state as the looking-through signal.
+            PublishesLookingThrough = 1u << 2,
+            // FRIK does not dampen hands or recoil while scoped; the provider smooths its own view.
+            OwnsDamping = 1u << 3,
+        };
+
+        /**
+         * Payload carried by kSkeletonReady and kSkeletonDestroying (msg->data, msg->dataLen == sizeof).
+         * generation counts skeleton builds this session (1 for the first), so a client can tell a
+         * rebuild from the body it measured. rootNode is the skeleton root and is valid for the
+         * duration of the message. Since v2.2.
+         */
+        struct SkeletonLifecycleData
+        {
+            std::uint32_t structSize = 0;
+            std::uint32_t generation = 0;
+            RE::NiNode* rootNode = nullptr;
+            bool inPowerArmor = false;
+            std::uint8_t reserved0[7] = {};
+            std::uint32_t reserved[4] = {};
+        };
+
+        static_assert(sizeof(SkeletonLifecycleData) == 40, "SkeletonLifecycleData ABI changed");
 
         /**
          * Get the API v2 version number.
@@ -631,18 +678,71 @@ namespace frik::api
          */
         bool(FRIK_CALL* unregisterWeaponHandRecoilController)(const char* tag);
 
+        // ---- Added in v2.2 ----
+
+        /**
+         * Number of skeletons FRIK has built this session: 0 before the first, +1 on every rebuild.
+         * Matches SkeletonLifecycleData::generation of the latest lifecycle message. Since v2.2.
+         */
+        std::uint32_t(FRIK_CALL* getSkeletonGeneration)();
+
+        /**
+         * Whether the current skeleton is the power armor rig. FRIK debounces the game's transient
+         * power-armor state before rebuilding, so this only flips together with the generation. Since v2.2.
+         */
+        bool(FRIK_CALL* isInPowerArmor)();
+
+        /**
+         * Register or replace a scope provider with the ScopeCapability bits it takes over.
+         * Providers survive skeleton rebuilds; capabilities are the union over registered tags.
+         * Call once after FRIK has loaded (the GameLoaded event). Since v2.2.
+         * @return false for an empty tag or unknown capability bits.
+         */
+        bool(FRIK_CALL* setScopeProvider)(const char* tag, std::uint32_t capabilities);
+
+        /**
+         * Drop a scope provider. Removing an unknown tag is idempotent. Since v2.2.
+         */
+        bool(FRIK_CALL* clearScopeProvider)(const char* tag);
+
+        /**
+         * Publish whether the player is looking through the scope. Only a provider registered with
+         * PublishesLookingThrough may; publish on the game update thread whenever the state changes.
+         * FRIK keys body hiding, hand and recoil damping, Pip-Boy interaction and two-handed grip
+         * release on it, and broadcasts kScopeEnter / kScopeExit when it flips. Since v2.2.
+         */
+        bool(FRIK_CALL* setLookingThroughScope)(const char* tag, bool lookingThrough);
+
+        /**
+         * The looking-through-scope state FRIK is keying on this frame: a publishing provider's flag,
+         * else whether the vanilla ScopeMenu is open. Since v2.2.
+         */
+        bool(FRIK_CALL* isLookingThroughScope)();
+
+        /**
+         * Size of the table as published at a given contract version; the append-only rule keeps every older prefix intact.
+         */
+        static constexpr std::size_t tableSizeForVersion(const std::uint32_t version)
+        {
+            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37 };
+            const auto index = version < std::size(functionCountByVersion) ? version : std::size(functionCountByVersion) - 1;
+            return functionCountByVersion[index] * sizeof(void (*)());
+        }
+
         /**
          * Initialize the FRIK API v2 object.
          * NOTE: call after all mods have been loaded in the game (GameLoaded event).
          *
-         * @param minVersion the minimal version required (default: the compiled against version)
+         * @param minVersion the minimal version required (default: the compiled against version).
+         * Pass an older version to also run against an older FRIK, and gate every entry newer
+         * than it on getVersion().
          * @return error codes:
          * 0 - Successful
          * 1 - Failed to find FRIK.dll (trying to init too early?)
          * 2 - No FRIKAPI_V2_GetApi API found
          * 3 - Failed FRIKAPI_V2_GetApi call
          * 4 - FRIK API v2 version is older than the minimal required version
-         * 5 - Loaded API v2 contract does not exactly match this header
+         * 5 - Loaded API v2 table is smaller than minVersion requires (FRIK is older than it claims)
          */
         [[nodiscard]] static int initialize(const uint32_t minVersion = FRIK_API_V2_VERSION)
         {
@@ -672,7 +772,7 @@ namespace frik::api
             }
 
             const auto getApiStructSize = reinterpret_cast<std::uint32_t(FRIK_CALL*)()>(GetProcAddress(frikDll, "FRIKAPI_V2_GetApiStructSize"));
-            if (!getApiStructSize || getApiStructSize() != sizeof(FRIKApiV2)) {
+            if (!getApiStructSize || getApiStructSize() < tableSizeForVersion(minVersion)) {
                 return 5;
             }
 
@@ -689,5 +789,6 @@ namespace frik::api
 
     inline constexpr std::size_t FRIK_API_V2_FUNCTION_POINTER_SIZE = sizeof(decltype(FRIKApiV2::getVersion));
     static_assert(std::is_standard_layout_v<FRIKApiV2>, "FRIKApiV2 must remain standard-layout for its exported function table ABI");
-    static_assert(sizeof(FRIKApiV2) == 31 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
+    static_assert(sizeof(FRIKApiV2) == 37 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
+    static_assert(FRIKApiV2::tableSizeForVersion(FRIK_API_V2_VERSION) == sizeof(FRIKApiV2), "tableSizeForVersion is out of step with the table");
 }

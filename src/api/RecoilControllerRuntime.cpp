@@ -12,8 +12,6 @@
 
 namespace
 {
-    using Api = frik::api::FRIKApiV2;
-
     namespace core = frik::api::core;
 
     /**
@@ -41,7 +39,7 @@ namespace
     struct RecoilControllerEntry
     {
         std::string tag;
-        Api::WeaponHandRecoilController controller = nullptr;
+        core::WeaponHandRecoilController controller = nullptr;
         void* userData = nullptr;
         int priority = 0;
         std::uint64_t generation = 0;
@@ -174,11 +172,11 @@ namespace
      * refused rather than guessed at, so a response written for a future API cannot be
      * silently misread as one of today's.
      */
-    bool isValidResponse(const Api::RecoilResponse& response)
+    bool isValidResponse(const core::RecoilResponse& response)
     {
-        constexpr auto supportedHandMask = static_cast<std::uint32_t>(Api::RecoilHandMask::Primary) | static_cast<std::uint32_t>(Api::RecoilHandMask::Offhand);
+        constexpr auto supportedHandMask = static_cast<std::uint32_t>(core::RecoilHandMask::Primary) | static_cast<std::uint32_t>(core::RecoilHandMask::Offhand);
 
-        return (response.handMask & ~supportedHandMask) == 0 && (response.delivery == Api::RecoilDelivery::Damped || response.delivery == Api::RecoilDelivery::Direct) &&
+        return (response.handMask & ~supportedHandMask) == 0 && (response.delivery == core::RecoilDelivery::Damped || response.delivery == core::RecoilDelivery::Direct) &&
                isPlausibleRigidTransform(response.controlledKickLocal);
     }
 
@@ -197,7 +195,7 @@ namespace frik::api
      * @return false for a bad tag, a null controller, a negative priority, a full registry,
      * or any call made from inside a controller callback.
      */
-    bool FRIK_CALL registerWeaponHandRecoilController(const char* const tag, const FRIKApiV2::WeaponHandRecoilController controller, void* const userData, const int priority)
+    bool FRIK_CORE_CALL registerWeaponHandRecoilController(const char* const tag, const core::WeaponHandRecoilController controller, void* const userData, const int priority)
     {
         const auto normalizedTag = core::normalizeTag(tag);
 
@@ -250,7 +248,7 @@ namespace frik::api
      *
      * @return false only for a bad tag or a call made from inside a controller callback.
      */
-    bool FRIK_CALL unregisterWeaponHandRecoilController(const char* const tag)
+    bool FRIK_CORE_CALL unregisterWeaponHandRecoilController(const char* const tag)
     {
         const auto normalizedTag = core::normalizeTag(tag);
         if (g_invokingRecoilController) {
@@ -286,10 +284,10 @@ namespace frik::api
      * with a rejection logged at a rate limit since a broken controller would otherwise
      * log every frame.
      */
-    RecoilControllerResolution resolveWeaponHandRecoil(const FRIKApiV2::RecoilSample& sample) noexcept
+    RecoilControllerResolution resolveWeaponHandRecoil(const core::RecoilSample& sample) noexcept
     {
         RecoilControllerResolution resolution{};
-        resolution.response.structSize = sizeof(FRIKApiV2::RecoilResponse);
+        resolution.response.structSize = sizeof(core::RecoilResponse);
         resolution.response.controlledKickLocal = makeIdentityTransform();
 
         std::array<RecoilControllerEntry*, MAX_RECOIL_CONTROLLERS> ordered{};
@@ -305,10 +303,10 @@ namespace frik::api
 
         g_invokingRecoilController = true;
         for (std::size_t index = 0; index < count; ++index) {
-            FRIKApiV2::RecoilResponse response{};
-            response.structSize = sizeof(FRIKApiV2::RecoilResponse);
-            response.handMask = static_cast<std::uint32_t>(FRIKApiV2::RecoilHandMask::Primary);
-            response.delivery = FRIKApiV2::RecoilDelivery::Direct;
+            core::RecoilResponse response{};
+            response.structSize = sizeof(core::RecoilResponse);
+            response.handMask = static_cast<std::uint32_t>(core::RecoilHandMask::Primary);
+            response.delivery = core::RecoilDelivery::Direct;
             response.controlledKickLocal = makeIdentityTransform();
 
             if (!ordered[index]->controller(&sample, &response, ordered[index]->userData)) {

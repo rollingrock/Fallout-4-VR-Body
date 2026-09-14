@@ -107,6 +107,8 @@ namespace frik
             logger::info("BetterScopesVR mod detected, registering for messages...");
             _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
             _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
+            // legacy path: its near-eye message is the looking-through signal, everything else stays vanilla
+            g_scopeAuthority.setProvider(BETTER_SCOPES_VR_MOD_NAME, static_cast<std::uint32_t>(ScopeCapability::PublishesLookingThrough));
         }
 
         // Registered here rather than at kPostPostLoad: F4SE keeps one listener per plugin
@@ -165,6 +167,8 @@ namespace frik
         devbench::g_devBenchBridge.drainCommands();
 
         onFrameUpdateInner();
+
+        broadcastScopeEvents();
 
         // After every exit path of the inner update, including its early returns: a snapshot
         // frozen at its last good value through a loading screen would be a lie.
@@ -246,8 +250,8 @@ namespace frik
 
         if (!_skeletonReadyPublished) {
             _skeletonReadyPublished = true;
-            logger::info("Broadcasting API lifecycle event: kSkeletonReady");
-            broadcastMessage(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonReady), nullptr, 0);
+            logger::info("Broadcasting API lifecycle event: kSkeletonReady (generation {})", _skeletonGeneration);
+            broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonReady));
         }
     }
 
@@ -268,8 +272,7 @@ namespace frik
         _inPowerArmor = f4vr::isInPowerArmor();
         _powerArmorChangeFrames = 0;
         _skeletonInitDelayFrames = 0;
-
-        devbench::g_devBenchBridge.bumpSkeletonGeneration();
+        ++_skeletonGeneration;
 
         const auto player = f4vr::getPlayer();
         logger::info("Initialize Skeleton ({}) ; Nodes: Player={}, Data={}, Root={}, Skeleton={}, Common={}",
@@ -397,8 +400,8 @@ namespace frik
     void FRIK::releaseSkeleton()
     {
         if (_skelly && _skeletonReadyPublished) {
-            logger::info("Broadcasting API lifecycle event: kSkeletonDestroying");
-            broadcastMessage(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying), nullptr, 0);
+            logger::info("Broadcasting API lifecycle event: kSkeletonDestroying (generation {})", _skeletonGeneration);
+            broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying));
         }
         _skeletonReadyPublished = false;
 
@@ -407,7 +410,6 @@ namespace frik
         g_externalAuthority.clearForSkeletonRelease();
         HandPose::clearHandPoseOverridesForSkeletonRelease();
         api::clearWeaponHandRecoilControllersForSkeletonRelease();
-        devbench::g_devBenchBridge.bumpSkeletonGeneration();
 
         _workingRootNode = nullptr;
         _skeletonInitDelayFrames = kSkeletonInitDelayFramesAfterRelease;
@@ -495,6 +497,33 @@ namespace frik
         _messaging->Dispatch(messageType, data, dataLen, receivingModName.c_str());
     }
 
+    /**
+     * Broadcast kScopeEnter / kScopeExit when the looking-through-scope state flips, so clients stop inferring it.
+     */
+    void FRIK::broadcastScopeEvents()
+    {
+        const bool lookingThrough = isLookingThroughScope();
+        if (lookingThrough == _lookingThroughScopeLastFrame) {
+            return;
+        }
+        _lookingThroughScopeLastFrame = lookingThrough;
+        logger::info("Broadcasting API lifecycle event: {}", lookingThrough ? "kScopeEnter" : "kScopeExit");
+        broadcastMessage(static_cast<std::uint32_t>(lookingThrough ? api::FRIKApiV2::LifecycleEvent::kScopeEnter : api::FRIKApiV2::LifecycleEvent::kScopeExit), nullptr, 0);
+    }
+
+    /**
+     * Broadcast a skeleton lifecycle event with its payload; the message is delivered synchronously so a stack struct is fine.
+     */
+    void FRIK::broadcastSkeletonLifecycle(const std::uint32_t messageType) const
+    {
+        api::core::SkeletonLifecycleData data{};
+        data.structSize = sizeof(data);
+        data.generation = _skeletonGeneration;
+        data.rootNode = _workingRootNode;
+        data.inPowerArmor = _inPowerArmor;
+        broadcastMessage(messageType, &data, sizeof(data));
+    }
+
     void FRIK::broadcastMessage(const std::uint32_t messageType, void* data, const std::uint32_t dataLen) const
     {
         _messaging->Dispatch(messageType, data, dataLen, nullptr);
@@ -510,7 +539,7 @@ namespace frik
             // BetterScopesVR sends the bool as the pointer value itself, not as pointed-to data
             const bool lookingThroughScope = msg->data != nullptr;
             logger::info("BetterScopesVR looking through scopes: {}", lookingThroughScope);
-            g_frik.setLookingThroughScope(lookingThroughScope);
+            g_scopeAuthority.setLookingThroughScope(BETTER_SCOPES_VR_MOD_NAME, lookingThroughScope);
         }
     }
 

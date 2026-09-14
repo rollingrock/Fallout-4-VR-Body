@@ -85,12 +85,12 @@ Then read `build_output.txt`. Release builds also produce a versioned `.7z` pack
 
 ### Public C API for other mods
 
-FRIK publishes **two independent C ABI majors**. Both are exported with `__declspec(dllexport)` — `DLLEXPORT` ([src/PCH.h](src/PCH.h)) and `FRIK_API` ([src/api/FRIKApiV2.h](src/api/FRIKApiV2.h)). [src/exports.def](src/exports.def) lists only `F4SEPlugin_Query`/`F4SEPlugin_Load` and is **not referenced by the build**. Other mods copy one header into their project as-is, call `initialize()`, and use `inst->...`. Both majors sit on the same internal state, so a client of either arbitrates with the other by tag.
+FRIK publishes **two independent C ABI majors**. All are exported with `__declspec(dllexport)` — `DLLEXPORT` ([src/PCH.h](src/PCH.h)) and `FRIK_API` ([src/api/FRIKApiV2.h](src/api/FRIKApiV2.h)). [src/exports.def](src/exports.def) lists only `F4SEPlugin_Query`/`F4SEPlugin_Load` and is **not referenced by the build**. Other mods copy one header into their project as-is, call `initialize()`, and use `inst->...`. All majors sit on the same internal state, so clients of different majors arbitrate with each other by tag.
 
 | Major | Header | Exports | Versioning rule |
 |-------|--------|---------|-----------------|
 | v1.\* | [src/api/FRIKApi.h](src/api/FRIKApi.h) | `FRIKAPI_GetApi` | Append-only. **Bump `FRIK_API_VERSION` whenever you change the struct layout** — clients check `>=`. Never reshape an existing entry or enum: a shipped client's header cannot gain enumerators, so new pose kinds must fold down to something v1.\* already knows. |
-| v2 | [src/api/FRIKApiV2.h](src/api/FRIKApiV2.h) | `FRIKAPI_V2_GetApi`, `FRIKAPI_V2_GetApiStructSize` | Exact match. A client is refused at `initialize()` unless `sizeof(FRIKApiV2)` agrees, so entries may move; bump `FRIK_API_V2_VERSION` for semantic changes. |
+| v2 | [src/api/FRIKApiV2.h](src/api/FRIKApiV2.h) | `FRIKAPI_V2_GetApi`, `FRIKAPI_V2_GetApiStructSize` | Append-only since v2.2. Add entries at the **end** of the table, **bump `FRIK_API_V2_VERSION`**, extend `tableSizeForVersion`, and document the version that introduced each entry. A new major is only for a breaking change. |
 
 Both are thin shims over [src/api/ApiCore.h](src/api/ApiCore.h), which owns the version-agnostic implementation and speaks FRIK's own vocabulary — it never includes a public API header. **Put new shared logic in `ApiCore`, not in a major.** Entries whose signatures mention no version-specific type are literally the same function pointer in both tables; the rest are shims that `static_assert` their enum parity with core.
 
@@ -104,7 +104,7 @@ For mods that want a button in FRIK's main config menu: they call `registerOpenM
 
 ### External mod integrations
 
-- **BetterScopesVR** — registers as a message listener at startup; messages of type 15 update `_isLookingThroughScope`, which gates dampening behavior.
+- **Scope providers** — `ScopeAuthority` (`src/ScopeAuthority.h`) holds the registered scope provider capabilities and the looking-through-scope state that every scope behaviour keys on (`FRIK::isLookingThroughScope`). **BetterScopesVR** is registered by FRIK as a legacy `PublishesLookingThrough` provider fed by its message type 15; True Scopes registers itself through API v2.2.
 - **Fallout London VR** — detected via `isFalloutLondonVRModLoaded()`; loads `FRIK_FOLVR.ini` overrides and switches Pipboy to "Attaboy" mode. Can be force-disabled with `ignoreFalloutLondonVR`.
 - **Immersive Flashlight VR** — if loaded, FRIK skips its embedded flashlight to avoid conflict.
 

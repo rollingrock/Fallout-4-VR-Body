@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FRIKApiV2.h"
+#include "ApiCore.h"
 
 namespace frik::api
 {
@@ -14,19 +14,20 @@ namespace frik::api
     struct RecoilControllerResolution
     {
         bool accepted = false;
-        FRIKApiV2::RecoilResponse response{};
+        core::RecoilResponse response{};
     };
 
     /**
      * The recoil-controller registry is owned and invoked by the game update
      * thread. Registration APIs fail closed while a callback is executing, so
      * callbacks cannot invalidate the bounded registry during iteration.
+     * Typed on core's recoil ABI; each API major casts its own controller pointer through.
      */
-    bool FRIK_CALL registerWeaponHandRecoilController(const char* tag, FRIKApiV2::WeaponHandRecoilController controller, void* userData, int priority);
+    bool FRIK_CORE_CALL registerWeaponHandRecoilController(const char* tag, core::WeaponHandRecoilController controller, void* userData, int priority);
 
-    bool FRIK_CALL unregisterWeaponHandRecoilController(const char* tag);
+    bool FRIK_CORE_CALL unregisterWeaponHandRecoilController(const char* tag);
 
-    RecoilControllerResolution resolveWeaponHandRecoil(const FRIKApiV2::RecoilSample& sample) noexcept;
+    RecoilControllerResolution resolveWeaponHandRecoil(const core::RecoilSample& sample) noexcept;
 
     void clearWeaponHandRecoilControllersForSkeletonRelease() noexcept;
 }

@@ -12,6 +12,11 @@
 #include "skeleton/HandPoseData.h"
 #include "skeleton/HandPoseMath.h"
 
+namespace RE
+{
+    class NiNode;
+}
+
 /**
  * Internal implementation shared by every published FRIK API major version.
  *
@@ -52,6 +57,64 @@ namespace frik::api::core
 
     inline constexpr std::size_t FEATURE_COUNT = 4;
 
+    // ------------------------------------------------------------------
+    // Weapon hand recoil C ABI. Every published major mirrors these
+    // byte-for-byte and static_asserts it, so the recoil registry never
+    // depends on a version header.
+    // ------------------------------------------------------------------
+
+    enum class RecoilDelivery : std::uint8_t
+    {
+        Damped = 0,
+        Direct = 1,
+    };
+
+    enum class RecoilHandMask : std::uint8_t
+    {
+        None = 0,
+        Primary = 1u << 0,
+        Offhand = 1u << 1,
+    };
+
+    struct RecoilSample
+    {
+        std::uint32_t structSize = 0;
+        std::uint32_t reserved0[3] = {};
+        RE::NiTransform nativeKickLocal{};
+        std::uint32_t reserved[8] = {};
+    };
+
+    struct RecoilResponse
+    {
+        std::uint32_t structSize = 0;
+        std::uint32_t handMask = static_cast<std::uint32_t>(RecoilHandMask::Primary);
+        RecoilDelivery delivery = RecoilDelivery::Direct;
+        std::uint32_t reserved0 = 0;
+        RE::NiTransform controlledKickLocal{};
+        std::uint32_t reserved[8] = {};
+    };
+
+    using WeaponHandRecoilController = bool(FRIK_CORE_CALL*)(const RecoilSample* sample, RecoilResponse* outResponse, void* userData) noexcept;
+
+    static_assert(sizeof(RecoilSample) == 112, "RecoilSample ABI changed");
+    static_assert(sizeof(RecoilResponse) == 112, "RecoilResponse ABI changed");
+
+    /**
+     * Payload of the kSkeletonReady / kSkeletonDestroying lifecycle messages.
+     * generation counts skeleton builds this session, so a client can tell a rebuild from the body it measured.
+     */
+    struct SkeletonLifecycleData
+    {
+        std::uint32_t structSize = 0;
+        std::uint32_t generation = 0;
+        RE::NiNode* rootNode = nullptr;
+        bool inPowerArmor = false;
+        std::uint8_t reserved0[7] = {};
+        std::uint32_t reserved[4] = {};
+    };
+
+    static_assert(sizeof(SkeletonLifecycleData) == 40, "SkeletonLifecycleData ABI changed");
+
     /**
      * The hand-pose priority scale. HandPose owns the ordering, so these alias
      * its constants rather than restating the values.
@@ -80,6 +143,12 @@ namespace frik::api::core
 
     const char* FRIK_CORE_CALL getModVersion();
     bool FRIK_CORE_CALL isSkeletonReady();
+    std::uint32_t FRIK_CORE_CALL getSkeletonGeneration();
+    bool FRIK_CORE_CALL isInPowerArmor();
+    bool FRIK_CORE_CALL setScopeProvider(const char* tag, std::uint32_t capabilities);
+    bool FRIK_CORE_CALL clearScopeProvider(const char* tag);
+    bool FRIK_CORE_CALL setLookingThroughScope(const char* tag, bool lookingThrough);
+    bool FRIK_CORE_CALL isLookingThroughScope();
     bool FRIK_CORE_CALL isConfigOpen();
     bool FRIK_CORE_CALL isSelfieModeOn();
     void FRIK_CORE_CALL setSelfieModeOn(bool setOn);
