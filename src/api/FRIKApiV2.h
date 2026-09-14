@@ -68,7 +68,7 @@ namespace frik::api
      * number, so one header serves every FRIK from the minVersion you initialize with. Each entry
      * documents the version that introduced it; check getVersion() before calling a newer one.
      */
-    inline constexpr std::uint32_t FRIK_API_V2_VERSION = 2;
+    inline constexpr std::uint32_t FRIK_API_V2_VERSION = 3;
 
     struct FRIKApiV2
     {
@@ -422,6 +422,33 @@ namespace frik::api
         static_assert(sizeof(SkeletonLifecycleData) == 40, "SkeletonLifecycleData ABI changed");
 
         /**
+         * Points in FRIK's frame where a registered callback runs, in frame order. Phases only run while a
+         * skeleton exists. Since v2.3.
+         */
+        enum class FramePhase : std::uint8_t
+        {
+            // The engine's animation graph output for the player, before FRIK touches the body.
+            NativeGraphOutput = 0,
+            // The body root is placed under the HMD and posture is set.
+            BodyPlaced = 1,
+            LegsSolved = 2,
+            // A hand transform published here (setHandWorldTransform) is solved in this same frame.
+            BeforeArmSolve = 3,
+            AfterArmSolve = 4,
+            AfterHandPose = 5,
+            AfterWeaponPosition = 6,
+            BeforeWorldFinal = 7,
+            // The last phase of the frame; every bone world transform is final.
+            AfterWorldFinal = 8,
+        };
+
+        /**
+         * Frame-phase callback. Runs on the game update thread inside FRIK's frame; must not register or
+         * unregister frame callbacks. Since v2.3.
+         */
+        using FrameCallback = void(FRIK_CALL*)(std::uint32_t phase, void* userData) noexcept;
+
+        /**
          * Get the API v2 version number.
          * Use this to check compatibility before calling other functions.
          */
@@ -719,12 +746,28 @@ namespace frik::api
          */
         bool(FRIK_CALL* isLookingThroughScope)();
 
+        // ---- Added in v2.3 ----
+
+        /**
+         * Register or replace a callback for one FramePhase, keyed by tag and phase. Callbacks run by descending
+         * priority, then registration order. Registrations survive skeleton rebuilds; call once after FRIK has
+         * loaded. Since v2.3.
+         * @return false for an empty tag, null callback, unknown phase, negative priority, a full registry, or
+         * when called from inside a frame callback.
+         */
+        bool(FRIK_CALL* registerFrameCallback)(const char* tag, std::uint32_t phase, FrameCallback callback, void* userData, int priority);
+
+        /**
+         * Drop every phase a tag registered. Removing an unknown tag is idempotent. Since v2.3.
+         */
+        bool(FRIK_CALL* unregisterFrameCallback)(const char* tag);
+
         /**
          * Size of the table as published at a given contract version; the append-only rule keeps every older prefix intact.
          */
         static constexpr std::size_t tableSizeForVersion(const std::uint32_t version)
         {
-            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37 };
+            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 39 };
             const auto index = version < std::size(functionCountByVersion) ? version : std::size(functionCountByVersion) - 1;
             return functionCountByVersion[index] * sizeof(void (*)());
         }
@@ -789,6 +832,6 @@ namespace frik::api
 
     inline constexpr std::size_t FRIK_API_V2_FUNCTION_POINTER_SIZE = sizeof(decltype(FRIKApiV2::getVersion));
     static_assert(std::is_standard_layout_v<FRIKApiV2>, "FRIKApiV2 must remain standard-layout for its exported function table ABI");
-    static_assert(sizeof(FRIKApiV2) == 37 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
+    static_assert(sizeof(FRIKApiV2) == 39 * FRIK_API_V2_FUNCTION_POINTER_SIZE, "FRIK API v2 function table layout changed");
     static_assert(FRIKApiV2::tableSizeForVersion(FRIK_API_V2_VERSION) == sizeof(FRIKApiV2), "tableSizeForVersion is out of step with the table");
 }

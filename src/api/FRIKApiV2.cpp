@@ -41,6 +41,18 @@ namespace
     static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::PublishesLookingThrough) == static_cast<int>(ScopeCapability::PublishesLookingThrough));
     static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::OwnsDamping) == static_cast<int>(ScopeCapability::OwnsDamping));
 
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::NativeGraphOutput) == static_cast<int>(FramePhase::NativeGraphOutput));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::BodyPlaced) == static_cast<int>(FramePhase::BodyPlaced));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::LegsSolved) == static_cast<int>(FramePhase::LegsSolved));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::BeforeArmSolve) == static_cast<int>(FramePhase::BeforeArmSolve));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::AfterArmSolve) == static_cast<int>(FramePhase::AfterArmSolve));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::AfterHandPose) == static_cast<int>(FramePhase::AfterHandPose));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::AfterWeaponPosition) == static_cast<int>(FramePhase::AfterWeaponPosition));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::BeforeWorldFinal) == static_cast<int>(FramePhase::BeforeWorldFinal));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::AfterWorldFinal) == static_cast<int>(FramePhase::AfterWorldFinal));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::AfterWorldFinal) + 1 == FRAME_PHASE_COUNT);
+    static_assert(std::is_same_v<FRIKApiV2::FrameCallback, FrameCallback>);
+
     static_assert(sizeof(FRIKApiV2::SkeletonLifecycleData) == sizeof(core::SkeletonLifecycleData));
     static_assert(offsetof(FRIKApiV2::SkeletonLifecycleData, generation) == offsetof(core::SkeletonLifecycleData, generation));
     static_assert(offsetof(FRIKApiV2::SkeletonLifecycleData, rootNode) == offsetof(core::SkeletonLifecycleData, rootNode));
@@ -352,7 +364,9 @@ namespace
         .setScopeProvider = &core::setScopeProvider,
         .clearScopeProvider = &core::clearScopeProvider,
         .setLookingThroughScope = &core::setLookingThroughScope,
-        .isLookingThroughScope = &core::isLookingThroughScope };
+        .isLookingThroughScope = &core::isLookingThroughScope,
+        .registerFrameCallback = &core::registerFrameCallback,
+        .unregisterFrameCallback = &core::unregisterFrameCallback };
 }
 
 namespace frik::api

@@ -66,7 +66,7 @@ void onFrame()
 
 ## Versioning and compatibility
 
-`FRIK_API_V2_VERSION` (currently **2**) identifies the v2 contract — this page documents v2.2. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
+`FRIK_API_V2_VERSION` (currently **3**) identifies the v2 contract — this page documents v2.3. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
 
 Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end and bumps `FRIK_API_V2_VERSION`, so a header you copied today keeps working against every newer FRIK. `initialize(minVersion)` checks `getVersion() >= minVersion` and that FRIK's table is at least as large as `minVersion` implies (code `5` otherwise). To also run against an older FRIK, pass the oldest version you can live with and gate every newer entry on `getVersion()`; each entry below is documented with the version that introduced it.
 
@@ -74,6 +74,7 @@ Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end 
 | --- | --- | --- |
 | `1` | 0.78 | The original 31-entry table (exact-size check at `initialize()`). |
 | `2` | 0.79 | Append-only rule; `getSkeletonGeneration`, `isInPowerArmor`; lifecycle messages carry `SkeletonLifecycleData`; scope providers: `setScopeProvider`, `clearScopeProvider`, `setLookingThroughScope`, `isLookingThroughScope`; `kScopeEnter` / `kScopeExit` events. |
+| `3` | 0.79 | Frame phases: `registerFrameCallback`, `unregisterFrameCallback`; a hand transform published in `BeforeArmSolve` is solved in the same frame. |
 
 > A client built against the v2.1 header refuses any FRIK from 0.79 on (its exact-size check fails with code `5`). Recopy the header once; after that no further recopy is ever forced.
 
@@ -234,7 +235,7 @@ Use `getHandPoseSetTagState` to detect when another system has taken over the po
 
 Take over where a hand is placed, giving FRIK the world transform to solve the arm to instead of the tracked controller. `worldTransform` is the **wrist transform in world space**, not hand-local space.
 
-- The transform is **consumed by FRIK's arm solve on its next skeleton frame**, not applied during your call. The arm is solved exactly once per frame, so everything FRIK derives from the hand stays consistent with it.
+- The transform is **consumed by FRIK's arm solve**, not applied during your call: published from a `BeforeArmSolve` [frame callback](#frame-phases-v23) it is solved in that same frame, published anywhere else it is solved on FRIK's next frame. The arm is solved exactly once per frame, so everything FRIK derives from the hand stays consistent with it.
 - A published transform **keeps owning the hand until cleared**. Holding a hand steady needs no per-frame republishing; tracking a moving target means republishing whenever the target changes.
 - The return value reports **validation only**. Whether the arm can actually reach the target is decided per frame by the solver, which falls back to FRIK's own posing for any frame it cannot solve.
 - Call on the **game update thread**. The call is pure data publication — it does not need to run mid-scene-graph mutation.
@@ -311,6 +312,31 @@ Providers survive skeleton rebuilds, like feature blocks, and capabilities are t
 Publish on the game update thread whenever the state changes; only a provider registered with `PublishesLookingThrough` may. `isLookingThroughScope` returns the state FRIK keyed on this frame. When it flips FRIK broadcasts `kScopeEnter` / `kScopeExit`.
 
 BetterScopesVR is registered by FRIK itself as a `PublishesLookingThrough` provider when its plugin is detected, mapping its legacy message onto this state.
+
+`kScopeEnter` / `kScopeExit` are broadcast at the start of FRIK's frame, before any frame phase runs, so a callback in that frame already sees the new state.
+
+## Frame phases (v2.3)
+
+FRIK's frame is a fixed sequence, and a mod can run at named points of it instead of hooking around FRIK. Register once after FRIK has loaded; registrations survive skeleton rebuilds and phases only run while a skeleton exists.
+
+`bool registerFrameCallback(const char* tag, std::uint32_t phase, FrameCallback callback, void* userData, int priority)`
+`bool unregisterFrameCallback(const char* tag)`
+
+`FrameCallback` is `void(FRIK_CALL*)(std::uint32_t phase, void* userData) noexcept`. One tag may register several phases; `unregisterFrameCallback` drops them all. Within a phase, callbacks run by descending priority, then registration order, so at equal priority the newest registration runs last and its writes win. Re-registering a tag and phase replaces the callback in place. Registering or unregistering from inside a callback is refused. The registry holds 32 registrations.
+
+| `FramePhase` | When |
+| --- | --- |
+| `NativeGraphOutput` | The engine's animation graph output for the player, before FRIK touches the body. |
+| `BodyPlaced` | The body root is under the HMD and posture is set. |
+| `LegsSolved` | Legs and walking are solved. |
+| `BeforeArmSolve` | Before the arm solve. A `setHandWorldTransform` published here is solved in this same frame. |
+| `AfterArmSolve` | Both arms are solved to their targets. |
+| `AfterHandPose` | Finger poses are applied. |
+| `AfterWeaponPosition` | Weapon offsets, two-handed grip and the scope camera are applied; the primary hand is final. |
+| `BeforeWorldFinal` | Before FRIK pushes the frame into the flattened bone array. |
+| `AfterWorldFinal` | The frame is complete; every bone world transform is final. On the first frame of a skeleton this runs after `kSkeletonReady`. |
+
+All callbacks run on the game update thread inside FRIK's frame. Any API call is allowed from a callback except `registerFrameCallback` / `unregisterFrameCallback`.
 
 ## State queries
 

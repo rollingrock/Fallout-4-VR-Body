@@ -9,6 +9,7 @@
 #include "Config.h"
 #include "ExternalAuthority.h"
 #include "FRIK.h"
+#include "api/ApiCore.h"
 #include "common/MatrixUtils.h"
 #include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
@@ -212,6 +213,7 @@ namespace frik
         logger::trace("Set body posture...");
         setBodyPosture(neckPitch);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+        api::core::invokeFramePhase(FramePhase::BodyPlaced);
 
         logger::trace("Set knee posture...");
         setKneePos();
@@ -225,14 +227,18 @@ namespace frik
 
         // Do another update before setting arms
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+        api::core::invokeFramePhase(FramePhase::LegsSolved);
 
         // do arm IK - Right then Left
         logger::trace("Set Arms...");
         handleLeftHandedWeaponNodesSwitch();
+        // Hand transforms published in this phase are solved below, in the same frame
+        api::core::invokeFramePhase(FramePhase::BeforeArmSolve);
         _weaponHandRecoil.onFrameUpdate(_playerNodes, isLeftHandedMode() || g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked());
         setArms(false);
         setArms(true);
         updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+        api::core::invokeFramePhase(FramePhase::AfterArmSolve);
 
         // Misc stuff to show/hide things
         logger::trace("Pipboy and Weapons...");
@@ -249,6 +255,7 @@ namespace frik
 
         logger::trace("Operate hands...");
         _handPose.onFrameUpdate(_root, _frameTime);
+        api::core::invokeFramePhase(FramePhase::AfterHandPose);
 
         if (g_frik.shouldHideBodyInScope()) {
             hideHands();

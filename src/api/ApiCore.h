@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 
+#include "FramePhaseRegistry.h"
 #include "RE/NetImmerse/NiPoint.h"
 #include "RE/NetImmerse/NiTransform.h"
 #include "skeleton/HandPose.h"
@@ -149,6 +150,8 @@ namespace frik::api::core
     bool FRIK_CORE_CALL clearScopeProvider(const char* tag);
     bool FRIK_CORE_CALL setLookingThroughScope(const char* tag, bool lookingThrough);
     bool FRIK_CORE_CALL isLookingThroughScope();
+    bool FRIK_CORE_CALL registerFrameCallback(const char* tag, std::uint32_t phase, FrameCallback callback, void* userData, int priority);
+    bool FRIK_CORE_CALL unregisterFrameCallback(const char* tag);
     bool FRIK_CORE_CALL isConfigOpen();
     bool FRIK_CORE_CALL isSelfieModeOn();
     void FRIK_CORE_CALL setSelfieModeOn(bool setOn);
@@ -213,6 +216,11 @@ namespace frik::api::core
             handPose.palmYaw,
             skeleton::data::HandPoseKind::Custom };
     }
+
+    /**
+     * Run the callbacks registered for a phase; called by FRIK at each point of its frame.
+     */
+    void invokeFramePhase(FramePhase phase);
 
     RE::NiPoint3 getIndexFingerTipPosition(Hand hand);
 

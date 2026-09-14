@@ -32,6 +32,11 @@ namespace
     std::array<TagBlockSet, FEATURE_COUNT> g_featureBlocks;
 
     /**
+     * Frame-phase callbacks. They hold no node references, so they outlive skeleton rebuilds like feature blocks.
+     */
+    FramePhaseRegistry g_framePhases;
+
+    /**
      * Client modules already reported per API table, so a mod that re-acquires - the published
      * initialize() is idempotent but nothing stops a client calling the export directly - is
      * logged once instead of on every call.
@@ -150,6 +155,71 @@ namespace frik::api::core
     bool FRIK_CORE_CALL isLookingThroughScope()
     {
         return g_frik.isLookingThroughScope();
+    }
+
+    /**
+     * Register or replace a callback for one frame phase. Registrations survive skeleton rebuilds; phases
+     * only run while a skeleton exists. Refused from inside a frame callback.
+     */
+    bool FRIK_CORE_CALL registerFrameCallback(const char* tag, const std::uint32_t phase, const FrameCallback callback, void* const userData, const int priority)
+    {
+        const auto normalizedTag = normalizeTag(tag);
+        const auto result = g_framePhases.set(normalizedTag.value_or(""), phase, callback, userData, priority);
+        switch (result) {
+        case FramePhaseRegistry::Result::Registered:
+        case FramePhaseRegistry::Result::Replaced:
+            logger::info("{} frame callback tag:'{}' phase:{} priority:{}",
+                result == FramePhaseRegistry::Result::Replaced ? "replaced" : "registered",
+                *normalizedTag,
+                phase,
+                priority);
+            return true;
+        case FramePhaseRegistry::Result::BadTag:
+            logger::sample("registerFrameCallback REJECTED - tag is null or blank");
+            return false;
+        case FramePhaseRegistry::Result::NullCallback:
+            logger::sample("registerFrameCallback REJECTED tag:'{}' - callback is null", *normalizedTag);
+            return false;
+        case FramePhaseRegistry::Result::BadPhase:
+            logger::sample("registerFrameCallback REJECTED tag:'{}' - unknown phase {}", *normalizedTag, phase);
+            return false;
+        case FramePhaseRegistry::Result::NegativePriority:
+            logger::sample("registerFrameCallback REJECTED tag:'{}' - priority {} is negative", *normalizedTag, priority);
+            return false;
+        case FramePhaseRegistry::Result::Full:
+            logger::sample("registerFrameCallback REJECTED tag:'{}' - registry is full at {} callbacks", *normalizedTag, FramePhaseRegistry::CAPACITY);
+            return false;
+        case FramePhaseRegistry::Result::Reentrant:
+            logger::sample("registerFrameCallback REJECTED tag:'{}' - called from inside a frame callback", normalizedTag.value_or("?"));
+            return false;
+        }
+        return false;
+    }
+
+    /**
+     * Drop every phase a tag registered. Unknown tags succeed.
+     */
+    bool FRIK_CORE_CALL unregisterFrameCallback(const char* tag)
+    {
+        const auto normalizedTag = normalizeTag(tag);
+        if (!normalizedTag) {
+            logger::sample("unregisterFrameCallback REJECTED - tag is null or blank");
+            return false;
+        }
+        std::size_t removed = 0;
+        if (!g_framePhases.remove(*normalizedTag, &removed)) {
+            logger::sample("unregisterFrameCallback REJECTED tag:'{}' - called from inside a frame callback", *normalizedTag);
+            return false;
+        }
+        if (removed > 0) {
+            logger::info("unregistered frame callback tag:'{}' ({} phase(s))", *normalizedTag, removed);
+        }
+        return true;
+    }
+
+    void invokeFramePhase(const FramePhase phase)
+    {
+        g_framePhases.invoke(static_cast<std::uint32_t>(phase));
     }
 
     bool FRIK_CORE_CALL isConfigOpen()
