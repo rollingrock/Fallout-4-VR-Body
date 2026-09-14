@@ -78,6 +78,8 @@ Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end 
 
 > A client built against the v2.1 header refuses any FRIK from 0.79 on (its exact-size check fails with code `5`). Recopy the header once; after that no further recopy is ever forced.
 
+> **v2.3 compatibility note.** Two behaviours changed underneath existing entries, so a mod that relied on them must update in the same drop: (1) `blockPrimaryWeaponNodeOwnership` no longer parents the weapon node under the left hand as a side effect, nor flips the first-person arm source, the off-side hand pose copy and the recoil hand with it; a left-carry now also calls `setWeaponNodeParentHand`. A client that only blocks and reparents itself gets a right-hand pose and recoil on the wrong hand, with no error. (2) FRIK's patch at `0xF2F0A0` is a call detour now, so a mod that chained on the NOP bytes there must register for `NativeGraphOutput` instead. Neither is negotiable per client at runtime.
+
 - `getVersion()` returns the v2 contract version FRIK was built with; `getModVersion()` returns the FRIK mod version string (e.g. `"0.78.1"`).
 
 ## Skeleton lifecycle
@@ -248,7 +250,7 @@ Take over where a hand is placed, giving FRIK the world transform to solve the a
 | `bool blockPrimaryWeaponNodeOwnership(tag, block)` | Release FRIK's ownership of the primary weapon scene node so your mod can drive the weapon transform itself. |
 | `bool blockPrimaryHandWeaponPose(tag, block)` | Stop FRIK's built-in primary weapon hand pose, including its per-weapon primary-hand grip rotation. |
 
-Both are reference-counted by tag, like `blockFeature`. Taking weapon node ownership also releases an active offhand two-handed grip, so the grip and its pose don't stay latched while you own the weapon. While the node is blocked FRIK writes nothing to it: no offsets, no re-glue to the hand each frame. The scope camera and the muzzle flash keep following wherever you put it.
+Both are reference-counted by tag, like `blockFeature`. Taking weapon node ownership also releases an active offhand two-handed grip, so the grip and its pose don't stay latched while you own the weapon. While the node is blocked FRIK writes nothing to it: no offsets, no re-glue to the hand each frame. The scope camera and the muzzle flash keep following wherever you put it; a mod that drives the scope camera itself registers as a scope provider with `OwnsScopeCamera` and FRIK leaves the camera alone in every path.
 
 `bool setWeaponNodeParentHand(const char* tag, Hand hand)` / `bool clearWeaponNodeParentHand(const char* tag)` (v2.3)
 
@@ -345,6 +347,8 @@ FRIK's frame is a fixed sequence, and a mod can run at named points of it instea
 | `AfterWorldFinal` | The frame is complete; every bone world transform is final. On the first frame of a skeleton this runs after `kSkeletonReady`. |
 
 All callbacks run on the game update thread inside FRIK's frame. Any API call is allowed from a callback except `registerFrameCallback` / `unregisterFrameCallback`.
+
+Register once per mod. A mod that fans a phase out to its own plugins (a provider API of its own) should be the only registrant, or the plugin's work runs twice. Use priority to order work within a phase: higher runs first, so a callback that only reads the pose registers above one that writes it.
 
 ## Reading tracked hands and bones (v2.3)
 
