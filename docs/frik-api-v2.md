@@ -326,7 +326,7 @@ FRIK's frame is a fixed sequence, and a mod can run at named points of it instea
 
 | `FramePhase` | When |
 | --- | --- |
-| `NativeGraphOutput` | The engine's animation graph output for the player, before FRIK touches the body. |
+| `NativeGraphOutput` | The engine's animation graph output for the player, before FRIK touches the body. Runs from FRIK's detour of the player post-animation vfunc (`0xF2F0A0`), earlier in the game frame than the other phases; do not hook that site yourself. |
 | `BodyPlaced` | The body root is under the HMD and posture is set. |
 | `LegsSolved` | Legs and walking are solved. |
 | `BeforeArmSolve` | Before the arm solve. A `setHandWorldTransform` published here is solved in this same frame. |

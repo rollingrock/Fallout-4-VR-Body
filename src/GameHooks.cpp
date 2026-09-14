@@ -5,6 +5,7 @@
 #include <format>
 
 #include "FRIK.h"
+#include "api/ApiCore.h"
 
 namespace
 {
@@ -124,10 +125,22 @@ namespace
     }
 
     /**
-     * this block resets the body pose to hang off the camera. Blocking this off so body height is correct.
-     * The NOPs cover the whole body of PlayerCharacter vfunc at 0xF2F0A0, from its first instruction to its epilogue.
+     * Runs in place of the body-pose reset, right after the engine's animation graph output for the player.
+     * rcx is the PlayerCharacter sub-object the vfunc was called on; nothing here needs it.
      */
-    void blockResetBodyPose()
+    void hookPlayerPostAnimGraph(const uint64_t)
+    {
+        if (frik::g_frik.isSkeletonReady()) {
+            frik::api::core::invokeFramePhase(frik::FramePhase::NativeGraphOutput);
+        }
+    }
+
+    /**
+     * The PlayerCharacter vfunc at 0xF2F0A0 resets the body pose to hang off the camera, which breaks body height.
+     * Its whole body (first instruction to epilogue, prologue and epilogue intact) is replaced with a call to
+     * hookPlayerPostAnimGraph followed by NOPs, so the reset is gone and the post-animation point is exposed as a frame phase.
+     */
+    void detourResetBodyPose()
     {
         const int bytesToNOP = 0x1FF;
         const auto address = f4vr::hookAnimationVFunc.address();
@@ -136,8 +149,10 @@ namespace
             return;
         }
         for (int i = 0; i < bytesToNOP; ++i) {
-            REL::safe_write(f4vr::hookAnimationVFunc.address() + i, static_cast<uint8_t>(0x90));
+            REL::safe_write(address + i, static_cast<uint8_t>(0x90));
         }
+        F4SE::GetTrampoline().write_call<5>(address, &hookPlayerPostAnimGraph);
+        logger::info("Detoured body pose reset at 0x{:X} to the NativeGraphOutput phase", address);
     }
 }
 
@@ -285,7 +300,7 @@ namespace frik::hook
     {
         replacePrimaryWandNif();
 
-        blockResetBodyPose();
+        detourResetBodyPose();
 
         auto& trampoline = F4SE::GetTrampoline();
         if (verifyCallSite("mainUpdatePlayer", f4vr::hook_MainUpdatePlayer.address(), f4vr::main_update_player.address())) {
