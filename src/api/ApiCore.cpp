@@ -5,6 +5,7 @@
 #include <format>
 #include <unordered_set>
 
+#include "ClaimLogDebounce.h"
 #include "Config.h"
 #include "ExternalAuthority.h"
 #include "FRIK.h"
@@ -35,6 +36,11 @@ namespace
      * Frame-phase callbacks. They hold no node references, so they outlive skeleton rebuilds like feature blocks.
      */
     FramePhaseRegistry g_framePhases;
+
+    /**
+     * Start and end of external hand world transform claims, so a claim cleared and re-set every frame is logged once.
+     */
+    api::ClaimLogDebounce g_handClaimLog;
 
     /**
      * Client modules already reported per API table, so a mod that re-acquires - the published
@@ -559,8 +565,9 @@ namespace frik::api::core
             return false;
         }
 
-        // a claim is typically republished every frame, so only its start and end are logged
-        if (inserted) {
+        // a claim is typically republished every frame, so only its start and end are logged;
+        // a clear and re-set within the debounce window, which some clients do every frame, counts as one claim
+        if (inserted && g_handClaimLog.onStart(tag, isLeft)) {
             logger::info("setHandWorldTransform tag:'{}' hand={} priority={}", tag, isLeft ? "Left" : "Right", priority);
         }
         return true;
@@ -571,9 +578,17 @@ namespace frik::api::core
         bool removed = false;
         const bool ok = g_externalAuthority.clearHandWorldTransform(tag, isLeft, &removed);
         if (removed) {
-            logger::info("clearHandWorldTransform tag:'{}' hand={}", tag, isLeft ? "Left" : "Right");
+            g_handClaimLog.onEnd(tag, isLeft, ClaimLogDebounce::Clock::now());
         }
         return ok;
+    }
+
+    void flushHandClaimLog()
+    {
+        // logged a window after the clear, once no re-set followed
+        for (const auto& ended : g_handClaimLog.takeEnded(ClaimLogDebounce::Clock::now())) {
+            logger::info("clearHandWorldTransform tag:'{}' hand={} restarts={}", ended.tag, ended.isLeft ? "Left" : "Right", ended.restarts);
+        }
     }
 
     bool setHandPoseLocalTransforms(const std::string_view tag, const bool isLeft, const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& localTransforms,

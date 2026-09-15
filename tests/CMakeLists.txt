@@ -4,6 +4,7 @@
 find_package(Catch2 3 CONFIG REQUIRED)
 
 add_executable(FRIK_tests
+  ClaimLogDebounceTests.cpp
   FramePhaseRegistryTests.cpp
   GripDetectionTests.cpp
   ScopeAuthorityTests.cpp

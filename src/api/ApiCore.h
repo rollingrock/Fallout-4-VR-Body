@@ -281,6 +281,11 @@ namespace frik::api::core
     bool setHandWorldTransform(std::string_view tag, bool isLeft, const RE::NiTransform& worldTransform, int priority);
     bool clearHandWorldTransform(std::string_view tag, bool isLeft);
 
+    /**
+     * Log the hand claims that have stayed cleared for the debounce window; called by FRIK once per frame.
+     */
+    void flushHandClaimLog();
+
     bool setHandPoseLocalTransforms(std::string_view tag, bool isLeft, const std::array<RE::NiTransform, skeleton::data::FINGER_BONE_COUNT>& localTransforms,
         std::uint16_t enabledMask, int priority);
 
