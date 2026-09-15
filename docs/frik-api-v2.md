@@ -250,7 +250,7 @@ Take over where a hand is placed, giving FRIK the world transform to solve the a
 | `bool blockPrimaryWeaponNodeOwnership(tag, block)` | Release FRIK's ownership of the primary weapon scene node so your mod can drive the weapon transform itself. |
 | `bool blockPrimaryHandWeaponPose(tag, block)` | Stop FRIK's built-in primary weapon hand pose, including its per-weapon primary-hand grip rotation. |
 
-Both are reference-counted by tag, like `blockFeature`. Taking weapon node ownership also releases an active offhand two-handed grip, so the grip and its pose don't stay latched while you own the weapon. While the node is blocked FRIK writes nothing to it: no offsets, no re-glue to the hand each frame. The scope camera and the muzzle flash keep following wherever you put it; a mod that drives the scope camera itself registers as a scope provider with `OwnsScopeCamera` and FRIK leaves the camera alone in every path.
+Both are reference-counted by tag, like `blockFeature`. Taking weapon node ownership also releases an active offhand two-handed grip, so the grip and its pose don't stay latched while you own the weapon. While the node is blocked FRIK leaves it as you set it: no offsets, no re-glue to the hand each frame, and the first-person hands still follow the controllers. The scope camera and the muzzle flash keep following wherever you put it; a mod that drives the scope camera itself registers as a scope provider with `OwnsScopeCamera` and FRIK leaves the camera alone in every path.
 
 `bool setWeaponNodeParentHand(const char* tag, Hand hand)` / `bool clearWeaponNodeParentHand(const char* tag)` (v2.3)
 
@@ -364,7 +364,7 @@ The inputs and outputs of FRIK's own solve, so a mod computes its claims from th
 | `WeaponOffset` | The weapon offset node FRIK dampens (the `DampenHands*` settings) and drives the first-person arm from. |
 | `FirstPersonHand` | The first-person hand FRIK solves the body arm to when no hand transform is published. |
 
-Current from `BeforeArmSolve` on; read earlier in the frame they still hold the previous frame. Returns false without a skeleton or when the node does not exist.
+Current from `BeforeArmSolve` on; read earlier in the frame they still hold the previous frame, and during a left-carry `FirstPersonHand` holds the game's own re-glue instead. Returns false without a skeleton or when the node does not exist.
 
 `bool getBoneWorldTransform(const char* boneName, RE::NiTransform* outTransform)`
 

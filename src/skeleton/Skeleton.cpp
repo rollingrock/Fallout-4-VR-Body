@@ -1007,26 +1007,33 @@ namespace frik
             updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
 
-        // an external owner of the primary weapon node gets no writes from FRIK, not even the re-glue to the hand
+        // An external owner of the primary weapon node keeps its transform, but the hand target still comes from FRIK's glue:
+        // present the glue for the arm update only and restore the owner's transform after it.
         const bool ownedExternally = weaponNode == rightWeapon && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
-        if (!ownedExternally) {
-            weaponNode->local.rotate = !isLeftHandedMode() ? MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
-                                                           : MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
+        const RE::NiTransform ownerLocal = weaponNode->local;
+        const RE::NiTransform ownerWorld = weaponNode->world;
 
-            if (handleOffhand) {
-                weaponNode->local.rotate = weaponNode->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(isLeft ? 45.0f : -45.0f), 0);
-            }
+        weaponNode->local.rotate = !isLeftHandedMode() ? MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
+                                                       : MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
 
-            weaponNode->local.translate = isLeftHandedMode() ? (isLeft ? RE::NiPoint3(3.389f, -2.099f, 3.133f) : RE::NiPoint3(0, -4.8f, 0))
-                                          : isLeft           ? RE::NiPoint3(0, 0, 0)
-                                                             : RE::NiPoint3(4.389f, -1.899f, -3.133f);
+        if (handleOffhand) {
+            weaponNode->local.rotate = weaponNode->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(isLeft ? 45.0f : -45.0f), 0);
         }
+
+        weaponNode->local.translate = isLeftHandedMode() ? (isLeft ? RE::NiPoint3(3.389f, -2.099f, 3.133f) : RE::NiPoint3(0, -4.8f, 0))
+                                      : isLeft           ? RE::NiPoint3(0, 0, 0)
+                                                         : RE::NiPoint3(4.389f, -1.899f, -3.133f);
 
         {
             const WeaponHandRecoil::ScopedNativeKickNeutralizer neutralizeNativeKick(_weaponHandRecoil);
             dampenHand(offsetNode, isLeft);
             weaponNode->IncRefCount();
             Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
+        }
+
+        if (ownedExternally) {
+            weaponNode->local = ownerLocal;
+            weaponNode->world = ownerWorld;
         }
     }
 

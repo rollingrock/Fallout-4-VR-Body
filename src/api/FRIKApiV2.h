@@ -820,7 +820,8 @@ namespace frik::api
 
         /**
          * World transform of a tracked input for a hand, as FRIK uses it this frame. Current from
-         * BeforeArmSolve on; before that phase it still holds the previous frame. Since v2.3.
+         * BeforeArmSolve on; before that phase it still holds the previous frame, and during a
+         * left-carry FirstPersonHand holds the game's own re-glue instead. Since v2.3.
          * @return false without a skeleton or when the node does not exist.
          */
         bool(FRIK_CALL* getTrackedHandTransform)(Hand hand, TrackedHandKind kind, RE::NiTransform* outTransform);

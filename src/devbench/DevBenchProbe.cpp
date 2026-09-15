@@ -63,6 +63,8 @@ namespace frik::devbench
             std::size_t recordNext = 0;
             // the frame the last claim was published in and the one after, latched so a slow reader still sees them
             std::array<FrameRecord, 2> claimRecords{};
+            // FirstPersonHand as a client reads it in AfterArmSolve, right hand first
+            std::array<RE::NiTransform, 2> afterArmSolveHand{};
         };
 
         ProbeState g_probe;
@@ -140,6 +142,12 @@ namespace frik::devbench
                 const auto request = *g_probe.pending;
                 g_probe.pending.reset();
                 executeClaim(request);
+            }
+
+            if (phase == static_cast<std::uint32_t>(FramePhase::AfterArmSolve)) {
+                for (const bool isLeft : { false, true }) {
+                    core::getTrackedHandTransform(isLeft, core::TrackedHandKind::FirstPersonHand, g_probe.afterArmSolveHand[isLeft ? 1 : 0]);
+                }
             }
 
             if (phase == static_cast<std::uint32_t>(FramePhase::AfterWorldFinal)) {
@@ -298,7 +306,8 @@ namespace frik::devbench
                 { "hand", transformJson(chain.hand) },
                 { "boneHand", boneOk ? transformJson(bone) : json(nullptr) },
                 { "chainVsBone", boneOk ? diffJson(chain.hand, bone) : json(nullptr) },
-                { "tracked", trackedJson }
+                { "tracked", trackedJson },
+                { "firstPersonHandAfterArmSolve", transformJson(g_probe.afterArmSolveHand[isLeft ? 1 : 0]) }
             }.dump();
         }
 
