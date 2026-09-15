@@ -1011,7 +1011,6 @@ namespace frik
         // present the glue for the arm update only and restore the owner's transform after it.
         const bool ownedExternally = weaponNode == rightWeapon && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
         const RE::NiTransform ownerLocal = weaponNode->local;
-        const RE::NiTransform ownerWorld = weaponNode->world;
 
         weaponNode->local.rotate = !isLeftHandedMode() ? MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
                                                        : MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, -0.990f, -0.114f, -0.081f, -0.069f, -0.109f, 0.992f);
@@ -1031,9 +1030,10 @@ namespace frik
             Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
         }
 
+        // the arm update placed the weapon subtree from the glue; re-derive it from the owner's local under the updated hand
         if (ownedExternally) {
             weaponNode->local = ownerLocal;
-            weaponNode->world = ownerWorld;
+            updateTransformsDown(weaponNode, true);
         }
     }
 
