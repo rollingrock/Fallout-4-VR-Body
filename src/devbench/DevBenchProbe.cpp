@@ -21,6 +21,7 @@ namespace frik::devbench
         using nlohmann::json;
 
         constexpr auto PROBE_TAG = "frik.probe";
+        constexpr auto PROBE_EARLY_TAG = "frik.probe.early";
         constexpr std::uint32_t PHASE_NOW = 255;
 
         /**
@@ -45,6 +46,64 @@ namespace frik::devbench
             std::array<RE::NiTransform, 2> wrist{};
         };
 
+        /**
+         * One frame of a left-carry: the weapon after the AfterArmSolve callbacks and at AfterWorldFinal, and the right hand against its claim.
+         */
+        struct CarryRecord
+        {
+            std::uint64_t frame = 0;
+            // latched before the other AfterArmSolve callbacks run, i.e. what they read
+            RE::NiTransform weaponBeforeCallbacks{};
+            RE::NiTransform rightBoneBeforeCallbacks{};
+            RE::NiTransform rightHandNodeBeforeCallbacks{};
+            RE::NiTransform leftHandBeforeCallbacks{};
+            std::uint64_t leftRevisionBeforeCallbacks = 0;
+            RE::NiTransform weaponAfterArmSolve{};
+            RE::NiTransform leftHandAfterArmSolve{};
+            std::uint64_t leftRevisionAfterCallbacks = 0;
+            RE::NiTransform leftHandWorldFinal{};
+            RE::NiTransform weaponAfterWorldFinal{};
+            bool rightClaimed = false;
+            RE::NiTransform rightClaim{};
+            core::HandSolveState rightState = core::HandSolveState::NoClaim;
+            RE::NiTransform rightWrist{};
+            RE::NiTransform rightBone{};
+            // the Weapon's own local and its parent's world at each point, and the previous frame's final ones
+            RE::NiTransform weaponBeforeArmSolve{};
+            RE::NiTransform localBeforeArmSolve{};
+            RE::NiTransform parentBeforeArmSolve{};
+            RE::NiTransform localPrevFinal{};
+            RE::NiTransform parentPrevFinal{};
+            RE::NiTransform localBeforeCallbacks{};
+            RE::NiTransform parentBeforeCallbacks{};
+            RE::NiTransform localAfterArmSolve{};
+            RE::NiTransform parentAfterArmSolve{};
+            RE::NiTransform localWorldFinal{};
+            RE::NiTransform parentWorldFinal{};
+        };
+
+        // world of a node from its parent's world and its local, the same composition updateTransforms uses
+        RE::NiTransform composeWorld(const RE::NiTransform& parent, const RE::NiTransform& local)
+        {
+            RE::NiTransform world;
+            world.translate = parent.translate + parent.rotate.Transpose() * (local.translate * parent.scale);
+            world.rotate = local.rotate * parent.rotate;
+            world.scale = parent.scale * local.scale;
+            return world;
+        }
+
+        // the Weapon node's local and its parent's world, when it has a parent
+        bool weaponFrames(RE::NiTransform& outLocal, RE::NiTransform& outParentWorld)
+        {
+            const auto weapon = f4vr::getWeaponNode();
+            if (!weapon || !weapon->parent) {
+                return false;
+            }
+            outLocal = weapon->local;
+            outParentWorld = weapon->parent->world;
+            return true;
+        }
+
         struct ProbeState
         {
             bool registered = false;
@@ -65,6 +124,12 @@ namespace frik::devbench
             std::array<FrameRecord, 2> claimRecords{};
             // FirstPersonHand as a client reads it in AfterArmSolve, right hand first
             std::array<RE::NiTransform, 2> afterArmSolveHand{};
+            // the last left-carry frame, the largest weapon shift seen after AfterArmSolve, and how many carry frames were recorded
+            CarryRecord carry{};
+            CarryRecord carryStaging{};
+            bool carryPending = false;
+            float carryMaxWeaponShift = 0;
+            std::uint64_t carryFrames = 0;
         };
 
         ProbeState g_probe;
@@ -101,6 +166,13 @@ namespace frik::devbench
                 return "Unreachable";
             }
             return "?";
+        }
+
+        void handNodeWorld(const bool isLeft, RE::NiTransform& out)
+        {
+            if (const auto* skelly = g_frik.getSkeleton(); skelly && skelly->getArm(isLeft).hand) {
+                out = skelly->getArm(isLeft).hand->world;
+            }
         }
 
         void executeClaim(const ClaimRequest& request)
@@ -148,6 +220,40 @@ namespace frik::devbench
                 for (const bool isLeft : { false, true }) {
                     core::getTrackedHandTransform(isLeft, core::TrackedHandKind::FirstPersonHand, g_probe.afterArmSolveHand[isLeft ? 1 : 0]);
                 }
+                if (const auto weapon = f4vr::getWeaponNode(); weapon && g_probe.carryPending) {
+                    g_probe.carryStaging.weaponAfterArmSolve = weapon->world;
+                    handNodeWorld(true, g_probe.carryStaging.leftHandAfterArmSolve);
+                    g_probe.carryStaging.leftRevisionAfterCallbacks = g_externalAuthority.getHandClaimRevision(true);
+                    weaponFrames(g_probe.carryStaging.localAfterArmSolve, g_probe.carryStaging.parentAfterArmSolve);
+                }
+            }
+
+            if (phase == static_cast<std::uint32_t>(FramePhase::BeforeArmSolve) && g_frik.isWeaponInLeftHand()) {
+                auto& carry = g_probe.carryStaging;
+                if (const auto weapon = f4vr::getWeaponNode()) {
+                    carry.weaponBeforeArmSolve = weapon->world;
+                }
+                weaponFrames(carry.localBeforeArmSolve, carry.parentBeforeArmSolve);
+                carry.localPrevFinal = g_probe.carry.localWorldFinal;
+                carry.parentPrevFinal = g_probe.carry.parentWorldFinal;
+            }
+
+            if (phase == static_cast<std::uint32_t>(FramePhase::AfterWorldFinal) && g_probe.carryPending) {
+                g_probe.carryPending = false;
+                auto& carry = g_probe.carryStaging;
+                carry.frame = g_probe.frame;
+                if (const auto weapon = f4vr::getWeaponNode()) {
+                    carry.weaponAfterWorldFinal = weapon->world;
+                }
+                handNodeWorld(true, carry.leftHandWorldFinal);
+                weaponFrames(carry.localWorldFinal, carry.parentWorldFinal);
+                carry.rightClaimed = g_externalAuthority.getHandWorldTransform(false, carry.rightClaim);
+                carry.rightState = core::getHandSolveResult(false, carry.rightWrist);
+                core::getBoneWorldTransform("RArm_Hand", &carry.rightBone);
+                g_probe.carryMaxWeaponShift =
+                    (std::max)(g_probe.carryMaxWeaponShift, common::MatrixUtils::vec3Len(carry.weaponAfterWorldFinal.translate - carry.weaponBeforeCallbacks.translate));
+                g_probe.carry = carry;
+                ++g_probe.carryFrames;
             }
 
             if (phase == static_cast<std::uint32_t>(FramePhase::AfterWorldFinal)) {
@@ -164,10 +270,30 @@ namespace frik::devbench
             }
         }
 
+        // runs first in AfterArmSolve, to latch what the other callbacks of that phase read
+        void __cdecl probeEarlyCallback(const std::uint32_t, void*) noexcept
+        {
+            const auto weapon = f4vr::getWeaponNode();
+            g_probe.carryPending = weapon && g_frik.isWeaponInLeftHand();
+            if (!g_probe.carryPending) {
+                return;
+            }
+            auto& carry = g_probe.carryStaging;
+            carry.weaponBeforeCallbacks = weapon->world;
+            core::getBoneWorldTransform("RArm_Hand", &carry.rightBoneBeforeCallbacks);
+            handNodeWorld(false, carry.rightHandNodeBeforeCallbacks);
+            handNodeWorld(true, carry.leftHandBeforeCallbacks);
+            carry.leftRevisionBeforeCallbacks = g_externalAuthority.getHandClaimRevision(true);
+            weaponFrames(carry.localBeforeCallbacks, carry.parentBeforeCallbacks);
+        }
+
         bool ensureRegistered()
         {
             if (g_probe.registered) {
                 return true;
+            }
+            if (!core::registerFrameCallback(PROBE_EARLY_TAG, static_cast<std::uint32_t>(FramePhase::AfterArmSolve), &probeEarlyCallback, nullptr, 10000)) {
+                return false;
             }
             for (std::uint32_t phase = 0; phase < FRAME_PHASE_COUNT; ++phase) {
                 if (!core::registerFrameCallback(PROBE_TAG, phase, &probeCallback, nullptr, 0)) {
@@ -205,6 +331,7 @@ namespace frik::devbench
 
         if (op == "reset") {
             core::unregisterFrameCallback(PROBE_TAG);
+            core::unregisterFrameCallback(PROBE_EARLY_TAG);
             core::clearHandWorldTransform(PROBE_TAG, false);
             core::clearHandWorldTransform(PROBE_TAG, true);
             core::setOffHandGripping(PROBE_TAG, false, false, nullptr);
@@ -367,6 +494,44 @@ namespace frik::devbench
             }.dump();
         }
 
-        return json{ { "ok", false }, { "error", "unknown op (phases|claim|solve|chain|grip|parent|scope|block|nodes|reset)" } }.dump();
+        if (op == "carry") {
+            const auto& carry = g_probe.carry;
+            return json{
+                { "ok", true },
+                { "carryFrames", g_probe.carryFrames },
+                { "lastCarryFrame", carry.frame },
+                { "now", g_probe.frame },
+                { "weaponBeforeCallbacksToAfterArmSolve", diffJson(carry.weaponBeforeCallbacks, carry.weaponAfterArmSolve) },
+                { "weaponAfterArmSolveToWorldFinal", diffJson(carry.weaponAfterArmSolve, carry.weaponAfterWorldFinal) },
+                { "weaponBeforeCallbacksToWorldFinal", diffJson(carry.weaponBeforeCallbacks, carry.weaponAfterWorldFinal) },
+                { "rightBoneBeforeCallbacksToWorldFinal", diffJson(carry.rightBoneBeforeCallbacks, carry.rightBone) },
+                { "rightHandNodeToBoneBeforeCallbacks", diffJson(carry.rightHandNodeBeforeCallbacks, carry.rightBoneBeforeCallbacks) },
+                { "leftHandBeforeCallbacksToAfterArmSolve", diffJson(carry.leftHandBeforeCallbacks, carry.leftHandAfterArmSolve) },
+                { "leftHandAfterArmSolveToWorldFinal", diffJson(carry.leftHandAfterArmSolve, carry.leftHandWorldFinal) },
+                { "leftRevisionChangedInCallbacks", carry.leftRevisionAfterCallbacks != carry.leftRevisionBeforeCallbacks },
+                { "localPrevFinalToBeforeArmSolve", diffJson(carry.localPrevFinal, carry.localBeforeArmSolve) },
+                { "parentPrevFinalToBeforeArmSolve", diffJson(carry.parentPrevFinal, carry.parentBeforeArmSolve) },
+                { "localBeforeArmSolveToBeforeCallbacks", diffJson(carry.localBeforeArmSolve, carry.localBeforeCallbacks) },
+                { "parentBeforeArmSolveToBeforeCallbacks", diffJson(carry.parentBeforeArmSolve, carry.parentBeforeCallbacks) },
+                { "weaponBeforeArmSolveToBeforeCallbacks", diffJson(carry.weaponBeforeArmSolve, carry.weaponBeforeCallbacks) },
+                { "localBeforeCallbacksToAfterArmSolve", diffJson(carry.localBeforeCallbacks, carry.localAfterArmSolve) },
+                { "parentBeforeCallbacksToAfterArmSolve", diffJson(carry.parentBeforeCallbacks, carry.parentAfterArmSolve) },
+                { "localAfterArmSolveToWorldFinal", diffJson(carry.localAfterArmSolve, carry.localWorldFinal) },
+                { "parentAfterArmSolveToWorldFinal", diffJson(carry.parentAfterArmSolve, carry.parentWorldFinal) },
+                { "weaponBeforeArmSolveVsComposed", diffJson(carry.weaponBeforeArmSolve, composeWorld(carry.parentBeforeArmSolve, carry.localBeforeArmSolve)) },
+                { "weaponBeforeCallbacksVsComposed", diffJson(carry.weaponBeforeCallbacks, composeWorld(carry.parentBeforeCallbacks, carry.localBeforeCallbacks)) },
+                { "weaponFinalVsComposed", diffJson(carry.weaponAfterWorldFinal, composeWorld(carry.parentWorldFinal, carry.localWorldFinal)) },
+                { "maxWeaponShift", g_probe.carryMaxWeaponShift },
+                { "rightClaimed", carry.rightClaimed },
+                { "rightState", stateName(carry.rightState) },
+                { "rightWristToClaim", carry.rightClaimed ? diffJson(carry.rightWrist, carry.rightClaim) : json(nullptr) },
+                { "rightBoneToClaim", carry.rightClaimed ? diffJson(carry.rightBone, carry.rightClaim) : json(nullptr) },
+                { "rightBoneToWrist", diffJson(carry.rightBone, carry.rightWrist) },
+                { "weaponWorldFinal", transformJson(carry.weaponAfterWorldFinal) },
+                { "rightClaim", transformJson(carry.rightClaim) }
+            }.dump();
+        }
+
+        return json{ { "ok", false }, { "error", "unknown op (phases|claim|solve|chain|grip|parent|scope|block|nodes|carry|reset)" } }.dump();
     }
 }
