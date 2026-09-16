@@ -205,6 +205,9 @@ namespace frik
         RE::NiTransform _rightHandPrevFrame;
         RE::NiTransform _leftHandPrevFrame;
 
+        // last frame's looking-through state, to log the damping pair only when it switches
+        bool _dampenHandsInScopePrevFrame = false;
+
         // elbow twist smoothing: committed once per frame so a re-solve in the same frame gives the same answer
         std::array<float, 2> _twistAnglePrevFrame = { 0, 0 };
         std::array<float, 2> _twistAngleThisFrame = { 0, 0 };

@@ -40,6 +40,13 @@ namespace frik
      */
     void WeaponPositionAdjuster::resetOnDisable()
     {
+        // FRIK's last scope camera offset would otherwise persist into the takeover; the rotation keeps following the weapon
+        if (!g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera)) {
+            if (const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera) {
+                scopeCamera->local.translate = RE::NiPoint3();
+            }
+        }
+
         if (_grip.gripping) {
             setOffhandGripping(false);
         }

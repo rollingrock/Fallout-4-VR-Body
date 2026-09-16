@@ -1392,6 +1392,13 @@ namespace frik
         }
 
         const bool isInScopeMenu = g_frik.isLookingThroughScope();
+
+        // the looking-through edge is where the damping pair switches; log it so a capture lines up with the provider's own publish edge
+        if (isInScopeMenu != _dampenHandsInScopePrevFrame) {
+            _dampenHandsInScopePrevFrame = isInScopeMenu;
+            logger::info("Damping pair -> {}", isInScopeMenu ? "in-scope" : "general");
+        }
+
         if (isInScopeMenu && (!g_config.dampenHandsInVanillaScope || g_scopeAuthority.hasCapability(ScopeCapability::OwnsDamping))) {
             return;
         }
