@@ -1400,6 +1400,12 @@ namespace frik
         }
 
         if (isInScopeMenu && (!g_config.dampenHandsInVanillaScope || g_scopeAuthority.hasCapability(ScopeCapability::OwnsDamping))) {
+            // keep the anchor fresh while no damping runs, so the general pair resumes from the current pose instead of catching up
+            if (isLeft) {
+                _leftHandPrevFrame = node->world;
+            } else {
+                _rightHandPrevFrame = node->world;
+            }
             return;
         }
 
