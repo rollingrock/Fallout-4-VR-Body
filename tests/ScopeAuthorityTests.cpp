@@ -88,3 +88,30 @@ TEST_CASE("ScopeAuthority re-registering a tag replaces its capabilities")
     REQUIRE(scope.hasCapability(ScopeCapability::OwnsScopeCamera));
     REQUIRE(scope.providerCount() == 1);
 }
+
+TEST_CASE("ScopeAuthority a publisher leaving or flipping cannot strand another publisher's state")
+{
+    frik::ScopeAuthority scope;
+    const auto publishes = static_cast<std::uint32_t>(frik::ScopeCapability::PublishesLookingThrough);
+    REQUIRE(scope.setProvider("ts", publishes));
+    REQUIRE(scope.setProvider("probe", publishes));
+
+    // the probe publishes true and leaves while ts stays idle: seen live on 2026-09-16, the flag stayed true
+    REQUIRE(scope.setLookingThroughScope("probe", true));
+    REQUIRE(scope.isLookingThroughScope(false));
+    REQUIRE(scope.clearProvider("probe"));
+    REQUIRE_FALSE(scope.isLookingThroughScope(false));
+
+    // two live publishers OR: either one looking through counts, and one flipping off does not cancel the other
+    REQUIRE(scope.setProvider("probe", publishes));
+    REQUIRE(scope.setLookingThroughScope("ts", true));
+    REQUIRE(scope.setLookingThroughScope("probe", false));
+    REQUIRE(scope.isLookingThroughScope(false));
+    REQUIRE(scope.setLookingThroughScope("ts", false));
+    REQUIRE_FALSE(scope.isLookingThroughScope(false));
+
+    // re-registering a tag resets its state
+    REQUIRE(scope.setLookingThroughScope("ts", true));
+    REQUIRE(scope.setProvider("ts", publishes));
+    REQUIRE_FALSE(scope.isLookingThroughScope(false));
+}

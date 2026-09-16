@@ -2,6 +2,7 @@
 
 - Scopes: FRIK's own scope camera offset is dropped while another mod owns the weapon node, so the scope view sits where that mod placed the weapon.
 - Scopes: Hand damping resumes from the current pose on leaving a scope instead of catching up in one frame.
+- Scopes: The looking-through-scope state is kept per provider and merged, so a provider leaving or flipping can no longer strand another provider's published state.
 - Dev: The post-build plugin copy runs for Release builds only, so a Debug build can no longer land in the MO2 folder by accident.
 - Dev: The devbench `frik` tool gained a `perf` action reporting per-site frame timings, including the Pip-Boy sub-steps, accumulated between resets.
 
