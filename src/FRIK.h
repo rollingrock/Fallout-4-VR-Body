@@ -125,6 +125,13 @@ namespace frik
             }
         }
 
+        void openPipboy() const
+        {
+            if (_pipboy) {
+                _pipboy->openClose(true);
+            }
+        }
+
         bool isMainConfigurationModeActive() const
         {
             return _mainConfigMode.isOpen();

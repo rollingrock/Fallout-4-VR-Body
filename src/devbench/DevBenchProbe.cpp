@@ -438,6 +438,16 @@ namespace frik::devbench
             }.dump();
         }
 
+        if (op == "pipboy") {
+            // opens/closes FRIK's Pip-Boy the way the button does, so a headless run can hold it open for a perf window
+            if (args.value("on", true)) {
+                g_frik.openPipboy();
+            } else {
+                g_frik.closePipboy();
+            }
+            return json{ { "ok", true }, { "pipboyOn", g_frik.isPipboyOn() } }.dump();
+        }
+
         if (op == "grip") {
             bool isLeft = false;
             parseHand(args, isLeft);

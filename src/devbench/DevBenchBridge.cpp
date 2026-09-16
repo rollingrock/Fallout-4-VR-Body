@@ -226,12 +226,12 @@ namespace frik::devbench
   "section":{"type":"string","description":"INI section; defaults to FRIK's main section."},
   "key":{"type":"string","description":"config/set/clear: the setting name."},
   "value":{"type":"string","description":"set: the new value. perf: 'reset' to clear every site after reading it."},
-  "op":{"type":"string","description":"probe: phases|claim|solve|chain|grip|parent|scope|block|nodes|reset (dev-only exerciser of the v2.3 API)."},
+  "op":{"type":"string","description":"probe: phases|claim|solve|chain|grip|parent|scope|block|nodes|pipboy|carry|reset (dev-only exerciser of the v2.3 API; pipboy opens/closes FRIK's Pip-Boy with on)."},
   "hand":{"type":"string","description":"probe: left|right (parent: left|right|clear)."},
   "phase":{"type":"integer","description":"probe claim: FramePhase index to publish in; omit to publish before this frame's skeleton pass."},
   "kind":{"type":"string","description":"probe claim: offset (default, tracked hand + offset)|unreachable|clear."},
   "offset":{"type":"array","description":"probe claim: [x,y,z] offset from the tracked hand, default [0,0,10]."},
-  "on":{"type":"boolean","description":"probe grip/scope/block: on or off."}
+  "on":{"type":"boolean","description":"probe grip/scope/block/pipboy: on or off."}
  }
 }})";
     }
