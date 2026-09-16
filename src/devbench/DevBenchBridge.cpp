@@ -8,6 +8,7 @@
 #include "FRIK.h"
 #include "devbench/DevBenchAPI.h"
 #include "devbench/DevBenchProbe.h"
+#include "devbench/PerfProbe.h"
 #include "f4vr/F4VRUtils.h"
 
 namespace frik::devbench
@@ -170,6 +171,36 @@ namespace frik::devbench
                 return;
             }
 
+            if (action == "perf") {
+                // Per-site frame timings since the last reset. Probes live on the game thread, so read and reset there.
+                const bool reset = value == "reset";
+                write(sink,
+                    g_devBenchBridge
+                        .runOnGameThread([reset]() -> std::string {
+                            const auto now = PerfStats::Clock::now();
+                            nlohmann::json sites = nlohmann::json::object();
+                            for (auto* probe : PerfProbe::all()) {
+                                const auto s = probe->stats().summary(now);
+                                sites[probe->name()] = { { "n", s.count },
+                                    { "windowMs", s.windowMs },
+                                    { "totalMs", s.totalMs },
+                                    { "avgMs", s.avgMs },
+                                    { "p95Ms", s.p95Ms },
+                                    { "p99Ms", s.p99Ms },
+                                    { "minMs", s.minMs },
+                                    { "maxMs", s.maxMs },
+                                    { "busyPct", s.busyPct },
+                                    { "percentilesTruncated", s.percentilesTruncated } };
+                                if (reset) {
+                                    probe->resetStats();
+                                }
+                            }
+                            return nlohmann::json{ { "ok", true }, { "reset", reset }, { "sites", sites } }.dump();
+                        })
+                        .c_str());
+                return;
+            }
+
             if (action == "probe") {
                 // Exercises the v2.3 API from inside FRIK; every op touches FRIK state, so it runs on the game thread.
                 const std::string probeArgs = argsJson ? argsJson : "";
@@ -182,19 +213,19 @@ namespace frik::devbench
                 return;
             }
 
-            write(sink, errorJson("unknown action '" + action + "' (state|config|set|clear|health|probe)").c_str());
+            write(sink, errorJson("unknown action '" + action + "' (state|config|set|clear|health|perf|probe)").c_str());
         }
 
         constexpr auto kDescriptor = R"({
-"description":"FRIK (Fallout 4 VR body IK) live state and config. 'state' returns the body, Pip-Boy, weapon-positioning, config-UI and subsystem flags as of the last rendered frame, with a 'liveness' block carrying frame, skeletonGeneration and ageMs - ALWAYS read liveness first: a stale or absent frame means the rest is not a measurement. 'health' answers even before FRIK has run a frame, so it distinguishes 'FRIK is loaded but idle' from 'FRIK is absent'. 'config' reads one FRIK.ini value; 'set' overrides one for the session without writing to disk; 'clear' drops the override. skeletonGeneration is FRIK's skeleton build counter (1 for the first body of the session), so together with state a change between two reads means the body you measured is not the body you are looking at now.",
+"description":"FRIK (Fallout 4 VR body IK) live state and config. 'state' returns the body, Pip-Boy, weapon-positioning, config-UI and subsystem flags as of the last rendered frame, with a 'liveness' block carrying frame, skeletonGeneration and ageMs - ALWAYS read liveness first: a stale or absent frame means the rest is not a measurement. 'health' answers even before FRIK has run a frame, so it distinguishes 'FRIK is loaded but idle' from 'FRIK is absent'. 'config' reads one FRIK.ini value; 'set' overrides one for the session without writing to disk; 'clear' drops the override. skeletonGeneration is FRIK's skeleton build counter (1 for the first body of the session), so together with state a change between two reads means the body you measured is not the body you are looking at now. 'perf' returns per-site game-thread timings (n, avg, p95, p99, min, max ms, busyPct) accumulated since the last 'perf' with value='reset'; collection starts when the tool is first used, so reset once, hold the condition, then read. CPU main-thread cost only; it cannot see GPU time.",
 "readOnly":false,
 "inputSchema":{
  "type":"object",
  "properties":{
-  "action":{"type":"string","default":"state","enum":["state","config","set","clear","health","probe"]},
+  "action":{"type":"string","default":"state","enum":["state","config","set","clear","health","perf","probe"]},
   "section":{"type":"string","description":"INI section; defaults to FRIK's main section."},
   "key":{"type":"string","description":"config/set/clear: the setting name."},
-  "value":{"type":"string","description":"set: the new value."},
+  "value":{"type":"string","description":"set: the new value. perf: 'reset' to clear every site after reading it."},
   "op":{"type":"string","description":"probe: phases|claim|solve|chain|grip|parent|scope|block|nodes|reset (dev-only exerciser of the v2.3 API)."},
   "hand":{"type":"string","description":"probe: left|right (parent: left|right|clear)."},
   "phase":{"type":"integer","description":"probe claim: FramePhase index to publish in; omit to publish before this frame's skeleton pass."},
