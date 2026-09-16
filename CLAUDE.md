@@ -21,14 +21,14 @@ The project is built on top of [F4VR-CommonFramework](external/F4VR-CommonFramew
 cmake --preset default        # uses vs2026 by default
 ```
 For local development, copy `CMakeUserPresets.json.template` → `CMakeUserPresets.json` and set:
-- `POST_BUILD_COPY_PLUGIN: true` and `COPY_PLUGIN_BASE_PATH` to your MO2 mod folder(s) (semicolon-separated for multiple) — this auto-copies `FRIK.dll` + `.pdb` to `<path>/F4SE/Plugins/` after every build.
+- `POST_BUILD_COPY_PLUGIN: true` and `COPY_PLUGIN_BASE_PATH` to your MO2 mod folder(s) (semicolon-separated for multiple) — this auto-copies `FRIK.dll` + `.pdb` to `<path>/F4SE/Plugins/` after every **Release** build. Debug builds are never copied (`cmake/copy_plugin.cmake`), so a debugging build cannot land on a test rig by accident.
 - `F4VR_COMMON_FRAMEWORK_PATH` to point to a sibling checkout of F4VR-CommonFramework if you want to develop against it instead of the submodule.
 
 **Build (and ALWAYS check the output before reporting done):**
 ```
-cmake --build build 2>&1 | tee build_output.txt
+cmake --build build --config Release 2>&1 | tee build_output.txt
 ```
-Then read `build_output.txt`. Release builds also produce a versioned `.7z` package in `build/package/`.
+Then read `build_output.txt`. The solution is multi-config, so without `--config Release` you get a Debug build, which is neither copied to the mod folder nor packaged. Release builds also produce a versioned `.7z` package in `build/package/`.
 
 ## Architecture
 

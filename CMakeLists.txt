@@ -189,7 +189,7 @@ if(FRIK_BUILD_TESTS)
   add_subdirectory(tests)
 endif()
 
-# >>> Post build command to copy plugins (supports multiple paths separated by ';')
+# >>> Post build command to copy plugins (supports multiple paths separated by ';'). Release only, see cmake/copy_plugin.cmake
 if(POST_BUILD_COPY_PLUGIN)
   if(DEFINED COPY_PLUGIN_BASE_PATH)
     # Treat semicolon-separated COPY_PLUGIN_BASE_PATH as a CMake list
@@ -201,10 +201,13 @@ if(POST_BUILD_COPY_PLUGIN)
       add_custom_command(
         TARGET ${PROJECT_NAME}
         POST_BUILD
-        COMMENT "Copying ${PROJECT_NAME}.dll and .pdb to plugins folder: '${copy_path}/F4SE/Plugins/'"
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${copy_path}/F4SE/Plugins/
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${copy_path}/F4SE/Plugins/
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${copy_path}/F4SE/Plugins/
+        COMMENT "Copying ${PROJECT_NAME}.dll and .pdb to plugins folder (release only): '${copy_path}/F4SE/Plugins/'"
+        COMMAND ${CMAKE_COMMAND}
+                -DCOPY_PATH="${copy_path}"
+                -DTARGET_FILE="$<TARGET_FILE:${PROJECT_NAME}>"
+                -DTARGET_PDB_FILE="$<TARGET_PDB_FILE:${PROJECT_NAME}>"
+                -DCONFIG=$(Configuration)
+                -P "${ROOT_DIR}/cmake/copy_plugin.cmake"
       )
     endforeach()
   else()
