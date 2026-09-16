@@ -7,7 +7,8 @@ namespace frik
     class CullGeometryHandler
     {
     public:
-        void cullPlayerGeometry();
+        // hideAll culls every player geometry (scoped without a provider keeping the body visible), bones stay valid
+        void cullPlayerGeometry(bool hideAll = false);
 
     private:
         void restoreGeometry();
@@ -18,6 +19,7 @@ namespace frik
         // used to handle update to hide flags to know to restore culled geometries
         bool _isGeometryCulled = false;
         bool _isEquipmentCulled = false;
+        bool _isAllCulled = false;
 
         time_t _lastPreProcessTime = 0;
         int _lastHiddenGeometryIdx = -1;

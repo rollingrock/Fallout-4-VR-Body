@@ -7,6 +7,7 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "devbench/DevBenchAPI.h"
+#include "devbench/DevBenchProbe.h"
 #include "f4vr/F4VRUtils.h"
 
 namespace frik::devbench
@@ -169,7 +170,19 @@ namespace frik::devbench
                 return;
             }
 
-            write(sink, errorJson("unknown action '" + action + "' (state|config|set|clear|health)").c_str());
+            if (action == "probe") {
+                // Exercises the v2.3 API from inside FRIK; every op touches FRIK state, so it runs on the game thread.
+                const std::string probeArgs = argsJson ? argsJson : "";
+                write(sink,
+                    g_devBenchBridge
+                        .runOnGameThread([probeArgs]() -> std::string {
+                            return runProbe(probeArgs);
+                        })
+                        .c_str());
+                return;
+            }
+
+            write(sink, errorJson("unknown action '" + action + "' (state|config|set|clear|health|probe)").c_str());
         }
 
         constexpr auto kDescriptor = R"({
@@ -178,10 +191,16 @@ namespace frik::devbench
 "inputSchema":{
  "type":"object",
  "properties":{
-  "action":{"type":"string","default":"state","enum":["state","config","set","clear","health"]},
+  "action":{"type":"string","default":"state","enum":["state","config","set","clear","health","probe"]},
   "section":{"type":"string","description":"INI section; defaults to FRIK's main section."},
   "key":{"type":"string","description":"config/set/clear: the setting name."},
-  "value":{"type":"string","description":"set: the new value."}
+  "value":{"type":"string","description":"set: the new value."},
+  "op":{"type":"string","description":"probe: phases|claim|solve|chain|grip|parent|scope|block|nodes|reset (dev-only exerciser of the v2.3 API)."},
+  "hand":{"type":"string","description":"probe: left|right (parent: left|right|clear)."},
+  "phase":{"type":"integer","description":"probe claim: FramePhase index to publish in; omit to publish before this frame's skeleton pass."},
+  "kind":{"type":"string","description":"probe claim: offset (default, tracked hand + offset)|unreachable|clear."},
+  "offset":{"type":"array","description":"probe claim: [x,y,z] offset from the tracked hand, default [0,0,10]."},
+  "on":{"type":"boolean","description":"probe grip/scope/block: on or off."}
  }
 }})";
     }

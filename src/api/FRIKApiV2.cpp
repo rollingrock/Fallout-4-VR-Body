@@ -41,6 +41,32 @@ namespace
     static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::PublishesLookingThrough) == static_cast<int>(ScopeCapability::PublishesLookingThrough));
     static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::OwnsDamping) == static_cast<int>(ScopeCapability::OwnsDamping));
 
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::NativeGraphOutput) == static_cast<int>(FramePhase::NativeGraphOutput));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::BodyPlaced) == static_cast<int>(FramePhase::BodyPlaced));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::LegsSolved) == static_cast<int>(FramePhase::LegsSolved));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::BeforeArmSolve) == static_cast<int>(FramePhase::BeforeArmSolve));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::AfterArmSolve) == static_cast<int>(FramePhase::AfterArmSolve));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::AfterHandPose) == static_cast<int>(FramePhase::AfterHandPose));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::AfterWeaponPosition) == static_cast<int>(FramePhase::AfterWeaponPosition));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::BeforeWorldFinal) == static_cast<int>(FramePhase::BeforeWorldFinal));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::AfterWorldFinal) == static_cast<int>(FramePhase::AfterWorldFinal));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::FrameBegin) == static_cast<int>(FramePhase::FrameBegin));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::FrameEnd) == static_cast<int>(FramePhase::FrameEnd));
+    static_assert(static_cast<int>(FRIKApiV2::FramePhase::FrameEnd) + 1 == FRAME_PHASE_COUNT);
+    static_assert(std::is_same_v<FRIKApiV2::FrameCallback, FrameCallback>);
+
+    static_assert(static_cast<int>(FRIKApiV2::TrackedHandKind::Wand) == static_cast<int>(core::TrackedHandKind::Wand));
+    static_assert(static_cast<int>(FRIKApiV2::TrackedHandKind::WeaponOffset) == static_cast<int>(core::TrackedHandKind::WeaponOffset));
+    static_assert(static_cast<int>(FRIKApiV2::TrackedHandKind::FirstPersonHand) == static_cast<int>(core::TrackedHandKind::FirstPersonHand));
+    static_assert(sizeof(FRIKApiV2::ArmChainTransforms) == sizeof(core::ArmChainTransforms));
+    static_assert(offsetof(FRIKApiV2::ArmChainTransforms, validMask) == offsetof(core::ArmChainTransforms, validMask));
+    static_assert(offsetof(FRIKApiV2::ArmChainTransforms, shoulder) == offsetof(core::ArmChainTransforms, shoulder));
+    static_assert(offsetof(FRIKApiV2::ArmChainTransforms, hand) == offsetof(core::ArmChainTransforms, hand));
+    static_assert(static_cast<int>(FRIKApiV2::HandSolveState::SkeletonNotReady) == static_cast<int>(core::HandSolveState::SkeletonNotReady));
+    static_assert(static_cast<int>(FRIKApiV2::HandSolveState::NoClaim) == static_cast<int>(core::HandSolveState::NoClaim));
+    static_assert(static_cast<int>(FRIKApiV2::HandSolveState::Consumed) == static_cast<int>(core::HandSolveState::Consumed));
+    static_assert(static_cast<int>(FRIKApiV2::HandSolveState::Unreachable) == static_cast<int>(core::HandSolveState::Unreachable));
+
     static_assert(sizeof(FRIKApiV2::SkeletonLifecycleData) == sizeof(core::SkeletonLifecycleData));
     static_assert(offsetof(FRIKApiV2::SkeletonLifecycleData, generation) == offsetof(core::SkeletonLifecycleData, generation));
     static_assert(offsetof(FRIKApiV2::SkeletonLifecycleData, rootNode) == offsetof(core::SkeletonLifecycleData, rootNode));
@@ -291,6 +317,50 @@ namespace
         return core::clearHandWorldTransform(*normalizedTag, core::isLeftForHand(hand));
     }
 
+    bool FRIK_CALL getTrackedHandTransform(const FRIKApiV2::Hand hand, const FRIKApiV2::TrackedHandKind kind, RE::NiTransform* outTransform)
+    {
+        if (!outTransform || static_cast<std::uint8_t>(kind) > static_cast<std::uint8_t>(FRIKApiV2::TrackedHandKind::FirstPersonHand)) {
+            return false;
+        }
+        return core::getTrackedHandTransform(core::isLeftForHand(hand), static_cast<core::TrackedHandKind>(kind), *outTransform);
+    }
+
+    bool FRIK_CALL getArmChain(const FRIKApiV2::Hand hand, FRIKApiV2::ArmChainTransforms* outChain)
+    {
+        if (!outChain) {
+            return false;
+        }
+        return core::getArmChain(core::isLeftForHand(hand), *reinterpret_cast<core::ArmChainTransforms*>(outChain));
+    }
+
+    FRIKApiV2::HandSolveState FRIK_CALL getHandSolveResult(const FRIKApiV2::Hand hand, RE::NiTransform* outWrist)
+    {
+        RE::NiTransform wrist;
+        const auto state = core::getHandSolveResult(core::isLeftForHand(hand), wrist);
+        if (outWrist) {
+            *outWrist = wrist;
+        }
+        return static_cast<FRIKApiV2::HandSolveState>(state);
+    }
+
+    bool FRIK_CALL setOffHandGripping(const char* tag, const bool active, const FRIKApiV2::Hand supportHand, const RE::NiTransform* supportWorld)
+    {
+        const auto normalizedTag = core::normalizeTag(tag);
+        if (!normalizedTag) {
+            return false;
+        }
+        return core::setOffHandGripping(*normalizedTag, active, core::isLeftForHand(supportHand), supportWorld);
+    }
+
+    bool FRIK_CALL setWeaponNodeParentHand(const char* tag, const FRIKApiV2::Hand hand)
+    {
+        const auto normalizedTag = core::normalizeTag(tag);
+        if (!normalizedTag) {
+            return false;
+        }
+        return core::setWeaponNodeParentHand(*normalizedTag, core::isLeftForHand(hand));
+    }
+
     bool FRIK_CALL registerOpenModSettingButtonToMainConfig(const FRIKApiV2::OpenExternalModConfigData& data)
     {
         return core::registerOpenModSettingButtonToMainConfig(data.buttonIconNifPath, data.callbackReceiverName, data.callbackMessageType);
@@ -352,7 +422,16 @@ namespace
         .setScopeProvider = &core::setScopeProvider,
         .clearScopeProvider = &core::clearScopeProvider,
         .setLookingThroughScope = &core::setLookingThroughScope,
-        .isLookingThroughScope = &core::isLookingThroughScope };
+        .isLookingThroughScope = &core::isLookingThroughScope,
+        .registerFrameCallback = &core::registerFrameCallback,
+        .unregisterFrameCallback = &core::unregisterFrameCallback,
+        .getTrackedHandTransform = &getTrackedHandTransform,
+        .getBoneWorldTransform = &core::getBoneWorldTransform,
+        .getArmChain = &getArmChain,
+        .getHandSolveResult = &getHandSolveResult,
+        .setOffHandGripping = &setOffHandGripping,
+        .setWeaponNodeParentHand = &setWeaponNodeParentHand,
+        .clearWeaponNodeParentHand = &core::clearWeaponNodeParentHand };
 }
 
 namespace frik::api

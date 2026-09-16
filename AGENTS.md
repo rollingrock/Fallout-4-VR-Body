@@ -57,6 +57,8 @@ Then read `build_output.txt`. Release builds also produce a versioned `.7z` pack
 
 `FRIK::smoothMovement` is invoked from a separate hook (not from `onFrameUpdate`).
 
+**Frame phases.** External mods run at fixed points of this sequence through `FramePhase` callbacks (`src/FramePhaseRegistry.h`, registry `g_framePhases` in `ApiCore.cpp`, invoked via `api::core::invokeFramePhase`): `NativeGraphOutput` fires from the detour at 0xF2F0A0 (`GameHooks.cpp`, earlier in the game frame), `BodyPlaced`/`LegsSolved`/`BeforeArmSolve`/`AfterArmSolve`/`AfterHandPose` from `Skeleton::onFrameUpdate`, and `AfterWeaponPosition`/`BeforeWorldFinal`/`AfterWorldFinal` from `FRIK::onFrameUpdateInner`. Tracked hands are refreshed (`updateHandTarget`) before `BeforeArmSolve`, so a hand transform published there is solved in the same frame. `broadcastScopeEvents` runs before step 1.
+
 ### Subsystem map
 
 | Subsystem | Location | Responsibility |
@@ -69,7 +71,7 @@ Then read `build_output.txt`. Release builds also produce a versioned `.7z` pack
 | Config UI | [src/config-mode/](src/config-mode/) | In-VR config menus (`MainConfigMode`, `PipboyConfigMode`, `BodyAdjustmentSubConfigMode`) |
 | Reload | [src/reload/](src/reload/) | Two-handed gun reload interaction — **dead code**: both files and their hooks in `GameHooks.cpp` are fully commented out |
 | Public API | [src/api/](src/api/) | Two C ABI majors (`FRIKApi` v1.\*, `FRIKApiV2`) over a shared `ApiCore`, loaded by other mods via `GetProcAddress` |
-| External mod state | [src/ExternalAuthority.h](src/ExternalAuthority.h), [src/TagBlockSet.h](src/TagBlockSet.h) | Weapon node ownership, weapon pose blocks, tagged hand world transforms; `TagBlockSet` is the shared "blocked while any tag holds it" registry |
+| External mod state | [src/ExternalAuthority.h](src/ExternalAuthority.h), [src/TagBlockSet.h](src/TagBlockSet.h) | Weapon node ownership, weapon pose blocks, tagged hand world transforms, external off-hand grips, weapon node parent-hand requests; `TagBlockSet` is the shared "blocked while any tag holds it" registry |
 | Papyrus API | [src/PapyrusApi.h](src/PapyrusApi.h) | Native functions for in-game scripts |
 
 ### Config
@@ -94,7 +96,7 @@ FRIK publishes **two independent C ABI majors**. All are exported with `__declsp
 
 Both are thin shims over [src/api/ApiCore.h](src/api/ApiCore.h), which owns the version-agnostic implementation and speaks FRIK's own vocabulary — it never includes a public API header. **Put new shared logic in `ApiCore`, not in a major.** Entries whose signatures mention no version-specific type are literally the same function pointer in both tables; the rest are shims that `static_assert` their enum parity with core.
 
-Cross-mod state that must outlive the skeleton lives in [src/ExternalAuthority.h](src/ExternalAuthority.h) (`g_externalAuthority` — weapon node ownership, weapon pose blocks, tagged hand world transforms) and [src/api/RecoilControllerRuntime.h](src/api/RecoilControllerRuntime.h) (recoil controllers, which stay in the API layer because they hold C ABI callbacks). Tagged hand-pose overrides stay in `HandPose`, since FRIK pushes its own poses onto that same stack. Each registry clears itself from `FRIK::releaseSkeleton`, which then broadcasts `LifecycleEvent::kSkeletonReady` / `kSkeletonDestroying` (F4SE message types 100/101) so clients know to republish.
+Cross-mod state that must outlive the skeleton lives in [src/ExternalAuthority.h](src/ExternalAuthority.h) (`g_externalAuthority` — weapon node ownership, weapon pose blocks, tagged hand world transforms, external off-hand grips, weapon node parent-hand requests) and [src/api/RecoilControllerRuntime.h](src/api/RecoilControllerRuntime.h) (recoil controllers, which stay in the API layer because they hold C ABI callbacks). Tagged hand-pose overrides stay in `HandPose`, since FRIK pushes its own poses onto that same stack. Each registry clears itself from `FRIK::releaseSkeleton`, which then broadcasts `LifecycleEvent::kSkeletonReady` / `kSkeletonDestroying` (F4SE message types 100/101) so clients know to republish. Frame-phase callbacks and scope providers are not tied to the skeleton and survive rebuilds.
 
 Hand poses, hand world transforms, and recoil controllers are all keyed by a string `tag` plus an `int priority`: highest wins, equal priorities break by newest registration, and re-setting a tag keeps its original place in that order.
 
@@ -105,6 +107,7 @@ For mods that want a button in FRIK's main config menu: they call `registerOpenM
 ### External mod integrations
 
 - **Scope providers** — `ScopeAuthority` (`src/ScopeAuthority.h`) holds the registered scope provider capabilities and the looking-through-scope state that every scope behaviour keys on (`FRIK::isLookingThroughScope`). **BetterScopesVR** is registered by FRIK as a legacy `PublishesLookingThrough` provider fed by its message type 15; True Scopes registers itself through API v2.2.
+- **ROCK (two-handed grips, hand claims)** — publishes hand transforms from a `BeforeArmSolve` frame callback, reports its grips with `setOffHandGripping` (so `FRIK::isOffHandGrippingWeapon` and the Pip-Boy guards honour them), and parents the weapon under the left hand with `setWeaponNodeParentHand` (`FRIK::isWeaponInLeftHand` is what the skeleton, hand pose and recoil key on). While `blockPrimaryWeaponNodeOwnership` is held FRIK leaves the weapon node as the mod set it; the arm update presents FRIK's glue to the game and restores the node, so the hands still follow the controllers.
 - **Fallout London VR** — detected via `isFalloutLondonVRModLoaded()`; loads `FRIK_FOLVR.ini` overrides and switches Pipboy to "Attaboy" mode. Can be force-disabled with `ignoreFalloutLondonVR`.
 - **Immersive Flashlight VR** — if loaded, FRIK skips its embedded flashlight to avoid conflict.
 
