@@ -439,7 +439,8 @@ namespace frik::devbench
         }
 
         if (op == "pipboy") {
-            // opens/closes FRIK's Pip-Boy the way the button does, so a headless run can hold it open for a perf window
+            // opens/closes FRIK's Pip-Boy the way the button does; the engine pushes PipboyMenu with it (verified headless), so a
+            // run with nobody in the headset can hold a blocking menu open. Override PipBoyCloseWhenLookAway first or it closes again.
             if (args.value("on", true)) {
                 g_frik.openPipboy();
             } else {
