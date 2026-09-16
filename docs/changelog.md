@@ -1,3 +1,9 @@
+## v0.79.1
+
+- Scopes: FRIK's own scope camera offset is dropped while another mod owns the weapon node, so the scope view sits where that mod placed the weapon.
+- Scopes: Hand damping resumes from the current pose on leaving a scope instead of catching up in one frame.
+- Dev: The devbench `frik` tool gained a `perf` action reporting per-site frame timings, including the Pip-Boy sub-steps, accumulated between resets.
+
 ## v0.79
 
 - Scopes: True Scopes support. A scope mod registers as a scope provider and FRIK keeps the body visible and fully posed while looking through the scope.
