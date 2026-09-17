@@ -88,7 +88,7 @@ namespace frik
         // the scope rig (ScopeParent, scope camera) is parented under the weapon for an external carry; the camera base re-expressed for it
         bool _scopeRigCarried = false;
         RE::NiMatrix3 _scopeCameraCarryBaseMatrix;
-        // the rig nodes' engine-authored locals on the wand chain, refreshed while not carried, put back on release
+        // the rig nodes' locals on the wand chain as last seen before a carry (the engine's, or a scope mod's last write), put back on release
         bool _scopeRigRestValid = false;
         RE::NiTransform _scopeParentRestLocal;
         RE::NiTransform _scopeCameraRestLocal;

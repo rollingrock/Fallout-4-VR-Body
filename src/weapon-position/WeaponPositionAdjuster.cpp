@@ -358,7 +358,7 @@ namespace frik
      * ScopeParent (the vanilla scope widget's parent, also what a scope provider's lens hangs on) and the scope camera
      * hang off the primary wand chain, so a weapon re-parented under the other hand would leave the scope view and
      * the widget in the hand that no longer holds it. For the carry both are parented under the weapon keeping their
-     * world, and go back on the wand chain with their engine-authored locals after. A provider owning the camera keeps the rig.
+     * world, and go back on the wand chain with the locals they had before the carry. A provider owning the camera keeps the rig.
      * Frame start only: a mid-frame weapon world is an intermediate of the arm update and a local derived from it is wrong.
      */
     void WeaponPositionAdjuster::carryScopeRigWithWeapon()
