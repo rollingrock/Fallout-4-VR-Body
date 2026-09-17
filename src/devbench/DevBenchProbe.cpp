@@ -495,8 +495,27 @@ namespace frik::devbench
             const auto root = f4vr::getRootNode();
             RE::NiTransform spine;
             const bool spineOk = core::getBoneWorldTransform("SPINE2", &spine);
+            // a node's world plus its parent chain, so a probe can tell which hand the engine's scope rig hangs on
+            const auto nodeJson = [](const RE::NiAVObject* node) -> json {
+                if (!node) {
+                    return nullptr;
+                }
+                json chain = json::array();
+                for (auto p = node->parent; p && chain.size() < 6; p = p->parent) {
+                    chain.push_back(p->name.c_str());
+                }
+                return { { "world", transformJson(node->world) }, { "parents", chain } };
+            };
+            const auto pn = f4vr::getPlayerNodes();
+            const auto fp = f4vr::getFirstPersonSkeleton();
             return json{
                 { "ok", true },
+                { "weapon", nodeJson(weapon) },
+                { "scopeParent", nodeJson(pn ? pn->ScopeParentNode : nullptr) },
+                { "scopeCamera", nodeJson(pn ? pn->primaryWeaponScopeCamera : nullptr) },
+                { "rHand", nodeJson(fp ? f4vr::findNode(fp, "RArm_Hand") : nullptr) },
+                { "lHand", nodeJson(fp ? f4vr::findNode(fp, "LArm_Hand") : nullptr) },
+                { "weaponInLeftHand", g_frik.isWeaponInLeftHand() },
                 { "weaponLocal", weapon ? transformJson(weapon->local) : json(nullptr) },
                 { "weaponWorld", weapon ? transformJson(weapon->world) : json(nullptr) },
                 { "rootScale", root ? root->local.scale : 0.0f },

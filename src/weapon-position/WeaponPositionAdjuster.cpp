@@ -137,6 +137,8 @@ namespace frik
     void WeaponPositionAdjuster::handlePrimaryWeapon()
     {
         const auto weapon = f4vr::getWeaponNode();
+        carryScopeRigWithWeapon(weapon);
+
         if (!f4vr::isNodeVisible(weapon)) {
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
@@ -332,7 +334,8 @@ namespace frik
         const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
 
         // need to update default transform for later world rotation use
-        scopeCamera->local.rotate = _scopeCameraBaseMatrix;
+        const auto& baseMatrix = _scopeRigCarried ? _scopeCameraCarryBaseMatrix : _scopeCameraBaseMatrix;
+        scopeCamera->local.rotate = baseMatrix;
         f4vr::updateTransforms(scopeCamera);
 
         const auto weaponForwardVec = RE::NiPoint3(weapon->world.rotate.entry[1][0], weapon->world.rotate.entry[1][1], weapon->world.rotate.entry[1][2]);
@@ -341,7 +344,55 @@ namespace frik
         Quaternion rotAdjust;
         const auto weaponForwardVecInScopeTransform = scopeCamera->world.rotate * (weaponForwardVec / scopeCamera->world.scale);
         rotAdjust.vec2Vec(weaponForwardVecInScopeTransform, RE::NiPoint3(1, 0, 0));
-        scopeCamera->local.rotate = rotAdjust.getMatrix() * _scopeCameraBaseMatrix;
+        scopeCamera->local.rotate = rotAdjust.getMatrix() * baseMatrix;
+    }
+
+    /**
+     * Keep the engine's scope rig on the weapon while an external owner carries it in the non-primary hand.
+     * ScopeParent (the vanilla scope widget's parent, also what a scope provider's lens hangs on) and the scope camera
+     * hang off the primary wand chain, so a weapon re-parented under the other hand would leave the scope view and
+     * the widget in the hand that no longer holds it. For the carry both are parented under the weapon rigid to it,
+     * and go back on the wand chain after. A scope provider that owns the camera keeps the rig to itself.
+     */
+    void WeaponPositionAdjuster::carryScopeRigWithWeapon(RE::NiNode* weapon)
+    {
+        const auto pn = f4vr::getPlayerNodes();
+        const bool carried = weapon && g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera);
+
+        const auto scopeCamera = pn->primaryWeaponScopeCamera;
+        const auto cameraParentBefore = scopeCamera ? scopeCamera->parent : nullptr;
+        reparentKeepingWorld(pn->ScopeParentNode, carried ? weapon : pn->primaryUIAttachNode);
+        reparentKeepingWorld(scopeCamera, carried ? weapon : pn->primaryWeaponOffsetNOde);
+
+        if (carried && scopeCamera && cameraParentBefore && cameraParentBefore != weapon) {
+            // the camera base is authored in the offset node's frame; re-express it for the weapon so the view keeps its roll
+            _scopeCameraCarryBaseMatrix = _scopeCameraBaseMatrix * cameraParentBefore->world.rotate * weapon->world.rotate.Transpose();
+        }
+        if (carried != _scopeRigCarried) {
+            logger::info("Scope rig {} the weapon for an external carry", carried ? "parented under" : "released from");
+        }
+        _scopeRigCarried = carried;
+    }
+
+    /**
+     * Move a node under a new parent keeping its world transform. Returns true if it was moved.
+     */
+    bool WeaponPositionAdjuster::reparentKeepingWorld(RE::NiNode* node, RE::NiNode* newParent)
+    {
+        if (!node || !newParent || node->parent == newParent) {
+            return false;
+        }
+        const RE::NiTransform world = node->world;
+        if (node->parent) {
+            node->parent->DetachChild(node);
+        }
+        newParent->AttachChild(node, true);
+        const auto& parent = newParent->world;
+        node->local.rotate = world.rotate * parent.rotate.Transpose();
+        node->local.translate = parent.rotate * ((world.translate - parent.translate) / parent.scale);
+        node->local.scale = world.scale / parent.scale;
+        node->world = world;
+        return true;
     }
 
     /**

@@ -64,6 +64,8 @@ namespace frik
         void handleThrowableWeapon();
         void handlePrimaryWeapon();
         void checkEquippedWeaponChanged();
+        void carryScopeRigWithWeapon(RE::NiNode* weapon);
+        static bool reparentKeepingWorld(RE::NiNode* node, RE::NiNode* newParent);
         void handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const;
         void alignScopeCameraToWeapon(const RE::NiNode* weapon) const;
         void checkIfOffhandIsGripping(const RE::NiNode* weapon);
@@ -81,6 +83,10 @@ namespace frik
 
         // Define a basis remapping matrix to correct coordinate system for scope camera
         RE::NiMatrix3 _scopeCameraBaseMatrix;
+
+        // the scope rig (ScopeParent, scope camera) is parented under the weapon for an external carry; the camera base re-expressed for it
+        bool _scopeRigCarried = false;
+        RE::NiMatrix3 _scopeCameraCarryBaseMatrix;
 
         Skeleton* _skelly;
 
