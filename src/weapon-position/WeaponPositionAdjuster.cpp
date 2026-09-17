@@ -368,6 +368,9 @@ namespace frik
         const auto scopeParent = pn->ScopeParentNode;
         const auto scopeCamera = pn->primaryWeaponScopeCamera;
         if (!weapon || !scopeParent || !scopeCamera || !pn->primaryUIAttachNode || !pn->primaryWeaponOffsetNOde) {
+            if (_scopeRigCarried) {
+                restoreScopeRig();
+            }
             return;
         }
         const bool carried = g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera);
@@ -396,7 +399,26 @@ namespace frik
     }
 
     /**
+     * Put the scope rig back on the wand chain, with the locals it had before the carry when known. Safe with the weapon
+     * node already gone (skeleton release mid-carry): a detached rig node is simply attached to its wand-chain parent.
+     */
+    void WeaponPositionAdjuster::restoreScopeRig()
+    {
+        const auto pn = f4vr::getPlayerNodes();
+        if (!pn) {
+            return;
+        }
+        reparent(pn->ScopeParentNode, pn->primaryUIAttachNode, _scopeRigRestValid ? &_scopeParentRestLocal : nullptr);
+        reparent(pn->primaryWeaponScopeCamera, pn->primaryWeaponOffsetNOde, _scopeRigRestValid ? &_scopeCameraRestLocal : nullptr);
+        if (_scopeRigCarried) {
+            logger::info("Scope rig released from the weapon for an external carry");
+        }
+        _scopeRigCarried = false;
+    }
+
+    /**
      * Move a node under a new parent: with a local it takes that local, else it keeps its world. Returns true if it was moved.
+     * The node is held across the detach, in case nothing but the old parent references it.
      */
     bool WeaponPositionAdjuster::reparent(RE::NiNode* node, RE::NiNode* newParent, const RE::NiTransform* local)
     {
@@ -404,8 +426,9 @@ namespace frik
             return false;
         }
         const RE::NiTransform world = node->world;
+        RE::NiPointer<RE::NiAVObject> held(node);
         if (node->parent) {
-            node->parent->DetachChild(node);
+            node->parent->DetachChild(node, held);
         }
         newParent->AttachChild(node, true);
         if (local) {

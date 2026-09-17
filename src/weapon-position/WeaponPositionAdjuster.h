@@ -27,6 +27,15 @@ namespace frik
             _gripPoseRestorePending = _grip.gripping;
         }
 
+        // the scope rig must not stay under a weapon node that is about to go with the skeleton
+        ~WeaponPositionAdjuster()
+        {
+            restoreScopeRig();
+        }
+
+        WeaponPositionAdjuster(const WeaponPositionAdjuster&) = delete;
+        WeaponPositionAdjuster& operator=(const WeaponPositionAdjuster&) = delete;
+
         bool isWeaponDrawn() const
         {
             return _equippedWeapon.isDrawn();
@@ -66,6 +75,7 @@ namespace frik
         void handlePrimaryWeapon();
         void checkEquippedWeaponChanged();
         void carryScopeRigWithWeapon();
+        void restoreScopeRig();
         static bool reparent(RE::NiNode* node, RE::NiNode* newParent, const RE::NiTransform* local);
         void handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const;
         void alignScopeCameraToWeapon(const RE::NiNode* weapon) const;
