@@ -504,7 +504,14 @@ namespace frik::devbench
                 for (auto p = node->parent; p && chain.size() < 6; p = p->parent) {
                     chain.push_back(p->name.c_str());
                 }
-                return { { "world", transformJson(node->world) }, { "parents", chain } };
+                const auto rows = [](const RE::NiMatrix3& m) {
+                    json out = json::array();
+                    for (int r = 0; r < 3; ++r) {
+                        out.push_back({ m.entry[r][0], m.entry[r][1], m.entry[r][2] });
+                    }
+                    return out;
+                };
+                return { { "world", transformJson(node->world) }, { "local", transformJson(node->local) }, { "worldRot", rows(node->world.rotate) }, { "parents", chain } };
             };
             const auto pn = f4vr::getPlayerNodes();
             const auto fp = f4vr::getFirstPersonSkeleton();

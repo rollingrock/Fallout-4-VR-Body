@@ -231,6 +231,10 @@ namespace frik
             }
         }
 
+        if (_weaponPositionEnabled) {
+            _weaponPosition->onFrameStart();
+        }
+
         logger::trace("Update Skeleton...");
         _skelly->onFrameUpdate();
 

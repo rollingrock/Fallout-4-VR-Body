@@ -57,6 +57,7 @@ namespace frik
         void toggleWeaponRepositionMode();
         void resetOnDisable();
 
+        void onFrameStart();
         void onFrameUpdate();
         void loadStoredOffsets();
 
@@ -64,8 +65,8 @@ namespace frik
         void handleThrowableWeapon();
         void handlePrimaryWeapon();
         void checkEquippedWeaponChanged();
-        void carryScopeRigWithWeapon(RE::NiNode* weapon);
-        static bool reparentKeepingWorld(RE::NiNode* node, RE::NiNode* newParent);
+        void carryScopeRigWithWeapon();
+        static bool reparent(RE::NiNode* node, RE::NiNode* newParent, const RE::NiTransform* local);
         void handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const;
         void alignScopeCameraToWeapon(const RE::NiNode* weapon) const;
         void checkIfOffhandIsGripping(const RE::NiNode* weapon);
@@ -87,6 +88,10 @@ namespace frik
         // the scope rig (ScopeParent, scope camera) is parented under the weapon for an external carry; the camera base re-expressed for it
         bool _scopeRigCarried = false;
         RE::NiMatrix3 _scopeCameraCarryBaseMatrix;
+        // the rig nodes' engine-authored locals on the wand chain, refreshed while not carried, put back on release
+        bool _scopeRigRestValid = false;
+        RE::NiTransform _scopeParentRestLocal;
+        RE::NiTransform _scopeCameraRestLocal;
 
         Skeleton* _skelly;
 
