@@ -269,22 +269,42 @@ namespace frik
 
         {
             const auto t = perfArms.scope();
+            static devbench::PerfProbe perfHandTargets("Skeleton::arms.handTargets");
+            static devbench::PerfProbe perfBeforeArmSolve("Skeleton::arms.phaseBeforeArmSolve");
+            static devbench::PerfProbe perfSolve("Skeleton::arms.solveArms");
+            static devbench::PerfProbe perfArmsFlatten("Skeleton::arms.flatten");
+            static devbench::PerfProbe perfAfterArmSolve("Skeleton::arms.phaseAfterArmSolve");
             // do arm IK - Right then Left
             logger::trace("Set Arms...");
-            handleLeftHandedWeaponNodesSwitch();
-            _weaponHandRecoil.onFrameUpdate(_playerNodes, g_frik.isWeaponInLeftHand());
-            updateHandTarget(false);
-            updateHandTarget(true);
-            // Tracked hands are current here; hand transforms published in this phase are solved below, in the same frame
-            api::core::invokeFramePhase(FramePhase::BeforeArmSolve);
-            solveArm(false);
-            solveArm(true);
-            updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+            {
+                const auto tt = perfHandTargets.scope();
+                handleLeftHandedWeaponNodesSwitch();
+                _weaponHandRecoil.onFrameUpdate(_playerNodes, g_frik.isWeaponInLeftHand());
+                updateHandTarget(false);
+                updateHandTarget(true);
+            }
+            {
+                // Tracked hands are current here; hand transforms published in this phase are solved below, in the same frame
+                const auto tt = perfBeforeArmSolve.scope();
+                api::core::invokeFramePhase(FramePhase::BeforeArmSolve);
+            }
+            {
+                const auto tt = perfSolve.scope();
+                solveArm(false);
+                solveArm(true);
+            }
+            {
+                const auto tt = perfArmsFlatten.scope();
+                updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+            }
 
             // A claim published or cleared inside AfterArmSolve (a mod that needs the solved arm first) is re-solved right here,
             // before hand pose and weapon position run, so the rest of the frame still sees one consistent arm
             const std::array<std::uint64_t, 2> claimRevisionBefore{ g_externalAuthority.getHandClaimRevision(false), g_externalAuthority.getHandClaimRevision(true) };
-            api::core::invokeFramePhase(FramePhase::AfterArmSolve);
+            {
+                const auto tt = perfAfterArmSolve.scope();
+                api::core::invokeFramePhase(FramePhase::AfterArmSolve);
+            }
             bool resolved = false;
             for (const bool isLeft : { false, true }) {
                 if (g_externalAuthority.getHandClaimRevision(isLeft) != claimRevisionBefore[isLeft ? 1 : 0]) {
@@ -1451,6 +1471,12 @@ namespace frik
         // The twist bone under the upper arm rolls back part of the roll, so the shoulder end of the mesh rolls less than the elbow end
         if (g_config.armUpperTwistSplit > 0.0f && arm.upperT1 && static_cast<RE::NiAVObject*>(arm.upperT1->parent) == arm.upper) {
             arm.upperT1->local.rotate = MatrixUtils::getMatrixFromEulerAngles(g_config.armUpperTwistSplit * upperAngle, 0, 0) * arm.upperT1->local.rotate;
+            logger::sample(2000, "UpperTwist1 split {:.2f} x upperAngle {:.1f} deg ({})", g_config.armUpperTwistSplit, MatrixUtils::radsToDegrees(upperAngle), isLeft ? "L" : "R");
+        } else if (g_config.armUpperTwistSplit > 0.0f) {
+            logger::sample(2000,
+                "UpperTwist1 split skipped: node {} parent {}",
+                static_cast<const void*>(arm.upperT1),
+                arm.upperT1 && arm.upperT1->parent ? arm.upperT1->parent->name.c_str() : "-");
         }
 
         // The forearm arm bone must be rotated from its forward vector to its elbow-to-hand vector in its local space

@@ -15,6 +15,7 @@
 #include "api/ApiCore.h"
 #include "common/MatrixUtils.h"
 #include "f4vr/F4VRUtils.h"
+#include "f4vr/PlayerNodes.h"
 #include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 
@@ -577,6 +578,24 @@ namespace frik::devbench
             const auto since = static_cast<std::uint64_t>((std::max)(args.value("since", 0), 0));
             return json{ { "ok", true }, { "seq", g_probe.chordSeq }, { "fresh", g_probe.chordSeq > since }, { "chord", g_probe.chordLast }, { "frame", g_probe.chordFrame } }
                 .dump();
+        }
+
+        if (op == "bone") {
+            // one bone by name: its scene-graph node (parent, local) and its flattened-tree entry (world), to check who owns what
+            const auto name = args.value("name", "RArm_UpperTwist1");
+            json out{ { "ok", true }, { "name", name } };
+            RE::NiTransform world;
+            out["treeWorld"] = core::getBoneWorldTransform(name.c_str(), &world) ? transformJson(world) : json(nullptr);
+            if (const auto* skeleton = g_frik.getSkeleton(); skeleton) {
+                if (auto* node = f4vr::findAVObject(f4vr::getCommonNode(), name.c_str())) {
+                    out["node"] = { { "parent", node->parent ? node->parent->name.c_str() : "" },
+                        { "local", transformJson(node->local) },
+                        { "world", transformJson(node->world) } };
+                } else {
+                    out["node"] = nullptr;
+                }
+            }
+            return out.dump();
         }
 
         if (op == "selfie") {
