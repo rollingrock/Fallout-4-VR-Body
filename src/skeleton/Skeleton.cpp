@@ -1192,6 +1192,11 @@ namespace frik
      */
     void Skeleton::applyUpperTwist()
     {
+        // Off by default: the tree is not touched at all unless the split is enabled (a launch on 53d9b9a coincided with ROCK reading the
+        // flattened hand entries thousands of units off for a minute after load; until that is explained the write stays opt-in)
+        if (!(g_config.armUpperTwistSplit > 0.0f)) {
+            return;
+        }
         auto* tree = getFlattenedBoneTree();
         if (!tree) {
             return;
