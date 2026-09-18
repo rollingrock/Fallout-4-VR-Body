@@ -123,13 +123,13 @@ namespace frik
     void FRIK::initForFalloutLondonVR()
     {
         g_config.isFalloutLondonVR = isFalloutLondonVRModLoaded();
-        if (g_config.isFalloutLondonVR) {
+        if (g_config.isFalloutLondonVR && g_config.ignoreFalloutLondonVR) {
+            // checked before the ini swap, so ignoring the mod keeps FRIK.ini and its file watch
+            logger::warn("Ignore Fallout London VR flag set, do not treat the game as Fallout London!");
+            g_config.isFalloutLondonVR = false;
+        } else if (g_config.isFalloutLondonVR) {
             logger::info("Fallout London VR mod detected, enabling compatibility mode...");
             g_config.reloadForFalloutLondonVR();
-            if (g_config.ignoreFalloutLondonVR) {
-                logger::warn("Ignore Fallout London VR flag set, do not treat the game as Fallout London!");
-                g_config.isFalloutLondonVR = false;
-            }
         }
     }
 
@@ -426,7 +426,9 @@ namespace frik
     {
         F4CF_PERF_FUNCTION();
 
-        if (_skelly && _skeletonReadyPublished) {
+        // Every skeleton FRIK created gets its destroy event, whether or not its ready event was reached: a client may have registered
+        // against this generation before the first world-final frame, and its registrations are dropped below either way
+        if (_skelly) {
             logger::info("Broadcasting API lifecycle event: kSkeletonDestroying (generation {})", _skeletonGeneration);
             broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying));
             f4cf::devbench::emit("skeleton.destroying", [this] {
@@ -455,7 +457,9 @@ namespace frik
 
         _inPowerArmor = false;
         _powerArmorChangeFrames = 0;
-        _dynamicCameraHeight = 0.0f;
+        // _dynamicCameraHeight is a script's setting for the player, not skeleton state: it survives a rebuild
+
+        _boneSpheres.onSkeletonReleased();
     }
 
     /**

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "f4sevr/PapyrusNativeFunctions.h"
 
 namespace frik
@@ -32,6 +34,7 @@ namespace frik
         BoneSphere(const float a_radius, RE::NiNode* a_bone, const RE::NiPoint3 a_offset)
             : radius(a_radius),
               bone(a_bone),
+              boneName(a_bone ? a_bone->name.c_str() : ""),
               offset(a_offset)
         {
             stickyRight = false;
@@ -41,12 +44,17 @@ namespace frik
         }
 
         float radius;
+        // the live bone, re-resolved by name after a skeleton rebuild (null until it is)
         RE::NiNode* bone;
+        std::string boneName;
         RE::NiPoint3 offset;
         bool stickyRight;
         bool stickyLeft;
         bool turnOnDebugSpheres;
         RE::NiNode* debugSphere;
+        // the skeleton generation a by-name lookup was last attempted in, so a bone that is simply not in
+        // this skeleton costs one scene-graph walk per rebuild instead of two per frame forever
+        std::optional<std::uint32_t> resolveGeneration;
     };
 
     class BoneSpheresHandler
@@ -59,6 +67,8 @@ namespace frik
 
         void init();
         void onFrameUpdate();
+        // the skeleton nodes the spheres hang on are going away; forget them and re-resolve on the next frame that has them
+        void onSkeletonReleased();
 
         std::uint32_t registerBoneSphere(float radius, const F4SEVR::BSFixedString& bone);
         std::uint32_t registerBoneSphereOffset(float radius, const F4SEVR::BSFixedString& bone, F4SEVR::VMArray<float> pos);
@@ -80,6 +90,9 @@ namespace frik
 
         void detectBoneSphere();
         void handleDebugBoneSpheres();
+        static RE::NiNode* findBoneNode(const char* name);
+        // the sphere's bone, re-resolved by name when a rebuild dropped it; null while the bone does not exist
+        static RE::NiNode* liveBone(BoneSphere& sphere);
 
         //
         std::unordered_map<std::uint64_t, std::string> _boneSphereEventRegs;

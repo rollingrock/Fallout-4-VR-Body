@@ -74,6 +74,52 @@ namespace frik
         handleDebugBoneSpheres();
     }
 
+    void BoneSpheresHandler::onSkeletonReleased()
+    {
+        // the nodes belong to the tree being released; the debug spheres go with it, so only the pointers are dropped here.
+        // HAZARD, inherited rather than introduced: releaseSkeleton can run off the game thread (docs/features-backlog.md,
+        // found by the perf work's Tracy captures), so this clear races the game thread's own liveBone() re-resolution. It
+        // is no worse than everything else releaseSkeleton already touches, and it is fixed for all of them by deferring the
+        // release to the next game-thread frame. Until then: a torn read here costs one frame of a stale or null bone, not
+        // a use-after-free, because the pointer is only ever read through liveBone and re-resolved by name.
+        // For the same reason this does NOT send BoneSphereEvent::Exit for a sticky sphere, although a script that got
+        // Enter then never hears Exit: dispatching a Papyrus event off the game thread is worse than the asymmetry.
+        for (const auto& sphere : _boneSphereRegisteredObjects | std::views::values) {
+            sphere->bone = nullptr;
+            sphere->debugSphere = nullptr;
+            sphere->stickyRight = false;
+            sphere->stickyLeft = false;
+        }
+    }
+
+    RE::NiNode* BoneSpheresHandler::findBoneNode(const char* name)
+    {
+        auto n = f4vr::getWorldRootNode();
+        if (!n) {
+            return nullptr;
+        }
+        if (const auto bone = f4vr::findNode(n, name)) {
+            return bone;
+        }
+        while (n->parent) {
+            n = n->parent;
+        }
+        return f4vr::findNode(n, name); // ObjectLODRoot
+    }
+
+    RE::NiNode* BoneSpheresHandler::liveBone(BoneSphere& sphere)
+    {
+        if (!sphere.bone && !sphere.boneName.empty()) {
+            const auto generation = g_frik.getSkeletonGeneration();
+            if (sphere.resolveGeneration != generation) {
+                F4CF_PERF_SCOPE("resolveBoneSphereBone");
+                sphere.resolveGeneration = generation;
+                sphere.bone = findBoneNode(sphere.boneName.c_str());
+            }
+        }
+        return sphere.bone;
+    }
+
     std::uint32_t BoneSpheresHandler::registerBoneSphere(const float radius, const BSFixedString& bone)
     {
         if (radius == 0.0) {
@@ -221,8 +267,12 @@ namespace frik
         }
 
         for (const auto& element : _boneSphereRegisteredObjects) {
-            RE::NiPoint3 offset = element.second->bone->world.rotate.Transpose() * (element.second->offset);
-            offset = element.second->bone->world.translate + offset;
+            const auto* bone = liveBone(*element.second);
+            if (!bone) {
+                continue;
+            }
+            RE::NiPoint3 offset = bone->world.rotate.Transpose() * (element.second->offset);
+            offset = bone->world.translate + offset;
 
             double dist = MatrixUtils::vec3Len(rFinger->world.translate - offset);
 
@@ -284,7 +334,10 @@ namespace frik
     void BoneSpheresHandler::handleDebugBoneSpheres()
     {
         for (const auto& val : _boneSphereRegisteredObjects | std::views::values) {
-            RE::NiNode* bone = val->bone;
+            RE::NiNode* bone = liveBone(*val);
+            if (!bone) {
+                continue;
+            }
             RE::NiNode* sphere = val->debugSphere;
 
             if (val->turnOnDebugSpheres && !val->debugSphere) {
