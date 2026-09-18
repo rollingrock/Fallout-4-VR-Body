@@ -1,8 +1,11 @@
 #include "devbench/DevBenchProbe.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <optional>
+#include <string>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
@@ -12,6 +15,8 @@
 #include "api/ApiCore.h"
 #include "common/MatrixUtils.h"
 #include "f4vr/F4VRUtils.h"
+#include "vrcf/VRControllersHaptic.h"
+#include "vrcf/VRControllersManager.h"
 
 namespace frik::devbench
 {
@@ -104,9 +109,31 @@ namespace frik::devbench
             return true;
         }
 
+        // Arm recorder: the world transforms of one arm's bones (and the tracked wand) at AfterWorldFinal, every frame, for a sitting
+        // to measure elbow swivel, roll, collarbone and twist instead of judging them by eye. Right hand first.
+        constexpr std::array<const char*, 7> ARM_BONE_SUFFIXES = { "Collarbone", "UpperArm", "UpperTwist1", "ForeArm1", "ForeArm2", "ForeArm3", "Hand" };
+        constexpr std::size_t ARM_SAMPLE_SLOTS = ARM_BONE_SUFFIXES.size() + 1; // + wand
+        constexpr std::size_t ARM_RECORD_MAX_FRAMES = 6000;
+
+        struct ArmSample
+        {
+            std::uint64_t frame = 0;
+            std::array<std::array<RE::NiTransform, ARM_SAMPLE_SLOTS>, 2> slots{};
+            std::array<std::uint8_t, ARM_SAMPLE_SLOTS * 2> valid{};
+            std::array<std::uint8_t, 2> state{};
+        };
+
         struct ProbeState
         {
             bool registered = false;
+            // arm recorder
+            std::vector<ArmSample> armRecord;
+            std::size_t armRecordTarget = 0;
+            bool armRecording = false;
+            // controller chords (grip + A / B / trigger), detected at FrameEnd, acknowledged by a haptic
+            std::uint64_t chordSeq = 0;
+            std::string chordLast;
+            std::uint64_t chordFrame = 0;
             std::array<std::uint64_t, FRAME_PHASE_COUNT> counts{};
             std::array<std::uint8_t, 16> orderCurrent{};
             std::size_t orderCurrentCount = 0;
@@ -254,6 +281,54 @@ namespace frik::devbench
                     (std::max)(g_probe.carryMaxWeaponShift, common::MatrixUtils::vec3Len(carry.weaponAfterWorldFinal.translate - carry.weaponBeforeCallbacks.translate));
                 g_probe.carry = carry;
                 ++g_probe.carryFrames;
+            }
+
+            if (phase == static_cast<std::uint32_t>(FramePhase::AfterWorldFinal) && g_probe.armRecording) {
+                if (g_probe.armRecord.size() >= g_probe.armRecordTarget) {
+                    g_probe.armRecording = false;
+                } else {
+                    ArmSample sample;
+                    sample.frame = g_probe.frame;
+                    for (const bool isLeft : { false, true }) {
+                        const auto side = isLeft ? 1 : 0;
+                        for (std::size_t b = 0; b < ARM_BONE_SUFFIXES.size(); ++b) {
+                            const std::string name = std::string(isLeft ? "LArm_" : "RArm_") + ARM_BONE_SUFFIXES[b];
+                            sample.valid[side * ARM_SAMPLE_SLOTS + b] = core::getBoneWorldTransform(name.c_str(), &sample.slots[side][b]) ? 1 : 0;
+                        }
+                        const std::size_t wandSlot = ARM_BONE_SUFFIXES.size();
+                        sample.valid[side * ARM_SAMPLE_SLOTS + wandSlot] = core::getTrackedHandTransform(isLeft, core::TrackedHandKind::Wand, sample.slots[side][wandSlot]) ? 1 : 0;
+                        RE::NiTransform wrist;
+                        sample.state[side] = static_cast<std::uint8_t>(core::getHandSolveResult(isLeft, wrist));
+                    }
+                    g_probe.armRecord.push_back(sample);
+                }
+            }
+
+            if (phase == static_cast<std::uint32_t>(FramePhase::FrameEnd)) {
+                // grip held on a hand plus an edge on A (yes), B / menu (no) or trigger (repeat); the same hand acknowledges with a haptic
+                for (const auto hand : { vrcf::Hand::Right, vrcf::Hand::Left }) {
+                    if (!vrcf::VRControllers.isPressHeldDown(hand, vr::k_EButton_Grip)) {
+                        continue;
+                    }
+                    const char* chord = nullptr;
+                    auto pattern = vrcf::HapticPattern::Click;
+                    if (vrcf::VRControllers.isPressed(hand, vr::k_EButton_A)) {
+                        chord = "yes";
+                    } else if (vrcf::VRControllers.isPressed(hand, vr::k_EButton_ApplicationMenu)) {
+                        chord = "no";
+                        pattern = vrcf::HapticPattern::DoubleClick;
+                    } else if (vrcf::VRControllers.isPressed(hand, vr::k_EButton_SteamVR_Trigger)) {
+                        chord = "repeat";
+                        pattern = vrcf::HapticPattern::TripleClick;
+                    }
+                    if (chord) {
+                        ++g_probe.chordSeq;
+                        g_probe.chordLast = chord;
+                        g_probe.chordFrame = g_probe.frame;
+                        vrcf::VRHaptics.trigger(hand, pattern);
+                        break;
+                    }
+                }
             }
 
             if (phase == static_cast<std::uint32_t>(FramePhase::AfterWorldFinal)) {
@@ -436,6 +511,77 @@ namespace frik::devbench
                 { "tracked", trackedJson },
                 { "firstPersonHandAfterArmSolve", transformJson(g_probe.afterArmSolveHand[isLeft ? 1 : 0]) }
             }.dump();
+        }
+
+        if (op == "record") {
+            // start recording both arms for `frames` frames (replaces any previous recording)
+            const auto frames = static_cast<std::size_t>(std::clamp(args.value("frames", 900), 1, static_cast<int>(ARM_RECORD_MAX_FRAMES)));
+            g_probe.armRecord.clear();
+            g_probe.armRecord.reserve(frames);
+            g_probe.armRecordTarget = frames;
+            g_probe.armRecording = true;
+            return json{ { "ok", true }, { "frames", frames } }.dump();
+        }
+
+        if (op == "recordStop") {
+            g_probe.armRecording = false;
+            return json{ { "ok", true }, { "recorded", g_probe.armRecord.size() } }.dump();
+        }
+
+        if (op == "recordDump") {
+            // frames [from, from+count) as compact rows: per hand, per slot [px,py,pz, r00..r22] (null when the bone was missing)
+            const auto from = static_cast<std::size_t>((std::max)(args.value("from", 0), 0));
+            const auto count = static_cast<std::size_t>(std::clamp(args.value("count", 300), 1, 1000));
+            json rows = json::array();
+            for (std::size_t i = from; i < g_probe.armRecord.size() && i < from + count; ++i) {
+                const auto& s = g_probe.armRecord[i];
+                json hands = json::array();
+                for (int side = 0; side < 2; ++side) {
+                    json slots = json::array();
+                    for (std::size_t k = 0; k < ARM_SAMPLE_SLOTS; ++k) {
+                        if (!s.valid[side * ARM_SAMPLE_SLOTS + k]) {
+                            slots.push_back(nullptr);
+                            continue;
+                        }
+                        const auto& t = s.slots[side][k];
+                        slots.push_back({ t.translate.x,
+                            t.translate.y,
+                            t.translate.z,
+                            t.rotate.entry[0][0],
+                            t.rotate.entry[0][1],
+                            t.rotate.entry[0][2],
+                            t.rotate.entry[1][0],
+                            t.rotate.entry[1][1],
+                            t.rotate.entry[1][2],
+                            t.rotate.entry[2][0],
+                            t.rotate.entry[2][1],
+                            t.rotate.entry[2][2] });
+                    }
+                    hands.push_back({ { "state", stateName(static_cast<core::HandSolveState>(s.state[side])) }, { "slots", slots } });
+                }
+                rows.push_back({ { "frame", s.frame }, { "hands", hands } });
+            }
+            return json{
+                { "ok", true },
+                { "recording", g_probe.armRecording },
+                { "total", g_probe.armRecord.size() },
+                { "from", from },
+                { "slotNames", { "Collarbone", "UpperArm", "UpperTwist1", "ForeArm1", "ForeArm2", "ForeArm3", "Hand", "Wand" } },
+                { "handOrder", { "right", "left" } },
+                { "rows", rows }
+            }.dump();
+        }
+
+        if (op == "chord") {
+            // the last controller chord (grip + A yes / B no / trigger repeat); `since` = the seq the caller already saw
+            const auto since = static_cast<std::uint64_t>((std::max)(args.value("since", 0), 0));
+            return json{ { "ok", true }, { "seq", g_probe.chordSeq }, { "fresh", g_probe.chordSeq > since }, { "chord", g_probe.chordLast }, { "frame", g_probe.chordFrame } }
+                .dump();
+        }
+
+        if (op == "selfie") {
+            g_frik.setSelfieMode(args.value("on", true));
+            return json{ { "ok", true }, { "selfie", g_frik.isSelfieModeOn() } }.dump();
         }
 
         if (op == "pipboy") {

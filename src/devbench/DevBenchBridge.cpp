@@ -226,7 +226,7 @@ namespace frik::devbench
   "section":{"type":"string","description":"INI section; defaults to FRIK's main section."},
   "key":{"type":"string","description":"config/set/clear: the setting name."},
   "value":{"type":"string","description":"set: the new value. perf: 'reset' to clear every site after reading it."},
-  "op":{"type":"string","description":"probe: phases|claim|solve|chain|grip|parent|scope|block|nodes|pipboy|carry|reset (dev-only exerciser of the v2.3 API; pipboy opens/closes FRIK's Pip-Boy with on, which puts the engine's PipboyMenu on the stack; set PipBoyCloseWhenLookAway=false first when nobody is looking at it)."},
+  "op":{"type":"string","description":"probe: phases|claim|solve|chain|grip|parent|scope|block|nodes|pipboy|carry|record|recordStop|recordDump|chord|selfie|reset (dev-only exerciser of the v2.3 API; record captures both arms' bone worlds every frame for `frames`, recordDump returns rows from/count, chord reports the last grip+A/B/trigger chord since `since`, selfie toggles selfie mode; pipboy opens/closes FRIK's Pip-Boy with on, which puts the engine's PipboyMenu on the stack; set PipBoyCloseWhenLookAway=false first when nobody is looking at it)."},
   "hand":{"type":"string","description":"probe: left|right (parent: left|right|clear)."},
   "phase":{"type":"integer","description":"probe claim: FramePhase index to publish in; omit to publish before this frame's skeleton pass."},
   "kind":{"type":"string","description":"probe claim: offset (default, tracked hand + offset)|unreachable|clear."},
