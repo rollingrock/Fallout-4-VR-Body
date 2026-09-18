@@ -6,6 +6,13 @@
 - Scopes: The looking-through-scope state is kept per provider and merged, so a provider leaving or flipping can no longer strand another provider's published state.
 - Dev: The post-build plugin copy runs for Release builds only, so a Debug build can no longer land in the MO2 folder by accident.
 - Dev: The devbench `frik` tool gained a `perf` action reporting per-site frame timings, including the Pip-Boy sub-steps, accumulated between resets.
+- Body: The elbow keeps a minimum bend at full reach (`fArmElbowMinFlexionDeg`, default 10), so a straight arm no longer makes the elbow spin or shake while aiming.
+- Body: A hand brought close to the shoulder bends the elbow to a ceiling (`fArmElbowMaxFlexionDeg`, default 145) and shortens the upper arm smoothly instead of the arm flipping between frames (visible in power armor).
+- Body: The elbow twist window never closes (`fArmTwistWindowMinDeg`, default 15) and the elbow heuristics blend smoothly across their switch points (`bArmSmoothBlends`), so the elbow no longer locks in a low-ready or steps when crossing a threshold.
+- Body: An out-of-reach hand target now leaves the arm untouched instead of a rotated collarbone on a rest-pose arm, and the 180-degree case of the aim rotation is handled instead of picking a random axis.
+- Body: Hand damping and elbow smoothing are frame-rate independent (`bArmFrameRateIndependentSmoothing`), keeping the 90 Hz feel under reprojection instead of doubling the lag.
+- Body: Added shoulder reach and twist-distribution settings (`fArmShoulderReachFraction`, `fArmShoulderDownwardDamp`, `fArmUpperTwistSplit`, `fArmForearmTwistWeight1..3`), all defaulting to the previous look; the UpperTwist1 bones are now reset every frame like the rest of the arm.
+- Dev: Per-step perf sites for the skeleton pass (reset, body, posture, legs, arms, hide/cull, hand pose).
 
 ## v0.79
 

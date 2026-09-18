@@ -111,6 +111,19 @@ namespace frik
         float playerHeight = 0;
         float armLength = 0;
 
+        // Arm solver (see FRIK.ini; 0 on the angle keys keeps the pre-0.79.1 behaviour)
+        float armElbowMinFlexionDeg = 0;
+        float armElbowMaxFlexionDeg = 0;
+        float armTwistWindowMinDeg = 0;
+        bool armSmoothBlends = false;
+        float armShoulderReachFraction = 0;
+        float armShoulderDownwardDamp = 0;
+        float armUpperTwistSplit = 0;
+        float armForearmTwistWeight1 = 0;
+        float armForearmTwistWeight2 = 0;
+        float armForearmTwistWeight3 = 0;
+        bool armFrameRateIndependentSmoothing = false;
+
         // Head Geometry Hide
         bool hideHead = false;
         bool hideHeadEquipment = false;
