@@ -709,6 +709,9 @@ namespace frik::devbench
                 { "weapon", nodeJson(weapon) },
                 { "scopeParent", nodeJson(pn ? pn->ScopeParentNode : nullptr) },
                 { "scopeCamera", nodeJson(pn ? pn->primaryWeaponScopeCamera : nullptr) },
+                // the scope shape a scope mod places its widget on, wherever it hangs (it should be a descendant of the Weapon node)
+                { "scopeShape", nodeJson(weapon ? f4vr::findAVObjectStartsWith(weapon, "P-Scope") : nullptr) },
+                { "scopeShapeUnderRoot", nodeJson(root && !(weapon && f4vr::findAVObjectStartsWith(weapon, "P-Scope")) ? f4vr::findAVObjectStartsWith(root, "P-Scope") : nullptr) },
                 { "rHand", nodeJson(fp ? f4vr::findNode(fp, "RArm_Hand") : nullptr) },
                 { "lHand", nodeJson(fp ? f4vr::findNode(fp, "LArm_Hand") : nullptr) },
                 { "weaponInLeftHand", g_frik.isWeaponInLeftHand() },
