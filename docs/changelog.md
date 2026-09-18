@@ -1,5 +1,6 @@
 ## v0.79.1
 
+- Scopes: While another mod carries the weapon in the other hand, the engine's own per-frame first-person arm placement no longer crosses the arms (left hand on the right controller and vice versa), so a carried scope sits at the eye instead of at arm's length.
 - Scopes: FRIK's own scope camera offset is dropped while another mod owns the weapon node, so the scope view sits where that mod placed the weapon.
 - Scopes: Hand damping resumes from the current pose on leaving a scope instead of catching up in one frame.
 - Scopes: The scope camera and the scope widget parent follow the weapon while another mod carries it in the other hand, so the scope view and a scope mod's lens no longer stay in the hand that let go.

@@ -69,6 +69,13 @@ namespace frik
             return isLeft ? _leftHand : _rightHand;
         }
 
+        /**
+         * Re-pair one of the engine's per-frame first-person arm placements during an external left carry. The engine moves whichever arm
+         * the weapon node really hangs under, and handleLeftHandedWeaponNodesSwitch hung the nodes under the other hands. Returns true when
+         * the placement was done here (with the other hand's offset and FRIK's glue) instead of by the engine's call.
+         */
+        bool repairEngineArmPlacementForCarry(RE::NiNode* weapon) const;
+
         bool getBoneWorldTransform(std::string_view boneName, RE::NiTransform& outTransform) const;
 
         enum class HandSolveState : std::uint8_t
@@ -124,6 +131,7 @@ namespace frik
         void setSingleLeg(bool isLeft) const;
         void handleLeftHandedWeaponNodesSwitch();
         void updateHandTarget(bool isLeft);
+        void placeFirstPersonArm(RE::NiNode* weaponNode, RE::NiNode* offsetNode, bool isLeft, bool handleOffhand) const;
         void solveArm(bool isLeft);
         void restoreArmNodesToDefault(bool isLeft);
         void applyUpperTwist();

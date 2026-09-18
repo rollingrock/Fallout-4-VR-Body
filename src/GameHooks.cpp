@@ -111,6 +111,20 @@ namespace
     }
 
     /**
+     * Runs in place of the engine's two per-frame first-person arm placements (the Weapon node onto the primary offset, then WeaponLeft
+     * onto the secondary), which come after FRIK's frame update. The engine moves whichever arm the node really hangs under, so during an
+     * external left carry (Skeleton::handleLeftHandedWeaponNodesSwitch) that pairing puts the left arm on the right controller and the
+     * right arm on the left one; the skeleton re-pairs it.
+     */
+    void* hookUpdate1stPersonArm(const RE::PlayerCharacter* pc, RE::NiNode** weapon, RE::NiNode** offsetNode)
+    {
+        if (weapon && frik::g_frik.isSkeletonReady() && frik::g_frik.getSkeleton()->repairEngineArmPlacementForCarry(*weapon)) {
+            return nullptr;
+        }
+        return f4vr::Update1StPersonArm(pc, weapon, offsetNode);
+    }
+
+    /**
      * Replace mesh pointer string (replaces HP,Ammo,etc. UI to use nif that puts it on the back of the hand)
      */
     void replacePrimaryWandNif()
@@ -308,6 +322,12 @@ namespace frik::hook
         }
         if (verifyCallSite("smoothMovement", f4vr::hook_smoothMovementHook.address(), f4vr::smoothMovementHook.address())) {
             trampoline.write_call<5>(f4vr::hook_smoothMovementHook.address(), &hookSmoothMovement);
+        }
+        // the engine's two first-person arm placements in its per-frame update (Weapon, then WeaponLeft)
+        for (const auto site : { REL::Offset(0xef6108).address(), REL::Offset(0xef614b).address() }) {
+            if (verifyCallSite("update1stPersonArm", site, f4vr::Update1StPersonArm.address())) {
+                trampoline.write_call<5>(site, &hookUpdate1stPersonArm);
+            }
         }
 
         if (verifyCallSite("reEquipAllExit", f4vr::hookActor_ReEquipAllExit.address(), f4vr::Actor_ReEquipAll.address())) {

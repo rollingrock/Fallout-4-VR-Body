@@ -1054,6 +1054,23 @@ namespace frik
         setLocalFromWorld(leftWeapon, leftWeaponWorld);
     }
 
+    bool Skeleton::repairEngineArmPlacementForCarry(RE::NiNode* weapon) const
+    {
+        if (!weapon || !_playerNodes || g_frik.isWeaponInLeftHand() == isLeftHandedMode()) {
+            return false;
+        }
+        // the pairing updateHandTarget uses: the node hanging under the other hand goes to that hand's offset, with that hand's glue
+        if (weapon == getWeaponNode()) {
+            placeFirstPersonArm(weapon, _playerNodes->SecondaryMeleeWeaponOffsetNode2, !isLeftHandedMode(), true);
+            return true;
+        }
+        if (weapon == _playerNodes->WeaponLeftNode) {
+            placeFirstPersonArm(weapon, _playerNodes->primaryWeaponOffsetNOde, isLeftHandedMode(), false);
+            return true;
+        }
+        return false;
+    }
+
     // Bring this hand's weapon and offset nodes and the first-person hand up to date for the frame (the target solveArm uses).
     void Skeleton::updateHandTarget(bool isLeft)
     {
@@ -1092,9 +1109,18 @@ namespace frik
             updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
 
-        // An external owner of the primary weapon node keeps its transform, but the hand target still comes from FRIK's glue:
-        // present the glue for the arm update only and restore the owner's transform after it.
-        const bool ownedExternally = weaponNode == rightWeapon && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
+        const WeaponHandRecoil::ScopedNativeKickNeutralizer neutralizeNativeKick(_weaponHandRecoil);
+        dampenHand(offsetNode, isLeft);
+        weaponNode->IncRefCount();
+        placeFirstPersonArm(weaponNode, offsetNode, isLeft, handleOffhand);
+    }
+
+    // Present FRIK's glue on the weapon node and run the engine's first-person arm placement, so the hand lands at the controller regardless
+    // of the weapon's own offset. An external owner of the primary weapon node keeps its transform: the glue is presented for the placement
+    // only and the owner's transform re-derived under the updated hand afterwards. The caller holds the reference the engine call releases.
+    void Skeleton::placeFirstPersonArm(RE::NiNode* weaponNode, RE::NiNode* offsetNode, const bool isLeft, const bool handleOffhand) const
+    {
+        const bool ownedExternally = weaponNode == getWeaponNode() && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
         const RE::NiTransform ownerLocal = weaponNode->local;
 
         weaponNode->local.rotate = !isLeftHandedMode() ? MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
@@ -1108,14 +1134,8 @@ namespace frik
                                       : isLeft           ? RE::NiPoint3(0, 0, 0)
                                                          : RE::NiPoint3(4.389f, -1.899f, -3.133f);
 
-        {
-            const WeaponHandRecoil::ScopedNativeKickNeutralizer neutralizeNativeKick(_weaponHandRecoil);
-            dampenHand(offsetNode, isLeft);
-            weaponNode->IncRefCount();
-            Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
-        }
+        Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
 
-        // the arm update placed the weapon subtree from the glue; re-derive it from the owner's local under the updated hand
         if (ownedExternally) {
             weaponNode->local = ownerLocal;
             updateTransformsDown(weaponNode, true);
