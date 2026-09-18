@@ -724,6 +724,30 @@ namespace frik::devbench
                         ? json(common::MatrixUtils::vec3Len(
                               composeWorld(pn->ScopeParentNode->parent->world, pn->ScopeParentNode->local).translate - pn->ScopeParentNode->world.translate))
                         : json(nullptr) },
+                // ScopeParent's subtree: names, worlds, scales and the app-culled flag of every child (a scope mod's widget lives here)
+                { "scopeParentChildren",
+                    [&]() -> json {
+                        json out = json::array();
+                        const RE::NiNode* sp = pn ? pn->ScopeParentNode : nullptr;
+                        if (!sp) {
+                            return out;
+                        }
+                        for (const auto& child : sp->children) {
+                            if (!child) {
+                                continue;
+                            }
+                            out.push_back({ { "name", child->name.c_str() },
+                                { "world", transformJson(child->world) },
+                                { "localScale", child->local.scale },
+                                { "appCulled", child->GetAppCulled() },
+                                { "flags", static_cast<std::uint64_t>(child->flags.flags) } });
+                            if (out.size() >= 16) {
+                                break;
+                            }
+                        }
+                        return out;
+                    }() },
+                { "scopeParentAppCulled", pn && pn->ScopeParentNode ? json(pn->ScopeParentNode->GetAppCulled()) : json(nullptr) },
                 { "weaponInLeftHand", g_frik.isWeaponInLeftHand() },
                 { "weaponLocal", weapon ? transformJson(weapon->local) : json(nullptr) },
                 { "weaponWorld", weapon ? transformJson(weapon->world) : json(nullptr) },
