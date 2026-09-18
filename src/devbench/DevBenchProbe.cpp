@@ -714,6 +714,16 @@ namespace frik::devbench
                 { "scopeShapeUnderRoot", nodeJson(root && !(weapon && f4vr::findAVObjectStartsWith(weapon, "P-Scope")) ? f4vr::findAVObjectStartsWith(root, "P-Scope") : nullptr) },
                 { "rHand", nodeJson(fp ? f4vr::findNode(fp, "RArm_Hand") : nullptr) },
                 { "lHand", nodeJson(fp ? f4vr::findNode(fp, "LArm_Hand") : nullptr) },
+                // ScopeParent's world as the engine would compose it from its live parent and its own local, and the gap to the world it actually
+                // carries: a persistent gap means someone wrote the world directly after the local was set
+                { "scopeParentComposed",
+                    pn && pn->ScopeParentNode && pn->ScopeParentNode->parent ? transformJson(composeWorld(pn->ScopeParentNode->parent->world, pn->ScopeParentNode->local))
+                                                                             : json(nullptr) },
+                { "scopeParentGap",
+                    pn && pn->ScopeParentNode && pn->ScopeParentNode->parent
+                        ? json(common::MatrixUtils::vec3Len(
+                              composeWorld(pn->ScopeParentNode->parent->world, pn->ScopeParentNode->local).translate - pn->ScopeParentNode->world.translate))
+                        : json(nullptr) },
                 { "weaponInLeftHand", g_frik.isWeaponInLeftHand() },
                 { "weaponLocal", weapon ? transformJson(weapon->local) : json(nullptr) },
                 { "weaponWorld", weapon ? transformJson(weapon->world) : json(nullptr) },
