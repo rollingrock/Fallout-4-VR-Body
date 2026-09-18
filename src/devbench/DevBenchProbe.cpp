@@ -438,6 +438,17 @@ namespace frik::devbench
             }.dump();
         }
 
+        if (op == "pipboy") {
+            // opens/closes FRIK's Pip-Boy the way the button does; the engine pushes PipboyMenu with it (verified headless), so a
+            // run with nobody in the headset can hold a blocking menu open. Override PipBoyCloseWhenLookAway first or it closes again.
+            if (args.value("on", true)) {
+                g_frik.openPipboy();
+            } else {
+                g_frik.closePipboy();
+            }
+            return json{ { "ok", true }, { "pipboyOn", g_frik.isPipboyOn() } }.dump();
+        }
+
         if (op == "grip") {
             bool isLeft = false;
             parseHand(args, isLeft);
@@ -484,8 +495,34 @@ namespace frik::devbench
             const auto root = f4vr::getRootNode();
             RE::NiTransform spine;
             const bool spineOk = core::getBoneWorldTransform("SPINE2", &spine);
+            // a node's world plus its parent chain, so a probe can tell which hand the engine's scope rig hangs on
+            const auto nodeJson = [](const RE::NiAVObject* node) -> json {
+                if (!node) {
+                    return nullptr;
+                }
+                json chain = json::array();
+                for (auto p = node->parent; p && chain.size() < 6; p = p->parent) {
+                    chain.push_back(p->name.c_str());
+                }
+                const auto rows = [](const RE::NiMatrix3& m) {
+                    json out = json::array();
+                    for (int r = 0; r < 3; ++r) {
+                        out.push_back({ m.entry[r][0], m.entry[r][1], m.entry[r][2] });
+                    }
+                    return out;
+                };
+                return { { "world", transformJson(node->world) }, { "local", transformJson(node->local) }, { "worldRot", rows(node->world.rotate) }, { "parents", chain } };
+            };
+            const auto pn = f4vr::getPlayerNodes();
+            const auto fp = f4vr::getFirstPersonSkeleton();
             return json{
                 { "ok", true },
+                { "weapon", nodeJson(weapon) },
+                { "scopeParent", nodeJson(pn ? pn->ScopeParentNode : nullptr) },
+                { "scopeCamera", nodeJson(pn ? pn->primaryWeaponScopeCamera : nullptr) },
+                { "rHand", nodeJson(fp ? f4vr::findNode(fp, "RArm_Hand") : nullptr) },
+                { "lHand", nodeJson(fp ? f4vr::findNode(fp, "LArm_Hand") : nullptr) },
+                { "weaponInLeftHand", g_frik.isWeaponInLeftHand() },
                 { "weaponLocal", weapon ? transformJson(weapon->local) : json(nullptr) },
                 { "weaponWorld", weapon ? transformJson(weapon->world) : json(nullptr) },
                 { "rootScale", root ? root->local.scale : 0.0f },

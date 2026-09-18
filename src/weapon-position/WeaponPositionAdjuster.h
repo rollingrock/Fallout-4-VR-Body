@@ -27,6 +27,15 @@ namespace frik
             _gripPoseRestorePending = _grip.gripping;
         }
 
+        // the scope rig must not stay under a weapon node that is about to go with the skeleton
+        ~WeaponPositionAdjuster()
+        {
+            restoreScopeRig();
+        }
+
+        WeaponPositionAdjuster(const WeaponPositionAdjuster&) = delete;
+        WeaponPositionAdjuster& operator=(const WeaponPositionAdjuster&) = delete;
+
         bool isWeaponDrawn() const
         {
             return _equippedWeapon.isDrawn();
@@ -57,6 +66,7 @@ namespace frik
         void toggleWeaponRepositionMode();
         void resetOnDisable();
 
+        void onFrameStart();
         void onFrameUpdate();
         void loadStoredOffsets();
 
@@ -64,6 +74,9 @@ namespace frik
         void handleThrowableWeapon();
         void handlePrimaryWeapon();
         void checkEquippedWeaponChanged();
+        void carryScopeRigWithWeapon();
+        void restoreScopeRig();
+        static bool reparent(RE::NiNode* node, RE::NiNode* newParent, const RE::NiTransform* local);
         void handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const;
         void alignScopeCameraToWeapon(const RE::NiNode* weapon) const;
         void checkIfOffhandIsGripping(const RE::NiNode* weapon);
@@ -81,6 +94,14 @@ namespace frik
 
         // Define a basis remapping matrix to correct coordinate system for scope camera
         RE::NiMatrix3 _scopeCameraBaseMatrix;
+
+        // the scope rig (ScopeParent, scope camera) is parented under the weapon for an external carry; the camera base re-expressed for it
+        bool _scopeRigCarried = false;
+        RE::NiMatrix3 _scopeCameraCarryBaseMatrix;
+        // the rig nodes' locals on the wand chain as last seen before a carry (the engine's, or a scope mod's last write), put back on release
+        bool _scopeRigRestValid = false;
+        RE::NiTransform _scopeParentRestLocal;
+        RE::NiTransform _scopeCameraRestLocal;
 
         Skeleton* _skelly;
 

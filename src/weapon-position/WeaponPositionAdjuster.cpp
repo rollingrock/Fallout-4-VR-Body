@@ -40,6 +40,13 @@ namespace frik
      */
     void WeaponPositionAdjuster::resetOnDisable()
     {
+        // FRIK's last scope camera offset would otherwise persist into the takeover; the rotation keeps following the weapon
+        if (!g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera)) {
+            if (const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera) {
+                scopeCamera->local.translate = RE::NiPoint3();
+            }
+        }
+
         if (_grip.gripping) {
             setOffhandGripping(false);
         }
@@ -325,7 +332,8 @@ namespace frik
         const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
 
         // need to update default transform for later world rotation use
-        scopeCamera->local.rotate = _scopeCameraBaseMatrix;
+        const auto& baseMatrix = _scopeRigCarried ? _scopeCameraCarryBaseMatrix : _scopeCameraBaseMatrix;
+        scopeCamera->local.rotate = baseMatrix;
         f4vr::updateTransforms(scopeCamera);
 
         const auto weaponForwardVec = RE::NiPoint3(weapon->world.rotate.entry[1][0], weapon->world.rotate.entry[1][1], weapon->world.rotate.entry[1][2]);
@@ -334,7 +342,106 @@ namespace frik
         Quaternion rotAdjust;
         const auto weaponForwardVecInScopeTransform = scopeCamera->world.rotate * (weaponForwardVec / scopeCamera->world.scale);
         rotAdjust.vec2Vec(weaponForwardVecInScopeTransform, RE::NiPoint3(1, 0, 0));
-        scopeCamera->local.rotate = rotAdjust.getMatrix() * _scopeCameraBaseMatrix;
+        scopeCamera->local.rotate = rotAdjust.getMatrix() * baseMatrix;
+    }
+
+    /**
+     * Runs at the top of FRIK's frame, before the skeleton moves anything, so every world transform is last frame's settled one.
+     */
+    void WeaponPositionAdjuster::onFrameStart()
+    {
+        carryScopeRigWithWeapon();
+    }
+
+    /**
+     * Keep the engine's scope rig on the weapon while an external owner carries it in the non-primary hand.
+     * ScopeParent (the vanilla scope widget's parent, also what a scope provider's lens hangs on) and the scope camera
+     * hang off the primary wand chain, so a weapon re-parented under the other hand would leave the scope view and
+     * the widget in the hand that no longer holds it. For the carry both are parented under the weapon keeping their
+     * world, and go back on the wand chain with the locals they had before the carry. A provider owning the camera keeps the rig.
+     * Frame start only: a mid-frame weapon world is an intermediate of the arm update and a local derived from it is wrong.
+     */
+    void WeaponPositionAdjuster::carryScopeRigWithWeapon()
+    {
+        const auto pn = f4vr::getPlayerNodes();
+        const auto weapon = f4vr::getWeaponNode();
+        const auto scopeParent = pn->ScopeParentNode;
+        const auto scopeCamera = pn->primaryWeaponScopeCamera;
+        if (!weapon || !scopeParent || !scopeCamera || !pn->primaryUIAttachNode || !pn->primaryWeaponOffsetNOde) {
+            if (_scopeRigCarried) {
+                restoreScopeRig();
+            }
+            return;
+        }
+        const bool carried = g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera);
+
+        if (!carried && scopeParent->parent == pn->primaryUIAttachNode && scopeCamera->parent == pn->primaryWeaponOffsetNOde) {
+            _scopeParentRestLocal = scopeParent->local;
+            _scopeCameraRestLocal = scopeCamera->local;
+            _scopeRigRestValid = true;
+        }
+
+        if (carried) {
+            if (scopeCamera->parent != weapon) {
+                // the camera base is authored in the offset node's frame; re-express it for the weapon so the view keeps its roll
+                _scopeCameraCarryBaseMatrix = _scopeCameraBaseMatrix * scopeCamera->parent->world.rotate * weapon->world.rotate.Transpose();
+            }
+            reparent(scopeParent, weapon, nullptr);
+            reparent(scopeCamera, weapon, nullptr);
+        } else {
+            reparent(scopeParent, pn->primaryUIAttachNode, _scopeRigRestValid ? &_scopeParentRestLocal : nullptr);
+            reparent(scopeCamera, pn->primaryWeaponOffsetNOde, _scopeRigRestValid ? &_scopeCameraRestLocal : nullptr);
+        }
+        if (carried != _scopeRigCarried) {
+            logger::info("Scope rig {} the weapon for an external carry", carried ? "parented under" : "released from");
+        }
+        _scopeRigCarried = carried;
+    }
+
+    /**
+     * Put the scope rig back on the wand chain, with the locals it had before the carry when known. Safe with the weapon
+     * node already gone (skeleton release mid-carry): a detached rig node is simply attached to its wand-chain parent.
+     */
+    void WeaponPositionAdjuster::restoreScopeRig()
+    {
+        const auto pn = f4vr::getPlayerNodes();
+        if (!pn) {
+            return;
+        }
+        reparent(pn->ScopeParentNode, pn->primaryUIAttachNode, _scopeRigRestValid ? &_scopeParentRestLocal : nullptr);
+        reparent(pn->primaryWeaponScopeCamera, pn->primaryWeaponOffsetNOde, _scopeRigRestValid ? &_scopeCameraRestLocal : nullptr);
+        if (_scopeRigCarried) {
+            logger::info("Scope rig released from the weapon for an external carry");
+        }
+        _scopeRigCarried = false;
+    }
+
+    /**
+     * Move a node under a new parent: with a local it takes that local, else it keeps its world. Returns true if it was moved.
+     * The node is held across the detach, in case nothing but the old parent references it.
+     */
+    bool WeaponPositionAdjuster::reparent(RE::NiNode* node, RE::NiNode* newParent, const RE::NiTransform* local)
+    {
+        if (!node || !newParent || node->parent == newParent) {
+            return false;
+        }
+        const RE::NiTransform world = node->world;
+        RE::NiPointer<RE::NiAVObject> held(node);
+        if (node->parent) {
+            node->parent->DetachChild(node, held);
+        }
+        newParent->AttachChild(node, true);
+        if (local) {
+            node->local = *local;
+            f4vr::updateTransforms(node);
+            return true;
+        }
+        const auto& parent = newParent->world;
+        node->local.rotate = world.rotate * parent.rotate.Transpose();
+        node->local.translate = parent.rotate * ((world.translate - parent.translate) / parent.scale);
+        node->local.scale = world.scale / parent.scale;
+        node->world = world;
+        return true;
     }
 
     /**

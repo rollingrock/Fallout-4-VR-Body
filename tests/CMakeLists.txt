@@ -7,6 +7,7 @@ add_executable(FRIK_tests
   ClaimLogDebounceTests.cpp
   FramePhaseRegistryTests.cpp
   GripDetectionTests.cpp
+  PerfStatsTests.cpp
   ScopeAuthorityTests.cpp
   TagBlockSetTests.cpp
 )

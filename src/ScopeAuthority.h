@@ -31,7 +31,8 @@ namespace frik
      *
      * Providers register once per session with the capabilities they take over and survive skeleton
      * rebuilds, like feature blocks. Capabilities are the union over registered tags. The looking-through
-     * flag is whatever a publishing provider last said; without one the vanilla ScopeMenu state stands in.
+     * flag is true while any publishing provider says so, kept per tag so one provider leaving or flipping
+     * cannot strand another's state; without a publisher the vanilla ScopeMenu state stands in.
      * Registration arrives from client mods while the flags are read every frame on the game thread, so
      * mutation takes the lock and mirrors into atomics the readers use without one.
      */
@@ -51,7 +52,8 @@ namespace frik
             }
 
             std::lock_guard lock(_lock);
-            _providers.insert_or_assign(std::string(tag), capabilities);
+            // (re)registration starts from not looking through; the provider publishes its next edge
+            _providers.insert_or_assign(std::string(tag), Provider{ capabilities, false });
             const bool changed = refreshCapabilities();
             if (outChanged) {
                 *outChanged = changed;
@@ -84,10 +86,11 @@ namespace frik
         {
             std::lock_guard lock(_lock);
             const auto it = _providers.find(std::string(tag));
-            if (it == _providers.end() || (it->second & static_cast<std::uint32_t>(ScopeCapability::PublishesLookingThrough)) == 0) {
+            if (it == _providers.end() || (it->second.capabilities & static_cast<std::uint32_t>(ScopeCapability::PublishesLookingThrough)) == 0) {
                 return false;
             }
-            _lookingThrough.store(lookingThrough, std::memory_order_release);
+            it->second.lookingThrough = lookingThrough;
+            refreshCapabilities();
             return true;
         }
 
@@ -111,21 +114,27 @@ namespace frik
         }
 
     private:
-        // Requires _lock. Recomputes the union and drops a stale published flag once nobody publishes it.
+        // Requires _lock. Recomputes the capability union and the looking-through OR over publishing providers.
         bool refreshCapabilities()
         {
             std::uint32_t capabilities = 0;
-            for (const auto& [_, providerCapabilities] : _providers) {
-                capabilities |= providerCapabilities;
+            bool lookingThrough = false;
+            for (const auto& [_, provider] : _providers) {
+                capabilities |= provider.capabilities;
+                lookingThrough = lookingThrough || ((provider.capabilities & static_cast<std::uint32_t>(ScopeCapability::PublishesLookingThrough)) != 0 && provider.lookingThrough);
             }
-            if ((capabilities & static_cast<std::uint32_t>(ScopeCapability::PublishesLookingThrough)) == 0) {
-                _lookingThrough.store(false, std::memory_order_release);
-            }
+            _lookingThrough.store(lookingThrough, std::memory_order_release);
             return _capabilities.exchange(capabilities, std::memory_order_acq_rel) != capabilities;
         }
 
+        struct Provider
+        {
+            std::uint32_t capabilities = 0;
+            bool lookingThrough = false;
+        };
+
         mutable std::mutex _lock;
-        std::unordered_map<std::string, std::uint32_t> _providers;
+        std::unordered_map<std::string, Provider> _providers;
         std::atomic<std::uint32_t> _capabilities{ 0 };
         std::atomic<bool> _lookingThrough{ false };
     };

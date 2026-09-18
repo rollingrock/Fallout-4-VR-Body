@@ -11,8 +11,8 @@
 #include "FRIK.h"
 #include "api/ApiCore.h"
 #include "common/MatrixUtils.h"
-#include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
+#include "devbench/PerfProbe.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
@@ -187,7 +187,7 @@ namespace frik
      */
     void Skeleton::onFrameUpdate()
     {
-        static PerfMonitor perf("Skeleton::onFrameUpdate");
+        static devbench::PerfProbe perf("Skeleton::onFrameUpdate");
         const auto timer = perf.scope();
 
         setTime();
@@ -1392,7 +1392,20 @@ namespace frik
         }
 
         const bool isInScopeMenu = g_frik.isLookingThroughScope();
+
+        // the looking-through edge is where the damping pair switches; log it so a capture lines up with the provider's own publish edge
+        if (isInScopeMenu != _dampenHandsInScopePrevFrame) {
+            _dampenHandsInScopePrevFrame = isInScopeMenu;
+            logger::info("Damping pair -> {}", isInScopeMenu ? "in-scope" : "general");
+        }
+
         if (isInScopeMenu && (!g_config.dampenHandsInVanillaScope || g_scopeAuthority.hasCapability(ScopeCapability::OwnsDamping))) {
+            // keep the anchor fresh while no damping runs, so the general pair resumes from the current pose instead of catching up
+            if (isLeft) {
+                _leftHandPrevFrame = node->world;
+            } else {
+                _rightHandPrevFrame = node->world;
+            }
             return;
         }
 

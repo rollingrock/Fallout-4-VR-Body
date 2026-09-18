@@ -7,9 +7,9 @@
 #include "api/ApiCore.h"
 #include "api/FRIKApiV2.h"
 #include "api/RecoilControllerRuntime.h"
-#include "common/PerfMonitor.h"
 #include "config-mode/PipboyConfigMode.h"
 #include "devbench/DevBenchBridge.h"
+#include "devbench/PerfProbe.h"
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
@@ -186,7 +186,7 @@ namespace frik
 
     void FRIK::onFrameUpdateInner()
     {
-        static PerfMonitor perf("FRIK::onFrameUpdate");
+        static devbench::PerfProbe perf("FRIK::onFrameUpdate");
         const auto timer = perf.scope();
 
         if (!RE::PlayerCharacter::GetSingleton()) {
@@ -229,6 +229,10 @@ namespace frik
             if (!_skelly) {
                 return;
             }
+        }
+
+        if (_weaponPositionEnabled) {
+            _weaponPosition->onFrameStart();
         }
 
         logger::trace("Update Skeleton...");

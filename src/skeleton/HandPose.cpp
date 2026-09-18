@@ -11,8 +11,8 @@
 #include "HandPoseData.h"
 #include "HandPoseMath.h"
 #include "common/MatrixUtils.h"
-#include "common/PerfMonitor.h"
 #include "common/Quaternion.h"
+#include "devbench/PerfProbe.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
@@ -374,7 +374,7 @@ namespace frik
      */
     void HandPose::onFrameUpdate(RE::NiNode* root, const float frameTime)
     {
-        static PerfMonitor perf("HandPose::onFrameUpdate");
+        static devbench::PerfProbe perf("HandPose::onFrameUpdate");
         const auto timer = perf.scope();
 
         const auto leftHandSource = resolveHandPoseSource(true);

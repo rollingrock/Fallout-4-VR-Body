@@ -256,6 +256,8 @@ Both are reference-counted by tag, like `blockFeature`. Taking weapon node owner
 
 Ask FRIK to parent the primary weapon node under a hand, for a left-carry. FRIK does the reparent and its own bookkeeping (which weapon node drives each first-person arm, the off-side weapon hand pose copy, the recoil hand) and restores the game's left-handed setting when the tag clears or the skeleton rebuilds. The newest request wins. Before v2.3 `blockPrimaryWeaponNodeOwnership` flipped this topology as a side effect; it no longer does, so a left-carry needs both calls.
 
+While the weapon is parented under the hand the game does not consider primary, FRIK also parents the engine's scope rig, `ScopeParent` (the vanilla scope widget's parent) and the scope camera, under the weapon node so the scope view and any lens hung on `ScopeParent` follow the carried weapon; they go back on the wand chain when the carry ends, keeping their world transform on each switch. A mod that reads either node should re-read its parent rather than cache it. A scope provider holding `OwnsScopeCamera` keeps the rig where it is.
+
 `bool setOffHandGripping(const char* tag, bool active, Hand supportHand, const RE::NiTransform* supportWorld)` (v2.3)
 
 Report your own two-handed grip so `isOffHandGrippingWeapon()` and every FRIK consumer of it (the Pip-Boy guards among them) treat the weapon as gripped. `supportHand` is the physical hand on the weapon, `supportWorld` its world transform or null. The grip is tied to the current weapon: FRIK drops it when the drawn weapon changes and on skeleton release, so re-report after `kSkeletonReady`. Pass `active = false` to release.
