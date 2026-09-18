@@ -128,7 +128,23 @@ namespace frik
                 const auto side = isLeft ? 0 : 1;
                 _upperTwistTreeIdx[side] = it != _boneIndexByName.end() ? it->second : -1;
                 if (_upperTwistTreeIdx[side] >= 0) {
-                    _upperTwistRestRotate[side] = tree->transforms[_upperTwistTreeIdx[side]].local.rotate;
+                    // the entry's local at skeleton build is the rest the split rotates from; refuse a degenerate one (a zero or
+                    // non-orthonormal matrix would put a broken rotation on the twist chain every frame)
+                    const auto& rest = tree->transforms[_upperTwistTreeIdx[side]].local.rotate;
+                    const RE::NiPoint3 c0(rest.entry[0][0], rest.entry[1][0], rest.entry[2][0]);
+                    const RE::NiPoint3 c1(rest.entry[0][1], rest.entry[1][1], rest.entry[2][1]);
+                    const RE::NiPoint3 c2(rest.entry[0][2], rest.entry[1][2], rest.entry[2][2]);
+                    const float det = MatrixUtils::vec3Dot(c0, MatrixUtils::vec3Cross(c1, c2));
+                    const bool valid = std::isfinite(det) && std::abs(det - 1.0f) < 0.05f;
+                    _upperTwistRestRotate[side] = valid ? rest : MatrixUtils::getIdentityMatrix();
+                    logger::info("UpperTwist1 {} tree entry {} rest det {:.3f} ({})",
+                        isLeft ? "L" : "R",
+                        _upperTwistTreeIdx[side],
+                        det,
+                        valid ? "used" : "degenerate, identity used");
+                    if (!valid) {
+                        _upperTwistTreeIdx[side] = -1;
+                    }
                 }
             }
         }
