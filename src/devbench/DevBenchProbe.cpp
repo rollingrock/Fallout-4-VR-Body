@@ -166,7 +166,11 @@ namespace frik::devbench
         {
             float heading = 0, roll = 0, attitude = 0;
             common::MatrixUtils::getEulerAnglesFromMatrixDegrees(t.rotate, &heading, &roll, &attitude);
-            return { { "pos", { t.translate.x, t.translate.y, t.translate.z } }, { "eulerDeg", { heading, roll, attitude } }, { "scale", t.scale } };
+            const auto& m = t.rotate.entry;
+            // a mirrored frame (det -1) flips a quad's winding and gets it back-face culled; worth seeing on every transform a probe reports
+            const float det =
+                m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+            return { { "pos", { t.translate.x, t.translate.y, t.translate.z } }, { "eulerDeg", { heading, roll, attitude } }, { "scale", t.scale }, { "det", det } };
         }
 
         float rotationAngleDeg(const RE::NiMatrix3& a, const RE::NiMatrix3& b)
