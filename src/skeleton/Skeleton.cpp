@@ -122,6 +122,15 @@ namespace frik
             for (int i = 0; i < tree->numTransforms; ++i) {
                 _boneIndexByName.emplace(tree->transforms[i].name.c_str(), i);
             }
+            // the upper-arm twist bones have no scene-graph node; they are driven through the tree from their rest local
+            for (const bool isLeft : { true, false }) {
+                const auto it = _boneIndexByName.find(isLeft ? "LArm_UpperTwist1" : "RArm_UpperTwist1");
+                const auto side = isLeft ? 0 : 1;
+                _upperTwistTreeIdx[side] = it != _boneIndexByName.end() ? it->second : -1;
+                if (_upperTwistTreeIdx[side] >= 0) {
+                    _upperTwistRestRotate[side] = tree->transforms[_upperTwistTreeIdx[side]].local.rotate;
+                }
+            }
         }
 
         setBodyLen();
@@ -296,6 +305,7 @@ namespace frik
             {
                 const auto tt = perfArmsFlatten.scope();
                 updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+                applyUpperTwist();
             }
 
             // A claim published or cleared inside AfterArmSolve (a mod that needs the solved arm first) is re-solved right here,
@@ -1176,6 +1186,37 @@ namespace frik
         (void)solveArmToHandWorldTarget(isLeft, trackedHandTarget);
     }
 
+    /**
+     * Write this frame's upper-arm roll split onto the UpperTwist1 tree entries (rest local rotated about the bone axis) and refresh
+     * their worlds from the upper arm, which is final here. Writing from the rest each frame means nothing accumulates.
+     */
+    void Skeleton::applyUpperTwist()
+    {
+        auto* tree = getFlattenedBoneTree();
+        if (!tree) {
+            return;
+        }
+        for (const bool isLeft : { true, false }) {
+            const auto side = isLeft ? 0 : 1;
+            const int idx = _upperTwistTreeIdx[side];
+            if (idx < 0 || idx >= tree->numTransforms) {
+                continue;
+            }
+            auto& bone = tree->transforms[idx];
+            bone.local.rotate = MatrixUtils::getMatrixFromEulerAngles(_upperTwistRoll[side], 0, 0) * _upperTwistRestRotate[side];
+            if (const auto* upper = getArm(isLeft).upper) {
+                bone.world.translate = upper->world.translate + upper->world.rotate.Transpose() * (bone.local.translate * upper->world.scale);
+                bone.world.rotate = bone.local.rotate * upper->world.rotate;
+                bone.world.scale = bone.local.scale * upper->world.scale;
+            } else if (bone.parPos >= 0 && bone.parPos < tree->numTransforms) {
+                const auto& parentWorld = tree->transforms[bone.parPos].world;
+                bone.world.translate = parentWorld.translate + parentWorld.rotate.Transpose() * (bone.local.translate * parentWorld.scale);
+                bone.world.rotate = bone.local.rotate * parentWorld.rotate;
+                bone.world.scale = bone.local.scale * parentWorld.scale;
+            }
+        }
+    }
+
     void Skeleton::latchRenderedWrists()
     {
         for (const bool isLeft : { true, false }) {
@@ -1468,16 +1509,9 @@ namespace frik
 
         arm.forearm1->local.rotate = MatrixUtils::getMatrixFromEulerAngles(-upperAngle, 0, 0) * arm.forearm1->local.rotate;
 
-        // The twist bone under the upper arm rolls back part of the roll, so the shoulder end of the mesh rolls less than the elbow end
-        if (g_config.armUpperTwistSplit > 0.0f && arm.upperT1 && static_cast<RE::NiAVObject*>(arm.upperT1->parent) == arm.upper) {
-            arm.upperT1->local.rotate = MatrixUtils::getMatrixFromEulerAngles(g_config.armUpperTwistSplit * upperAngle, 0, 0) * arm.upperT1->local.rotate;
-            logger::sample(2000, "UpperTwist1 split {:.2f} x upperAngle {:.1f} deg ({})", g_config.armUpperTwistSplit, MatrixUtils::radsToDegrees(upperAngle), isLeft ? "L" : "R");
-        } else if (g_config.armUpperTwistSplit > 0.0f) {
-            logger::sample(2000,
-                "UpperTwist1 split skipped: node {} parent {}",
-                static_cast<const void*>(arm.upperT1),
-                arm.upperT1 && arm.upperT1->parent ? arm.upperT1->parent->name.c_str() : "-");
-        }
+        // The twist bone under the upper arm rolls back part of the roll, so the shoulder end of the mesh rolls less than the elbow end.
+        // It has no scene-graph node, so the roll is applied to its flattened-tree entry once the arm's worlds are final (applyUpperTwist)
+        _upperTwistRoll[side] = g_config.armUpperTwistSplit > 0.0f ? g_config.armUpperTwistSplit * upperAngle : 0.0f;
 
         // The forearm arm bone must be rotated from its forward vector to its elbow-to-hand vector in its local space
         // Calculate Flr:  Fwr * rotTowardHand = Uwr * Flr   ===>   Flr = Uwr' * Fwr * rotTowardHand

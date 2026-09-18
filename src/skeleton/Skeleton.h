@@ -126,6 +126,7 @@ namespace frik
         void updateHandTarget(bool isLeft);
         void solveArm(bool isLeft);
         void restoreArmNodesToDefault(bool isLeft);
+        void applyUpperTwist();
         bool solveArmToHandWorldTarget(bool isLeft, const RE::NiTransform& handWorldTarget);
         void dampenHand(RE::NiNode* node, bool isLeft);
         void hide3rdPersonWeapon() const;
@@ -212,6 +213,10 @@ namespace frik
         std::array<float, 2> _twistAnglePrevFrame = { 0, 0 };
         std::array<float, 2> _twistAngleThisFrame = { 0, 0 };
         std::array<HandSolveState, 2> _handSolveState = { HandSolveState::NoClaim, HandSolveState::NoClaim };
+        // upper-arm twist bones live only in the flattened bone tree (no scene-graph node); index, rest local rotation, this frame's roll (left first, like the twist angles)
+        std::array<int, 2> _upperTwistTreeIdx = { -1, -1 };
+        std::array<RE::NiMatrix3, 2> _upperTwistRestRotate{};
+        std::array<float, 2> _upperTwistRoll = { 0, 0 };
         std::array<RE::NiTransform, 2> _renderedWrist = {};
 
         WeaponHandRecoil _weaponHandRecoil;

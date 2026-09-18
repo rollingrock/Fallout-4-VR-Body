@@ -598,6 +598,30 @@ namespace frik::devbench
             return out.dump();
         }
 
+        if (op == "visibility") {
+            // raw NiAVObject flags of the player body root, FRIK's skeleton root and the first-person skeleton, for the "no body after a scope exit" hunt
+            json out{ { "ok", true } };
+            auto flagsOf = [](const RE::NiAVObject* node) -> json {
+                if (!node) {
+                    return nullptr;
+                }
+                return { { "name", node->name.c_str() },
+                    { "flags", static_cast<std::uint64_t>(node->flags.flags) },
+                    { "scale", node->local.scale },
+                    { "worldZ", node->world.translate.z } };
+            };
+            const auto player = f4vr::getPlayer();
+            const RE::NiAVObject* body = player && player->loadedData ? player->loadedData->data3D.get() : nullptr;
+            out["body"] = flagsOf(body);
+            out["root"] = flagsOf(f4vr::getRootNode());
+            out["firstPerson"] = flagsOf(f4vr::getFirstPersonSkeleton());
+            out["common"] = flagsOf(f4vr::getCommonNode());
+            out["hideBodyInScope"] = g_frik.shouldHideBodyInScope();
+            out["lookingThrough"] = g_frik.isLookingThroughScope();
+            out["inScopeMenu"] = g_frik.isInScopeMenu();
+            return out.dump();
+        }
+
         if (op == "selfie") {
             g_frik.setSelfieMode(args.value("on", true));
             return json{ { "ok", true }, { "selfie", g_frik.isSelfieModeOn() } }.dump();
