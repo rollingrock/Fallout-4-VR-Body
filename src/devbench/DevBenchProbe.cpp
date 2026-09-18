@@ -721,6 +721,13 @@ namespace frik::devbench
                 { "scopeShapeUnderRoot", nodeJson(root && !(weapon && f4vr::findAVObjectStartsWith(weapon, "P-Scope")) ? f4vr::findAVObjectStartsWith(root, "P-Scope") : nullptr) },
                 { "rHand", nodeJson(fp ? f4vr::findNode(fp, "RArm_Hand") : nullptr) },
                 { "lHand", nodeJson(fp ? f4vr::findNode(fp, "LArm_Hand") : nullptr) },
+                // the first-person hand nodes the skeleton itself holds (found once at build), to catch a second node of the same name
+                { "rHandFrik", g_frik.getSkeleton() ? nodeJson(g_frik.getSkeleton()->getFirstPersonHandNode(false)) : json(nullptr) },
+                { "lHandFrik", g_frik.getSkeleton() ? nodeJson(g_frik.getSkeleton()->getFirstPersonHandNode(true)) : json(nullptr) },
+                { "lHandSameNode",
+                    fp && g_frik.getSkeleton() ? json(static_cast<const RE::NiAVObject*>(f4vr::findNode(fp, "LArm_Hand")) ==
+                                                      static_cast<const RE::NiAVObject*>(g_frik.getSkeleton()->getFirstPersonHandNode(true)))
+                                               : json(nullptr) },
                 // ScopeParent's world as the engine would compose it from its live parent and its own local, and the gap to the world it actually
                 // carries: a persistent gap means someone wrote the world directly after the local was set
                 { "scopeParentComposed",
