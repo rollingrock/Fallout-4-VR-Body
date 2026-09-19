@@ -401,7 +401,9 @@ namespace frik
             reparent(scopeCamera, pn->primaryWeaponOffsetNOde, _scopeRigRestValid ? &_scopeCameraRestLocal : nullptr);
         }
         if (carried != _scopeRigCarried) {
-            logger::info("Scope rig {} the weapon for an external carry", carried ? "parented under" : "released from");
+            logger::info("Scope {} {} the weapon for an external carry",
+                carryWidgetParent ? "rig" : "camera (widget parent stays on the wand chain)",
+                carried ? "parented under" : "released from");
         }
         _scopeRigCarried = carried;
     }
