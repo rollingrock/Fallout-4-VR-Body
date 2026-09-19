@@ -126,6 +126,11 @@ namespace frik::devbench
 
         struct ProbeState
         {
+            // automatic load trace: hands and weapon node against the wands and the scope shape's world bound for the first frames
+            // of every skeleton, plus any later displacement edge, so a broken save load is on disk without a runner (ROCK-021)
+            std::uint32_t traceGeneration = 0;
+            std::uint64_t traceFrames = 0;
+            bool traceDisplaced = false;
             bool registered = false;
             // arm recorder
             std::vector<ArmSample> armRecord;
@@ -161,6 +166,71 @@ namespace frik::devbench
         };
 
         ProbeState g_probe;
+
+        float wandDistance(const bool isLeft, const core::TrackedHandKind kind)
+        {
+            RE::NiTransform wand, other;
+            if (!core::getTrackedHandTransform(isLeft, core::TrackedHandKind::Wand, wand) || !core::getTrackedHandTransform(isLeft, kind, other)) {
+                return -1.0f;
+            }
+            return common::MatrixUtils::vec3Len(wand.translate - other.translate);
+        }
+
+        // the scope shape under the weapon (the geometry a scope mod reads bounds from), or the weapon's first child
+        RE::NiAVObject* weaponGeometryProbe(RE::NiNode* weapon)
+        {
+            if (!weapon) {
+                return nullptr;
+            }
+            if (const auto shape = f4vr::findAVObjectStartsWith(weapon, "P-Scope")) {
+                return shape;
+            }
+            return weapon->children.empty() ? nullptr : weapon->children[0].get();
+        }
+
+        void loadTrace()
+        {
+            const auto generation = g_frik.getSkeletonGeneration();
+            if (generation != g_probe.traceGeneration) {
+                g_probe.traceGeneration = generation;
+                g_probe.traceFrames = 0;
+                g_probe.traceDisplaced = false;
+            }
+            ++g_probe.traceFrames;
+            const auto f = g_probe.traceFrames;
+            const float r = wandDistance(false, core::TrackedHandKind::FirstPersonHand);
+            const float l = wandDistance(true, core::TrackedHandKind::FirstPersonHand);
+            const auto weapon = f4vr::getWeaponNode();
+            RE::NiTransform rightWand;
+            const float w = weapon && core::getTrackedHandTransform(false, core::TrackedHandKind::Wand, rightWand)
+                                ? common::MatrixUtils::vec3Len(rightWand.translate - weapon->world.translate)
+                                : -1.0f;
+            const auto geom = weaponGeometryProbe(weapon);
+            const float boundRadius = geom ? geom->worldBound.fRadius : -1.0f;
+            const float boundOff = geom ? common::MatrixUtils::vec3Len(geom->worldBound.center - geom->world.translate) : -1.0f;
+            const bool displaced = r > 50.0f || l > 50.0f || w > 50.0f || (geom && (boundRadius < 0.01f || boundOff > 50.0f));
+            const bool sampled = f == 1 || f == 2 || f == 5 || f == 10 || f == 30 || f == 60 || f == 120 || f == 300 || f == 600;
+            if (!sampled && displaced == g_probe.traceDisplaced) {
+                return;
+            }
+            g_probe.traceDisplaced = displaced;
+            logger::info(
+                "LOADTRACE gen {} frame {} {}: fpR-wand {:.1f} fpL-wand {:.1f} weapon-rwand {:.1f} weapon<-{} owned={} left={} geom={} boundRadius {:.2f} boundCenterOff {:.1f} "
+                "culled={}",
+                generation,
+                f,
+                displaced ? "DISPLACED" : "ok",
+                r,
+                l,
+                w,
+                weapon && weapon->parent ? weapon->parent->name.c_str() : "-",
+                g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked(),
+                g_frik.isWeaponInLeftHand(),
+                geom ? geom->name.c_str() : "-",
+                boundRadius,
+                boundOff,
+                geom ? geom->GetAppCulled() : false);
+        }
 
         json transformJson(const RE::NiTransform& t)
         {
@@ -310,6 +380,7 @@ namespace frik::devbench
             }
 
             if (phase == static_cast<std::uint32_t>(FramePhase::FrameEnd)) {
+                loadTrace();
                 // grip held on a hand plus an edge on A (yes), B / menu (no) or trigger (repeat); the same hand acknowledges with a haptic
                 for (const auto hand : { vrcf::Hand::Right, vrcf::Hand::Left }) {
                     if (!vrcf::VRControllers.isPressHeldDown(hand, vr::k_EButton_Grip)) {
@@ -650,6 +721,21 @@ namespace frik::devbench
             return json{ { "ok", ok }, { "gripping", g_frik.isOffHandGrippingWeapon() } }.dump();
         }
 
+        if (op == "weaponUpdate") {
+            // run the engine's transform-and-bounds update over the weapon subtree; if a rifle that loaded invisible appears on this
+            // call, its geometry bounds were never computed after the 3D attach (ROCK-021)
+            const auto weapon = f4vr::getWeaponNode();
+            if (!weapon) {
+                return json{ { "ok", false }, { "error", "no weapon node" } }.dump();
+            }
+            const auto geom = weaponGeometryProbe(weapon);
+            const float before = geom ? geom->worldBound.fRadius : -1.0f;
+            RE::NiUpdateData data;
+            weapon->UpdateTransformAndBounds(data);
+            const float after = geom ? geom->worldBound.fRadius : -1.0f;
+            return json{ { "ok", true }, { "geom", geom ? geom->name.c_str() : "" }, { "boundRadiusBefore", before }, { "boundRadiusAfter", after } }.dump();
+        }
+
         if (op == "scopeRig") {
             // force the scope rig topology (under=weapon: ScopeParent + camera on the weapon; wand: both on the primary wand chain;
             // offwand: ScopeParent under the off-hand wand with the camera on the weapon; clear: natural), so a scope mod can
@@ -723,7 +809,15 @@ namespace frik::devbench
                     }
                     return out;
                 };
-                return { { "world", transformJson(node->world) }, { "local", transformJson(node->local) }, { "worldRot", rows(node->world.rotate) }, { "parents", chain } };
+                return { { "world", transformJson(node->world) },
+                    { "local", transformJson(node->local) },
+                    { "worldRot", rows(node->world.rotate) },
+                    { "parents", chain },
+                    { "bound",
+                        { { "center", { node->worldBound.center.x, node->worldBound.center.y, node->worldBound.center.z } },
+                            { "radius", node->worldBound.fRadius },
+                            { "centerToWorld", common::MatrixUtils::vec3Len(node->worldBound.center - node->world.translate) } } },
+                    { "culled", node->GetAppCulled() } };
             };
             const auto pn = f4vr::getPlayerNodes();
             const auto fp = f4vr::getFirstPersonSkeleton();
@@ -845,6 +939,6 @@ namespace frik::devbench
             }.dump();
         }
 
-        return json{ { "ok", false }, { "error", "unknown op (phases|claim|solve|chain|grip|parent|scope|scopeRig|block|nodes|carry|reset)" } }.dump();
+        return json{ { "ok", false }, { "error", "unknown op (phases|claim|solve|chain|grip|parent|scope|scopeRig|weaponUpdate|block|nodes|carry|reset)" } }.dump();
     }
 }
