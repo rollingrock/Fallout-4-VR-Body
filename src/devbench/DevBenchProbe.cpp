@@ -741,6 +741,13 @@ namespace frik::devbench
                 { "secondaryMeleeOffset", nodeJson(pn ? pn->SecondaryMeleeWeaponOffsetNode : nullptr) },
                 { "secondaryAim", nodeJson(pn ? pn->SecondaryAimNode : nullptr) },
                 { "rForeArm3", nodeJson(fp ? f4vr::findNode(fp, "RArm_ForeArm3") : nullptr) },
+                // the first-person skeleton root and the player world chain, for the save-load displacement (ROCK-021)
+                { "fpRoot", nodeJson(fp) },
+                { "fpBoneTree", nodeJson(fp && !fp->children.empty() ? fp->children[0].get() : nullptr) },
+                { "playerWorld", nodeJson(pn ? pn->playerworldnode : nullptr) },
+                { "roomNode", nodeJson(pn ? pn->roomnode : nullptr) },
+                { "hmd", nodeJson(pn ? pn->HmdNode : nullptr) },
+                { "bodyRoot", nodeJson(root) },
                 { "lForeArm3", nodeJson(fp ? f4vr::findNode(fp, "LArm_ForeArm3") : nullptr) },
                 { "primaryWeaponOffset", nodeJson(pn ? pn->primaryWeaponOffsetNOde : nullptr) },
                 { "secondaryMeleeOffset2", nodeJson(pn ? pn->SecondaryMeleeWeaponOffsetNode2 : nullptr) },
