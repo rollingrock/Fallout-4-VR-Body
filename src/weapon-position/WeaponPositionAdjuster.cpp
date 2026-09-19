@@ -408,7 +408,9 @@ namespace frik
         }
         if (carried != _scopeRigCarried) {
             logger::info("Scope {} {} the weapon for an external carry",
-                carryWidgetParent ? "rig" : "camera (widget parent stays on the wand chain)",
+                carryWidgetParent        ? "rig"
+                : widgetUnderOffhandWand ? "camera (widget parent under the off-hand wand)"
+                                         : "camera (widget parent stays on the wand chain)",
                 carried ? "parented under" : "released from");
         }
         _scopeRigCarried = carried;
