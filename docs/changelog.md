@@ -1,11 +1,22 @@
 ## v0.79.1
 
+- API: Documented when a client may capture a relation from a first-person hand or arm bone. The engine resets those arms to an unplaced pose every frame and FRIK places them back within it, so a capture must happen at or after `AfterArmSolve`, and a client should refuse an implausible one rather than cache it.
+- API: **FRIK API v2.4**. Scope providers may register `PlacesScopeWidget`: FRIK then hangs `ScopeParent` under the carrying hand's wand node while another mod carries the weapon in the other hand and moves only the scope camera with the weapon node, because the engine does not draw the scope widget under the first-person skeleton. With True Scopes registering it, the lens renders while the rifle is carried left.
+- Scopes: While another mod carries the weapon in the other hand, the engine's own per-frame first-person arm placement no longer crosses the arms (left hand on the right controller and vice versa), so a carried scope sits at the eye instead of at arm's length.
 - Scopes: FRIK's own scope camera offset is dropped while another mod owns the weapon node, so the scope view sits where that mod placed the weapon.
 - Scopes: Hand damping resumes from the current pose on leaving a scope instead of catching up in one frame.
 - Scopes: The scope camera and the scope widget parent follow the weapon while another mod carries it in the other hand, so the scope view and a scope mod's lens no longer stay in the hand that let go.
 - Scopes: The looking-through-scope state is kept per provider and merged, so a provider leaving or flipping can no longer strand another provider's published state.
 - Dev: The post-build plugin copy runs for Release builds only, so a Debug build can no longer land in the MO2 folder by accident.
 - Dev: The devbench `frik` tool gained a `perf` action reporting per-site frame timings, including the Pip-Boy sub-steps, accumulated between resets.
+- Body: The elbow keeps a minimum bend at full reach (`fArmElbowMinFlexionDeg`, default 10), so a straight arm no longer makes the elbow spin or shake while aiming.
+- Body: A hand brought close to the shoulder bends the elbow to a ceiling (`fArmElbowMaxFlexionDeg`, default 145) and shortens the upper arm smoothly instead of the arm flipping between frames (visible in power armor).
+- Body: The elbow twist window never closes (`fArmTwistWindowMinDeg`, default 15) and the elbow heuristics blend smoothly across their switch points (`bArmSmoothBlends`), so the elbow no longer locks in a low-ready or steps when crossing a threshold.
+- Body: An out-of-reach hand target now leaves the arm untouched instead of a rotated collarbone on a rest-pose arm, and the 180-degree case of the aim rotation is handled instead of picking a random axis.
+- Body: Hand damping and elbow smoothing are frame-rate independent (`bArmFrameRateIndependentSmoothing`), keeping the 90 Hz feel under reprojection instead of doubling the lag.
+- Body: Hand damping now starts from the hand's own pose on a fresh skeleton, so after a save load the hands and the weapon are placed correctly on the first frame instead of easing in over ten to twenty-five frames; a mod that places a weapon when FRIK reports the skeleton ready no longer binds against a weapon still in flight (a rifle missing or misplaced until an unequip and re-equip).
+- Body: Added shoulder reach and twist-distribution settings (`fArmShoulderReachFraction`, `fArmShoulderDownwardDamp`, `fArmUpperTwistSplit`, `fArmForearmTwistWeight1..3`); the shoulder now reaches a little further at full extension and dips less (defaults 0.15 and 0.4, the old look is 0.08 and 1.0), the rest default to the previous look; the UpperTwist1 bones are now reset every frame like the rest of the arm.
+- Dev: Per-step perf sites for the skeleton pass (reset, body, posture, legs, arms, hide/cull, hand pose).
 
 ## v0.79
 

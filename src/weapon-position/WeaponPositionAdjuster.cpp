@@ -373,7 +373,15 @@ namespace frik
             }
             return;
         }
-        const bool carried = g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera);
+        const bool naturallyCarried = g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera);
+        const bool carried = _scopeRigOverride == ScopeRigOverride::None ? naturallyCarried : _scopeRigOverride != ScopeRigOverride::Wand;
+        // the scope widget is not drawn while ScopeParent hangs under the first-person skeleton, so for a provider that places its
+        // own widget the widget parent rides the wand of the hand that holds the carried weapon instead (the game's secondary wand
+        // follows the non-dominant hand): drawn with the world, and a short lever arm from that wand to the glass; only the camera
+        // follows the weapon node itself
+        const bool providerPlacesWidget = g_scopeAuthority.hasCapability(ScopeCapability::PlacesScopeWidget) || _scopeRigOverride == ScopeRigOverride::OffhandWand;
+        const bool widgetUnderOffhandWand = carried && providerPlacesWidget && pn->SecondaryWandNode;
+        const bool carryWidgetParent = carried && !providerPlacesWidget;
 
         if (!carried && scopeParent->parent == pn->primaryUIAttachNode && scopeCamera->parent == pn->primaryWeaponOffsetNOde) {
             _scopeParentRestLocal = scopeParent->local;
@@ -386,14 +394,24 @@ namespace frik
                 // the camera base is authored in the offset node's frame; re-express it for the weapon so the view keeps its roll
                 _scopeCameraCarryBaseMatrix = _scopeCameraBaseMatrix * scopeCamera->parent->world.rotate * weapon->world.rotate.Transpose();
             }
-            reparent(scopeParent, weapon, nullptr);
+            if (widgetUnderOffhandWand) {
+                reparent(scopeParent, pn->SecondaryWandNode, nullptr);
+            } else if (carryWidgetParent) {
+                reparent(scopeParent, weapon, nullptr);
+            } else {
+                reparent(scopeParent, pn->primaryUIAttachNode, _scopeRigRestValid ? &_scopeParentRestLocal : nullptr);
+            }
             reparent(scopeCamera, weapon, nullptr);
         } else {
             reparent(scopeParent, pn->primaryUIAttachNode, _scopeRigRestValid ? &_scopeParentRestLocal : nullptr);
             reparent(scopeCamera, pn->primaryWeaponOffsetNOde, _scopeRigRestValid ? &_scopeCameraRestLocal : nullptr);
         }
         if (carried != _scopeRigCarried) {
-            logger::info("Scope rig {} the weapon for an external carry", carried ? "parented under" : "released from");
+            logger::info("Scope {} {} the weapon for an external carry",
+                carryWidgetParent        ? "rig"
+                : widgetUnderOffhandWand ? "camera (widget parent under the off-hand wand)"
+                                         : "camera (widget parent stays on the wand chain)",
+                carried ? "parented under" : "released from");
         }
         _scopeRigCarried = carried;
     }

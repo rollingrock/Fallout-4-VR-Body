@@ -96,8 +96,13 @@ namespace frik
                 static_cast<const void*>(_leftHand));
             return false;
         }
+        // NOT an anchor for hand damping: at build the first-person hands still sit in their unplaced player-relative pose (the
+        // engine's arm placement has not run for this skeleton yet), so damping from here would drag the hand targets in from
+        // ~100k units over tens of frames. dampenHand snaps on its first frame instead.
         _rightHandPrevFrame = _rightHand->world;
         _leftHandPrevFrame = _leftHand->world;
+        _rightHandDampenSeeded = false;
+        _leftHandDampenSeeded = false;
 
         _head = findNode(_root, "Head");
         _spine = findNode(_root, "SPINE2");
@@ -121,6 +126,31 @@ namespace frik
         if (const auto* tree = getFlattenedBoneTree()) {
             for (int i = 0; i < tree->numTransforms; ++i) {
                 _boneIndexByName.emplace(tree->transforms[i].name.c_str(), i);
+            }
+            // the upper-arm twist bones have no scene-graph node; they are driven through the tree from their rest local
+            for (const bool isLeft : { true, false }) {
+                const auto it = _boneIndexByName.find(isLeft ? "LArm_UpperTwist1" : "RArm_UpperTwist1");
+                const auto side = isLeft ? 0 : 1;
+                _upperTwistTreeIdx[side] = it != _boneIndexByName.end() ? it->second : -1;
+                if (_upperTwistTreeIdx[side] >= 0) {
+                    // the entry's local at skeleton build is the rest the split rotates from; refuse a degenerate one (a zero or
+                    // non-orthonormal matrix would put a broken rotation on the twist chain every frame)
+                    const auto& rest = tree->transforms[_upperTwistTreeIdx[side]].local.rotate;
+                    const RE::NiPoint3 c0(rest.entry[0][0], rest.entry[1][0], rest.entry[2][0]);
+                    const RE::NiPoint3 c1(rest.entry[0][1], rest.entry[1][1], rest.entry[2][1]);
+                    const RE::NiPoint3 c2(rest.entry[0][2], rest.entry[1][2], rest.entry[2][2]);
+                    const float det = MatrixUtils::vec3Dot(c0, MatrixUtils::vec3Cross(c1, c2));
+                    const bool valid = std::isfinite(det) && std::abs(det - 1.0f) < 0.05f;
+                    _upperTwistRestRotate[side] = valid ? rest : MatrixUtils::getIdentityMatrix();
+                    logger::info("UpperTwist1 {} tree entry {} rest det {:.3f} ({})",
+                        isLeft ? "L" : "R",
+                        _upperTwistTreeIdx[side],
+                        det,
+                        valid ? "used" : "degenerate, identity used");
+                    if (!valid) {
+                        _upperTwistTreeIdx[side] = -1;
+                    }
+                }
             }
         }
 
@@ -169,6 +199,14 @@ namespace frik
                 logger::warn("Skeleton bone node not found for '{}'", boneName.c_str());
             }
         }
+
+        // The upper-arm twist bones have no authored entry; hold them at the local they were built with, so a solver
+        // that writes them starts from the same pose every frame instead of accumulating
+        for (auto* twist : { _rightArm.upperT1, _leftArm.upperT1 }) {
+            if (twist) {
+                _skeletonNodesToDefaultTransforms.emplace_back(twist, twist->local);
+            }
+        }
     }
 
     void Skeleton::setBodyLen()
@@ -200,87 +238,139 @@ namespace frik
         setWandsVisibility(false, true);
         setWandsVisibility(false, false);
 
-        logger::trace("Restore locals of skeleton");
-        _twistAnglePrevFrame = _twistAngleThisFrame;
-        restoreNodesToDefault();
-        updateDownFromRoot();
+        // Each step is a devbench perf site, so a sitting can read where the body pass spends its time (perf action)
+        static devbench::PerfProbe perfReset("Skeleton::resetAndFlatten");
+        static devbench::PerfProbe perfBody("Skeleton::bodyUnderHMD");
+        static devbench::PerfProbe perfPosture("Skeleton::posture");
+        static devbench::PerfProbe perfLegs("Skeleton::legs");
+        static devbench::PerfProbe perfArms("Skeleton::arms");
+        static devbench::PerfProbe perfMisc("Skeleton::hideCullSelfie");
+        static devbench::PerfProbe perfHands("Skeleton::handPose");
 
-        const float neckYaw = getNeckYaw();
-        const float neckPitch = getNeckPitch();
+        float neckYaw, neckPitch;
+        {
+            const auto t = perfReset.scope();
+            logger::trace("Restore locals of skeleton");
+            _twistAnglePrevFrame = _twistAngleThisFrame;
+            restoreNodesToDefault();
+            updateDownFromRoot();
 
-        if (!g_config.hideHead || (g_frik.isSelfieModeOn() && g_config.selfieIgnoreHideFlags)) {
-            logger::trace("Setup Head");
-            setupHead(neckYaw, neckPitch);
+            neckYaw = getNeckYaw();
+            neckPitch = getNeckPitch();
         }
 
-        logger::trace("Set body under HMD");
-        setBodyUnderHMD(neckYaw, neckPitch);
-        updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+        {
+            const auto t = perfBody.scope();
+            if (!g_config.hideHead || (g_frik.isSelfieModeOn() && g_config.selfieIgnoreHideFlags)) {
+                logger::trace("Setup Head");
+                setupHead(neckYaw, neckPitch);
+            }
 
-        // Now Set up body Posture and hook up the legs
-        logger::trace("Set body posture...");
-        setBodyPosture(neckPitch);
-        updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
-        api::core::invokeFramePhase(FramePhase::BodyPlaced);
+            logger::trace("Set body under HMD");
+            setBodyUnderHMD(neckYaw, neckPitch);
+            updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+        }
 
-        logger::trace("Set knee posture...");
-        setKneePos();
+        {
+            const auto t = perfPosture.scope();
+            // Now Set up body Posture and hook up the legs
+            logger::trace("Set body posture...");
+            setBodyPosture(neckPitch);
+            updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+            api::core::invokeFramePhase(FramePhase::BodyPlaced);
+        }
 
-        logger::trace("Set walk...");
-        walk();
+        {
+            const auto t = perfLegs.scope();
+            logger::trace("Set knee posture...");
+            setKneePos();
 
-        logger::trace("Set legs...");
-        setSingleLeg(false);
-        setSingleLeg(true);
+            logger::trace("Set walk...");
+            walk();
 
-        // Do another update before setting arms
-        updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
-        api::core::invokeFramePhase(FramePhase::LegsSolved);
+            logger::trace("Set legs...");
+            setSingleLeg(false);
+            setSingleLeg(true);
 
-        // do arm IK - Right then Left
-        logger::trace("Set Arms...");
-        handleLeftHandedWeaponNodesSwitch();
-        _weaponHandRecoil.onFrameUpdate(_playerNodes, g_frik.isWeaponInLeftHand());
-        updateHandTarget(false);
-        updateHandTarget(true);
-        // Tracked hands are current here; hand transforms published in this phase are solved below, in the same frame
-        api::core::invokeFramePhase(FramePhase::BeforeArmSolve);
-        solveArm(false);
-        solveArm(true);
-        updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+            // Do another update before setting arms
+            updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+            api::core::invokeFramePhase(FramePhase::LegsSolved);
+        }
 
-        // A claim published or cleared inside AfterArmSolve (a mod that needs the solved arm first) is re-solved right here,
-        // before hand pose and weapon position run, so the rest of the frame still sees one consistent arm
-        const std::array<std::uint64_t, 2> claimRevisionBefore{ g_externalAuthority.getHandClaimRevision(false), g_externalAuthority.getHandClaimRevision(true) };
-        api::core::invokeFramePhase(FramePhase::AfterArmSolve);
-        bool resolved = false;
-        for (const bool isLeft : { false, true }) {
-            if (g_externalAuthority.getHandClaimRevision(isLeft) != claimRevisionBefore[isLeft ? 1 : 0]) {
-                restoreArmNodesToDefault(isLeft);
-                solveArm(isLeft);
-                resolved = true;
+        {
+            const auto t = perfArms.scope();
+            static devbench::PerfProbe perfHandTargets("Skeleton::arms.handTargets");
+            static devbench::PerfProbe perfBeforeArmSolve("Skeleton::arms.phaseBeforeArmSolve");
+            static devbench::PerfProbe perfSolve("Skeleton::arms.solveArms");
+            static devbench::PerfProbe perfArmsFlatten("Skeleton::arms.flatten");
+            static devbench::PerfProbe perfAfterArmSolve("Skeleton::arms.phaseAfterArmSolve");
+            // do arm IK - Right then Left
+            logger::trace("Set Arms...");
+            {
+                const auto tt = perfHandTargets.scope();
+                handleLeftHandedWeaponNodesSwitch();
+                _weaponHandRecoil.onFrameUpdate(_playerNodes, g_frik.isWeaponInLeftHand());
+                updateHandTarget(false);
+                updateHandTarget(true);
+            }
+            {
+                // Tracked hands are current here; hand transforms published in this phase are solved below, in the same frame
+                const auto tt = perfBeforeArmSolve.scope();
+                api::core::invokeFramePhase(FramePhase::BeforeArmSolve);
+            }
+            {
+                const auto tt = perfSolve.scope();
+                solveArm(false);
+                solveArm(true);
+            }
+            {
+                const auto tt = perfArmsFlatten.scope();
+                updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
+                applyUpperTwist();
+            }
+
+            // A claim published or cleared inside AfterArmSolve (a mod that needs the solved arm first) is re-solved right here,
+            // before hand pose and weapon position run, so the rest of the frame still sees one consistent arm
+            const std::array<std::uint64_t, 2> claimRevisionBefore{ g_externalAuthority.getHandClaimRevision(false), g_externalAuthority.getHandClaimRevision(true) };
+            {
+                const auto tt = perfAfterArmSolve.scope();
+                api::core::invokeFramePhase(FramePhase::AfterArmSolve);
+            }
+            bool resolved = false;
+            for (const bool isLeft : { false, true }) {
+                if (g_externalAuthority.getHandClaimRevision(isLeft) != claimRevisionBefore[isLeft ? 1 : 0]) {
+                    restoreArmNodesToDefault(isLeft);
+                    solveArm(isLeft);
+                    resolved = true;
+                }
+            }
+            if (resolved) {
+                updateDownFromRoot();
             }
         }
-        if (resolved) {
-            updateDownFromRoot();
+
+        {
+            const auto t = perfMisc.scope();
+            // Misc stuff to show/hide things
+            logger::trace("Pipboy and Weapons...");
+            hide3rdPersonWeapon();
+            hideFistHelpers();
+            showHidePAHud();
+
+            logger::trace("Cull geometry...");
+            _cullGeometry.cullPlayerGeometry(g_frik.shouldHideBodyInScope());
+
+            // project body out in front of the camera for debug purposes
+            logger::trace("Selfie Time");
+            _selfieHandler.onFrameUpdate();
         }
 
-        // Misc stuff to show/hide things
-        logger::trace("Pipboy and Weapons...");
-        hide3rdPersonWeapon();
-        hideFistHelpers();
-        showHidePAHud();
-
-        logger::trace("Cull geometry...");
-        _cullGeometry.cullPlayerGeometry(g_frik.shouldHideBodyInScope());
-
-        // project body out in front of the camera for debug purposes
-        logger::trace("Selfie Time");
-        _selfieHandler.onFrameUpdate();
-
-        logger::trace("Operate hands...");
-        _handPose.onFrameUpdate(_root, _frameTime);
-        api::core::invokeFramePhase(FramePhase::AfterHandPose);
+        {
+            const auto t = perfHands.scope();
+            logger::trace("Operate hands...");
+            _handPose.onFrameUpdate(_root, _frameTime);
+            api::core::invokeFramePhase(FramePhase::AfterHandPose);
+        }
 
         if (_inPowerArmor) {
             fixArmor();
@@ -969,6 +1059,23 @@ namespace frik
         setLocalFromWorld(leftWeapon, leftWeaponWorld);
     }
 
+    bool Skeleton::repairEngineArmPlacementForCarry(RE::NiNode* weapon) const
+    {
+        if (!weapon || !_playerNodes || g_frik.isWeaponInLeftHand() == isLeftHandedMode()) {
+            return false;
+        }
+        // the pairing updateHandTarget uses: the node hanging under the other hand goes to that hand's offset, with that hand's glue
+        if (weapon == getWeaponNode()) {
+            placeFirstPersonArm(weapon, _playerNodes->SecondaryMeleeWeaponOffsetNode2, !isLeftHandedMode(), true);
+            return true;
+        }
+        if (weapon == _playerNodes->WeaponLeftNode) {
+            placeFirstPersonArm(weapon, _playerNodes->primaryWeaponOffsetNOde, isLeftHandedMode(), false);
+            return true;
+        }
+        return false;
+    }
+
     // Bring this hand's weapon and offset nodes and the first-person hand up to date for the frame (the target solveArm uses).
     void Skeleton::updateHandTarget(bool isLeft)
     {
@@ -1007,9 +1114,18 @@ namespace frik
             updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
         }
 
-        // An external owner of the primary weapon node keeps its transform, but the hand target still comes from FRIK's glue:
-        // present the glue for the arm update only and restore the owner's transform after it.
-        const bool ownedExternally = weaponNode == rightWeapon && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
+        const WeaponHandRecoil::ScopedNativeKickNeutralizer neutralizeNativeKick(_weaponHandRecoil);
+        dampenHand(offsetNode, isLeft);
+        weaponNode->IncRefCount();
+        placeFirstPersonArm(weaponNode, offsetNode, isLeft, handleOffhand);
+    }
+
+    // Present FRIK's glue on the weapon node and run the engine's first-person arm placement, so the hand lands at the controller regardless
+    // of the weapon's own offset. An external owner of the primary weapon node keeps its transform: the glue is presented for the placement
+    // only and the owner's transform re-derived under the updated hand afterwards. The caller holds the reference the engine call releases.
+    void Skeleton::placeFirstPersonArm(RE::NiNode* weaponNode, RE::NiNode* offsetNode, const bool isLeft, const bool handleOffhand) const
+    {
+        const bool ownedExternally = weaponNode == getWeaponNode() && g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
         const RE::NiTransform ownerLocal = weaponNode->local;
 
         weaponNode->local.rotate = !isLeftHandedMode() ? MatrixUtils::getMatrix(-0.122f, 0.987f, 0.100f, 0.990f, 0.114f, 0.081f, 0.069f, 0.109f, -0.992f)
@@ -1023,17 +1139,59 @@ namespace frik
                                       : isLeft           ? RE::NiPoint3(0, 0, 0)
                                                          : RE::NiPoint3(4.389f, -1.899f, -3.133f);
 
-        {
-            const WeaponHandRecoil::ScopedNativeKickNeutralizer neutralizeNativeKick(_weaponHandRecoil);
-            dampenHand(offsetNode, isLeft);
-            weaponNode->IncRefCount();
-            Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
-        }
+        Update1StPersonArm(RE::PlayerCharacter::GetSingleton(), &weaponNode, &offsetNode);
 
-        // the arm update placed the weapon subtree from the glue; re-derive it from the owner's local under the updated hand
         if (ownedExternally) {
             weaponNode->local = ownerLocal;
             updateTransformsDown(weaponNode, true);
+        }
+    }
+
+    namespace
+    {
+        // Smoothers are tuned as a per-frame retention at 90 Hz; over a frame of dt the same time constant keeps r^(dt*90).
+        // dt is clamped to three nominal frames so a hitch moves a smoother at most that far instead of flinging it.
+        float smoothingMoveFraction(const float retentionPerFrameAt90Hz, const float dt, const bool frameRateIndependent)
+        {
+            const float retention = std::clamp(retentionPerFrameAt90Hz, 0.0f, 0.999f);
+            if (!frameRateIndependent) {
+                return 1.0f - retention;
+            }
+            constexpr float kMaxDt = 3.0f / 90.0f;
+            return 1.0f - std::pow(retention, std::clamp(dt, 0.0f, kMaxDt) * 90.0f);
+        }
+
+        // max(a, b) outside a band of width k around a == b, C1 across it (polynomial smooth maximum)
+        float smoothMax(const float a, const float b, const float k)
+        {
+            const float h = (std::max)(k - std::abs(a - b), 0.0f) / k;
+            return (std::max)(a, b) + h * h * k * 0.25f;
+        }
+
+        float smoothMin(const float a, const float b, const float k)
+        {
+            return -smoothMax(-a, -b, k);
+        }
+
+        // Rotation taking `from` onto `to`. The framework helper has no antiparallel branch and invents an axis there;
+        // a 180 degree turn about any axis perpendicular to `from` is R = 2aa^T - I, symmetric, so storage order is moot.
+        RE::NiMatrix3 rotationFromTo(const RE::NiPoint3& to, const RE::NiPoint3& from)
+        {
+            const RE::NiPoint3 t = MatrixUtils::vec3Norm(to);
+            const RE::NiPoint3 f = MatrixUtils::vec3Norm(from);
+            if (MatrixUtils::vec3Dot(t, f) > -0.99999f) {
+                return MatrixUtils::getMatrixFromRotateVectorVec(to, from);
+            }
+            const RE::NiPoint3 helper = std::abs(f.x) < 0.9f ? RE::NiPoint3(1, 0, 0) : RE::NiPoint3(0, 1, 0);
+            const RE::NiPoint3 a = MatrixUtils::vec3Norm(MatrixUtils::vec3Cross(f, helper));
+            const float axis[3] = { a.x, a.y, a.z };
+            RE::NiMatrix3 result;
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    result.entry[i][j] = 2.0f * axis[i] * axis[j] - (i == j ? 1.0f : 0.0f);
+                }
+            }
+            return result;
         }
     }
 
@@ -1067,6 +1225,42 @@ namespace frik
         RE::NiTransform trackedHandTarget = isLeft ? _leftHand->world : _rightHand->world;
         (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, trackedHandTarget);
         (void)solveArmToHandWorldTarget(isLeft, trackedHandTarget);
+    }
+
+    /**
+     * Write this frame's upper-arm roll split onto the UpperTwist1 tree entries (rest local rotated about the bone axis) and refresh
+     * their worlds from the upper arm, which is final here. Writing from the rest each frame means nothing accumulates.
+     */
+    void Skeleton::applyUpperTwist()
+    {
+        // Off by default: the tree is not touched at all unless the split is enabled (a launch on 53d9b9a coincided with ROCK reading the
+        // flattened hand entries thousands of units off for a minute after load; until that is explained the write stays opt-in)
+        if (!(g_config.armUpperTwistSplit > 0.0f)) {
+            return;
+        }
+        auto* tree = getFlattenedBoneTree();
+        if (!tree) {
+            return;
+        }
+        for (const bool isLeft : { true, false }) {
+            const auto side = isLeft ? 0 : 1;
+            const int idx = _upperTwistTreeIdx[side];
+            if (idx < 0 || idx >= tree->numTransforms) {
+                continue;
+            }
+            auto& bone = tree->transforms[idx];
+            bone.local.rotate = MatrixUtils::getMatrixFromEulerAngles(_upperTwistRoll[side], 0, 0) * _upperTwistRestRotate[side];
+            if (const auto* upper = getArm(isLeft).upper) {
+                bone.world.translate = upper->world.translate + upper->world.rotate.Transpose() * (bone.local.translate * upper->world.scale);
+                bone.world.rotate = bone.local.rotate * upper->world.rotate;
+                bone.world.scale = bone.local.scale * upper->world.scale;
+            } else if (bone.parPos >= 0 && bone.parPos < tree->numTransforms) {
+                const auto& parentWorld = tree->transforms[bone.parPos].world;
+                bone.world.translate = parentWorld.translate + parentWorld.rotate.Transpose() * (bone.local.translate * parentWorld.scale);
+                bone.world.rotate = bone.local.rotate * parentWorld.rotate;
+                bone.world.scale = bone.local.scale * parentWorld.scale;
+            }
+        }
     }
 
     void Skeleton::latchRenderedWrists()
@@ -1136,23 +1330,45 @@ namespace frik
             return false;
         }
 
-        float adjustedArmLength = g_config.armLength / 36.74f;
+        const float adjustedArmLength = g_config.armLength / 36.74f;
+        const float armLength = g_config.armLength;
+
+        // Bone lengths and the reach gate come first: a bail-out must leave the arm exactly as it was, not with a rotated collarbone
+        const float originalUpperLen = MatrixUtils::vec3Len(arm.forearm1->local.translate);
+        float originalForearmLen;
+
+        if (_inPowerArmor) {
+            originalForearmLen = MatrixUtils::vec3Len(arm.hand->local.translate);
+        } else {
+            originalForearmLen =
+                MatrixUtils::vec3Len(arm.hand->local.translate) + MatrixUtils::vec3Len(arm.forearm2->local.translate) + MatrixUtils::vec3Len(arm.forearm3->local.translate);
+        }
+        float upperLen = originalUpperLen * adjustedArmLength;
+        float forearmLen = originalForearmLen * adjustedArmLength;
+
+        const RE::NiPoint3 shoulderToHand = handPos - arm.upper->world.translate;
+        if (MatrixUtils::vec3Len(shoulderToHand) > (upperLen + forearmLen) * 2.25f) {
+            return false;
+        }
 
         // Shoulder IK is done in a very simple way
 
-        RE::NiPoint3 shoulderToHand = handPos - arm.upper->world.translate;
-        float armLength = g_config.armLength;
         float adjustAmount = (std::clamp)(MatrixUtils::vec3Len(shoulderToHand) - armLength * 0.5f, 0.0f, armLength * 0.85f) / (armLength * 0.85f);
-        RE::NiPoint3 shoulderOffset = MatrixUtils::vec3Norm(shoulderToHand) * (adjustAmount * armLength * 0.08f);
+        RE::NiPoint3 shoulderOffset = MatrixUtils::vec3Norm(shoulderToHand) * (adjustAmount * armLength * g_config.armShoulderReachFraction);
+        if (shoulderOffset.z < 0.0f) {
+            shoulderOffset.z *= g_config.armShoulderDownwardDamp;
+        }
 
         RE::NiPoint3 clavicalToNewShoulder = arm.upper->world.translate + shoulderOffset - arm.shoulder->world.translate;
 
         RE::NiPoint3 sLocalDir = arm.shoulder->world.rotate * (clavicalToNewShoulder / arm.shoulder->world.scale);
 
-        RE::NiMatrix3 result = MatrixUtils::getMatrixFromRotateVectorVec(sLocalDir, RE::NiPoint3(1, 0, 0)) * arm.shoulder->local.rotate;
+        RE::NiMatrix3 result = rotationFromTo(sLocalDir, RE::NiPoint3(1, 0, 0)) * arm.shoulder->local.rotate;
         arm.shoulder->local.rotate = result;
 
         updateDown(arm.shoulder, true);
+        // the frame the upper-arm twist is measured against below; the worlds are not refreshed again until the solve is done
+        const RE::NiMatrix3 preAimUpperWorldRot = arm.upper->world.rotate;
 
         // The bend of the arm depends on its distance to the body.  Its distance as well as the lengths of
         // the upper arm and forearm define the sides of a triangle:
@@ -1170,32 +1386,35 @@ namespace frik
 
         float negLeft = isLeft ? -1.0f : 1.0f;
 
-        float originalUpperLen = MatrixUtils::vec3Len(arm.forearm1->local.translate);
-        float originalForearmLen;
-
-        if (_inPowerArmor) {
-            originalForearmLen = MatrixUtils::vec3Len(arm.hand->local.translate);
-        } else {
-            originalForearmLen =
-                MatrixUtils::vec3Len(arm.hand->local.translate) + MatrixUtils::vec3Len(arm.forearm2->local.translate) + MatrixUtils::vec3Len(arm.forearm3->local.translate);
-        }
-        float upperLen = originalUpperLen * adjustedArmLength;
-        float forearmLen = originalForearmLen * adjustedArmLength;
-
         RE::NiPoint3 Uwp = arm.upper->world.translate;
         RE::NiPoint3 handToShoulder = Uwp - handPos;
         float hsLen = (std::max)(MatrixUtils::vec3Len(handToShoulder), 0.1f);
 
-        if (hsLen > (upperLen + forearmLen) * 2.25f) {
-            return false;
-        }
-
-        // Stretch the upper arm and forearm proportionally when the hand distance exceeds the arm length
-        if (hsLen > upperLen + forearmLen) {
+        // Reach. With a flexion floor the bones stretch so the hand is reached with the elbow still bent by that much, on every
+        // frame: a straight arm is where the elbow twist below loses its reference and spins. Without one, the old stretch with
+        // its 0.1 slack applies (the slack was the only guard, and only on the stretch branch).
+        const float minFlexion = MatrixUtils::degreesToRads(g_config.armElbowMinFlexionDeg);
+        if (minFlexion > 0.0f) {
+            const float reachAtMinFlexion = sqrtf(upperLen * upperLen + forearmLen * forearmLen + 2.0f * upperLen * forearmLen * cosf(minFlexion));
+            if (hsLen > reachAtMinFlexion) {
+                const float stretch = hsLen / reachAtMinFlexion;
+                upperLen *= stretch;
+                forearmLen *= stretch;
+            }
+        } else if (hsLen > upperLen + forearmLen) {
             float diff = hsLen - upperLen - forearmLen;
             float ratio = forearmLen / (forearmLen + upperLen);
             forearmLen += ratio * diff + 0.1f;
             upperLen += (1.0f - ratio) * diff + 0.1f;
+        }
+
+        // Near the shoulder the elbow bends at most the ceiling; the triangle is solved for that reach and the upper arm
+        // shortens continuously (its length is realised from the elbow position below) instead of both bones flipping to their mean.
+        float triangleLen = hsLen;
+        const float maxFlexion = MatrixUtils::degreesToRads(g_config.armElbowMaxFlexionDeg);
+        if (maxFlexion > 0.0f) {
+            const float reachAtMaxFlexion = sqrtf((std::max)(upperLen * upperLen + forearmLen * forearmLen + 2.0f * upperLen * forearmLen * cosf(maxFlexion), 0.0f));
+            triangleLen = (std::max)(hsLen, reachAtMaxFlexion);
         }
 
         RE::NiPoint3 forwardDir = MatrixUtils::vec3Norm(_forwardDir);
@@ -1222,9 +1441,10 @@ namespace frik
 
         //		logger::info("final angle %2f", rads_to_degrees(twistAngle));
 
-        // Smooth out sudden changes in the twist angle over time to reduce elbow shake
+        // Smooth out sudden changes in the twist angle over time to reduce elbow shake (retention 0.75 per frame at 90 Hz)
         const auto side = isLeft ? 0 : 1;
-        twistAngle = _twistAnglePrevFrame[side] + (twistAngle - _twistAnglePrevFrame[side]) * 0.25f;
+        const float twistMove = smoothingMoveFraction(0.75f, _frameTime, g_config.armFrameRateIndependentSmoothing);
+        twistAngle = _twistAnglePrevFrame[side] + (twistAngle - _twistAnglePrevFrame[side]) * twistMove;
         _twistAngleThisFrame[side] = twistAngle;
 
         // Calculate the hand's distance behind the body - It will increase the minimum elbow rotation angle
@@ -1245,12 +1465,21 @@ namespace frik
         float armLiftLimit = (std::clamp)((armLiftLimitZ + armLiftThreshold - handPos.z) / armLiftThreshold, 0.0f, 1.0f); // 1 at bottom, 0 at top
         float upLimit = (std::clamp)((1.0f - armLiftLimit) * 1.4f, 0.0f, 1.0f); // 0 at bottom, 1 at a much lower top
 
-        // Determine overall amount the elbows minimum rotation will be limited
-        float adjustMinAmount = (std::max)(behindAmount, (std::min)(armCrossAmount, armLiftLimit));
+        // Determine overall amount the elbows minimum rotation will be limited. The blends are smooth across their switch points
+        // so the elbow's angular velocity does not step when a pose crosses one (bands: a tenth of the amount range, 9 degrees).
+        constexpr float kAmountBand = 0.1f;
+        const float kAngleBand = MatrixUtils::degreesToRads(9.0f);
+        const bool smoothBlends = g_config.armSmoothBlends;
+        float adjustMinAmount = smoothBlends ? smoothMax(behindAmount, smoothMin(armCrossAmount, armLiftLimit, kAmountBand), kAmountBand)
+                                             : (std::max)(behindAmount, (std::min)(armCrossAmount, armLiftLimit));
 
         // Get the minimum and maximum angles at which the elbow is allowed to twist
         float twistMinAngle = MatrixUtils::degreesToRads(-85.0) + MatrixUtils::degreesToRads(50) * adjustMinAmount;
-        float twistMaxAngle = MatrixUtils::degreesToRads(55.0) - (std::max)(MatrixUtils::degreesToRads(90) * armCrossAmount, MatrixUtils::degreesToRads(70) * upLimit);
+        const float crossPenalty = MatrixUtils::degreesToRads(90) * armCrossAmount;
+        const float liftPenalty = MatrixUtils::degreesToRads(70) * upLimit;
+        float twistMaxAngle = MatrixUtils::degreesToRads(55.0) - (smoothBlends ? smoothMax(crossPenalty, liftPenalty, kAngleBand) : (std::max)(crossPenalty, liftPenalty));
+        // the window never closes, so the wrist keeps steering the elbow through a low-ready or a reload
+        twistMaxAngle = (std::max)(twistMaxAngle, twistMinAngle + MatrixUtils::degreesToRads(g_config.armTwistWindowMinDeg));
 
         // Twist angle ranges from -PI/2 to +PI/2; map that range to go from the minimum to the maximum instead
         float twistLimitAngle = twistMinAngle + (twistAngle + std::numbers::pi_v<float> / 2.0f) / std::numbers::pi_v<float> * (twistMaxAngle - twistMinAngle);
@@ -1274,17 +1503,19 @@ namespace frik
         }
 
         float handBehindHead = (std::clamp)((handBehindDist + 0.0f * size) / (15.0f * size), 0.0f, 1.0f) * (std::clamp)(upLimit * 1.2f, 0.0f, 1.0f);
-        float elbowsTwistForward = (std::max)(acrossAmount * MatrixUtils::degreesToRads(90), handBehindHead * MatrixUtils::degreesToRads(120));
+        const float acrossTwist = acrossAmount * MatrixUtils::degreesToRads(90);
+        const float behindHeadTwist = handBehindHead * MatrixUtils::degreesToRads(120);
+        float elbowsTwistForward = smoothBlends ? smoothMax(acrossTwist, behindHeadTwist, kAngleBand) : (std::max)(acrossTwist, behindHeadTwist);
         RE::NiPoint3 elbowDir = MatrixUtils::rotateXY(bendDownDir, -negLeft * (MatrixUtils::degreesToRads(150) - armTwist * MatrixUtils::degreesToRads(25) - elbowsTwistForward));
         RE::NiPoint3 yDir = elbowDir - xDir * MatrixUtils::vec3Dot(elbowDir, xDir);
         yDir = MatrixUtils::vec3Norm(yDir);
 
-        // Get the angle wrist must bend to reach elbow position
-        // In cases where this is impossible (hand too close to shoulder), then set forearmLen = upperLen so there is always a solution
-        float wristAngle = acosf((forearmLen * forearmLen + hsLen * hsLen - upperLen * upperLen) / (2 * forearmLen * hsLen));
+        // Get the angle wrist must bend to reach elbow position, for the (possibly ceiling-clamped) shoulder-to-hand length.
+        // If that is still impossible (hand too close to shoulder with the ceiling off), set forearmLen = upperLen so there is always a solution
+        float wristAngle = acosf((forearmLen * forearmLen + triangleLen * triangleLen - upperLen * upperLen) / (2 * forearmLen * triangleLen));
         if (isnan(wristAngle) || isinf(wristAngle)) {
             forearmLen = upperLen = (originalUpperLen + originalForearmLen) / 2.0f * adjustedArmLength;
-            wristAngle = acosf((forearmLen * forearmLen + hsLen * hsLen - upperLen * upperLen) / (2 * forearmLen * hsLen));
+            wristAngle = acosf((forearmLen * forearmLen + triangleLen * triangleLen - upperLen * upperLen) / (2 * forearmLen * triangleLen));
         }
 
         // Get the desired world coordinate of the elbow
@@ -1304,7 +1535,7 @@ namespace frik
         RE::NiPoint3 pos = elbowWorld - Uwp;
         RE::NiPoint3 uLocalDir = Uwr * (MatrixUtils::vec3Norm(pos) / arm.upper->world.scale);
 
-        arm.upper->local.rotate = MatrixUtils::getMatrixFromRotateVectorVec(uLocalDir, arm.forearm1->local.translate) * arm.upper->local.rotate;
+        arm.upper->local.rotate = rotationFromTo(uLocalDir, arm.forearm1->local.translate) * arm.upper->local.rotate;
 
         Uwr = arm.upper->local.rotate * arm.shoulder->world.rotate;
 
@@ -1313,7 +1544,7 @@ namespace frik
         pos = handPos - elbowWorld;
         RE::NiPoint3 uLocalTwist = Uwr * (MatrixUtils::vec3Norm(pos));
         uLocalTwist.x = 0;
-        RE::NiPoint3 upperSide = arm.upper->world.rotate.Transpose() * (RE::NiPoint3(0, 1, 0));
+        RE::NiPoint3 upperSide = preAimUpperWorldRot.Transpose() * (RE::NiPoint3(0, 1, 0));
         RE::NiPoint3 uloc = arm.shoulder->world.rotate * (upperSide);
         uloc.x = 0;
         float upperAngle = acosf(MatrixUtils::vec3Dot(MatrixUtils::vec3Norm(uLocalTwist), MatrixUtils::vec3Norm(uloc))) * (uLocalTwist.z > 0 ? 1.f : -1.f);
@@ -1324,13 +1555,17 @@ namespace frik
 
         arm.forearm1->local.rotate = MatrixUtils::getMatrixFromEulerAngles(-upperAngle, 0, 0) * arm.forearm1->local.rotate;
 
+        // The twist bone under the upper arm rolls back part of the roll, so the shoulder end of the mesh rolls less than the elbow end.
+        // It has no scene-graph node, so the roll is applied to its flattened-tree entry once the arm's worlds are final (applyUpperTwist)
+        _upperTwistRoll[side] = g_config.armUpperTwistSplit > 0.0f ? g_config.armUpperTwistSplit * upperAngle : 0.0f;
+
         // The forearm arm bone must be rotated from its forward vector to its elbow-to-hand vector in its local space
         // Calculate Flr:  Fwr * rotTowardHand = Uwr * Flr   ===>   Flr = Uwr' * Fwr * rotTowardHand
         RE::NiMatrix3 Fwr = arm.forearm1->local.rotate * Uwr;
         RE::NiPoint3 elbowHand = handPos - elbowWorld;
         RE::NiPoint3 fLocalDir = Fwr * (MatrixUtils::vec3Norm(elbowHand));
 
-        arm.forearm1->local.rotate = MatrixUtils::getMatrixFromRotateVectorVec(fLocalDir, RE::NiPoint3(1, 0, 0)) * arm.forearm1->local.rotate;
+        arm.forearm1->local.rotate = rotationFromTo(fLocalDir, RE::NiPoint3(1, 0, 0)) * arm.forearm1->local.rotate;
         Fwr = arm.forearm1->local.rotate * Uwr;
 
         RE::NiMatrix3 Fwr3;
@@ -1352,8 +1587,13 @@ namespace frik
             float fsin = MatrixUtils::vec3Det(MatrixUtils::vec3Norm(wLocalDir), MatrixUtils::vec3Norm(floc), RE::NiPoint3(-1, 0, 0));
             float forearmAngle = -1 * negLeft * atan2f(fsin, fcos);
 
-            arm.forearm2->local.rotate = MatrixUtils::getMatrixFromEulerAngles(negLeft * forearmAngle / 2, 0, 0) * arm.forearm2->local.rotate;
-            arm.forearm3->local.rotate = MatrixUtils::getMatrixFromEulerAngles(negLeft * forearmAngle / 2, 0, 0) * arm.forearm3->local.rotate;
+            // spread the roll over the three forearm bones (the wrist is set exactly below, so the weights only shape the skin twist)
+            if (!common::fEqual(g_config.armForearmTwistWeight1, 0.0f)) {
+                arm.forearm1->local.rotate = MatrixUtils::getMatrixFromEulerAngles(negLeft * forearmAngle * g_config.armForearmTwistWeight1, 0, 0) * arm.forearm1->local.rotate;
+                Fwr = arm.forearm1->local.rotate * Uwr;
+            }
+            arm.forearm2->local.rotate = MatrixUtils::getMatrixFromEulerAngles(negLeft * forearmAngle * g_config.armForearmTwistWeight2, 0, 0) * arm.forearm2->local.rotate;
+            arm.forearm3->local.rotate = MatrixUtils::getMatrixFromEulerAngles(negLeft * forearmAngle * g_config.armForearmTwistWeight3, 0, 0) * arm.forearm3->local.rotate;
 
             Fwr2 = arm.forearm2->local.rotate * Fwr;
             Fwr3 = arm.forearm3->local.rotate * Fwr2;
@@ -1409,20 +1649,35 @@ namespace frik
             return;
         }
 
+        // A fresh skeleton has no anchor yet: snap to the current pose for one frame instead of easing in from an unrelated one,
+        // so the hand targets (and everything an external mod binds to them on kSkeletonReady) are right from the first frame.
+        if (bool& seeded = isLeft ? _leftHandDampenSeeded : _rightHandDampenSeeded; !seeded) {
+            seeded = true;
+            (isLeft ? _leftHandPrevFrame : _rightHandPrevFrame) = node->world;
+            return;
+        }
+
         // Get the previous frame transform
         const RE::NiTransform& prevFrame = isLeft ? _leftHandPrevFrame : _rightHandPrevFrame;
+
+        // The damping strengths are per-frame retentions at 90 Hz; the move fraction keeps that feel at any frame rate
+        const float rotationMove =
+            smoothingMoveFraction(isInScopeMenu ? g_config.dampenHandsRotationInVanillaScope : g_config.dampenHandsRotation, _frameTime, g_config.armFrameRateIndependentSmoothing);
+        const float translationMove = smoothingMoveFraction(isInScopeMenu ? g_config.dampenHandsTranslationInVanillaScope : g_config.dampenHandsTranslation,
+            _frameTime,
+            g_config.armFrameRateIndependentSmoothing);
 
         // Spherical interpolation between previous frame and current frame for the world rotation matrix
         Quaternion rq, rt;
         rq.fromMatrix(prevFrame.rotate);
         rt.fromMatrix(node->world.rotate);
-        rq.slerp(1 - (isInScopeMenu ? g_config.dampenHandsRotationInVanillaScope : g_config.dampenHandsRotation), rt);
+        rq.slerp(rotationMove, rt);
         node->world.rotate = rq.getMatrix();
 
         // Linear interpolation between the position from the previous frame to current frame
         const RE::NiPoint3 dir = _curentPosition - _lastPosition; // Offset the player movement from this interpolation
         RE::NiPoint3 deltaPos = node->world.translate - prevFrame.translate - dir; // Add in player velocity
-        deltaPos *= isInScopeMenu ? g_config.dampenHandsTranslationInVanillaScope : g_config.dampenHandsTranslation;
+        deltaPos *= 1.0f - translationMove;
         node->world.translate -= deltaPos;
 
         // Update the previous frame transform

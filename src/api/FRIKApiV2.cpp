@@ -40,6 +40,7 @@ namespace
     static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::OwnsScopeCamera) == static_cast<int>(ScopeCapability::OwnsScopeCamera));
     static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::PublishesLookingThrough) == static_cast<int>(ScopeCapability::PublishesLookingThrough));
     static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::OwnsDamping) == static_cast<int>(ScopeCapability::OwnsDamping));
+    static_assert(static_cast<int>(FRIKApiV2::ScopeCapability::PlacesScopeWidget) == static_cast<int>(ScopeCapability::PlacesScopeWidget));
 
     static_assert(static_cast<int>(FRIKApiV2::FramePhase::NativeGraphOutput) == static_cast<int>(FramePhase::NativeGraphOutput));
     static_assert(static_cast<int>(FRIKApiV2::FramePhase::BodyPlaced) == static_cast<int>(FramePhase::BodyPlaced));
