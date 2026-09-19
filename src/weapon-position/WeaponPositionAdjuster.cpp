@@ -373,7 +373,8 @@ namespace frik
             }
             return;
         }
-        const bool carried = g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera);
+        const bool carried =
+            _scopeRigCarryOverride.value_or(g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera));
 
         if (!carried && scopeParent->parent == pn->primaryUIAttachNode && scopeCamera->parent == pn->primaryWeaponOffsetNOde) {
             _scopeParentRestLocal = scopeParent->local;

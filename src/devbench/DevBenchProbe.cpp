@@ -650,6 +650,23 @@ namespace frik::devbench
             return json{ { "ok", ok }, { "gripping", g_frik.isOffHandGrippingWeapon() } }.dump();
         }
 
+        if (op == "scopeRig") {
+            // force the scope rig (ScopeParent + scope camera) under the weapon or back on the wand chain without any carry, so a
+            // scope mod can tell whether its widget draws at all under the first-person skeleton
+            const auto under = args.value("under", "clear");
+            const auto adjuster = g_frik.getWeaponPositionAdjuster();
+            if (!adjuster) {
+                return json{ { "ok", false }, { "error", "no weapon position adjuster" } }.dump();
+            }
+            adjuster->setScopeRigCarryOverride(under == "weapon" ? std::optional(true) : under == "wand" ? std::optional(false) : std::nullopt);
+            const auto pn = f4vr::getPlayerNodes();
+            return json{ { "ok", true },
+                { "under", under },
+                { "scopeParentParent", pn && pn->ScopeParentNode && pn->ScopeParentNode->parent ? pn->ScopeParentNode->parent->name.c_str() : "" },
+                { "scopeCameraParent", pn && pn->primaryWeaponScopeCamera && pn->primaryWeaponScopeCamera->parent ? pn->primaryWeaponScopeCamera->parent->name.c_str() : "" } }
+                .dump();
+        }
+
         if (op == "parent") {
             const auto hand = args.value("hand", "clear");
             const bool ok = hand == "clear" ? core::clearWeaponNodeParentHand(PROBE_TAG) : core::setWeaponNodeParentHand(PROBE_TAG, hand == "left");
@@ -694,7 +711,7 @@ namespace frik::devbench
                     return nullptr;
                 }
                 json chain = json::array();
-                for (auto p = node->parent; p && chain.size() < 6; p = p->parent) {
+                for (auto p = node->parent; p && chain.size() < 16; p = p->parent) {
                     chain.push_back(p->name.c_str());
                 }
                 const auto rows = [](const RE::NiMatrix3& m) {
@@ -819,6 +836,6 @@ namespace frik::devbench
             }.dump();
         }
 
-        return json{ { "ok", false }, { "error", "unknown op (phases|claim|solve|chain|grip|parent|scope|block|nodes|carry|reset)" } }.dump();
+        return json{ { "ok", false }, { "error", "unknown op (phases|claim|solve|chain|grip|parent|scope|scopeRig|block|nodes|carry|reset)" } }.dump();
     }
 }

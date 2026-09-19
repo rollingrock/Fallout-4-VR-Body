@@ -75,6 +75,14 @@ namespace frik
         void handlePrimaryWeapon();
         void checkEquippedWeaponChanged();
         void carryScopeRigWithWeapon();
+
+    public:
+        void setScopeRigCarryOverride(const std::optional<bool> carried)
+        {
+            _scopeRigCarryOverride = carried;
+        }
+
+    private:
         void restoreScopeRig();
         static bool reparent(RE::NiNode* node, RE::NiNode* newParent, const RE::NiTransform* local);
         void handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const;
@@ -97,6 +105,8 @@ namespace frik
 
         // the scope rig (ScopeParent, scope camera) is parented under the weapon for an external carry; the camera base re-expressed for it
         bool _scopeRigCarried = false;
+        // devbench: forces the scope rig onto the weapon (true) or the wand chain (false) regardless of the carry state
+        std::optional<bool> _scopeRigCarryOverride;
         RE::NiMatrix3 _scopeCameraCarryBaseMatrix;
         // the rig nodes' locals on the wand chain as last seen before a carry (the engine's, or a scope mod's last write), put back on release
         bool _scopeRigRestValid = false;
