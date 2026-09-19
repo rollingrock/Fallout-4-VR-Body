@@ -329,8 +329,8 @@ namespace frik
         armElbowMaxFlexionDeg = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmElbowMaxFlexionDeg", 145.0));
         armTwistWindowMinDeg = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmTwistWindowMinDeg", 15.0));
         armSmoothBlends = ini.GetBoolValue(INI_SECTION_MAIN, "bArmSmoothBlends", true);
-        armShoulderReachFraction = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmShoulderReachFraction", 0.08));
-        armShoulderDownwardDamp = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmShoulderDownwardDamp", 1.0));
+        armShoulderReachFraction = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmShoulderReachFraction", 0.15));
+        armShoulderDownwardDamp = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmShoulderDownwardDamp", 0.4));
         armUpperTwistSplit = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmUpperTwistSplit", 0.0));
         armForearmTwistWeight1 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmForearmTwistWeight1", 0.0));
         armForearmTwistWeight2 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmForearmTwistWeight2", 0.5));

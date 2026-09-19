@@ -13,7 +13,7 @@
 - Body: The elbow twist window never closes (`fArmTwistWindowMinDeg`, default 15) and the elbow heuristics blend smoothly across their switch points (`bArmSmoothBlends`), so the elbow no longer locks in a low-ready or steps when crossing a threshold.
 - Body: An out-of-reach hand target now leaves the arm untouched instead of a rotated collarbone on a rest-pose arm, and the 180-degree case of the aim rotation is handled instead of picking a random axis.
 - Body: Hand damping and elbow smoothing are frame-rate independent (`bArmFrameRateIndependentSmoothing`), keeping the 90 Hz feel under reprojection instead of doubling the lag.
-- Body: Added shoulder reach and twist-distribution settings (`fArmShoulderReachFraction`, `fArmShoulderDownwardDamp`, `fArmUpperTwistSplit`, `fArmForearmTwistWeight1..3`), all defaulting to the previous look; the UpperTwist1 bones are now reset every frame like the rest of the arm.
+- Body: Added shoulder reach and twist-distribution settings (`fArmShoulderReachFraction`, `fArmShoulderDownwardDamp`, `fArmUpperTwistSplit`, `fArmForearmTwistWeight1..3`); the shoulder now reaches a little further at full extension and dips less (defaults 0.15 and 0.4, the old look is 0.08 and 1.0), the rest default to the previous look; the UpperTwist1 bones are now reset every frame like the rest of the arm.
 - Dev: Per-step perf sites for the skeleton pass (reset, body, posture, legs, arms, hide/cull, hand pose).
 
 ## v0.79
