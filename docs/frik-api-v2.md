@@ -369,6 +369,29 @@ The inputs and outputs of FRIK's own solve, so a mod computes its claims from th
 
 Current from `BeforeArmSolve` on; read earlier in the frame they still hold the previous frame, and during a left-carry `FirstPersonHand` holds the game's own re-glue instead. Returns false without a skeleton or when the node does not exist.
 
+### When these are safe to capture from
+
+The first-person arms are **not** posed continuously. The engine's animation graph resets them to an unplaced,
+player-relative pose at the start of every game frame, roughly 100,000 units away from where the controllers are, and they are
+placed back onto the controllers from scratch within that same frame, several times over while another mod carries the weapon.
+So "the first-person hand" is a garbage value for part of every frame, not only after a load.
+
+FRIK's own arm work is what places them, so anything derived from a first-person transform, or from a bone under the arm
+chain, must be captured **at or after `AfterArmSolve`**. `BeforeArmSolve` and `FrameBegin` are too early, and
+`NativeGraphOutput` is earlier still. This matters most for a relation a mod caches and reuses, a hand-in-weapon offset, a
+controller-to-bone relation, a calibration: capture one of those from an unplaced arm and it is wrong for as long as it is
+cached, which can outlive the session if the mod persists it.
+
+Two things follow for a client:
+
+- Capture relations from `AfterArmSolve` or later. `AfterWorldFinal` is safest for anything read out of the flattened bone
+  tree, which FRIK refreshes at the end of its frame.
+- Sanity check the magnitude of anything you capture and refuse implausible values rather than caching them. A relation
+  between a controller and a hand is a few tens of units; a hundred-thousand-unit one means the arm was not placed when you
+  looked. A guard costs nothing and turns a timing mistake into a refused capture instead of a poisoned cached value.
+
+FRIK will keep placement before the published capture phases, or move those phases with it and say so here.
+
 `bool getBoneWorldTransform(const char* boneName, RE::NiTransform* outTransform)`
 
 World transform of any body bone by its skeleton name (`LArm_Hand`, `Spine2`, ...), read from the flattened bone tree. Final after `AfterWorldFinal`; earlier in the frame it holds the previous frame. Returns false for an unknown name or without a skeleton.
