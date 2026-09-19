@@ -176,20 +176,17 @@ namespace frik::devbench
             return common::MatrixUtils::vec3Len(wand.translate - other.translate);
         }
 
-        // the scope shape under the weapon (the geometry a scope mod reads bounds from), or the weapon's first child
+        // the weapon's own model node (its first child; the scope shape hangs below it): no subtree walk, this runs every frame
         RE::NiAVObject* weaponGeometryProbe(RE::NiNode* weapon)
         {
-            if (!weapon) {
-                return nullptr;
-            }
-            if (const auto shape = f4vr::findAVObjectStartsWith(weapon, "P-Scope")) {
-                return shape;
-            }
-            return weapon->children.empty() ? nullptr : weapon->children[0].get();
+            return weapon && !weapon->children.empty() ? weapon->children[0].get() : nullptr;
         }
 
         void loadTrace()
         {
+            if (!g_frik.isSkeletonReady()) {
+                return;
+            }
             const auto generation = g_frik.getSkeletonGeneration();
             if (generation != g_probe.traceGeneration) {
                 g_probe.traceGeneration = generation;
