@@ -375,12 +375,13 @@ namespace frik
         }
         const bool naturallyCarried = g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera);
         const bool carried = _scopeRigOverride == ScopeRigOverride::None ? naturallyCarried : _scopeRigOverride != ScopeRigOverride::Wand;
-        // the scope widget is not drawn while ScopeParent hangs under the first-person skeleton, so a provider that places its own
-        // widget keeps ScopeParent on the wand chain and only the camera follows the carried weapon
-        const bool carryWidgetParent = carried && !g_scopeAuthority.hasCapability(ScopeCapability::PlacesScopeWidget);
-        // validation topology: the widget rides the wand of the hand that holds the carried weapon (the game's secondary wand
-        // follows the non-dominant hand), so its lever arm to the glass stays short
-        const bool widgetUnderOffhandWand = carried && _scopeRigOverride == ScopeRigOverride::OffhandWand && pn->SecondaryWandNode;
+        // the scope widget is not drawn while ScopeParent hangs under the first-person skeleton, so for a provider that places its
+        // own widget the widget parent rides the wand of the hand that holds the carried weapon instead (the game's secondary wand
+        // follows the non-dominant hand): drawn with the world, and a short lever arm from that wand to the glass; only the camera
+        // follows the weapon node itself
+        const bool providerPlacesWidget = g_scopeAuthority.hasCapability(ScopeCapability::PlacesScopeWidget) || _scopeRigOverride == ScopeRigOverride::OffhandWand;
+        const bool widgetUnderOffhandWand = carried && providerPlacesWidget && pn->SecondaryWandNode;
+        const bool carryWidgetParent = carried && !providerPlacesWidget;
 
         if (!carried && scopeParent->parent == pn->primaryUIAttachNode && scopeCamera->parent == pn->primaryWeaponOffsetNOde) {
             _scopeParentRestLocal = scopeParent->local;
