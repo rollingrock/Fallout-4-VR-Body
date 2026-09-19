@@ -745,11 +745,12 @@ namespace frik::devbench
             using Override = WeaponPositionAdjuster::ScopeRigOverride;
             adjuster->setScopeRigOverride(under == "weapon" ? Override::Weapon : under == "wand" ? Override::Wand : under == "offwand" ? Override::OffhandWand : Override::None);
             const auto pn = f4vr::getPlayerNodes();
-            return json{ { "ok", true },
+            return json{
+                { "ok", true },
                 { "under", under },
                 { "scopeParentParent", pn && pn->ScopeParentNode && pn->ScopeParentNode->parent ? pn->ScopeParentNode->parent->name.c_str() : "" },
-                { "scopeCameraParent", pn && pn->primaryWeaponScopeCamera && pn->primaryWeaponScopeCamera->parent ? pn->primaryWeaponScopeCamera->parent->name.c_str() : "" } }
-                .dump();
+                { "scopeCameraParent", pn && pn->primaryWeaponScopeCamera && pn->primaryWeaponScopeCamera->parent ? pn->primaryWeaponScopeCamera->parent->name.c_str() : "" }
+            }.dump();
         }
 
         if (op == "parent") {
