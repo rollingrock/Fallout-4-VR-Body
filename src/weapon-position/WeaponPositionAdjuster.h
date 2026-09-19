@@ -77,9 +77,17 @@ namespace frik
         void carryScopeRigWithWeapon();
 
     public:
-        void setScopeRigCarryOverride(const std::optional<bool> carried)
+        enum class ScopeRigOverride : std::uint8_t
         {
-            _scopeRigCarryOverride = carried;
+            None,
+            Weapon,
+            Wand,
+            OffhandWand,
+        };
+
+        void setScopeRigOverride(const ScopeRigOverride override)
+        {
+            _scopeRigOverride = override;
         }
 
     private:
@@ -105,8 +113,9 @@ namespace frik
 
         // the scope rig (ScopeParent, scope camera) is parented under the weapon for an external carry; the camera base re-expressed for it
         bool _scopeRigCarried = false;
-        // devbench: forces the scope rig onto the weapon (true) or the wand chain (false) regardless of the carry state
-        std::optional<bool> _scopeRigCarryOverride;
+        // devbench: forces the scope rig topology regardless of the carry state (Weapon / primary wand chain / widget under the
+        // off-hand wand with the camera on the weapon)
+        ScopeRigOverride _scopeRigOverride = ScopeRigOverride::None;
         RE::NiMatrix3 _scopeCameraCarryBaseMatrix;
         // the rig nodes' locals on the wand chain as last seen before a carry (the engine's, or a scope mod's last write), put back on release
         bool _scopeRigRestValid = false;

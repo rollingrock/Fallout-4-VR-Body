@@ -651,14 +651,16 @@ namespace frik::devbench
         }
 
         if (op == "scopeRig") {
-            // force the scope rig (ScopeParent + scope camera) under the weapon or back on the wand chain without any carry, so a
-            // scope mod can tell whether its widget draws at all under the first-person skeleton
+            // force the scope rig topology (under=weapon: ScopeParent + camera on the weapon; wand: both on the primary wand chain;
+            // offwand: ScopeParent under the off-hand wand with the camera on the weapon; clear: natural), so a scope mod can
+            // validate where its widget draws and how it tracks
             const auto under = args.value("under", "clear");
             const auto adjuster = g_frik.getWeaponPositionAdjuster();
             if (!adjuster) {
                 return json{ { "ok", false }, { "error", "no weapon position adjuster" } }.dump();
             }
-            adjuster->setScopeRigCarryOverride(under == "weapon" ? std::optional(true) : under == "wand" ? std::optional(false) : std::nullopt);
+            using Override = WeaponPositionAdjuster::ScopeRigOverride;
+            adjuster->setScopeRigOverride(under == "weapon" ? Override::Weapon : under == "wand" ? Override::Wand : under == "offwand" ? Override::OffhandWand : Override::None);
             const auto pn = f4vr::getPlayerNodes();
             return json{ { "ok", true },
                 { "under", under },

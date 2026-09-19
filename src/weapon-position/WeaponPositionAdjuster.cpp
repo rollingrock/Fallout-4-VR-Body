@@ -373,11 +373,14 @@ namespace frik
             }
             return;
         }
-        const bool carried =
-            _scopeRigCarryOverride.value_or(g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera));
+        const bool naturallyCarried = g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera);
+        const bool carried = _scopeRigOverride == ScopeRigOverride::None ? naturallyCarried : _scopeRigOverride != ScopeRigOverride::Wand;
         // the scope widget is not drawn while ScopeParent hangs under the first-person skeleton, so a provider that places its own
         // widget keeps ScopeParent on the wand chain and only the camera follows the carried weapon
         const bool carryWidgetParent = carried && !g_scopeAuthority.hasCapability(ScopeCapability::PlacesScopeWidget);
+        // validation topology: the widget rides the wand of the hand that holds the carried weapon (the game's secondary wand
+        // follows the non-dominant hand), so its lever arm to the glass stays short
+        const bool widgetUnderOffhandWand = carried && _scopeRigOverride == ScopeRigOverride::OffhandWand && pn->SecondaryWandNode;
 
         if (!carried && scopeParent->parent == pn->primaryUIAttachNode && scopeCamera->parent == pn->primaryWeaponOffsetNOde) {
             _scopeParentRestLocal = scopeParent->local;
@@ -390,7 +393,9 @@ namespace frik
                 // the camera base is authored in the offset node's frame; re-express it for the weapon so the view keeps its roll
                 _scopeCameraCarryBaseMatrix = _scopeCameraBaseMatrix * scopeCamera->parent->world.rotate * weapon->world.rotate.Transpose();
             }
-            if (carryWidgetParent) {
+            if (widgetUnderOffhandWand) {
+                reparent(scopeParent, pn->SecondaryWandNode, nullptr);
+            } else if (carryWidgetParent) {
                 reparent(scopeParent, weapon, nullptr);
             } else {
                 reparent(scopeParent, pn->primaryUIAttachNode, _scopeRigRestValid ? &_scopeParentRestLocal : nullptr);
