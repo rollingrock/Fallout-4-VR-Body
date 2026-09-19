@@ -96,8 +96,13 @@ namespace frik
                 static_cast<const void*>(_leftHand));
             return false;
         }
+        // NOT an anchor for hand damping: at build the first-person hands still sit in their unplaced player-relative pose (the
+        // engine's arm placement has not run for this skeleton yet), so damping from here would drag the hand targets in from
+        // ~100k units over tens of frames. dampenHand snaps on its first frame instead.
         _rightHandPrevFrame = _rightHand->world;
         _leftHandPrevFrame = _leftHand->world;
+        _rightHandDampenSeeded = false;
+        _leftHandDampenSeeded = false;
 
         _head = findNode(_root, "Head");
         _spine = findNode(_root, "SPINE2");
@@ -1641,6 +1646,14 @@ namespace frik
             } else {
                 _rightHandPrevFrame = node->world;
             }
+            return;
+        }
+
+        // A fresh skeleton has no anchor yet: snap to the current pose for one frame instead of easing in from an unrelated one,
+        // so the hand targets (and everything an external mod binds to them on kSkeletonReady) are right from the first frame.
+        if (bool& seeded = isLeft ? _leftHandDampenSeeded : _rightHandDampenSeeded; !seeded) {
+            seeded = true;
+            (isLeft ? _leftHandPrevFrame : _rightHandPrevFrame) = node->world;
             return;
         }
 

@@ -213,6 +213,9 @@ namespace frik
 
         RE::NiTransform _rightHandPrevFrame;
         RE::NiTransform _leftHandPrevFrame;
+        // the damping anchors only mean something once they hold a damped node's own world; until then the first frame snaps
+        bool _rightHandDampenSeeded = false;
+        bool _leftHandDampenSeeded = false;
 
         // last frame's looking-through state, to log the damping pair only when it switches
         bool _dampenHandsInScopePrevFrame = false;
