@@ -66,7 +66,7 @@ void onFrame()
 
 ## Versioning and compatibility
 
-`FRIK_API_V2_VERSION` (currently **3**) identifies the v2 contract — this page documents v2.3. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
+`FRIK_API_V2_VERSION` (currently **4**) identifies the v2 contract — this page documents v2.4. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
 
 Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end and bumps `FRIK_API_V2_VERSION`, so a header you copied today keeps working against every newer FRIK. `initialize(minVersion)` checks `getVersion() >= minVersion` and that FRIK's table is at least as large as `minVersion` implies (code `5` otherwise). To also run against an older FRIK, pass the oldest version you can live with and gate every newer entry on `getVersion()`; each entry below is documented with the version that introduced it.
 
@@ -256,7 +256,7 @@ Both are reference-counted by tag, like `blockFeature`. Taking weapon node owner
 
 Ask FRIK to parent the primary weapon node under a hand, for a left-carry. FRIK does the reparent and its own bookkeeping (which weapon node drives each first-person arm, the off-side weapon hand pose copy, the recoil hand) and restores the game's left-handed setting when the tag clears or the skeleton rebuilds. The newest request wins. Before v2.3 `blockPrimaryWeaponNodeOwnership` flipped this topology as a side effect; it no longer does, so a left-carry needs both calls.
 
-While the weapon is parented under the hand the game does not consider primary, FRIK also parents the engine's scope rig, `ScopeParent` (the vanilla scope widget's parent) and the scope camera, under the weapon node so the scope view and any lens hung on `ScopeParent` follow the carried weapon; they go back on the wand chain when the carry ends, keeping their world transform on each switch. A mod that reads either node should re-read its parent rather than cache it. A scope provider holding `OwnsScopeCamera` keeps the rig where it is.
+While the weapon is parented under the hand the game does not consider primary, FRIK also parents the engine's scope rig, `ScopeParent` (the vanilla scope widget's parent) and the scope camera, under the weapon node so the scope view and any lens hung on `ScopeParent` follow the carried weapon; they go back on the wand chain when the carry ends, keeping their world transform on each switch. A mod that reads either node should re-read its parent rather than cache it. A scope provider holding `OwnsScopeCamera` keeps the rig where it is; one holding `PlacesScopeWidget` (v2.4) keeps `ScopeParent` on the wand chain and only the camera follows the weapon, since the scope widget is not drawn under the first-person skeleton.
 
 `bool setOffHandGripping(const char* tag, bool active, Hand supportHand, const RE::NiTransform* supportWorld)` (v2.3)
 
@@ -315,6 +315,7 @@ FRIK keys every scope behaviour on one **looking-through-scope** state: whether 
 | `OwnsScopeCamera` | FRIK leaves the `primaryWeaponScopeCamera` node alone. |
 | `PublishesLookingThrough` | This provider's `setLookingThroughScope` replaces the vanilla `ScopeMenu` state. |
 | `OwnsDamping` | FRIK does not dampen hands or recoil while scoped. |
+| `PlacesScopeWidget` | (v2.4) The provider places its own widget on the scope. During a carry in the other hand FRIK keeps `ScopeParent` on the wand chain and carries only the scope camera with the weapon, because the engine does not draw the scope widget while `ScopeParent` hangs under the first-person skeleton. |
 
 Providers survive skeleton rebuilds, like feature blocks, and capabilities are the union over registered tags. Register once on the game-loaded event.
 

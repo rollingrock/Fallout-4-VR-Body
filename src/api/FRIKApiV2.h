@@ -68,7 +68,7 @@ namespace frik::api
      * number, so one header serves every FRIK from the minVersion you initialize with. Each entry
      * documents the version that introduced it; check getVersion() before calling a newer one.
      */
-    inline constexpr std::uint32_t FRIK_API_V2_VERSION = 3;
+    inline constexpr std::uint32_t FRIK_API_V2_VERSION = 4;
 
     struct FRIKApiV2
     {
@@ -401,6 +401,10 @@ namespace frik::api
             PublishesLookingThrough = 1u << 2,
             // FRIK does not dampen hands or recoil while scoped; the provider smooths its own view.
             OwnsDamping = 1u << 3,
+            // (v2.4) The provider places its own widget on the scope. During a carry in the other hand FRIK keeps ScopeParent on
+            // the wand chain and carries only the scope camera with the weapon, because the scope widget is not drawn while
+            // ScopeParent hangs under the first-person skeleton.
+            PlacesScopeWidget = 1u << 4,
         };
 
         /**
@@ -876,7 +880,7 @@ namespace frik::api
          */
         static constexpr std::size_t tableSizeForVersion(const std::uint32_t version)
         {
-            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 46 };
+            constexpr std::size_t functionCountByVersion[] = { 0, 31, 37, 46, 46 };
             const auto index = version < std::size(functionCountByVersion) ? version : std::size(functionCountByVersion) - 1;
             return functionCountByVersion[index] * sizeof(void (*)());
         }

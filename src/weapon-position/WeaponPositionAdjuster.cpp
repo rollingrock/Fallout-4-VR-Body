@@ -375,6 +375,9 @@ namespace frik
         }
         const bool carried =
             _scopeRigCarryOverride.value_or(g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera));
+        // the scope widget is not drawn while ScopeParent hangs under the first-person skeleton, so a provider that places its own
+        // widget keeps ScopeParent on the wand chain and only the camera follows the carried weapon
+        const bool carryWidgetParent = carried && !g_scopeAuthority.hasCapability(ScopeCapability::PlacesScopeWidget);
 
         if (!carried && scopeParent->parent == pn->primaryUIAttachNode && scopeCamera->parent == pn->primaryWeaponOffsetNOde) {
             _scopeParentRestLocal = scopeParent->local;
@@ -387,7 +390,11 @@ namespace frik
                 // the camera base is authored in the offset node's frame; re-express it for the weapon so the view keeps its roll
                 _scopeCameraCarryBaseMatrix = _scopeCameraBaseMatrix * scopeCamera->parent->world.rotate * weapon->world.rotate.Transpose();
             }
-            reparent(scopeParent, weapon, nullptr);
+            if (carryWidgetParent) {
+                reparent(scopeParent, weapon, nullptr);
+            } else {
+                reparent(scopeParent, pn->primaryUIAttachNode, _scopeRigRestValid ? &_scopeParentRestLocal : nullptr);
+            }
             reparent(scopeCamera, weapon, nullptr);
         } else {
             reparent(scopeParent, pn->primaryUIAttachNode, _scopeRigRestValid ? &_scopeParentRestLocal : nullptr);
