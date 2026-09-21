@@ -1,8 +1,11 @@
 #include "devbench/DevBenchProbe.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <optional>
+#include <string>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
@@ -12,6 +15,9 @@
 #include "api/ApiCore.h"
 #include "common/MatrixUtils.h"
 #include "f4vr/F4VRUtils.h"
+#include "f4vr/PlayerNodes.h"
+#include "vrcf/VRControllersHaptic.h"
+#include "vrcf/VRControllersManager.h"
 
 namespace frik::devbench
 {
@@ -104,9 +110,36 @@ namespace frik::devbench
             return true;
         }
 
+        // Arm recorder: the world transforms of one arm's bones (and the tracked wand) at AfterWorldFinal, every frame, for a sitting
+        // to measure elbow swivel, roll, collarbone and twist instead of judging them by eye. Right hand first.
+        constexpr std::array<const char*, 7> ARM_BONE_SUFFIXES = { "Collarbone", "UpperArm", "UpperTwist1", "ForeArm1", "ForeArm2", "ForeArm3", "Hand" };
+        constexpr std::size_t ARM_SAMPLE_SLOTS = ARM_BONE_SUFFIXES.size() + 1; // + wand
+        constexpr std::size_t ARM_RECORD_MAX_FRAMES = 6000;
+
+        struct ArmSample
+        {
+            std::uint64_t frame = 0;
+            std::array<std::array<RE::NiTransform, ARM_SAMPLE_SLOTS>, 2> slots{};
+            std::array<std::uint8_t, ARM_SAMPLE_SLOTS * 2> valid{};
+            std::array<std::uint8_t, 2> state{};
+        };
+
         struct ProbeState
         {
+            // automatic load trace: hands and weapon node against the wands and the scope shape's world bound for the first frames
+            // of every skeleton, plus any later displacement edge, so a broken save load is on disk without a runner (ROCK-021)
+            std::uint32_t traceGeneration = 0;
+            std::uint64_t traceFrames = 0;
+            bool traceDisplaced = false;
             bool registered = false;
+            // arm recorder
+            std::vector<ArmSample> armRecord;
+            std::size_t armRecordTarget = 0;
+            bool armRecording = false;
+            // controller chords (grip + A / B / trigger), detected at FrameEnd, acknowledged by a haptic
+            std::uint64_t chordSeq = 0;
+            std::string chordLast;
+            std::uint64_t chordFrame = 0;
             std::array<std::uint64_t, FRAME_PHASE_COUNT> counts{};
             std::array<std::uint8_t, 16> orderCurrent{};
             std::size_t orderCurrentCount = 0;
@@ -134,11 +167,77 @@ namespace frik::devbench
 
         ProbeState g_probe;
 
+        float wandDistance(const bool isLeft, const core::TrackedHandKind kind)
+        {
+            RE::NiTransform wand, other;
+            if (!core::getTrackedHandTransform(isLeft, core::TrackedHandKind::Wand, wand) || !core::getTrackedHandTransform(isLeft, kind, other)) {
+                return -1.0f;
+            }
+            return common::MatrixUtils::vec3Len(wand.translate - other.translate);
+        }
+
+        // the weapon's own model node (its first child; the scope shape hangs below it): no subtree walk, this runs every frame
+        RE::NiAVObject* weaponGeometryProbe(RE::NiNode* weapon)
+        {
+            return weapon && !weapon->children.empty() ? weapon->children[0].get() : nullptr;
+        }
+
+        void loadTrace()
+        {
+            if (!g_frik.isSkeletonReady()) {
+                return;
+            }
+            const auto generation = g_frik.getSkeletonGeneration();
+            if (generation != g_probe.traceGeneration) {
+                g_probe.traceGeneration = generation;
+                g_probe.traceFrames = 0;
+                g_probe.traceDisplaced = false;
+            }
+            ++g_probe.traceFrames;
+            const auto f = g_probe.traceFrames;
+            const float r = wandDistance(false, core::TrackedHandKind::FirstPersonHand);
+            const float l = wandDistance(true, core::TrackedHandKind::FirstPersonHand);
+            const auto weapon = f4vr::getWeaponNode();
+            RE::NiTransform rightWand;
+            const float w = weapon && core::getTrackedHandTransform(false, core::TrackedHandKind::Wand, rightWand)
+                                ? common::MatrixUtils::vec3Len(rightWand.translate - weapon->world.translate)
+                                : -1.0f;
+            const auto geom = weaponGeometryProbe(weapon);
+            const float boundRadius = geom ? geom->worldBound.fRadius : -1.0f;
+            const float boundOff = geom ? common::MatrixUtils::vec3Len(geom->worldBound.center - geom->world.translate) : -1.0f;
+            const bool displaced = r > 50.0f || l > 50.0f || w > 50.0f || (geom && (boundRadius < 0.01f || boundOff > 50.0f));
+            const bool sampled = f == 1 || f == 2 || f == 5 || f == 10 || f == 30 || f == 60 || f == 120 || f == 300 || f == 600;
+            if (!sampled && displaced == g_probe.traceDisplaced) {
+                return;
+            }
+            g_probe.traceDisplaced = displaced;
+            logger::info(
+                "LOADTRACE gen {} frame {} {}: fpR-wand {:.1f} fpL-wand {:.1f} weapon-rwand {:.1f} weapon<-{} owned={} left={} geom={} boundRadius {:.2f} boundCenterOff {:.1f} "
+                "culled={}",
+                generation,
+                f,
+                displaced ? "DISPLACED" : "ok",
+                r,
+                l,
+                w,
+                weapon && weapon->parent ? weapon->parent->name.c_str() : "-",
+                g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked(),
+                g_frik.isWeaponInLeftHand(),
+                geom ? geom->name.c_str() : "-",
+                boundRadius,
+                boundOff,
+                geom ? geom->GetAppCulled() : false);
+        }
+
         json transformJson(const RE::NiTransform& t)
         {
             float heading = 0, roll = 0, attitude = 0;
             common::MatrixUtils::getEulerAnglesFromMatrixDegrees(t.rotate, &heading, &roll, &attitude);
-            return { { "pos", { t.translate.x, t.translate.y, t.translate.z } }, { "eulerDeg", { heading, roll, attitude } }, { "scale", t.scale } };
+            const auto& m = t.rotate.entry;
+            // a mirrored frame (det -1) flips a quad's winding and gets it back-face culled; worth seeing on every transform a probe reports
+            const float det =
+                m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+            return { { "pos", { t.translate.x, t.translate.y, t.translate.z } }, { "eulerDeg", { heading, roll, attitude } }, { "scale", t.scale }, { "det", det } };
         }
 
         float rotationAngleDeg(const RE::NiMatrix3& a, const RE::NiMatrix3& b)
@@ -254,6 +353,55 @@ namespace frik::devbench
                     (std::max)(g_probe.carryMaxWeaponShift, common::MatrixUtils::vec3Len(carry.weaponAfterWorldFinal.translate - carry.weaponBeforeCallbacks.translate));
                 g_probe.carry = carry;
                 ++g_probe.carryFrames;
+            }
+
+            if (phase == static_cast<std::uint32_t>(FramePhase::AfterWorldFinal) && g_probe.armRecording) {
+                if (g_probe.armRecord.size() >= g_probe.armRecordTarget) {
+                    g_probe.armRecording = false;
+                } else {
+                    ArmSample sample;
+                    sample.frame = g_probe.frame;
+                    for (const bool isLeft : { false, true }) {
+                        const auto side = isLeft ? 1 : 0;
+                        for (std::size_t b = 0; b < ARM_BONE_SUFFIXES.size(); ++b) {
+                            const std::string name = std::string(isLeft ? "LArm_" : "RArm_") + ARM_BONE_SUFFIXES[b];
+                            sample.valid[side * ARM_SAMPLE_SLOTS + b] = core::getBoneWorldTransform(name.c_str(), &sample.slots[side][b]) ? 1 : 0;
+                        }
+                        const std::size_t wandSlot = ARM_BONE_SUFFIXES.size();
+                        sample.valid[side * ARM_SAMPLE_SLOTS + wandSlot] = core::getTrackedHandTransform(isLeft, core::TrackedHandKind::Wand, sample.slots[side][wandSlot]) ? 1 : 0;
+                        RE::NiTransform wrist;
+                        sample.state[side] = static_cast<std::uint8_t>(core::getHandSolveResult(isLeft, wrist));
+                    }
+                    g_probe.armRecord.push_back(sample);
+                }
+            }
+
+            if (phase == static_cast<std::uint32_t>(FramePhase::FrameEnd)) {
+                loadTrace();
+                // grip held on a hand plus an edge on A (yes), B / menu (no) or trigger (repeat); the same hand acknowledges with a haptic
+                for (const auto hand : { vrcf::Hand::Right, vrcf::Hand::Left }) {
+                    if (!vrcf::VRControllers.isPressHeldDown(hand, vr::k_EButton_Grip)) {
+                        continue;
+                    }
+                    const char* chord = nullptr;
+                    auto pattern = vrcf::HapticPattern::Click;
+                    if (vrcf::VRControllers.isPressed(hand, vr::k_EButton_A)) {
+                        chord = "yes";
+                    } else if (vrcf::VRControllers.isPressed(hand, vr::k_EButton_ApplicationMenu)) {
+                        chord = "no";
+                        pattern = vrcf::HapticPattern::DoubleClick;
+                    } else if (vrcf::VRControllers.isPressed(hand, vr::k_EButton_SteamVR_Trigger)) {
+                        chord = "repeat";
+                        pattern = vrcf::HapticPattern::TripleClick;
+                    }
+                    if (chord) {
+                        ++g_probe.chordSeq;
+                        g_probe.chordLast = chord;
+                        g_probe.chordFrame = g_probe.frame;
+                        vrcf::VRHaptics.trigger(hand, pattern);
+                        break;
+                    }
+                }
             }
 
             if (phase == static_cast<std::uint32_t>(FramePhase::AfterWorldFinal)) {
@@ -438,6 +586,119 @@ namespace frik::devbench
             }.dump();
         }
 
+        if (op == "record") {
+            // start recording both arms for `frames` frames (replaces any previous recording)
+            const auto frames = static_cast<std::size_t>(std::clamp(args.value("frames", 900), 1, static_cast<int>(ARM_RECORD_MAX_FRAMES)));
+            g_probe.armRecord.clear();
+            g_probe.armRecord.reserve(frames);
+            g_probe.armRecordTarget = frames;
+            g_probe.armRecording = true;
+            return json{ { "ok", true }, { "frames", frames } }.dump();
+        }
+
+        if (op == "recordStop") {
+            g_probe.armRecording = false;
+            return json{ { "ok", true }, { "recorded", g_probe.armRecord.size() } }.dump();
+        }
+
+        if (op == "recordDump") {
+            // frames [from, from+count) as compact rows: per hand, per slot [px,py,pz, r00..r22] (null when the bone was missing)
+            const auto from = static_cast<std::size_t>((std::max)(args.value("from", 0), 0));
+            const auto count = static_cast<std::size_t>(std::clamp(args.value("count", 300), 1, 1000));
+            json rows = json::array();
+            for (std::size_t i = from; i < g_probe.armRecord.size() && i < from + count; ++i) {
+                const auto& s = g_probe.armRecord[i];
+                json hands = json::array();
+                for (int side = 0; side < 2; ++side) {
+                    json slots = json::array();
+                    for (std::size_t k = 0; k < ARM_SAMPLE_SLOTS; ++k) {
+                        if (!s.valid[side * ARM_SAMPLE_SLOTS + k]) {
+                            slots.push_back(nullptr);
+                            continue;
+                        }
+                        const auto& t = s.slots[side][k];
+                        slots.push_back({ t.translate.x,
+                            t.translate.y,
+                            t.translate.z,
+                            t.rotate.entry[0][0],
+                            t.rotate.entry[0][1],
+                            t.rotate.entry[0][2],
+                            t.rotate.entry[1][0],
+                            t.rotate.entry[1][1],
+                            t.rotate.entry[1][2],
+                            t.rotate.entry[2][0],
+                            t.rotate.entry[2][1],
+                            t.rotate.entry[2][2] });
+                    }
+                    hands.push_back({ { "state", stateName(static_cast<core::HandSolveState>(s.state[side])) }, { "slots", slots } });
+                }
+                rows.push_back({ { "frame", s.frame }, { "hands", hands } });
+            }
+            return json{
+                { "ok", true },
+                { "recording", g_probe.armRecording },
+                { "total", g_probe.armRecord.size() },
+                { "from", from },
+                { "slotNames", { "Collarbone", "UpperArm", "UpperTwist1", "ForeArm1", "ForeArm2", "ForeArm3", "Hand", "Wand" } },
+                { "handOrder", { "right", "left" } },
+                { "rows", rows }
+            }.dump();
+        }
+
+        if (op == "chord") {
+            // the last controller chord (grip + A yes / B no / trigger repeat); `since` = the seq the caller already saw
+            const auto since = static_cast<std::uint64_t>((std::max)(args.value("since", 0), 0));
+            return json{ { "ok", true }, { "seq", g_probe.chordSeq }, { "fresh", g_probe.chordSeq > since }, { "chord", g_probe.chordLast }, { "frame", g_probe.chordFrame } }
+                .dump();
+        }
+
+        if (op == "bone") {
+            // one bone by name: its scene-graph node (parent, local) and its flattened-tree entry (world), to check who owns what
+            const auto name = args.value("name", "RArm_UpperTwist1");
+            json out{ { "ok", true }, { "name", name } };
+            RE::NiTransform world;
+            out["treeWorld"] = core::getBoneWorldTransform(name.c_str(), &world) ? transformJson(world) : json(nullptr);
+            if (const auto* skeleton = g_frik.getSkeleton(); skeleton) {
+                if (auto* node = f4vr::findAVObject(f4vr::getCommonNode(), name.c_str())) {
+                    out["node"] = { { "parent", node->parent ? node->parent->name.c_str() : "" },
+                        { "local", transformJson(node->local) },
+                        { "world", transformJson(node->world) } };
+                } else {
+                    out["node"] = nullptr;
+                }
+            }
+            return out.dump();
+        }
+
+        if (op == "visibility") {
+            // raw NiAVObject flags of the player body root, FRIK's skeleton root and the first-person skeleton, for the "no body after a scope exit" hunt
+            json out{ { "ok", true } };
+            auto flagsOf = [](const RE::NiAVObject* node) -> json {
+                if (!node) {
+                    return nullptr;
+                }
+                return { { "name", node->name.c_str() },
+                    { "flags", static_cast<std::uint64_t>(node->flags.flags) },
+                    { "scale", node->local.scale },
+                    { "worldZ", node->world.translate.z } };
+            };
+            const auto player = f4vr::getPlayer();
+            const RE::NiAVObject* body = player && player->loadedData ? player->loadedData->data3D.get() : nullptr;
+            out["body"] = flagsOf(body);
+            out["root"] = flagsOf(f4vr::getRootNode());
+            out["firstPerson"] = flagsOf(f4vr::getFirstPersonSkeleton());
+            out["common"] = flagsOf(f4vr::getCommonNode());
+            out["hideBodyInScope"] = g_frik.shouldHideBodyInScope();
+            out["lookingThrough"] = g_frik.isLookingThroughScope();
+            out["inScopeMenu"] = g_frik.isInScopeMenu();
+            return out.dump();
+        }
+
+        if (op == "selfie") {
+            g_frik.setSelfieMode(args.value("on", true));
+            return json{ { "ok", true }, { "selfie", g_frik.isSelfieModeOn() } }.dump();
+        }
+
         if (op == "pipboy") {
             // opens/closes FRIK's Pip-Boy the way the button does; the engine pushes PipboyMenu with it (verified headless), so a
             // run with nobody in the headset can hold a blocking menu open. Override PipBoyCloseWhenLookAway first or it closes again.
@@ -455,6 +716,41 @@ namespace frik::devbench
             const bool on = args.value("on", true);
             const bool ok = core::setOffHandGripping(PROBE_TAG, on, isLeft, nullptr);
             return json{ { "ok", ok }, { "gripping", g_frik.isOffHandGrippingWeapon() } }.dump();
+        }
+
+        if (op == "weaponUpdate") {
+            // run the engine's transform-and-bounds update over the weapon subtree; if a rifle that loaded invisible appears on this
+            // call, its geometry bounds were never computed after the 3D attach (ROCK-021)
+            const auto weapon = f4vr::getWeaponNode();
+            if (!weapon) {
+                return json{ { "ok", false }, { "error", "no weapon node" } }.dump();
+            }
+            const auto geom = weaponGeometryProbe(weapon);
+            const float before = geom ? geom->worldBound.fRadius : -1.0f;
+            RE::NiUpdateData data;
+            weapon->UpdateTransformAndBounds(data);
+            const float after = geom ? geom->worldBound.fRadius : -1.0f;
+            return json{ { "ok", true }, { "geom", geom ? geom->name.c_str() : "" }, { "boundRadiusBefore", before }, { "boundRadiusAfter", after } }.dump();
+        }
+
+        if (op == "scopeRig") {
+            // force the scope rig topology (under=weapon: ScopeParent + camera on the weapon; wand: both on the primary wand chain;
+            // offwand: ScopeParent under the off-hand wand with the camera on the weapon; clear: natural), so a scope mod can
+            // validate where its widget draws and how it tracks
+            const auto under = args.value("under", "clear");
+            const auto adjuster = g_frik.getWeaponPositionAdjuster();
+            if (!adjuster) {
+                return json{ { "ok", false }, { "error", "no weapon position adjuster" } }.dump();
+            }
+            using Override = WeaponPositionAdjuster::ScopeRigOverride;
+            adjuster->setScopeRigOverride(under == "weapon" ? Override::Weapon : under == "wand" ? Override::Wand : under == "offwand" ? Override::OffhandWand : Override::None);
+            const auto pn = f4vr::getPlayerNodes();
+            return json{
+                { "ok", true },
+                { "under", under },
+                { "scopeParentParent", pn && pn->ScopeParentNode && pn->ScopeParentNode->parent ? pn->ScopeParentNode->parent->name.c_str() : "" },
+                { "scopeCameraParent", pn && pn->primaryWeaponScopeCamera && pn->primaryWeaponScopeCamera->parent ? pn->primaryWeaponScopeCamera->parent->name.c_str() : "" }
+            }.dump();
         }
 
         if (op == "parent") {
@@ -501,7 +797,7 @@ namespace frik::devbench
                     return nullptr;
                 }
                 json chain = json::array();
-                for (auto p = node->parent; p && chain.size() < 6; p = p->parent) {
+                for (auto p = node->parent; p && chain.size() < 16; p = p->parent) {
                     chain.push_back(p->name.c_str());
                 }
                 const auto rows = [](const RE::NiMatrix3& m) {
@@ -511,7 +807,15 @@ namespace frik::devbench
                     }
                     return out;
                 };
-                return { { "world", transformJson(node->world) }, { "local", transformJson(node->local) }, { "worldRot", rows(node->world.rotate) }, { "parents", chain } };
+                return { { "world", transformJson(node->world) },
+                    { "local", transformJson(node->local) },
+                    { "worldRot", rows(node->world.rotate) },
+                    { "parents", chain },
+                    { "bound",
+                        { { "center", { node->worldBound.center.x, node->worldBound.center.y, node->worldBound.center.z } },
+                            { "radius", node->worldBound.fRadius },
+                            { "centerToWorld", common::MatrixUtils::vec3Len(node->worldBound.center - node->world.translate) } } },
+                    { "culled", node->GetAppCulled() } };
             };
             const auto pn = f4vr::getPlayerNodes();
             const auto fp = f4vr::getFirstPersonSkeleton();
@@ -519,9 +823,73 @@ namespace frik::devbench
                 { "ok", true },
                 { "weapon", nodeJson(weapon) },
                 { "scopeParent", nodeJson(pn ? pn->ScopeParentNode : nullptr) },
+                { "weaponLeft", nodeJson(pn ? pn->WeaponLeftNode : nullptr) },
+                // the wand chains the offset nodes hang from, so a hand-to-controller relation can be derived for each side
+                { "primaryWand", nodeJson(pn ? pn->primaryWandNode : nullptr) },
+                { "secondaryWand", nodeJson(pn ? pn->SecondaryWandNode : nullptr) },
+                { "primaryWeaponToWand", nodeJson(pn ? pn->primaryWeapontoWeaponNode : nullptr) },
+                { "primaryKickback", nodeJson(pn ? pn->primaryWeaponKickbackRecoilNode : nullptr) },
+                { "primaryMeleeOffset", nodeJson(pn ? pn->primaryMeleeWeaponOffsetNode : nullptr) },
+                { "secondaryMeleeOffset", nodeJson(pn ? pn->SecondaryMeleeWeaponOffsetNode : nullptr) },
+                { "secondaryAim", nodeJson(pn ? pn->SecondaryAimNode : nullptr) },
+                { "rForeArm3", nodeJson(fp ? f4vr::findNode(fp, "RArm_ForeArm3") : nullptr) },
+                // the first-person skeleton root and the player world chain, for the save-load displacement (ROCK-021)
+                { "fpRoot", nodeJson(fp) },
+                { "fpBoneTree", nodeJson(fp && !fp->children.empty() ? fp->children[0].get() : nullptr) },
+                { "playerWorld", nodeJson(pn ? pn->playerworldnode : nullptr) },
+                { "roomNode", nodeJson(pn ? pn->roomnode : nullptr) },
+                { "hmd", nodeJson(pn ? pn->HmdNode : nullptr) },
+                { "bodyRoot", nodeJson(root) },
+                { "lForeArm3", nodeJson(fp ? f4vr::findNode(fp, "LArm_ForeArm3") : nullptr) },
+                { "primaryWeaponOffset", nodeJson(pn ? pn->primaryWeaponOffsetNOde : nullptr) },
+                { "secondaryMeleeOffset2", nodeJson(pn ? pn->SecondaryMeleeWeaponOffsetNode2 : nullptr) },
                 { "scopeCamera", nodeJson(pn ? pn->primaryWeaponScopeCamera : nullptr) },
+                // the scope shape a scope mod places its widget on, wherever it hangs (it should be a descendant of the Weapon node)
+                { "scopeShape", nodeJson(weapon ? f4vr::findAVObjectStartsWith(weapon, "P-Scope") : nullptr) },
+                { "scopeShapeUnderRoot", nodeJson(root && !(weapon && f4vr::findAVObjectStartsWith(weapon, "P-Scope")) ? f4vr::findAVObjectStartsWith(root, "P-Scope") : nullptr) },
                 { "rHand", nodeJson(fp ? f4vr::findNode(fp, "RArm_Hand") : nullptr) },
                 { "lHand", nodeJson(fp ? f4vr::findNode(fp, "LArm_Hand") : nullptr) },
+                // the first-person hand nodes the skeleton itself holds (found once at build), to catch a second node of the same name
+                { "rHandFrik", g_frik.getSkeleton() ? nodeJson(g_frik.getSkeleton()->getFirstPersonHandNode(false)) : json(nullptr) },
+                { "lHandFrik", g_frik.getSkeleton() ? nodeJson(g_frik.getSkeleton()->getFirstPersonHandNode(true)) : json(nullptr) },
+                { "lHandSameNode",
+                    fp && g_frik.getSkeleton() ? json(static_cast<const RE::NiAVObject*>(f4vr::findNode(fp, "LArm_Hand")) ==
+                                                      static_cast<const RE::NiAVObject*>(g_frik.getSkeleton()->getFirstPersonHandNode(true)))
+                                               : json(nullptr) },
+                // ScopeParent's world as the engine would compose it from its live parent and its own local, and the gap to the world it actually
+                // carries: a persistent gap means someone wrote the world directly after the local was set
+                { "scopeParentComposed",
+                    pn && pn->ScopeParentNode && pn->ScopeParentNode->parent ? transformJson(composeWorld(pn->ScopeParentNode->parent->world, pn->ScopeParentNode->local))
+                                                                             : json(nullptr) },
+                { "scopeParentGap",
+                    pn && pn->ScopeParentNode && pn->ScopeParentNode->parent
+                        ? json(common::MatrixUtils::vec3Len(
+                              composeWorld(pn->ScopeParentNode->parent->world, pn->ScopeParentNode->local).translate - pn->ScopeParentNode->world.translate))
+                        : json(nullptr) },
+                // ScopeParent's subtree: names, worlds, scales and the app-culled flag of every child (a scope mod's widget lives here)
+                { "scopeParentChildren",
+                    [&]() -> json {
+                        json out = json::array();
+                        const RE::NiNode* sp = pn ? pn->ScopeParentNode : nullptr;
+                        if (!sp) {
+                            return out;
+                        }
+                        for (const auto& child : sp->children) {
+                            if (!child) {
+                                continue;
+                            }
+                            out.push_back({ { "name", child->name.c_str() },
+                                { "world", transformJson(child->world) },
+                                { "localScale", child->local.scale },
+                                { "appCulled", child->GetAppCulled() },
+                                { "flags", static_cast<std::uint64_t>(child->flags.flags) } });
+                            if (out.size() >= 16) {
+                                break;
+                            }
+                        }
+                        return out;
+                    }() },
+                { "scopeParentAppCulled", pn && pn->ScopeParentNode ? json(pn->ScopeParentNode->GetAppCulled()) : json(nullptr) },
                 { "weaponInLeftHand", g_frik.isWeaponInLeftHand() },
                 { "weaponLocal", weapon ? transformJson(weapon->local) : json(nullptr) },
                 { "weaponWorld", weapon ? transformJson(weapon->world) : json(nullptr) },
@@ -569,6 +937,6 @@ namespace frik::devbench
             }.dump();
         }
 
-        return json{ { "ok", false }, { "error", "unknown op (phases|claim|solve|chain|grip|parent|scope|block|nodes|carry|reset)" } }.dump();
+        return json{ { "ok", false }, { "error", "unknown op (phases|claim|solve|chain|grip|parent|scope|scopeRig|weaponUpdate|block|nodes|carry|reset)" } }.dump();
     }
 }

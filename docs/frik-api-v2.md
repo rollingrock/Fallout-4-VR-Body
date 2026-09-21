@@ -66,7 +66,7 @@ void onFrame()
 
 ## Versioning and compatibility
 
-`FRIK_API_V2_VERSION` (currently **3**) identifies the v2 contract — this page documents v2.3. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
+`FRIK_API_V2_VERSION` (currently **4**) identifies the v2 contract — this page documents v2.4. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
 
 Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end and bumps `FRIK_API_V2_VERSION`, so a header you copied today keeps working against every newer FRIK. `initialize(minVersion)` checks `getVersion() >= minVersion` and that FRIK's table is at least as large as `minVersion` implies (code `5` otherwise). To also run against an older FRIK, pass the oldest version you can live with and gate every newer entry on `getVersion()`; each entry below is documented with the version that introduced it.
 
@@ -256,7 +256,7 @@ Both are reference-counted by tag, like `blockFeature`. Taking weapon node owner
 
 Ask FRIK to parent the primary weapon node under a hand, for a left-carry. FRIK does the reparent and its own bookkeeping (which weapon node drives each first-person arm, the off-side weapon hand pose copy, the recoil hand) and restores the game's left-handed setting when the tag clears or the skeleton rebuilds. The newest request wins. Before v2.3 `blockPrimaryWeaponNodeOwnership` flipped this topology as a side effect; it no longer does, so a left-carry needs both calls.
 
-While the weapon is parented under the hand the game does not consider primary, FRIK also parents the engine's scope rig, `ScopeParent` (the vanilla scope widget's parent) and the scope camera, under the weapon node so the scope view and any lens hung on `ScopeParent` follow the carried weapon; they go back on the wand chain when the carry ends, keeping their world transform on each switch. A mod that reads either node should re-read its parent rather than cache it. A scope provider holding `OwnsScopeCamera` keeps the rig where it is.
+While the weapon is parented under the hand the game does not consider primary, FRIK also parents the engine's scope rig, `ScopeParent` (the vanilla scope widget's parent) and the scope camera, under the weapon node so the scope view and any lens hung on `ScopeParent` follow the carried weapon; they go back on the wand chain when the carry ends, keeping their world transform on each switch. A mod that reads either node should re-read its parent rather than cache it. A scope provider holding `OwnsScopeCamera` keeps the rig where it is; one holding `PlacesScopeWidget` (v2.4) gets `ScopeParent` under the carrying hand's wand node instead and only the camera follows the weapon node, since the scope widget is not drawn under the first-person skeleton.
 
 `bool setOffHandGripping(const char* tag, bool active, Hand supportHand, const RE::NiTransform* supportWorld)` (v2.3)
 
@@ -315,6 +315,7 @@ FRIK keys every scope behaviour on one **looking-through-scope** state: whether 
 | `OwnsScopeCamera` | FRIK leaves the `primaryWeaponScopeCamera` node alone. |
 | `PublishesLookingThrough` | This provider's `setLookingThroughScope` replaces the vanilla `ScopeMenu` state. |
 | `OwnsDamping` | FRIK does not dampen hands or recoil while scoped. |
+| `PlacesScopeWidget` | (v2.4) The provider places its own widget on the scope. During a carry in the other hand FRIK hangs `ScopeParent` under that hand's wand node (`SecondaryWandNode`, world-preserving; back under `PrimaryUIAttachNode` with its rest local when the carry ends) and carries only the scope camera with the weapon node, because the engine does not draw the scope widget while `ScopeParent` hangs under the first-person skeleton. Re-read the parent rather than cache it. |
 
 Providers survive skeleton rebuilds, like feature blocks, and capabilities are the union over registered tags. Register once on the game-loaded event.
 
@@ -367,6 +368,29 @@ The inputs and outputs of FRIK's own solve, so a mod computes its claims from th
 | `FirstPersonHand` | The first-person hand FRIK solves the body arm to when no hand transform is published. |
 
 Current from `BeforeArmSolve` on; read earlier in the frame they still hold the previous frame, and during a left-carry `FirstPersonHand` holds the game's own re-glue instead. Returns false without a skeleton or when the node does not exist.
+
+### When these are safe to capture from
+
+The first-person arms are **not** posed continuously. The engine's animation graph resets them to an unplaced,
+player-relative pose at the start of every game frame, roughly 100,000 units away from where the controllers are, and they are
+placed back onto the controllers from scratch within that same frame, several times over while another mod carries the weapon.
+So "the first-person hand" is a garbage value for part of every frame, not only after a load.
+
+FRIK's own arm work is what places them, so anything derived from a first-person transform, or from a bone under the arm
+chain, must be captured **at or after `AfterArmSolve`**. `BeforeArmSolve` and `FrameBegin` are too early, and
+`NativeGraphOutput` is earlier still. This matters most for a relation a mod caches and reuses, a hand-in-weapon offset, a
+controller-to-bone relation, a calibration: capture one of those from an unplaced arm and it is wrong for as long as it is
+cached, which can outlive the session if the mod persists it.
+
+Two things follow for a client:
+
+- Capture relations from `AfterArmSolve` or later. `AfterWorldFinal` is safest for anything read out of the flattened bone
+  tree, which FRIK refreshes at the end of its frame.
+- Sanity check the magnitude of anything you capture and refuse implausible values rather than caching them. A relation
+  between a controller and a hand is a few tens of units; a hundred-thousand-unit one means the arm was not placed when you
+  looked. A guard costs nothing and turns a timing mistake into a refused capture instead of a poisoned cached value.
+
+FRIK will keep placement before the published capture phases, or move those phases with it and say so here.
 
 `bool getBoneWorldTransform(const char* boneName, RE::NiTransform* outTransform)`
 
