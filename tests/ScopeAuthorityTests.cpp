@@ -140,3 +140,28 @@ TEST_CASE("ScopeAuthority a new game session forgets what every provider publish
     REQUIRE(idle.setProvider("ts", publishes));
     REQUIRE_FALSE(idle.clearPublishedLookingThrough());
 }
+
+TEST_CASE("ScopeAuthority clearing a provider and re-adding it starts from not looking through")
+{
+    // The documented recovery for a provider that cannot tell what it last published. It is the two-call form
+    // rather than a bare re-registration on purpose: the erase leaves nothing for a later setProvider to carry
+    // over, so this holds however setProvider treats an existing tag.
+    frik::ScopeAuthority scope;
+    const auto publishes = static_cast<std::uint32_t>(frik::ScopeCapability::PublishesLookingThrough);
+    REQUIRE(scope.setProvider("ts", publishes));
+    REQUIRE(scope.setLookingThroughScope("ts", true));
+    REQUIRE(scope.isLookingThroughScope(false));
+
+    REQUIRE(scope.clearProvider("ts"));
+    REQUIRE(scope.providerCount() == 0);
+    REQUIRE(scope.setProvider("ts", publishes));
+    REQUIRE_FALSE(scope.isLookingThroughScope(false));
+    REQUIRE(scope.hasCapability(frik::ScopeCapability::PublishesLookingThrough));
+
+    // and another provider's state is untouched by one tag recovering
+    REQUIRE(scope.setProvider("bsvr", publishes));
+    REQUIRE(scope.setLookingThroughScope("bsvr", true));
+    REQUIRE(scope.clearProvider("ts"));
+    REQUIRE(scope.setProvider("ts", publishes));
+    REQUIRE(scope.isLookingThroughScope(false));
+}
