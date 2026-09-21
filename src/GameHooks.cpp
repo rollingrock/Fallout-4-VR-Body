@@ -53,7 +53,11 @@ namespace
         }
         const auto target = address + 5 + *reinterpret_cast<const std::int32_t*>(address + 1);
         if (target != expectedTarget) {
-            logger::warn("Hook '{}' at 0x{:X} already redirected to 0x{:X} (expected 0x{:X}), chaining", name, address, target, expectedTarget);
+            logger::warn("Hook '{}' at 0x{:X} already redirected to 0x{:X} (expected 0x{:X}); hooking it anyway, which REPLACES that redirect rather than chaining to it",
+                name,
+                address,
+                target,
+                expectedTarget);
         }
         return true;
     }
@@ -116,6 +120,8 @@ namespace
      * external left carry (Skeleton::handleLeftHandedWeaponNodesSwitch) that pairing puts the left arm on the right controller and the
      * right arm on the left one; the skeleton re-pairs it.
      */
+    // The fallthrough is deliberately a tail call: a mod that detours Update1StPersonArm itself and keys on the caller's return
+    // address sees the engine's own call site through it. Keep it a tail call if this function grows.
     void* hookUpdate1stPersonArm(const RE::PlayerCharacter* pc, RE::NiNode** weapon, RE::NiNode** offsetNode)
     {
         if (weapon && frik::g_frik.isSkeletonReady() && frik::g_frik.getSkeleton()->repairEngineArmPlacementForCarry(*weapon)) {

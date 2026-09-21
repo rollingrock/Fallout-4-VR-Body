@@ -74,6 +74,7 @@ Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end 
 | --- | --- | --- |
 | `1` | 0.78 | The original 31-entry table (exact-size check at `initialize()`). |
 | `2` | 0.79 | Append-only rule; `getSkeletonGeneration`, `isInPowerArmor`; lifecycle messages carry `SkeletonLifecycleData`; scope providers: `setScopeProvider`, `clearScopeProvider`, `setLookingThroughScope`, `isLookingThroughScope`; `kScopeEnter` / `kScopeExit` events. |
+| `4` | 0.79.1 | Scope providers: the `PlacesScopeWidget` capability, and the scope rig (`ScopeParent`, scope camera) is carried with a weapon another mod holds in the other hand. No new table entries, so a v2.3 client needs no change. |
 | `3` | 0.79 | Frame phases: `registerFrameCallback`, `unregisterFrameCallback`; a hand transform published in `BeforeArmSolve` is solved in the same frame. Body reads: `getTrackedHandTransform`, `getBoneWorldTransform`, `getArmChain`; `getHandSolveResult`; `setOffHandGripping`; `setWeaponNodeParentHand` / `clearWeaponNodeParentHand` (and `blockPrimaryWeaponNodeOwnership` no longer flips the parent hand). |
 
 > A client built against the v2.1 header refuses any FRIK from 0.79 on (its exact-size check fails with code `5`). Recopy the header once; after that no further recopy is ever forced.
@@ -316,6 +317,8 @@ FRIK keys every scope behaviour on one **looking-through-scope** state: whether 
 | `PublishesLookingThrough` | This provider's `setLookingThroughScope` replaces the vanilla `ScopeMenu` state. |
 | `OwnsDamping` | FRIK does not dampen hands or recoil while scoped. |
 | `PlacesScopeWidget` | (v2.4) The provider places its own widget on the scope. During a carry in the other hand FRIK hangs `ScopeParent` under that hand's wand node (`SecondaryWandNode`, world-preserving; back under `PrimaryUIAttachNode` with its rest local when the carry ends) and carries only the scope camera with the weapon node, because the engine does not draw the scope widget while `ScopeParent` hangs under the first-person skeleton. Re-read the parent rather than cache it. |
+
+Capabilities are validated as a set: one bit this FRIK does not know refuses the **whole** call and returns `false`, rather than registering the bits it does know. So a client that may run against an older FRIK must gate a newer bit on `getVersion()`, or register again without it when the first call returns false; passing `PlacesScopeWidget` unconditionally to FRIK 0.79.0 loses the provider registration entirely, not just that one behaviour.
 
 Providers survive skeleton rebuilds, like feature blocks, and capabilities are the union over registered tags. Register once on the game-loaded event.
 
