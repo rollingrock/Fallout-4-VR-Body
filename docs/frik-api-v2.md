@@ -74,8 +74,8 @@ Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end 
 | --- | --- | --- |
 | `1` | 0.78 | The original 31-entry table (exact-size check at `initialize()`). |
 | `2` | 0.79 | Append-only rule; `getSkeletonGeneration`, `isInPowerArmor`; lifecycle messages carry `SkeletonLifecycleData`; scope providers: `setScopeProvider`, `clearScopeProvider`, `setLookingThroughScope`, `isLookingThroughScope`; `kScopeEnter` / `kScopeExit` events. |
-| `4` | 0.79.1 | Scope providers: the `PlacesScopeWidget` capability, and the scope rig (`ScopeParent`, scope camera) is carried with a weapon another mod holds in the other hand. No new table entries, so a v2.3 client needs no change. |
 | `3` | 0.79 | Frame phases: `registerFrameCallback`, `unregisterFrameCallback`; a hand transform published in `BeforeArmSolve` is solved in the same frame. Body reads: `getTrackedHandTransform`, `getBoneWorldTransform`, `getArmChain`; `getHandSolveResult`; `setOffHandGripping`; `setWeaponNodeParentHand` / `clearWeaponNodeParentHand` (and `blockPrimaryWeaponNodeOwnership` no longer flips the parent hand). |
+| `4` | 0.79.1 | Scope providers: the `PlacesScopeWidget` capability, and the scope rig (`ScopeParent`, scope camera) is carried with a weapon another mod holds in the other hand. No new table entries, so a v2.3 client needs no change. |
 
 > A client built against the v2.1 header refuses any FRIK from 0.79 on (its exact-size check fails with code `5`). Recopy the header once; after that no further recopy is ever forced.
 
@@ -326,6 +326,8 @@ Providers survive skeleton rebuilds, like feature blocks, and capabilities are t
 `bool isLookingThroughScope()`
 
 Publish on the game update thread whenever the state changes; only a provider registered with `PublishesLookingThrough` may. `isLookingThroughScope` returns the state FRIK keyed on this frame. When it flips FRIK broadcasts `kScopeEnter` / `kScopeExit`.
+
+**The provider owns the stand-down, and FRIK will not do it for you.** The published state is merged across providers with a logical or, it survives skeleton rebuilds and save loads like the registration itself, re-registering a tag keeps it, and nothing times it out. A provider that publishes `true` and then misses its own exit edge — because a blocking menu, an unequip or a save load took the weapon out from under it — leaves FRIK scoped indefinitely: hand and recoil damping stay on the in-scope pair, the Pip-Boy guards stay suppressed and a two-handed grip stays released, with no way for the player to recover short of the provider finally saying `false`. Publish `false` from every path that ends your scope state, not only from the one that normally does.
 
 BetterScopesVR is registered by FRIK itself as a `PublishesLookingThrough` provider when its plugin is detected, mapping its legacy message onto this state.
 
