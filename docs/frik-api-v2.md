@@ -329,7 +329,9 @@ Publish on the game update thread whenever the state changes; only a provider re
 
 **The provider owns the stand-down, and FRIK will not do it for you.** The published state is merged across providers with a logical or, it survives skeleton rebuilds and save loads like the registration itself, and nothing times it out. A provider that publishes `true` and then misses its own exit edge — because a blocking menu, an unequip or a save load took the weapon out from under it — leaves FRIK scoped for as long as the game runs: hand and recoil damping stay on the in-scope pair, the Pip-Boy guards stay suppressed and a two-handed grip stays released, and the player cannot clear it, reloading included. Publish `false` from every path that ends your scope state, not only from the one that normally does.
 
-Two ways back if you suspect your own state is stale: publish `false`, or call `setScopeProvider` again — a re-registering tag starts from not looking through, deliberately, and then publishes its next edge. The second is the one to reach for when you cannot tell what you last published.
+Two ways back if you suspect your own state is stale. Publish `false` — always correct, and the right answer when you know you are not scoped. Or, when you cannot tell what you last published, call `clearScopeProvider(tag)` and then `setScopeProvider(tag, capabilities)`: the clear leaves nothing behind, so the re-add starts from not looking through.
+
+Reach for that two-call form rather than a bare `setScopeProvider`, which is the one most clients will guess. Whether a bare re-registration clears what the tag published is an implementation detail, not a promise, and it is not one to build a recovery on. The cost of the two calls is that FRIK holds no provider for your tag between them, so the merged capabilities drop for that instant and a body-hiding decision landing in the gap could flash — worth it as a recovery, not as a routine capability refresh.
 
 BetterScopesVR is registered by FRIK itself as a `PublishesLookingThrough` provider when its plugin is detected, mapping its legacy message onto this state.
 
