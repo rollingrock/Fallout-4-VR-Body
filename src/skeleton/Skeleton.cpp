@@ -74,7 +74,7 @@ namespace frik
 
         _prevSpeed = 0.0;
 
-        _playerNodes = getPlayerNodes();
+        _playerNodes = getVRPlayerNodes();
         if (!_playerNodes || !_root) {
             logger::warn("Skeleton initialization failed: missing player nodes or root. playerNodes={} root={}",
                 static_cast<const void*>(_playerNodes),
@@ -422,8 +422,8 @@ namespace frik
             return 0.0;
         }
 
-        const RE::NiPoint3 pos = _playerNodes->UprightHmdNode->world.translate;
-        const RE::NiPoint3 hmdToLeft = _playerNodes->SecondaryWandNode->world.translate - pos;
+        const RE::NiPoint3 pos = _playerNodes->uprightHmdNode->world.translate;
+        const RE::NiPoint3 hmdToLeft = _playerNodes->secondaryWandNode->world.translate - pos;
         const RE::NiPoint3 hmdToRight = _playerNodes->primaryWandNode->world.translate - pos;
         float weight = 1.0f;
 
@@ -442,8 +442,8 @@ namespace frik
 
         // hands moving across the chest rotate too much.   try to handle with below
         // wp = parWp + parWr * lp =>   lp = (wp - parWp) * parWr'
-        const RE::NiPoint3 locLeft = _playerNodes->HmdNode->world.rotate * (hmdToLeft);
-        const RE::NiPoint3 locRight = _playerNodes->HmdNode->world.rotate * (hmdToRight);
+        const RE::NiPoint3 locLeft = _playerNodes->hmdNode->world.rotate * (hmdToLeft);
+        const RE::NiPoint3 locRight = _playerNodes->hmdNode->world.rotate * (hmdToRight);
 
         if (locLeft.x > locRight.x) {
             const float delta = locRight.x - locLeft.x;
@@ -452,9 +452,9 @@ namespace frik
 
         const RE::NiPoint3 sum = hmdToRight + hmdToLeft;
 
-        const RE::NiPoint3 forwardDir = MatrixUtils::vec3Norm(_playerNodes->HmdNode->world.rotate * (MatrixUtils::vec3Norm(sum)));
+        const RE::NiPoint3 forwardDir = MatrixUtils::vec3Norm(_playerNodes->hmdNode->world.rotate * (MatrixUtils::vec3Norm(sum)));
         // rotate sum to local hmd space to get the proper angle
-        const RE::NiPoint3 hmdForwardDir = MatrixUtils::vec3Norm(_playerNodes->HmdNode->world.rotate * (_playerNodes->HmdNode->local.translate));
+        const RE::NiPoint3 hmdForwardDir = MatrixUtils::vec3Norm(_playerNodes->hmdNode->world.rotate * (_playerNodes->hmdNode->local.translate));
 
         const float anglePrime = atan2f(forwardDir.x, forwardDir.y);
         const float angleSec = atan2f(forwardDir.x, forwardDir.z);
@@ -467,7 +467,7 @@ namespace frik
 
     float Skeleton::getNeckPitch() const
     {
-        const RE::NiPoint3& lookDir = MatrixUtils::vec3Norm(_playerNodes->HmdNode->world.rotate * (_playerNodes->HmdNode->local.translate));
+        const RE::NiPoint3& lookDir = MatrixUtils::vec3Norm(_playerNodes->hmdNode->world.rotate * (_playerNodes->hmdNode->local.translate));
         return atan2f(lookDir.y, lookDir.z);
     }
 
@@ -481,7 +481,7 @@ namespace frik
         constexpr float weight = 0.1f;
 
         const float curHeight = g_config.playerHeight;
-        const float heightCalc = std::abs((curHeight - (_playerNodes->UprightHmdNode->local.translate.z + getAdjustedPlayerHMDOffset())) / curHeight);
+        const float heightCalc = std::abs((curHeight - (_playerNodes->uprightHmdNode->local.translate.z + getAdjustedPlayerHMDOffset())) / curHeight);
         const float angle = heightCalc * (basePitch + weight * MatrixUtils::radsToDegrees(neckPitch));
         return MatrixUtils::degreesToRads(angle);
     }
@@ -492,8 +492,8 @@ namespace frik
     void Skeleton::setBodyUnderHMD(const float neckYaw, const float neckPitch)
     {
         if (g_config.disableSmoothMovement) {
-            _playerNodes->playerworldnode->local.translate.z = getAdjustedPlayerHMDOffset();
-            updateDown(_playerNodes->playerworldnode, true);
+            _playerNodes->playerWorldNode->local.translate.z = getAdjustedPlayerHMDOffset();
+            updateDown(_playerNodes->playerWorldNode, true);
         }
 
         //		float y    = (*g_playerCamera)->cameraNode->world.rotate.data[1][1];  // Middle column is y vector.   Grab just x and y portions and make a unit vector.    This can be used to rotate body to always be orientated with the hmd.
@@ -504,7 +504,7 @@ namespace frik
         Quaternion qa;
         qa.setAngleAxis(-neckPitch, RE::NiPoint3(-1, 0, 0));
 
-        const RE::NiMatrix3 newRot = qa.getMatrix() * _playerNodes->HmdNode->local.rotate;
+        const RE::NiMatrix3 newRot = qa.getMatrix() * _playerNodes->hmdNode->local.rotate;
 
         _forwardDir = MatrixUtils::rotateXY(RE::NiPoint3(newRot.entry[1][0], newRot.entry[1][1], 0), neckYaw * 0.7f);
         _sidewaysRDir = RE::NiPoint3(_forwardDir.y, -_forwardDir.x, 0);
@@ -513,7 +513,7 @@ namespace frik
         body->local.translate *= 0.0f;
         body->world.translate.x = _curentPosition.x;
         body->world.translate.y = _curentPosition.y;
-        body->world.translate.z += _playerNodes->playerworldnode->local.translate.z;
+        body->world.translate.z += _playerNodes->playerWorldNode->local.translate.z;
 
         const RE::NiPoint3 back = MatrixUtils::vec3Norm(RE::NiPoint3(_forwardDir.x, _forwardDir.y, 0));
         const auto bodyDir = RE::NiPoint3(0, 1, 0);
@@ -941,32 +941,32 @@ namespace frik
                 node->flags.flags |= 0x1;
             }
 
-            node = findNode(_playerNodes->SecondaryWandNode, "fist_M_Left_HELPER");
+            node = findNode(_playerNodes->secondaryWandNode, "fist_M_Left_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1; // first bit sets the cull flag so it will be hidden;
             }
 
-            node = findNode(_playerNodes->SecondaryWandNode, "fist_F_Left_HELPER");
+            node = findNode(_playerNodes->secondaryWandNode, "fist_F_Left_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
 
-            node = findNode(_playerNodes->SecondaryWandNode, "PA_fist_L_HELPER");
+            node = findNode(_playerNodes->secondaryWandNode, "PA_fist_L_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
         } else {
-            RE::NiAVObject* node = findNode(_playerNodes->SecondaryWandNode, "fist_M_Right_HELPER");
+            RE::NiAVObject* node = findNode(_playerNodes->secondaryWandNode, "fist_M_Right_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1; // first bit sets the cull flag so it will be hidden;
             }
 
-            node = findNode(_playerNodes->SecondaryWandNode, "fist_F_Right_HELPER");
+            node = findNode(_playerNodes->secondaryWandNode, "fist_F_Right_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
 
-            node = findNode(_playerNodes->SecondaryWandNode, "PA_fist_R_HELPER");
+            node = findNode(_playerNodes->secondaryWandNode, "PA_fist_R_HELPER");
             if (node != nullptr) {
                 node->flags.flags |= 0x1;
             }
@@ -987,14 +987,14 @@ namespace frik
             }
         }
 
-        if (const auto uiNode = findNode(_playerNodes->SecondaryWandNode, "Point002")) {
+        if (const auto uiNode = findNode(_playerNodes->secondaryWandNode, "Point002")) {
             uiNode->local.scale = 0.0;
         }
     }
 
     void Skeleton::showHidePAHud() const
     {
-        if (const auto hud = findNode(_playerNodes->roomnode, "PowerArmorHelmetRoot")) {
+        if (const auto hud = findNode(_playerNodes->roomNode, "PowerArmorHelmetRoot")) {
             hud->local.scale = g_config.showPAHUD ? 1.0f : 0.0f;
         }
     }
@@ -1026,7 +1026,7 @@ namespace frik
         }
 
         RE::NiNode* rightWeapon = getWeaponNode();
-        RE::NiNode* leftWeapon = _playerNodes->WeaponLeftNode;
+        RE::NiNode* leftWeapon = _playerNodes->weaponLeftNode;
         const auto rHand = findNode(getFirstPersonSkeleton(), "RArm_Hand");
         const auto lHand = findNode(getFirstPersonSkeleton(), "LArm_Hand");
 
@@ -1066,11 +1066,11 @@ namespace frik
         }
         // the pairing updateHandTarget uses: the node hanging under the other hand goes to that hand's offset, with that hand's glue
         if (weapon == getWeaponNode()) {
-            placeFirstPersonArm(weapon, _playerNodes->SecondaryMeleeWeaponOffsetNode2, !isLeftHandedMode(), true);
+            placeFirstPersonArm(weapon, _playerNodes->secondaryMeleeWeaponOffsetNode, !isLeftHandedMode(), true);
             return true;
         }
-        if (weapon == _playerNodes->WeaponLeftNode) {
-            placeFirstPersonArm(weapon, _playerNodes->primaryWeaponOffsetNOde, isLeftHandedMode(), false);
+        if (weapon == _playerNodes->weaponLeftNode) {
+            placeFirstPersonArm(weapon, _playerNodes->primaryWeaponOffsetNode, isLeftHandedMode(), false);
             return true;
         }
         return false;
@@ -1093,13 +1093,13 @@ namespace frik
 
         RE::NiNode* rightWeapon = getWeaponNode();
         //RE::NiNode* rightWeapon = _playerNodes->primaryWandNode;
-        RE::NiNode* leftWeapon = _playerNodes->WeaponLeftNode; // "WeaponLeft" can return incorrect node for left-handed with throwable weapons
+        RE::NiNode* leftWeapon = _playerNodes->weaponLeftNode; // "WeaponLeft" can return incorrect node for left-handed with throwable weapons
 
         // handle the NON-primary hand (i.e. the hand that is NOT holding the weapon)
         bool handleOffhand = isLeftHandedMode() ^ isLeft;
 
         RE::NiNode* weaponNode = handleOffhand ? leftWeapon : rightWeapon;
-        RE::NiNode* offsetNode = handleOffhand ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
+        RE::NiNode* offsetNode = handleOffhand ? _playerNodes->secondaryMeleeWeaponOffsetNode : _playerNodes->primaryWeaponOffsetNode;
 
         if (g_frik.isWeaponInLeftHand() != isLeftHandedMode()) {
             // the weapon node is parented under the other hand than the game setting says (external left-carry)
@@ -1107,11 +1107,11 @@ namespace frik
         }
 
         if (handleOffhand) {
-            _playerNodes->SecondaryMeleeWeaponOffsetNode2->local = _playerNodes->primaryWeaponOffsetNOde->local;
-            _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate =
-                _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(180.0f), 0);
-            _playerNodes->SecondaryMeleeWeaponOffsetNode2->local.translate = RE::NiPoint3(-2, -9, 2);
-            updateTransforms(_playerNodes->SecondaryMeleeWeaponOffsetNode2);
+            _playerNodes->secondaryMeleeWeaponOffsetNode->local = _playerNodes->primaryWeaponOffsetNode->local;
+            _playerNodes->secondaryMeleeWeaponOffsetNode->local.rotate =
+                _playerNodes->secondaryMeleeWeaponOffsetNode->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(180.0f), 0);
+            _playerNodes->secondaryMeleeWeaponOffsetNode->local.translate = RE::NiPoint3(-2, -9, 2);
+            updateTransforms(_playerNodes->secondaryMeleeWeaponOffsetNode);
         }
 
         const WeaponHandRecoil::ScopedNativeKickNeutralizer neutralizeNativeKick(_weaponHandRecoil);

@@ -58,12 +58,12 @@ namespace frik
             return;
         }
 
-        const auto playerNodes = f4vr::getPlayerNodes();
-        if (!playerNodes || !playerNodes->playerworldnode) {
+        const auto playerNodes = f4vr::getVRPlayerNodes();
+        if (!playerNodes || !playerNodes->playerWorldNode) {
             return;
         }
 
-        playerNodes->playerworldnode->local.translate = zeroPoint();
+        playerNodes->playerWorldNode->local.translate = zeroPoint();
     }
 
     void SmoothMovementVR::onFrameUpdate()
@@ -81,8 +81,8 @@ namespace frik
             return;
         }
 
-        const auto playerNodes = f4vr::getPlayerNodes();
-        if (!playerNodes || !playerNodes->playerworldnode) {
+        const auto playerNodes = f4vr::getVRPlayerNodes();
+        if (!playerNodes || !playerNodes->playerWorldNode) {
             resetState();
             return;
         }
@@ -104,8 +104,8 @@ namespace frik
                 _smoothedPos.y,
                 _smoothedPos.z);
             seedCurrentPosition(curPos);
-            playerNodes->playerworldnode->local.translate = zeroPoint();
-            playerNodes->playerworldnode->local.translate.z += Skeleton::getAdjustedPlayerHMDOffset();
+            playerNodes->playerWorldNode->local.translate = zeroPoint();
+            playerNodes->playerWorldNode->local.translate.z += Skeleton::getAdjustedPlayerHMDOffset();
             return;
         }
 
@@ -131,7 +131,7 @@ namespace frik
         const auto newPos = smoothedValue(curPos, _smoothedPos);
         _smoothedPos = newPos;
 
-        auto& playerLocalTransformPos = playerNodes->playerworldnode->local.translate;
+        auto& playerLocalTransformPos = playerNodes->playerWorldNode->local.translate;
         if (_notMoving && MatrixUtils::distanceNoSqrt2d(newPos.x - curPos.x, newPos.y - curPos.y, _lastAppliedLocalX, _lastAppliedLocalY) > kNotMovingResetDistanceSquared) {
             seedCurrentPosition(curPos);
             playerLocalTransformPos = zeroPoint();

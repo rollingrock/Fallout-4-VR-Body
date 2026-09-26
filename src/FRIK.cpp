@@ -341,7 +341,7 @@ namespace frik
         const auto rootNode = f4vr::getRootNode();
         const auto worldRootNode = f4vr::getWorldRootNode();
         const auto commonNode = f4vr::getCommonNode();
-        const auto playerNodes = f4vr::getPlayerNodes();
+        const auto playerNodes = f4vr::getVRPlayerNodes();
         const auto flattenedTree = f4vr::getFlattenedBoneTree();
         const auto firstPersonSkeleton = f4vr::getFirstPersonSkeleton();
         const auto rightHand = firstPersonSkeleton ? f4vr::findNode(firstPersonSkeleton, "RArm_Hand") : nullptr;

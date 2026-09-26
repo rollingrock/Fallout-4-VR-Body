@@ -73,7 +73,7 @@ namespace frik
 
     void SelfieHandler::enterSelfieMode()
     {
-        const auto hmdRot = f4vr::getPlayerNodes()->HmdNode->local.rotate;
+        const auto hmdRot = f4vr::getVRPlayerNodes()->hmdNode->local.rotate;
         _forwardDir = RE::NiPoint3(hmdRot.entry[1][0], hmdRot.entry[1][1], 0);
 
         _rootWorldPos = f4vr::getRootNode()->parent->world.translate;
@@ -93,7 +93,7 @@ namespace frik
 
     void SelfieHandler::experimental()
     {
-        // const auto pWorldNode = f4vr::getPlayerNodes()->playerworldnode;
+        // const auto pWorldNode = f4vr::getVRPlayerNodes()->playerWorldNode;
         //
         // const RE::NiNode* body = _root->parent;
         // const auto back = vec3Norm(RE::NiPoint3(-_forwardDir.x, -_forwardDir.y, 0));

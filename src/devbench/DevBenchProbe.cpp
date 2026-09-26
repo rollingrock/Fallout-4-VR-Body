@@ -744,11 +744,11 @@ namespace frik::devbench
             }
             using Override = WeaponPositionAdjuster::ScopeRigOverride;
             adjuster->setScopeRigOverride(under == "weapon" ? Override::Weapon : under == "wand" ? Override::Wand : under == "offwand" ? Override::OffhandWand : Override::None);
-            const auto pn = f4vr::getPlayerNodes();
+            const auto pn = f4vr::getVRPlayerNodes();
             return json{
                 { "ok", true },
                 { "under", under },
-                { "scopeParentParent", pn && pn->ScopeParentNode && pn->ScopeParentNode->parent ? pn->ScopeParentNode->parent->name.c_str() : "" },
+                { "scopeParentParent", pn && pn->scopeParentNode && pn->scopeParentNode->parent ? pn->scopeParentNode->parent->name.c_str() : "" },
                 { "scopeCameraParent", pn && pn->primaryWeaponScopeCamera && pn->primaryWeaponScopeCamera->parent ? pn->primaryWeaponScopeCamera->parent->name.c_str() : "" }
             }.dump();
         }
@@ -817,32 +817,32 @@ namespace frik::devbench
                             { "centerToWorld", common::MatrixUtils::vec3Len(node->worldBound.center - node->world.translate) } } },
                     { "culled", node->GetAppCulled() } };
             };
-            const auto pn = f4vr::getPlayerNodes();
+            const auto pn = f4vr::getVRPlayerNodes();
             const auto fp = f4vr::getFirstPersonSkeleton();
             return json{
                 { "ok", true },
                 { "weapon", nodeJson(weapon) },
-                { "scopeParent", nodeJson(pn ? pn->ScopeParentNode : nullptr) },
-                { "weaponLeft", nodeJson(pn ? pn->WeaponLeftNode : nullptr) },
+                { "scopeParent", nodeJson(pn ? pn->scopeParentNode : nullptr) },
+                { "weaponLeft", nodeJson(pn ? pn->weaponLeftNode : nullptr) },
                 // the wand chains the offset nodes hang from, so a hand-to-controller relation can be derived for each side
                 { "primaryWand", nodeJson(pn ? pn->primaryWandNode : nullptr) },
-                { "secondaryWand", nodeJson(pn ? pn->SecondaryWandNode : nullptr) },
-                { "primaryWeaponToWand", nodeJson(pn ? pn->primaryWeapontoWeaponNode : nullptr) },
+                { "secondaryWand", nodeJson(pn ? pn->secondaryWandNode : nullptr) },
+                { "primaryWeaponToWand", nodeJson(pn ? pn->primaryWeaponToWandNode : nullptr) },
                 { "primaryKickback", nodeJson(pn ? pn->primaryWeaponKickbackRecoilNode : nullptr) },
                 { "primaryMeleeOffset", nodeJson(pn ? pn->primaryMeleeWeaponOffsetNode : nullptr) },
-                { "secondaryMeleeOffset", nodeJson(pn ? pn->SecondaryMeleeWeaponOffsetNode : nullptr) },
-                { "secondaryAim", nodeJson(pn ? pn->SecondaryAimNode : nullptr) },
+                { "secondaryMeleeOffset", nodeJson(pn ? pn->secondaryMeleeWeaponOffsetNodeInUse : nullptr) },
+                { "secondaryAim", nodeJson(pn ? pn->secondaryAimNode : nullptr) },
                 { "rForeArm3", nodeJson(fp ? f4vr::findNode(fp, "RArm_ForeArm3") : nullptr) },
                 // the first-person skeleton root and the player world chain, for the save-load displacement (ROCK-021)
                 { "fpRoot", nodeJson(fp) },
                 { "fpBoneTree", nodeJson(fp && !fp->children.empty() ? fp->children[0].get() : nullptr) },
-                { "playerWorld", nodeJson(pn ? pn->playerworldnode : nullptr) },
-                { "roomNode", nodeJson(pn ? pn->roomnode : nullptr) },
-                { "hmd", nodeJson(pn ? pn->HmdNode : nullptr) },
+                { "playerWorld", nodeJson(pn ? pn->playerWorldNode : nullptr) },
+                { "roomNode", nodeJson(pn ? pn->roomNode : nullptr) },
+                { "hmd", nodeJson(pn ? pn->hmdNode : nullptr) },
                 { "bodyRoot", nodeJson(root) },
                 { "lForeArm3", nodeJson(fp ? f4vr::findNode(fp, "LArm_ForeArm3") : nullptr) },
-                { "primaryWeaponOffset", nodeJson(pn ? pn->primaryWeaponOffsetNOde : nullptr) },
-                { "secondaryMeleeOffset2", nodeJson(pn ? pn->SecondaryMeleeWeaponOffsetNode2 : nullptr) },
+                { "primaryWeaponOffset", nodeJson(pn ? pn->primaryWeaponOffsetNode : nullptr) },
+                { "secondaryMeleeOffset2", nodeJson(pn ? pn->secondaryMeleeWeaponOffsetNode : nullptr) },
                 { "scopeCamera", nodeJson(pn ? pn->primaryWeaponScopeCamera : nullptr) },
                 // the scope shape a scope mod places its widget on, wherever it hangs (it should be a descendant of the Weapon node)
                 { "scopeShape", nodeJson(weapon ? f4vr::findAVObjectStartsWith(weapon, "P-Scope") : nullptr) },
@@ -859,18 +859,18 @@ namespace frik::devbench
                 // ScopeParent's world as the engine would compose it from its live parent and its own local, and the gap to the world it actually
                 // carries: a persistent gap means someone wrote the world directly after the local was set
                 { "scopeParentComposed",
-                    pn && pn->ScopeParentNode && pn->ScopeParentNode->parent ? transformJson(composeWorld(pn->ScopeParentNode->parent->world, pn->ScopeParentNode->local))
+                    pn && pn->scopeParentNode && pn->scopeParentNode->parent ? transformJson(composeWorld(pn->scopeParentNode->parent->world, pn->scopeParentNode->local))
                                                                              : json(nullptr) },
                 { "scopeParentGap",
-                    pn && pn->ScopeParentNode && pn->ScopeParentNode->parent
+                    pn && pn->scopeParentNode && pn->scopeParentNode->parent
                         ? json(common::MatrixUtils::vec3Len(
-                              composeWorld(pn->ScopeParentNode->parent->world, pn->ScopeParentNode->local).translate - pn->ScopeParentNode->world.translate))
+                              composeWorld(pn->scopeParentNode->parent->world, pn->scopeParentNode->local).translate - pn->scopeParentNode->world.translate))
                         : json(nullptr) },
                 // ScopeParent's subtree: names, worlds, scales and the app-culled flag of every child (a scope mod's widget lives here)
                 { "scopeParentChildren",
                     [&]() -> json {
                         json out = json::array();
-                        const RE::NiNode* sp = pn ? pn->ScopeParentNode : nullptr;
+                        const RE::NiNode* sp = pn ? pn->scopeParentNode : nullptr;
                         if (!sp) {
                             return out;
                         }
@@ -889,7 +889,7 @@ namespace frik::devbench
                         }
                         return out;
                     }() },
-                { "scopeParentAppCulled", pn && pn->ScopeParentNode ? json(pn->ScopeParentNode->GetAppCulled()) : json(nullptr) },
+                { "scopeParentAppCulled", pn && pn->scopeParentNode ? json(pn->scopeParentNode->GetAppCulled()) : json(nullptr) },
                 { "weaponInLeftHand", g_frik.isWeaponInLeftHand() },
                 { "weaponLocal", weapon ? transformJson(weapon->local) : json(nullptr) },
                 { "weaponWorld", weapon ? transformJson(weapon->world) : json(nullptr) },

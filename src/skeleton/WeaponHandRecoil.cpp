@@ -102,7 +102,7 @@ namespace frik
      * Every path that ends without damping drops the smoothing history, so a later damped
      * burst always eases out from rest instead of resuming a stale value.
      */
-    void WeaponHandRecoil::onFrameUpdate(f4vr::PlayerNodes* playerNodes, const bool physicalPrimaryIsLeft)
+    void WeaponHandRecoil::onFrameUpdate(RE::VRPlayerNodes* playerNodes, const bool physicalPrimaryIsLeft)
     {
         _playerNodes = playerNodes;
         _physicalPrimaryIsLeft = physicalPrimaryIsLeft;
@@ -209,7 +209,7 @@ namespace frik
         const bool nativePrimaryIsLeft = isLeftHandedMode();
         if (isLeft != nativePrimaryIsLeft) {
             auto* const nativePrimaryWand = _playerNodes->primaryWandNode;
-            auto* const nativeOffhandWand = _playerNodes->SecondaryWandNode;
+            auto* const nativeOffhandWand = _playerNodes->secondaryWandNode;
             if (!nativePrimaryWand || !nativeOffhandWand || !isFiniteTransform(nativePrimaryWand->world) || !isFiniteTransform(nativeOffhandWand->world)) {
                 return false;
             }

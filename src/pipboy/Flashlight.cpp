@@ -38,7 +38,7 @@ namespace frik
     void Flashlight::checkSwitchingFlashlightHeadHand()
     {
         // check a bit higher than the HMD to allow hand close to the lower part of the face
-        const auto hmdPos = f4vr::getPlayerNodes()->HmdNode->world.translate + RE::NiPoint3(0, 0, 4);
+        const auto hmdPos = f4vr::getVRPlayerNodes()->hmdNode->world.translate + RE::NiPoint3(0, 0, 4);
         const auto isLeftHandCloseToHMD = MatrixUtils::vec3Len(_skelly->getLeftArm().hand->world.translate - hmdPos) < 12;
         const auto isRightHandCloseToHMD = MatrixUtils::vec3Len(_skelly->getRightArm().hand->world.translate - hmdPos) < 12;
 
@@ -79,7 +79,7 @@ namespace frik
      */
     void Flashlight::adjustFlashlightTransformToHandOrHead() const
     {
-        const auto lightNode = f4vr::getFirstChild(f4vr::getPlayerNodes()->HeadLightParentNode);
+        const auto lightNode = f4vr::getFirstChild(f4vr::getVRPlayerNodes()->headLightParentNode);
         if (!lightNode) {
             return;
         }

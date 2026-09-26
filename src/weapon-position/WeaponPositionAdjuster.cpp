@@ -42,7 +42,7 @@ namespace frik
     {
         // FRIK's last scope camera offset would otherwise persist into the takeover; the rotation keeps following the weapon
         if (!g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera)) {
-            if (const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera) {
+            if (const auto scopeCamera = f4vr::getVRPlayerNodes()->primaryWeaponScopeCamera) {
                 scopeCamera->local.translate = RE::NiPoint3();
             }
         }
@@ -305,7 +305,7 @@ namespace frik
             return;
         }
 
-        const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
+        const auto scopeCamera = f4vr::getVRPlayerNodes()->primaryWeaponScopeCamera;
 
         // Apply the position offset is weird because of different coordinate system
         const auto weaponPosDiff = weapon->local.translate - _weaponOriginalTransform.translate;
@@ -329,7 +329,7 @@ namespace frik
             return;
         }
 
-        const auto scopeCamera = f4vr::getPlayerNodes()->primaryWeaponScopeCamera;
+        const auto scopeCamera = f4vr::getVRPlayerNodes()->primaryWeaponScopeCamera;
 
         // need to update default transform for later world rotation use
         const auto& baseMatrix = _scopeRigCarried ? _scopeCameraCarryBaseMatrix : _scopeCameraBaseMatrix;
@@ -363,11 +363,11 @@ namespace frik
      */
     void WeaponPositionAdjuster::carryScopeRigWithWeapon()
     {
-        const auto pn = f4vr::getPlayerNodes();
+        const auto pn = f4vr::getVRPlayerNodes();
         const auto weapon = f4vr::getWeaponNode();
-        const auto scopeParent = pn->ScopeParentNode;
+        const auto scopeParent = pn->scopeParentNode;
         const auto scopeCamera = pn->primaryWeaponScopeCamera;
-        if (!weapon || !scopeParent || !scopeCamera || !pn->primaryUIAttachNode || !pn->primaryWeaponOffsetNOde) {
+        if (!weapon || !scopeParent || !scopeCamera || !pn->primaryUIAttachNode || !pn->primaryWeaponOffsetNode) {
             if (_scopeRigCarried) {
                 restoreScopeRig();
             }
@@ -380,10 +380,10 @@ namespace frik
         // follows the non-dominant hand): drawn with the world, and a short lever arm from that wand to the glass; only the camera
         // follows the weapon node itself
         const bool providerPlacesWidget = g_scopeAuthority.hasCapability(ScopeCapability::PlacesScopeWidget) || _scopeRigOverride == ScopeRigOverride::OffhandWand;
-        const bool widgetUnderOffhandWand = carried && providerPlacesWidget && pn->SecondaryWandNode;
+        const bool widgetUnderOffhandWand = carried && providerPlacesWidget && pn->secondaryWandNode;
         const bool carryWidgetParent = carried && !providerPlacesWidget;
 
-        if (!carried && scopeParent->parent == pn->primaryUIAttachNode && scopeCamera->parent == pn->primaryWeaponOffsetNOde) {
+        if (!carried && scopeParent->parent == pn->primaryUIAttachNode && scopeCamera->parent == pn->primaryWeaponOffsetNode) {
             _scopeParentRestLocal = scopeParent->local;
             _scopeCameraRestLocal = scopeCamera->local;
             _scopeRigRestValid = true;
@@ -395,7 +395,7 @@ namespace frik
                 _scopeCameraCarryBaseMatrix = _scopeCameraBaseMatrix * scopeCamera->parent->world.rotate * weapon->world.rotate.Transpose();
             }
             if (widgetUnderOffhandWand) {
-                reparent(scopeParent, pn->SecondaryWandNode, nullptr);
+                reparent(scopeParent, pn->secondaryWandNode, nullptr);
             } else if (carryWidgetParent) {
                 reparent(scopeParent, weapon, nullptr);
             } else {
@@ -404,7 +404,7 @@ namespace frik
             reparent(scopeCamera, weapon, nullptr);
         } else {
             reparent(scopeParent, pn->primaryUIAttachNode, _scopeRigRestValid ? &_scopeParentRestLocal : nullptr);
-            reparent(scopeCamera, pn->primaryWeaponOffsetNOde, _scopeRigRestValid ? &_scopeCameraRestLocal : nullptr);
+            reparent(scopeCamera, pn->primaryWeaponOffsetNode, _scopeRigRestValid ? &_scopeCameraRestLocal : nullptr);
         }
         if (carried != _scopeRigCarried) {
             logger::info("Scope {} {} the weapon for an external carry",
@@ -422,12 +422,12 @@ namespace frik
      */
     void WeaponPositionAdjuster::restoreScopeRig()
     {
-        const auto pn = f4vr::getPlayerNodes();
+        const auto pn = f4vr::getVRPlayerNodes();
         if (!pn) {
             return;
         }
-        reparent(pn->ScopeParentNode, pn->primaryUIAttachNode, _scopeRigRestValid ? &_scopeParentRestLocal : nullptr);
-        reparent(pn->primaryWeaponScopeCamera, pn->primaryWeaponOffsetNOde, _scopeRigRestValid ? &_scopeCameraRestLocal : nullptr);
+        reparent(pn->scopeParentNode, pn->primaryUIAttachNode, _scopeRigRestValid ? &_scopeParentRestLocal : nullptr);
+        reparent(pn->primaryWeaponScopeCamera, pn->primaryWeaponOffsetNode, _scopeRigRestValid ? &_scopeCameraRestLocal : nullptr);
         if (_scopeRigCarried) {
             logger::info("Scope rig released from the weapon for an external carry");
         }
@@ -438,7 +438,7 @@ namespace frik
      * Move a node under a new parent: with a local it takes that local, else it keeps its world. Returns true if it was moved.
      * The node is held across the detach, in case nothing but the old parent references it.
      */
-    bool WeaponPositionAdjuster::reparent(RE::NiNode* node, RE::NiNode* newParent, const RE::NiTransform* local)
+    bool WeaponPositionAdjuster::reparent(RE::NiAVObject* node, RE::NiNode* newParent, const RE::NiTransform* local)
     {
         if (!node || !newParent || node->parent == newParent) {
             return false;
@@ -751,7 +751,7 @@ namespace frik
         f4vr::DebugDump::printTransform("Weapon Original: ", _weaponOriginalTransform);
         f4vr::DebugDump::printTransform("Weapon Offset  : ", _weaponOffsetTransform);
         f4vr::DebugDump::printTransform("Back of Hand UI: ", _backOfHandUIOffsetTransform);
-        f4vr::DebugDump::printTransform("Scope Offset   : ", f4vr::getPlayerNodes()->primaryWeaponScopeCamera->local);
+        f4vr::DebugDump::printTransform("Scope Offset   : ", f4vr::getVRPlayerNodes()->primaryWeaponScopeCamera->local);
         f4vr::DebugDump::printNodes(weapon);
         f4vr::DebugDump::printNodesTransform(weapon);
     }

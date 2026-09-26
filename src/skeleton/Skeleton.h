@@ -58,7 +58,7 @@ namespace frik
          */
         RE::NiNode* getWeaponOffsetNode(const bool isLeft) const
         {
-            return (f4vr::isLeftHandedMode() ^ isLeft) ? _playerNodes->SecondaryMeleeWeaponOffsetNode2 : _playerNodes->primaryWeaponOffsetNOde;
+            return (f4vr::isLeftHandedMode() ^ isLeft) ? _playerNodes->secondaryMeleeWeaponOffsetNode : _playerNodes->primaryWeaponOffsetNode;
         }
 
         /**
@@ -172,7 +172,7 @@ namespace frik
         RE::NiPoint3 _upDir;
 
         // skeleton nodes
-        f4vr::PlayerNodes* _playerNodes;
+        RE::VRPlayerNodes* _playerNodes;
         RE::NiNode* _rightHand;
         RE::NiNode* _leftHand;
         RE::NiNode* _head;

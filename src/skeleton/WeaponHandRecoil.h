@@ -11,7 +11,7 @@ namespace frik
      * Hand recoil ("kickback") authority for the equipped weapon.
      *
      * The game drives recoil through a single animated node under the primary wand
-     * (PlayerNodes::primaryWeaponKickbackRecoilNode) that the first-person arm update folds
+     * (RE::VRPlayerNodes::primaryWeaponKickbackRecoilNode) that the first-person arm update folds
      * into the hand. External mods can take that over through the FRIK API: each frame the
      * native kick is sampled, offered to the registered recoil controllers, and whatever they
      * return is applied to the IK hand world targets instead. While a controller owns the frame
@@ -24,7 +24,7 @@ namespace frik
     class WeaponHandRecoil
     {
     public:
-        void onFrameUpdate(f4vr::PlayerNodes* playerNodes, bool physicalPrimaryIsLeft);
+        void onFrameUpdate(RE::VRPlayerNodes* playerNodes, bool physicalPrimaryIsLeft);
 
         /**
          * Return whether a controller accepted ownership of this frame's recoil.
@@ -63,7 +63,7 @@ namespace frik
         RE::NiTransform dampen(const RE::NiTransform& kick);
         bool buildWorldDelta(bool isLeft, RE::NiTransform& outWorldDelta) const;
 
-        f4vr::PlayerNodes* _playerNodes = nullptr;
+        RE::VRPlayerNodes* _playerNodes = nullptr;
 
         bool _responseAccepted = false;
 

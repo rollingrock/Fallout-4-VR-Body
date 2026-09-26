@@ -49,7 +49,7 @@ namespace frik
           _physicalHandler(skelly, this)
     {
         // force hide if was open before like when fast traveling (force show if not wrist to allow changing mid-game)
-        f4vr::getPlayerNodes()->PipboyRoot_nif_only_node->local.scale = f4vr::isPipboyOnWrist() ? 0.0f : 1.0f;
+        f4vr::getVRPlayerNodes()->pipboyRootNIFOnlyNode->local.scale = f4vr::isPipboyOnWrist() ? 0.0f : 1.0f;
 
         // if skeleton changed we need to re-attach the pipboy root nif
         detachReplacedPipboyRootNif();
@@ -72,7 +72,7 @@ namespace frik
      */
     bool Pipboy::isPlayerLookingAtPipboy(const float threshold)
     {
-        const auto screen = f4vr::getPlayerNodes()->ScreenNode;
+        const auto screen = f4vr::getVRPlayerNodes()->screenNode;
         if (screen == nullptr) {
             return false;
         }
@@ -107,9 +107,9 @@ namespace frik
         logger::info("Turning Pipboy {}", open ? "ON" : "OFF");
         _isOpen = open;
 
-        const auto pn = f4vr::getPlayerNodes();
-        f4vr::setNodeVisibility(pn->ScreenNode, open);
-        pn->PipboyRoot_nif_only_node->local.scale = open ? 1.0f : 0.0f;
+        const auto pn = f4vr::getVRPlayerNodes();
+        f4vr::setNodeVisibility(pn->screenNode, open);
+        pn->pipboyRootNIFOnlyNode->local.scale = open ? 1.0f : 0.0f;
         turnPipBoyOnOff(open);
 
         if (open) {
@@ -156,9 +156,9 @@ namespace frik
         turnPipBoyOnOff(false);
         detachReplacedPipboyRootNif();
         updateSetupPipboyNodes();
-        const auto pn = f4vr::getPlayerNodes();
-        pn->PipboyRoot_nif_only_node->local.scale = 1;
-        pn->ScreenNode->local = g_config.getPipboyOffset();
+        const auto pn = f4vr::getVRPlayerNodes();
+        pn->pipboyRootNIFOnlyNode->local.scale = 1;
+        pn->screenNode->local = g_config.getPipboyOffset();
         _pipboyScreenPrevFrame.clear();
         turnPipBoyOnOff(true);
     }
@@ -290,16 +290,16 @@ namespace frik
     {
         detachReplacedPipboyRootNif();
 
-        const auto pn = f4vr::getPlayerNodes();
+        const auto pn = f4vr::getVRPlayerNodes();
         if (!_originalPipboyRootNifOnlyNode) {
             return;
         }
 
         logger::info("Restoring original Pipboy model...");
         _originalPipboyRootNifOnlyNode->local.scale = 1;
-        pn->PipboyRoot_nif_only_node = _originalPipboyRootNifOnlyNode;
+        pn->pipboyRootNIFOnlyNode = _originalPipboyRootNifOnlyNode;
         if (const auto screenNode = f4vr::findNode(_originalPipboyRootNifOnlyNode, "Screen")) {
-            pn->ScreenNode = screenNode;
+            pn->screenNode = screenNode;
         } else {
             logger::error("Failed to find Pipboy screen node in original nif!");
         }
@@ -332,7 +332,7 @@ namespace frik
 
         if (!g_frik.isPipboyConfigurationModeActive()) {
             // load Pipboy screen adjusted position config
-            f4vr::getPlayerNodes()->ScreenNode->local = g_config.getPipboyOffset();
+            f4vr::getVRPlayerNodes()->screenNode->local = g_config.getPipboyOffset();
         }
 
         updateSetupAttaboyNodes();
@@ -365,8 +365,8 @@ namespace frik
      */
     void Pipboy::setupPipboyRootNif() const
     {
-        const auto pn = f4vr::getPlayerNodes();
-        if (!pn->PipboyParentNode || !pn->PipboyRoot_nif_only_node) {
+        const auto pn = f4vr::getVRPlayerNodes();
+        if (!pn->pipboyParentNode || !pn->pipboyRootNIFOnlyNode) {
             logger::warn("No pipboy parent or root nif nodes found!");
             return;
         }
@@ -374,7 +374,7 @@ namespace frik
         if (!_originalPipboyRootNifOnlyNode) {
             // save the original to restore it later if needed.
             logger::info("Store original pipboy root nif node");
-            _originalPipboyRootNifOnlyNode = pn->PipboyRoot_nif_only_node;
+            _originalPipboyRootNifOnlyNode = pn->pipboyRootNIFOnlyNode;
             _originalPipboyRootNifOnlyNode->local.scale = 0;
         }
 
@@ -388,9 +388,9 @@ namespace frik
         }
 
         // replace the game Pipboy nif with ours
-        pn->PipboyRoot_nif_only_node = newPipboyRootNifOnlyNode;
-        pn->PipboyRoot_nif_only_node->local.scale = 0.0; // hide until opened
-        pn->ScreenNode = newScreen;
+        pn->pipboyRootNIFOnlyNode = newPipboyRootNifOnlyNode;
+        pn->pipboyRootNIFOnlyNode->local.scale = 0.0; // hide until opened
+        pn->screenNode = newScreen;
 
         // attach where the 3rd-person Pipboy is on the arm
         if (const auto pipboyAttachNode = g_config.isFalloutLondonVR ? _skelly->getLeftArm().hand->IsNode() : getPipboyModelOnArmNode()) {
@@ -589,7 +589,7 @@ namespace frik
             return;
         }
 
-        const auto pipboyScreen = f4vr::getPlayerNodes()->ScreenNode;
+        const auto pipboyScreen = f4vr::getVRPlayerNodes()->screenNode;
         if (!pipboyScreen) {
             return;
         }
