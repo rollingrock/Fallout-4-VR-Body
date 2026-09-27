@@ -1,21 +1,22 @@
-# Post-Build event script to package the mod into a .7z file ONLY for release builds
+# Package the mod into a versioned .7z file, run by the 'package_mod' target (see CMakeLists.txt).
+# Any configuration can be packaged, but a non-Release archive has the configuration in its name so it can't pass for a release.
 
 string(TOLOWER "${CONFIG}" CONFIG_LOWER)
+set(PACKAGE_CONFIG_SUFFIX "")
 if(NOT CONFIG_LOWER STREQUAL "release")
-  message("Skipping post-build packaging: not a release build: '${CONFIG}'")
-  return()
+  set(PACKAGE_CONFIG_SUFFIX " - ${CONFIG}")
 endif()
 
 set(PACKAGE_DIR "${BUILD_DIR}/package")
 set(PACKAGE_STAGE_DIR "${PACKAGE_DIR}/stageing")
 set(PACKAGE_STAGE_PLUGINS_DIR "${PACKAGE_STAGE_DIR}/F4SE/Plugins")
 string(TIMESTAMP PACKAGE_DATE "%Y%m%d")
-set(TARGET_ZIP "${PACKAGE_DIR}/${PROJECT_FRIENDLY_NAME} - v${PROJECT_VERSION} - ${PACKAGE_DATE}.7z")
+set(TARGET_ZIP "${PACKAGE_DIR}/${PROJECT_FRIENDLY_NAME} - v${PROJECT_VERSION} - ${PACKAGE_DATE}${PACKAGE_CONFIG_SUFFIX}.7z")
 
-message("Packaging release build into '${TARGET_ZIP}'")
+message("Packaging ${CONFIG} build into '${TARGET_ZIP}'")
 
 # Stage from scratch every time. Copying only ever adds files, so a mesh or texture that was renamed
-# or deleted since the last release build would keep shipping out of the previous build's leftovers.
+# or deleted since the last packaged build would keep shipping out of the previous build's leftovers.
 file(REMOVE_RECURSE "${PACKAGE_STAGE_DIR}")
 file(MAKE_DIRECTORY "${PACKAGE_STAGE_PLUGINS_DIR}")
 file(COPY "${ROOT_DIR}/data/mod/" DESTINATION "${PACKAGE_STAGE_DIR}")
@@ -31,5 +32,5 @@ execute_process(
   RESULT_VARIABLE PACKAGE_RESULT
 )
 if(NOT PACKAGE_RESULT EQUAL 0)
-  message(FATAL_ERROR "Failed to package release into '${TARGET_ZIP}' (exit code: ${PACKAGE_RESULT})")
+  message(FATAL_ERROR "Failed to package build into '${TARGET_ZIP}' (exit code: ${PACKAGE_RESULT})")
 endif()

@@ -32,9 +32,9 @@ cmake --preset default
 Build and package:
 ```
 cmake --preset default
-cmake --build build --config Release
+cmake --build build --config Release --target package_mod
 ```
-- This automatically creates a 7-Zip package of the mod in `build/package`.
+- The `package_mod` target builds the plugin if needed and creates a 7-Zip package of the mod in `build/package`. A plain build does not package.
 
 ---
 

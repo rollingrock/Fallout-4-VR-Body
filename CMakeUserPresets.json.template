@@ -4,9 +4,11 @@
 // Set "COPY_PLUGIN_CONFIGURATIONS" to the build configurations to copy on: "all" (default) or a list (i.e. "Release" or "Debug;RelWithDebInfo").
 // Use "F4VR_COMMON_FRAMEWORK_PATH" to use existing F4VRCommonFramework instead of submodule.
 // Rename the file to 'CMakeUserPresets.json' (it is in .gitignore to keep it local to you).
+// Build preset names must not repeat the ones in CMakePresets.json ("debug" / "release" / "package").
 // Remove this comment block.
 // Run:
 // cmake --preset custom
+// cmake --build --preset custom-debug   (or custom-release, or custom-package to also package the mod into build/package/)
 
 {
   "version": 3,
@@ -20,6 +22,24 @@
         "F4VR_COMMON_FRAMEWORK_PATH": ""
       },
       "inherits": "default"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "custom-debug",
+      "configurePreset": "custom",
+      "configuration": "Debug"
+    },
+    {
+      "name": "custom-release",
+      "configurePreset": "custom",
+      "configuration": "Release"
+    },
+    {
+      "name": "custom-package",
+      "configurePreset": "custom",
+      "configuration": "Release",
+      "targets": ["package_mod"]
     }
   ]
 }

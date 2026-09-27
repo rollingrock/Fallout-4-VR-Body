@@ -62,6 +62,12 @@
       "name": "release",
       "configurePreset": "default",
       "configuration": "Release"
+    },
+    {
+      "name": "package",
+      "configurePreset": "default",
+      "configuration": "Release",
+      "targets": ["package_mod"]
     }
   ],
   "version": 3

@@ -238,19 +238,21 @@ else()
   message(">>> No post build copy")
 endif()
 
-# >>> Post build for release only to package the mod into a .7z file
-message(">>> Create post build command: package mod on release build")
-add_custom_command(
-  TARGET ${PROJECT_NAME}
-  POST_BUILD
+# >>> Target to package the mod into a versioned .7z file in build/package/, see cmake/package.cmake
+# Not part of a normal build, build it explicitly: `cmake --build build --config Release --target package_mod`
+# or a build preset with "targets": ["package_mod"]. It builds the plugin first when it is out of date.
+add_custom_target(package_mod
   COMMAND ${CMAKE_COMMAND}
-          -DPROJECT_NAME=${PROJECT_NAME}
-          -DPROJECT_FRIENDLY_NAME=${FRIENDLY_NAME}
-          -DPROJECT_VERSION=${PROJECT_VERSION}
-          -DROOT_DIR=${ROOT_DIR}
-          -DBUILD_DIR=${BUILD_DIR}
-          -DTARGET_FILE="$<TARGET_FILE:${PROJECT_NAME}>"
-          -DTARGET_PDB_FILE="$<TARGET_PDB_FILE:${PROJECT_NAME}>"
-          -DCONFIG=$(Configuration)
+          "-DPROJECT_NAME=${PROJECT_NAME}"
+          "-DPROJECT_FRIENDLY_NAME=${FRIENDLY_NAME}"
+          "-DPROJECT_VERSION=${PROJECT_VERSION}"
+          "-DROOT_DIR=${ROOT_DIR}"
+          "-DBUILD_DIR=${BUILD_DIR}"
+          "-DTARGET_FILE=$<TARGET_FILE:${PROJECT_NAME}>"
+          "-DTARGET_PDB_FILE=$<TARGET_PDB_FILE:${PROJECT_NAME}>"
+          "-DCONFIG=$<CONFIG>"
           -P "${ROOT_DIR}/cmake/package.cmake"
+  COMMENT "Packaging ${PROJECT_NAME} into '${BUILD_DIR}/package/'"
+  VERBATIM
 )
+add_dependencies(package_mod ${PROJECT_NAME})

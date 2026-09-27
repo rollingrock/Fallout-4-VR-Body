@@ -28,7 +28,7 @@ For local development, copy `CMakeUserPresets.json.template` → `CMakeUserPrese
 ```
 cmake --build build 2>&1 | tee build_output.txt
 ```
-Then read `build_output.txt`. Release builds also produce a versioned `.7z` package in `build/package/`.
+Then read `build_output.txt`. To package, build the `package_mod` target (`cmake --build build --config Release --target package_mod`), which writes a versioned `.7z` to `build/package/`.
 
 ## Architecture
 

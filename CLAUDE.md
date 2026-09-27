@@ -29,7 +29,7 @@ For local development, copy `CMakeUserPresets.json.template` → `CMakeUserPrese
 ```
 cmake --build build --config Release 2>&1 | tee build_output.txt
 ```
-Then read `build_output.txt`. The solution is multi-config, so without `--config Release` you get a Debug build, which is not packaged (and is copied to the mod folder only if `COPY_PLUGIN_CONFIGURATIONS` includes Debug). Release builds also produce a versioned `.7z` package in `build/package/`.
+Then read `build_output.txt`. The solution is multi-config, so without `--config Release` you get a Debug build, which is copied to the mod folder only if `COPY_PLUGIN_CONFIGURATIONS` includes Debug. A normal build does not package: build the `package_mod` target (`cmake --build build --config Release --target package_mod`, or a build preset with `"targets": ["package_mod"]`) to build the plugin if needed and write a versioned `.7z` to `build/package/`. A non-Release package has the configuration in its file name.
 
 ## Architecture
 

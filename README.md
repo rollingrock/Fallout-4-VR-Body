@@ -92,7 +92,7 @@ cmake --preset default
 cmake --build build --config Release
 ```
 
-This generates the Visual Studio solution in `build/`. Open `build/FRIK.slnx` if you prefer building or debugging in Visual Studio. Project configuration belongs in `CMakeLists.txt`, not the generated VS project files. Release builds automatically produce a `.7z` package in `build/package`.
+This generates the Visual Studio solution in `build/`. Open `build/FRIK.slnx` if you prefer building or debugging in Visual Studio. Project configuration belongs in `CMakeLists.txt`, not the generated VS project files. To produce the `.7z` package in `build/package`, build the `package_mod` target: `cmake --build build --config Release --target package_mod`.
 
 For local post-build copying, copy `CMakeUserPresets.json.template` to `CMakeUserPresets.json` and set `COPY_PLUGIN_BASE_PATH` to your MO2 mod folder or Fallout 4 VR `Data` folder. More development notes are in [docs/development.md](docs/development.md).
 
