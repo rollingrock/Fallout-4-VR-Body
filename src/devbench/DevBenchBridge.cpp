@@ -8,8 +8,8 @@
 #include "FRIK.h"
 #include "devbench/DevBenchAPI.h"
 #include "devbench/DevBenchProbe.h"
-#include "devbench/PerfProbe.h"
 #include "f4vr/F4VRUtils.h"
+#include "perf/PerfMonitor.h"
 
 namespace frik::devbench
 {
@@ -177,11 +177,11 @@ namespace frik::devbench
                 write(sink,
                     g_devBenchBridge
                         .runOnGameThread([reset]() -> std::string {
-                            const auto now = PerfStats::Clock::now();
+                            const auto now = perf::PerfStats::Clock::now();
                             nlohmann::json sites = nlohmann::json::object();
-                            for (auto* probe : PerfProbe::all()) {
-                                const auto s = probe->stats().summary(now);
-                                sites[probe->name()] = { { "n", s.count },
+                            for (auto* monitor : perf::PerfMonitor::all()) {
+                                const auto s = monitor->stats().summary(now);
+                                sites[monitor->name()] = { { "n", s.count },
                                     { "windowMs", s.windowMs },
                                     { "totalMs", s.totalMs },
                                     { "avgMs", s.avgMs },
@@ -192,7 +192,7 @@ namespace frik::devbench
                                     { "busyPct", s.busyPct },
                                     { "percentilesTruncated", s.percentilesTruncated } };
                                 if (reset) {
-                                    probe->resetStats();
+                                    monitor->resetStats();
                                 }
                             }
                             return nlohmann::json{ { "ok", true }, { "reset", reset }, { "sites", sites } }.dump();

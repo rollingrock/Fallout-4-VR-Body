@@ -12,10 +12,10 @@
 #include "api/ApiCore.h"
 #include "common/MatrixUtils.h"
 #include "common/Quaternion.h"
-#include "devbench/PerfProbe.h"
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
+#include "perf/PerfMonitor.h"
 #include "utils.h"
 
 using namespace common;
@@ -225,7 +225,7 @@ namespace frik
      */
     void Skeleton::onFrameUpdate()
     {
-        static devbench::PerfProbe perf("Skeleton::onFrameUpdate");
+        static perf::PerfMonitor perf("Skeleton::onFrameUpdate");
         const auto timer = perf.scope();
 
         setTime();
@@ -239,13 +239,13 @@ namespace frik
         setWandsVisibility(false, false);
 
         // Each step is a devbench perf site, so a sitting can read where the body pass spends its time (perf action)
-        static devbench::PerfProbe perfReset("Skeleton::resetAndFlatten");
-        static devbench::PerfProbe perfBody("Skeleton::bodyUnderHMD");
-        static devbench::PerfProbe perfPosture("Skeleton::posture");
-        static devbench::PerfProbe perfLegs("Skeleton::legs");
-        static devbench::PerfProbe perfArms("Skeleton::arms");
-        static devbench::PerfProbe perfMisc("Skeleton::hideCullSelfie");
-        static devbench::PerfProbe perfHands("Skeleton::handPose");
+        static perf::PerfMonitor perfReset("Skeleton::resetAndFlatten");
+        static perf::PerfMonitor perfBody("Skeleton::bodyUnderHMD");
+        static perf::PerfMonitor perfPosture("Skeleton::posture");
+        static perf::PerfMonitor perfLegs("Skeleton::legs");
+        static perf::PerfMonitor perfArms("Skeleton::arms");
+        static perf::PerfMonitor perfMisc("Skeleton::hideCullSelfie");
+        static perf::PerfMonitor perfHands("Skeleton::handPose");
 
         float neckYaw, neckPitch;
         {
@@ -299,11 +299,11 @@ namespace frik
 
         {
             const auto t = perfArms.scope();
-            static devbench::PerfProbe perfHandTargets("Skeleton::arms.handTargets");
-            static devbench::PerfProbe perfBeforeArmSolve("Skeleton::arms.phaseBeforeArmSolve");
-            static devbench::PerfProbe perfSolve("Skeleton::arms.solveArms");
-            static devbench::PerfProbe perfArmsFlatten("Skeleton::arms.flatten");
-            static devbench::PerfProbe perfAfterArmSolve("Skeleton::arms.phaseAfterArmSolve");
+            static perf::PerfMonitor perfHandTargets("Skeleton::arms.handTargets");
+            static perf::PerfMonitor perfBeforeArmSolve("Skeleton::arms.phaseBeforeArmSolve");
+            static perf::PerfMonitor perfSolve("Skeleton::arms.solveArms");
+            static perf::PerfMonitor perfArmsFlatten("Skeleton::arms.flatten");
+            static perf::PerfMonitor perfAfterArmSolve("Skeleton::arms.phaseAfterArmSolve");
             // do arm IK - Right then Left
             logger::trace("Set Arms...");
             {

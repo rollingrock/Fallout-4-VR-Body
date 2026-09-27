@@ -9,10 +9,10 @@
 #include "api/RecoilControllerRuntime.h"
 #include "config-mode/PipboyConfigMode.h"
 #include "devbench/DevBenchBridge.h"
-#include "devbench/PerfProbe.h"
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
+#include "perf/PerfMonitor.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
@@ -186,7 +186,7 @@ namespace frik
 
     void FRIK::onFrameUpdateInner()
     {
-        static devbench::PerfProbe perf("FRIK::onFrameUpdate");
+        static perf::PerfMonitor perf("FRIK::onFrameUpdate");
         const auto timer = perf.scope();
 
         if (!RE::PlayerCharacter::GetSingleton()) {

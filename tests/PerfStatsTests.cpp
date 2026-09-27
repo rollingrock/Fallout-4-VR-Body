@@ -1,9 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include "devbench/PerfStats.h"
+#include "perf/PerfStats.h"
 
-using frik::devbench::PerfStats;
+using f4cf::perf::PerfStats;
 using namespace std::chrono_literals;
 using Catch::Matchers::WithinAbs;
 
@@ -72,17 +72,33 @@ TEST_CASE("PerfStats: reset drops everything and the next sample restarts the wi
     REQUIRE_THAT(s.minMs, WithinAbs(2.0, 1e-9));
 }
 
+TEST_CASE("PerfStats: count and first-sample time track the window, which PerfMonitor's log interval is measured from")
+{
+    PerfStats stats;
+    REQUIRE(stats.count() == 0);
+
+    stats.record(1ms, T0 + 5s);
+    stats.record(1ms, T0 + 6s);
+    REQUIRE(stats.count() == 2);
+    REQUIRE(stats.firstSampleAt() == T0 + 5s);
+
+    stats.reset();
+    stats.record(1ms, T0 + 9s);
+    REQUIRE(stats.count() == 1);
+    REQUIRE(stats.firstSampleAt() == T0 + 9s);
+}
+
 TEST_CASE("PerfStats: past the sample cap count and extremes keep updating and the summary says percentiles are partial")
 {
     PerfStats stats;
-    for (std::size_t i = 0; i < PerfStats::kMaxSamples; ++i) {
+    for (std::size_t i = 0; i < PerfStats::MAX_SAMPLES; ++i) {
         stats.record(1ms, T0);
     }
     REQUIRE_FALSE(stats.summary(T0 + 1s).percentilesTruncated);
 
     stats.record(9ms, T0 + 1s);
     const auto s = stats.summary(T0 + 2s);
-    REQUIRE(s.count == PerfStats::kMaxSamples + 1);
+    REQUIRE(s.count == PerfStats::MAX_SAMPLES + 1);
     REQUIRE_THAT(s.maxMs, WithinAbs(9.0, 1e-9));
     REQUIRE_THAT(s.p99Ms, WithinAbs(1.0, 1e-9));
     REQUIRE(s.percentilesTruncated);

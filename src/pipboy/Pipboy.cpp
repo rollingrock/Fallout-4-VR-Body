@@ -2,7 +2,7 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "devbench/PerfProbe.h"
+#include "perf/PerfMonitor.h"
 #include "skeleton/HandPose.h"
 #include "utils.h"
 #include "vrcf/VRControllersHaptic.h"
@@ -168,7 +168,7 @@ namespace frik
      */
     void Pipboy::onFrameUpdate()
     {
-        static devbench::PerfProbe perf("Pipboy::onFrameUpdate");
+        static perf::PerfMonitor perf("Pipboy::onFrameUpdate");
         const auto timer = perf.scope();
 
         exitPowerArmorBugFixHack(false);
@@ -263,7 +263,7 @@ namespace frik
      */
     void Pipboy::hideShowPipboyOnArm() const
     {
-        static devbench::PerfProbe perf("Pipboy::hideShowPipboyOnArm");
+        static perf::PerfMonitor perf("Pipboy::hideShowPipboyOnArm");
         const auto timer = perf.scope();
 
         const auto pipboy = getPipboyModelOnArmNode();
@@ -312,7 +312,7 @@ namespace frik
      */
     void Pipboy::updateSetupPipboyNodes()
     {
-        static devbench::PerfProbe perf("Pipboy::updateSetupPipboyNodes");
+        static perf::PerfMonitor perf("Pipboy::updateSetupPipboyNodes");
         const auto timer = perf.scope();
 
         if (f4vr::isInPowerArmor()) {
@@ -507,7 +507,7 @@ namespace frik
      */
     void Pipboy::checkTurningOnByLookingAt()
     {
-        static devbench::PerfProbe perf("Pipboy::checkTurningOnByLookingAt");
+        static perf::PerfMonitor perf("Pipboy::checkTurningOnByLookingAt");
         const auto timer = perf.scope();
 
         if (_isOpen || !g_config.pipboyOpenWhenLookAt || g_config.isFalloutLondonVR || g_frik.isMainConfigurationModeActive() || g_frik.isOffHandGrippingWeapon() ||
@@ -530,7 +530,7 @@ namespace frik
      */
     void Pipboy::checkTurningOffByLookingAway()
     {
-        static devbench::PerfProbe perf("Pipboy::checkTurningOffByLookingAway");
+        static perf::PerfMonitor perf("Pipboy::checkTurningOffByLookingAway");
         const auto timer = perf.scope();
 
         if (!_isOpen || g_config.isFalloutLondonVR) {
@@ -568,7 +568,7 @@ namespace frik
      */
     void Pipboy::storeLastPipboyPage()
     {
-        static devbench::PerfProbe perf("Pipboy::storeLastPipboyPage");
+        static perf::PerfMonitor perf("Pipboy::storeLastPipboyPage");
         const auto timer = perf.scope();
 
         const auto pipboyPage = PipboyOperationHandler::getCurrentPipboyPage(PipboyOperationHandler::getPipboyMenuRoot());
@@ -582,7 +582,7 @@ namespace frik
      */
     void Pipboy::dampenPipboyScreen()
     {
-        static devbench::PerfProbe perf("Pipboy::dampenPipboyScreen");
+        static perf::PerfMonitor perf("Pipboy::dampenPipboyScreen");
         const auto timer = perf.scope();
 
         if (!_isOpen || g_config.dampenPipboyScreenMode == DampenPipboyScreenMode::None) {

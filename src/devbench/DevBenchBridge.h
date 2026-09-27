@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "perf/PerfMonitor.h"
+
 namespace frik::devbench
 {
     /**
@@ -128,6 +130,8 @@ namespace frik::devbench
         void arm()
         {
             _armed.store(true, std::memory_order_relaxed);
+            // the perf action reads what every PerfMonitor collects from here on
+            perf::PerfMonitor::setCollecting(true);
         }
 
     private:

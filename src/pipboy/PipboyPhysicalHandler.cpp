@@ -2,8 +2,8 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "devbench/PerfProbe.h"
 #include "f4vr/F4VRSkelly.h"
+#include "perf/PerfMonitor.h"
 #include "skeleton/HandPose.h"
 #include "utils.h"
 #include "vrcf/VRControllersHaptic.h"
@@ -19,7 +19,7 @@ namespace frik
      */
     void PipboyPhysicalHandler::operate(const PipboyPage lastPipboyPage)
     {
-        static devbench::PerfProbe perf("PipboyPhysicalHandler::operate");
+        static perf::PerfMonitor perf("PipboyPhysicalHandler::operate");
         const auto timer = perf.scope();
 
         if (g_config.isFalloutLondonVR) {

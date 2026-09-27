@@ -2,7 +2,7 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "devbench/PerfProbe.h"
+#include "perf/PerfMonitor.h"
 #include "utils.h"
 #include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
@@ -20,7 +20,7 @@ namespace frik
      */
     void Flashlight::onFrameUpdate()
     {
-        static devbench::PerfProbe perf("Flashlight::onFrameUpdate");
+        static perf::PerfMonitor perf("Flashlight::onFrameUpdate");
         const auto timer = perf.scope();
 
         if (!g_config.flashlightEnabled || !g_frik.isFlashlightEnabled() || !f4vr::isPipboyLightOn(f4vr::getPlayer())) {
