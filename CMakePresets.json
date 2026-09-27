@@ -56,5 +56,13 @@
       "name": "default"
     }
   ],
+  "buildPresets": [
+    { "name": "debug", "configurePreset": "default", "configuration": "Debug" },
+    {
+      "name": "release",
+      "configurePreset": "default",
+      "configuration": "Release"
+    }
+  ],
   "version": 3
 }

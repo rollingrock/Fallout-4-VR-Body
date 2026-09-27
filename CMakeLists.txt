@@ -191,25 +191,44 @@ if(FRIK_BUILD_TESTS)
   add_subdirectory(tests)
 endif()
 
-# >>> Post build command to copy plugins (supports multiple paths separated by ';'). Release only, see cmake/copy_plugin.cmake
+# >>> Post build command to copy plugins (supports multiple paths separated by ';')
+# COPY_PLUGIN_CONFIGURATIONS limits the copy to some build configurations, e.g. "Release" or "Debug;RelWithDebInfo" (case-insensitive)
+set(COPY_PLUGIN_CONFIGURATIONS "all" CACHE STRING "Build configurations the post build plugin copy runs for: 'all' or a ';' separated list")
 if(POST_BUILD_COPY_PLUGIN)
   if(DEFINED COPY_PLUGIN_BASE_PATH)
     # Treat semicolon-separated COPY_PLUGIN_BASE_PATH as a CMake list
     set(COPY_PLUGIN_PATH_LIST ${COPY_PLUGIN_BASE_PATH})
 
-    message(">>> Create post build command: copy targets to:")
+    # Resolved per configuration at generate time: $<CONFIG:a,b> is 1 when building any of them
+    string(TOLOWER "${COPY_PLUGIN_CONFIGURATIONS}" copy_plugin_configs)
+    if(copy_plugin_configs STREQUAL "all")
+      set(copy_plugin_enabled 1)
+    else()
+      if(CMAKE_CONFIGURATION_TYPES)
+        string(TOLOWER "${CMAKE_CONFIGURATION_TYPES}" known_configs)
+        foreach(config IN LISTS copy_plugin_configs)
+          if(NOT config IN_LIST known_configs)
+            message(FATAL_ERROR "COPY_PLUGIN_CONFIGURATIONS has unknown configuration '${config}', expected 'all' or any of: ${CMAKE_CONFIGURATION_TYPES}")
+          endif()
+        endforeach()
+      endif()
+      string(REPLACE ";" "," copy_plugin_configs "${copy_plugin_configs}")
+      set(copy_plugin_enabled "$<CONFIG:${copy_plugin_configs}>")
+    endif()
+
+    message(">>> Create post build command: copy targets on '${COPY_PLUGIN_CONFIGURATIONS}' configurations to:")
     foreach(copy_path IN LISTS COPY_PLUGIN_PATH_LIST)
-      message("    ${copy_path}/F4SE/Plugins/")
+      set(copy_dir "${copy_path}/F4SE/Plugins")
+      message("    ${copy_dir}/")
+      # Each command is wrapped in $<cond:...> so it expands to nothing, and is dropped, for the configurations it does not run on
       add_custom_command(
         TARGET ${PROJECT_NAME}
         POST_BUILD
-        COMMENT "Copying ${PROJECT_NAME}.dll and .pdb to plugins folder (release only): '${copy_path}/F4SE/Plugins/'"
-        COMMAND ${CMAKE_COMMAND}
-                -DCOPY_PATH="${copy_path}"
-                -DTARGET_FILE="$<TARGET_FILE:${PROJECT_NAME}>"
-                -DTARGET_PDB_FILE="$<TARGET_PDB_FILE:${PROJECT_NAME}>"
-                -DCONFIG=$(Configuration)
-                -P "${ROOT_DIR}/cmake/copy_plugin.cmake"
+        COMMENT "Post build copy of ${PROJECT_NAME}.dll and .pdb to plugins folder: '${copy_dir}/'"
+        COMMAND "$<${copy_plugin_enabled}:${CMAKE_COMMAND};-E;make_directory;${copy_dir}>"
+        COMMAND "$<${copy_plugin_enabled}:${CMAKE_COMMAND};-E;copy;$<TARGET_FILE:${PROJECT_NAME}>;$<TARGET_PDB_FILE:${PROJECT_NAME}>;${copy_dir}>"
+        COMMAND "$<$<NOT:${copy_plugin_enabled}>:${CMAKE_COMMAND};-E;echo;Skipping: $<CONFIG> is not in COPY_PLUGIN_CONFIGURATIONS>"
+        COMMAND_EXPAND_LISTS
       )
     endforeach()
   else()

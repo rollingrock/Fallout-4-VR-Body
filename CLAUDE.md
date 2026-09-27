@@ -21,14 +21,15 @@ The project is built on top of [F4VR-CommonFramework](external/F4VR-CommonFramew
 cmake --preset default        # uses vs2026 by default
 ```
 For local development, copy `CMakeUserPresets.json.template` → `CMakeUserPresets.json` and set:
-- `POST_BUILD_COPY_PLUGIN: true` and `COPY_PLUGIN_BASE_PATH` to your MO2 mod folder(s) (semicolon-separated for multiple) — this auto-copies `FRIK.dll` + `.pdb` to `<path>/F4SE/Plugins/` after every **Release** build. Debug builds are never copied (`cmake/copy_plugin.cmake`), so a debugging build cannot land on a test rig by accident.
+- `POST_BUILD_COPY_PLUGIN: true` and `COPY_PLUGIN_BASE_PATH` to your MO2 mod folder(s) (semicolon-separated for multiple) — this auto-copies `FRIK.dll` + `.pdb` to `<path>/F4SE/Plugins/` after every build.
+- `COPY_PLUGIN_CONFIGURATIONS` to limit that copy to some build configurations: `all` (default) or a `;` list such as `Release` or `Debug;RelWithDebInfo` (case-insensitive, unknown names fail at configure). Resolved per configuration with `$<CONFIG:...>` in `CMakeLists.txt`, so it holds for build presets, `cmake --build` and the VS IDE alike. Set it to `Release` to keep a debugging build from landing on a test rig.
 - `F4VR_COMMON_FRAMEWORK_PATH` to point to a sibling checkout of F4VR-CommonFramework if you want to develop against it instead of the submodule.
 
 **Build (and ALWAYS check the output before reporting done):**
 ```
 cmake --build build --config Release 2>&1 | tee build_output.txt
 ```
-Then read `build_output.txt`. The solution is multi-config, so without `--config Release` you get a Debug build, which is neither copied to the mod folder nor packaged. Release builds also produce a versioned `.7z` package in `build/package/`.
+Then read `build_output.txt`. The solution is multi-config, so without `--config Release` you get a Debug build, which is not packaged (and is copied to the mod folder only if `COPY_PLUGIN_CONFIGURATIONS` includes Debug). Release builds also produce a versioned `.7z` package in `build/package/`.
 
 ## Architecture
 
