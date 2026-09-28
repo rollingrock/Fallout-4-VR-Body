@@ -1,3 +1,7 @@
+## v0.79.2
+
+- Dev: The devbench `frik` tool is now the framework's per-mod tool: `action` is required; `health` also reports the framework version, the devbench build and the snapshot's liveness, and no longer arms the tool; `perf` resets with `reset: true`; a new `overrides` action lists the session overrides; the call that arms `state` waits for the first snapshot instead of failing. FRIK also publishes devbench events: `frik.skeleton.ready` / `frik.skeleton.destroying`, and `frik.<group>.<flag>` whenever a state flag changes and holds for 3 frames.
+
 ## v0.79.1
 
 - API: Documented when a client may capture a relation from a first-person hand or arm bone. The engine resets those arms to an unplaced pose every frame and FRIK places them back within it, so a capture must happen at or after `AfterArmSolve`, and a client should refuse an implausible one rather than cache it.

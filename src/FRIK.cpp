@@ -8,7 +8,8 @@
 #include "api/FRIKApiV2.h"
 #include "api/RecoilControllerRuntime.h"
 #include "config-mode/PipboyConfigMode.h"
-#include "devbench/DevBenchBridge.h"
+#include "devbench/DevBench.h"
+#include "devbench/FrikDevBench.h"
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
@@ -82,6 +83,9 @@ namespace frik
 
         logger::info("Hook main...");
         hook::hookMain();
+
+        // the framework registers the tool once the game has loaded, with everything set up here
+        devbench::setupDevBenchTool();
     }
 
     /**
@@ -110,12 +114,6 @@ namespace frik
             // legacy path: its near-eye message is the looking-through signal, everything else stays vanilla
             g_scopeAuthority.setProvider(BETTER_SCOPES_VR_MOD_NAME, static_cast<std::uint32_t>(ScopeCapability::PublishesLookingThrough));
         }
-
-        // Registered here rather than at kPostPostLoad: F4SE keeps one listener per plugin
-        // per sender and ModBase already owns FRIK's, so a second RegisterListener is
-        // rejected. kGameLoaded is strictly later than devbench's own kPostLoad setup, so
-        // the interface is always there by now.
-        devbench::g_devBenchBridge.registerWithDevBench();
     }
 
     /**
@@ -163,9 +161,6 @@ namespace frik
      */
     void FRIK::onFrameUpdate()
     {
-        // Before anything reads state this frame, so a queued config override applies to it.
-        devbench::g_devBenchBridge.drainCommands();
-
         // Scope providers publish before this frame, so clients hear the flip before any phase runs
         broadcastScopeEvents();
 
@@ -178,10 +173,6 @@ namespace frik
         api::core::invokeFramePhase(FramePhase::FrameEnd);
 
         api::core::flushHandClaimLog();
-
-        // After every exit path of the inner update, including its early returns: a snapshot
-        // frozen at its last good value through a loading screen would be a lie.
-        devbench::g_devBenchBridge.publishSnapshot();
     }
 
     void FRIK::onFrameUpdateInner()
@@ -268,6 +259,9 @@ namespace frik
             _skeletonReadyPublished = true;
             logger::info("Broadcasting API lifecycle event: kSkeletonReady (generation {})", _skeletonGeneration);
             broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonReady));
+            f4cf::devbench::emit("skeleton.ready", [this] {
+                return nlohmann::json{ { "generation", _skeletonGeneration } };
+            });
         }
         // After the ready broadcast so a client never sees a phase of a skeleton it was not told about
         api::core::invokeFramePhase(FramePhase::AfterWorldFinal);
@@ -420,6 +414,9 @@ namespace frik
         if (_skelly && _skeletonReadyPublished) {
             logger::info("Broadcasting API lifecycle event: kSkeletonDestroying (generation {})", _skeletonGeneration);
             broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying));
+            f4cf::devbench::emit("skeleton.destroying", [this] {
+                return nlohmann::json{ { "generation", _skeletonGeneration } };
+            });
         }
         _skeletonReadyPublished = false;
 

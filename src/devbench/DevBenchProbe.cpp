@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <format>
 #include <optional>
 #include <string>
 #include <vector>
@@ -467,14 +468,8 @@ namespace frik::devbench
         }
     }
 
-    std::string runProbe(const std::string& argsJson)
+    json runProbe(const json& args)
     {
-        json args;
-        try {
-            args = argsJson.empty() ? json::object() : json::parse(argsJson);
-        } catch (const std::exception& ex) {
-            return json{ { "ok", false }, { "error", std::string("bad arguments JSON: ") + ex.what() } }.dump();
-        }
         const auto op = args.value("op", "phases");
 
         if (op == "reset") {
@@ -487,14 +482,14 @@ namespace frik::devbench
             core::clearScopeProvider(PROBE_TAG);
             core::blockPrimaryWeaponNodeOwnership(PROBE_TAG, false);
             g_probe = {};
-            return json{ { "ok", true } }.dump();
+            return json{ { "ok", true } };
         }
 
         if (!g_frik.isSkeletonReady()) {
-            return json{ { "ok", false }, { "error", "skeleton not ready" } }.dump();
+            return json{ { "ok", false }, { "error", "skeleton not ready" } };
         }
         if (!ensureRegistered()) {
-            return json{ { "ok", false }, { "error", "registerFrameCallback failed" } }.dump();
+            return json{ { "ok", false }, { "error", "registerFrameCallback failed" } };
         }
 
         if (op == "phases") {
@@ -502,14 +497,13 @@ namespace frik::devbench
             for (std::size_t i = 0; i < g_probe.orderLastCount; ++i) {
                 order.push_back(g_probe.orderLast[i]);
             }
-            return json{ { "ok", true }, { "frames", g_probe.frame }, { "counts", g_probe.counts }, { "lastFrameOrder", order }, { "generation", g_frik.getSkeletonGeneration() } }
-                .dump();
+            return json{ { "ok", true }, { "frames", g_probe.frame }, { "counts", g_probe.counts }, { "lastFrameOrder", order }, { "generation", g_frik.getSkeletonGeneration() } };
         }
 
         if (op == "claim") {
             ClaimRequest request;
             if (!parseHand(args, request.isLeft)) {
-                return json{ { "ok", false }, { "error", "hand must be left or right" } }.dump();
+                return json{ { "ok", false }, { "error", "hand must be left or right" } };
             }
             const auto kind = args.value("kind", "offset");
             request.clear = kind == "clear";
@@ -521,13 +515,13 @@ namespace frik::devbench
             request.phase = phase < 0 ? PHASE_NOW : static_cast<std::uint32_t>(phase);
             if (request.phase == PHASE_NOW) {
                 executeClaim(request);
-                return json{ { "ok", true }, { "publishedFrame", g_probe.lastClaimFrame }, { "when", "before this frame's skeleton pass" } }.dump();
+                return json{ { "ok", true }, { "publishedFrame", g_probe.lastClaimFrame }, { "when", "before this frame's skeleton pass" } };
             }
             if (request.phase >= FRAME_PHASE_COUNT) {
-                return json{ { "ok", false }, { "error", "phase out of range" } }.dump();
+                return json{ { "ok", false }, { "error", "phase out of range" } };
             }
             g_probe.pending = request;
-            return json{ { "ok", true }, { "queuedForPhase", request.phase }, { "frameNow", g_probe.frame } }.dump();
+            return json{ { "ok", true }, { "queuedForPhase", request.phase }, { "frameNow", g_probe.frame } };
         }
 
         if (op == "solve") {
@@ -544,22 +538,20 @@ namespace frik::devbench
                 const auto state = core::getHandSolveResult(isLeft, wrist);
                 now[isLeft ? "left" : "right"] = { { "state", stateName(state) }, { "wrist", transformJson(wrist) } };
             }
-            return json{
-                { "ok", true },
+            return json{ { "ok", true },
                 { "claimFrame", g_probe.lastClaim ? json(g_probe.lastClaimFrame) : json(nullptr) },
                 { "claimPhase", g_probe.lastClaim ? json(g_probe.lastClaim->phase) : json(nullptr) },
                 { "pending", g_probe.pending.has_value() },
                 { "target", transformJson(g_probe.lastTarget) },
                 { "records", records },
                 { "claimRecords", { recordJson(g_probe.claimRecords[0]), recordJson(g_probe.claimRecords[1]) } },
-                { "now", now }
-            }.dump();
+                { "now", now } };
         }
 
         if (op == "chain") {
             bool isLeft = false;
             if (!parseHand(args, isLeft)) {
-                return json{ { "ok", false }, { "error", "hand must be left or right" } }.dump();
+                return json{ { "ok", false }, { "error", "hand must be left or right" } };
             }
             core::ArmChainTransforms chain{};
             core::getArmChain(isLeft, chain);
@@ -573,8 +565,7 @@ namespace frik::devbench
                     trackedJson[kinds[k]] = transformJson(tracked[k]);
                 }
             }
-            return json{
-                { "ok", true },
+            return json{ { "ok", true },
                 { "validMask", chain.validMask },
                 { "shoulder", transformJson(chain.shoulder) },
                 { "forearm1", transformJson(chain.forearm1) },
@@ -582,8 +573,7 @@ namespace frik::devbench
                 { "boneHand", boneOk ? transformJson(bone) : json(nullptr) },
                 { "chainVsBone", boneOk ? diffJson(chain.hand, bone) : json(nullptr) },
                 { "tracked", trackedJson },
-                { "firstPersonHandAfterArmSolve", transformJson(g_probe.afterArmSolveHand[isLeft ? 1 : 0]) }
-            }.dump();
+                { "firstPersonHandAfterArmSolve", transformJson(g_probe.afterArmSolveHand[isLeft ? 1 : 0]) } };
         }
 
         if (op == "record") {
@@ -593,12 +583,12 @@ namespace frik::devbench
             g_probe.armRecord.reserve(frames);
             g_probe.armRecordTarget = frames;
             g_probe.armRecording = true;
-            return json{ { "ok", true }, { "frames", frames } }.dump();
+            return json{ { "ok", true }, { "frames", frames } };
         }
 
         if (op == "recordStop") {
             g_probe.armRecording = false;
-            return json{ { "ok", true }, { "recorded", g_probe.armRecord.size() } }.dump();
+            return json{ { "ok", true }, { "recorded", g_probe.armRecord.size() } };
         }
 
         if (op == "recordDump") {
@@ -634,22 +624,19 @@ namespace frik::devbench
                 }
                 rows.push_back({ { "frame", s.frame }, { "hands", hands } });
             }
-            return json{
-                { "ok", true },
+            return json{ { "ok", true },
                 { "recording", g_probe.armRecording },
                 { "total", g_probe.armRecord.size() },
                 { "from", from },
                 { "slotNames", { "Collarbone", "UpperArm", "UpperTwist1", "ForeArm1", "ForeArm2", "ForeArm3", "Hand", "Wand" } },
                 { "handOrder", { "right", "left" } },
-                { "rows", rows }
-            }.dump();
+                { "rows", rows } };
         }
 
         if (op == "chord") {
             // the last controller chord (grip + A yes / B no / trigger repeat); `since` = the seq the caller already saw
             const auto since = static_cast<std::uint64_t>((std::max)(args.value("since", 0), 0));
-            return json{ { "ok", true }, { "seq", g_probe.chordSeq }, { "fresh", g_probe.chordSeq > since }, { "chord", g_probe.chordLast }, { "frame", g_probe.chordFrame } }
-                .dump();
+            return json{ { "ok", true }, { "seq", g_probe.chordSeq }, { "fresh", g_probe.chordSeq > since }, { "chord", g_probe.chordLast }, { "frame", g_probe.chordFrame } };
         }
 
         if (op == "bone") {
@@ -667,7 +654,7 @@ namespace frik::devbench
                     out["node"] = nullptr;
                 }
             }
-            return out.dump();
+            return out;
         }
 
         if (op == "visibility") {
@@ -691,12 +678,12 @@ namespace frik::devbench
             out["hideBodyInScope"] = g_frik.shouldHideBodyInScope();
             out["lookingThrough"] = g_frik.isLookingThroughScope();
             out["inScopeMenu"] = g_frik.isInScopeMenu();
-            return out.dump();
+            return out;
         }
 
         if (op == "selfie") {
             g_frik.setSelfieMode(args.value("on", true));
-            return json{ { "ok", true }, { "selfie", g_frik.isSelfieModeOn() } }.dump();
+            return json{ { "ok", true }, { "selfie", g_frik.isSelfieModeOn() } };
         }
 
         if (op == "pipboy") {
@@ -707,7 +694,7 @@ namespace frik::devbench
             } else {
                 g_frik.closePipboy();
             }
-            return json{ { "ok", true }, { "pipboyOn", g_frik.isPipboyOn() } }.dump();
+            return json{ { "ok", true }, { "pipboyOn", g_frik.isPipboyOn() } };
         }
 
         if (op == "grip") {
@@ -715,7 +702,7 @@ namespace frik::devbench
             parseHand(args, isLeft);
             const bool on = args.value("on", true);
             const bool ok = core::setOffHandGripping(PROBE_TAG, on, isLeft, nullptr);
-            return json{ { "ok", ok }, { "gripping", g_frik.isOffHandGrippingWeapon() } }.dump();
+            return json{ { "ok", ok }, { "gripping", g_frik.isOffHandGrippingWeapon() } };
         }
 
         if (op == "weaponUpdate") {
@@ -723,14 +710,14 @@ namespace frik::devbench
             // call, its geometry bounds were never computed after the 3D attach (ROCK-021)
             const auto weapon = f4vr::getWeaponNode();
             if (!weapon) {
-                return json{ { "ok", false }, { "error", "no weapon node" } }.dump();
+                return json{ { "ok", false }, { "error", "no weapon node" } };
             }
             const auto geom = weaponGeometryProbe(weapon);
             const float before = geom ? geom->worldBound.fRadius : -1.0f;
             RE::NiUpdateData data;
             weapon->UpdateTransformAndBounds(data);
             const float after = geom ? geom->worldBound.fRadius : -1.0f;
-            return json{ { "ok", true }, { "geom", geom ? geom->name.c_str() : "" }, { "boundRadiusBefore", before }, { "boundRadiusAfter", after } }.dump();
+            return json{ { "ok", true }, { "geom", geom ? geom->name.c_str() : "" }, { "boundRadiusBefore", before }, { "boundRadiusAfter", after } };
         }
 
         if (op == "scopeRig") {
@@ -740,23 +727,21 @@ namespace frik::devbench
             const auto under = args.value("under", "clear");
             const auto adjuster = g_frik.getWeaponPositionAdjuster();
             if (!adjuster) {
-                return json{ { "ok", false }, { "error", "no weapon position adjuster" } }.dump();
+                return json{ { "ok", false }, { "error", "no weapon position adjuster" } };
             }
             using Override = WeaponPositionAdjuster::ScopeRigOverride;
             adjuster->setScopeRigOverride(under == "weapon" ? Override::Weapon : under == "wand" ? Override::Wand : under == "offwand" ? Override::OffhandWand : Override::None);
             const auto pn = f4vr::getVRPlayerNodes();
-            return json{
-                { "ok", true },
+            return json{ { "ok", true },
                 { "under", under },
                 { "scopeParentParent", pn && pn->scopeParentNode && pn->scopeParentNode->parent ? pn->scopeParentNode->parent->name.c_str() : "" },
-                { "scopeCameraParent", pn && pn->primaryWeaponScopeCamera && pn->primaryWeaponScopeCamera->parent ? pn->primaryWeaponScopeCamera->parent->name.c_str() : "" }
-            }.dump();
+                { "scopeCameraParent", pn && pn->primaryWeaponScopeCamera && pn->primaryWeaponScopeCamera->parent ? pn->primaryWeaponScopeCamera->parent->name.c_str() : "" } };
         }
 
         if (op == "parent") {
             const auto hand = args.value("hand", "clear");
             const bool ok = hand == "clear" ? core::clearWeaponNodeParentHand(PROBE_TAG) : core::setWeaponNodeParentHand(PROBE_TAG, hand == "left");
-            return json{ { "ok", ok }, { "weaponInLeftHand", g_frik.isWeaponInLeftHand() } }.dump();
+            return json{ { "ok", ok }, { "weaponInLeftHand", g_frik.isWeaponInLeftHand() } };
         }
 
         if (op == "scope") {
@@ -777,13 +762,13 @@ namespace frik::devbench
                     core::setScopeProvider(TRUE_SCOPES_TAG, TRUE_SCOPES_CAPABILITIES);
                 }
             }
-            return json{ { "ok", ok }, { "lookingThroughScope", g_frik.isLookingThroughScope() }, { "hideBody", g_frik.shouldHideBodyInScope() } }.dump();
+            return json{ { "ok", ok }, { "lookingThroughScope", g_frik.isLookingThroughScope() }, { "hideBody", g_frik.shouldHideBodyInScope() } };
         }
 
         if (op == "block") {
             const bool on = args.value("on", true);
             const bool ok = core::blockPrimaryWeaponNodeOwnership(PROBE_TAG, on);
-            return json{ { "ok", ok }, { "blocked", g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked() } }.dump();
+            return json{ { "ok", ok }, { "blocked", g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked() } };
         }
 
         if (op == "nodes") {
@@ -819,8 +804,7 @@ namespace frik::devbench
             };
             const auto pn = f4vr::getVRPlayerNodes();
             const auto fp = f4vr::getFirstPersonSkeleton();
-            return json{
-                { "ok", true },
+            return json{ { "ok", true },
                 { "weapon", nodeJson(weapon) },
                 { "scopeParent", nodeJson(pn ? pn->scopeParentNode : nullptr) },
                 { "weaponLeft", nodeJson(pn ? pn->weaponLeftNode : nullptr) },
@@ -895,14 +879,12 @@ namespace frik::devbench
                 { "weaponWorld", weapon ? transformJson(weapon->world) : json(nullptr) },
                 { "rootScale", root ? root->local.scale : 0.0f },
                 { "spine2", spineOk ? transformJson(spine) : json(nullptr) },
-                { "camera", { f4vr::getCameraPosition().x, f4vr::getCameraPosition().y, f4vr::getCameraPosition().z } }
-            }.dump();
+                { "camera", { f4vr::getCameraPosition().x, f4vr::getCameraPosition().y, f4vr::getCameraPosition().z } } };
         }
 
         if (op == "carry") {
             const auto& carry = g_probe.carry;
-            return json{
-                { "ok", true },
+            return json{ { "ok", true },
                 { "carryFrames", g_probe.carryFrames },
                 { "lastCarryFrame", carry.frame },
                 { "now", g_probe.frame },
@@ -933,10 +915,13 @@ namespace frik::devbench
                 { "rightBoneToClaim", carry.rightClaimed ? diffJson(carry.rightBone, carry.rightClaim) : json(nullptr) },
                 { "rightBoneToWrist", diffJson(carry.rightBone, carry.rightWrist) },
                 { "weaponWorldFinal", transformJson(carry.weaponAfterWorldFinal) },
-                { "rightClaim", transformJson(carry.rightClaim) }
-            }.dump();
+                { "rightClaim", transformJson(carry.rightClaim) } };
         }
 
-        return json{ { "ok", false }, { "error", "unknown op (phases|claim|solve|chain|grip|parent|scope|scopeRig|weaponUpdate|block|nodes|carry|reset)" } }.dump();
+        return json{ { "ok", false },
+            { "error",
+                std::format("unknown op '{}' (phases|claim|solve|chain|record|recordStop|recordDump|chord|bone|nodes|carry|visibility|grip|parent|block|scope|"
+                            "scopeRig|weaponUpdate|pipboy|selfie|reset)",
+                    op) } };
     }
 }

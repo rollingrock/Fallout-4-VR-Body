@@ -74,6 +74,7 @@ Then read `build_output.txt`. The solution is multi-config, so without `--config
 | Public API | [src/api/](src/api/) | Two C ABI majors (`FRIKApi` v1.\*, `FRIKApiV2`) over a shared `ApiCore`, loaded by other mods via `GetProcAddress` |
 | External mod state | [src/ExternalAuthority.h](src/ExternalAuthority.h), [src/TagBlockSet.h](src/TagBlockSet.h) | Weapon node ownership, weapon pose blocks, tagged hand world transforms, external off-hand grips, weapon node parent-hand requests; `TagBlockSet` is the shared "blocked while any tag holds it" registry |
 | Papyrus API | [src/PapyrusApi.h](src/PapyrusApi.h) | Native functions for in-game scripts |
+| devbench tool | [src/devbench/](src/devbench/) | FRIK's part of the `frik` devbench tool, which the framework registers (`f4cf::devbench`): its state (a table of flags, `FrikDevBench.cpp`) with a `frik.<group>.<flag>` event per stable change, the skeleton ready/destroying events, and the `probe` action exercising the API from inside FRIK. Inside `namespace frik`, `devbench::` means `frik::devbench`; the framework's is `f4cf::devbench::` |
 
 ### Config
 
