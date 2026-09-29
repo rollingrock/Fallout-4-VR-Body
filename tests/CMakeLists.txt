@@ -5,6 +5,7 @@ find_package(Catch2 3 CONFIG REQUIRED)
 
 add_executable(FRIK_tests
   ClaimLogDebounceTests.cpp
+  FrameContextTests.cpp
   FramePhaseRegistryTests.cpp
   GripDetectionTests.cpp
   HistogramTests.cpp
@@ -13,6 +14,7 @@ add_executable(FRIK_tests
   ScopeAuthorityTests.cpp
   TagBlockSetTests.cpp
   # the framework's plain-std sources under test
+  ${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}/src/perf/FrameContext.cpp
   ${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}/src/perf/Perf.cpp
   ${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}/src/perf/Report.cpp
 )

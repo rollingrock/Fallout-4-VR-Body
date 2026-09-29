@@ -214,10 +214,10 @@ TEST_CASE("Perf report text: a header, then one line per thread and per site, in
     // the numbers line up under the header
     REQUIRE(rows[3].size() == rows[1].size());
     REQUIRE(rows[4].size() == rows[1].size());
-    // avg 3 ms, self (3 - 2) ms, and one call per frame
+    // avg 3 ms, self (3 - 2) ms, one call per frame, and no share of the budget without a refresh rate
     REQUIRE(rows[3].find("   3.000") != std::string::npos);
     REQUIRE(rows[3].find("   1.000") != std::string::npos);
-    REQUIRE(rows[3].ends_with("   1.00"));
+    REQUIRE(rows[3].ends_with("     1.00        -"));
     REQUIRE(rows[4].find("   2.000") != std::string::npos);
 }
 
