@@ -3,6 +3,7 @@
 #include "config-mode/MainConfigMode.h"
 #include "config-mode/PipboyConfigMode.h"
 #include "f4vr/F4VRThumbstickControls.h"
+#include "perf/Perf.h"
 #include "pipboy/Pipboy.h"
 #include "weapon-position/WeaponPositionAdjuster.h"
 
@@ -88,6 +89,8 @@ namespace frik
     inline void PlayerControlsHandler::onFrameUpdate(const MainConfigMode& mainConfigMode, const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition,
         const PipboyConfigMode* pipboyConfigurationMode)
     {
+        F4CF_PERF_FUNCTION();
+
         checkWeaponHideForPipboyOperationWIthFinger(pipboy, weaponPosition);
 
         if (pipboy->isOpen() || pipboyConfigurationMode->isPipBoyConfigModeActive() || mainConfigMode.isBodyAdjustOpen() || weaponPosition->inWeaponRepositionMode() ||

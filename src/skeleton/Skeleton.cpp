@@ -1050,6 +1050,8 @@ namespace frik
         if (!weapon || !_playerNodes || g_frik.isWeaponInLeftHand() == isLeftHandedMode()) {
             return false;
         }
+        // only while a carry needs the repair; a root of its own, since the engine places the arms after the mod's frame
+        F4CF_PERF_FUNCTION();
         // the pairing updateHandTarget uses: the node hanging under the other hand goes to that hand's offset, with that hand's glue
         if (weapon == getWeaponNode()) {
             placeFirstPersonArm(weapon, _playerNodes->secondaryMeleeWeaponOffsetNode, !isLeftHandedMode(), true);

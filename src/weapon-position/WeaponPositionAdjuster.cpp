@@ -8,6 +8,7 @@
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
+#include "perf/Perf.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
 #include "utils.h"
@@ -82,6 +83,8 @@ namespace frik
      */
     void WeaponPositionAdjuster::onFrameUpdate()
     {
+        F4CF_PERF_FUNCTION();
+
         // An external node owner skips checkIfOffhandIsGripping, the only thing that clears a grip,
         // so release transient state as the block engages - here, to catch a holstered weapon too.
         const bool nodeOwnershipBlocked = g_externalAuthority.isPrimaryWeaponNodeOwnershipBlocked();
@@ -350,6 +353,7 @@ namespace frik
      */
     void WeaponPositionAdjuster::onFrameStart()
     {
+        F4CF_PERF_FUNCTION();
         carryScopeRigWithWeapon();
     }
 

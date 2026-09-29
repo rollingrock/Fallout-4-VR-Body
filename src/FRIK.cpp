@@ -282,6 +282,8 @@ namespace frik
 
     void FRIK::initSkeleton()
     {
+        F4CF_PERF_FUNCTION();
+
         _inPowerArmor = f4vr::isInPowerArmor();
         _powerArmorChangeFrames = 0;
         _skeletonInitDelayFrames = 0;
@@ -412,6 +414,8 @@ namespace frik
      */
     void FRIK::releaseSkeleton()
     {
+        F4CF_PERF_FUNCTION();
+
         if (_skelly && _skeletonReadyPublished) {
             logger::info("Broadcasting API lifecycle event: kSkeletonDestroying (generation {})", _skeletonGeneration);
             broadcastSkeletonLifecycle(static_cast<std::uint32_t>(api::FRIKApiV2::LifecycleEvent::kSkeletonDestroying));
@@ -451,6 +455,8 @@ namespace frik
      */
     void FRIK::updateWorldFinal()
     {
+        F4CF_PERF_FUNCTION();
+
         const auto worldRootNode = f4vr::getWorldRootNode();
         f4vr::BSFadeNode_MergeWorldBounds(worldRootNode);
         f4vr::BSFlattenedBoneTree_UpdateBoneArray(f4vr::getRootNode());

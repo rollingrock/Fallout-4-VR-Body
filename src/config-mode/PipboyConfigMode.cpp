@@ -4,6 +4,7 @@
 #include "FRIK.h"
 #include "common/MatrixUtils.h"
 #include "f4vr/F4VRUtils.h"
+#include "perf/Perf.h"
 #include "skeleton/Skeleton.h"
 #include "utils.h"
 #include "vrcf/VRControllersHaptic.h"
@@ -46,6 +47,8 @@ namespace frik
 
     void PipboyConfigMode::onFrameUpdate()
     {
+        F4CF_PERF_FUNCTION();
+
         if (!g_frik.isPipboyOn() && f4vr::isPipboyOnWrist()) {
             return;
         }
