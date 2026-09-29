@@ -86,6 +86,59 @@ TEST_CASE("Perf report: a site is a child of the site it runs inside")
     REQUIRE(node->children[0].stats.durations.count == 1);
 }
 
+TEST_CASE("Perf report: children are listed in the order they run, not the order their sites were made")
+{
+    perf::setEnabled(true);
+    static perf::Site parent("OrderTest::parent", nullptr);
+    static perf::Site madeFirst("OrderTest::parent", "madeFirst");
+    static perf::Site madeSecond("OrderTest::parent", "madeSecond");
+    {
+        const perf::Scope parentScope(parent);
+        {
+            const perf::Scope second(madeSecond);
+        }
+        {
+            const perf::Scope first(madeFirst);
+        }
+    }
+
+    const auto report = perf::readReport();
+    const auto* node = find(report, parent);
+    REQUIRE(node != nullptr);
+    REQUIRE(node->children.size() == 2);
+    REQUIRE(node->children[0].site == &madeSecond);
+    REQUIRE(node->children[1].site == &madeFirst);
+}
+
+TEST_CASE("Perf report: a site first seen with no caller takes its place in the order when its caller shows up")
+{
+    perf::setEnabled(true);
+    static perf::Site parent("OrderTest::late", nullptr);
+    static perf::Site early("OrderTest::late", "early");
+    static perf::Site late("OrderTest::late", "late");
+    // recording switched on mid-frame, after the parent and the early site had started: the late one looks outermost
+    {
+        const perf::Scope lateScope(late);
+    }
+    // the next frame
+    {
+        const perf::Scope parentScope(parent);
+        {
+            const perf::Scope earlyScope(early);
+        }
+        {
+            const perf::Scope lateScope(late);
+        }
+    }
+
+    const auto report = perf::readReport();
+    const auto* node = find(report, parent);
+    REQUIRE(node != nullptr);
+    REQUIRE(node->children.size() == 2);
+    REQUIRE(node->children[0].site == &early);
+    REQUIRE(node->children[1].site == &late);
+}
+
 TEST_CASE("Perf report: a site that recorded nothing in the window is left out, unless something under it recorded")
 {
     perf::setEnabled(true);

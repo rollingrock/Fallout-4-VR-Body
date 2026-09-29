@@ -161,6 +161,8 @@ namespace frik
      */
     void FRIK::onFrameUpdate()
     {
+        F4CF_PERF_FUNCTION();
+
         // Scope providers publish before this frame, so clients hear the flip before any phase runs
         broadcastScopeEvents();
 
