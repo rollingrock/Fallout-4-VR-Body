@@ -15,7 +15,7 @@
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
-#include "perf/PerfMonitor.h"
+#include "perf/Perf.h"
 #include "utils.h"
 
 using namespace common;
@@ -225,8 +225,7 @@ namespace frik
      */
     void Skeleton::onFrameUpdate()
     {
-        static perf::PerfMonitor perf("Skeleton::onFrameUpdate");
-        const auto timer = perf.scope();
+        F4CF_PERF_FUNCTION();
 
         setTime();
 
@@ -238,18 +237,10 @@ namespace frik
         setWandsVisibility(false, true);
         setWandsVisibility(false, false);
 
-        // Each step is a devbench perf site, so a sitting can read where the body pass spends its time (perf action)
-        static perf::PerfMonitor perfReset("Skeleton::resetAndFlatten");
-        static perf::PerfMonitor perfBody("Skeleton::bodyUnderHMD");
-        static perf::PerfMonitor perfPosture("Skeleton::posture");
-        static perf::PerfMonitor perfLegs("Skeleton::legs");
-        static perf::PerfMonitor perfArms("Skeleton::arms");
-        static perf::PerfMonitor perfMisc("Skeleton::hideCullSelfie");
-        static perf::PerfMonitor perfHands("Skeleton::handPose");
-
+        // Each step is a perf site, so a sitting can read where the body pass spends its time (devbench perf action)
         float neckYaw, neckPitch;
         {
-            const auto t = perfReset.scope();
+            F4CF_PERF_SCOPE("resetAndFlatten");
             logger::trace("Restore locals of skeleton");
             _twistAnglePrevFrame = _twistAngleThisFrame;
             restoreNodesToDefault();
@@ -260,7 +251,7 @@ namespace frik
         }
 
         {
-            const auto t = perfBody.scope();
+            F4CF_PERF_SCOPE("bodyUnderHMD");
             if (!g_config.hideHead || (g_frik.isSelfieModeOn() && g_config.selfieIgnoreHideFlags)) {
                 logger::trace("Setup Head");
                 setupHead(neckYaw, neckPitch);
@@ -272,7 +263,7 @@ namespace frik
         }
 
         {
-            const auto t = perfPosture.scope();
+            F4CF_PERF_SCOPE("posture");
             // Now Set up body Posture and hook up the legs
             logger::trace("Set body posture...");
             setBodyPosture(neckPitch);
@@ -281,7 +272,7 @@ namespace frik
         }
 
         {
-            const auto t = perfLegs.scope();
+            F4CF_PERF_SCOPE("legs");
             logger::trace("Set knee posture...");
             setKneePos();
 
@@ -298,16 +289,11 @@ namespace frik
         }
 
         {
-            const auto t = perfArms.scope();
-            static perf::PerfMonitor perfHandTargets("Skeleton::arms.handTargets");
-            static perf::PerfMonitor perfBeforeArmSolve("Skeleton::arms.phaseBeforeArmSolve");
-            static perf::PerfMonitor perfSolve("Skeleton::arms.solveArms");
-            static perf::PerfMonitor perfArmsFlatten("Skeleton::arms.flatten");
-            static perf::PerfMonitor perfAfterArmSolve("Skeleton::arms.phaseAfterArmSolve");
+            F4CF_PERF_SCOPE("arms");
             // do arm IK - Right then Left
             logger::trace("Set Arms...");
             {
-                const auto tt = perfHandTargets.scope();
+                F4CF_PERF_SCOPE("handTargets");
                 handleLeftHandedWeaponNodesSwitch();
                 _weaponHandRecoil.onFrameUpdate(_playerNodes, g_frik.isWeaponInLeftHand());
                 updateHandTarget(false);
@@ -315,16 +301,16 @@ namespace frik
             }
             {
                 // Tracked hands are current here; hand transforms published in this phase are solved below, in the same frame
-                const auto tt = perfBeforeArmSolve.scope();
+                F4CF_PERF_SCOPE("phaseBeforeArmSolve");
                 api::core::invokeFramePhase(FramePhase::BeforeArmSolve);
             }
             {
-                const auto tt = perfSolve.scope();
+                F4CF_PERF_SCOPE("solveArms");
                 solveArm(false);
                 solveArm(true);
             }
             {
-                const auto tt = perfArmsFlatten.scope();
+                F4CF_PERF_SCOPE("flatten");
                 updateDownFromRoot(); // Do world update now so that IK calculations have proper world reference
                 applyUpperTwist();
             }
@@ -333,7 +319,7 @@ namespace frik
             // before hand pose and weapon position run, so the rest of the frame still sees one consistent arm
             const std::array<std::uint64_t, 2> claimRevisionBefore{ g_externalAuthority.getHandClaimRevision(false), g_externalAuthority.getHandClaimRevision(true) };
             {
-                const auto tt = perfAfterArmSolve.scope();
+                F4CF_PERF_SCOPE("phaseAfterArmSolve");
                 api::core::invokeFramePhase(FramePhase::AfterArmSolve);
             }
             bool resolved = false;
@@ -350,7 +336,7 @@ namespace frik
         }
 
         {
-            const auto t = perfMisc.scope();
+            F4CF_PERF_SCOPE("hideCullSelfie");
             // Misc stuff to show/hide things
             logger::trace("Pipboy and Weapons...");
             hide3rdPersonWeapon();
@@ -366,7 +352,7 @@ namespace frik
         }
 
         {
-            const auto t = perfHands.scope();
+            F4CF_PERF_SCOPE("handPose");
             logger::trace("Operate hands...");
             _handPose.onFrameUpdate(_root, _frameTime);
             api::core::invokeFramePhase(FramePhase::AfterHandPose);

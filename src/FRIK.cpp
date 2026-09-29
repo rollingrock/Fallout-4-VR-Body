@@ -13,7 +13,7 @@
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
-#include "perf/PerfMonitor.h"
+#include "perf/Perf.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/HandPose.h"
 #include "skeleton/Skeleton.h"
@@ -177,8 +177,7 @@ namespace frik
 
     void FRIK::onFrameUpdateInner()
     {
-        static perf::PerfMonitor perf("FRIK::onFrameUpdate");
-        const auto timer = perf.scope();
+        F4CF_PERF_FUNCTION();
 
         if (!RE::PlayerCharacter::GetSingleton()) {
             // game not loaded or existing

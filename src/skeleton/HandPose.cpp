@@ -15,7 +15,7 @@
 #include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
-#include "perf/PerfMonitor.h"
+#include "perf/Perf.h"
 #include "utils.h"
 #include "vrcf/VRControllersManager.h"
 
@@ -374,8 +374,7 @@ namespace frik
      */
     void HandPose::onFrameUpdate(RE::NiNode* root, const float frameTime)
     {
-        static perf::PerfMonitor perf("HandPose::onFrameUpdate");
-        const auto timer = perf.scope();
+        F4CF_PERF_FUNCTION();
 
         const auto leftHandSource = resolveHandPoseSource(true);
         const auto rightHandSource = resolveHandPoseSource(false);

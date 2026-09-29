@@ -2,7 +2,7 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "perf/PerfMonitor.h"
+#include "perf/Perf.h"
 
 using namespace common;
 
@@ -68,8 +68,7 @@ namespace frik
 
     void SmoothMovementVR::onFrameUpdate()
     {
-        static perf::PerfMonitor perf("SmoothMovementVR::onFrameUpdate");
-        const auto timer = perf.scope();
+        F4CF_PERF_FUNCTION();
 
         if (g_config.disableSmoothMovement) {
             return;

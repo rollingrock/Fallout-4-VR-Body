@@ -8,13 +8,15 @@ add_executable(FRIK_tests
   FramePhaseRegistryTests.cpp
   GripDetectionTests.cpp
   HistogramTests.cpp
-  PerfStatsTests.cpp
+  PerfSiteTests.cpp
   ScopeAuthorityTests.cpp
   TagBlockSetTests.cpp
+  # the framework's plain-std sources under test
+  ${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}/src/perf/Perf.cpp
 )
 
 target_compile_features(FRIK_tests PRIVATE cxx_std_23)
-# the framework's src/ for its plain-std headers, such as perf/PerfStats.h
+# the framework's src/ for its plain-std headers, such as perf/Histogram.h
 target_include_directories(FRIK_tests PRIVATE ${SOURCE_DIR} ${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}/src)
 target_compile_options(FRIK_tests PRIVATE /utf-8 /permissive- /W4 /external:anglebrackets /external:W0)
 target_link_libraries(FRIK_tests PRIVATE Catch2::Catch2WithMain)
