@@ -66,6 +66,12 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 # >>> Bring in the framework (it brings CommonLibF4 transitively)
 # The mod draws no Dear ImGui UI, so leave the framework's f4cf::imgui layer (and its vcpkg port) out
 set(F4CF_WITH_IMGUI_UI OFF)
+# The unit tests: FRIK's own (tests/) and the framework's, built and run with them
+option(FRIK_BUILD_TESTS "Build the FRIK and framework unit tests" ON)
+set(F4CF_BUILD_TESTS ${FRIK_BUILD_TESTS})
+if(FRIK_BUILD_TESTS)
+  enable_testing()
+endif()
 add_subdirectory(${F4VR_COMMON_FRAMEWORK_PATH_SELECTED} "F4VR-CommonFramework" EXCLUDE_FROM_ALL)
 # >>> IMPORTANT:
 # For CommonLibF4 to build successfully you must satisfy it's vcpkg dependencies
@@ -187,9 +193,7 @@ string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}
 string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_TRACY "${CMAKE_CXX_FLAGS_TRACY}")
 
 # >>> Unit tests (pure logic only, no game dependency)
-option(FRIK_BUILD_TESTS "Build the FRIK unit tests" ON)
 if(FRIK_BUILD_TESTS)
-  enable_testing()
   add_subdirectory(tests)
 endif()
 

@@ -33,6 +33,8 @@ Then read `build_output.txt`. The solution is multi-config, so without `--config
 
 The `Tracy` configuration (build preset `tracy`, or `custom-tracy` from the user template) is the Release build plus the Tracy profiler client, copied to the mod folder like any other build. The framework adds it; anything `CMakeLists.txt` gives Release only it gives `$<CONFIG:Release,Tracy>`. See the framework's [perf README](external/F4VR-CommonFramework/src/perf/README.md#tracy).
 
+**Tests:** `ctest --test-dir build -C Release` after a build runs the Catch2 unit tests for pure logic with no game dependency: FRIK's own in [tests/](tests/) and the framework's in its `tests/`, which FRIK turns on (`F4CF_BUILD_TESTS`) so a normal build builds both. `-DFRIK_BUILD_TESTS=OFF` drops both. A test of framework code belongs in the framework.
+
 ## Architecture
 
 ### Entry point and global
