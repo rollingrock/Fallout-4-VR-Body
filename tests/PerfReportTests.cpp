@@ -309,3 +309,49 @@ TEST_CASE("Perf report text: with nothing recorded it says so")
     REQUIRE(rows.size() == 2);
     REQUIRE(rows[1] == "no site has recorded anything since the last reset");
 }
+
+TEST_CASE("Perf report: GPU sites are a tree of their own, never under a thread's sites")
+{
+    perf::setEnabled(true);
+    static perf::Site cpu("GpuTest::draw", nullptr);
+    static perf::Site gpuRoot("GpuTest::draw", nullptr, "", 0, perf::SiteKind::Gpu);
+    static perf::Site& gpuLayer = perf::dynamicSite("GpuTest::draw", "layer", perf::SiteKind::Gpu);
+    // the same function and label as a CPU dynamic site, yet another site
+    REQUIRE(&gpuLayer != &perf::dynamicSite("GpuTest::draw", "layer"));
+    {
+        // recorded while a CPU site is open, as the Submit host reads GPU times back inside its draw
+        const perf::Scope scope(cpu);
+        gpuRoot.record(3'000'000, nullptr);
+        gpuLayer.record(2'000'000, &gpuRoot);
+    }
+
+    const auto report = perf::readReport();
+    const auto* cpuNode = find(report, cpu);
+    REQUIRE(cpuNode != nullptr);
+    REQUIRE(cpuNode->children.empty());
+    REQUIRE(find(report, gpuRoot) == nullptr);
+    const auto* node = findIn(report.gpu, gpuRoot);
+    REQUIRE(node != nullptr);
+    REQUIRE(node->children.size() == 1);
+    REQUIRE(node->children[0].site == &gpuLayer);
+    REQUIRE(node->stats.selfNs() == 1'000'000);
+}
+
+TEST_CASE("Perf report text: the GPU sites come last, under a line of their own")
+{
+    const perf::Site cpuRoot("TextTest::frame", nullptr);
+    const perf::Site gpuRoot("TextTest::draw", nullptr, "", 0, perf::SiteKind::Gpu);
+    perf::Report report;
+    report.window = 1s;
+    report.frames = 1;
+    report.threads.push_back({ std::this_thread::get_id(), true, { { &cpuRoot, { durations({ 1ms }), 0 }, {} } } });
+    report.gpu.push_back({ &gpuRoot, { durations({ 2ms }), 0 }, {} });
+
+    const auto rows = lines(perf::formatReport(report));
+    REQUIRE(rows.size() == 6);
+    REQUIRE(rows[2].starts_with("game thread "));
+    REQUIRE(rows[3].starts_with("  TextTest::frame "));
+    REQUIRE(rows[4].starts_with("gpu "));
+    REQUIRE(rows[5].starts_with("  TextTest::draw "));
+    REQUIRE(rows[5].size() == rows[1].size());
+}
