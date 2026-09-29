@@ -1,14 +1,15 @@
 // Template for custom CMake user presets.
 // Set "COPY_PLUGIN_BASE_PATH" to your mod folder in MO2 or your Fallout 4 VR Data folder.
 // Support multiple paths separated by semicolons (i.e. "<path1>;<path2>").
-// Set "COPY_PLUGIN_CONFIGURATIONS" to the build configurations to copy on: "all" (default) or a list (i.e. "Release" or "Debug;RelWithDebInfo").
+// Set "COPY_PLUGIN_CONFIGURATIONS" to the build configurations to copy on: "all" (default) or a list (i.e. "Release;Tracy" or "Debug;RelWithDebInfo").
 // Use "F4VR_COMMON_FRAMEWORK_PATH" to use existing F4VRCommonFramework instead of submodule.
 // Rename the file to 'CMakeUserPresets.json' (it is in .gitignore to keep it local to you).
-// Build preset names must not repeat the ones in CMakePresets.json ("debug" / "release" / "package").
+// Build preset names must not repeat the ones in CMakePresets.json ("debug" / "release" / "package" / "tracy").
 // Remove this comment block.
 // Run:
 // cmake --preset custom
-// cmake --build --preset custom-debug   (or custom-release, or custom-package to also package the mod into build/package/)
+// cmake --build --preset custom-debug   (or custom-release, or custom-package to also package the mod into build/package/,
+//                                        or custom-tracy for a Release build with the Tracy profiler client)
 
 {
   "version": 3,
@@ -40,6 +41,11 @@
       "configurePreset": "custom",
       "configuration": "Release",
       "targets": ["package_mod"]
+    },
+    {
+      "name": "custom-tracy",
+      "configurePreset": "custom",
+      "configuration": "Tracy"
     }
   ]
 }

@@ -171,18 +171,20 @@ target_compile_options(${PROJECT_NAME}
 	/external:W0
 
     /W4 # Warning level
-    "$<$<CONFIG:RELEASE>:/Zc:inline;/JMC-;/Ob3>"
+    # Tracy: the framework's profiling configuration, a Release build with the Tracy client
+    "$<$<CONFIG:Release,Tracy>:/Zc:inline;/JMC-;/Ob3>"
 )
 
 target_link_options(${PROJECT_NAME}
   PRIVATE
     /WX # Treat Linker Warnings as Errors
     "$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
-    "$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
+    "$<$<CONFIG:Release,Tracy>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
 )
 
 # >>> fix a warning with /Ob2 being overridden with /Ob3
 string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_TRACY "${CMAKE_CXX_FLAGS_TRACY}")
 
 # >>> Unit tests (pure logic only, no game dependency)
 option(FRIK_BUILD_TESTS "Build the FRIK unit tests" ON)

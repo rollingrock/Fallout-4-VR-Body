@@ -36,6 +36,12 @@ cmake --build build --config Release --target package_mod
 ```
 - The `package_mod` target builds the plugin if needed and creates a 7-Zip package of the mod in `build/package`. A plain build does not package.
 
+Build for profiling with [Tracy](https://github.com/wolfpld/tracy):
+```
+cmake --build build --config Tracy
+```
+- The `Tracy` configuration (build preset `tracy`) is the Release build with the Tracy profiler client compiled in. Connect the Tracy viewer v0.14.1 to FRIK while the game runs to see every timed step of its frame on a timeline. See the framework's [perf README](../external/F4VR-CommonFramework/src/perf/README.md#tracy).
+
 ---
 
 ## Tips
