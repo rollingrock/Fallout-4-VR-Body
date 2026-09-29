@@ -137,7 +137,8 @@ namespace frik::devbench
 
         /**
          * Publish frik.<group>.<flag> for every flag whose new value has held STABLE_FRAMES frames. It rides on the state
-         * capture, so it runs only while the tool is armed, and costs nothing beyond comparing what was captured.
+         * capture, so it runs only while the tool is armed (devbench installed, a Tracy viewer connected, or perf_reset),
+         * and costs nothing beyond comparing what was captured.
          */
         void emitTransitions(const FrikState& state)
         {
