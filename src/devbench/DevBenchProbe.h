@@ -1,13 +1,13 @@
 #pragma once
 
-#include <string>
+#include <nlohmann/json.hpp>
 
 namespace frik::devbench
 {
     /**
-     * Dev-only exerciser of the v2.3 API from inside FRIK, driven by the devbench 'frik' tool
-     * (action 'probe'), so the frame phases, hand claims, grips and weapon parent can be tested
-     * without a client mod. Runs on the game thread only.
+     * Dev-only exerciser of FRIK's API from inside FRIK, run as the devbench tool's probe action, with "op" choosing
+     * what it does, so the frame phases, hand claims, grips and weapon parent can be tested without a client mod.
+     * Game thread only.
      */
-    std::string runProbe(const std::string& argsJson);
+    nlohmann::json runProbe(const nlohmann::json& args);
 }

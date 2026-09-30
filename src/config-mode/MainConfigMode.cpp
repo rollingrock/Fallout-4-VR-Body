@@ -1,6 +1,7 @@
 #include "MainConfigMode.h"
 
 #include "FRIK.h"
+#include "perf/Perf.h"
 #include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 #include "vrui/UIManager.h"
@@ -54,6 +55,8 @@ namespace frik
      */
     void MainConfigMode::onFrameUpdate()
     {
+        F4CF_PERF_FUNCTION();
+
         // open main config on the configured shortcut (both thumbsticks long-pressed by default)
         if (!isOpen() && vrcf::VRControllers.check(g_config.openMainConfigBinding)) {
             logger::info("Open main config by shortcut...");

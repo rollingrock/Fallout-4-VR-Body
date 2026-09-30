@@ -1,10 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "FramePhaseRegistry.h"
+#include "perf/Perf.h"
 
+namespace perf = f4cf::perf;
 using frik::FRAME_PHASE_COUNT;
 using frik::FramePhase;
 using frik::FramePhaseRegistry;
@@ -106,6 +109,41 @@ TEST_CASE("FramePhaseRegistry refuses mutation and nesting from inside a callbac
     REQUIRE_FALSE(g_reentrantRemove);
     REQUIRE_FALSE(registry.isInvoking());
     REQUIRE(registry.count() == 1);
+}
+
+TEST_CASE("FramePhaseRegistry times each callback as a perf site under the site open when its phase runs")
+{
+    perf::setEnabled(true);
+    perf::reset();
+    FramePhaseRegistry registry;
+    const auto p = phase(FramePhase::AfterArmSolve);
+    REQUIRE(registry.set("timed", p, &record, tagA, 0) == Result::Registered);
+
+    static perf::Site outer("Test::phases", "outer");
+    {
+        const perf::Scope scope(outer);
+        registry.invoke(p);
+        registry.invoke(p);
+    }
+
+    const auto& site = perf::dynamicSite(FramePhaseRegistry::PERF_FUNCTION, "AfterArmSolve:timed");
+    REQUIRE(std::string_view(site.shortFunction()) == "FramePhaseRegistry::invoke");
+    REQUIRE(site.read().durations.count == 2);
+    REQUIRE(site.caller() == &outer);
+
+    // registered again, the tag times into the same site
+    REQUIRE(registry.remove("timed"));
+    REQUIRE(registry.set("timed", p, &record, tagA, 0) == Result::Registered);
+    registry.invoke(p);
+    REQUIRE(site.read().durations.count == 3);
+}
+
+TEST_CASE("FramePhaseRegistry names every phase")
+{
+    REQUIRE(frik::framePhaseName(phase(FramePhase::NativeGraphOutput)) == "NativeGraphOutput");
+    REQUIRE(frik::framePhaseName(phase(FramePhase::AfterArmSolve)) == "AfterArmSolve");
+    REQUIRE(frik::framePhaseName(phase(FramePhase::FrameEnd)) == "FrameEnd");
+    REQUIRE(frik::framePhaseName(FRAME_PHASE_COUNT) == "Unknown");
 }
 
 TEST_CASE("FramePhaseRegistry is bounded and clears")

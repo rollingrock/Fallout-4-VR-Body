@@ -6,6 +6,7 @@
 
 #include "FRIK.h"
 #include "api/ApiCore.h"
+#include "perf/Perf.h"
 
 namespace
 {
@@ -151,6 +152,8 @@ namespace
     void hookPlayerPostAnimGraph(const uint64_t)
     {
         if (frik::g_frik.isSkeletonReady()) {
+            // a root of its own: the animation update runs before the mod's frame
+            F4CF_PERF_SCOPE("NativeGraphOutput");
             frik::api::core::invokeFramePhase(frik::FramePhase::NativeGraphOutput);
         }
     }

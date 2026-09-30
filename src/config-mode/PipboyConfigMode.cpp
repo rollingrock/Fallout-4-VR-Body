@@ -4,6 +4,7 @@
 #include "FRIK.h"
 #include "common/MatrixUtils.h"
 #include "f4vr/F4VRUtils.h"
+#include "perf/Perf.h"
 #include "skeleton/Skeleton.h"
 #include "utils.h"
 #include "vrcf/VRControllersHaptic.h"
@@ -46,6 +47,8 @@ namespace frik
 
     void PipboyConfigMode::onFrameUpdate()
     {
+        F4CF_PERF_FUNCTION();
+
         if (!g_frik.isPipboyOn() && f4vr::isPipboyOnWrist()) {
             return;
         }
@@ -167,7 +170,7 @@ namespace frik
             return;
         }
 
-        auto& transform = f4vr::getPlayerNodes()->ScreenNode->local;
+        auto& transform = f4vr::getVRPlayerNodes()->screenNode->local;
         if (vrcf::VRControllers.isPressHeldDown(vrcf::Hand::Offhand, vr::EVRButtonId::k_EButton_A)) {
             // adjust the scale of the screen
             transform.scale = std::fmax(0.1f, transform.scale + correctAdjustmentValue(primAxisY, 100));
@@ -207,7 +210,7 @@ namespace frik
     {
         switch (_adjustTarget) {
         case PipboyAdjustTarget::ScreenAdjust:
-            g_config.savePipboyOffset(f4vr::getPlayerNodes()->ScreenNode->local);
+            g_config.savePipboyOffset(f4vr::getVRPlayerNodes()->screenNode->local);
             f4vr::showNotification("Saved Pipboy screen position");
             return true;
         case PipboyAdjustTarget::ModelScale:
@@ -232,7 +235,7 @@ namespace frik
         switch (_adjustTarget) {
         case PipboyAdjustTarget::ScreenAdjust:
             f4vr::showNotification("Reset Pipboy screen position to default");
-            f4vr::getPlayerNodes()->ScreenNode->local = g_config.getDefaultPipboyOffset();
+            f4vr::getVRPlayerNodes()->screenNode->local = g_config.getDefaultPipboyOffset();
             break;
         case PipboyAdjustTarget::ModelScale:
             f4vr::showNotification("Reset Pipboy model scale to default");

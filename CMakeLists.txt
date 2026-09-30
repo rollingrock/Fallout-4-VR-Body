@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 4.2)
 # >>> Project
 set(NAME "FRIK")
 set(FRIENDLY_NAME "FRIK")
-set(VERSION 0.79.1)
+set(VERSION 0.79.2)
 
 message(">>> Start build for '${NAME}' v${VERSION}")
 
@@ -64,6 +64,14 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 
 # >>> Bring in the framework (it brings CommonLibF4 transitively)
+# The mod draws no Dear ImGui UI, so leave the framework's f4cf::imgui layer (and its vcpkg port) out
+set(F4CF_WITH_IMGUI_UI OFF)
+# The unit tests: FRIK's own (tests/) and the framework's, built and run with them
+option(FRIK_BUILD_TESTS "Build the FRIK and framework unit tests" ON)
+set(F4CF_BUILD_TESTS ${FRIK_BUILD_TESTS})
+if(FRIK_BUILD_TESTS)
+  enable_testing()
+endif()
 add_subdirectory(${F4VR_COMMON_FRAMEWORK_PATH_SELECTED} "F4VR-CommonFramework" EXCLUDE_FROM_ALL)
 # >>> IMPORTANT:
 # For CommonLibF4 to build successfully you must satisfy it's vcpkg dependencies
@@ -169,45 +177,64 @@ target_compile_options(${PROJECT_NAME}
 	/external:W0
 
     /W4 # Warning level
-    "$<$<CONFIG:RELEASE>:/Zc:inline;/JMC-;/Ob3>"
+    # Tracy: the framework's profiling configuration, a Release build with the Tracy client
+    "$<$<CONFIG:Release,Tracy>:/Zc:inline;/JMC-;/Ob3>"
 )
 
 target_link_options(${PROJECT_NAME}
   PRIVATE
     /WX # Treat Linker Warnings as Errors
     "$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
-    "$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
+    "$<$<CONFIG:Release,Tracy>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
 )
 
 # >>> fix a warning with /Ob2 being overridden with /Ob3
 string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_TRACY "${CMAKE_CXX_FLAGS_TRACY}")
 
 # >>> Unit tests (pure logic only, no game dependency)
-option(FRIK_BUILD_TESTS "Build the FRIK unit tests" ON)
 if(FRIK_BUILD_TESTS)
-  enable_testing()
   add_subdirectory(tests)
 endif()
 
-# >>> Post build command to copy plugins (supports multiple paths separated by ';'). Release only, see cmake/copy_plugin.cmake
+# >>> Post build command to copy plugins (supports multiple paths separated by ';')
+# COPY_PLUGIN_CONFIGURATIONS limits the copy to some build configurations, e.g. "Release" or "Debug;RelWithDebInfo" (case-insensitive)
+set(COPY_PLUGIN_CONFIGURATIONS "all" CACHE STRING "Build configurations the post build plugin copy runs for: 'all' or a ';' separated list")
 if(POST_BUILD_COPY_PLUGIN)
   if(DEFINED COPY_PLUGIN_BASE_PATH)
     # Treat semicolon-separated COPY_PLUGIN_BASE_PATH as a CMake list
     set(COPY_PLUGIN_PATH_LIST ${COPY_PLUGIN_BASE_PATH})
 
-    message(">>> Create post build command: copy targets to:")
+    # Resolved per configuration at generate time: $<CONFIG:a,b> is 1 when building any of them
+    string(TOLOWER "${COPY_PLUGIN_CONFIGURATIONS}" copy_plugin_configs)
+    if(copy_plugin_configs STREQUAL "all")
+      set(copy_plugin_enabled 1)
+    else()
+      if(CMAKE_CONFIGURATION_TYPES)
+        string(TOLOWER "${CMAKE_CONFIGURATION_TYPES}" known_configs)
+        foreach(config IN LISTS copy_plugin_configs)
+          if(NOT config IN_LIST known_configs)
+            message(FATAL_ERROR "COPY_PLUGIN_CONFIGURATIONS has unknown configuration '${config}', expected 'all' or any of: ${CMAKE_CONFIGURATION_TYPES}")
+          endif()
+        endforeach()
+      endif()
+      string(REPLACE ";" "," copy_plugin_configs "${copy_plugin_configs}")
+      set(copy_plugin_enabled "$<CONFIG:${copy_plugin_configs}>")
+    endif()
+
+    message(">>> Create post build command: copy targets on '${COPY_PLUGIN_CONFIGURATIONS}' configurations to:")
     foreach(copy_path IN LISTS COPY_PLUGIN_PATH_LIST)
-      message("    ${copy_path}/F4SE/Plugins/")
+      set(copy_dir "${copy_path}/F4SE/Plugins")
+      message("    ${copy_dir}/")
+      # Each command is wrapped in $<cond:...> so it expands to nothing, and is dropped, for the configurations it does not run on
       add_custom_command(
         TARGET ${PROJECT_NAME}
         POST_BUILD
-        COMMENT "Copying ${PROJECT_NAME}.dll and .pdb to plugins folder (release only): '${copy_path}/F4SE/Plugins/'"
-        COMMAND ${CMAKE_COMMAND}
-                -DCOPY_PATH="${copy_path}"
-                -DTARGET_FILE="$<TARGET_FILE:${PROJECT_NAME}>"
-                -DTARGET_PDB_FILE="$<TARGET_PDB_FILE:${PROJECT_NAME}>"
-                -DCONFIG=$(Configuration)
-                -P "${ROOT_DIR}/cmake/copy_plugin.cmake"
+        COMMENT "Post build copy of ${PROJECT_NAME}.dll and .pdb to plugins folder: '${copy_dir}/'"
+        COMMAND "$<${copy_plugin_enabled}:${CMAKE_COMMAND};-E;make_directory;${copy_dir}>"
+        COMMAND "$<${copy_plugin_enabled}:${CMAKE_COMMAND};-E;copy;$<TARGET_FILE:${PROJECT_NAME}>;$<TARGET_PDB_FILE:${PROJECT_NAME}>;${copy_dir}>"
+        COMMAND "$<$<NOT:${copy_plugin_enabled}>:${CMAKE_COMMAND};-E;echo;Skipping: $<CONFIG> is not in COPY_PLUGIN_CONFIGURATIONS>"
+        COMMAND_EXPAND_LISTS
       )
     endforeach()
   else()
@@ -217,19 +244,21 @@ else()
   message(">>> No post build copy")
 endif()
 
-# >>> Post build for release only to package the mod into a .7z file
-message(">>> Create post build command: package mod on release build")
-add_custom_command(
-  TARGET ${PROJECT_NAME}
-  POST_BUILD
+# >>> Target to package the mod into a versioned .7z file in build/package/, see cmake/package.cmake
+# Not part of a normal build, build it explicitly: `cmake --build build --config Release --target package_mod`
+# or a build preset with "targets": ["package_mod"]. It builds the plugin first when it is out of date.
+add_custom_target(package_mod
   COMMAND ${CMAKE_COMMAND}
-          -DPROJECT_NAME=${PROJECT_NAME}
-          -DPROJECT_FRIENDLY_NAME=${FRIENDLY_NAME}
-          -DPROJECT_VERSION=${PROJECT_VERSION}
-          -DROOT_DIR=${ROOT_DIR}
-          -DBUILD_DIR=${BUILD_DIR}
-          -DTARGET_FILE="$<TARGET_FILE:${PROJECT_NAME}>"
-          -DTARGET_PDB_FILE="$<TARGET_PDB_FILE:${PROJECT_NAME}>"
-          -DCONFIG=$(Configuration)
+          "-DPROJECT_NAME=${PROJECT_NAME}"
+          "-DPROJECT_FRIENDLY_NAME=${FRIENDLY_NAME}"
+          "-DPROJECT_VERSION=${PROJECT_VERSION}"
+          "-DROOT_DIR=${ROOT_DIR}"
+          "-DBUILD_DIR=${BUILD_DIR}"
+          "-DTARGET_FILE=$<TARGET_FILE:${PROJECT_NAME}>"
+          "-DTARGET_PDB_FILE=$<TARGET_PDB_FILE:${PROJECT_NAME}>"
+          "-DCONFIG=$<CONFIG>"
           -P "${ROOT_DIR}/cmake/package.cmake"
+  COMMENT "Packaging ${PROJECT_NAME} into '${BUILD_DIR}/package/'"
+  VERBATIM
 )
+add_dependencies(package_mod ${PROJECT_NAME})

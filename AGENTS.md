@@ -22,13 +22,18 @@ cmake --preset default        # uses vs2026 by default
 ```
 For local development, copy `CMakeUserPresets.json.template` → `CMakeUserPresets.json` and set:
 - `POST_BUILD_COPY_PLUGIN: true` and `COPY_PLUGIN_BASE_PATH` to your MO2 mod folder(s) (semicolon-separated for multiple) — this auto-copies `FRIK.dll` + `.pdb` to `<path>/F4SE/Plugins/` after every build.
+- `COPY_PLUGIN_CONFIGURATIONS` to limit that copy to some build configurations: `all` (default) or a `;` list such as `Release` or `Debug;RelWithDebInfo` (case-insensitive, unknown names fail at configure). Resolved per configuration with `$<CONFIG:...>` in `CMakeLists.txt`, so it holds for build presets, `cmake --build` and the VS IDE alike. Set it to `Release;Tracy` to keep a debugging build from landing on a test rig.
 - `F4VR_COMMON_FRAMEWORK_PATH` to point to a sibling checkout of F4VR-CommonFramework if you want to develop against it instead of the submodule.
 
 **Build (and ALWAYS check the output before reporting done):**
 ```
-cmake --build build 2>&1 | tee build_output.txt
+cmake --build build --config Release 2>&1 | tee build_output.txt
 ```
-Then read `build_output.txt`. Release builds also produce a versioned `.7z` package in `build/package/`.
+Then read `build_output.txt`. The solution is multi-config, so without `--config Release` you get a Debug build, which is copied to the mod folder only if `COPY_PLUGIN_CONFIGURATIONS` includes Debug. A normal build does not package: build the `package_mod` target (`cmake --build build --config Release --target package_mod`, or a build preset with `"targets": ["package_mod"]`) to build the plugin if needed and write a versioned `.7z` to `build/package/`. A non-Release package has the configuration in its file name.
+
+The `Tracy` configuration (build preset `tracy`, or `custom-tracy` from the user template) is the Release build plus the Tracy profiler client, copied to the mod folder like any other build. The framework adds it; anything `CMakeLists.txt` gives Release only it gives `$<CONFIG:Release,Tracy>`. See the framework's [perf README](external/F4VR-CommonFramework/src/perf/README.md#tracy).
+
+**Tests:** `ctest --test-dir build -C Release` after a build runs the Catch2 unit tests for pure logic with no game dependency: FRIK's own in [tests/](tests/) and the framework's in its `tests/`, which FRIK turns on (`F4CF_BUILD_TESTS`) so a normal build builds both. `-DFRIK_BUILD_TESTS=OFF` drops both. A test of framework code belongs in the framework.
 
 ## Architecture
 
@@ -57,7 +62,9 @@ Then read `build_output.txt`. Release builds also produce a versioned `.7z` pack
 
 `FRIK::smoothMovement` is invoked from a separate hook (not from `onFrameUpdate`).
 
-**Frame phases.** External mods run at fixed points of this sequence through `FramePhase` callbacks (`src/FramePhaseRegistry.h`, registry `g_framePhases` in `ApiCore.cpp`, invoked via `api::core::invokeFramePhase`): `NativeGraphOutput` fires from the detour at 0xF2F0A0 (`GameHooks.cpp`, earlier in the game frame), `BodyPlaced`/`LegsSolved`/`BeforeArmSolve`/`AfterArmSolve`/`AfterHandPose` from `Skeleton::onFrameUpdate`, and `AfterWeaponPosition`/`BeforeWorldFinal`/`AfterWorldFinal` from `FRIK::onFrameUpdateInner`. Tracked hands are refreshed (`updateHandTarget`) before `BeforeArmSolve`, so a hand transform published there is solved in the same frame. `broadcastScopeEvents` runs before step 1.
+**Frame phases.** External mods run at fixed points of this sequence through `FramePhase` callbacks (`src/FramePhaseRegistry.h`, registry `g_framePhases` in `ApiCore.cpp`, invoked via `api::core::invokeFramePhase`): `NativeGraphOutput` fires from the detour at 0xF2F0A0 (`GameHooks.cpp`, earlier in the game frame), `BodyPlaced`/`LegsSolved`/`BeforeArmSolve`/`AfterArmSolve`/`AfterHandPose` from `Skeleton::onFrameUpdate`, `AfterWeaponPosition`/`BeforeWorldFinal`/`AfterWorldFinal` from `FRIK::onFrameUpdateInner`, and `FrameBegin`/`FrameEnd` from `FRIK::onFrameUpdate` around it, every frame, with or without a skeleton. Tracked hands are refreshed (`updateHandTarget`) before `BeforeArmSolve`, so a hand transform published there is solved in the same frame. `broadcastScopeEvents` runs before step 1. Each callback is timed as a perf site labelled `Phase:tag` (`AfterArmSolve:ROCK`), under the site open when its phase runs.
+
+**Timing.** Every step of the frame is an [`f4cf::perf`](external/F4VR-CommonFramework/src/perf/README.md) site, nested by where it runs. Read them with the devbench `frik` tool's `perf` action (`format: "text"` for a table), or without devbench through `[Debug] sDumpDataOnceNames`: `perf_reset` starts a window, `perf` logs the table to `FRIK.log`. Give new per-frame code `F4CF_PERF_FUNCTION()` or `F4CF_PERF_SCOPE("label")`. Code the engine calls outside FRIK's frame shows as a root of its own on the game thread: the `NativeGraphOutput` phase, and `Skeleton::repairEngineArmPlacementForCarry` (twice a frame while a left carry needs it). `hookUpdate1stPersonArm` itself has no site, since it has to stay a tail call. In the `Tracy` build every site is also a Tracy zone, so the Tracy viewer shows the same steps on a timeline, frame by frame and thread by thread, with FRIK's devbench events as messages.
 
 ### Subsystem map
 
@@ -73,6 +80,7 @@ Then read `build_output.txt`. Release builds also produce a versioned `.7z` pack
 | Public API | [src/api/](src/api/) | Two C ABI majors (`FRIKApi` v1.\*, `FRIKApiV2`) over a shared `ApiCore`, loaded by other mods via `GetProcAddress` |
 | External mod state | [src/ExternalAuthority.h](src/ExternalAuthority.h), [src/TagBlockSet.h](src/TagBlockSet.h) | Weapon node ownership, weapon pose blocks, tagged hand world transforms, external off-hand grips, weapon node parent-hand requests; `TagBlockSet` is the shared "blocked while any tag holds it" registry |
 | Papyrus API | [src/PapyrusApi.h](src/PapyrusApi.h) | Native functions for in-game scripts |
+| devbench tool | [src/devbench/](src/devbench/) | FRIK's part of the `frik` devbench tool, which the framework registers (`f4cf::devbench`): its state (a table of flags, `FrikDevBench.cpp`) with a `frik.<group>.<flag>` event per stable change, the skeleton ready/destroying events, and the `probe` action exercising the API from inside FRIK. Inside `namespace frik`, `devbench::` means `frik::devbench`; the framework's is `f4cf::devbench::` |
 
 ### Config
 

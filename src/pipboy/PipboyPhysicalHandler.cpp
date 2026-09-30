@@ -2,8 +2,8 @@
 
 #include "Config.h"
 #include "FRIK.h"
-#include "devbench/PerfProbe.h"
 #include "f4vr/F4VRSkelly.h"
+#include "perf/Perf.h"
 #include "skeleton/HandPose.h"
 #include "utils.h"
 #include "vrcf/VRControllersHaptic.h"
@@ -19,8 +19,7 @@ namespace frik
      */
     void PipboyPhysicalHandler::operate(const PipboyPage lastPipboyPage)
     {
-        static devbench::PerfProbe perf("PipboyPhysicalHandler::operate");
-        const auto timer = perf.scope();
+        F4CF_PERF_FUNCTION();
 
         if (g_config.isFalloutLondonVR) {
             // FOLVR is not currently supported

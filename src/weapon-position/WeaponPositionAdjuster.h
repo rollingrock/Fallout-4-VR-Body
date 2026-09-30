@@ -92,7 +92,7 @@ namespace frik
 
     private:
         void restoreScopeRig();
-        static bool reparent(RE::NiNode* node, RE::NiNode* newParent, const RE::NiTransform* local);
+        static bool reparent(RE::NiAVObject* node, RE::NiNode* newParent, const RE::NiTransform* local);
         void handleScopeCameraAdjustmentByWeaponOffset(const RE::NiNode* weapon) const;
         void alignScopeCameraToWeapon(const RE::NiNode* weapon) const;
         void checkIfOffhandIsGripping(const RE::NiNode* weapon);

@@ -6,8 +6,8 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "common/CommonUtils.h"
-#include "devbench/PerfProbe.h"
 #include "f4vr/scaleformUtils.h"
+#include "perf/Perf.h"
 #include "utils.h"
 
 using namespace RE::Scaleform;
@@ -147,8 +147,7 @@ namespace frik
      */
     void PipboyOperationHandler::operate()
     {
-        static devbench::PerfProbe perf("PipboyOperationHandler::operate");
-        const auto timer = perf.scope();
+        F4CF_PERF_FUNCTION();
 
         if (!g_config.enablePrimaryControllerPipboyUse || g_frik.isPipboyConfigurationModeAdjusting()) {
             return;

@@ -3,8 +3,11 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <string>
 #include <string_view>
+
+#include "perf/Perf.h"
 
 namespace frik
 {
@@ -34,6 +37,25 @@ namespace frik
 
     inline constexpr std::uint32_t FRAME_PHASE_COUNT = 11;
 
+    /**
+     * A phase's name as the enum spells it ("AfterArmSolve"), or "Unknown" past the last one.
+     */
+    constexpr std::string_view framePhaseName(const std::uint32_t phase)
+    {
+        constexpr std::array<std::string_view, FRAME_PHASE_COUNT> NAMES{ "NativeGraphOutput",
+            "BodyPlaced",
+            "LegsSolved",
+            "BeforeArmSolve",
+            "AfterArmSolve",
+            "AfterHandPose",
+            "AfterWeaponPosition",
+            "BeforeWorldFinal",
+            "AfterWorldFinal",
+            "FrameBegin",
+            "FrameEnd" };
+        return phase < NAMES.size() ? NAMES[phase] : "Unknown";
+    }
+
     using FrameCallback = void(__cdecl*)(std::uint32_t phase, void* userData) noexcept;
 
     /**
@@ -42,11 +64,17 @@ namespace frik
      * Callbacks run by descending priority, then registration order, so at equal priority the newest
      * registration runs last and its writes win. Re-setting a tag and phase keeps its place in that order.
      * Registration and removal are refused while a callback is on the stack. Game thread only.
+     *
+     * Each callback is timed as a perf site labelled "phase:tag" ("AfterArmSolve:ROCK_Physics"), which nests
+     * under whatever site is open when its phase runs, so another mod's cost shows where it lands in FRIK's frame.
      */
     class FramePhaseRegistry
     {
     public:
         static constexpr std::size_t CAPACITY = 32;
+
+        // the function the callbacks' perf sites are timed in
+        static constexpr const char* PERF_FUNCTION = "frik::FramePhaseRegistry::invoke";
 
         enum class Result : std::uint8_t
         {
@@ -89,6 +117,8 @@ namespace frik
                 entry->phase = phase;
                 entry->generation = ++_generation;
                 entry->active = true;
+                // looked up once here, never per frame; the same tag and phase registered again times into the same site
+                entry->perfSite = &f4cf::perf::dynamicSite(PERF_FUNCTION, std::format("{}:{}", framePhaseName(phase), tag));
             }
             entry->callback = callback;
             entry->userData = userData;
@@ -135,6 +165,7 @@ namespace frik
             _invoking = true;
             for (std::size_t i = 0; i < count; ++i) {
                 const auto& entry = _entries[_order[phase][i]];
+                const f4cf::perf::Scope perfScope(*entry.perfSite);
                 entry.callback(phase, entry.userData);
             }
             _invoking = false;
@@ -179,6 +210,7 @@ namespace frik
             std::uint32_t phase = 0;
             int priority = 0;
             std::uint64_t generation = 0;
+            f4cf::perf::Site* perfSite = nullptr;
             bool active = false;
         };
 

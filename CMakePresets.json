@@ -56,5 +56,20 @@
       "name": "default"
     }
   ],
+  "buildPresets": [
+    { "name": "debug", "configurePreset": "default", "configuration": "Debug" },
+    {
+      "name": "release",
+      "configurePreset": "default",
+      "configuration": "Release"
+    },
+    {
+      "name": "package",
+      "configurePreset": "default",
+      "configuration": "Release",
+      "targets": ["package_mod"]
+    },
+    { "name": "tracy", "configurePreset": "default", "configuration": "Tracy" }
+  ],
   "version": 3
 }

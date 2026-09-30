@@ -5,6 +5,7 @@
 #include "FRIK.h"
 #include "f4sevr/PapyrusNativeFunctions.h"
 #include "f4sevr/PapyrusUtils.h"
+#include "perf/Perf.h"
 
 using namespace common;
 using namespace F4SEVR;
@@ -68,6 +69,7 @@ namespace frik
 
     void BoneSpheresHandler::onFrameUpdate()
     {
+        F4CF_PERF_FUNCTION();
         detectBoneSphere();
         handleDebugBoneSpheres();
     }
