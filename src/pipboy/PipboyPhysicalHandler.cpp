@@ -141,7 +141,7 @@ namespace frik
         if (powerTranslate->local.translate.z < -0.10 && !_stickyPower) {
             logger::info("Pipboy power button pressed");
             _stickyPower = true;
-            vrcf::VRHaptics.trigger(vrcf::Hand::Right, vrcf::HapticPattern::Click);
+            vrcf::VRHaptics.trigger(g_config.leftHandedPipBoy ? vrcf::Hand::Left : vrcf::Hand::Right, vrcf::HapticPattern::Click);
             _pipboy->openClose(!_pipboy->isOpen());
         }
     }
@@ -168,7 +168,7 @@ namespace frik
         if (lightTranslate->local.translate.z < -0.14 && !_stickyLight) {
             logger::info("Light button pressed");
             _stickyLight = true;
-            vrcf::VRHaptics.trigger(vrcf::Hand::Right, vrcf::HapticPattern::Click);
+            vrcf::VRHaptics.trigger(g_config.leftHandedPipBoy ? vrcf::Hand::Left : vrcf::Hand::Right, vrcf::HapticPattern::Click);
             if (!_pipboy->isOpen()) {
                 f4vr::togglePipboyLight(f4vr::getPlayer());
             }
@@ -197,7 +197,7 @@ namespace frik
         if (lightTranslate->local.translate.y < -0.12 && !_stickyRadio) {
             logger::info("Radio button pressed");
             _stickyRadio = true;
-            vrcf::VRHaptics.trigger(vrcf::Hand::Right, vrcf::HapticPattern::Click);
+            vrcf::VRHaptics.trigger(g_config.leftHandedPipBoy ? vrcf::Hand::Left : vrcf::Hand::Right, vrcf::HapticPattern::Click);
             if (f4vr::isPlayerRadioEnabled()) {
                 turnPlayerRadioOn(false);
             } else {

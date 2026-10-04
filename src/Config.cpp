@@ -279,9 +279,17 @@ namespace frik
      */
     std::optional<RE::NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const
     {
-        const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode()));
+        const bool leftHanded = f4vr::isLeftHandedMode();
+        const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, leftHanded));
         if (it != _weaponsOffsets.end()) {
             return it->second;
+        }
+        // a left-handed player without a left-handed entry gets the right-handed one rather than none
+        if (leftHanded) {
+            const auto rightIt = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, false));
+            if (rightIt != _weaponsOffsets.end()) {
+                return rightIt->second;
+            }
         }
         // Check without PA (historic)
         return inPA ? getWeaponOffsets(name, mode, false) : std::nullopt;
@@ -319,7 +327,7 @@ namespace frik
     void Config::loadIniConfigInternal(const CSimpleIniA& ini)
     {
         // Player/Skeleton
-        setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", false);
+        setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", true);
         fVrScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fVrScale", 70.0));
         playerHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f));
         armLength = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "armLength", 36.74f));

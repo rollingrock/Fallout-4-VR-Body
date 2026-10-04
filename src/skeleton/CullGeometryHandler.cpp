@@ -34,6 +34,12 @@ namespace frik
         }
         _lastPreProcessTime = now;
 
+        // re-show only the geometries this handler hid; anything another mod hid stays hidden
+        for (const auto idx : _hideFaceSkinGeometryIndexes) {
+            if (std::cmp_less(idx, rn->geomArray.size()) && rn->geomArray[idx].geometry) {
+                f4vr::setNodeVisibility(rn->geomArray[idx].geometry.get(), true);
+            }
+        }
         _hideFaceSkinGeometryIndexes.clear();
         for (std::uint32_t i = 0; i < rn->geomArray.size(); i++) {
             auto& geometry = rn->geomArray[i].geometry;
@@ -58,9 +64,6 @@ namespace frik
                     }
                 }
             }
-
-            // in case it was hidden before and shouldn't be anymore
-            f4vr::setNodeVisibility(geometry.get(), true);
 
             if (toHide) {
                 _hideFaceSkinGeometryIndexes.push_back(i);

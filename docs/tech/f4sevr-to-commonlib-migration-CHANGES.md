@@ -209,3 +209,7 @@ Commented-out historical code in `GameHooks.cpp`, `GunReload.cpp`,
 `GunReload.h`, `Skeleton.cpp`, and `SelfieHandler.cpp` still references
 the old field names. Left as-is to preserve the historical reference
 intent.
+
+This file is a record of the migration as it was done, not of the current
+tree: the `GameHooks.cpp` comment block and both `GunReload` files named
+above were deleted in the v0.79.2 hygiene sweep.

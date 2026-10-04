@@ -106,7 +106,7 @@ namespace frik
         // Config variables: See FRIK.ini for descriptions.
 
         // Player/Skeleton
-        bool setScale = false;
+        bool setScale = true;
         float fVrScale = 0;
         float playerHeight = 0;
         float armLength = 0;
