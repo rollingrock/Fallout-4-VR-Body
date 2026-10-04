@@ -1161,26 +1161,6 @@ namespace frik
             return -smoothMax(-a, -b, k);
         }
 
-        // Rotation taking `from` onto `to`. The framework helper has no antiparallel branch and invents an axis there;
-        // a 180 degree turn about any axis perpendicular to `from` is R = 2aa^T - I, symmetric, so storage order is moot.
-        RE::NiMatrix3 rotationFromTo(const RE::NiPoint3& to, const RE::NiPoint3& from)
-        {
-            const RE::NiPoint3 t = MatrixUtils::vec3Norm(to);
-            const RE::NiPoint3 f = MatrixUtils::vec3Norm(from);
-            if (MatrixUtils::vec3Dot(t, f) > -0.99999f) {
-                return MatrixUtils::getMatrixFromRotateVectorVec(to, from);
-            }
-            const RE::NiPoint3 helper = std::abs(f.x) < 0.9f ? RE::NiPoint3(1, 0, 0) : RE::NiPoint3(0, 1, 0);
-            const RE::NiPoint3 a = MatrixUtils::vec3Norm(MatrixUtils::vec3Cross(f, helper));
-            const float axis[3] = { a.x, a.y, a.z };
-            RE::NiMatrix3 result;
-            for (int i = 0; i < 3; ++i) {
-                for (int j = 0; j < 3; ++j) {
-                    result.entry[i][j] = 2.0f * axis[i] * axis[j] - (i == j ? 1.0f : 0.0f);
-                }
-            }
-            return result;
-        }
     }
 
     // This is the main arm IK solver function - Algo credit to prog from SkyrimVR VRIK mod - what a beast!
@@ -1351,7 +1331,7 @@ namespace frik
 
         RE::NiPoint3 sLocalDir = arm.shoulder->world.rotate * (clavicalToNewShoulder / arm.shoulder->world.scale);
 
-        RE::NiMatrix3 result = rotationFromTo(sLocalDir, RE::NiPoint3(1, 0, 0)) * arm.shoulder->local.rotate;
+        RE::NiMatrix3 result = MatrixUtils::getMatrixFromRotateVectorVec(sLocalDir, RE::NiPoint3(1, 0, 0)) * arm.shoulder->local.rotate;
         arm.shoulder->local.rotate = result;
 
         updateDown(arm.shoulder, true);
@@ -1523,7 +1503,7 @@ namespace frik
         RE::NiPoint3 pos = elbowWorld - Uwp;
         RE::NiPoint3 uLocalDir = Uwr * (MatrixUtils::vec3Norm(pos) / arm.upper->world.scale);
 
-        arm.upper->local.rotate = rotationFromTo(uLocalDir, arm.forearm1->local.translate) * arm.upper->local.rotate;
+        arm.upper->local.rotate = MatrixUtils::getMatrixFromRotateVectorVec(uLocalDir, arm.forearm1->local.translate) * arm.upper->local.rotate;
 
         Uwr = arm.upper->local.rotate * arm.shoulder->world.rotate;
 
@@ -1553,7 +1533,7 @@ namespace frik
         RE::NiPoint3 elbowHand = handPos - elbowWorld;
         RE::NiPoint3 fLocalDir = Fwr * (MatrixUtils::vec3Norm(elbowHand));
 
-        arm.forearm1->local.rotate = rotationFromTo(fLocalDir, RE::NiPoint3(1, 0, 0)) * arm.forearm1->local.rotate;
+        arm.forearm1->local.rotate = MatrixUtils::getMatrixFromRotateVectorVec(fLocalDir, RE::NiPoint3(1, 0, 0)) * arm.forearm1->local.rotate;
         Fwr = arm.forearm1->local.rotate * Uwr;
 
         RE::NiMatrix3 Fwr3;
