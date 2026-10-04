@@ -143,9 +143,9 @@ TEST_CASE("ScopeAuthority a new game session forgets what every provider publish
 
 TEST_CASE("ScopeAuthority clearing a provider and re-adding it starts from not looking through")
 {
-    // The documented recovery for a provider that cannot tell what it last published. It is the two-call form
-    // rather than a bare re-registration on purpose: the erase leaves nothing for a later setProvider to carry
-    // over, so this holds however setProvider treats an existing tag.
+    // The recovery for a provider that wants its capabilities dropped as well as its published state. A bare
+    // re-registration is the simpler route and is pinned by the test above; this one additionally holds whatever
+    // setProvider does with an existing tag, because the erase leaves it nothing to carry over.
     frik::ScopeAuthority scope;
     const auto publishes = static_cast<std::uint32_t>(frik::ScopeCapability::PublishesLookingThrough);
     REQUIRE(scope.setProvider("ts", publishes));

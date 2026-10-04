@@ -153,6 +153,8 @@ namespace frik
         // them can still know whether the player is looking through one; the registrations stay and each publishes
         // its next edge. Without this a provider that missed its own exit edge leaves FRIK scoped for the rest of the
         // run, and reloading - the player's instinctive fix - is the one action guaranteed not to help.
+        // Safe although this function runs off the game thread (docs/features-backlog.md): ScopeAuthority takes its
+        // own lock and the merged flag is atomic, so the game thread reading it mid-frame sees one value or the other.
         if (g_scopeAuthority.clearPublishedLookingThrough()) {
             logger::info("New game session: cleared the published looking-through-scope state");
         }
