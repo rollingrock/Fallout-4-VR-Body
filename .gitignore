@@ -5,7 +5,15 @@
 
 .vscode
 /build*/
-build_output.txt
+build_output*.txt
+
+# Local scratch and per-machine leftovers that are never part of a build:
+# a stray OpenVR import library (the build uses the framework's vendored SDK), an old
+# hand-written changelog and todo list, and another assistant's config directory.
+openvr/
+changelog.txt
+frik.list.txt
+.codex/
 
 CMakeUserPresets*.json
 
