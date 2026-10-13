@@ -10,7 +10,7 @@
 - API: `getArmChain` returns `false` when no bone of the chain exists instead of `true` with an empty mask.
 - API: `kSkeletonDestroying` is broadcast for every skeleton FRIK created, even one released before its ready event.
 - Config: `setScale` now does what its comment says: `fVrScale` is applied to the game only when it is true (default true).
-- Weapons: A left-handed player whose weapon has no left-handed offsets gets the right-handed offsets instead of none, so switching handedness no longer resets every weapon.
+- Weapons: A left-handed player whose weapon has no left-handed offsets gets its right-handed weapon offset mirrored to the left hand instead of none, so switching handedness no longer resets every weapon. The hand-pose offsets still fall back to none.
 - Pip-Boy: Physical button haptics fire on the hand that touches the Pip-Boy in the right-arm (left-handed) mode.
 - Body: The hide pass re-shows only the geometries FRIK hid, instead of every geometry, so another mod's hidden geometry stays hidden.
 - Dev: Dead code removed: the commented-out gun reload feature, the unused renderer and patch-offset helpers in the hooks, and a stray log line in smooth movement.

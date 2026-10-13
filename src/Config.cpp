@@ -39,6 +39,20 @@ namespace frik
                 return nullptr;
             }
         }
+
+        /**
+         * A right-handed weapon offset as the left hand holds it: a half turn about the barrel and z flipped, which is what
+         * every shipped right/left weapon pair differs by (32 pairs, median 1.4 degrees off the hand-tuned left one).
+         */
+        RE::NiTransform mirroredForLeftHand(RE::NiTransform transform)
+        {
+            for (int i = 0; i < 3; ++i) {
+                transform.rotate.entry[i][1] = -transform.rotate.entry[i][1];
+                transform.rotate.entry[i][2] = -transform.rotate.entry[i][2];
+            }
+            transform.translate.z = -transform.translate.z;
+            return transform;
+        }
     }
 
     /**
@@ -284,11 +298,12 @@ namespace frik
         if (it != _weaponsOffsets.end()) {
             return it->second;
         }
-        // a left-handed player without a left-handed entry gets the right-handed one rather than none
-        if (leftHanded) {
+        // a left-handed player without a left-handed weapon entry gets the right-handed one mirrored, not as is (that held
+        // the gun upside down); the hand-pose modes have no such relation between their pairs, so they still get none
+        if (leftHanded && mode == WeaponOffsetsMode::Weapon) {
             const auto rightIt = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, false));
             if (rightIt != _weaponsOffsets.end()) {
-                return rightIt->second;
+                return mirroredForLeftHand(rightIt->second);
             }
         }
         // Check without PA (historic)
