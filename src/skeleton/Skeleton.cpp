@@ -495,8 +495,12 @@ namespace frik
         _forwardDir = MatrixUtils::rotateXY(RE::NiPoint3(newRot.entry[1][0], newRot.entry[1][1], 0), neckYaw * 0.7f);
         _sidewaysRDir = RE::NiPoint3(_forwardDir.y, -_forwardDir.x, 0);
 
+        // The body node has two writers: the player-update hook (GameHooks.cpp hookMainUpdatePlayer) keeps it under the camera
+        // between FRIK frames, and this pass sets it for the frame. Both write the same value, the camera's X/Y, to local and
+        // world, so whichever ran last the node reads the same; the local used to be zeroed here, which the hook then undid.
         RE::NiNode* body = _root->parent;
-        body->local.translate *= 0.0f;
+        body->local.translate.x = _curentPosition.x;
+        body->local.translate.y = _curentPosition.y;
         body->world.translate.x = _curentPosition.x;
         body->world.translate.y = _curentPosition.y;
         body->world.translate.z += _playerNodes->playerWorldNode->local.translate.z;
@@ -1149,6 +1153,23 @@ namespace frik
             return 1.0f - std::pow(retention, std::clamp(dt, 0.0f, kMaxDt) * 90.0f);
         }
 
+        // Whether a transform was moved at all, translation or rotation. Used to tell a recoil kick that
+        // actually displaced a hand target from one that had nothing to apply.
+        bool transformsEqual(const RE::NiTransform& a, const RE::NiTransform& b)
+        {
+            if (!fEqual(a.translate.x, b.translate.x) || !fEqual(a.translate.y, b.translate.y) || !fEqual(a.translate.z, b.translate.z)) {
+                return false;
+            }
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    if (!fEqual(a.rotate.entry[i][j], b.rotate.entry[i][j])) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         // max(a, b) outside a band of width k around a == b, C1 across it (polynomial smooth maximum)
         float smoothMax(const float a, const float b, const float k)
         {
@@ -1197,10 +1218,23 @@ namespace frik
         if (!hasTransformOverride) {
             handWorldTarget = isLeft ? _leftHand->world : _rightHand->world;
         }
+        const RE::NiTransform targetWithoutRecoil = handWorldTarget;
         (void)_weaponHandRecoil.applyToHandWorldTarget(isLeft, handWorldTarget);
+        // Its bool is "no error", returned both when it applied a kick and when it had nothing to apply for this
+        // hand, so the only sound test of whether the kick moved THIS hand is the target it was asked to move.
+        const bool recoilMovedTarget = !transformsEqual(targetWithoutRecoil, handWorldTarget);
         auto& solveState = _handSolveState[isLeft ? 0 : 1];
         solveState = hasTransformOverride ? HandSolveState::Consumed : HandSolveState::NoClaim;
-        if (solveArmToHandWorldTarget(isLeft, handWorldTarget) || !hasTransformOverride) {
+        if (solveArmToHandWorldTarget(isLeft, handWorldTarget)) {
+            return;
+        }
+        if (!hasTransformOverride) {
+            // The recoil delta is applied before the reach gates, so a large kick can push an otherwise reachable target past them;
+            // rather than leave the arm unsolved for that frame, solve to the target without the kick.
+            if (recoilMovedTarget) {
+                restoreArmNodesToDefault(isLeft);
+                (void)solveArmToHandWorldTarget(isLeft, targetWithoutRecoil);
+            }
             return;
         }
 
