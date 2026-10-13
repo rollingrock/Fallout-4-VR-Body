@@ -52,9 +52,13 @@ namespace frik
         bool stickyLeft;
         bool turnOnDebugSpheres;
         RE::NiNode* debugSphere;
-        // the skeleton generation a by-name lookup was last attempted in, so a bone that is simply not in
-        // this skeleton costs one scene-graph walk per rebuild instead of two per frame forever
+        // found in the player's own 3D at registration: re-resolved only there, never in the whole scene, so a rebuild
+        // cannot move the sphere onto another actor's or an empty power armor frame's bone of the same name
+        bool inPlayerTree = true;
+        // the skeleton generation a by-name lookup was last attempted in, and the frames of it left to retry in, so a
+        // bone missing on a rebuild's first frame is still found while one that is not in this skeleton stops costing walks
         std::optional<std::uint32_t> resolveGeneration;
+        std::uint32_t resolveFramesLeft = 0;
     };
 
     class BoneSpheresHandler
@@ -90,7 +94,7 @@ namespace frik
 
         void detectBoneSphere();
         void handleDebugBoneSpheres();
-        static RE::NiNode* findBoneNode(const char* name);
+        static RE::NiNode* findBoneNode(const char* name, bool inPlayerTree);
         // the sphere's bone, re-resolved by name when a rebuild dropped it; null while the bone does not exist
         static RE::NiNode* liveBone(BoneSphere& sphere);
 

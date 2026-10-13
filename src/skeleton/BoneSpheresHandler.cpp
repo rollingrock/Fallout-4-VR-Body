@@ -12,6 +12,12 @@ using namespace F4SEVR;
 
 namespace frik
 {
+    namespace
+    {
+        // about a second at 90 Hz: a rebuild's first frames can come before the new 3D holds the bone
+        constexpr std::uint32_t BONE_RESOLVE_FRAMES = 90;
+    }
+
     void BoneSpheresHandler::init()
     {
         if (_instance) {
@@ -92,8 +98,15 @@ namespace frik
         }
     }
 
-    RE::NiNode* BoneSpheresHandler::findBoneNode(const char* name)
+    RE::NiNode* BoneSpheresHandler::findBoneNode(const char* name, const bool inPlayerTree)
     {
+        if (inPlayerTree) {
+            // the skeleton FRIK just built first: while power armor is swapped the player's 3D can still hold the outgoing tree
+            if (const auto bone = f4vr::findNode(f4vr::getRootNode(), name)) {
+                return bone;
+            }
+            return f4vr::findNode(f4vr::getWorldRootNode(), name);
+        }
         auto n = f4vr::getWorldRootNode();
         if (!n) {
             return nullptr;
@@ -112,9 +125,13 @@ namespace frik
         if (!sphere.bone && !sphere.boneName.empty()) {
             const auto generation = g_frik.getSkeletonGeneration();
             if (sphere.resolveGeneration != generation) {
-                F4CF_PERF_SCOPE("resolveBoneSphereBone");
                 sphere.resolveGeneration = generation;
-                sphere.bone = findBoneNode(sphere.boneName.c_str());
+                sphere.resolveFramesLeft = BONE_RESOLVE_FRAMES;
+            }
+            if (sphere.resolveFramesLeft > 0) {
+                F4CF_PERF_SCOPE("resolveBoneSphereBone");
+                --sphere.resolveFramesLeft;
+                sphere.bone = findBoneNode(sphere.boneName.c_str(), sphere.inPlayerTree);
             }
         }
         return sphere.bone;
@@ -157,6 +174,7 @@ namespace frik
 
         auto n = f4vr::getWorldRootNode();
         auto boneNode = f4vr::findNode(n, bone.c_str());
+        const bool inPlayerTree = boneNode != nullptr;
 
         if (!boneNode) {
             while (n->parent) {
@@ -178,6 +196,7 @@ namespace frik
         pos.Get(&offsetVec.z, 2);
 
         const auto sphere = new BoneSphere(radius, boneNode, offsetVec);
+        sphere->inPlayerTree = inPlayerTree;
         const std::uint32_t handle = _nextBoneSphereHandle++;
 
         _boneSphereRegisteredObjects[handle] = sphere;
