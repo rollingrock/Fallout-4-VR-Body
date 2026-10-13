@@ -466,7 +466,7 @@ namespace frik::api::core
             return false;
         }
         logger::sample("setConfigValueOverride caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
-        g_config.setConfigOverride(section, key, value);
+        g_config.setConfigOverride(caller && *caller ? caller : "FRIKApi", section, key, value);
         return true;
     }
 
@@ -475,12 +475,11 @@ namespace frik::api::core
      */
     bool FRIK_CORE_CALL clearConfigValueOverride(const char* caller, const char* section, const char* key)
     {
-        if (!section || !key || !g_config.hasConfigOverride(section, key)) {
+        if (!section || !key) {
             return false;
         }
         logger::sample("clearConfigValueOverride caller:'{}' {}.{}", caller ? caller : "?", section, key);
-        g_config.clearConfigOverride(section, key);
-        return true;
+        return g_config.clearConfigOverride(caller && *caller ? caller : "FRIKApi", section, key);
     }
 
     void logApiAcquired(const std::string_view apiName, const std::uint32_t apiVersion, const std::size_t tableSize, const void* returnAddress)

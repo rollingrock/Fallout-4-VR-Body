@@ -3,8 +3,8 @@
 #include <Version.h>
 #include <optional>
 
-#include "ConfigBase.h"
 #include "common/CommonUtils.h"
+#include "config/ConfigBase.h"
 #include "f4vr/WandActivationSphere.h"
 #include "resources.h"
 #include "vrcf/VRControllersManager.h"
