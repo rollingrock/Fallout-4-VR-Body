@@ -150,7 +150,6 @@ namespace
             return false;
         }
 
-        logger::sample("setHandPose tag:'{}' hand={} pose={}", *normalizedTag, FRIKApi::handName(hand), static_cast<int>(handPose));
         core::setHandPose(*normalizedTag, isLeft, *pose, core::HAND_POSE_PRIORITY_DEFAULT);
         return true;
     }
@@ -163,7 +162,6 @@ namespace
             return false;
         }
 
-        logger::sample("setHandPoseCustomFingerPositions tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
         core::setHandPose(*normalizedTag,
             core::isLeftForHand(hand),
             HandFingersPose{ FingerPose{ thumb, thumb, thumb },
@@ -182,7 +180,6 @@ namespace
             return false;
         }
 
-        logger::sample("setHandPoseCustom tag:'{}' hand={} forceTop={}", *normalizedTag, FRIKApi::handName(hand), forceTop);
         core::setHandPose(*normalizedTag, core::isLeftForHand(hand), core::makeHandPoseFromApiData(handPose), core::priorityFromForceTop(forceTop));
         return true;
     }
@@ -194,7 +191,6 @@ namespace
             return false;
         }
 
-        logger::sample("clearHandPose tag:'{}' hand={}", *normalizedTag, FRIKApi::handName(hand));
         core::clearHandPose(*normalizedTag, core::isLeftForHand(hand));
         return true;
     }
@@ -202,9 +198,8 @@ namespace
     /**
      * Say once, at warn, that a deprecated entry point is in use.
      *
-     * The sampled lines below report activity; this reports the deprecation itself, which is a
-     * one-time fact about the client and would otherwise only ever live in the header where the
-     * person reading a log will not see it.
+     * The deprecation is a one-time fact about the client that would otherwise only ever live in
+     * the header, where the person reading a log will not see it.
      */
     void warnDeprecatedOnce(bool& alreadyWarned, const char* apiFunction, const char* replacement)
     {
@@ -219,8 +214,6 @@ namespace
     {
         static bool warned = false;
         warnDeprecatedOnce(warned, "setHandPoseFingerPositions", "setHandPoseCustomFingerPositions");
-
-        logger::sample("[DEPRECATED] setHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
         core::setHandPose(core::LEGACY_API_HAND_POSE_TAG,
             core::isLeftForHand(hand),
             HandFingersPose{ FingerPose{ thumb, thumb, thumb },
@@ -235,8 +228,6 @@ namespace
     {
         static bool warned = false;
         warnDeprecatedOnce(warned, "clearHandPoseFingerPositions", "clearHandPose");
-
-        logger::sample("[DEPRECATED] clearHandPoseFingerPositions hand={}", FRIKApi::handName(hand));
         core::clearHandPose(core::LEGACY_API_HAND_POSE_TAG, core::isLeftForHand(hand));
     }
 
