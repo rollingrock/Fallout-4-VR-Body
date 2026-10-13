@@ -56,7 +56,7 @@ The `Tracy` configuration (build preset `tracy`, or `custom-tracy` from the user
 4. `PlayerControlsHandler::onFrameUpdate` — enable/disable player movement based on UI state
 5. `WeaponPositionAdjuster::onFrameUpdate` — weapon offsets, offhand grip, reposition mode
 6. `Pipboy::onFrameUpdate` — wrist Pipboy logic, finger interaction, flashlight
-7. `vrui::g_uiManager->onFrameUpdate` — VR UI widgets (driven by `FrameUpdateContext` adapter that exposes the offhand index-finger tip and hand-pointing pose)
+7. `vrui::g_uiManager->onFrameUpdate` — VR UI widgets. FRIK calls it here, so the framework skips its own call after `onFrameUpdate`; in a frame with no skeleton the framework's call runs. The framework finds the pressing fingertip, and points the hand through the handler FRIK sets in `onGameLoaded` (`setHandPointingHandler` → `HandPose::setForceHandPointingPose`)
 8. `MainConfigMode` + `PipboyConfigMode` — config UI rendering
 9. `updateWorldFinal` — three engine-level scene-graph updates (`BSFadeNode_MergeWorldBounds`, `BSFlattenedBoneTree_UpdateBoneArray`, `BSFadeNode_UpdateGeomArray`) needed for cull geometry, finger position, and Pipboy interaction to work correctly
 

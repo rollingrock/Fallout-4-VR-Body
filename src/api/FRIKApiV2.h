@@ -734,7 +734,8 @@ namespace frik::api
          * by the type-appropriate reader when the config is loaded, so it works for any config value
          * (bool/int/float/string and the compound transform/binding/hand-pose values). FRIK reloads its
          * config immediately so the change takes effect right away.
-         * @param caller name of the calling mod, used only for FRIK logging.
+         * @param caller name of the calling mod: the owner of the override, and used for FRIK logging.
+         *        When two owners override the same key, the one set last applies.
          * @return true if section, key, and value are all non-null.
          */
         bool(FRIK_CALL* setConfigValueOverride)(const char* caller, const char* section, const char* key, const char* value);
@@ -742,8 +743,9 @@ namespace frik::api
         /**
          * Remove a previously set session override for section/key; FRIK reloads so the value reverts to
          * its on-disk FRIK.ini value.
-         * @param caller name of the calling mod, used only for FRIK logging.
-         * @return true if an override was set for that key and has been removed.
+         * @param caller name of the calling mod: only an override set under the same name is removed.
+         *        An override another owner holds on the key stays, and applies again.
+         * @return true if the caller had an override for that key and it has been removed.
          */
         bool(FRIK_CALL* clearConfigValueOverride)(const char* caller, const char* section, const char* key);
 

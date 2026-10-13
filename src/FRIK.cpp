@@ -21,7 +21,6 @@
 #include "utils.h"
 #include "vrcf/VRControllersManager.h"
 #include "vrui/UIManager.h"
-#include "vrui/UIModAdapter.h"
 
 using namespace common;
 
@@ -53,25 +52,6 @@ namespace frik
     }
 
     /**
-     * TODO: think about it, is it the best way to handle this dependency indirection.
-     */
-    class FrameUpdateContext : public vrui::UIModAdapter
-    {
-    public:
-        explicit FrameUpdateContext() = default;
-
-        virtual RE::NiPoint3 getInteractionBoneWorldPosition() override
-        {
-            return f4vr::Skelly::getIndexFingerTipWorldPosition(vrcf::Hand::Offhand);
-        }
-
-        virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override
-        {
-            HandPose::setForceHandPointingPose(primaryHand, toPoint);
-        }
-    };
-
-    /**
      * On mod loaded by F4SE.
      */
     void FRIK::onModLoaded(const F4SE::LoadInterface*)
@@ -94,6 +74,11 @@ namespace frik
     void FRIK::onGameLoaded()
     {
         initForFalloutLondonVR();
+
+        // FRIK poses the hands itself, where the framework would point a hand through FRIK's own API
+        vrui::g_uiManager->setHandPointingHandler([](const bool primaryHand, const bool toPoint) {
+            HandPose::setForceHandPointingPose(primaryHand, toPoint);
+        });
 
         logger::info("Register papyrus native functions...");
         api::initPapyrusApis();
@@ -255,8 +240,8 @@ namespace frik
         logger::trace("Update Pipboy...");
         _pipboy->onFrameUpdate();
 
-        FrameUpdateContext context;
-        vrui::g_uiManager->onFrameUpdate(&context);
+        // run here, in place of the framework's own call after this update, so the UI is laid out before the config modes and the final world update
+        vrui::g_uiManager->onFrameUpdate();
 
         _mainConfigMode.onFrameUpdate();
 

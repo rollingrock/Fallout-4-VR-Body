@@ -456,8 +456,8 @@ Writes the effective value (session override → on-disk value → `defaultValue
 | Function | Description |
 | --- | --- |
 | `bool hasConfigValueOverride(section, key)` | Whether a session override is currently set. |
-| `bool setConfigValueOverride(caller, section, key, value)` | Set a session override (string, parsed by FRIK's type-appropriate reader; works for bool/int/float/string and compound transform/binding/pose values). FRIK reloads immediately. |
-| `bool clearConfigValueOverride(caller, section, key)` | Remove a session override; the value reverts to the on-disk `FRIK.ini` value. |
+| `bool setConfigValueOverride(caller, section, key, value)` | Set a session override (string, parsed by FRIK's type-appropriate reader; works for bool/int/float/string and compound transform/binding/pose values). FRIK reloads immediately. The override is owned by `caller`; when two owners override the same key, the one set last applies. |
+| `bool clearConfigValueOverride(caller, section, key)` | Remove the session override `caller` set; the value reverts to another owner's override if one is held, else to the on-disk `FRIK.ini` value. Returns false if `caller` holds none. |
 
 ## Adding a button to FRIK's config menu
 
