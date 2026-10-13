@@ -761,7 +761,7 @@ namespace frik
         sortHandOverrides(overrides);
 
         if (wasInserted || overrides.front().tag != previousTopTag) {
-            logger::debug("Hand pose: {} override tag:'{}' priority:{} for '{}' hand (top tag:'{}' -> '{}', depth {})",
+            logger::info("Hand pose: {} override tag:'{}' priority:{} for '{}' hand (top tag:'{}' -> '{}', depth {})",
                 wasInserted ? "Insert" : "Update",
                 tag,
                 priority,
@@ -792,7 +792,7 @@ namespace frik
 
         overrides.erase(overrideIt);
 
-        logger::debug("Hand pose: Clear override tag:'{}' for '{}' hand (top tag:'{}' -> '{}', depth {})",
+        logger::info("Hand pose: Clear override tag:'{}' for '{}' hand (top tag:'{}' -> '{}', depth {})",
             tag,
             isLeft ? "Left" : "Right",
             previousTopTag,

@@ -598,8 +598,6 @@ namespace frik::api::core
             logger::sample("setHandPoseCustomLocalTransforms REJECTED tag:'{}' - tag holds no pose override, set one with a setHandPose* call first", tag);
             return false;
         }
-
-        logger::sample("setHandPoseCustomLocalTransforms tag:'{}' hand={} enabledMask=0x{:04x} priority={}", tag, isLeft ? "Left" : "Right", enabledMask, priority);
         return true;
     }
 
