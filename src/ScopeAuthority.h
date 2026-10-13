@@ -84,6 +84,25 @@ namespace frik
         }
 
         /**
+         * Forget what every provider published, keeping the registrations. For a new game session: each provider
+         * published its state against a weapon and a scope that no longer exist, so none of them can still know
+         * whether the player is looking through one. They republish on their own next edge.
+         *
+         * @return whether the merged state changed, i.e. whether a scope exit is owed.
+         */
+        bool clearPublishedLookingThrough()
+        {
+            std::lock_guard lock(_lock);
+            // refreshCapabilities reports a capability change, which this never causes; the merged flag is what moved
+            const bool was = _lookingThrough.load(std::memory_order_acquire);
+            for (auto& [tag, provider] : _providers) {
+                provider.lookingThrough = false;
+            }
+            refreshCapabilities();
+            return was && !_lookingThrough.load(std::memory_order_acquire);
+        }
+
+        /**
          * Publish the looking-through-scope state. Only a registered provider with PublishesLookingThrough may.
          */
         bool setLookingThroughScope(const std::string_view tag, const bool lookingThrough)

@@ -115,3 +115,53 @@ TEST_CASE("ScopeAuthority a publisher leaving or flipping cannot strand another 
     REQUIRE(scope.setProvider("ts", publishes));
     REQUIRE_FALSE(scope.isLookingThroughScope(false));
 }
+
+TEST_CASE("ScopeAuthority a new game session forgets what every provider published")
+{
+    frik::ScopeAuthority scope;
+    const auto publishes = static_cast<std::uint32_t>(frik::ScopeCapability::PublishesLookingThrough);
+    REQUIRE(scope.setProvider("ts", publishes));
+    REQUIRE(scope.setProvider("bsvr", publishes));
+    REQUIRE(scope.setLookingThroughScope("ts", true));
+    REQUIRE(scope.isLookingThroughScope(false));
+
+    // ts missed its own exit edge across the load; without this the player stays scoped for the rest of the run
+    REQUIRE(scope.clearPublishedLookingThrough());
+    REQUIRE_FALSE(scope.isLookingThroughScope(false));
+
+    // the registrations survive, so a provider still publishes without re-registering
+    REQUIRE(scope.providerCount() == 2);
+    REQUIRE(scope.hasCapability(frik::ScopeCapability::PublishesLookingThrough));
+    REQUIRE(scope.setLookingThroughScope("ts", true));
+    REQUIRE(scope.isLookingThroughScope(false));
+
+    // nothing published, nothing owed: no spurious scope exit on a load that was not scoped
+    frik::ScopeAuthority idle;
+    REQUIRE(idle.setProvider("ts", publishes));
+    REQUIRE_FALSE(idle.clearPublishedLookingThrough());
+}
+
+TEST_CASE("ScopeAuthority clearing a provider and re-adding it starts from not looking through")
+{
+    // The recovery for a provider that wants its capabilities dropped as well as its published state. A bare
+    // re-registration is the simpler route and is pinned by the test above; this one additionally holds whatever
+    // setProvider does with an existing tag, because the erase leaves it nothing to carry over.
+    frik::ScopeAuthority scope;
+    const auto publishes = static_cast<std::uint32_t>(frik::ScopeCapability::PublishesLookingThrough);
+    REQUIRE(scope.setProvider("ts", publishes));
+    REQUIRE(scope.setLookingThroughScope("ts", true));
+    REQUIRE(scope.isLookingThroughScope(false));
+
+    REQUIRE(scope.clearProvider("ts"));
+    REQUIRE(scope.providerCount() == 0);
+    REQUIRE(scope.setProvider("ts", publishes));
+    REQUIRE_FALSE(scope.isLookingThroughScope(false));
+    REQUIRE(scope.hasCapability(frik::ScopeCapability::PublishesLookingThrough));
+
+    // and another provider's state is untouched by one tag recovering
+    REQUIRE(scope.setProvider("bsvr", publishes));
+    REQUIRE(scope.setLookingThroughScope("bsvr", true));
+    REQUIRE(scope.clearProvider("ts"));
+    REQUIRE(scope.setProvider("ts", publishes));
+    REQUIRE(scope.isLookingThroughScope(false));
+}
