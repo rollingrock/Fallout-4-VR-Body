@@ -92,7 +92,7 @@ FRIK broadcasts these as F4SE messages under `FRIK_F4SE_MOD_NAME`:
 | `LifecycleEvent` | Value | Meaning |
 | --- | --- | --- |
 | `kSkeletonReady` | `100` | A new skeleton is built and spatial calls are valid. Republish here. |
-| `kSkeletonDestroying` | `101` | The skeleton is about to go away; your registrations are being dropped. |
+| `kSkeletonDestroying` | `101` | The skeleton is about to go away; your registrations are being dropped. Sent for every skeleton FRIK created, including one released before its `kSkeletonReady` was reached. |
 | `kScopeEnter` | `102` | The looking-through-scope state turned on (v2.2, no payload; see [Scope providers](#scope-providers-v22)). |
 | `kScopeExit` | `103` | The looking-through-scope state turned off (v2.2, no payload). |
 
@@ -409,7 +409,7 @@ World transform of any body bone by its skeleton name (`LArm_Hand`, `Spine2`, ..
 
 `bool getArmChain(Hand hand, ArmChainTransforms* outChain)`
 
-World transforms of the live arm nodes, shoulder to hand, in `ArmChainTransforms`. Bit `i` of `validMask` is set when bone `i` exists; `forearm2` / `forearm3` do not in power armor and read as identity. Valid after `AfterArmSolve`, final after `AfterWorldFinal`.
+World transforms of the live arm nodes, shoulder to hand, in `ArmChainTransforms`. Bit `i` of `validMask` is set when bone `i` exists; `forearm2` / `forearm3` do not in power armor and read as identity. Returns `false` with no skeleton or when no bone of the chain exists (`validMask` is then `0`). Valid after `AfterArmSolve`, final after `AfterWorldFinal`.
 
 ## State queries
 

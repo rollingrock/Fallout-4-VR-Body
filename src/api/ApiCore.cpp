@@ -345,7 +345,8 @@ namespace frik::api::core
                 targets[i]->MakeIdentity();
             }
         }
-        return true;
+        // a chain with no bone in it is not a result
+        return outChain.validMask != 0;
     }
 
     bool FRIK_CORE_CALL isConfigOpen()
