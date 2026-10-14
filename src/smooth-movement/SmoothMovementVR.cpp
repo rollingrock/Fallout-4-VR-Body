@@ -178,8 +178,6 @@ namespace frik
             const float absValY = min(50, max(0.1f, abs(curPos.y - prevPos.y)));
             newPos.y = prevPos.y + _frameTime * ((curPos.y - prevPos.y) / (g_config.smoothingAmountHorizontal * (g_config.dampingMultiplierHorizontal / absValY) *
                                                                               (_notMoving ? g_config.stoppingMultiplierHorizontal : 1.0f)));
-        } else {
-            logger::sample("shouldn't be here!");
         }
 
         // Don't smooth vertical movement if jumping or in air as it will break the jump

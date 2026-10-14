@@ -46,6 +46,7 @@ Manual setup, including the required `Fallout4Custom.ini` edits, is covered in t
 ### Compatibility
 
 - **True Scopes** - supported through the FRIK API v2.2 scope provider: the body stays visible and posed while looking through the scope.
+- **ROCK** - supported through the FRIK API: ROCK runs the two-handed grip and may carry the weapon in either hand (v2.3), and FRIK follows it, so the arms and the scope camera stay on the hand holding the gun, and a scope mod's lens with them (v2.4).
 - **BetterScopesVR** - supported (legacy path); FRIK repositions scope reticles and adjusts dampening while looking through a scope.
 - **Fallout London VR** - detected automatically; swaps the Pip-Boy for the Attaboy and loads `FRIK_FOLVR.ini` overrides.
 - **Immersive Flashlight VR** - compatible; FRIK disables its embedded flashlight to avoid conflicts.

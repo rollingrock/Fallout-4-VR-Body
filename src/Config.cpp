@@ -39,6 +39,20 @@ namespace frik
                 return nullptr;
             }
         }
+
+        /**
+         * A right-handed weapon offset as the left hand holds it: a half turn about the barrel and z flipped, which is what
+         * every shipped right/left weapon pair differs by (32 pairs, median 1.4 degrees off the hand-tuned left one).
+         */
+        RE::NiTransform mirroredForLeftHand(RE::NiTransform transform)
+        {
+            for (int i = 0; i < 3; ++i) {
+                transform.rotate.entry[i][1] = -transform.rotate.entry[i][1];
+                transform.rotate.entry[i][2] = -transform.rotate.entry[i][2];
+            }
+            transform.translate.z = -transform.translate.z;
+            return transform;
+        }
     }
 
     /**
@@ -279,9 +293,18 @@ namespace frik
      */
     std::optional<RE::NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const
     {
-        const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode()));
+        const bool leftHanded = f4vr::isLeftHandedMode();
+        const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, leftHanded));
         if (it != _weaponsOffsets.end()) {
             return it->second;
+        }
+        // a left-handed player without a left-handed weapon entry gets the right-handed one mirrored, not as is (that held
+        // the gun upside down); the hand-pose modes have no such relation between their pairs, so they still get none
+        if (leftHanded && mode == WeaponOffsetsMode::Weapon) {
+            const auto rightIt = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, false));
+            if (rightIt != _weaponsOffsets.end()) {
+                return mirroredForLeftHand(rightIt->second);
+            }
         }
         // Check without PA (historic)
         return inPA ? getWeaponOffsets(name, mode, false) : std::nullopt;
@@ -319,7 +342,7 @@ namespace frik
     void Config::loadIniConfigInternal(const CSimpleIniA& ini)
     {
         // Player/Skeleton
-        setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", false);
+        setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", true);
         fVrScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fVrScale", 70.0));
         playerHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f));
         armLength = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "armLength", 36.74f));

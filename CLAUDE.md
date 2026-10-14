@@ -76,7 +76,6 @@ The `Tracy` configuration (build preset `tracy`, or `custom-tracy` from the user
 | Weapon positioning | [src/weapon-position/](src/weapon-position/) | Per-weapon offsets, offhand-grip two-handed mode, in-game reposition tool |
 | Smooth movement | [src/smooth-movement/](src/smooth-movement/) | Reduce VR motion sickness on locomotion |
 | Config UI | [src/config-mode/](src/config-mode/) | In-VR config menus (`MainConfigMode`, `PipboyConfigMode`, `BodyAdjustmentSubConfigMode`) |
-| Reload | [src/reload/](src/reload/) | Two-handed gun reload interaction — **dead code**: both files and their hooks in `GameHooks.cpp` are fully commented out |
 | Public API | [src/api/](src/api/) | Two C ABI majors (`FRIKApi` v1.\*, `FRIKApiV2`) over a shared `ApiCore`, loaded by other mods via `GetProcAddress` |
 | External mod state | [src/ExternalAuthority.h](src/ExternalAuthority.h), [src/TagBlockSet.h](src/TagBlockSet.h) | Weapon node ownership, weapon pose blocks, tagged hand world transforms, external off-hand grips, weapon node parent-hand requests; `TagBlockSet` is the shared "blocked while any tag holds it" registry |
 | Papyrus API | [src/PapyrusApi.h](src/PapyrusApi.h) | Native functions for in-game scripts |
