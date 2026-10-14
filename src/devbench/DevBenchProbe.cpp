@@ -460,6 +460,25 @@ namespace frik::devbench
             return hand == "left" || hand == "right";
         }
 
+        // every bone sphere debug node under a tree, wherever it hangs, so one no registration holds still shows
+        void collectDebugSpheres(RE::NiAVObject* node, const int depth, json& out)
+        {
+            if (!node || depth > 64 || out.size() >= 32) {
+                return;
+            }
+            if (std::string_view(node->name.c_str()) == DEBUG_SPHERE_NODE_NAME) {
+                out.push_back({ { "parent", node->parent ? node->parent->name.c_str() : "" },
+                    { "scale", node->local.scale },
+                    { "appCulled", node->GetAppCulled() },
+                    { "world", { node->world.translate.x, node->world.translate.y, node->world.translate.z } } });
+            }
+            if (const auto n = node->IsNode()) {
+                for (const auto& child : n->children) {
+                    collectDebugSpheres(child.get(), depth + 1, out);
+                }
+            }
+        }
+
         json recordJson(const FrameRecord& r)
         {
             return { { "frame", r.frame },
@@ -655,6 +674,30 @@ namespace frik::devbench
                 }
             }
             return out;
+        }
+
+        if (op == "spheres") {
+            // bone spheres through FRIK's own calls rather than the console (FRIK-087): action on|off|destroy (with handle), applied on the
+            // next frame, then the registrations and every debug sphere node in the player's 3D
+            auto& spheres = g_frik.getBoneSpheres();
+            const auto action = args.value("action", "list");
+            if (action == "on" || action == "off") {
+                spheres.toggleDebugBoneSpheres(action == "on");
+            } else if (action == "destroy") {
+                spheres.destroyBoneSphere(static_cast<std::uint32_t>((std::max)(args.value("handle", 0), 0)));
+            }
+            json registered = json::array();
+            for (const auto& s : spheres.getSphereInfos()) {
+                registered.push_back({ { "handle", s.handle },
+                    { "bone", s.boneName },
+                    { "radius", s.radius },
+                    { "hasBone", s.hasBone },
+                    { "debugOn", s.debugOn },
+                    { "hasDebugSphere", s.hasDebugSphere } });
+            }
+            json nodes = json::array();
+            collectDebugSpheres(f4vr::getWorldRootNode(), 0, nodes);
+            return json{ { "ok", true }, { "action", action }, { "registered", registered }, { "debugSphereNodes", nodes } };
         }
 
         if (op == "visibility") {
@@ -920,7 +963,7 @@ namespace frik::devbench
 
         return json{ { "ok", false },
             { "error",
-                std::format("unknown op '{}' (phases|claim|solve|chain|record|recordStop|recordDump|chord|bone|nodes|carry|visibility|grip|parent|block|scope|"
+                std::format("unknown op '{}' (phases|claim|solve|chain|record|recordStop|recordDump|chord|bone|spheres|nodes|carry|visibility|grip|parent|block|scope|"
                             "scopeRig|weaponUpdate|pipboy|selfie|reset)",
                     op) } };
     }
