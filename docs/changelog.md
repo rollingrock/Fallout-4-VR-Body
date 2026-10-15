@@ -1,3 +1,16 @@
+## v0.79.3
+
+- Config: `FRIK.toml` replaces `FRIK.ini`. Your `FRIK.ini` (and `FRIK_FOLVR.ini`) is moved into it on the first run and kept as a backup.
+- Config: Text values, like controller bindings, are written in quotes: `sGripButton = "offhand press grip"`.
+- Config: In-game saves keep the file's comments and layout.
+- Config: An invalid `FRIK.toml` is reported in FRIK.log with its line, and FRIK keeps its values until it is fixed.
+- Config: Removed the move of config files from the pre-v0.73 location.
+- Config menu: A finger presses a button only from its front, while you look at it.
+- Log: The log level is written as a word.
+- API: A config override is owned by the mod that set it.
+- API: `setConfigValueOverride` refuses a value of the wrong type; `getConfigValue` returns TOML text (`71.0`, `false`).
+- Dev: Hand pose overrides are logged only when they change.
+
 ## v0.79.2
 
 - Scopes: A new game session forgets what every scope provider published about looking through a scope, keeping the registrations. A provider that missed its own exit edge used to leave FRIK scoped for the rest of the run - damping on the in-scope pair, the Pip-Boy's gesture paths gated, and a mode-1 two-handed grip that could not be let go by moving the hand away - and reloading was the one thing that could not clear it.

@@ -269,7 +269,6 @@ namespace frik
         void loadPipboyOffsets();
         void loadWeaponsOffsets();
         static void setupFolders();
-        static void migrateConfigFilesIfNeeded();
         static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool leftHanded);
         std::string getPipboyOffsetKey() const;
         std::string getPipboyOffsetPath() const;
