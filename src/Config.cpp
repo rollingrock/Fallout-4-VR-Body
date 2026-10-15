@@ -37,7 +37,6 @@ namespace frik
     void Config::load()
     {
         setupFolders();
-        migrateConfigFilesIfNeeded();
 
         logger::info("Load config...");
         loadConfig();
@@ -621,24 +620,6 @@ namespace frik
         createDirDeep(MESH_HIDE_FACE_INI_PATH);
         createDirDeep(PIPBOY_HOLO_OFFSETS_PATH);
         createDirDeep(WEAPONS_OFFSETS_PATH);
-    }
-
-    /**
-     * One time migration of config files (ini,json) to common location to handle MO2 overwrite.
-     * See https://github.com/rollingrock/Fallout-4-VR-Body/wiki/Development#frik-config-folder
-     * and https://github.com/rollingrock/Fallout-4-VR-Body/pull/80
-     * Always migrate config to handle custom weapon offsets at mod-list installation time.
-     */
-    void Config::migrateConfigFilesIfNeeded()
-    {
-        // migrate pre v72 and v72 config files to v73 location; ConfigBase then imports an INI config into its TOML one
-        logger::info("Migrate configs if exists in old locations...");
-        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK.ini)", BASE_PATH + R"(\FRIK.ini)");
-        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_FOLVR.ini)", BASE_PATH + R"(\FRIK_FOLVR.ini)");
-        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
-        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);
-        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\slots.ini)", MESH_HIDE_SLOTS_INI_PATH);
-        moveAllFilesInFolderSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets)", WEAPONS_OFFSETS_PATH);
     }
 
     /**
