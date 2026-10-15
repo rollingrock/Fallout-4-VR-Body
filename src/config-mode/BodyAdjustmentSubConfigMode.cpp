@@ -36,7 +36,7 @@ namespace frik
     BodyAdjustmentSubConfigMode::~BodyAdjustmentSubConfigMode()
     {
         // reload config to revert unsaved values
-        g_config.loadIniOnly();
+        g_config.loadConfigOnly();
 
         // redo VR Scale if changed
         updateVRScaleGameConfig();

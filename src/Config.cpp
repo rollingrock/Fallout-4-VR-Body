@@ -3,7 +3,6 @@
 #include "Config.h"
 
 #include <filesystem>
-#include <format>
 
 #include "common/CommonUtils.h"
 #include "f4vr/F4VRUtils.h"
@@ -15,31 +14,6 @@ namespace frik
 {
     namespace
     {
-        /**
-         * Map an old numeric button config value to its token in the InputBinding string format.
-         * Pre-v17 keys ("GripButtonID = 2") held raw OpenVR button ids. Returns nullptr for any id
-         * without a token, including the old "99 = unbound" value.
-         */
-        const char* oldButtonIdToBindingToken(const int buttonId)
-        {
-            switch (buttonId) {
-            case vrcf::VRButtonId::k_EButton_System:
-                return "system";
-            case vrcf::VRButtonId::k_EButton_ApplicationMenu:
-                return "b";
-            case vrcf::VRButtonId::k_EButton_Grip:
-                return "grip";
-            case vrcf::VRButtonId::k_EButton_A:
-                return "a";
-            case vrcf::VRButtonId::k_EButton_SteamVR_Touchpad:
-                return "thumbstick";
-            case vrcf::VRButtonId::k_EButton_SteamVR_Trigger:
-                return "trigger";
-            default:
-                return nullptr;
-            }
-        }
-
         /**
          * A right-handed weapon offset as the left hand holds it: a half turn about the barrel and z flipped, which is what
          * every shipped right/left weapon pair differs by (32 pairs, median 1.4 degrees off the hand-tuned left one).
@@ -56,17 +30,17 @@ namespace frik
     }
 
     /**
-     * Load the FRIK.ini config, hide meshes, and weapon offsets.
-     * Handle creating the FRIK.ini file if it doesn't exist.
-     * Handle updating the FRIK.ini file if the version is old.
+     * Load the FRIK.toml config, hide meshes, and weapon offsets.
+     * Handle creating the FRIK.toml file if it doesn't exist, from the player's FRIK.ini when there is one.
+     * Handle updating the FRIK.toml file if the version is old.
      */
     void Config::load()
     {
         setupFolders();
         migrateConfigFilesIfNeeded();
 
-        logger::info("Load ini config...");
-        loadIniConfig();
+        logger::info("Load config...");
+        loadConfig();
 
         logger::info("Load hide meshes...");
         loadHideMeshes();
@@ -79,12 +53,12 @@ namespace frik
     }
 
     /**
-     * Load only the FRIK.ini config from the file and override in-memory values.
+     * Load only the FRIK.toml config from the file and override in-memory values.
      */
-    void Config::loadIniOnly()
+    void Config::loadConfigOnly()
     {
-        logger::info("Load ini config only...");
-        loadIniConfig();
+        logger::info("Load config only...");
+        loadConfig();
     }
 
     /**
@@ -93,63 +67,63 @@ namespace frik
      */
     void Config::reloadForFalloutLondonVR()
     {
-        stopIniConfigFileWatch();
-        _iniFilePath = FRIK_FOLVR_INI_PATH;
-        loadIniOnly();
+        stopConfigFileWatch();
+        _configFilePath = FRIK_FOLVR_CONFIG_PATH;
+        loadConfigOnly();
     }
 
     void Config::setFlashlightLocation(const FlashlightLocation location)
     {
         flashlightLocation = location;
-        saveIniConfigValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
+        saveConfigValue(CONFIG_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
     }
 
     void Config::toggleIsHoloPipboy()
     {
         isHoloPipboy = !isHoloPipboy;
-        saveIniConfigValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
+        saveConfigValue(CONFIG_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
     }
 
     void Config::toggleDampenPipboyScreen()
     {
         dampenPipboyScreenMode = static_cast<DampenPipboyScreenMode>((static_cast<uint8_t>(dampenPipboyScreenMode) + 1) % 3);
-        saveIniConfigValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
+        saveConfigValue(CONFIG_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
     }
 
     void Config::togglePipBoyOpenWhenLookAt()
     {
         pipboyOpenWhenLookAt = !pipboyOpenWhenLookAt;
-        saveIniConfigValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
+        saveConfigValue(CONFIG_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
     }
 
     void Config::togglePipBoyCloseWhenLookAway()
     {
         pipboyCloseWhenLookAway = !pipboyCloseWhenLookAway;
-        saveIniConfigValue(INI_SECTION_MAIN, "PipBoyCloseWhenLookAway", pipboyCloseWhenLookAway);
+        saveConfigValue(CONFIG_SECTION_MAIN, "PipBoyCloseWhenLookAway", pipboyCloseWhenLookAway);
     }
 
     void Config::savePipboyScale(const float scale)
     {
         pipBoyScale = scale;
-        saveIniConfigValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
+        saveConfigValue(CONFIG_SECTION_MAIN, "PipboyScale", pipBoyScale);
     }
 
     void Config::saveIsPlayingSeated(const bool iIsPlayingSeated)
     {
         this->isPlayingSeated = iIsPlayingSeated;
-        saveIniConfigValue(INI_SECTION_MAIN, "bIsPlayingSeated", iIsPlayingSeated);
+        saveConfigValue(CONFIG_SECTION_MAIN, "bIsPlayingSeated", iIsPlayingSeated);
     }
 
     void Config::saveHideHeadEquipment(const bool hide)
     {
         hideHeadEquipment = hide;
-        saveIniConfigValue(INI_SECTION_MAIN, "bHidePlayerHeadEquipment", hide);
+        saveConfigValue(CONFIG_SECTION_MAIN, "bHidePlayerHeadEquipment", hide);
     }
 
     void Config::saveDampenHands(const bool iDampenHands)
     {
         this->dampenHands = iDampenHands;
-        saveIniConfigValue(INI_SECTION_MAIN, "DampenHands", iDampenHands);
+        saveConfigValue(CONFIG_SECTION_MAIN, "DampenHands", iDampenHands);
     }
 
     float Config::getPlayerBodyOffsetUp() const
@@ -253,11 +227,11 @@ namespace frik
     }
 
     /**
-     * Open the FRIK.ini file in Notepad for editing.
+     * Open the FRIK.toml file in Notepad for editing.
      */
     void Config::openInNotepad()
     {
-        ShellExecuteA(nullptr, "open", "notepad.exe", FRIK_INI_PATH.c_str(), nullptr, SW_SHOWNORMAL);
+        ShellExecuteA(nullptr, "open", "notepad.exe", FRIK_CONFIG_PATH.c_str(), nullptr, SW_SHOWNORMAL);
     }
 
     /**
@@ -339,83 +313,91 @@ namespace frik
         }
     }
 
-    void Config::loadIniConfigInternal(const CSimpleIniA& ini)
+    /**
+     * Read the config values from the loaded FRIK.toml, each with its default when the file does not have it.
+     */
+    void Config::loadConfigInternal(const toml::table& config)
     {
+        const auto mainSection = config[CONFIG_SECTION_MAIN];
+        const auto smoothMovement = config[CONFIG_SECTION_SMOOTH_MOVEMENT];
+
         // Player/Skeleton
-        setScale = ini.GetBoolValue(INI_SECTION_MAIN, "setScale", true);
-        fVrScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fVrScale", 70.0));
-        playerHeight = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PlayerHeight", 120.4828f));
-        armLength = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "armLength", 36.74f));
+        setScale = mainSection["setScale"].value_or(true);
+        fVrScale = mainSection["fVrScale"].value_or(70.0f);
+        playerHeight = mainSection["PlayerHeight"].value_or(120.4828f);
+        armLength = mainSection["armLength"].value_or(36.74f);
 
         // Arm solver
-        armElbowMinFlexionDeg = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmElbowMinFlexionDeg", 10.0));
-        armElbowMaxFlexionDeg = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmElbowMaxFlexionDeg", 145.0));
-        armTwistWindowMinDeg = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmTwistWindowMinDeg", 15.0));
-        armSmoothBlends = ini.GetBoolValue(INI_SECTION_MAIN, "bArmSmoothBlends", true);
-        armShoulderReachFraction = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmShoulderReachFraction", 0.15));
-        armShoulderDownwardDamp = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmShoulderDownwardDamp", 0.4));
-        armUpperTwistSplit = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmUpperTwistSplit", 0.0));
-        armForearmTwistWeight1 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmForearmTwistWeight1", 0.0));
-        armForearmTwistWeight2 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmForearmTwistWeight2", 0.5));
-        armForearmTwistWeight3 = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fArmForearmTwistWeight3", 0.5));
-        armFrameRateIndependentSmoothing = ini.GetBoolValue(INI_SECTION_MAIN, "bArmFrameRateIndependentSmoothing", true);
+        armElbowMinFlexionDeg = mainSection["fArmElbowMinFlexionDeg"].value_or(10.0f);
+        armElbowMaxFlexionDeg = mainSection["fArmElbowMaxFlexionDeg"].value_or(145.0f);
+        armTwistWindowMinDeg = mainSection["fArmTwistWindowMinDeg"].value_or(15.0f);
+        armSmoothBlends = mainSection["bArmSmoothBlends"].value_or(true);
+        armShoulderReachFraction = mainSection["fArmShoulderReachFraction"].value_or(0.15f);
+        armShoulderDownwardDamp = mainSection["fArmShoulderDownwardDamp"].value_or(0.4f);
+        armUpperTwistSplit = mainSection["fArmUpperTwistSplit"].value_or(0.0f);
+        armForearmTwistWeight1 = mainSection["fArmForearmTwistWeight1"].value_or(0.0f);
+        armForearmTwistWeight2 = mainSection["fArmForearmTwistWeight2"].value_or(0.5f);
+        armForearmTwistWeight3 = mainSection["fArmForearmTwistWeight3"].value_or(0.5f);
+        armFrameRateIndependentSmoothing = mainSection["bArmFrameRateIndependentSmoothing"].value_or(true);
 
         // Head Geometry Hide
-        hideHead = ini.GetBoolValue(INI_SECTION_MAIN, "bHidePlayerHead");
-        hideHeadEquipment = ini.GetBoolValue(INI_SECTION_MAIN, "bHidePlayerHeadEquipment");
-        hideSkin = ini.GetBoolValue(INI_SECTION_MAIN, "bHidePlayerSkin");
+        hideHead = mainSection["bHidePlayerHead"].value_or(false);
+        hideHeadEquipment = mainSection["bHidePlayerHeadEquipment"].value_or(false);
+        hideSkin = mainSection["bHidePlayerSkin"].value_or(false);
 
         // is the player playing standing or sitting
-        isPlayingSeated = ini.GetBoolValue(INI_SECTION_MAIN, "bIsPlayingSeated", false);
+        isPlayingSeated = mainSection["bIsPlayingSeated"].value_or(false);
 
         // HMD, body, and leg slack adjust offsets
-        playerHMDOffsetUpStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStanding", 8.0f));
-        playerBodyOffsetUpStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStanding", -3.0f));
-        playerLegSlackAdjustOffsetStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetStanding", 0.0f));
-        playerBodyOffsetForwardStanding = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStanding", -3.0f));
-        playerHMDOffsetUpSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSitting", 31.0f));
-        playerBodyOffsetUpSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSitting", -4.0f));
-        playerLegSlackAdjustOffsetSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetSitting", 0.0f));
-        playerBodyOffsetForwardSitting = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSitting", 2.0f));
+        playerHMDOffsetUpStanding = mainSection["fPlayerHMDOffsetUpStanding"].value_or(8.0f);
+        playerBodyOffsetUpStanding = mainSection["fPlayerBodyOffsetUpStanding"].value_or(-3.0f);
+        playerLegSlackAdjustOffsetStanding = mainSection["fPlayerLegSlackAdjustOffsetStanding"].value_or(0.0f);
+        playerBodyOffsetForwardStanding = mainSection["fPlayerBodyOffsetForwardStanding"].value_or(-3.0f);
+        playerHMDOffsetUpSitting = mainSection["fPlayerHMDOffsetUpSitting"].value_or(31.0f);
+        playerBodyOffsetUpSitting = mainSection["fPlayerBodyOffsetUpSitting"].value_or(-4.0f);
+        playerLegSlackAdjustOffsetSitting = mainSection["fPlayerLegSlackAdjustOffsetSitting"].value_or(0.0f);
+        playerBodyOffsetForwardSitting = mainSection["fPlayerBodyOffsetForwardSitting"].value_or(2.0f);
 
-        playerHMDOffsetUpStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStandingInPA", 23.0f));
-        playerBodyOffsetUpStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStandingInPA", -8.0f));
-        playerLegSlackAdjustOffsetStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetStandingInPA", 0.0f));
-        playerBodyOffsetForwardStandingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStandingInPA", -15.0f));
-        playerHMDOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSittingInPA", 53.0f));
-        playerBodyOffsetUpSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", -7.0f));
-        playerLegSlackAdjustOffsetSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetSittingInPA", 0.0f));
-        playerBodyOffsetForwardSittingInPA = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", -9.0f));
+        playerHMDOffsetUpStandingInPA = mainSection["fPlayerHMDOffsetUpStandingInPA"].value_or(23.0f);
+        playerBodyOffsetUpStandingInPA = mainSection["fPlayerBodyOffsetUpStandingInPA"].value_or(-8.0f);
+        playerLegSlackAdjustOffsetStandingInPA = mainSection["fPlayerLegSlackAdjustOffsetStandingInPA"].value_or(0.0f);
+        playerBodyOffsetForwardStandingInPA = mainSection["fPlayerBodyOffsetForwardStandingInPA"].value_or(-15.0f);
+        playerHMDOffsetUpSittingInPA = mainSection["fPlayerHMDOffsetUpSittingInPA"].value_or(53.0f);
+        playerBodyOffsetUpSittingInPA = mainSection["fPlayerBodyOffsetUpSittingInPA"].value_or(-7.0f);
+        playerLegSlackAdjustOffsetSittingInPA = mainSection["fPlayerLegSlackAdjustOffsetSittingInPA"].value_or(0.0f);
+        playerBodyOffsetForwardSittingInPA = mainSection["fPlayerBodyOffsetForwardSittingInPA"].value_or(-9.0f);
 
-        headBackPositionOffset = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fHeadBackPositionOffset", 4));
-        skeletonLegSlackTarget = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fSkeletonLegSlackTarget", 2.5f));
+        headBackPositionOffset = mainSection["fHeadBackPositionOffset"].value_or(4.0f);
+        skeletonLegSlackTarget = mainSection["fSkeletonLegSlackTarget"].value_or(2.5f);
 
-        comfortSneakHackStaticBodyPitchAngle = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fComfortSneakHackStaticBodyPitchAngle", 30.0f));
+        comfortSneakHackStaticBodyPitchAngle = mainSection["fComfortSneakHackStaticBodyPitchAngle"].value_or(30.0f);
 
         // Pipboy
-        pipBoyScale = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipboyScale", 1.0));
-        hidePipboy = ini.GetBoolValue(INI_SECTION_MAIN, "hidePipboy");
-        isHoloPipboy = ini.GetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", true);
-        holoPipboyKeepWristModel = ini.GetBoolValue(INI_SECTION_MAIN, "HoloPipBoyKeepWristModel", false);
-        leftHandedPipBoy = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyRightArmLeftHandedMode");
-        enablePrimaryControllerPipboyUse = ini.GetBoolValue(INI_SECTION_MAIN, "PipboyUIPrimaryController", true);
-        pipboyOpenWhenLookAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", false);
-        pipboyOpenWithButtonOnlyWhenLookingAt = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWithButtonOnlyWhenLookingAt", false);
-        pipboyCloseWhenLookAway = ini.GetBoolValue(INI_SECTION_MAIN, "PipBoyCloseWhenLookAway", false);
-        pipboyCloseWhenMovingWhileLookingAway = ini.GetBoolValue(INI_SECTION_MAIN, "AllowMovementWhenNotLookingAtPipboy", true);
-        pipboyHolsterWeaponForOperation = ini.GetBoolValue(INI_SECTION_MAIN, "bHolsterWeaponForOperation", false);
-        pipboyLookAtThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAtThreshold", 0.75f));
-        pipboyLookAwayThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyLookAwayThreshold", 0.3f));
-        pipboyButtonLookAtThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "PipBoyButtonLookAtThreshold", 0.5f));
-        pipboyOperationFingerDetectionRange = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fPipboyOperationFingerDetectionRange", 12.0));
-        pipBoyOnDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOnDelay", 400));
-        pipBoyOffDelay = static_cast<int>(ini.GetLongValue(INI_SECTION_MAIN, "PipBoyOffDelay", 1000));
-        pipboyOpenBinding =
-            getInputBindingValue(ini, INI_SECTION_MAIN, "sPipboyOpenButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_SteamVR_Trigger });
+        pipBoyScale = mainSection["PipboyScale"].value_or(1.0f);
+        hidePipboy = mainSection["hidePipboy"].value_or(false);
+        isHoloPipboy = mainSection["HoloPipBoyEnabled"].value_or(true);
+        holoPipboyKeepWristModel = mainSection["HoloPipBoyKeepWristModel"].value_or(false);
+        leftHandedPipBoy = mainSection["PipboyRightArmLeftHandedMode"].value_or(false);
+        enablePrimaryControllerPipboyUse = mainSection["PipboyUIPrimaryController"].value_or(true);
+        pipboyOpenWhenLookAt = mainSection["PipBoyOpenWhenLookAt"].value_or(false);
+        pipboyOpenWithButtonOnlyWhenLookingAt = mainSection["PipBoyOpenWithButtonOnlyWhenLookingAt"].value_or(false);
+        pipboyCloseWhenLookAway = mainSection["PipBoyCloseWhenLookAway"].value_or(false);
+        pipboyCloseWhenMovingWhileLookingAway = mainSection["AllowMovementWhenNotLookingAtPipboy"].value_or(true);
+        pipboyHolsterWeaponForOperation = mainSection["bHolsterWeaponForOperation"].value_or(false);
+        pipboyLookAtThreshold = mainSection["PipBoyLookAtThreshold"].value_or(0.75f);
+        pipboyLookAwayThreshold = mainSection["PipBoyLookAwayThreshold"].value_or(0.3f);
+        pipboyButtonLookAtThreshold = mainSection["PipBoyButtonLookAtThreshold"].value_or(0.5f);
+        pipboyOperationFingerDetectionRange = mainSection["fPipboyOperationFingerDetectionRange"].value_or(12.0f);
+        pipBoyOnDelay = mainSection["PipBoyOnDelay"].value_or(400);
+        pipBoyOffDelay = mainSection["PipBoyOffDelay"].value_or(1000);
+        pipboyOpenBinding = getInputBindingValue(config,
+            CONFIG_SECTION_MAIN,
+            "sPipboyOpenButton",
+            vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_SteamVR_Trigger });
         pipboyCloseBinding =
-            getInputBindingValue(ini, INI_SECTION_MAIN, "sPipboyCloseButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
-        holdPipboyScreenBinding = getInputBindingValue(ini,
-            INI_SECTION_MAIN,
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sPipboyCloseButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
+        holdPipboyScreenBinding = getInputBindingValue(config,
+            CONFIG_SECTION_MAIN,
             "sHoldPipboyScreenButton",
             vrcf::InputBinding{
                 .hand = vrcf::Hand::Offhand,
@@ -423,8 +405,8 @@ namespace frik
                 .button = vr::k_EButton_Grip,
                 .duration = 0.3f,
             });
-        enterPipboyConfigBinding = getInputBindingValue(ini,
-            INI_SECTION_MAIN,
+        enterPipboyConfigBinding = getInputBindingValue(config,
+            CONFIG_SECTION_MAIN,
             "sEnterPipboyConfigButton",
             vrcf::InputBinding{
                 .hand = vrcf::Hand::Primary,
@@ -434,13 +416,13 @@ namespace frik
             });
 
         // Torch/Flashlight
-        removeFlashlight = ini.GetBoolValue(INI_SECTION_MAIN, "bRemoveFlashlight", false);
-        flashlightLocation = static_cast<FlashlightLocation>(ini.GetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", 0));
+        removeFlashlight = mainSection["bRemoveFlashlight"].value_or(false);
+        flashlightLocation = static_cast<FlashlightLocation>(mainSection["iFlashlightLocation"].value_or(0));
         // change hand / head button (one binding per hand)
         switchTorchLeftBinding =
-            getInputBindingValue(ini, INI_SECTION_MAIN, "sSwitchTorchLeftButton", vrcf::InputBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sSwitchTorchLeftButton", vrcf::InputBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
         switchTorchRightBinding =
-            getInputBindingValue(ini, INI_SECTION_MAIN, "sSwitchTorchRightButton", vrcf::InputBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sSwitchTorchRightButton", vrcf::InputBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
 
         // Fallout London VR support: the Attaboy grab proximity gesture (anchored to the on-belt Attaboy node).
         static const f4vr::WandActivationConfig attaboyGrabDefaults = [] {
@@ -453,41 +435,42 @@ namespace frik
             cfg.showSphere = f4vr::ActivationSphereVisibility::Never;
             return cfg;
         }();
-        attaboyGrab = loadWandActivationConfig(ini, INI_SECTION_ATTABOY_GRAB, attaboyGrabDefaults);
+        attaboyGrab = loadWandActivationConfig(config, CONFIG_SECTION_ATTABOY_GRAB, attaboyGrabDefaults);
 
         // Two-handed gripping
-        enableOffHandGripping = ini.GetBoolValue(INI_SECTION_MAIN, "EnableOffHandGripping", true);
-        enableGripButtonToGrap = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButton", true);
-        enableGripButtonToLetGo = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", true);
-        onePressGripButton = ini.GetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", true);
-        gripLetGoThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "GripLetGoThreshold", 15.0f));
-        offhandGripBinding = getInputBindingValue(ini, INI_SECTION_MAIN, "sGripButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Press, vr::k_EButton_Grip });
+        enableOffHandGripping = mainSection["EnableOffHandGripping"].value_or(true);
+        enableGripButtonToGrap = mainSection["EnableGripButton"].value_or(true);
+        enableGripButtonToLetGo = mainSection["EnableGripButtonToLetGo"].value_or(true);
+        onePressGripButton = mainSection["EnableGripButtonOnePress"].value_or(true);
+        gripLetGoThreshold = mainSection["GripLetGoThreshold"].value_or(15.0f);
+        offhandGripBinding =
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sGripButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Press, vr::k_EButton_Grip });
         offhandGripHoldBinding =
-            getInputBindingValue(ini, INI_SECTION_MAIN, "sGripHoldButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::HoldDown, vr::k_EButton_Grip });
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sGripHoldButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::HoldDown, vr::k_EButton_Grip });
 
         // Dampen hands
-        dampenHands = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHands", true);
-        dampenHandsInVanillaScope = ini.GetBoolValue(INI_SECTION_MAIN, "DampenHandsInVanillaScope", true);
-        hideBodyInVanillaScope = ini.GetBoolValue(INI_SECTION_MAIN, "HideBodyInVanillaScope", true);
-        dampenHandsRotation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotation", 0.7f));
-        dampenHandsTranslation = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslation", 0.7f));
-        dampenHandsRotationInVanillaScope = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsRotationInVanillaScope", 0.2f));
-        dampenHandsTranslationInVanillaScope = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "DampenHandsTranslationInVanillaScope", 0.2f));
+        dampenHands = mainSection["DampenHands"].value_or(true);
+        dampenHandsInVanillaScope = mainSection["DampenHandsInVanillaScope"].value_or(true);
+        hideBodyInVanillaScope = mainSection["HideBodyInVanillaScope"].value_or(true);
+        dampenHandsRotation = mainSection["DampenHandsRotation"].value_or(0.7f);
+        dampenHandsTranslation = mainSection["DampenHandsTranslation"].value_or(0.7f);
+        dampenHandsRotationInVanillaScope = mainSection["DampenHandsRotationInVanillaScope"].value_or(0.2f);
+        dampenHandsTranslationInVanillaScope = mainSection["DampenHandsTranslationInVanillaScope"].value_or(0.2f);
 
         // Dampen Pipboy
-        dampenPipboyScreenMode = static_cast<DampenPipboyScreenMode>(ini.GetLongValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", 1));
-        dampenPipboyThreshold = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenPipboyThreshold", 1.1f));
-        dampenPipboyMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "fDampenPipboyMultiplier", 0.7f));
+        dampenPipboyScreenMode = static_cast<DampenPipboyScreenMode>(mainSection["iDampenPipboyScreenMode"].value_or(1));
+        dampenPipboyThreshold = mainSection["fDampenPipboyThreshold"].value_or(1.1f);
+        dampenPipboyMultiplier = mainSection["fDampenPipboyMultiplier"].value_or(0.7f);
 
         // Misc
-        showPAHUD = ini.GetBoolValue(INI_SECTION_MAIN, "showPAHUD");
-        selfieOutFrontDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "selfieOutFrontDistance", 120.0));
-        selfieIgnoreHideFlags = ini.GetBoolValue(INI_SECTION_MAIN, "bSelfieIgnoreHideFlags", true);
+        showPAHUD = mainSection["showPAHUD"].value_or(false);
+        selfieOutFrontDistance = mainSection["selfieOutFrontDistance"].value_or(120.0f);
+        selfieIgnoreHideFlags = mainSection["bSelfieIgnoreHideFlags"].value_or(true);
         toggleSelfieBinding =
-            getInputBindingValue(ini, INI_SECTION_MAIN, "sToggleSelfieButton", vrcf::InputBinding{ vrcf::Hand::Primary, vrcf::ActivationType::Tap, vr::k_EButton_A });
-        scopeAdjustDistance = static_cast<float>(ini.GetDoubleValue(INI_SECTION_MAIN, "ScopeAdjustDistance", 15.f));
-        openMainConfigBinding = getInputBindingValue(ini,
-            INI_SECTION_MAIN,
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sToggleSelfieButton", vrcf::InputBinding{ vrcf::Hand::Primary, vrcf::ActivationType::Tap, vr::k_EButton_A });
+        scopeAdjustDistance = mainSection["ScopeAdjustDistance"].value_or(15.0f);
+        openMainConfigBinding = getInputBindingValue(config,
+            CONFIG_SECTION_MAIN,
             "sOpenConfigButton",
             vrcf::InputBinding{
                 .hand = vrcf::Hand::Primary,
@@ -498,59 +481,65 @@ namespace frik
             });
 
         // special disable of Fallout London so Pipboy can be used - a hacky hack for a specific player
-        ignoreFalloutLondonVR = ini.GetBoolValue(INI_SECTION_MAIN, "bIgnoreFalloutLondonVR", true);
+        ignoreFalloutLondonVR = mainSection["bIgnoreFalloutLondonVR"].value_or(true);
 
         //Smooth Movement
-        disableSmoothMovement = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableSmoothMovement");
-        smoothingAmount = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmount", 15.0));
-        smoothingAmountHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "SmoothAmountHorizontal", 5.0));
-        dampingMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "Damping", 1.0));
-        dampingMultiplierHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "DampingHorizontal", 1.0));
-        stoppingMultiplier = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplier", 0.6f));
-        stoppingMultiplierHorizontal = static_cast<float>(ini.GetDoubleValue(INI_SECTION_SMOOTH_MOVEMENT, "StoppingMultiplierHorizontal", 0.6f));
-        disableInteriorSmoothing = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothing", true);
-        disableInteriorSmoothingHorizontal = ini.GetBoolValue(INI_SECTION_SMOOTH_MOVEMENT, "DisableInteriorSmoothingHorizontal", true);
+        disableSmoothMovement = smoothMovement["DisableSmoothMovement"].value_or(false);
+        smoothingAmount = smoothMovement["SmoothAmount"].value_or(15.0f);
+        smoothingAmountHorizontal = smoothMovement["SmoothAmountHorizontal"].value_or(5.0f);
+        dampingMultiplier = smoothMovement["Damping"].value_or(1.0f);
+        dampingMultiplierHorizontal = smoothMovement["DampingHorizontal"].value_or(1.0f);
+        stoppingMultiplier = smoothMovement["StoppingMultiplier"].value_or(0.6f);
+        stoppingMultiplierHorizontal = smoothMovement["StoppingMultiplierHorizontal"].value_or(0.6f);
+        disableInteriorSmoothing = smoothMovement["DisableInteriorSmoothing"].value_or(true);
+        disableInteriorSmoothingHorizontal = smoothMovement["DisableInteriorSmoothingHorizontal"].value_or(true);
     }
 
-    void Config::saveIniConfigInternal(CSimpleIniA& ini)
+    /**
+     * Save the values the in-game config menus change, all with one write of FRIK.toml.
+     */
+    void Config::save()
     {
-        ini.SetBoolValue(INI_SECTION_MAIN, "bIsPlayingSeated", isPlayingSeated);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fVrScale", fVrScale);
-        ini.SetBoolValue(INI_SECTION_MAIN, "bHidePlayerHead", hideHead);
-        ini.SetBoolValue(INI_SECTION_MAIN, "bHidePlayerHeadEquipment", hideHeadEquipment);
+        saveConfigValues(CONFIG_SECTION_MAIN,
+            {
+                { "bIsPlayingSeated", isPlayingSeated },
+                { "fVrScale", fVrScale },
+                { "bHidePlayerHead", hideHead },
+                { "bHidePlayerHeadEquipment", hideHeadEquipment },
 
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStanding", playerBodyOffsetUpStanding);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStanding", playerBodyOffsetForwardStanding);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStanding", playerHMDOffsetUpStanding);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetStanding", playerLegSlackAdjustOffsetStanding);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSitting", playerBodyOffsetUpSitting);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSitting", playerBodyOffsetForwardSitting);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSitting", playerHMDOffsetUpSitting);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetSitting", playerLegSlackAdjustOffsetSitting);
+                { "fPlayerBodyOffsetUpStanding", playerBodyOffsetUpStanding },
+                { "fPlayerBodyOffsetForwardStanding", playerBodyOffsetForwardStanding },
+                { "fPlayerHMDOffsetUpStanding", playerHMDOffsetUpStanding },
+                { "fPlayerLegSlackAdjustOffsetStanding", playerLegSlackAdjustOffsetStanding },
+                { "fPlayerBodyOffsetUpSitting", playerBodyOffsetUpSitting },
+                { "fPlayerBodyOffsetForwardSitting", playerBodyOffsetForwardSitting },
+                { "fPlayerHMDOffsetUpSitting", playerHMDOffsetUpSitting },
+                { "fPlayerLegSlackAdjustOffsetSitting", playerLegSlackAdjustOffsetSitting },
 
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpStandingInPA", playerBodyOffsetUpStandingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardStandingInPA", playerBodyOffsetForwardStandingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpStandingInPA", playerHMDOffsetUpStandingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetStandingInPA", playerLegSlackAdjustOffsetStandingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetUpSittingInPA", playerBodyOffsetUpSittingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerBodyOffsetForwardSittingInPA", playerBodyOffsetForwardSittingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerHMDOffsetUpSittingInPA", playerHMDOffsetUpSittingInPA);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fPlayerLegSlackAdjustOffsetSittingInPA", playerLegSlackAdjustOffsetSittingInPA);
+                { "fPlayerBodyOffsetUpStandingInPA", playerBodyOffsetUpStandingInPA },
+                { "fPlayerBodyOffsetForwardStandingInPA", playerBodyOffsetForwardStandingInPA },
+                { "fPlayerHMDOffsetUpStandingInPA", playerHMDOffsetUpStandingInPA },
+                { "fPlayerLegSlackAdjustOffsetStandingInPA", playerLegSlackAdjustOffsetStandingInPA },
+                { "fPlayerBodyOffsetUpSittingInPA", playerBodyOffsetUpSittingInPA },
+                { "fPlayerBodyOffsetForwardSittingInPA", playerBodyOffsetForwardSittingInPA },
+                { "fPlayerHMDOffsetUpSittingInPA", playerHMDOffsetUpSittingInPA },
+                { "fPlayerLegSlackAdjustOffsetSittingInPA", playerLegSlackAdjustOffsetSittingInPA },
 
-        ini.SetDoubleValue(INI_SECTION_MAIN, "fSkeletonLegSlackTarget", skeletonLegSlackTarget);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "armLength", armLength);
-        ini.SetBoolValue(INI_SECTION_MAIN, "hidePipboy", hidePipboy);
-        ini.SetDoubleValue(INI_SECTION_MAIN, "PipboyScale", pipBoyScale);
-        ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
-        ini.SetBoolValue(INI_SECTION_MAIN, "HoloPipBoyKeepWristModel", holoPipboyKeepWristModel);
-        ini.SetLongValue(INI_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
-        ini.SetLongValue(INI_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
-        ini.SetBoolValue(INI_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
-        ini.SetBoolValue(INI_SECTION_MAIN, "DampenHands", dampenHands);
+                { "fSkeletonLegSlackTarget", skeletonLegSlackTarget },
+                { "armLength", armLength },
+                { "hidePipboy", hidePipboy },
+                { "PipboyScale", pipBoyScale },
+                { "HoloPipBoyEnabled", isHoloPipboy },
+                { "HoloPipBoyKeepWristModel", holoPipboyKeepWristModel },
+                { "iFlashlightLocation", static_cast<int>(flashlightLocation) },
+                { "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode) },
+                { "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt },
+                { "DampenHands", dampenHands },
 
-        ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButton", enableGripButtonToGrap);
-        ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonToLetGo", enableGripButtonToLetGo);
-        ini.SetBoolValue(INI_SECTION_MAIN, "EnableGripButtonOnePress", onePressGripButton);
+                { "EnableGripButton", enableGripButtonToGrap },
+                { "EnableGripButtonToLetGo", enableGripButtonToLetGo },
+                { "EnableGripButtonOnePress", onePressGripButton },
+            });
     }
 
     /**
@@ -628,7 +617,7 @@ namespace frik
      */
     void Config::setupFolders()
     {
-        createDirDeep(FRIK_INI_PATH);
+        createDirDeep(FRIK_CONFIG_PATH);
         createDirDeep(MESH_HIDE_FACE_INI_PATH);
         createDirDeep(PIPBOY_HOLO_OFFSETS_PATH);
         createDirDeep(WEAPONS_OFFSETS_PATH);
@@ -642,79 +631,14 @@ namespace frik
      */
     void Config::migrateConfigFilesIfNeeded()
     {
-        // migrate pre v72 and v72 config files to v73 location
+        // migrate pre v72 and v72 config files to v73 location; ConfigBase then imports an INI config into its TOML one
         logger::info("Migrate configs if exists in old locations...");
-        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK.ini)", FRIK_INI_PATH);
-        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_FOLVR.ini)", FRIK_FOLVR_INI_PATH);
+        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK.ini)", BASE_PATH + R"(\FRIK.ini)");
+        moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_FOLVR.ini)", BASE_PATH + R"(\FRIK_FOLVR.ini)");
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\face.ini)", MESH_HIDE_FACE_INI_PATH);
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\skins.ini)", MESH_HIDE_SKINS_INI_PATH);
         moveFileSafe(R"(.\Data\F4SE\plugins\FRIK_Mesh_Hide\slots.ini)", MESH_HIDE_SLOTS_INI_PATH);
         moveAllFilesInFolderSafe(R"(.\Data\F4SE\plugins\FRIK_weapon_offsets)", WEAPONS_OFFSETS_PATH);
-    }
-
-    /**
-     * Migrate old config keys that were replaced rather than renamed, which the generic key-by-key
-     * migration in ConfigBase can't carry over as it only copies keys that still exist by name.
-     * Runs after the generic migration, so it can also correct what the generic pass copied.
-     *
-     * v17 replaced every numeric button setting ("GripButtonID = 2") with an InputBinding line
-     * ("sGripButton = offhand press grip"), and v18 replaced the Attaboy grab keys with an activation
-     * sphere. Without this every button rebound in a pre-v17 FRIK.ini (i.e. anything up to the v0.77.12
-     * release) silently reverts to default on upgrade. Some old settings drove more than one activation
-     * in code and so fan out into more than one binding key.
-     *
-     * Only the button bindings are migrated. "OperatePipboyWithButtonArm" / "...OffArm" were loaded
-     * but never used, the Pipboy buttons were always read from the offhand. The timings and distances
-     * ("fOpenConfigurationModePressDelay", "fAttaboyGrabActivationDistance") are left to their new
-     * defaults as those were retuned, and the debug scratch values are throwaway by nature.
-     *
-     * Everything here landed in v18 or earlier, so a config already at v18 must be left alone by any
-     * later migration. Note the log pattern reset below reads the new config, so without this gate it
-     * would keep firing on every future version bump and undo a deliberate choice of the old pattern.
-     */
-    void Config::updateIniConfigToLatestVersionCustom(const int currentVersion, int, const CSimpleIniA& oldIni, CSimpleIniA& newIni) const
-    {
-        if (currentVersion >= 18) {
-            return;
-        }
-
-        // Rewrite one binding key from an old numeric button setting, if that setting exists in the old config.
-        // "prefix" is the hand and activation type the old code used, "suffix" any duration / suppress flag.
-        const auto migrateButton =
-            [&](const char* oldKey, const char* newKey, const std::string_view prefix, const std::string_view suffix = "", const char* newSection = INI_SECTION_MAIN) {
-                if (!oldIni.GetValue(INI_SECTION_MAIN, oldKey, nullptr)) {
-                    return;
-                }
-                const auto* button = oldButtonIdToBindingToken(static_cast<int>(oldIni.GetLongValue(INI_SECTION_MAIN, oldKey)));
-                const auto binding = button ? std::format("{} {}{}", prefix, button, suffix) : "none";
-                logger::info("Migrating {} to {}.{} = {}", oldKey, newSection, newKey, binding);
-                newIni.SetValue(newSection, newKey, binding.c_str());
-            };
-
-        // Pipboy open / close, was isReleasedShort(Offhand, id); the close button held also moved the holo screen
-        migrateButton("OperatePipboyWithButtonID", "sPipboyOpenButton", "offhand tap");
-        migrateButton("OperatePipboyWithButtonOffID", "sPipboyCloseButton", "offhand tap");
-        migrateButton("OperatePipboyWithButtonOffID", "sHoldPipboyScreenButton", "offhand holddown", " 0.3");
-
-        // Two-handed offhand grip, was isPressed(Offhand, id) to grip and isPressHeldDown(Offhand, id) to keep gripping
-        migrateButton("GripButtonID", "sGripButton", "offhand press");
-        migrateButton("GripButtonID", "sGripHoldButton", "offhand hold");
-
-        // Flashlight head/hand switch, was isReleasedShort on both hands with the same id
-        migrateButton("SwitchTorchButton", "sSwitchTorchLeftButton", "left tap");
-        migrateButton("SwitchTorchButton", "sSwitchTorchRightButton", "right tap");
-
-        // Fallout London VR Attaboy grab, was isReleasedShort(Left, id) while inside the grab distance.
-        // "suppress" keeps the grab button from also firing its normal action while the hand is in the zone.
-        migrateButton("iAttaboyGrabButtonId", "sPrimaryBinding", "left tap", " suppress", INI_SECTION_ATTABOY_GRAB);
-
-        // The log pattern gained the "%k" logging-class column, but the generic migration copies the old
-        // pattern over it. Reset it to the current default unless the player customized it.
-        const auto* logPattern = newIni.GetValue(INI_SECTION_DEBUG, "sLogPattern", nullptr);
-        if (logPattern && (logPattern == "%H:%M:%S.%e %l: %v"sv || logPattern == "%H:%M:%S.%e %L: %v"sv)) {
-            logger::info("Migrating {}.sLogPattern to the current default", INI_SECTION_DEBUG);
-            newIni.SetValue(INI_SECTION_DEBUG, "sLogPattern", "%H:%M:%S.%e %L [%-20!k] %v");
-        }
     }
 
     /**

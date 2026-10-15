@@ -447,17 +447,17 @@ Feature blocks are **not** cleared when the skeleton is released.
 
 ## Reading and overriding config
 
-Read FRIK config values, or set session-only overrides that survive `FRIK.ini` live-reload but are never written to disk (and are cleared on game restart). The two override setters take a `caller` name used only for FRIK's logging.
+Read FRIK config values, or set session-only overrides that survive `FRIK.toml` live-reload but are never written to disk (and are cleared on game restart). The two override setters take a `caller` name used only for FRIK's logging.
 
 `int getConfigValue(section, key, char* outBuf, int bufLen, defaultValue)`
 
-Writes the effective value (session override → on-disk value → `defaultValue`) into `outBuf` as a **raw string** that you parse yourself (e.g. `std::strtof` / `std::atoi`). Always null-terminates when `bufLen > 0`. Returns the full value length excluding the null terminator; a return `>= bufLen` means the value was truncated.
+Writes the effective value (session override → on-disk value → `defaultValue`) into `outBuf` as a string that you parse yourself (e.g. `std::strtof` / `std::atoi`): a string value is its text, and any other value its TOML text (`true`, `1.5`, `71.0`). Always null-terminates when `bufLen > 0`. Returns the full value length excluding the null terminator; a return `>= bufLen` means the value was truncated.
 
 | Function | Description |
 | --- | --- |
 | `bool hasConfigValueOverride(section, key)` | Whether a session override is currently set. |
-| `bool setConfigValueOverride(caller, section, key, value)` | Set a session override (string, parsed by FRIK's type-appropriate reader; works for bool/int/float/string and compound transform/binding/pose values). FRIK reloads immediately. The override is owned by `caller`; when two owners override the same key, the one set last applies. |
-| `bool clearConfigValueOverride(caller, section, key)` | Remove the session override `caller` set; the value reverts to another owner's override if one is held, else to the on-disk `FRIK.ini` value. Returns false if `caller` holds none. |
+| `bool setConfigValueOverride(caller, section, key, value)` | Set a session override (string, taken in the type `FRIK.toml` has for the key; works for bool/int/float/string and compound transform/binding/pose values). A value not of that type is refused: returns false and sets nothing. `getConfigValue` returns the override as it applies (`no` over a bool is `false`). FRIK reloads immediately. The override is owned by `caller`; when two owners override the same key, the one set last applies. |
+| `bool clearConfigValueOverride(caller, section, key)` | Remove the session override `caller` set; the value reverts to another owner's override if one is held, else to the on-disk `FRIK.toml` value. Returns false if `caller` holds none. |
 
 ## Adding a button to FRIK's config menu
 

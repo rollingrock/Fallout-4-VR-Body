@@ -9,6 +9,7 @@
     "xbyak",
     "nlohmann-json",
     "simpleini",
+    "tomlplusplus",
     "thomasmonkman-filewatch",
     "cpptrace",
     "catch2"

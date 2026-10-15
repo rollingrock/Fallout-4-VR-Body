@@ -458,7 +458,8 @@ namespace frik::api::core
     }
 
     /**
-     * Set a session-only override for a config section/key (string parsed by the type-appropriate reader).
+     * Set a session-only override for a config section/key, taken in the type FRIK.toml has for the key; a value not
+     * of that type is refused.
      */
     bool FRIK_CORE_CALL setConfigValueOverride(const char* caller, const char* section, const char* key, const char* value)
     {
@@ -466,8 +467,7 @@ namespace frik::api::core
             return false;
         }
         logger::sample("setConfigValueOverride caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
-        g_config.setConfigOverride(caller && *caller ? caller : "FRIKApi", section, key, value);
-        return true;
+        return g_config.setConfigOverride(caller && *caller ? caller : "FRIKApi", section, key, value);
     }
 
     /**

@@ -92,7 +92,7 @@ source_group(TREE ${ROOT_DIR} FILES ${headers} ${sources} ${inls})
 
 # >>> Resource files
 list(APPEND resource_files
-  "${ROOT_DIR}/data/config/${NAME}.ini"
+  "${ROOT_DIR}/data/config/${NAME}.toml"
   "${ROOT_DIR}/data/config/mesh_hide_face.ini"
   "${ROOT_DIR}/data/config/mesh_hide_skins.ini"
   "${ROOT_DIR}/data/config/mesh_hide_slots.ini"

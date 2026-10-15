@@ -6,14 +6,16 @@ Check the [Changelog](changelog.md).
 See the [In-Game Configuration Guide](in-game-configuration-guide.md).
 
 
-## Where Do I Find FRIK.ini?
-Location: `%USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config\FRIK.ini`  
-Most configuration is stored in the FRIK.ini file, including many settings that are not exposed through the in-game configuration interfaces.
-Changes made to FRIK.ini are live-loaded into the running game.
+## Where Do I Find FRIK.toml?
+Location: `%USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config\FRIK.toml`  
+Most configuration is stored in the FRIK.toml file, including many settings that are not exposed through the in-game configuration interfaces.
+Changes made to FRIK.toml are live-loaded into the running game.
+FRIK used `FRIK.ini` before version 0.79.3: on the first run of a newer version its values move into `FRIK.toml`, and the INI is kept beside it as `FRIK_backup_v<N>.ini`.
+Text values, like the controller bindings, are written in quotes: `sGripButton = "offhand press grip"`. A file that is not valid TOML is reported in FRIK.log with its line, and FRIK keeps the values it had until it is fixed.
 
 
 ## I don't see my head!
-Head rendering is controlled in `FRIK.ini`. By default the head equipment is hidden (`bHidePlayerHeadEquipment = true`) and the head is pushed back out of view (`fHeadBackPositionOffset = 5`).
+Head rendering is controlled in `FRIK.toml`. By default the head equipment is hidden (`bHidePlayerHeadEquipment = true`) and the head is pushed back out of view (`fHeadBackPositionOffset = 5`).
 To render the full head, set `bHidePlayerHeadEquipment = false` and lower `fHeadBackPositionOffset` toward `0` (keep `bHidePlayerHead = false`). Be aware this may obscure or clip your vision.
 If you only want to see the head in selfie mode, leave `bSelfieIgnoreHideFlags = true`.
 
@@ -57,7 +59,7 @@ If I, the developer, can reproduce the crash, I can usually fix it. Help me do t
   - `FRIK.log` for FRIK logs
   - `f4sevr.log` and `f4sevr_loader.log` for mod loading failures.
 - Share the logs via [pastebin.com](https://pastebin.com)
-- **Bonus points** if you set `iLogLevel = 0` in FRIK.ini before reproducing the crash to capture more debug logs. This is performance-expensive.
+- **Bonus points** if you set `iLogLevel = 0` in FRIK.toml before reproducing the crash to capture more debug logs. This is performance-expensive.
 
 
 ## When I launch the game, I do not see a body!
@@ -104,7 +106,7 @@ Tip: Use configuration to move the body down or the camera up a little if needed
 
 
 ## I Don't Like the Built-In Flashlight. How Do I Remove It?
-Set `bRemoveFlashlight = true` in `FRIK.ini`  
+Set `bRemoveFlashlight = true` in `FRIK.toml`  
 It will remove the FRIK built-in flashlight.
 
 If you do not want to remove the FRIK flashlight and only want to change how it looks, see this [reddit comment](https://www.reddit.com/r/fo4vr/comments/1o54ejq/comment/nj9thh9/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button).
