@@ -677,13 +677,14 @@ namespace frik::devbench
         }
 
         if (op == "spheres") {
-            // bone spheres through FRIK's own calls rather than the console (FRIK-087): action on|off|destroy (with handle), applied on the
+            // bone spheres through FRIK's own calls rather than the console (FRIK-087): sphere on|off|destroy (with handle), applied on the
             // next frame, then the registrations and every debug sphere node in the player's 3D
             auto& spheres = g_frik.getBoneSpheres();
-            const auto action = args.value("action", "list");
-            if (action == "on" || action == "off") {
-                spheres.toggleDebugBoneSpheres(action == "on");
-            } else if (action == "destroy") {
+            // not "action": that key is the devbench action, always "probe" here
+            const auto sphere = args.value("sphere", "list");
+            if (sphere == "on" || sphere == "off") {
+                spheres.toggleDebugBoneSpheres(sphere == "on");
+            } else if (sphere == "destroy") {
                 spheres.destroyBoneSphere(static_cast<std::uint32_t>((std::max)(args.value("handle", 0), 0)));
             }
             json registered = json::array();
@@ -697,7 +698,7 @@ namespace frik::devbench
             }
             json nodes = json::array();
             collectDebugSpheres(f4vr::getWorldRootNode(), 0, nodes);
-            return json{ { "ok", true }, { "action", action }, { "registered", registered }, { "debugSphereNodes", nodes } };
+            return json{ { "ok", true }, { "sphere", sphere }, { "registered", registered }, { "debugSphereNodes", nodes } };
         }
 
         if (op == "visibility") {

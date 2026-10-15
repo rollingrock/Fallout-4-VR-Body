@@ -253,7 +253,7 @@ namespace frik::devbench
             return {
                 { "op",
                     arg("string",
-                        "probe: phases (default)|claim|solve|chain|record|recordStop|recordDump|chord|bone|nodes|carry|visibility|grip|parent|block|"
+                        "probe: phases (default)|claim|solve|chain|record|recordStop|recordDump|chord|bone|spheres|nodes|carry|visibility|grip|parent|block|"
                         "scope|scopeRig|weaponUpdate|pipboy|selfie|reset") },
                 { "hand", arg("string", "probe claim/chain/grip: left|right; parent: left|right|clear") },
                 { "phase", arg("integer", "probe claim: the FramePhase index to publish in; omit to publish before this frame's skeleton pass") },
@@ -265,6 +265,8 @@ namespace frik::devbench
                 { "count", arg("integer", "probe recordDump: frames to return, default 300, at most 1000") },
                 { "since", arg("integer", "probe chord: the chord seq already seen") },
                 { "name", arg("string", "probe bone: the bone name, default RArm_UpperTwist1") },
+                { "sphere", arg("string", "probe spheres: list (default)|on|off|destroy, through FRIK's own bone sphere calls") },
+                { "handle", arg("integer", "probe spheres destroy: the bone sphere handle") },
                 { "under", arg("string", "probe scopeRig: weapon|wand|offwand|clear (default)") },
                 { "takeover", arg("boolean", "probe scope: drop True Scopes' registration for the test; restored with on=false") },
             };
@@ -272,7 +274,7 @@ namespace frik::devbench
 
         constexpr auto PROBE_DESCRIPTION =
             "dev-only exerciser of FRIK's API from inside FRIK, chosen by op: frame phases (phases), hand claims and the arm solve (claim, solve, "
-            "chain), an arm recorder (record, recordStop, recordDump), controller chords (chord), bones and nodes (bone, nodes, visibility), the "
+            "chain), an arm recorder (record, recordStop, recordDump), controller chords (chord), bones and nodes (bone, nodes, visibility), bone spheres (spheres), the "
             "left-hand carry (carry), grips and the weapon node (grip, parent, block, weaponUpdate), scopes (scope, scopeRig) and FRIK's own modes "
             "(pipboy, selfie); reset drops everything it registered. pipboy on opens FRIK's Pip-Boy, which puts the engine's PipboyMenu on the "
             "stack: set PipBoyCloseWhenLookAway=false first when nobody is in the headset";
