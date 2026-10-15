@@ -66,9 +66,7 @@ namespace frik
      */
     void Config::reloadForFalloutLondonVR()
     {
-        stopConfigFileWatch();
-        _configFilePath = FRIK_FOLVR_CONFIG_PATH;
-        loadConfigOnly();
+        switchConfigFile(FRIK_FOLVR_CONFIG_PATH);
     }
 
     void Config::setFlashlightLocation(const FlashlightLocation location)
