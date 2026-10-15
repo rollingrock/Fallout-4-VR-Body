@@ -467,7 +467,7 @@ namespace frik::api::core
             return false;
         }
         logger::sample("setConfigValueOverride caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
-        return g_config.setConfigOverride(caller && *caller ? caller : "FRIKApi", section, key, value);
+        return g_config.setConfigOverride(caller && *caller ? caller : "FRIKApi", section, key, value).has_value();
     }
 
     /**
