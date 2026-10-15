@@ -350,12 +350,12 @@ namespace frik
     }
 
     /**
-     * Open FRIK.ini in Notepad on the PC desktop for advanced settings not exposed in the in-VR menu.
+     * Open FRIK.toml in Notepad on the PC desktop for advanced settings not exposed in the in-VR menu.
      */
     void MainConfigMode::openAdvancedConfig()
     {
-        logger::info("Open advanced config (FRIK.ini) on PC...");
-        f4vr::showNotification("Config INI opened in Notepad on your PC.\nSwitch to your monitor to edit advanced settings.\nSaved changes apply live.");
+        logger::info("Open advanced config (FRIK.toml) on PC...");
+        f4vr::showNotification("Config file opened in Notepad on your PC.\nSwitch to your monitor to edit advanced settings.\nSaved changes apply live.");
         Config::openInNotepad();
     }
 

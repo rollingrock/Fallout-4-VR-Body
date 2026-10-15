@@ -1,6 +1,6 @@
 #include "resources.h"
 
-IDR_FRIK_INI				RCDATA "@ROOT_DIR@/data/config/FRIK.ini"
+IDR_FRIK_CONFIG				RCDATA "@ROOT_DIR@/data/config/FRIK.toml"
 IDR_MESH_HIDE_FACE			RCDATA "@ROOT_DIR@/data/config/mesh_hide_face.ini"
 IDR_MESH_HIDE_SKINS			RCDATA "@ROOT_DIR@/data/config/mesh_hide_skins.ini"
 IDR_MESH_HIDE_SLOTS			RCDATA "@ROOT_DIR@/data/config/mesh_hide_slots.ini"

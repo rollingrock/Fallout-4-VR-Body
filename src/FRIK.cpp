@@ -109,7 +109,7 @@ namespace frik
     {
         g_config.isFalloutLondonVR = isFalloutLondonVRModLoaded();
         if (g_config.isFalloutLondonVR && g_config.ignoreFalloutLondonVR) {
-            // checked before the ini swap, so ignoring the mod keeps FRIK.ini and its file watch
+            // checked before the config swap, so ignoring the mod keeps FRIK.toml and its file watch
             logger::warn("Ignore Fallout London VR flag set, do not treat the game as Fallout London!");
             g_config.isFalloutLondonVR = false;
         } else if (g_config.isFalloutLondonVR) {
@@ -569,7 +569,7 @@ namespace frik
     }
 
     /**
-     * Dump game data if requested in "sDebugDumpDataOnceNames" flag in INI config.
+     * Dump game data if requested in "sDumpDataOnceNames" flag in the config.
      */
     void FRIK::checkDebugDump() const
     {

@@ -22,7 +22,7 @@ Press and hold both the `Sprint` and `Favorites` buttons until the UI is shown.
 
 ### Advanced Config and Help
 
-- **Advanced config** — opens `FRIK.ini` in Notepad on the PC for the many settings not exposed in the in-VR menu. Saved changes apply live via the INI file watcher.
+- **Advanced config** — opens `FRIK.toml` in Notepad on the PC for the many settings not exposed in the in-VR menu. Saved changes apply live via the config file watcher.
 - **Help** — opens the FRIK documentation in your web browser.
 
 ### Weapon Grip Modes
