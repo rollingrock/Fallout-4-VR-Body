@@ -357,15 +357,18 @@ sFlowText2 = ""
 sAdjustTarget = ""
 
 # Writes named game-state dumps to the mod log and removes each name after it runs.
-# Examples: ui_tree, skelly, fp_skelly, geometry, weapon_pos, weapon_muzzle, pipboy, world, all_nodes
-# Timing: perf_reset starts a perf window, then perf logs what each part of the frame cost since
+# Names: ui_tree, skelly, fp_skelly, geometry, weapon_pos, weapon_muzzle, menus, pipboy, world, all_nodes
+# Example: ["skelly", "weapon_pos"]
+# Timing: "perf_reset" starts a perf window, then "perf" logs what each part of the frame cost since
 # Guide: https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/debug-config.md
-sDumpDataOnceNames = ""
+aDumpDataOnce = []
 
-# Runs a one-shot inventory add or dry run from an operation plus category filters.
-# Examples: get, weapons, throwables; print, weapons:laser; print-all, armor:slot=torso|class=heavy
+# Runs one-shot inventory adds or dry runs, then clears the array (comments inside it too).
+# Keys: op (get, get-all, print, print-all), category (weapons, throwables, ammo, armor, aid, misc, or
+# an array of them), and the optional filters name, keyword, slot, class.
+# Example: [{ op = "print", category = "weapons", keyword = "laser" }, { op = "get", category = ["ammo", "aid"] }]
 # Guide: https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/debug-config.md
-sAddItemsOnceNames = ""
+aAddItemsOnce = []
 
 # Internal use for versioning
 iVersion = 1

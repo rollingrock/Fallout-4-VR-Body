@@ -569,7 +569,7 @@ namespace frik
     }
 
     /**
-     * Dump game data if requested in "sDumpDataOnceNames" flag in the config.
+     * Dump game data if requested in the "aDumpDataOnce" names of the config.
      */
     void FRIK::checkDebugDump() const
     {
