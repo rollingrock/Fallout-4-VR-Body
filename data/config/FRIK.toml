@@ -292,8 +292,9 @@ tZone = { pos = [5.0, -2.0, 1.0], scale = 24.0 }
 kPrimaryBinding = { hand = "left", type = "tap", button = "grip", suppress = true }
 sEntryHaptic = "tick"
 sPrimaryHaptic = "DoubleClick"
-sShowSphere = "wheninside"
-fSphereScale = 0.8
+sShowIcon = "wheninside"
+fIconSize = 1.0
+sShowSphere = "never"
 
 
 [SmoothMovementVR]
