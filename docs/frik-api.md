@@ -168,7 +168,7 @@ Writes the effective value (session override → on-disk value → `defaultValue
 | Function | Description |
 | --- | --- |
 | `bool hasConfigValueOverride(section, key)` | Whether a session override is currently set. |
-| `bool setConfigValueOverride(caller, section, key, value)` | Set a session override (string, taken in the type `FRIK.toml` has for the key; works for bool/int/float/string and compound transform/binding/pose values). A value not of that type is refused: returns false and sets nothing. `getConfigValue` returns the override as it applies (`no` over a bool is `false`). FRIK reloads immediately. The override is owned by `caller`; when two owners override the same key, the one set last applies. |
+| `bool setConfigValueOverride(caller, section, key, value)` | Set a session override (string, taken in the type `FRIK.toml` has for the key; works for bool/int/float/string, and for a transform, binding or hand pose given as the TOML text of its table, `{ pos = [1, 2, 3] }`; a binding also takes its line, `offhand tap grip` or `none`). A key renamed when its type changed is still reached by its old name (`sOpenConfigButton` sets `kOpenConfigButton`). A value not of that type is refused: returns false and sets nothing. `getConfigValue` returns the override as it applies (`no` over a bool is `false`). FRIK reloads immediately. The override is owned by `caller`; when two owners override the same key, the one set last applies. |
 | `bool clearConfigValueOverride(caller, section, key)` | Remove the session override `caller` set; the value reverts to another owner's override if one is held, else to the on-disk `FRIK.toml` value. Returns false if `caller` holds none. |
 
 ## Adding a button to FRIK's config menu

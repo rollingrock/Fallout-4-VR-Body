@@ -13,13 +13,15 @@
 #
 # ---------------
 # File Format:
-# The file is TOML (https://toml.io): text values are written in quotes, numbers and true/false are not.
+# The file is TOML (https://toml.io): text values are written in quotes, numbers and true/false are not,
+# and a value of several parts is a table in braces: { pos = [5.0, -2.0, 1.0], scale = 24.0 }.
 # A file that is not valid TOML is reported in FRIK.log with its line, and is not loaded until it is fixed.
 #
 # ---------------------
 # Input Binding Format:
-# Controller bindings are a quoted, case-insensitive string: "<hand> <type> <button> [duration] [+modifier]".
-# Examples: "none"; "offhand tap grip"; "primary longpress A"; "primary press trigger +grip".
+# A controller binding is a 'k' key: { hand = "offhand", type = "tap", button = "grip" }, with an optional
+# duration (seconds), suppress (true/false) and modifier = { hand = "offhand", button = "grip" }.
+# { type = "none" } turns it off. The words are case-insensitive.
 # Guide: https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/input-binding.md
 
 
@@ -174,12 +176,12 @@ PipBoyOffDelay = 1000
 AllowMovementWhenNotLookingAtPipboy = true
 
 # Which controller input opens / closes the Pipboy (see "Input Binding Format" near the top of this file)
-sPipboyOpenButton = "offhand tap trigger"
-sPipboyCloseButton = "offhand tap grip"
+kPipboyOpenButton = { hand = "offhand", type = "tap", button = "trigger" }
+kPipboyCloseButton = { hand = "offhand", type = "tap", button = "grip" }
 # Controller input that must be held to move the holo Pipboy screen in place (see iDampenPipboyScreenMode = 2)
-sHoldPipboyScreenButton = "offhand holddown grip 0.3"
-# Controller input that enters the wrist-Pipboy configuration mode (the trailing number is the hold duration in seconds)
-sEnterPipboyConfigButton = "primary longpress thumbstick 2.0"
+kHoldPipboyScreenButton = { hand = "offhand", type = "hold", button = "grip", duration = 0.3 }
+# Controller input that enters the wrist-Pipboy configuration mode (duration is how long it is held, in seconds)
+kEnterPipboyConfigButton = { hand = "primary", type = "longpress", button = "thumbstick", duration = 2.0 }
 
 # When using touch method to operate Pipboy it's the distance of the primary hand from
 # Pipboy that will change hand pose to pointing. Set to 0 to disable. (default: 12)
@@ -217,8 +219,8 @@ iFlashlightLocation = 0
 
 # Input used to switch the torch between head and hand (tapped on whichever hand is near the head)
 # One binding per hand (see "Input Binding Format" near the top of this file)
-sSwitchTorchLeftButton = "left tap grip"
-sSwitchTorchRightButton = "right tap grip"
+kSwitchTorchLeftButton = { hand = "left", type = "tap", button = "grip" }
+kSwitchTorchRightButton = { hand = "right", type = "tap", button = "grip" }
 
 
 ### Weapons and Hands
@@ -237,9 +239,9 @@ EnableGripButtonOnePress = true
 EnableGripButtonToLetGo = false
 GripLetGoThreshold = 2.5
 # Offhand input to grip / release a two-handed weapon (press to grab, and to let go in modes 2/4)
-sGripButton = "offhand press grip"
+kGripButton = { hand = "offhand", type = "press", button = "grip" }
 # Offhand input that must stay held to keep gripping (mode 3 lets go when this is released)
-sGripHoldButton = "offhand hold grip"
+kGripHoldButton = { hand = "offhand", type = "hold", button = "grip" }
 
 # Dampen hands settings - set strength from 0 to 0.95
 DampenHands = true
@@ -266,7 +268,7 @@ ScopeAdjustDistance = 15.0
 selfieOutFrontDistance = 120.0
 
 # Controller input that toggles selfie mode, only when the Pipboy is off (see "Input Binding Format" near the top of this file)
-sToggleSelfieButton = "primary tap a"
+kToggleSelfieButton = { hand = "primary", type = "tap", button = "a" }
 
 # If to show the HUD in powerarmor
 showPAHUD = true
@@ -275,19 +277,19 @@ showPAHUD = true
 bIgnoreFalloutLondonVR = false
 
 # Controller input that opens the configuration menu (see "Input Binding Format" near the top of this file)
-# Default: long-press both thumbsticks (the trailing number is the hold duration in seconds)
+# Default: long-press both thumbsticks (duration is how long they are held, in seconds)
 # HTC Vive Pro 2 issue: https://www.nexusmods.com/fallout4/mods/53464?tab=posts&comment_id=163662949
-sOpenConfigButton = "primary longpress thumbstick 1.5 +offhand:thumbstick"
+kOpenConfigButton = { hand = "primary", type = "longpress", button = "thumbstick", duration = 1.5, modifier = { hand = "offhand", button = "thumbstick" } }
 
 
 # Fallout London VR: grab the Attaboy off the belt to open/close the Pipboy (a proximity gesture).
 # Only active in Fallout London VR, once the on-belt Attaboy exists. This is an "activation sphere":
 # a spherical zone anchored to the Attaboy on the belt; while the bound hand is inside it.
-# To disable and have Attaboy open globally set sPrimaryBinding to none.
+# To disable and have Attaboy open globally set kPrimaryBinding to { type = "none" }.
 # https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/input-binding.md
 [FRIK_AttaboyActivationSphere]
-tZone = "5,-2,1;0,0,0;24.00"
-sPrimaryBinding = "left tap grip suppress"
+tZone = { pos = [5.0, -2.0, 1.0], scale = 24.0 }
+kPrimaryBinding = { hand = "left", type = "tap", button = "grip", suppress = true }
 sEntryHaptic = "tick"
 sPrimaryHaptic = "DoubleClick"
 sShowSphere = "wheninside"

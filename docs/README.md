@@ -28,7 +28,7 @@ FRIK brings the full player body to life in VR! Inspired by VRIK from Skyrim VR,
 
 ## Shortcuts
 
-- Open Main Configuration - Press and hold both thumbsticks (the `Sprint` and `Favorites` buttons) for ~1.5 seconds. The hold time is configurable via `sOpenConfigButton` in `FRIK.toml`.
+- Open Main Configuration - Press and hold both thumbsticks (the `Sprint` and `Favorites` buttons) for ~1.5 seconds. The hold time is the `duration` of `kOpenConfigButton` in `FRIK.toml`.
 - Open Pip-Boy Configuration - While the Pip-Boy is open, press and hold the primary-hand thumbstick (the `Favorites` button) for ~2 seconds.
 - These can also be opened via the FRIK Settings holotape.
 
