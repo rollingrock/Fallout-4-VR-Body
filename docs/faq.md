@@ -11,7 +11,7 @@ Location: `%USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config\FRIK.toml`
 Most configuration is stored in the FRIK.toml file, including many settings that are not exposed through the in-game configuration interfaces.
 Changes made to FRIK.toml are live-loaded into the running game.
 FRIK used `FRIK.ini` before version 0.79.3: on the first run of a newer version its values move into `FRIK.toml`, and the INI is kept beside it as `FRIK_backup_v<N>.ini`.
-Text values, like the controller bindings, are written in quotes: `sGripButton = "offhand press grip"`. A file that is not valid TOML is reported in FRIK.log with its line, and FRIK keeps the values it had until it is fixed.
+Text values are written in quotes, and a controller binding is a table: `kGripButton = { hand = "offhand", type = "press", button = "grip" }` ([every key of a binding](https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/input-binding.md)). A file that is not valid TOML is reported in FRIK.log with its line, and FRIK keeps the values it had until it is fixed.
 
 
 ## I don't see my head!

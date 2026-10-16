@@ -389,13 +389,13 @@ namespace frik
         pipBoyOffDelay = mainSection["PipBoyOffDelay"].value_or(1000);
         pipboyOpenBinding = getInputBindingValue(config,
             CONFIG_SECTION_MAIN,
-            "sPipboyOpenButton",
+            "kPipboyOpenButton",
             vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_SteamVR_Trigger });
         pipboyCloseBinding =
-            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sPipboyCloseButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "kPipboyCloseButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
         holdPipboyScreenBinding = getInputBindingValue(config,
             CONFIG_SECTION_MAIN,
-            "sHoldPipboyScreenButton",
+            "kHoldPipboyScreenButton",
             vrcf::InputBinding{
                 .hand = vrcf::Hand::Offhand,
                 .type = vrcf::ActivationType::HoldDown,
@@ -404,7 +404,7 @@ namespace frik
             });
         enterPipboyConfigBinding = getInputBindingValue(config,
             CONFIG_SECTION_MAIN,
-            "sEnterPipboyConfigButton",
+            "kEnterPipboyConfigButton",
             vrcf::InputBinding{
                 .hand = vrcf::Hand::Primary,
                 .type = vrcf::ActivationType::LongPress,
@@ -417,9 +417,9 @@ namespace frik
         flashlightLocation = static_cast<FlashlightLocation>(mainSection["iFlashlightLocation"].value_or(0));
         // change hand / head button (one binding per hand)
         switchTorchLeftBinding =
-            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sSwitchTorchLeftButton", vrcf::InputBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "kSwitchTorchLeftButton", vrcf::InputBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
         switchTorchRightBinding =
-            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sSwitchTorchRightButton", vrcf::InputBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "kSwitchTorchRightButton", vrcf::InputBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip });
 
         // Fallout London VR support: the Attaboy grab proximity gesture (anchored to the on-belt Attaboy node).
         static const f4vr::WandActivationConfig attaboyGrabDefaults = [] {
@@ -441,9 +441,9 @@ namespace frik
         onePressGripButton = mainSection["EnableGripButtonOnePress"].value_or(true);
         gripLetGoThreshold = mainSection["GripLetGoThreshold"].value_or(15.0f);
         offhandGripBinding =
-            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sGripButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Press, vr::k_EButton_Grip });
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "kGripButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Press, vr::k_EButton_Grip });
         offhandGripHoldBinding =
-            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sGripHoldButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::HoldDown, vr::k_EButton_Grip });
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "kGripHoldButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::HoldDown, vr::k_EButton_Grip });
 
         // Dampen hands
         dampenHands = mainSection["DampenHands"].value_or(true);
@@ -464,11 +464,11 @@ namespace frik
         selfieOutFrontDistance = mainSection["selfieOutFrontDistance"].value_or(120.0f);
         selfieIgnoreHideFlags = mainSection["bSelfieIgnoreHideFlags"].value_or(true);
         toggleSelfieBinding =
-            getInputBindingValue(config, CONFIG_SECTION_MAIN, "sToggleSelfieButton", vrcf::InputBinding{ vrcf::Hand::Primary, vrcf::ActivationType::Tap, vr::k_EButton_A });
+            getInputBindingValue(config, CONFIG_SECTION_MAIN, "kToggleSelfieButton", vrcf::InputBinding{ vrcf::Hand::Primary, vrcf::ActivationType::Tap, vr::k_EButton_A });
         scopeAdjustDistance = mainSection["ScopeAdjustDistance"].value_or(15.0f);
         openMainConfigBinding = getInputBindingValue(config,
             CONFIG_SECTION_MAIN,
-            "sOpenConfigButton",
+            "kOpenConfigButton",
             vrcf::InputBinding{
                 .hand = vrcf::Hand::Primary,
                 .type = vrcf::ActivationType::LongPress,

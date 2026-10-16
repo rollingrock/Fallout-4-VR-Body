@@ -206,7 +206,7 @@ namespace frik
         vrcf::InputBinding switchTorchRightBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
 
         // Fallout London VR support: grab the Attaboy off the belt (a proximity gesture) to toggle the Pipboy.
-        // Loaded from the [AttaboyGrab] activation-sphere section; disable by setting sPrimaryBinding = none.
+        // Loaded from the [AttaboyGrab] activation-sphere section; disable by setting kPrimaryBinding = { type = "none" }.
         f4vr::WandActivationConfig attaboyGrab;
 
         // Weapon offhand grip

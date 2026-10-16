@@ -1,10 +1,10 @@
 ## v0.79.3
 
 - Config: `FRIK.toml` replaces `FRIK.ini`. Your `FRIK.ini` (and `FRIK_FOLVR.ini`) is moved into it on the first run and kept as a backup.
-- Config: Text values, like controller bindings, are written in quotes: `sGripButton = "offhand press grip"`.
+- Config: Text values are written in quotes, and a controller binding is a table: `kGripButton = { hand = "offhand", type = "press", button = "grip" }`. Your `FRIK.ini` bindings are moved into it.
 - Config: In-game saves keep the file's comments and layout.
 - Config: An invalid `FRIK.toml` is reported in FRIK.log with its line, and FRIK keeps its values until it is fixed.
-- Config: An invalid controller binding is reported in FRIK.log with the word that is wrong and the words that fit there. A typo is no longer skipped: `"primary longpress a 1.2s"` is invalid, where it lost its duration, and FRIK uses the default binding until it is fixed.
+- Config: An invalid controller binding is reported in FRIK.log with the key or word that is wrong and what fits there. A typo is no longer skipped: `duration = "1.2s"` is invalid, where it lost its duration, and FRIK uses the default binding until it is fixed.
 - Config: Removed the move of config files from the pre-v0.73 location.
 - Config menu: A finger presses a button only from its front, while you look at it.
 - Log: The log level is written as a word.

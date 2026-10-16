@@ -424,8 +424,10 @@ namespace frik::api
          * The override is re-applied on every config (re)load, so it survives FRIK.toml live-reload, and
          * is never written to disk (cleared on game restart). The value is given as a string and taken in
          * the type FRIK.toml has for the key ("no" for a bool, "2" for a float), so it works for any config
-         * value (bool/int/float/string and the compound transform/binding/hand-pose values, which are
-         * strings). getConfigValue then returns it as it applies ("false", "2.0"). FRIK reloads its config
+         * value (bool/int/float/string, and a transform, binding or hand pose as the TOML text of its table,
+         * "{ pos = [1, 2, 3] }"; a binding also takes its line, "offhand tap grip" or "none"). A key renamed
+         * when its type changed is reached by its old name ("sOpenConfigButton" sets "kOpenConfigButton").
+         * getConfigValue then returns it as it applies ("false", "2.0"). FRIK reloads its config
          * immediately so the change takes effect right away.
          * @param caller name of the calling mod: the owner of the override, and used for FRIK logging.
          *        When two owners override the same key, the one set last applies.
