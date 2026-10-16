@@ -4,12 +4,14 @@
 - Config: Text values, like controller bindings, are written in quotes: `sGripButton = "offhand press grip"`.
 - Config: In-game saves keep the file's comments and layout.
 - Config: An invalid `FRIK.toml` is reported in FRIK.log with its line, and FRIK keeps its values until it is fixed.
+- Config: An invalid controller binding is reported in FRIK.log with the word that is wrong and the words that fit there. A typo is no longer skipped: `"primary longpress a 1.2s"` is invalid, where it lost its duration, and FRIK uses the default binding until it is fixed.
 - Config: Removed the move of config files from the pre-v0.73 location.
 - Config menu: A finger presses a button only from its front, while you look at it.
 - Log: The log level is written as a word.
 - API: A config override is owned by the mod that set it.
 - API: `setConfigValueOverride` refuses a value of the wrong type; `getConfigValue` returns TOML text (`71.0`, `false`).
 - Dev: Hand pose overrides are logged only when they change.
+- Dev: The one-shot `[Debug]` keys are TOML arrays: `aDumpDataOnce = ["skelly", "weapon_pos"]`, and `aAddItemsOnce` takes a request per table, `{ op = "print", category = "weapons", keyword = "laser" }`, naming the key that is wrong in an invalid one.
 
 ## v0.79.2
 
