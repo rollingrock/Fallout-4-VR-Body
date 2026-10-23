@@ -2,17 +2,10 @@
 
 #include "BodyAdjustmentSubConfigMode.h"
 #include "vrui/UIContainer.h"
+#include "weapon-position/GripMode.h"
 
 namespace frik
 {
-    enum class TwoHandedGripMode : uint8_t
-    {
-        Mode1,
-        Mode2,
-        Mode3,
-        Mode4,
-    };
-
     struct OpenExternalModConfigData
     {
         std::string buttonIconNifPath;
@@ -36,7 +29,6 @@ namespace frik
         static std::shared_ptr<vrui::UIContainer> createBalancedButtonRows(const std::string& name, const std::vector<std::shared_ptr<vrui::UIElement>>& buttons);
         void openBodyAdjustmentSubConfigUI();
         static void toggleSelfieMode();
-        static TwoHandedGripMode getTwoHandedGripMode();
         static void updateTwoHandedGripMode(TwoHandedGripMode mode);
         void openPipboyConfigUI();
         void openWeaponAdjustConfigUI();

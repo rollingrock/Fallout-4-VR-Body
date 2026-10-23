@@ -27,6 +27,10 @@ Press and hold both the `Sprint` and `Favorites` buttons until the UI is shown.
 
 ### Weapon Grip Modes
 
+The main FRIK menu button and the Mods Config VR **Grip mode** stepper use the same `iTwoHandedGripMode` setting in `FRIK.toml` (1–4, default 3).
+A `FRIK.ini` from an older FRIK is imported with its mode taken from the three legacy grip flags. Unrecognized flag combinations use mode 3, matching the old menu's fallback.
+The **Let-go threshold** applies only to mode 1.
+
 - Mode 1: The hand automatically snaps to the barrel when in range; move your hand quickly to let go.
 - Mode 2: The hand automatically snaps to the barrel when in range; press the grip button to let go.
 - Mode 3: Hold the grip button to snap to the barrel; release it to let go.

@@ -123,6 +123,26 @@ namespace frik
         saveConfigValue(CONFIG_SECTION_MAIN, "DampenHands", iDampenHands);
     }
 
+    /**
+     * Apply and persist the grip mode shared by both configuration menus.
+     */
+    void Config::setTwoHandedGripMode(const TwoHandedGripMode mode)
+    {
+        twoHandedGripMode = mode;
+        saveConfigValue(CONFIG_SECTION_MAIN, "iTwoHandedGripMode", static_cast<int>(twoHandedGripMode));
+    }
+
+    /**
+     * Move what FRIK.toml changed from FRIK.ini, for a version 0 config imported from it: the three grip flags are
+     * the one iTwoHandedGripMode.
+     */
+    void Config::updateConfigToLatestVersionCustom(const int currentVersion, const int /*latestVersion*/, const toml::table& old, common::TomlEditor& latest) const
+    {
+        if (currentVersion == 0) {
+            latest.set({ CONFIG_SECTION_MAIN, "iTwoHandedGripMode" }, static_cast<int>(gripModeFromIniFlags(old[CONFIG_SECTION_MAIN])));
+        }
+    }
+
     float Config::getPlayerBodyOffsetUp() const
     {
         if (isPlayingSeated) {
@@ -436,9 +456,8 @@ namespace frik
 
         // Two-handed gripping
         enableOffHandGripping = mainSection["EnableOffHandGripping"].value_or(true);
-        enableGripButtonToGrap = mainSection["EnableGripButton"].value_or(true);
-        enableGripButtonToLetGo = mainSection["EnableGripButtonToLetGo"].value_or(true);
-        onePressGripButton = mainSection["EnableGripButtonOnePress"].value_or(true);
+        const auto gripMode = mainSection["iTwoHandedGripMode"].value_or(3);
+        twoHandedGripMode = gripMode >= 1 && gripMode <= 4 ? static_cast<TwoHandedGripMode>(gripMode) : TwoHandedGripMode::Mode3;
         gripLetGoThreshold = mainSection["GripLetGoThreshold"].value_or(15.0f);
         offhandGripBinding =
             getInputBindingValue(config, CONFIG_SECTION_MAIN, "kGripButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Press, vr::k_EButton_Grip });
@@ -533,9 +552,7 @@ namespace frik
                 { "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt },
                 { "DampenHands", dampenHands },
 
-                { "EnableGripButton", enableGripButtonToGrap },
-                { "EnableGripButtonToLetGo", enableGripButtonToLetGo },
-                { "EnableGripButtonOnePress", onePressGripButton },
+                { "iTwoHandedGripMode", static_cast<int>(twoHandedGripMode) },
             });
     }
 

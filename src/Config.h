@@ -8,6 +8,7 @@
 #include "f4vr/WandActivationSphere.h"
 #include "resources.h"
 #include "vrcf/VRControllersManager.h"
+#include "weapon-position/GripMode.h"
 
 namespace frik
 {
@@ -86,6 +87,7 @@ namespace frik
         void saveIsPlayingSeated(bool iIsPlayingSeated);
         void saveHideHeadEquipment(bool hide);
         void saveDampenHands(bool iDampenHands);
+        void setTwoHandedGripMode(TwoHandedGripMode mode);
 
         float getPlayerBodyOffsetUp() const;
         void setPlayerBodyOffsetUp(float value);
@@ -211,9 +213,7 @@ namespace frik
 
         // Weapon offhand grip
         bool enableOffHandGripping = false;
-        bool enableGripButtonToGrap = false;
-        bool enableGripButtonToLetGo = false;
-        bool onePressGripButton = false;
+        TwoHandedGripMode twoHandedGripMode = TwoHandedGripMode::Mode3;
         float gripLetGoThreshold = 0;
         // Offhand input that grips / releases a two-handed weapon (press = grab and release toggle, modes 2/3/4).
         vrcf::InputBinding offhandGripBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Press, vr::k_EButton_Grip };
@@ -262,6 +262,7 @@ namespace frik
 
     protected:
         virtual void loadConfigInternal(const toml::table& config) override;
+        void updateConfigToLatestVersionCustom(int currentVersion, int latestVersion, const toml::table& old, common::TomlEditor& latest) const override;
 
     private:
         void loadHideMeshes();

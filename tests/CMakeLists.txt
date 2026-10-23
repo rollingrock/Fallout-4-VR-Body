@@ -7,7 +7,9 @@ add_executable(FRIK_tests
   ClaimLogDebounceTests.cpp
   FramePhaseRegistryTests.cpp
   GripDetectionTests.cpp
+  GripModeTests.cpp
   RotationSmoothingTests.cpp
+  ${SOURCE_DIR}/weapon-position/GripMode.cpp
   ScopeAuthorityTests.cpp
   TagBlockSetTests.cpp
   # the framework's plain-std perf sources, which the frame phase callbacks are timed with
@@ -22,6 +24,9 @@ set_target_properties(FRIK_tests PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 target_compile_features(FRIK_tests PRIVATE cxx_std_23)
 # the framework's src/ for its plain-std headers, such as perf/Perf.h
 target_include_directories(FRIK_tests PRIVATE ${SOURCE_DIR} ${F4VR_COMMON_FRAMEWORK_PATH_SELECTED}/src)
+# toml++ for weapon-position/GripMode, header-only here: the test binary does not link the framework's compiled toml++
+find_path(TOMLPLUSPLUS_INCLUDE_DIR "toml++/toml.hpp" REQUIRED)
+target_include_directories(FRIK_tests SYSTEM PRIVATE ${TOMLPLUSPLUS_INCLUDE_DIR})
 target_compile_options(FRIK_tests PRIVATE /utf-8 /permissive- /W4 /external:anglebrackets /external:W0)
 target_link_libraries(FRIK_tests PRIVATE Catch2::Catch2WithMain)
 

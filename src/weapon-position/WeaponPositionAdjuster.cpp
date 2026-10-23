@@ -467,11 +467,8 @@ namespace frik
     }
 
     /**
-     * Figure out if player should be gripping the weapon with offhand, handling all the different offhand grip modes:   | enableGripButtonToGrap | onePressGripButton | enableGripButtonToLetGo |
-     * Mode 1: hand automatically snap to the barrel when in range, move hand quickly to let go                          | false                  | false              | false                   |
-     * Mode 2: hand automatically snap to the barrel when in range, press grip button to let go                          | false                  | false              | true                    |
-     * Mode 3: holding grip button to snap to the barrel, release grib button to let go                                  | true                   | true               | false                   |
-     * Mode 4: press grip button to snap to the barrel, press grib button again to let go                                | true                   | false              | true                    |
+     * Update the offhand grip using the selected mode's grab and release behavior.
+     * Hidden-weapon revalidation and mode 2's wait to re-grip are shared by the grip latch.
      */
     void WeaponPositionAdjuster::checkIfOffhandIsGripping(const RE::NiNode* weapon)
     {
@@ -480,6 +477,7 @@ namespace frik
             return;
         }
 
+        const auto mode = g_config.twoHandedGripMode;
         if (_grip.gripping) {
             // the weapon is back after being hidden: keep the grip only if the hand is still on the barrel
             if (!_grip.revalidate(isOffhandCloseToBarrel(weapon, true))) {
@@ -487,27 +485,32 @@ namespace frik
                 return;
             }
 
-            if (g_config.onePressGripButton && !vrcf::VRControllers.check(g_config.offhandGripHoldBinding)) {
-                // Mode 3 release grip when not holding the grip button
-                setOffhandGripping(false);
-            }
-
-            if (g_config.enableGripButtonToLetGo && vrcf::VRControllers.check(g_config.offhandGripBinding)) {
-                // Mode 2,4 release grip on pressing the grip button again; mode 2 stays released until the hand leaves the cone
-                _grip.releaseByButton(!g_config.enableGripButtonToGrap);
-                HandPose::setOffhandGripHandPose(false);
-            }
-
-            if (!g_config.enableGripButtonToGrap && !g_config.enableGripButtonToLetGo && !g_frik.isLookingThroughScope() && isOffhandMovedFastAway()) {
-                // mode 1 release when move fast away from barrel
-                setOffhandGripping(false);
+            switch (mode) {
+            case TwoHandedGripMode::Mode1:
+                if (!g_frik.isLookingThroughScope() && isOffhandMovedFastAway()) {
+                    setOffhandGripping(false);
+                }
+                break;
+            case TwoHandedGripMode::Mode2:
+            case TwoHandedGripMode::Mode4:
+                if (vrcf::VRControllers.check(g_config.offhandGripBinding)) {
+                    // Auto grip stays released until the hand leaves the cone in mode 2.
+                    _grip.releaseByButton(mode == TwoHandedGripMode::Mode2);
+                    HandPose::setOffhandGripHandPose(false);
+                }
+                break;
+            case TwoHandedGripMode::Mode3:
+                if (!vrcf::VRControllers.check(g_config.offhandGripHoldBinding)) {
+                    setOffhandGripping(false);
+                }
+                break;
             }
 
             // already gripping, no need for checks to grip
             return;
         }
 
-        if (!g_config.enableGripButtonToGrap && !g_config.enableGripButtonToLetGo) {
+        if (mode == TwoHandedGripMode::Mode1) {
             // mode 1 extra calculation for past 3 frames, annoying but only if mode 1 is in use
             // ReSharper disable once CppExpressionWithoutSideEffects
             isOffhandMovedFastAway();
@@ -518,13 +521,17 @@ namespace frik
             return;
         }
 
-        if (!g_config.enableGripButtonToGrap) {
-            // Mode 1,2 grab when close to barrel
+        switch (mode) {
+        case TwoHandedGripMode::Mode1:
+        case TwoHandedGripMode::Mode2:
             setOffhandGripping(true);
-        }
-        if (!g_frik.isPipboyOn() && vrcf::VRControllers.check(g_config.offhandGripBinding)) {
-            // Mode 3,4 grab when pressing grip button
-            setOffhandGripping(true);
+            break;
+        case TwoHandedGripMode::Mode3:
+        case TwoHandedGripMode::Mode4:
+            if (!g_frik.isPipboyOn() && vrcf::VRControllers.check(g_config.offhandGripBinding)) {
+                setOffhandGripping(true);
+            }
+            break;
         }
     }
 

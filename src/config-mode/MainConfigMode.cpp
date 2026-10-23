@@ -138,7 +138,7 @@ namespace frik
                 { TwoHandedGripMode::Mode3, "ui-config-main\\btn-grip-mode-3.nif" },
                 { TwoHandedGripMode::Mode4, "ui-config-main\\btn-grip-mode-4.nif" } };
             const auto twoHandedGripModeBtn = std::make_shared<UIMultiStateToggleButton<TwoHandedGripMode>>(gripModesMap);
-            twoHandedGripModeBtn->setState(getTwoHandedGripMode());
+            twoHandedGripModeBtn->setState(g_config.twoHandedGripMode);
             twoHandedGripModeBtn->setOnStateChangedHandler([this](UIWidget*, const TwoHandedGripMode mode) {
                 updateTwoHandedGripMode(mode);
             });
@@ -270,64 +270,25 @@ namespace frik
     }
 
     /**
-     * Get the mode from the distinct flags.
-     * It's legacy code that I don't want to change to just use grip mode everywhere.
-     */
-    TwoHandedGripMode MainConfigMode::getTwoHandedGripMode()
-    {
-        if (!g_config.enableGripButtonToGrap && !g_config.onePressGripButton && !g_config.enableGripButtonToLetGo) {
-            return TwoHandedGripMode::Mode1;
-        }
-        if (!g_config.enableGripButtonToGrap && !g_config.onePressGripButton && g_config.enableGripButtonToLetGo) {
-            return TwoHandedGripMode::Mode2;
-        }
-        if (g_config.enableGripButtonToGrap && g_config.onePressGripButton && !g_config.enableGripButtonToLetGo) {
-            return TwoHandedGripMode::Mode3;
-        }
-        if (g_config.enableGripButtonToGrap && !g_config.onePressGripButton && g_config.enableGripButtonToLetGo) {
-            return TwoHandedGripMode::Mode4;
-        }
-        return TwoHandedGripMode::Mode3;
-    }
-
-    /**
-     * Set the distinct two-handed grip flags depending on the mode.
-     * And save the config.
+     * Announce the selected grip mode and save it through the shared config setting.
      */
     void MainConfigMode::updateTwoHandedGripMode(const TwoHandedGripMode mode)
     {
         switch (mode) {
         case TwoHandedGripMode::Mode1:
             f4vr::showNotification("Mode 1: Offhand automatically snap to the barrel when in range, move hand quickly to let go");
-            g_config.enableGripButtonToGrap = false;
-            g_config.onePressGripButton = false;
-            g_config.enableGripButtonToLetGo = false;
             break;
         case TwoHandedGripMode::Mode2:
             f4vr::showNotification("Mode 2: Offhand automatically snap to the barrel when in range, press grip button to let go");
-            g_config.enableGripButtonToGrap = false;
-            g_config.onePressGripButton = false;
-            g_config.enableGripButtonToLetGo = true;
             break;
         case TwoHandedGripMode::Mode3:
             f4vr::showNotification("Mode 3: Hold grip button to snap to the barrel, release grib button to let go");
-            g_config.enableGripButtonToGrap = true;
-            g_config.onePressGripButton = true;
-            g_config.enableGripButtonToLetGo = false;
             break;
         case TwoHandedGripMode::Mode4:
             f4vr::showNotification("Mode 4: Press grip button to snap to the barrel, press grib button again to let go");
-            g_config.enableGripButtonToGrap = true;
-            g_config.onePressGripButton = false;
-            g_config.enableGripButtonToLetGo = true;
             break;
-        default:
-            // Not expected - reset to standard sticky grip
-            g_config.enableGripButtonToGrap = false;
-            g_config.onePressGripButton = false;
-            g_config.enableGripButtonToLetGo = false;
         }
-        g_config.save();
+        g_config.setTwoHandedGripMode(mode);
     }
 
     void MainConfigMode::openPipboyConfigUI()
