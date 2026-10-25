@@ -13,6 +13,7 @@
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
+#include "modsconfig/ModsConfigVRApi.h"
 #include "perf/Perf.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/HandPose.h"
@@ -66,6 +67,52 @@ namespace frik
 
         // the framework registers the tool once the game has loaded, with everything set up here
         devbench::setupDevBenchTool();
+
+        registerModsConfigEntry();
+    }
+
+    /**
+     * Adds FRIK's main config to the quick launch section of Mods Config VR's front page. The framework connects the
+     * client at kPostLoad, and nothing is called while Mods Config VR is not installed. A press asks the main config to
+     * open in the next frame update: the press runs while the menu draws its panel. The menu is minimized while a config
+     * of FRIK is open, and shown again as the last of them closes. One opens only while the skeleton is ready.
+     */
+    void FRIK::registerModsConfigEntry()
+    {
+        using namespace mods_config::api;
+        ModsConfigVRClient::get().addQuickLaunch("openMainConfig",
+            { .text = "FRIK Configuration",
+                .help = "Opens FRIK's own configuration in the world: body height, arm length, and the weapon and Pip-Boy positions.",
+                .buttonText = {} },
+            [this](const Params&) {
+                if (!isSkeletonReady()) {
+                    return FunctionResult{ .done = false, .message = "FRIK's configuration opens once a game is loaded." };
+                }
+                _mainConfigOpenRequested = true;
+                _openedFromModsConfig = true;
+                ModsConfigVRClient::get().minimizeMenu();
+                return FunctionResult{ .done = true, .message = {} };
+            });
+    }
+
+    /**
+     * Opens the main config that Mods Config VR asked for, unless a config of FRIK is open already, as FRIK builds
+     * another main config UI on every open. Shows Mods Config VR's menu again once no config of FRIK is open, after one
+     * was opened from it: the Pip-Boy and weapon configs open from the main config, which closes as they do.
+     */
+    void FRIK::updateModsConfigEntry()
+    {
+        if (_mainConfigOpenRequested) {
+            _mainConfigOpenRequested = false;
+            if (!api::core::isConfigOpen()) {
+                _mainConfigMode.openConfigMode();
+            }
+            return;
+        }
+        if (_openedFromModsConfig && !api::core::isConfigOpen()) {
+            _openedFromModsConfig = false;
+            mods_config::api::ModsConfigVRClient::get().restoreMenu();
+        }
     }
 
     /**
@@ -165,6 +212,8 @@ namespace frik
         api::core::invokeFramePhase(FramePhase::FrameBegin);
 
         onFrameUpdateInner();
+
+        updateModsConfigEntry();
 
         // always paired with FrameBegin, even when the inner update returned early
         api::core::invokeFramePhase(FramePhase::FrameEnd);

@@ -11,6 +11,8 @@ Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 
 Press and hold both the `Sprint` and `Favorites` buttons until the UI is shown.
 
+With Mods Config VR installed, that gesture opens its menu instead: open FRIK's configuration from **FRIK Configuration** in its front page's Quick launch section. The menu is minimized while FRIK's configuration is open, and comes back when it closes.
+
 ### Play Seated Mode
 
 - Toggle this if you are playing seated for the best body position.
