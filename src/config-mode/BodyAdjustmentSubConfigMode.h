@@ -1,7 +1,8 @@
 #pragma once
 
-#include "vrui/UIButton.h"
+#include "vrui/UIButtonPanel.h"
 #include "vrui/UIContainer.h"
+#include "vrui/UITextPanel.h"
 #include "vrui/UIToggleGroupContainer.h"
 
 namespace frik
@@ -39,6 +40,7 @@ namespace frik
         void toggleHideHeadEquipment(bool hide);
         void closeConfig();
         void handleAdjustment() const;
+        void appendFooterRows(std::vector<vrui::TextRow>& rows) const;
         static void handleHeightAdjustment();
         static void handleForwardAdjustment();
         static void handleArmsLengthAdjustment();
@@ -57,12 +59,7 @@ namespace frik
         std::shared_ptr<vrui::UIContainer> _configUI;
 
         std::shared_ptr<vrui::UIToggleGroupContainer> _row2Container;
-        std::shared_ptr<vrui::UIButton> _saveBtn;
-        std::shared_ptr<vrui::UIButton> _resetBtn;
-        std::shared_ptr<vrui::UIWidget> _noneMsg;
-        std::shared_ptr<vrui::UIWidget> _heightMsg;
-        std::shared_ptr<vrui::UIWidget> _forwardMsg;
-        std::shared_ptr<vrui::UIWidget> _armsLengthMsg;
-        std::shared_ptr<vrui::UIWidget> _vrScaleMsg;
+        std::shared_ptr<vrui::UIButtonPanel> _saveBtn;
+        std::shared_ptr<vrui::UIButtonPanel> _resetBtn;
     };
 }

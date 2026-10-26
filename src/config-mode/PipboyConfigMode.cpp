@@ -1,6 +1,7 @@
 #include "PipboyConfigMode.h"
 
 #include "Config.h"
+#include "ConfigUIStyle.h"
 #include "FRIK.h"
 #include "common/MatrixUtils.h"
 #include "f4vr/F4VRUtils.h"
@@ -21,9 +22,6 @@ namespace frik
 {
     // owner key for suppressing the thumbstick from the game while adjusting, so it doesn't also drive the Pipboy menus
     constexpr std::string_view PIPBOY_CONFIG_SUPPRESS_KEY = "frik.pipboy_config";
-
-    // the footer's controller icons, larger than a span's default so the marks on them read
-    constexpr BindingPromptStyle FOOTER_PROMPT_STYLE{ .imageHeight = 3.0f };
 
     /**
      * On release, detach the UI from the global manager if it is still attached.
@@ -289,17 +287,19 @@ namespace frik
             break;
         case PipboyAdjustTarget::ScreenAdjust:
             rows.push_back({ .spans = { { .text = "ADJUST:  " } } });
-            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Primary) }, FOOTER_PROMPT_STYLE);
+            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Primary) }, CONFIG_FOOTER_PROMPT_STYLE);
             rows.back().spans.push_back({ .text = " / " });
-            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Offhand) }, FOOTER_PROMPT_STYLE);
+            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Offhand) }, CONFIG_FOOTER_PROMPT_STYLE);
             rows.push_back({ .spans = { { .text = "+ROTATION: " } } });
-            appendBindingPrompt(rows.back().spans, { .hand = vrcf::Hand::Offhand, .type = vrcf::ActivationType::HoldDown, .button = vr::k_EButton_Grip }, FOOTER_PROMPT_STYLE);
+            appendBindingPrompt(rows.back().spans,
+                { .hand = vrcf::Hand::Offhand, .type = vrcf::ActivationType::HoldDown, .button = vr::k_EButton_Grip },
+                CONFIG_FOOTER_PROMPT_STYLE);
             rows.back().spans.push_back({ .text = "  +SCALE: " });
-            appendBindingPrompt(rows.back().spans, { .hand = vrcf::Hand::Offhand, .type = vrcf::ActivationType::HoldDown, .button = vr::k_EButton_A }, FOOTER_PROMPT_STYLE);
+            appendBindingPrompt(rows.back().spans, { .hand = vrcf::Hand::Offhand, .type = vrcf::ActivationType::HoldDown, .button = vr::k_EButton_A }, CONFIG_FOOTER_PROMPT_STYLE);
             break;
         case PipboyAdjustTarget::ModelScale:
             rows.push_back({ .spans = { { .text = "ADJUST:  " } } });
-            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Primary) }, FOOTER_PROMPT_STYLE);
+            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Primary) }, CONFIG_FOOTER_PROMPT_STYLE);
             break;
         }
     }
@@ -451,7 +451,7 @@ namespace frik
         // is attached, and the UI is detached before this config mode goes.
         const auto footer = std::make_shared<UITextPanel>("Footer");
         footer->setStyle(F4VR_PANEL_STYLE);
-        footer->setTextHeight(0.22f);
+        footer->setTextHeight(CONFIG_FOOTER_TEXT_HEIGHT);
         footer->setContent([this](std::vector<TextRow>& rows) {
             appendFooterRows(rows);
         });

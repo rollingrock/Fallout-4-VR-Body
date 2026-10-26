@@ -1,10 +1,10 @@
 # FRIK main config-UI sprites
 
-Source PNGs for FRIK's in-VR **main configuration menu** and its **body-adjustment
-sub-config**. One PNG per sprite — the buttons (open body/pipboy/weapon config, dampen
-hands, two-handed grip modes, play seated, hide head, and the body/forward/arms-length/
-VR-scale toggles), the message lines, and the menu titles. Re-skin any of them by editing
-the PNG and re-running the pack command below.
+Source PNGs for FRIK's in-VR **main configuration menu**. One PNG per sprite — the buttons
+(open body/pipboy/weapon config, dampen hands, two-handed grip modes), the message lines,
+and the menu title. Re-skin any of them by editing the PNG and re-running the pack command
+below. The body-adjustment sub-config is built from vrui panels instead; its icons are in
+[ui-config-body](../ui-config-body/README.md).
 
 ## Pack command
 
@@ -21,8 +21,7 @@ python external\F4VR-CommonFramework\nif-tools\vrui_atlas.py pack --name ui-conf
 
 Each PNG's file name becomes its `.nif` name — the same name passed to `UIButton` /
 `UIWidget` in code (e.g. `btn-body-config.png` → `FRIK\ui-config-main\btn-body-config.nif`,
-referenced from [MainConfigMode.cpp](../../../src/config-mode/MainConfigMode.cpp) and
-[BodyAdjustmentSubConfigMode.cpp](../../../src/config-mode/BodyAdjustmentSubConfigMode.cpp)).
+referenced from [MainConfigMode.cpp](../../../src/config-mode/MainConfigMode.cpp)).
 So renaming a PNG here means updating the matching string in the source. Full options and
 the reverse (`unpack`) are in
 [nif-tools/README.md](../../../external/F4VR-CommonFramework/nif-tools/README.md).
