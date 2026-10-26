@@ -7,6 +7,7 @@
 - Config: An invalid controller binding is reported in FRIK.log with the key or word that is wrong and what fits there. A typo is no longer skipped: `duration = "1.2s"` is invalid, where it lost its duration, and FRIK uses the default binding until it is fixed.
 - Config: Removed the move of config files from the pre-v0.73 location.
 - Config menu: A finger presses a button only from its front, while you look at it.
+- Pip-Boy: Removed the long-press of the primary thumbstick (`kEnterPipboyConfigButton`) that opened the Pip-Boy config. Open it from the main config menu.
 - Log: The log level is written as a word.
 - API: A config override is owned by the mod that set it.
 - API: `setConfigValueOverride` refuses a value of the wrong type; `getConfigValue` returns TOML text (`71.0`, `false`).

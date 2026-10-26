@@ -180,8 +180,6 @@ kPipboyOpenButton = { hand = "offhand", type = "tap", button = "trigger" }
 kPipboyCloseButton = { hand = "offhand", type = "tap", button = "grip" }
 # Controller input that must be held to move the holo Pipboy screen in place (see iDampenPipboyScreenMode = 2)
 kHoldPipboyScreenButton = { hand = "offhand", type = "hold", button = "grip", duration = 0.3 }
-# Controller input that enters the wrist-Pipboy configuration mode (duration is how long it is held, in seconds)
-kEnterPipboyConfigButton = { hand = "primary", type = "longpress", button = "thumbstick", duration = 2.0 }
 
 # When using touch method to operate Pipboy it's the distance of the primary hand from
 # Pipboy that will change hand pose to pointing. Set to 0 to disable. (default: 12)

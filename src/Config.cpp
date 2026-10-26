@@ -422,15 +422,6 @@ namespace frik
                 .button = vr::k_EButton_Grip,
                 .duration = 0.3f,
             });
-        enterPipboyConfigBinding = getInputBindingValue(config,
-            CONFIG_SECTION_MAIN,
-            "kEnterPipboyConfigButton",
-            vrcf::InputBinding{
-                .hand = vrcf::Hand::Primary,
-                .type = vrcf::ActivationType::LongPress,
-                .button = vr::k_EButton_SteamVR_Touchpad,
-                .duration = 2.0f,
-            });
 
         // Torch/Flashlight
         removeFlashlight = mainSection["bRemoveFlashlight"].value_or(false);

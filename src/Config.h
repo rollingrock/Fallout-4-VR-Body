@@ -196,8 +196,6 @@ namespace frik
         vrcf::InputBinding pipboyCloseBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
         // Controller input that must be held to move the holo Pipboy screen (see DampenPipboyScreenMode::HoldInPlace).
         vrcf::InputBinding holdPipboyScreenBinding;
-        // Controller input that enters the wrist-Pipboy configuration mode (long-press the favorites button).
-        vrcf::InputBinding enterPipboyConfigBinding;
 
         // Pipboy Torch/Flashlight
         bool removeFlashlight = false;

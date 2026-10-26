@@ -51,7 +51,7 @@ Your fingers curl dynamically from the controller instead of snapping between fi
 
 ![pipboy config mode](assets/pipboy-config-mode.jpg)
 
-- **Activation**: Press and hold the `Favorites` button with the Pip-Boy open
+- **Activation**: Open it from the main configuration menu
 - **To Cancel Changes**: Exit the Pip-Boy without using the UI
 - **To Save Changes**: Use the UI save button
 

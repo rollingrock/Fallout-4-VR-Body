@@ -52,11 +52,6 @@ namespace frik
             return;
         }
 
-        // Enter Pipboy Config Mode by long-pressing the configured binding (favorites button by default).
-        if (!isPipBoyConfigModeActive() && f4vr::isPipboyOnWrist() && g_frik.isPipboyOn() && vrcf::VRControllers.check(g_config.enterPipboyConfigBinding)) {
-            enterPipboyConfigMode();
-        }
-
         if (!isPipBoyConfigModeActive()) {
             return;
         }
