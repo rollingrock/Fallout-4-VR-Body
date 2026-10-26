@@ -1,27 +1,25 @@
-# FRIK main config-UI sprites
+# FRIK main config-UI icons
 
-Source PNGs for FRIK's in-VR **main configuration menu**. One PNG per sprite — the buttons
-(open body/pipboy/weapon config, dampen hands, two-handed grip modes), the message lines,
-and the menu title. Re-skin any of them by editing the PNG and re-running the pack command
-below. The body-adjustment sub-config is built from vrui panels instead; its icons are in
-[ui-config-body](../ui-config-body/README.md).
+Source PNGs for the icons on FRIK's in-VR **main configuration menu**. The UI is built from vrui
+panels ([MainConfigMode.cpp](../../../src/config-mode/MainConfigMode.cpp)): each button's label is
+text drawn at runtime, so these images hold only the icon, white on transparent, for the panel's
+colour to read through.
 
-## Pack command
+| Icon | Used by |
+|------|---------|
+| `body-config` | Open the body adjustment sub-config |
+| `dampen-hands` | Toggle dampening the hands' movement |
+| `grip-mode` | All four states of the two-handed grip mode toggle (the mode is its bottom line of text) |
+| `pipboy-config` | Open the Pipboy config |
+| `weapon-config` | Open the weapon position config |
 
-Bin-packs every PNG in this folder into a single `ui-config-main.DDS` atlas plus one
-ready-to-use `<sprite>.nif` per image, written into FRIK's deployable mod tree
-(`Textures\FRIK\ui-config-main.DDS` + `Meshes\FRIK\ui-config-main\<sprite>.nif`):
+Open config file / help wiki / exit use the framework's shared icons under `Textures\FRIK\f4cf\vrui\`,
+and the footer and selfie prompts the controller icons under `Textures\FRIK\f4cf\bindings\`. A button
+another mod adds through FRIK's API is the NIF that mod registers.
 
-```
-python external\F4VR-CommonFramework\nif-tools\vrui_atlas.py pack --name ui-config-main --texture-subpath FRIK data/Resources/ui-config-main --output data\mod
-```
+## Deploying
 
-`--texture-subpath FRIK` is both the in-game texture path baked into every nif
-(`Textures\FRIK\ui-config-main.DDS`) and the subfolder the files are written under.
-
-Each PNG's file name becomes its `.nif` name — the same name passed to `UIButton` /
-`UIWidget` in code (e.g. `btn-body-config.png` → `FRIK\ui-config-main\btn-body-config.nif`,
-referenced from [MainConfigMode.cpp](../../../src/config-mode/MainConfigMode.cpp)).
-So renaming a PNG here means updating the matching string in the source. Full options and
-the reverse (`unpack`) are in
-[nif-tools/README.md](../../../external/F4VR-CommonFramework/nif-tools/README.md).
+Each PNG ships as `data\mod\Textures\FRIK\vrui\main\<icon>.dds`, the path the code passes to
+`setImage` (`vrui\\main\\<icon>.dds`, resolved under `Textures\FRIK\`). Export it in the format the
+framework's panel icons use: 140x100, **uncompressed 32-bit BGRA, no mipmaps** (see the vrui
+[Assets](../../../external/F4VR-CommonFramework/src/vrui/README.md#assets) notes).

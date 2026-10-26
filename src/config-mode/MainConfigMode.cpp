@@ -1,12 +1,16 @@
 #include "MainConfigMode.h"
 
+#include "ConfigUIStyle.h"
 #include "FRIK.h"
 #include "perf/Perf.h"
 #include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
+#include "vrui/UIButton.h"
+#include "vrui/UIButtonPanel.h"
 #include "vrui/UIManager.h"
-#include "vrui/UIMultiStateToggleButton.h"
-#include "vrui/UIToggleGroupContainer.h"
+#include "vrui/UIMultiStateToggleButtonPanel.h"
+#include "vrui/UITextPanel.h"
+#include "vrui/UIToggleButtonPanel.h"
 
 using namespace vrui;
 using namespace common;
@@ -129,14 +133,20 @@ namespace frik
      */
     void MainConfigMode::createMainConfigUI()
     {
-        const auto openBodyConfigBtn = std::make_shared<UIButton>("ui-config-main\\btn-body-config.nif");
-        openBodyConfigBtn->setOnPressHandler([this](UIWidget*) {
+        const auto openBodyConfigBtn = std::make_shared<UIButtonPanel>("BodyConfig");
+        openBodyConfigBtn->setTopText("BODY");
+        openBodyConfigBtn->setImage("vrui\\main\\body-config.dds");
+        openBodyConfigBtn->setBottomText("CONFIG");
+        openBodyConfigBtn->setOnPressHandler([this](UIButtonPanel*) {
             openBodyAdjustmentSubConfigUI();
         });
 
-        const auto dampenHandsBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-dampen-hands.nif");
+        const auto dampenHandsBtn = std::make_shared<UIToggleButtonPanel>("DampenHands");
+        dampenHandsBtn->setTopText("DAMPEN");
+        dampenHandsBtn->setImage("vrui\\main\\dampen-hands.dds");
+        dampenHandsBtn->setBottomText("HANDS");
         dampenHandsBtn->setToggleState(g_config.dampenHands);
-        dampenHandsBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+        dampenHandsBtn->setOnToggleHandler([this](UIToggleButtonPanel*, const bool enabled) {
             g_config.saveDampenHands(enabled);
         });
 
@@ -146,13 +156,17 @@ namespace frik
 
         // two-handed grip mode is part of weapon positioning, hide it when that feature is disabled via API
         if (g_frik.isWeaponPositionEnabled()) {
-            const auto gripModesMap = std::map<TwoHandedGripMode, std::string>{ { TwoHandedGripMode::Mode1, "ui-config-main\\btn-grip-mode-1.nif" },
-                { TwoHandedGripMode::Mode2, "ui-config-main\\btn-grip-mode-2.nif" },
-                { TwoHandedGripMode::Mode3, "ui-config-main\\btn-grip-mode-3.nif" },
-                { TwoHandedGripMode::Mode4, "ui-config-main\\btn-grip-mode-4.nif" } };
-            const auto twoHandedGripModeBtn = std::make_shared<UIMultiStateToggleButton<TwoHandedGripMode>>(gripModesMap);
+            // one icon for every mode; the bottom line names it
+            const auto gripMode = [](const char* mode) {
+                return UIButtonPanelContent{ .topText = "2 HANDED", .bottomText = mode, .image = "vrui\\main\\grip-mode.dds" };
+            };
+            const auto twoHandedGripModeBtn = std::make_shared<UIMultiStateToggleButtonPanel<TwoHandedGripMode>>("TwoHandedGripMode",
+                std::map<TwoHandedGripMode, UIButtonPanelContent>{ { TwoHandedGripMode::Mode1, gripMode("GRIP MODE 1") },
+                    { TwoHandedGripMode::Mode2, gripMode("GRIP MODE 2") },
+                    { TwoHandedGripMode::Mode3, gripMode("GRIP MODE 3") },
+                    { TwoHandedGripMode::Mode4, gripMode("GRIP MODE 4") } });
             twoHandedGripModeBtn->setState(g_config.twoHandedGripMode);
-            twoHandedGripModeBtn->setOnStateChangedHandler([this](UIWidget*, const TwoHandedGripMode mode) {
+            twoHandedGripModeBtn->setOnStateChangedHandler([this](UIMultiStateToggleButtonPanel<TwoHandedGripMode>*, const TwoHandedGripMode mode) {
                 updateTwoHandedGripMode(mode);
             });
             row1Container->addElement(twoHandedGripModeBtn);
@@ -164,19 +178,26 @@ namespace frik
 
         // hide a sub-config button when its feature is disabled via API as its config is not relevant
         if (g_frik.isPipboyEnabled()) {
-            const auto openPipboyConfigBtn = std::make_shared<UIButton>("ui-config-main\\btn-pipboy-config.nif");
-            openPipboyConfigBtn->setOnPressHandler([this](UIWidget*) {
+            const auto openPipboyConfigBtn = std::make_shared<UIButtonPanel>("PipboyConfig");
+            openPipboyConfigBtn->setTopText("PIPBOY");
+            openPipboyConfigBtn->setImage("vrui\\main\\pipboy-config.dds");
+            openPipboyConfigBtn->setBottomText("CONFIG");
+            openPipboyConfigBtn->setOnPressHandler([this](UIButtonPanel*) {
                 openPipboyConfigUI();
             });
             secondRowButtons.push_back(openPipboyConfigBtn);
         }
         if (g_frik.isWeaponPositionEnabled()) {
-            const auto openWeaponAdjustConfigBtn = std::make_shared<UIButton>("ui-config-main\\btn-weapon-adjust.nif");
-            openWeaponAdjustConfigBtn->setOnPressHandler([this](UIWidget*) {
+            const auto openWeaponAdjustConfigBtn = std::make_shared<UIButtonPanel>("WeaponConfig");
+            openWeaponAdjustConfigBtn->setTopText("WEAPON");
+            openWeaponAdjustConfigBtn->setImage("vrui\\main\\weapon-config.dds");
+            openWeaponAdjustConfigBtn->setBottomText("CONFIG");
+            openWeaponAdjustConfigBtn->setOnPressHandler([this](UIButtonPanel*) {
                 openWeaponAdjustConfigUI();
             });
             secondRowButtons.push_back(openWeaponAdjustConfigBtn);
         }
+        // other mods register their button as a NIF through the API, so it stays a NIF widget beside the panels
         for (const auto& buttonData : _externalModConfigButtonDataList) {
             const auto openExtModConfigBtn = std::make_shared<UIButton>(buttonData.buttonIconNifPath);
             openExtModConfigBtn->setOnPressHandler([this, buttonData](UIWidget*) {
@@ -185,18 +206,26 @@ namespace frik
             secondRowButtons.push_back(openExtModConfigBtn);
         }
 
-        const auto advancedConfigBtn = std::make_shared<UIButton>("ui-common\\btn-advanced-config.nif");
-        advancedConfigBtn->setOnPressHandler([](UIWidget*) {
+        const auto advancedConfigBtn = std::make_shared<UIButtonPanel>("AdvancedConfig");
+        advancedConfigBtn->setTopText("OPEN");
+        advancedConfigBtn->setImage("f4cf\\vrui\\advanced-config.DDS");
+        advancedConfigBtn->setBottomText("CONFIG FILE");
+        advancedConfigBtn->setOnPressHandler([](UIButtonPanel*) {
             openAdvancedConfig();
         });
 
-        const auto helpWikiBtn = std::make_shared<UIButton>("ui-common\\btn-help-wiki.nif");
-        helpWikiBtn->setOnPressHandler([](UIWidget*) {
+        const auto helpWikiBtn = std::make_shared<UIButtonPanel>("HelpWiki");
+        helpWikiBtn->setTopText("OPEN");
+        helpWikiBtn->setImage("f4cf\\vrui\\help-wiki.DDS");
+        helpWikiBtn->setBottomText("HELP WIKI");
+        helpWikiBtn->setOnPressHandler([](UIButtonPanel*) {
             openHelpWiki();
         });
 
-        const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-exit.nif");
-        exitBtn->setOnPressHandler([this](UIWidget*) {
+        const auto exitBtn = std::make_shared<UIButtonPanel>("Exit");
+        exitBtn->setImage("f4cf\\vrui\\exit.DDS");
+        exitBtn->setBottomText("EXIT");
+        exitBtn->setOnPressHandler([this](UIButtonPanel*) {
             closeConfigMode();
         });
 
@@ -205,14 +234,28 @@ namespace frik
         row3Container->addElement(helpWikiBtn);
         row3Container->addElement(exitBtn);
 
-        const auto mainMsg = std::make_shared<UIWidget>("ui-config-main\\msg-main.nif");
-        const auto toggleSelfieMsg = std::make_shared<UIWidget>("ui-config-main\\msg-toggle-selfie.nif");
-
         const auto messagesContainer = std::make_shared<UIContainer>("Messages", UIContainerLayout::HorizontalCenter, 0.3f);
-        messagesContainer->addElement(mainMsg);
-        messagesContainer->addElement(toggleSelfieMsg);
 
-        const auto header = std::make_shared<UIWidget>("ui-config-main\\title-main.nif", 1.7f);
+        // the tip names the open-config binding, so there is nothing to tell while it is turned off
+        if (g_config.openMainConfigBinding.isEnabled()) {
+            const auto footer = std::make_shared<UITextPanel>("Footer");
+            footer->setStyle(F4VR_PANEL_STYLE);
+            footer->setTextHeight(CONFIG_FOOTER_TEXT_HEIGHT);
+            footer->setContent([](std::vector<TextRow>& rows) {
+                rows.emplace_back("TIP: OPEN THIS CONFIG");
+                rows.push_back({ .spans = { { .text = "WITH  " } } });
+                appendBindingPrompt(rows.back().spans, g_config.openMainConfigBinding, CONFIG_FOOTER_PROMPT_STYLE);
+            });
+            messagesContainer->addElement(footer);
+        }
+        messagesContainer->addElement(createToggleSelfieMsg());
+
+        const auto header = std::make_shared<UITextPanel>("Title");
+        header->setStyle(UIPanelStyle{ .color = F4VR_PANEL_STYLE.color });
+        header->setTextHeight(0.5f);
+        header->setContent([](std::vector<TextRow>& rows) {
+            rows.emplace_back("FRIK: CONFIGURATION", std::nullopt, render::TextDecoration::Underline);
+        });
 
         _configUI = std::make_shared<UIContainer>("MainConfig", UIContainerLayout::VerticalUp, 0.35f, 1.8f);
         _configUI->addElement(messagesContainer);

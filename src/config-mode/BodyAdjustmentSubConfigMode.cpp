@@ -165,32 +165,10 @@ namespace frik
             appendFooterRows(rows);
         });
 
-        // The selfie toggle works on every target, so it has its own box beside the footer: the label on two
-        // lines, and the binding's icon to its right, centred on them.
-        const auto selfieLabel = std::make_shared<UITextPanel>("Label");
-        selfieLabel->setStyle(UIPanelStyle{ .color = F4VR_PANEL_STYLE.color, .padding = UIPadding::all(0.0f) });
-        selfieLabel->setTextHeight(CONFIG_FOOTER_TEXT_HEIGHT);
-        selfieLabel->setContent([](std::vector<TextRow>& rows) {
-            rows.emplace_back("TOGGLE");
-            rows.emplace_back("SELFIE");
-        });
-
-        const auto selfieButton = std::make_shared<UITextPanel>("Button");
-        selfieButton->setStyle(UIPanelStyle{ .color = F4VR_PANEL_STYLE.color, .padding = UIPadding::all(0.0f) });
-        selfieButton->setTextHeight(CONFIG_FOOTER_TEXT_HEIGHT);
-        selfieButton->setContent([](std::vector<TextRow>& rows) {
-            rows.push_back({});
-            appendBindingPrompt(rows.back().spans, g_config.toggleSelfieBinding, CONFIG_FOOTER_PROMPT_STYLE);
-        });
-
-        const auto selfieMsg = std::make_shared<UIContainer>("SelfieMsg", UIContainerLayout::HorizontalCenter, 0.3f);
-        selfieMsg->setBoxStyle(F4VR_PANEL_STYLE);
-        selfieMsg->addElement(selfieLabel);
-        selfieMsg->addElement(selfieButton);
-
+        // the selfie toggle works on every target, so it has its own box beside the footer
         const auto row4Container = std::make_shared<UIContainer>("Row4", UIContainerLayout::HorizontalCenter, 0.3f);
         row4Container->addElement(footer);
-        row4Container->addElement(selfieMsg);
+        row4Container->addElement(createToggleSelfieMsg());
 
         const auto header = std::make_shared<UITextPanel>("Title");
         header->setStyle(UIPanelStyle{ .color = F4VR_PANEL_STYLE.color });

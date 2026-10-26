@@ -1,9 +1,12 @@
 #pragma once
 
 #include "vrui/BindingPrompt.h"
+#include "vrui/UIContainer.h"
 
 namespace frik
 {
+    std::shared_ptr<vrui::UIContainer> createToggleSelfieMsg();
+
     /**
      * Text height of the config screens' footers, the panel under the buttons that says what the
      * selected mode does and which controls drive it.
