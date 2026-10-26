@@ -1,12 +1,14 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "f4sevr/PapyrusNativeFunctions.h"
 
 namespace frik
 {
     constexpr auto BONE_SPHERE_EVEN_NAME = "OnBoneSphereEvent";
+    constexpr auto DEBUG_SPHERE_NODE_NAME = "Sphere01";
 
     enum class BoneSphereEvent : uint8_t
     {
@@ -82,6 +84,19 @@ namespace frik
         void toggleDebugBoneSpheres(bool turnOn) const;
         void toggleDebugBoneSpheresAtBone(std::uint32_t handle, bool turnOn);
 
+        // the registrations as plain values, for the devbench probe
+        struct SphereInfo
+        {
+            std::uint32_t handle;
+            std::string boneName;
+            float radius;
+            bool hasBone;
+            bool debugOn;
+            bool hasDebugSphere;
+        };
+
+        std::vector<SphereInfo> getSphereInfos() const;
+
     private:
         static std::uint32_t registerBoneSphereFunc(F4SEVR::StaticFunctionTag* base, float radius, F4SEVR::BSFixedString bone);
         static std::uint32_t registerBoneSphereOffsetFunc(F4SEVR::StaticFunctionTag* base, float radius, F4SEVR::BSFixedString bone, F4SEVR::VMArray<float> pos);
@@ -94,6 +109,7 @@ namespace frik
 
         void detectBoneSphere();
         void handleDebugBoneSpheres();
+        void detachOrphanDebugSpheres(RE::NiNode* bone) const;
         static RE::NiNode* findBoneNode(const char* name, bool inPlayerTree);
         // the sphere's bone, re-resolved by name when a rebuild dropped it; null while the bone does not exist
         static RE::NiNode* liveBone(BoneSphere& sphere);

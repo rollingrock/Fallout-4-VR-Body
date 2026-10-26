@@ -258,6 +258,15 @@ namespace frik
         }
     }
 
+    std::vector<BoneSpheresHandler::SphereInfo> BoneSpheresHandler::getSphereInfos() const
+    {
+        std::vector<SphereInfo> infos;
+        for (const auto& [handle, sphere] : _boneSphereRegisteredObjects) {
+            infos.push_back({ handle, sphere->boneName, sphere->radius, sphere->bone != nullptr, sphere->turnOnDebugSpheres, sphere->debugSphere != nullptr });
+        }
+        return infos;
+    }
+
     /**
      * Bone sphere detection
      */
@@ -350,6 +359,31 @@ namespace frik
         }
     }
 
+    /**
+     * A skeleton release drops the debug sphere pointers. If the bone outlives the release, the node stays attached with no pointer
+     * left, so nothing can hide or remove it: toggling the spheres off or destroying one then acts only on the new sphere drawn next
+     * to it. Take any debug sphere no registration holds off this bone before attaching a new one.
+     */
+    void BoneSpheresHandler::detachOrphanDebugSpheres(RE::NiNode* bone) const
+    {
+        std::vector<RE::NiAVObject*> orphans;
+        for (const auto& child : bone->children) {
+            if (!child || std::string_view(child->name.c_str()) != DEBUG_SPHERE_NODE_NAME) {
+                continue;
+            }
+            const bool held = std::ranges::any_of(_boneSphereRegisteredObjects | std::views::values, [&](const BoneSphere* s) {
+                return s->debugSphere == child.get();
+            });
+            if (!held) {
+                orphans.push_back(child.get());
+            }
+        }
+        for (const auto orphan : orphans) {
+            logger::info("Bone sphere: removing an orphaned debug sphere from '{}'", bone->name.c_str());
+            bone->DetachChild(orphan);
+        }
+    }
+
     void BoneSpheresHandler::handleDebugBoneSpheres()
     {
         for (const auto& val : _boneSphereRegisteredObjects | std::views::values) {
@@ -360,9 +394,10 @@ namespace frik
             RE::NiNode* sphere = val->debugSphere;
 
             if (val->turnOnDebugSpheres && !val->debugSphere) {
+                detachOrphanDebugSpheres(bone);
                 sphere = f4vr::getClonedNiNodeForNifFileSetName("1x1Sphere.nif");
                 if (sphere) {
-                    sphere->name = RE::BSFixedString("Sphere01");
+                    sphere->name = RE::BSFixedString(DEBUG_SPHERE_NODE_NAME);
 
                     bone->AttachChild(sphere, true);
                     sphere->flags.flags &= 0xfffffffffffffffe;

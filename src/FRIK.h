@@ -43,6 +43,11 @@ namespace frik
             return _weaponPosition.get();
         }
 
+        BoneSpheresHandler& getBoneSpheres()
+        {
+            return _boneSpheres;
+        }
+
         // Number of skeletons built this session; 0 before the first, +1 on every rebuild
         std::uint32_t getSkeletonGeneration() const
         {

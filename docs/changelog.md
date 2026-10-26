@@ -9,6 +9,7 @@
 - Config: `bIgnoreFalloutLondonVR` is honoured before the Fallout London INI swap, so ignoring the mod keeps FRIK on its own INI.
 - API: `getArmChain` returns `false` when no bone of the chain exists instead of `true` with an empty mask.
 - API: `kSkeletonDestroying` is broadcast for every skeleton FRIK created, even one released before its ready event.
+- Papyrus: A debug bone sphere a skeleton rebuild left on its bone is taken off when the sphere is drawn again, so `toggleDebugBoneSpheres(false)` and `DestroyBoneSphere` no longer leave one behind.
 - Config: `setScale` now does what its comment says: `fVrScale` is applied to the game only when it is true (default true).
 - Weapons: Offsets saved or reset in the reposition tool for the rifle version of the Plasma, Pipe, Pipe Bolt-Action, Laser and Institute weapons are stored as that rifle again ("Laser Rifle"), where FRIK loads them from. Since 0.78.2 they were stored under the base name, so a re-saved rifle kept its old position and the save moved the pistol version instead; re-save those rifles once. Resetting a throwable's position now removes its saved offset.
 - Weapons: A left-handed player whose weapon has no left-handed offsets gets its right-handed weapon offset mirrored to the left hand instead of none, so switching handedness no longer resets every weapon. The hand-pose offsets still fall back to none.
