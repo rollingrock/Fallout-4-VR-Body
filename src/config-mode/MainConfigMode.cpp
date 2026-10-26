@@ -25,6 +25,19 @@ namespace frik
     }
 
     /**
+     * Open the body adjustment on its own: the main config holds it (and runs its frame update) but stays hidden, and
+     * closes with it, back to whatever opened it.
+     */
+    void MainConfigMode::openBodyAdjustmentConfigMode()
+    {
+        logger::info("Open body adjustment config by call...");
+        tryCreateMainConfigUI();
+        if (isOpen()) {
+            openBodyAdjustmentSubConfigUI(true);
+        }
+    }
+
+    /**
      * Build the config UI, logging instead of crashing the game when an asset is missing (a papyrus call has no other guard).
      */
     void MainConfigMode::tryCreateMainConfigUI()
@@ -248,14 +261,18 @@ namespace frik
     /**
      * Open the sub-config. visibility is handled on frame update.
      */
-    void MainConfigMode::openBodyAdjustmentSubConfigUI()
+    void MainConfigMode::openBodyAdjustmentSubConfigUI(const bool closeConfigOnClose)
     {
         if (_bodyAdjustmentSubConfig != nullptr) {
             logger::error("Body adjust config class is already initialized");
             return;
         }
-        _bodyAdjustmentSubConfig = std::make_shared<BodyAdjustmentSubConfigMode>([this]() {
-            _bodyAdjustmentSubConfig.reset();
+        _bodyAdjustmentSubConfig = std::make_shared<BodyAdjustmentSubConfigMode>([this, closeConfigOnClose]() {
+            if (closeConfigOnClose) {
+                closeConfigMode();
+            } else {
+                _bodyAdjustmentSubConfig.reset();
+            }
         });
     }
 

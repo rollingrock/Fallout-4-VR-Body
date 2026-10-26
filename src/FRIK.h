@@ -296,6 +296,7 @@ namespace frik
         void releaseSkeleton();
         void registerModsConfigEntry();
         void updateModsConfigEntry();
+        void subscribeToConfigChanges();
         void broadcastSkeletonLifecycle(std::uint32_t messageType) const;
         void broadcastScopeEvents();
         static void updateWorldFinal();
@@ -316,8 +317,16 @@ namespace frik
         bool _skeletonReadyPublished = false;
         std::uint32_t _skeletonGeneration = 0;
 
-        // the main config was asked to open from Mods Config VR's quick launch entry, and opens in the next frame update
-        bool _mainConfigOpenRequested = false;
+        // a config of FRIK that Mods Config VR asked to open, which opens in the next frame update
+        enum class ModsConfigOpenRequest : std::uint8_t
+        {
+            None,
+            MainConfig,
+            BodyAdjustment,
+            PipboyConfig,
+        };
+
+        ModsConfigOpenRequest _modsConfigOpenRequest = ModsConfigOpenRequest::None;
         // a config of FRIK was opened from Mods Config VR, whose menu is shown again as the last of them closes
         bool _openedFromModsConfig = false;
 

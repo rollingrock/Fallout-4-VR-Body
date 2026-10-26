@@ -154,14 +154,43 @@ namespace frik
     void Pipboy::swapModel()
     {
         g_config.toggleIsHoloPipboy();
+        reloadModel();
+    }
+
+    /**
+     * Replace the on-wrist Pipboy model with the one of the config's screen type and wrist model, open or closed as it was.
+     * Nothing while no model is replaced (not on wrist, in power armor): the frame update sets one up from the config.
+     */
+    void Pipboy::reloadModel()
+    {
+        if (!_newPipboyRootNifOnlyNode) {
+            return;
+        }
+
         turnPipBoyOnOff(false);
         detachReplacedPipboyRootNif();
         updateSetupPipboyNodes();
         const auto pn = f4vr::getVRPlayerNodes();
-        pn->pipboyRootNIFOnlyNode->local.scale = 1;
+        pn->pipboyRootNIFOnlyNode->local.scale = _isOpen ? 1.0f : 0.0f;
         pn->screenNode->local = g_config.getPipboyOffset();
         _pipboyScreenPrevFrame.clear();
-        turnPipBoyOnOff(true);
+        if (_isOpen) {
+            turnPipBoyOnOff(true);
+        }
+    }
+
+    /**
+     * Set the Pipboy model on the arm to the config's scale. A hidden model keeps its zero scale, and gets the config's
+     * as it is shown.
+     */
+    void Pipboy::applyModelScale() const
+    {
+        if (g_config.hidePipboy || g_config.isFalloutLondonVR) {
+            return;
+        }
+        if (const auto pipboy = getPipboyModelOnArmNode()) {
+            pipboy->local.scale = g_config.pipBoyScale;
+        }
     }
 
     /**

@@ -72,40 +72,71 @@ namespace frik
     }
 
     /**
-     * Adds FRIK's main config to the quick launch section of Mods Config VR's front page. The framework connects the
-     * client at kPostLoad, and nothing is called while Mods Config VR is not installed. A press asks the main config to
-     * open in the next frame update: the press runs while the menu draws its panel. The menu is minimized while a config
-     * of FRIK is open, and shown again as the last of them closes. One opens only while the skeleton is ready.
+     * Adds FRIK's main config to the quick launch section of Mods Config VR's front page, and the functions of the config
+     * spec's buttons that open the body adjustment and the Pip-Boy config. The framework connects the client at kPostLoad,
+     * and nothing is called while Mods Config VR is not installed. A press asks the config to open in the next frame
+     * update: the press runs while the menu draws its panel. The menu is minimized while a config of FRIK is open, and
+     * shown again as the last of them closes. One opens only while the skeleton is ready.
      */
     void FRIK::registerModsConfigEntry()
     {
+        // TODO: Fallout London VR: FRIK switches to FRIK_FOLVR.toml, but the config spec is of FRIK.toml, so its live
+        // settings are not previewed (the framework previews the file FRIK loaded) and a Save writes a file FRIK does not read.
         using namespace mods_config::api;
-        ModsConfigVRClient::get().addQuickLaunch("openMainConfig",
+        const auto requestOpen = [this](const ModsConfigOpenRequest request) {
+            if (!isSkeletonReady()) {
+                return FunctionResult{ .done = false, .message = "FRIK's configuration opens once a game is loaded." };
+            }
+            _modsConfigOpenRequest = request;
+            _openedFromModsConfig = true;
+            ModsConfigVRClient::get().minimizeMenu();
+            return FunctionResult{ .done = true, .message = {} };
+        };
+
+        auto& client = ModsConfigVRClient::get();
+        client.addQuickLaunch("openMainConfig",
             { .text = "FRIK Configuration",
                 .help = "Opens FRIK's own configuration in the world: body height, arm length, and the weapon and Pip-Boy positions.",
                 .buttonText = {} },
-            [this](const Params&) {
-                if (!isSkeletonReady()) {
-                    return FunctionResult{ .done = false, .message = "FRIK's configuration opens once a game is loaded." };
-                }
-                _mainConfigOpenRequested = true;
-                _openedFromModsConfig = true;
-                ModsConfigVRClient::get().minimizeMenu();
-                return FunctionResult{ .done = true, .message = {} };
+            [requestOpen](const Params&) {
+                return requestOpen(ModsConfigOpenRequest::MainConfig);
             });
+
+        client.addFunction("openBodyAdjustmentConfig", [requestOpen](const Params&) {
+            return requestOpen(ModsConfigOpenRequest::BodyAdjustment);
+        });
+
+        client.addFunction("openPipboyScreenAdjustmentConfig", [this, requestOpen](const Params&) {
+            if (!isPipboyEnabled()) {
+                return FunctionResult{ .done = false, .message = "FRIK's Pip-Boy is turned off by another mod." };
+            }
+            return requestOpen(ModsConfigOpenRequest::PipboyConfig);
+        });
     }
 
     /**
-     * Opens the main config that Mods Config VR asked for, unless a config of FRIK is open already, as FRIK builds
-     * another main config UI on every open. Shows Mods Config VR's menu again once no config of FRIK is open, after one
-     * was opened from it: the Pip-Boy and weapon configs open from the main config, which closes as they do.
+     * Opens the config that Mods Config VR asked for, unless a config of FRIK is open already, as FRIK builds another
+     * main config UI on every open. Shows Mods Config VR's menu again once no config of FRIK is open, after one was
+     * opened from it: the Pip-Boy and weapon configs open from the main config, which closes as they do.
      */
     void FRIK::updateModsConfigEntry()
     {
-        if (_mainConfigOpenRequested) {
-            _mainConfigOpenRequested = false;
+        if (_modsConfigOpenRequest != ModsConfigOpenRequest::None) {
+            const auto request = std::exchange(_modsConfigOpenRequest, ModsConfigOpenRequest::None);
             if (!api::core::isConfigOpen()) {
-                _mainConfigMode.openConfigMode();
+                switch (request) {
+                case ModsConfigOpenRequest::MainConfig:
+                    _mainConfigMode.openConfigMode();
+                    break;
+                case ModsConfigOpenRequest::BodyAdjustment:
+                    _mainConfigMode.openBodyAdjustmentConfigMode();
+                    break;
+                case ModsConfigOpenRequest::PipboyConfig:
+                    openPipboyConfigurationModeActive();
+                    break;
+                case ModsConfigOpenRequest::None:
+                    break;
+                }
             }
             return;
         }
@@ -138,6 +169,7 @@ namespace frik
         });
 
         addEmbeddedFlashlightKeywordIfNeeded();
+        subscribeToConfigChanges();
 
         if (isBetterScopesVRModLoaded()) {
             logger::info("BetterScopesVR mod detected, registering for messages...");
@@ -524,6 +556,41 @@ namespace frik
         f4vr::getIniSetting("fPipboyMaxScale:VRPipboy", true)->SetFloat(3.0000);
         f4vr::getIniSetting("fPipboyMinScale:VRPipboy", true)->SetFloat(0.0100f);
         f4vr::getIniSetting("fVrPowerArmorScaleMultiplier:VR", true)->SetFloat(1.0000);
+    }
+
+    /**
+     * Apply again the config values FRIK reads only as it sets something up, when a load of the config changes them:
+     * a change of the file, Mods Config VR's live preview, devbench's set. The rest are read every frame.
+     */
+    void FRIK::subscribeToConfigChanges()
+    {
+        g_config.subscribeForConfigChangedEvent("FRIK.vrScale",
+            { { CONFIG_SECTION_MAIN, "setScale" }, { CONFIG_SECTION_MAIN, "fVrScale" } },
+            [](const std::vector<config::ConfigKey>&) {
+                configureGameVars();
+            });
+
+        g_config.subscribeForConfigChangedEvent("FRIK.pipboyModel",
+            { { CONFIG_SECTION_MAIN, "HoloPipBoyEnabled" }, { CONFIG_SECTION_MAIN, "HoloPipBoyKeepWristModel" } },
+            [this](const std::vector<config::ConfigKey>&) {
+                if (_pipboy) {
+                    _pipboy->reloadModel();
+                }
+            });
+
+        g_config.subscribeForConfigChangedEvent("FRIK.pipboyScale", { { CONFIG_SECTION_MAIN, "PipboyScale" } }, [this](const std::vector<config::ConfigKey>&) {
+            if (_pipboy) {
+                _pipboy->applyModelScale();
+            }
+        });
+
+        g_config.subscribeForConfigChangedEvent("FRIK.hideGeometry",
+            { { CONFIG_SECTION_MAIN, "bHidePlayerHead" }, { CONFIG_SECTION_MAIN, "bHidePlayerSkin" } },
+            [this](const std::vector<config::ConfigKey>&) {
+                if (_skelly) {
+                    _skelly->resetHideGeometry();
+                }
+            });
     }
 
     /**
