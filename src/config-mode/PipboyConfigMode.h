@@ -1,11 +1,11 @@
 #pragma once
 
 #include "skeleton/Skeleton.h"
-#include "vrui/UIButton.h"
+#include "vrui/UIButtonPanel.h"
 #include "vrui/UIContainer.h"
-#include "vrui/UIToggleButton.h"
+#include "vrui/UITextPanel.h"
+#include "vrui/UIToggleButtonPanel.h"
 #include "vrui/UIToggleGroupContainer.h"
-#include "vrui/UIWidget.h"
 
 namespace frik
 {
@@ -26,8 +26,8 @@ namespace frik
      * Allows configuration of the holo-screen position/scale/rotation, the 3rd-person Pipboy model
      * scale, swapping the Pipboy model, "open on glance" and "dampen screen" toggles, and saving.
      * Entered by long-pressing the configured binding while the Pipboy is on the wrist and open, or
-     * from the main config menu. Built on the vrui widget system; the panel is attached above the
-     * primary wand while active and torn down on exit.
+     * from the main config menu. Built from vrui panels (text and icons drawn at runtime, no NIFs); the
+     * UI is attached above the primary wand while active and torn down on exit.
      */
     class PipboyConfigMode
     {
@@ -67,6 +67,7 @@ namespace frik
         static void onOpenWhenLookAtToggled(bool on);
         static void onCloseWhenLookAwayToggled(bool on);
         static void onDampenScreenModeChanged();
+        void appendFooterRows(std::vector<vrui::TextRow>& rows) const;
         RE::NiAVObject* getPipboyModelNode() const;
 
         Skeleton* _skelly;
@@ -79,18 +80,13 @@ namespace frik
         std::shared_ptr<vrui::UIToggleGroupContainer> _adjustModeGroup;
 
         // elements hidden when the Pipboy isn't on the wrist (only model scale stays relevant then)
-        std::shared_ptr<vrui::UIToggleButton> _adjustScreenBtn;
-        std::shared_ptr<vrui::UIButton> _swapModelBtn;
+        std::shared_ptr<vrui::UIToggleButtonPanel> _adjustScreenBtn;
+        std::shared_ptr<vrui::UIButtonPanel> _swapModelBtn;
         std::shared_ptr<vrui::UIContainer> _row2Container;
-        std::shared_ptr<vrui::UIWidget> _notOnWristMsg;
+        std::shared_ptr<vrui::UITextPanel> _notOnWristMsg;
 
-        // save/reset buttons - only visible while actively adjusting a target (exit button is always visible)
-        std::shared_ptr<vrui::UIButton> _saveBtn;
-        std::shared_ptr<vrui::UIButton> _resetBtn;
-
-        // footers - only one visible at a time depending on the current adjust target
-        std::shared_ptr<vrui::UIWidget> _footerMain;
-        std::shared_ptr<vrui::UIWidget> _footerScreenAdjust;
-        std::shared_ptr<vrui::UIWidget> _footerModelScale;
+        // save/reset buttons - only enabled while actively adjusting a target (exit button is always enabled)
+        std::shared_ptr<vrui::UIButtonPanel> _saveBtn;
+        std::shared_ptr<vrui::UIButtonPanel> _resetBtn;
     };
 }

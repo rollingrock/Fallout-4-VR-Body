@@ -26,7 +26,9 @@ namespace frik
     public:
         FRIK()
             : ModBase({ Version::PROJECT, "F4VRBody", Version::NAME, &g_config, Version::PROJECT, 512, true, true })
-        {}
+        {
+            _settings.preloadRendering = true;
+        }
 
         bool isSkeletonReady() const
         {
