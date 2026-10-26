@@ -171,10 +171,12 @@ namespace frik
         addEmbeddedFlashlightKeywordIfNeeded();
         subscribeToConfigChanges();
 
-        if (isBetterScopesVRModLoaded()) {
-            logger::info("BetterScopesVR mod detected, registering for messages...");
+        // F4SE refuses a listener for a sender no loaded plugin is named, so the registration is what detects
+        // BetterScopesVR's plugin, whatever its DLL is called and whether or not its ESP is installed
+        _betterScopesVRLoaded = _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
+        if (_betterScopesVRLoaded) {
+            logger::info("BetterScopesVR mod detected, registered for its messages");
             _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
-            _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
             // legacy path: its near-eye message is the looking-through signal, everything else stays vanilla
             g_scopeAuthority.setProvider(BETTER_SCOPES_VR_MOD_NAME, static_cast<std::uint32_t>(ScopeCapability::PublishesLookingThrough));
         }

@@ -47,16 +47,6 @@ namespace frik
     }
 
     /**
-     * @return true if BetterScopesVR mod is loaded in the game, false otherwise.
-     */
-    bool isBetterScopesVRModLoaded()
-    {
-        auto* dataHandler = RE::TESDataHandler::GetSingleton();
-        const auto mod = dataHandler ? dataHandler->LookupModByName("3dscopes-replacer.esp") : nullptr;
-        return mod != nullptr;
-    }
-
-    /**
      * @return true if Fallout London VR mod is loaded in the game, false otherwise.
      */
     bool isFalloutLondonVRModLoaded()

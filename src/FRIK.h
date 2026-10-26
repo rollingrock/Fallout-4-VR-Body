@@ -107,6 +107,12 @@ namespace frik
             return g_scopeAuthority.isLookingThroughScope(isInScopeMenu());
         }
 
+        // BetterScopesVR's F4SE plugin is loaded: FRIK registered for its messages when the game loaded
+        bool isBetterScopesVRLoaded() const
+        {
+            return _betterScopesVRLoaded;
+        }
+
         // Hide the body root while scoped, unless a provider keeps it visible or the user opted out
         bool shouldHideBodyInScope()
         {
@@ -313,6 +319,7 @@ namespace frik
         // consecutive frames the game reported a power armor state different from _inPowerArmor
         std::uint32_t _powerArmorChangeFrames = 0;
         bool _lookingThroughScopeLastFrame = false;
+        bool _betterScopesVRLoaded = false;
         float _dynamicCameraHeight = 0;
         bool _selfieMode = false;
         std::uint32_t _skeletonInitDelayFrames = 0;

@@ -602,7 +602,7 @@ namespace frik
         firstRowContainerInner->addElement(_throwableUIButton);
         firstRowContainerInner->addElement(backOfHandUIButton);
 
-        if (isBetterScopesVRModLoaded()) {
+        if (g_frik.isBetterScopesVRLoaded()) {
             _betterScopesModeButton = createModeButton("BetterScopes", "BETTER", "better-scopes-vr", "SCOPES VR");
             _betterScopesModeButton->setOnToggleHandler([this](UIToggleButtonPanel*, bool) {
                 _repositionTarget = RepositionTarget::BetterScopes;
