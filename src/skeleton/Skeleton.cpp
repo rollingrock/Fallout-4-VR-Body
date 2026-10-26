@@ -1549,7 +1549,9 @@ namespace frik
         RE::NiPoint3 upperSide = preAimUpperWorldRot.Transpose() * (RE::NiPoint3(0, 1, 0));
         RE::NiPoint3 uloc = arm.shoulder->world.rotate * (upperSide);
         uloc.x = 0;
-        float upperAngle = acosf(MatrixUtils::vec3Dot(MatrixUtils::vec3Norm(uLocalTwist), MatrixUtils::vec3Norm(uloc))) * (uLocalTwist.z > 0 ? 1.f : -1.f);
+        // rounding can put the dot of two unit vectors just past 1 when the roll is near zero, and acos of that is NaN for the whole arm
+        const float upperCos = std::clamp(MatrixUtils::vec3Dot(MatrixUtils::vec3Norm(uLocalTwist), MatrixUtils::vec3Norm(uloc)), -1.0f, 1.0f);
+        float upperAngle = acosf(upperCos) * (uLocalTwist.z > 0 ? 1.f : -1.f);
 
         arm.upper->local.rotate = MatrixUtils::getMatrixFromEulerAngles(-upperAngle, 0, 0) * arm.upper->local.rotate;
 
