@@ -7,6 +7,7 @@
 #include "common/MatrixUtils.h"
 #include "common/Quaternion.h"
 #include "f4vr/F4VRUtils.h"
+#include "skeleton/QuaternionSmoothing.h"
 #include "utils.h"
 
 using namespace common;
@@ -256,7 +257,7 @@ namespace frik
         Quaternion smoothedRotation, targetRotation;
         smoothedRotation.fromMatrix(_smoothedKickLocal.rotate);
         targetRotation.fromMatrix(kick.rotate);
-        smoothedRotation.slerp(1 - rotationFactor, targetRotation);
+        smoothedRotation = slerpToward(smoothedRotation, targetRotation, 1 - rotationFactor);
 
         RE::NiTransform smoothed = kick;
         smoothed.rotate = smoothedRotation.getMatrix();

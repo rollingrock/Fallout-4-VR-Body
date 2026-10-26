@@ -4,6 +4,7 @@
 #include "FRIK.h"
 #include "perf/Perf.h"
 #include "skeleton/HandPose.h"
+#include "skeleton/QuaternionSmoothing.h"
 #include "utils.h"
 #include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
@@ -638,7 +639,7 @@ namespace frik
         Quaternion rq, rt;
         rq.fromMatrix(prevFrame.rotate);
         rt.fromMatrix(pipboyScreen->world.rotate);
-        rq.slerp(1 - g_config.dampenPipboyMultiplier, rt);
+        rq = slerpToward(rq, rt, 1 - g_config.dampenPipboyMultiplier);
         pipboyScreen->world.rotate = rq.getMatrix();
 
         // do a linear interpolation between the position from the previous frame to current frame

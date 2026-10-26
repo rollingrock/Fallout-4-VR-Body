@@ -16,6 +16,7 @@
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "perf/Perf.h"
+#include "skeleton/QuaternionSmoothing.h"
 #include "utils.h"
 
 using namespace common;
@@ -1673,7 +1674,7 @@ namespace frik
         Quaternion rq, rt;
         rq.fromMatrix(prevFrame.rotate);
         rt.fromMatrix(node->world.rotate);
-        rq.slerp(rotationMove, rt);
+        rq = slerpToward(rq, rt, rotationMove);
         node->world.rotate = rq.getMatrix();
 
         // Linear interpolation between the position from the previous frame to current frame
