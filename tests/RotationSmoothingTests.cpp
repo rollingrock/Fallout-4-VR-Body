@@ -67,6 +67,27 @@ TEST_CASE("Rotation smoothing: the same rotation with a flipped sign takes the s
     REQUIRE(angleBetween(aboutZ(0.0f), r) == Catch::Approx(10.0f).margin(0.01));
 }
 
+TEST_CASE("Rotation smoothing: any axis and start match a double-precision slerp on both sides of the linear-blend switch")
+{
+    // a start that is not the identity, and a turn about a tilted axis, so every component is in play
+    const QuatValues from{ 0.8f, 0.2f, -0.5f, 0.2645751f }; // sqrt(0.07) makes it unit
+    const double ax = 0.48, ay = -0.6, az = 0.64; // unit length
+    for (const double degrees : { 0.1, 1.0, 3.5, 3.7, 30.0 }) {
+        const double half = degrees * std::numbers::pi / 360.0;
+        const double c = std::cos(half), s = std::sin(half);
+        // to = from * turn
+        const QuatValues to{ static_cast<float>(from.w * c - (from.x * ax + from.y * ay + from.z * az) * s),
+            static_cast<float>(from.w * ax * s + from.x * c + (from.y * az - from.z * ay) * s),
+            static_cast<float>(from.w * ay * s + from.y * c + (from.z * ax - from.x * az) * s),
+            static_cast<float>(from.w * az * s + from.z * c + (from.x * ay - from.y * ax) * s) };
+        for (const float t : { 0.21f, 0.5f, 0.79f }) {
+            const auto r = slerpToward(from, to, t);
+            REQUIRE(angleBetween(from, r) == Catch::Approx(degrees * t).margin(0.001));
+            REQUIRE(angleBetween(r, to) == Catch::Approx(degrees * (1.0 - t)).margin(0.001));
+        }
+    }
+}
+
 TEST_CASE("Rotation smoothing: repeated smoothing converges on a target 0.2 deg away instead of stopping short")
 {
     auto q = aboutZ(0.0f);

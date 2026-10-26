@@ -257,7 +257,7 @@ namespace frik
         Quaternion smoothedRotation, targetRotation;
         smoothedRotation.fromMatrix(_smoothedKickLocal.rotate);
         targetRotation.fromMatrix(kick.rotate);
-        smoothedRotation = slerpToward(smoothedRotation, targetRotation, 1 - rotationFactor);
+        smoothedRotation = slerpToward(smoothedRotation, targetRotation, std::clamp(1 - rotationFactor, 0.0f, 1.0f));
 
         RE::NiTransform smoothed = kick;
         smoothed.rotate = smoothedRotation.getMatrix();

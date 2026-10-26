@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <cmath>
 
 namespace frik
@@ -33,7 +32,7 @@ namespace frik
             const float length = std::sqrt(mixed.w * mixed.w + mixed.x * mixed.x + mixed.y * mixed.y + mixed.z * mixed.z);
             return { mixed.w / length, mixed.x / length, mixed.y / length, mixed.z / length };
         }
-        const float angle = std::acos((std::min)(cosine, 1.0f));
+        const float angle = std::acos(cosine);
         const float sinAngle = std::sin(angle);
         const float a = std::sin((1.0f - t) * angle) / sinAngle;
         const float b = std::sin(t * angle) / sinAngle;
