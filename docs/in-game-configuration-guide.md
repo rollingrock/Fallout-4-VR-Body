@@ -11,7 +11,7 @@ Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 
 Press and hold both the `Sprint` and `Favorites` buttons until the UI is shown.
 
-With Mods Config VR installed, that gesture opens its menu instead: open FRIK's configuration from **FRIK Configuration** in its front page's Quick launch section. The menu is minimized while FRIK's configuration is open, and comes back when it closes.
+With Mods Config FO4 VR installed, that gesture opens its menu instead: open FRIK's configuration from **FRIK Configuration** in its front page's Quick launch section. The menu is minimized while FRIK's configuration is open, and comes back when it closes.
 
 ### Play Seated Mode
 
@@ -29,7 +29,7 @@ With Mods Config VR installed, that gesture opens its menu instead: open FRIK's 
 
 ### Weapon Grip Modes
 
-The main FRIK menu button and the Mods Config VR **Grip mode** stepper use the same `iTwoHandedGripMode` setting in `FRIK.toml` (1–4, default 3).
+The main FRIK menu button and the Mods Config FO4 VR **Grip mode** stepper use the same `iTwoHandedGripMode` setting in `FRIK.toml` (1–4, default 3).
 A `FRIK.ini` from an older FRIK is imported with its mode taken from the three legacy grip flags. Unrecognized flag combinations use mode 3, matching the old menu's fallback.
 The **Let-go threshold** applies only to mode 1.
 

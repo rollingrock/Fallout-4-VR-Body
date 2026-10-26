@@ -326,7 +326,7 @@ namespace frik
         bool _skeletonReadyPublished = false;
         std::uint32_t _skeletonGeneration = 0;
 
-        // a config of FRIK that Mods Config VR asked to open, which opens in the next frame update
+        // a config of FRIK that Mods Config FO4 VR asked to open, which opens in the next frame update
         enum class ModsConfigOpenRequest : std::uint8_t
         {
             None,
@@ -336,7 +336,7 @@ namespace frik
         };
 
         ModsConfigOpenRequest _modsConfigOpenRequest = ModsConfigOpenRequest::None;
-        // a config of FRIK was opened from Mods Config VR, whose menu is shown again as the last of them closes
+        // a config of FRIK was opened from Mods Config FO4 VR, whose menu is shown again as the last of them closes
         bool _openedFromModsConfig = false;
 
         // Feature enable/disable flags toggled via the public API (see blockFeature). Default: enabled.

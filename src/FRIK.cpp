@@ -13,7 +13,7 @@
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
-#include "modsconfig/ModsConfigVRApi.h"
+#include "modsconfig/ModsConfigFO4Api.h"
 #include "perf/Perf.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/HandPose.h"
@@ -72,9 +72,9 @@ namespace frik
     }
 
     /**
-     * Adds FRIK's main config to the quick launch section of Mods Config VR's front page, and the functions of the config
+     * Adds FRIK's main config to the quick launch section of Mods Config FO4 VR's front page, and the functions of the config
      * spec's buttons that open the body adjustment and the Pip-Boy config. The framework connects the client at kPostLoad,
-     * and nothing is called while Mods Config VR is not installed. A press asks the config to open in the next frame
+     * and nothing is called while Mods Config FO4 VR is not installed. A press asks the config to open in the next frame
      * update: the press runs while the menu draws its panel. The menu is minimized while a config of FRIK is open, and
      * shown again as the last of them closes. One opens only while the skeleton is ready.
      */
@@ -89,11 +89,11 @@ namespace frik
             }
             _modsConfigOpenRequest = request;
             _openedFromModsConfig = true;
-            ModsConfigVRClient::get().minimizeMenu();
+            ModsConfigFO4Client::get().minimizeMenu();
             return FunctionResult{ .done = true, .message = {} };
         };
 
-        auto& client = ModsConfigVRClient::get();
+        auto& client = ModsConfigFO4Client::get();
         client.addQuickLaunch("openMainConfig",
             { .text = "FRIK Configuration",
                 .help = "Opens FRIK's own configuration in the world: body height, arm length, and the weapon and Pip-Boy positions.",
@@ -115,8 +115,8 @@ namespace frik
     }
 
     /**
-     * Opens the config that Mods Config VR asked for, unless a config of FRIK is open already, as FRIK builds another
-     * main config UI on every open. Shows Mods Config VR's menu again once no config of FRIK is open, after one was
+     * Opens the config that Mods Config FO4 VR asked for, unless a config of FRIK is open already, as FRIK builds another
+     * main config UI on every open. Shows Mods Config FO4 VR's menu again once no config of FRIK is open, after one was
      * opened from it: the Pip-Boy and weapon configs open from the main config, which closes as they do.
      */
     void FRIK::updateModsConfigEntry()
@@ -142,7 +142,7 @@ namespace frik
         }
         if (_openedFromModsConfig && !api::core::isConfigOpen()) {
             _openedFromModsConfig = false;
-            mods_config::api::ModsConfigVRClient::get().restoreMenu();
+            mods_config::api::ModsConfigFO4Client::get().restoreMenu();
         }
     }
 
@@ -562,7 +562,7 @@ namespace frik
 
     /**
      * Apply again the config values FRIK reads only as it sets something up, when a load of the config changes them:
-     * a change of the file, Mods Config VR's live preview, devbench's set. The rest are read every frame.
+     * a change of the file, Mods Config FO4 VR's live preview, devbench's set. The rest are read every frame.
      */
     void FRIK::subscribeToConfigChanges()
     {

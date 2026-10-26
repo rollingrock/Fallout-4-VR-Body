@@ -229,7 +229,7 @@ kSwitchTorchRightButton = { hand = "right", type = "tap", button = "grip" }
 # Enable 2 handed gripping of weapons
 EnableOffHandGripping = true
 
-# Grip mode, shared by the main configuration button and Mods Config VR:
+# Grip mode, shared by the main configuration button and Mods Config FO4 VR:
 # 1: Automatically grip when in range; move the hand away quickly to let go.
 # 2: Automatically grip when in range; press the grip button to let go.
 # 3: Hold the grip button to grip; release it to let go.

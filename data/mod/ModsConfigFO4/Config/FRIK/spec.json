@@ -1372,15 +1372,11 @@
           }
         },
         {
-          "type": "transform",
-          "text": "Zone",
-          "help": "Where the grab zone is around the Attaboy on your belt, and how large it is.",
-          "storage": { "path": ["FRIK_AttaboyActivationSphere", "tZone"] }
-        },
-        {
-          "type": "inputBinding",
+          "type": "cf.inputBinding",
           "text": "Grab button",
           "help": "Pressed with the hand in the zone to open or close the Pip-Boy. Off, the Attaboy opens with the open button anywhere.",
+          "default": { "hand": "left", "type": "tap", "button": "grip", "suppress": true },
+          "valueOptions": { "suppress": true },
           "storage": {
             "path": ["FRIK_AttaboyActivationSphere", "kPrimaryBinding"]
           }
@@ -1397,35 +1393,30 @@
           "help": "Opening, closing and configuring the Pip-Boy.",
           "content": [
             {
-              "type": "inputBinding",
+              "type": "cf.inputBinding",
               "text": "Open button",
               "help": "Opens the Pip-Boy.",
+              "default": { "hand": "offhand", "type": "tap", "button": "trigger" },
               "storage": { "path": ["Fallout4VRBody", "kPipboyOpenButton"] }
             },
             {
-              "type": "inputBinding",
+              "type": "cf.inputBinding",
               "text": "Close button",
               "help": "Closes the Pip-Boy.",
+              "default": { "hand": "offhand", "type": "tap", "button": "grip" },
               "storage": { "path": ["Fallout4VRBody", "kPipboyCloseButton"] }
             },
             {
-              "type": "inputBinding",
+              "type": "cf.inputBinding",
               "text": "Hold button",
               "help": "Held to move the screen while screen dampening holds it in place.",
-              "visibleWhen": {
+              "default": { "hand": "offhand", "type": "hold", "button": "grip", "duration": 0.3 },
+              "enabledWhen": {
                 "setting": "iDampenPipboyScreenMode:Fallout4VRBody",
                 "equals": 2
               },
               "storage": {
                 "path": ["Fallout4VRBody", "kHoldPipboyScreenButton"]
-              }
-            },
-            {
-              "type": "inputBinding",
-              "text": "Pip-Boy config button",
-              "help": "Opens FRIK's Pip-Boy config while the Pip-Boy is open on your wrist.",
-              "storage": {
-                "path": ["Fallout4VRBody", "kEnterPipboyConfigButton"]
               }
             }
           ]
@@ -1436,15 +1427,17 @@
           "help": "Gripping a weapon's barrel with your off hand.",
           "content": [
             {
-              "type": "inputBinding",
+              "type": "cf.inputBinding",
               "text": "Grip button",
               "help": "Pressed to grip the barrel, and to let go in grip modes 2 and 4.",
+              "default": { "hand": "offhand", "type": "press", "button": "grip" },
               "storage": { "path": ["Fallout4VRBody", "kGripButton"] }
             },
             {
-              "type": "inputBinding",
+              "type": "cf.inputBinding",
               "text": "Grip hold button",
               "help": "Held to keep the grip in grip mode 3.",
+              "default": { "hand": "offhand", "type": "hold", "button": "grip" },
               "storage": { "path": ["Fallout4VRBody", "kGripHoldButton"] }
             }
           ]
@@ -1456,17 +1449,19 @@
           "visibleWhen": { "not": { "f4sePlugin": "ImmersiveFlashlightVR" } },
           "content": [
             {
-              "type": "inputBinding",
+              "type": "cf.inputBinding",
               "text": "Move with the left hand",
               "help": "Pressed with the left hand near your head to move the flashlight between your head and that hand.",
+              "default": { "hand": "left", "type": "tap", "button": "grip" },
               "storage": {
                 "path": ["Fallout4VRBody", "kSwitchTorchLeftButton"]
               }
             },
             {
-              "type": "inputBinding",
+              "type": "cf.inputBinding",
               "text": "Move with the right hand",
               "help": "Pressed with the right hand near your head to move the flashlight between your head and that hand.",
+              "default": { "hand": "right", "type": "tap", "button": "grip" },
               "storage": {
                 "path": ["Fallout4VRBody", "kSwitchTorchRightButton"]
               }
@@ -1479,15 +1474,23 @@
           "help": "Opening FRIK's config, and selfie mode.",
           "content": [
             {
-              "type": "inputBinding",
+              "type": "cf.inputBinding",
               "text": "Config button",
-              "help": "Opens FRIK's own config in the game. Mods Config VR takes the button while it is installed.",
+              "help": "Opens FRIK's own config in the game. Mods Config FO4 VR takes the button while it is installed.",
+              "default": {
+                "hand": "primary",
+                "type": "longpress",
+                "button": "thumbstick",
+                "duration": 1.5,
+                "modifier": { "hand": "offhand", "button": "thumbstick" }
+              },
               "storage": { "path": ["Fallout4VRBody", "kOpenConfigButton"] }
             },
             {
-              "type": "inputBinding",
+              "type": "cf.inputBinding",
               "text": "Selfie button",
               "help": "Turns selfie mode on and off while the Pip-Boy is off.",
+              "default": { "hand": "primary", "type": "tap", "button": "a" },
               "storage": { "path": ["Fallout4VRBody", "kToggleSelfieButton"] }
             }
           ]
