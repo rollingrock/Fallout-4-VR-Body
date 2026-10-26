@@ -15,6 +15,20 @@ using namespace common;
 
 namespace
 {
+    // how long a value the height adjustment just changed stays highlighted in the values panel
+    constexpr uint64_t CHANGED_VALUE_HIGHLIGHT_MS = 1500;
+
+    // as tall as the target buttons beside it; the width follows the text
+    constexpr float HEIGHT_VALUES_PANEL_HEIGHT = 2.0f;
+
+    constexpr float HEIGHT_VALUES_TEXT_HEIGHT = 0.22f;
+
+    // the rows spread out to fill the height of the box
+    constexpr float HEIGHT_VALUES_LINE_SPACING = 2.4f;
+
+    // where a value starts, measured from the start of its row, so the three line up in a column
+    constexpr float HEIGHT_VALUES_TAB_WIDTH = 2.5f;
+
     void updateVRScaleGameConfig()
     {
         const auto set = RE::GetINISetting("fVrScale:VR");
@@ -28,6 +42,12 @@ namespace frik
         : _onClose(onClose)
     {
         createConfigUI();
+
+        // start from the current values, so opening the screen does not highlight all of them
+        trackHeightValues();
+        _hmdOffsetUp.changedTime = 0;
+        _bodyOffsetUp.changedTime = 0;
+        _legSlackAdjustOffset.changedTime = 0;
     }
 
     /**
@@ -47,7 +67,7 @@ namespace frik
         }
     }
 
-    void BodyAdjustmentSubConfigMode::onFrameUpdate() const
+    void BodyAdjustmentSubConfigMode::onFrameUpdate()
     {
         _configUI->setPosition(0, 0, f4vr::isNodeVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
 
@@ -57,6 +77,52 @@ namespace frik
         _resetBtn->setDisabled(noTarget);
 
         handleAdjustment();
+
+        trackHeightValues();
+        updateHeightValuesPanelVisibility();
+    }
+
+    /**
+     * Note which of the three values the height adjustment changes moved since the last frame. Every
+     * frame, not only while height is selected, since the leg slack follows the skeleton on its own and
+     * a reset changes them too.
+     */
+    void BodyAdjustmentSubConfigMode::trackHeightValues()
+    {
+        const auto now = nowMillis();
+        const auto track = [now](TrackedValue& tracked, const float value) {
+            if (fNotEqual(tracked.value, value)) {
+                tracked.value = value;
+                tracked.changedTime = now;
+            }
+        };
+        track(_hmdOffsetUp, g_config.getPlayerHMDOffsetUp());
+        track(_bodyOffsetUp, g_config.getPlayerBodyOffsetUp());
+        track(_legSlackAdjustOffset, g_config.getPlayerLegSlackAdjustOffset());
+    }
+
+    /**
+     * While height is the target the other three target buttons give their place in the row to the
+     * height values panel: the values are what the thumbsticks are changing.
+     */
+    void BodyAdjustmentSubConfigMode::updateHeightValuesPanelVisibility() const
+    {
+        const auto adjustingHeight = _configTarget == BodyAdjustmentConfigTarget::BodyHeight;
+        _heightValuesPanel->setVisibility(adjustingHeight);
+        for (const auto& btn : _nonHeightTargetBtns) {
+            btn->setVisibility(!adjustingHeight);
+        }
+    }
+
+    /**
+     * One row of the height values panel: the value's name, then the value itself at the tab stop so the
+     * three line up, highlighted while it is changing.
+     */
+    TextRow BodyAdjustmentSubConfigMode::heightValueRow(const std::string_view label, const TrackedValue& value)
+    {
+        const auto highlighted = nowMillis() - value.changedTime < CHANGED_VALUE_HIGHLIGHT_MS;
+        return { .spans = { { .text = std::format("{}\t", label) },
+                     { .text = std::format("{:.1f}", value.value), .color = highlighted ? std::optional(render::colors::Yellow) : std::nullopt } } };
     }
 
     /**
@@ -130,6 +196,30 @@ namespace frik
         armsLengthToggleBtn->setUnToggleAllowed(true);
         vrScaleToggleBtn->setUnToggleAllowed(true);
 
+        _nonHeightTargetBtns = { forwardToggleBtn, armsLengthToggleBtn, vrScaleToggleBtn };
+
+        // no bottom padding: the last row's descender room already keeps it off the bottom edge
+        auto valuesStyle = F4VR_PANEL_STYLE;
+        valuesStyle.padding = { .top = 0.3f, .right = 0.3f, .bottom = 0.0f, .left = 0.3f };
+        _heightValuesPanel = std::make_shared<UITextPanel>("HeightValues", 0.0f, HEIGHT_VALUES_PANEL_HEIGHT);
+        _heightValuesPanel->setSizing(UIPanelSizing::FixedHeight);
+        _heightValuesPanel->setStyle(valuesStyle);
+        _heightValuesPanel->setTextHeight(HEIGHT_VALUES_TEXT_HEIGHT);
+        _heightValuesPanel->setLineSpacing(HEIGHT_VALUES_LINE_SPACING);
+        _heightValuesPanel->setTabWidth(HEIGHT_VALUES_TAB_WIDTH);
+        _heightValuesPanel->setContent([this](std::vector<TextRow>& rows) {
+            rows.push_back(heightValueRow("HMD HEIGHT", _hmdOffsetUp));
+            rows.push_back(heightValueRow("BODY OFFSET", _bodyOffsetUp));
+            rows.push_back(heightValueRow("LEG SLACK", _legSlackAdjustOffset));
+        });
+
+        updateHeightValuesPanelVisibility();
+
+        // the target buttons and the values panel share the row, the three non-height buttons or the panel showing
+        const auto row2WithValuesContainer = std::make_shared<UIContainer>("Row2WithValues", UIContainerLayout::HorizontalCenter, 0.3f);
+        row2WithValuesContainer->addElement(_row2Container);
+        row2WithValuesContainer->addElement(_heightValuesPanel);
+
         _saveBtn = std::make_shared<UIButtonPanel>("Save");
         _saveBtn->setImage("f4cf\\vrui\\save.DDS");
         _saveBtn->setBottomText("SAVE");
@@ -168,7 +258,7 @@ namespace frik
         // the selfie toggle works on every target, so it has its own box beside the footer
         const auto row4Container = std::make_shared<UIContainer>("Row4", UIContainerLayout::HorizontalCenter, 0.3f);
         row4Container->addElement(footer);
-        row4Container->addElement(createToggleSelfieMsg());
+        row4Container->addElement(createToggleSelfieMsg(footer));
 
         const auto header = std::make_shared<UITextPanel>("Title");
         header->setStyle(UIPanelStyle{ .color = F4VR_PANEL_STYLE.color });
@@ -180,7 +270,7 @@ namespace frik
         _configUI = std::make_shared<UIContainer>("BodyAdjustConfig", UIContainerLayout::VerticalUp, 0.35f, 1.7f);
         _configUI->addElement(row4Container);
         _configUI->addElement(row3Container);
-        _configUI->addElement(_row2Container);
+        _configUI->addElement(row2WithValuesContainer);
         _configUI->addElement(row1Container);
         _configUI->addElement(header);
 

@@ -3,6 +3,7 @@
 #include "vrui/UIButtonPanel.h"
 #include "vrui/UIContainer.h"
 #include "vrui/UITextPanel.h"
+#include "vrui/UIToggleButtonPanel.h"
 #include "vrui/UIToggleGroupContainer.h"
 
 namespace frik
@@ -26,7 +27,7 @@ namespace frik
 
         ~BodyAdjustmentSubConfigMode();
 
-        void onFrameUpdate() const;
+        void onFrameUpdate();
 
         static void updateLegSlack(const float skeletonLegSlack)
         {
@@ -34,7 +35,20 @@ namespace frik
         };
 
     private:
+        /**
+         * A value the height adjustment changes, as last seen, and when it last changed, so the values
+         * panel can highlight the ones that are moving.
+         */
+        struct TrackedValue
+        {
+            float value = 0;
+            uint64_t changedTime = 0;
+        };
+
         void createConfigUI();
+        void trackHeightValues();
+        void updateHeightValuesPanelVisibility() const;
+        static vrui::TextRow heightValueRow(std::string_view label, const TrackedValue& value);
         void clearConfigTarget();
         void togglePlayingSeated(bool seated);
         void toggleHideHeadEquipment(bool hide);
@@ -61,5 +75,12 @@ namespace frik
         std::shared_ptr<vrui::UIToggleGroupContainer> _row2Container;
         std::shared_ptr<vrui::UIButtonPanel> _saveBtn;
         std::shared_ptr<vrui::UIButtonPanel> _resetBtn;
+        std::shared_ptr<vrui::UITextPanel> _heightValuesPanel;
+        std::array<std::shared_ptr<vrui::UIToggleButtonPanel>, 3> _nonHeightTargetBtns;
+
+        // the three values the height adjustment changes, for the values panel
+        TrackedValue _hmdOffsetUp;
+        TrackedValue _bodyOffsetUp;
+        TrackedValue _legSlackAdjustOffset;
     };
 }

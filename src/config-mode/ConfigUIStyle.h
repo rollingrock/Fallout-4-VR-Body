@@ -5,7 +5,7 @@
 
 namespace frik
 {
-    std::shared_ptr<vrui::UIContainer> createToggleSelfieMsg();
+    std::shared_ptr<vrui::UIContainer> createToggleSelfieMsg(const std::shared_ptr<vrui::UIElement>& matchHeightOf = nullptr);
 
     /**
      * Text height of the config screens' footers, the panel under the buttons that says what the

@@ -237,8 +237,9 @@ namespace frik
         const auto messagesContainer = std::make_shared<UIContainer>("Messages", UIContainerLayout::HorizontalCenter, 0.3f);
 
         // the tip names the open-config binding, so there is nothing to tell while it is turned off
+        std::shared_ptr<UITextPanel> footer;
         if (g_config.openMainConfigBinding.isEnabled()) {
-            const auto footer = std::make_shared<UITextPanel>("Footer");
+            footer = std::make_shared<UITextPanel>("Footer");
             footer->setStyle(F4VR_PANEL_STYLE);
             footer->setTextHeight(CONFIG_FOOTER_TEXT_HEIGHT);
             footer->setContent([](std::vector<TextRow>& rows) {
@@ -248,7 +249,7 @@ namespace frik
             });
             messagesContainer->addElement(footer);
         }
-        messagesContainer->addElement(createToggleSelfieMsg());
+        messagesContainer->addElement(createToggleSelfieMsg(footer));
 
         const auto header = std::make_shared<UITextPanel>("Title");
         header->setStyle(UIPanelStyle{ .color = F4VR_PANEL_STYLE.color });
