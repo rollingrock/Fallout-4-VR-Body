@@ -16,6 +16,7 @@
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "perf/Perf.h"
+#include "skeleton/QuaternionSmoothing.h"
 #include "utils.h"
 #include "vrcf/VRControllersManager.h"
 
@@ -621,7 +622,7 @@ namespace frik
         qc.fromMatrix(currentBone.rotate);
         qt.fromMatrix(targetRotation);
         const float blend = std::clamp(frameTime * HAND_POSE_BLEND_RATE, -1.0f, 2.0f);
-        qc.slerp(blend, qt);
+        qc = slerpToward(qc, qt, blend);
         currentBone.rotate = qc.getMatrix();
     }
 
