@@ -731,6 +731,7 @@
                   "text": "Keep the regular model",
                   "help": "With the holo screen, keeps the regular Pip-Boy model on your wrist in place of the holo emitter. The holo screen still opens.",
                   "default": false,
+                  "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 },
                   "enabledWhen": {
                     "setting": "HoloPipBoyEnabled:Fallout4VRBody",
                     "equals": true
@@ -745,9 +746,32 @@
         },
         { "type": "spacer" },
         {
+          "type": "stepper",
+          "valueType": "int",
+          "text": "Game Pip-Boy location",
+          "help": "Where the Pip-Boy opens. It is the game's own VR setting, set here for you. FRIK's Pip-Boy is the one on the wrist.",
+          "default": 0,
+          "applies": "live",
+          "valueOptions": {
+            "options": [
+              { "value": 0, "text": "Wrist", "help": "On your wrist, with FRIK's screen, finger use, and the settings below." },
+              { "value": 1, "text": "In front", "help": "The whole Pip-Boy opens in front of you." },
+              { "value": 2, "text": "Projected", "help": "Only the Pip-Boy's screen opens in front of you." }
+            ]
+          },
+          "storage": { "clientState": "pipboyPlacement" }
+        },
+        { "type": "spacer" },
+        {
+          "type": "text",
+          "text": "FRIK's Pip-Boy settings are for the Pip-Boy on the wrist. Set the location to Wrist to change them.",
+          "visibleWhen": { "clientState": "pipboyPlacement", "notEquals": 0 }
+        },
+        {
           "type": "section",
           "text": "Screen",
           "help": "Where the Pip-Boy's screen is when it opens.",
+          "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 },
           "content": [
             {
               "type": "stepper",
@@ -775,11 +799,12 @@
             }
           ]
         },
-        { "type": "spacer" },
+        { "type": "spacer", "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 } },
         {
           "type": "section",
           "text": "Opening and closing",
           "help": "When the Pip-Boy opens and closes: as you look at it, or with a button.",
+          "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 },
           "content": [
             {
               "type": "switcher",
@@ -903,11 +928,12 @@
             }
           ]
         },
-        { "type": "spacer" },
+        { "type": "spacer", "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 } },
         {
           "type": "section",
           "text": "Screen dampening",
           "help": "Steadies the Pip-Boy's screen against the shake of your arm.",
+          "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 },
           "content": [
             {
               "type": "stepper",
@@ -962,11 +988,12 @@
             }
           ]
         },
-        { "type": "spacer" },
+        { "type": "spacer", "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 } },
         {
           "type": "section",
           "text": "Operating",
           "help": "Using the Pip-Boy with your primary hand: its controller, or your finger.",
+          "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 },
           "content": [
             {
               "type": "switcher",

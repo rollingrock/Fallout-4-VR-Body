@@ -43,6 +43,20 @@ namespace frik
 
     bool isFalloutLondonVRModLoaded();
 
+    /**
+     * Where the game puts the Pip-Boy, by the game's VR settings. The values are the order of the game's own
+     * settings menu, and of the config spec's stepper.
+     */
+    enum class PipboyPlacement : std::uint8_t
+    {
+        Wrist = 0,
+        InFront = 1,
+        Projected = 2,
+    };
+
+    PipboyPlacement getPipboyPlacement();
+    bool setPipboyPlacement(PipboyPlacement placement);
+
     f4vr::MuzzleFlash* getMuzzleFlashNodes();
 
     float correctAdjustmentValue(float value, float sensitivityFactor);

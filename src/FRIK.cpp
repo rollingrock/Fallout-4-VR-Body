@@ -73,7 +73,8 @@ namespace frik
 
     /**
      * Adds FRIK's main config to the quick launch section of Mods Config FO4 VR's front page, and the functions of the config
-     * spec's buttons that open the body adjustment and the Pip-Boy config. The framework connects the client at kPostLoad,
+     * spec's buttons that open the body adjustment and the Pip-Boy config, and the state the game's Pip-Boy placement is
+     * kept in for the Pip-Boy page. The framework connects the client at kPostLoad,
      * and nothing is called while Mods Config FO4 VR is not installed. A press asks the config to open in the next frame
      * update: the press runs while the menu draws its panel. The menu is minimized while a config of FRIK is open, and
      * shown again as the last of them closes. One opens only while the skeleton is ready.
@@ -112,6 +113,26 @@ namespace frik
             }
             return requestOpen(ModsConfigOpenRequest::PipboyConfig);
         });
+
+        // the game's Pip-Boy placement, which the Pip-Boy page's stepper sets and its rows key on. The menu calls the setter
+        // on the game thread, and again with a value the game has, which changes nothing
+        client.addState(
+            "pipboyPlacement",
+            [] {
+                return std::optional<Value>(static_cast<int>(getPipboyPlacement()));
+            },
+            [this](const Value& value) {
+                const auto placement = std::get_if<int>(&value);
+                if (!placement || *placement < static_cast<int>(PipboyPlacement::Wrist) || *placement > static_cast<int>(PipboyPlacement::Projected)) {
+                    logger::warn("Mods Config FO4 VR gave an unknown Pip-Boy placement");
+                    return;
+                }
+                if (static_cast<PipboyPlacement>(*placement) != getPipboyPlacement()) {
+                    // close the wrist Pip-Boy first: once the game no longer puts it on the wrist, the close is ignored
+                    closePipboy();
+                    setPipboyPlacement(static_cast<PipboyPlacement>(*placement));
+                }
+            });
     }
 
     /**
