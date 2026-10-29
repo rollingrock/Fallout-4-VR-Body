@@ -74,21 +74,23 @@ namespace frik
     /**
      * Adds FRIK's main config to the quick launch section of Mods Config FO4 VR's front page, and the functions of the config
      * spec's buttons that open the body adjustment and the Pip-Boy config, and the state the game's Pip-Boy placement is
-     * kept in for the Pip-Boy page. The framework connects the client at kPostLoad,
-     * and nothing is called while Mods Config FO4 VR is not installed. A press asks the config to open in the next frame
-     * update: the press runs while the menu draws its panel. The menu is minimized while a config of FRIK is open, and
-     * shown again as the last of them closes. One opens only while the skeleton is ready.
+     * kept in for the Pip-Boy page. The framework connects the client at kPostLoad, and nothing is called while Mods Config
+     * FO4 VR is not installed. The menu calls a press on the game thread, which opens the config at once, unless a config
+     * of FRIK is open already, as FRIK builds another main config UI on every open. The menu is minimized while a config
+     * of FRIK is open, and shown again as the last of them closes. One opens only while the skeleton is ready.
      */
     void FRIK::registerModsConfigEntry()
     {
         // TODO: Fallout London VR: FRIK switches to FRIK_FOLVR.toml, but the config spec is of FRIK.toml, so its live
         // settings are not previewed (the framework previews the file FRIK loaded) and a Save writes a file FRIK does not read.
         using namespace mods_config::api;
-        const auto requestOpen = [this](const ModsConfigOpenRequest request) {
+        const auto openConfig = [this](const auto& open) {
             if (!isSkeletonReady()) {
                 return FunctionResult{ .done = false, .message = "FRIK's configuration opens once a game is loaded." };
             }
-            _modsConfigOpenRequest = request;
+            if (!api::core::isConfigOpen()) {
+                open();
+            }
             _openedFromModsConfig = true;
             ModsConfigFO4Client::get().minimizeMenu();
             return FunctionResult{ .done = true, .message = {} };
@@ -99,19 +101,25 @@ namespace frik
             { .text = "FRIK Configuration",
                 .help = "Opens FRIK's own configuration in the world: body height, arm length, and the weapon and Pip-Boy positions.",
                 .buttonText = {} },
-            [requestOpen](const Params&) {
-                return requestOpen(ModsConfigOpenRequest::MainConfig);
+            [this, openConfig](const Params&) {
+                return openConfig([this] {
+                    _mainConfigMode.openConfigMode();
+                });
             });
 
-        client.addFunction("openBodyAdjustmentConfig", [requestOpen](const Params&) {
-            return requestOpen(ModsConfigOpenRequest::BodyAdjustment);
+        client.addFunction("openBodyAdjustmentConfig", [this, openConfig](const Params&) {
+            return openConfig([this] {
+                _mainConfigMode.openBodyAdjustmentConfigMode();
+            });
         });
 
-        client.addFunction("openPipboyScreenAdjustmentConfig", [this, requestOpen](const Params&) {
+        client.addFunction("openPipboyScreenAdjustmentConfig", [this, openConfig](const Params&) {
             if (!isPipboyEnabled()) {
                 return FunctionResult{ .done = false, .message = "FRIK's Pip-Boy is turned off by another mod." };
             }
-            return requestOpen(ModsConfigOpenRequest::PipboyConfig);
+            return openConfig([this] {
+                openPipboyConfigurationModeActive();
+            });
         });
 
         // the game's Pip-Boy placement, which the Pip-Boy page's stepper sets and its rows key on. The menu calls the setter
@@ -136,31 +144,11 @@ namespace frik
     }
 
     /**
-     * Opens the config that Mods Config FO4 VR asked for, unless a config of FRIK is open already, as FRIK builds another
-     * main config UI on every open. Shows Mods Config FO4 VR's menu again once no config of FRIK is open, after one was
-     * opened from it: the Pip-Boy and weapon configs open from the main config, which closes as they do.
+     * Shows Mods Config FO4 VR's menu again once no config of FRIK is open, after one was opened from it: the Pip-Boy and
+     * weapon configs open from the main config, which closes as they do.
      */
-    void FRIK::updateModsConfigEntry()
+    void FRIK::restoreModsConfigMenuOnConfigClose()
     {
-        if (_modsConfigOpenRequest != ModsConfigOpenRequest::None) {
-            const auto request = std::exchange(_modsConfigOpenRequest, ModsConfigOpenRequest::None);
-            if (!api::core::isConfigOpen()) {
-                switch (request) {
-                case ModsConfigOpenRequest::MainConfig:
-                    _mainConfigMode.openConfigMode();
-                    break;
-                case ModsConfigOpenRequest::BodyAdjustment:
-                    _mainConfigMode.openBodyAdjustmentConfigMode();
-                    break;
-                case ModsConfigOpenRequest::PipboyConfig:
-                    openPipboyConfigurationModeActive();
-                    break;
-                case ModsConfigOpenRequest::None:
-                    break;
-                }
-            }
-            return;
-        }
         if (_openedFromModsConfig && !api::core::isConfigOpen()) {
             _openedFromModsConfig = false;
             mods_config::api::ModsConfigFO4Client::get().restoreMenu();
@@ -268,7 +256,7 @@ namespace frik
 
         onFrameUpdateInner();
 
-        updateModsConfigEntry();
+        restoreModsConfigMenuOnConfigClose();
 
         // always paired with FrameBegin, even when the inner update returned early
         api::core::invokeFramePhase(FramePhase::FrameEnd);

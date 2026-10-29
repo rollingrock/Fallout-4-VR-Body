@@ -303,7 +303,7 @@ namespace frik
         void onGameMenuOpened(const std::string& name, bool isOpened);
         void releaseSkeleton();
         void registerModsConfigEntry();
-        void updateModsConfigEntry();
+        void restoreModsConfigMenuOnConfigClose();
         void subscribeToConfigChanges();
         void broadcastSkeletonLifecycle(std::uint32_t messageType) const;
         void broadcastScopeEvents();
@@ -326,16 +326,6 @@ namespace frik
         bool _skeletonReadyPublished = false;
         std::uint32_t _skeletonGeneration = 0;
 
-        // a config of FRIK that Mods Config FO4 VR asked to open, which opens in the next frame update
-        enum class ModsConfigOpenRequest : std::uint8_t
-        {
-            None,
-            MainConfig,
-            BodyAdjustment,
-            PipboyConfig,
-        };
-
-        ModsConfigOpenRequest _modsConfigOpenRequest = ModsConfigOpenRequest::None;
         // a config of FRIK was opened from Mods Config FO4 VR, whose menu is shown again as the last of them closes
         bool _openedFromModsConfig = false;
 
