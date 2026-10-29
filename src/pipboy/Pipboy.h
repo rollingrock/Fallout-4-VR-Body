@@ -37,6 +37,8 @@ namespace frik
         void resetOnDisable();
 
         void swapModel();
+        void reloadModel();
+        void applyModelScale() const;
 
         void onFrameUpdate();
 

@@ -214,7 +214,6 @@ namespace
             return false;
         }
 
-        logger::sample("setHandPose tag:'{}' hand={} pose={} priority={}", *normalizedTag, FRIKApiV2::handName(hand), static_cast<int>(handPose), priority);
         core::setHandPose(*normalizedTag, isLeft, *pose, priority);
         return true;
     }
@@ -226,7 +225,6 @@ namespace
             return false;
         }
 
-        logger::sample("setHandPoseCustom tag:'{}' hand={} priority={}", *normalizedTag, FRIKApiV2::handName(hand), priority);
         core::setHandPose(*normalizedTag, core::isLeftForHand(hand), core::makeHandPoseFromApiData(handPose), priority);
         return true;
     }
@@ -293,7 +291,6 @@ namespace
             return false;
         }
 
-        logger::sample("clearHandPose tag:'{}' hand={}", *normalizedTag, FRIKApiV2::handName(hand));
         core::clearHandPose(*normalizedTag, core::isLeftForHand(hand));
         return true;
     }

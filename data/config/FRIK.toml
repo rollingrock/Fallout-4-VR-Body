@@ -1,0 +1,374 @@
+# README
+# https://github.com/rollingrock/Fallout-4-VR-Body/wiki
+#
+# In-game configuration
+# ----------------------
+# To open general menu: hold both controllers sticks
+# To open Pipboy menu: hold right controller stick while Pipbot is open
+#
+# ---------------
+# Live Reload:
+# Any change to the file while the game is running will be detected and applied immediately.
+# Useful to modify advanced settings and seeing the effects without restarting the game.
+#
+# ---------------
+# File Format:
+# The file is TOML (https://toml.io): text values are written in quotes, numbers and true/false are not,
+# and a value of several parts is a table in braces: { pos = [5.0, -2.0, 1.0], scale = 24.0 }.
+# A file that is not valid TOML is reported in FRIK.log with its line, and is not loaded until it is fixed.
+#
+# ---------------------
+# Input Binding Format:
+# A controller binding is a 'k' key: { hand = "offhand", type = "tap", button = "grip" }, with an optional
+# duration (seconds), suppress (true/false) and modifier = { hand = "offhand", button = "grip" }.
+# { type = "none" } turns it off. The words are case-insensitive.
+# Guide: https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/input-binding.md
+
+
+[Fallout4VRBody]
+
+### Head settings
+#----------------
+
+# Important: hiding geometries doesn't change the hit-box so it is safe to do.
+# https://github.com/rollingrock/Fallout-4-VR-Body/wiki/FAQ#is-hiding-the-head-prevents-getting-hit-in-the-head
+
+# Hide the head geometry by name (values in FRIK_Mesh_Hide\face.ini)
+# Warning: this will affect the shadow of the player, making it headless. check fHeadBackPositionOffset for alternative.
+bHidePlayerHead = false
+
+# Hide Equipment geometry by name (values in FRIK_Mesh_Hide\slots.ini)
+bHidePlayerHeadEquipment = true
+
+# Hide skin/clothes geometry by name (values in FRIK_Mesh_Hide\skins.ini)
+bHidePlayerSkin = false
+
+# How much to offset the head back to prevent it from clipping the player view (default: 4)
+# Better than hiding the whole head as it removes the shadow
+fHeadBackPositionOffset = 5.0
+
+# If to ignore hide bHidePlayerHead, bHidePlayerHeadEquipment, bHidePlayerSkin, and fHeadBackPositionOffset when in selfie mode
+bSelfieIgnoreHideFlags = true
+
+
+### Body and Camera Settings
+#---------------------------
+
+# If to use the value of fVrScale. (default: true)
+# Will set the scale when the game starts. If false "fVrScale" is ignored.
+setScale = true
+
+# How large/small the object in the world are (same as fVrScale value in fallout4custom.ini)
+fVrScale = 71.0
+
+# Height of the player avatar (default: 120.482803)
+# Warning: changing this value changes skeleton scale and will break hands to weapon alignment
+PlayerHeight = 120.482803
+
+# Arms length (default: 36)
+armLength = 36.0
+
+# Arm solver. The elbow keeps at least this much bend (degrees) at full reach, so it can no longer spin when the
+# arm is straight (the pose an aimed weapon sits in). 0 restores the pre-0.79.1 stretch behaviour. Try 6 to 14.
+fArmElbowMinFlexionDeg = 10.0
+# The elbow bends at most this much (degrees) when the hand comes close to the shoulder; the upper arm shortens
+# smoothly past it instead of the arm flipping. 0 restores the old behaviour.
+fArmElbowMaxFlexionDeg = 145.0
+# Minimum width (degrees) of the elbow twist window, so the wrist never stops steering the elbow in a low-ready or a reload.
+fArmTwistWindowMinDeg = 15.0
+# Blend the elbow heuristics smoothly where they switch, instead of the elbow stepping when a pose crosses a threshold.
+bArmSmoothBlends = true
+# How far the shoulder moves toward the hand at full reach, as a fraction of the arm length (0.08 = the original, 0.225 = Skyrim VRIK, 0.15 = default).
+fArmShoulderReachFraction = 0.15
+# Scale on the downward part of that shoulder movement (1.0 = the original, 0.4 = Skyrim VRIK and the default).
+fArmShoulderDownwardDamp = 0.4
+# Fraction of the upper-arm roll counter-rotated on the UpperTwist1 bone so the shoulder mesh rolls less than the elbow (0 = off, 0.7 = Skyrim VRIK).
+# Experimental, and off for two reasons: the shoulder was judged worse by eye at 0.7, and enabling it writes the flattened bone tree
+# directly, which has been seen to disturb what another mod reads from that tree after a load. Leave at 0 unless you are testing it.
+fArmUpperTwistSplit = 0.0
+# How the forearm roll is spread over ForeArm1 / ForeArm2 / ForeArm3 (original 0 / 0.5 / 0.5; a taper such as 0.1 / 0.35 / 0.55 twists the skin more evenly).
+fArmForearmTwistWeight1 = 0.0
+fArmForearmTwistWeight2 = 0.5
+fArmForearmTwistWeight3 = 0.5
+# Hand damping and elbow smoothing keep the same feel at any frame rate (the original factors were per frame, so reprojection doubled the lag).
+bArmFrameRateIndependentSmoothing = true
+
+# If the player is playing standing or sitting
+# Allows using different HMD, body, and posture offsets below for sitting vs standing
+bIsPlayingSeated = false
+
+# HMD, body, and leg slack adjust offsets
+fPlayerHMDOffsetUpStanding = 8.6
+fPlayerBodyOffsetUpStanding = -4.2
+fPlayerLegSlackAdjustOffsetStanding = 0.0
+fPlayerBodyOffsetForwardStanding = -3.0
+fPlayerHMDOffsetUpSitting = 35.0
+fPlayerBodyOffsetUpSitting = -5.0
+fPlayerLegSlackAdjustOffsetSitting = 12.0
+fPlayerBodyOffsetForwardSitting = -3.0
+
+# HMD, body, and leg slack adjust offsets in PowerArmor
+fPlayerHMDOffsetUpStandingInPA = 23.0
+fPlayerBodyOffsetUpStandingInPA = -8.0
+fPlayerLegSlackAdjustOffsetStandingInPA = 0.0
+fPlayerBodyOffsetForwardStandingInPA = -15.0
+fPlayerHMDOffsetUpSittingInPA = 53.0
+fPlayerBodyOffsetUpSittingInPA = -7.0
+fPlayerLegSlackAdjustOffsetSittingInPA = 0.0
+fPlayerBodyOffsetForwardSittingInPA = -9.0
+
+# Used as the target for automatic recalculation of Leg Slack Adjust Offset during body adjustment configuration.
+# The idea is to preserve slight knee bend for best skelton kinematics.
+fSkeletonLegSlackTarget = 2.0
+
+# Hack to handle comfort sneak affecting the height of the player without real-world body change. By setting static
+# body pitch the body position doesn't change, making it easier to handle skeleton related things like Virtual Holsters.
+# Default: 10, set to 0 to disable and use regular body pitch calculation
+fComfortSneakHackStaticBodyPitchAngle = 10.0
+
+
+### Pipboy Settings
+#------------------
+
+# If you want the pipboy mesh on the wrist hidden
+hidePipboy = false
+
+# The size of the Pipboy on the arm (default: 1.187001)
+PipboyScale = 1.0
+
+# Use HoloPipboy for wrist based screen / arm models.
+HoloPipBoyEnabled = true
+
+# Only when HoloPipBoyEnabled is true: keep the regular Pipboy model on the wrist
+# instead of switching it to the holo emitter (the floating holo screen is still used when opened).
+HoloPipBoyKeepWristModel = false
+
+# If to enable on-wrist Pipboy use via primary hand controller (default: true)
+# Controls for menu scrolling, map scrolling, page selection and item selection
+# Not: It does NOT change how the secondary hand operates Pipboy
+PipboyUIPrimaryController = true
+
+# Set true if you want Pipboy to open/close automatically when being looked at and away
+# LookAt is to open Pipboy and LookAway is to turn close it
+PipBoyOpenWhenLookAt = true
+PipBoyCloseWhenLookAway = true
+
+# Control how sensitive the look at Pipboy detection is. (default: 0.75 / 0.3)
+# Only if "PipBoyOpenWhenLookAt"/"PipBoyCloseWhenLookAway" is true
+PipBoyLookAtThreshold = 0.75
+PipBoyLookAwayThreshold = 0.6
+
+# Set true to require looking at the Pipboy for the open button to work, to avoid accidentally opening it.
+# Independent of "PipBoyOpenWhenLookAt" (which opens automatically, without a button press).
+PipBoyOpenWithButtonOnlyWhenLookingAt = true
+
+# How sensitive the look-at check is for the open button. A bit more relaxed (lower) than PipBoyLookAtThreshold. (default: 0.5)
+# Only if "PipBoyOpenWithButtonOnlyWhenLookingAt" is true
+PipBoyButtonLookAtThreshold = 0.6
+
+# Open / Close delay when looking at Pipboy in milliseconds
+# Only if "PipBoyOpenWhenLookAt" is true
+PipBoyOnDelay = 400
+PipBoyOffDelay = 1000
+
+# Control to close Pipboy when not looking at AND starting moving
+# Basically it shortens the "PipBoyOffDelay" to quickly close Pipboy by starting to move
+AllowMovementWhenNotLookingAtPipboy = true
+
+# Which controller input opens / closes the Pipboy (see "Input Binding Format" near the top of this file)
+kPipboyOpenButton = { hand = "offhand", type = "tap", button = "trigger" }
+kPipboyCloseButton = { hand = "offhand", type = "tap", button = "grip" }
+# Controller input that must be held to move the holo Pipboy screen in place (see iDampenPipboyScreenMode = 2)
+kHoldPipboyScreenButton = { hand = "offhand", type = "hold", button = "grip", duration = 0.3 }
+
+# When using touch method to operate Pipboy it's the distance of the primary hand from
+# Pipboy that will change hand pose to pointing. Set to 0 to disable. (default: 12)
+fPipboyOperationFingerDetectionRange = 12.0
+
+# When using touch method to operate Pipboy, if true will holster the weapon when looking at the Pipboy and the finger is within detection range
+# When false operating the Pipboy with a finger requies the weapon to be holstered manually but doesn't require looking at the Pipboy
+# WARNING: when true some player reported unintentional weapon holstering, specifically in combat.
+bHolsterWeaponForOperation = false
+
+# Dampen Pipboy Screen Mode to reduce shaking
+# 0 - none, 1 - reduce shaking by smoothing the screen movement between frames, 2 - hold the Pipboy screen in place where opened or moved by holding the grip button
+iDampenPipboyScreenMode = 1
+
+# The max distance allowed before the screen is forced to move with the pipboy (Default: 1.0)
+fDampenPipboyThreshold = 1.0
+
+# Dampen Pipboy screen strength movement (Default: 0.7)
+fDampenPipboyMultiplier = 0.7
+
+# This isn't working very well at the moment
+PipboyRightArmLeftHandedMode = false
+
+
+### Torch/Flashlight
+#--------------------------
+
+# If to remove the embedded FRIK flashlight (default: false)
+# Set to true for vanilla flashlight or other flashlight mods
+bRemoveFlashlight = false
+
+# Change the Pipboy flashlight to be on your left/right arm or head (0 - head, 1 - left arm, 2 - right arm)
+# Controlled in-game by grabbing the flashlight near the top of the head when it's on on
+iFlashlightLocation = 0
+
+# Input used to switch the torch between head and hand (tapped on whichever hand is near the head)
+# One binding per hand (see "Input Binding Format" near the top of this file)
+kSwitchTorchLeftButton = { hand = "left", type = "tap", button = "grip" }
+kSwitchTorchRightButton = { hand = "right", type = "tap", button = "grip" }
+
+
+### Weapons and Hands
+#--------------------
+
+# Enable 2 handed gripping of weapons
+EnableOffHandGripping = true
+
+# Grip mode, shared by the main configuration button and Mods Config FO4 VR:
+# 1: Automatically grip when in range; move the hand away quickly to let go.
+# 2: Automatically grip when in range; press the grip button to let go.
+# 3: Hold the grip button to grip; release it to let go.
+# 4: Press the grip button to grip; press it again to let go.
+iTwoHandedGripMode = 3
+# How quickly the hand moves away to let go in mode 1.
+GripLetGoThreshold = 2.5
+# Offhand input to grip / release a two-handed weapon (press to grab, and to let go in modes 2/4)
+kGripButton = { hand = "offhand", type = "press", button = "grip" }
+# Offhand input that must stay held to keep gripping (mode 3 lets go when this is released)
+kGripHoldButton = { hand = "offhand", type = "hold", button = "grip" }
+
+# Dampen hands settings - set strength from 0 to 0.95
+DampenHands = true
+DampenHandsRotation = 0.6
+DampenHandsTranslation = 0.6
+
+# Dampen hands settings while in vanilla scope mode (DampenHands must already be set to true) - set strength from 0 to 0.95
+# Warning: may be hard to do fine-tuned adjustments when using scope
+DampenHandsInVanillaScope = false
+DampenHandsRotationInVanillaScope = 0.2
+DampenHandsTranslationInVanillaScope = 0.2
+
+# Hide the player body while looking through a vanilla scope (a scope mod that keeps the body visible, like True Scopes, overrides this)
+HideBodyInVanillaScope = true
+
+# Distance offhand from scope to change zoom level with BetterScopesVR
+ScopeAdjustDistance = 15.0
+
+
+### Misc
+#-------
+
+# How far out in front the selfie mode body is.
+selfieOutFrontDistance = 120.0
+
+# Controller input that toggles selfie mode, only when the Pipboy is off (see "Input Binding Format" near the top of this file)
+kToggleSelfieButton = { hand = "primary", type = "tap", button = "a" }
+
+# If to show the HUD in powerarmor
+showPAHUD = true
+
+# Special flag to allow using Pipboy in Fallout London VR
+bIgnoreFalloutLondonVR = false
+
+# Controller input that opens the configuration menu (see "Input Binding Format" near the top of this file)
+# Default: long-press both thumbsticks (duration is how long they are held, in seconds)
+# HTC Vive Pro 2 issue: https://www.nexusmods.com/fallout4/mods/53464?tab=posts&comment_id=163662949
+kOpenConfigButton = { hand = "primary", type = "longpress", button = "thumbstick", duration = 1.5, modifier = { hand = "offhand", button = "thumbstick" } }
+
+
+# Fallout London VR: grab the Attaboy off the belt to open/close the Pipboy (a proximity gesture).
+# Only active in Fallout London VR, once the on-belt Attaboy exists. This is an "activation sphere":
+# a spherical zone anchored to the Attaboy on the belt; while the bound hand is inside it.
+# To disable and have Attaboy open globally set kPrimaryBinding to { type = "none" }.
+# https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/input-binding.md
+[FRIK_AttaboyActivationSphere]
+tZone = { pos = [5.0, -2.0, 1.0], scale = 24.0 }
+kPrimaryBinding = { hand = "left", type = "tap", button = "grip", suppress = true }
+sEntryHaptic = "tick"
+sPrimaryHaptic = "DoubleClick"
+sShowIcon = "wheninside"
+fIconSize = 1.0
+sShowSphere = "never"
+
+
+[SmoothMovementVR]
+
+# To disable smooth movement. (true/false)
+DisableSmoothMovement = false
+
+# This is the smoothing amount. (Between 0.1 and infinite)
+# High values will mask more up-down stutter, but returning to original height will take more time (unless you have a low Damping value).
+SmoothAmount = 5.0
+
+# This is the reverse damping coefficient. (Between 0.1 and infinite)
+# Higher this value is, longer it takes to get back to original height. Must be higher than zero!
+Damping = 1.0
+
+# This is the smoothing amount.
+# High values will mask more horizontal stutter, but will cause sliding effect when strafing (unless you have a low DampingHorizontal value).
+SmoothAmountHorizontal = 5.0
+
+# This is the reverse damping coefficient. (If set to 0, there will be no horizontal smoothing)
+# Higher this value is, longer it takes to get back to original horizontal position.
+DampingHorizontal = 1.0
+
+# This is used to determine how quickly it should return to original height when the player stops moving.
+# Lower values mean quicker. (Between 0.01 and 1.0)
+StoppingMultiplier = 0.5
+
+# This is used to determine how quickly it should return to original horizontal position when the player stops moving.
+# Lower values mean quicker. (Between 0.01 and 1.0)
+StoppingMultiplierHorizontal = 0.6
+
+# Issue from standalone Smooth Movement where there was excessive jitter indoors.
+# If you experience any indoor weirdness disable it here
+DisableInteriorSmoothing = false
+DisableInteriorSmoothingHorizontal = false
+
+
+[Debug]
+
+# The level of log message to output; 2 - info (basic), 1 - debug (more logs), 0 - trace (A LOT of logs)
+iLogLevel = 2
+
+# The pattern and data in each log messages.
+# %k is the name of the class that logged the message. "-20" left-aligns it in a 20 wide column and the
+# "!" clips anything longer, keeping the message column straight. Note the "!" goes before the flag
+# letter, not after it: "%-20!k" truncates, "%-20k!" prints a literal "!".
+# Other useful flags: %s for the source file with its extension, %# for the line number, %-7l for the
+# level as a word instead of a letter.
+# Terser log without the class name: "%H:%M:%S.%e %l: %v"
+sLogPattern = "%H:%M:%S.%e %l [%-20!k] %v"
+
+# Mod-defined numeric scratch values for runtime experiments; blank values load as 0.
+fFlowFlag1 = 0.0
+fFlowFlag2 = 0.0
+fFlowFlag3 = 0.0
+# Mod-defined text scratch values; sFlowText1 also supplies haptictest sequences.
+sFlowText1 = ""
+sFlowText2 = ""
+
+# Selects an in-game live-tuning target; none or blank disables it and restores controller input.
+# Examples: flag123; haptictest; ImmersiveFlashlightVR::tFlashlightInOffhandTransform
+# Guide: https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/debug-config.md
+sAdjustTarget = ""
+
+# Writes named game-state dumps to the mod log and removes each name after it runs.
+# Names: ui_tree, skelly, fp_skelly, geometry, weapon_pos, weapon_muzzle, menus, pipboy, world, all_nodes
+# Example: ["skelly", "weapon_pos"]
+# Timing: "perf_reset" starts a perf window, then "perf" logs what each part of the frame cost since
+# Guide: https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/debug-config.md
+aDumpDataOnce = []
+
+# Runs one-shot inventory adds or dry runs, then clears the array (comments inside it too).
+# Keys: op (get, get-all, print, print-all), category (weapons, throwables, ammo, armor, aid, misc, or
+# an array of them), and the optional filters name, keyword, slot, class.
+# Example: [{ op = "print", category = "weapons", keyword = "laser" }, { op = "get", category = ["ammo", "aid"] }]
+# Guide: https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/debug-config.md
+aAddItemsOnce = []
+
+# Internal use for versioning
+iVersion = 1

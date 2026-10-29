@@ -1,7 +1,9 @@
 #pragma once
 
-#include "vrui/UIButton.h"
+#include "vrui/UIButtonPanel.h"
 #include "vrui/UIContainer.h"
+#include "vrui/UITextPanel.h"
+#include "vrui/UIToggleButtonPanel.h"
 #include "vrui/UIToggleGroupContainer.h"
 
 namespace frik
@@ -25,7 +27,7 @@ namespace frik
 
         ~BodyAdjustmentSubConfigMode();
 
-        void onFrameUpdate() const;
+        void onFrameUpdate();
 
         static void updateLegSlack(const float skeletonLegSlack)
         {
@@ -33,12 +35,26 @@ namespace frik
         };
 
     private:
+        /**
+         * A value the height adjustment changes, as last seen, and when it last changed, so the values
+         * panel can highlight the ones that are moving.
+         */
+        struct TrackedValue
+        {
+            float value = 0;
+            uint64_t changedTime = 0;
+        };
+
         void createConfigUI();
+        void trackHeightValues();
+        void updateHeightValuesPanelVisibility() const;
+        static vrui::TextRow heightValueRow(std::string_view label, const TrackedValue& value);
         void clearConfigTarget();
         void togglePlayingSeated(bool seated);
         void toggleHideHeadEquipment(bool hide);
         void closeConfig();
         void handleAdjustment() const;
+        void appendFooterRows(std::vector<vrui::TextRow>& rows) const;
         static void handleHeightAdjustment();
         static void handleForwardAdjustment();
         static void handleArmsLengthAdjustment();
@@ -57,12 +73,14 @@ namespace frik
         std::shared_ptr<vrui::UIContainer> _configUI;
 
         std::shared_ptr<vrui::UIToggleGroupContainer> _row2Container;
-        std::shared_ptr<vrui::UIButton> _saveBtn;
-        std::shared_ptr<vrui::UIButton> _resetBtn;
-        std::shared_ptr<vrui::UIWidget> _noneMsg;
-        std::shared_ptr<vrui::UIWidget> _heightMsg;
-        std::shared_ptr<vrui::UIWidget> _forwardMsg;
-        std::shared_ptr<vrui::UIWidget> _armsLengthMsg;
-        std::shared_ptr<vrui::UIWidget> _vrScaleMsg;
+        std::shared_ptr<vrui::UIButtonPanel> _saveBtn;
+        std::shared_ptr<vrui::UIButtonPanel> _resetBtn;
+        std::shared_ptr<vrui::UITextPanel> _heightValuesPanel;
+        std::array<std::shared_ptr<vrui::UIToggleButtonPanel>, 3> _nonHeightTargetBtns;
+
+        // the three values the height adjustment changes, for the values panel
+        TrackedValue _hmdOffsetUp;
+        TrackedValue _bodyOffsetUp;
+        TrackedValue _legSlackAdjustOffset;
     };
 }

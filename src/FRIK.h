@@ -26,7 +26,9 @@ namespace frik
     public:
         FRIK()
             : ModBase({ Version::PROJECT, "F4VRBody", Version::NAME, &g_config, Version::PROJECT, 512, true, true })
-        {}
+        {
+            _settings.preloadRendering = true;
+        }
 
         bool isSkeletonReady() const
         {
@@ -103,6 +105,12 @@ namespace frik
         bool isLookingThroughScope()
         {
             return g_scopeAuthority.isLookingThroughScope(isInScopeMenu());
+        }
+
+        // BetterScopesVR's F4SE plugin is loaded: FRIK registered for its messages when the game loaded
+        bool isBetterScopesVRLoaded() const
+        {
+            return _betterScopesVRLoaded;
         }
 
         // Hide the body root while scoped, unless a provider keeps it visible or the user opted out
@@ -294,6 +302,9 @@ namespace frik
         void onFrameUpdateInner();
         void onGameMenuOpened(const std::string& name, bool isOpened);
         void releaseSkeleton();
+        void registerModsConfigEntry();
+        void restoreModsConfigMenuOnConfigClose();
+        void subscribeToConfigChanges();
         void broadcastSkeletonLifecycle(std::uint32_t messageType) const;
         void broadcastScopeEvents();
         static void updateWorldFinal();
@@ -308,11 +319,15 @@ namespace frik
         // consecutive frames the game reported a power armor state different from _inPowerArmor
         std::uint32_t _powerArmorChangeFrames = 0;
         bool _lookingThroughScopeLastFrame = false;
+        bool _betterScopesVRLoaded = false;
         float _dynamicCameraHeight = 0;
         bool _selfieMode = false;
         std::uint32_t _skeletonInitDelayFrames = 0;
         bool _skeletonReadyPublished = false;
         std::uint32_t _skeletonGeneration = 0;
+
+        // a config of FRIK was opened from Mods Config FO4 VR, whose menu is shown again as the last of them closes
+        bool _openedFromModsConfig = false;
 
         // Feature enable/disable flags toggled via the public API (see blockFeature). Default: enabled.
         bool _flashlightEnabled = true;

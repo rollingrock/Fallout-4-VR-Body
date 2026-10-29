@@ -10,6 +10,12 @@ namespace frik
         // hideAll culls every player geometry (scoped without a provider keeping the body visible), bones stay valid
         void cullPlayerGeometry(bool hideAll = false);
 
+        // the next cull finds the geometries to hide again instead of using the ones found in the last 2 seconds
+        void resetHideGeometryIndexes()
+        {
+            _lastPreProcessTime = 0;
+        }
+
     private:
         void restoreGeometry();
         void restoreEquipment();

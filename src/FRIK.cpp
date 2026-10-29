@@ -13,6 +13,7 @@
 #include "f4vr/DebugDump.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
+#include "modsconfig/ModsConfigFO4Api.h"
 #include "perf/Perf.h"
 #include "pipboy/Pipboy.h"
 #include "skeleton/HandPose.h"
@@ -21,7 +22,6 @@
 #include "utils.h"
 #include "vrcf/VRControllersManager.h"
 #include "vrui/UIManager.h"
-#include "vrui/UIModAdapter.h"
 
 using namespace common;
 
@@ -53,25 +53,6 @@ namespace frik
     }
 
     /**
-     * TODO: think about it, is it the best way to handle this dependency indirection.
-     */
-    class FrameUpdateContext : public vrui::UIModAdapter
-    {
-    public:
-        explicit FrameUpdateContext() = default;
-
-        virtual RE::NiPoint3 getInteractionBoneWorldPosition() override
-        {
-            return f4vr::Skelly::getIndexFingerTipWorldPosition(vrcf::Hand::Offhand);
-        }
-
-        virtual void setInteractionHandPointing(const bool primaryHand, const bool toPoint) override
-        {
-            HandPose::setForceHandPointingPose(primaryHand, toPoint);
-        }
-    };
-
-    /**
      * On mod loaded by F4SE.
      */
     void FRIK::onModLoaded(const F4SE::LoadInterface*)
@@ -86,6 +67,90 @@ namespace frik
 
         // the framework registers the tool once the game has loaded, with everything set up here
         devbench::setupDevBenchTool();
+
+        registerModsConfigEntry();
+    }
+
+    /**
+     * Adds FRIK's main config to the quick launch section of Mods Config FO4 VR's front page, and the functions of the config
+     * spec's buttons that open the body adjustment and the Pip-Boy config, and the state the game's Pip-Boy placement is
+     * kept in for the Pip-Boy page. The framework connects the client at kPostLoad, and nothing is called while Mods Config
+     * FO4 VR is not installed. The menu calls a press on the game thread, which opens the config at once, unless a config
+     * of FRIK is open already, as FRIK builds another main config UI on every open. The menu is minimized while a config
+     * of FRIK is open, and shown again as the last of them closes. One opens only while the skeleton is ready.
+     */
+    void FRIK::registerModsConfigEntry()
+    {
+        using namespace mods_config::api;
+        const auto openConfig = [this](const auto& open) {
+            if (!isSkeletonReady()) {
+                return FunctionResult{ .done = false, .message = "FRIK's configuration opens once a game is loaded." };
+            }
+            if (!api::core::isConfigOpen()) {
+                open();
+            }
+            _openedFromModsConfig = true;
+            ModsConfigFO4Client::get().minimizeMenu();
+            return FunctionResult{ .done = true, .message = {} };
+        };
+
+        auto& client = ModsConfigFO4Client::get();
+        client.addQuickLaunch("openMainConfig",
+            { .text = "FRIK Configuration",
+                .help = "Opens FRIK's own configuration in the world: body height, arm length, and the weapon and Pip-Boy positions.",
+                .buttonText = {} },
+            [this, openConfig](const Params&) {
+                return openConfig([this] {
+                    _mainConfigMode.openConfigMode();
+                });
+            });
+
+        client.addFunction("openBodyAdjustmentConfig", [this, openConfig](const Params&) {
+            return openConfig([this] {
+                _mainConfigMode.openBodyAdjustmentConfigMode();
+            });
+        });
+
+        client.addFunction("openPipboyScreenAdjustmentConfig", [this, openConfig](const Params&) {
+            if (!isPipboyEnabled()) {
+                return FunctionResult{ .done = false, .message = "FRIK's Pip-Boy is turned off by another mod." };
+            }
+            return openConfig([this] {
+                openPipboyConfigurationModeActive();
+            });
+        });
+
+        // the game's Pip-Boy placement, which the Pip-Boy page's stepper sets and its rows key on. The menu calls the setter
+        // on the game thread, and again with a value the game has, which changes nothing
+        client.addState(
+            "pipboyPlacement",
+            [] {
+                return std::optional<Value>(static_cast<int>(f4vr::getPipboyPlacement()));
+            },
+            [this](const Value& value) {
+                const auto placement = std::get_if<int>(&value);
+                if (!placement || *placement < static_cast<int>(f4vr::PipboyPlacement::Wrist) || *placement > static_cast<int>(f4vr::PipboyPlacement::Projected)) {
+                    logger::warn("Mods Config FO4 VR gave an unknown Pip-Boy placement");
+                    return;
+                }
+                if (static_cast<f4vr::PipboyPlacement>(*placement) != f4vr::getPipboyPlacement()) {
+                    // close the wrist Pip-Boy first: once the game no longer puts it on the wrist, the close is ignored
+                    closePipboy();
+                    f4vr::setPipboyPlacement(static_cast<f4vr::PipboyPlacement>(*placement));
+                }
+            });
+    }
+
+    /**
+     * Shows Mods Config FO4 VR's menu again once no config of FRIK is open, after one was opened from it: the Pip-Boy and
+     * weapon configs open from the main config, which closes as they do.
+     */
+    void FRIK::restoreModsConfigMenuOnConfigClose()
+    {
+        if (_openedFromModsConfig && !api::core::isConfigOpen()) {
+            _openedFromModsConfig = false;
+            mods_config::api::ModsConfigFO4Client::get().restoreMenu();
+        }
     }
 
     /**
@@ -94,6 +159,11 @@ namespace frik
     void FRIK::onGameLoaded()
     {
         initForFalloutLondonVR();
+
+        // FRIK poses the hands itself, where the framework would point a hand through FRIK's own API
+        vrui::g_uiManager->setHandPointingHandler([](const bool primaryHand, const bool toPoint) {
+            HandPose::setForceHandPointingPose(primaryHand, toPoint);
+        });
 
         logger::info("Register papyrus native functions...");
         api::initPapyrusApis();
@@ -106,11 +176,14 @@ namespace frik
         });
 
         addEmbeddedFlashlightKeywordIfNeeded();
+        subscribeToConfigChanges();
 
-        if (isBetterScopesVRModLoaded()) {
-            logger::info("BetterScopesVR mod detected, registering for messages...");
+        // F4SE refuses a listener for a sender no loaded plugin is named, so the registration is what detects
+        // BetterScopesVR's plugin, whatever its DLL is called and whether or not its ESP is installed
+        _betterScopesVRLoaded = _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
+        if (_betterScopesVRLoaded) {
+            logger::info("BetterScopesVR mod detected, registered for its messages");
             _messaging->Dispatch(15, static_cast<void*>(nullptr), sizeof(bool), BETTER_SCOPES_VR_MOD_NAME);
-            _messaging->RegisterListener(onBetterScopesMessage, BETTER_SCOPES_VR_MOD_NAME);
             // legacy path: its near-eye message is the looking-through signal, everything else stays vanilla
             g_scopeAuthority.setProvider(BETTER_SCOPES_VR_MOD_NAME, static_cast<std::uint32_t>(ScopeCapability::PublishesLookingThrough));
         }
@@ -124,7 +197,7 @@ namespace frik
     {
         g_config.isFalloutLondonVR = isFalloutLondonVRModLoaded();
         if (g_config.isFalloutLondonVR && g_config.ignoreFalloutLondonVR) {
-            // checked before the ini swap, so ignoring the mod keeps FRIK.ini and its file watch
+            // checked before the config swap, so ignoring the mod keeps FRIK.toml and its file watch
             logger::warn("Ignore Fallout London VR flag set, do not treat the game as Fallout London!");
             g_config.isFalloutLondonVR = false;
         } else if (g_config.isFalloutLondonVR) {
@@ -180,6 +253,8 @@ namespace frik
         api::core::invokeFramePhase(FramePhase::FrameBegin);
 
         onFrameUpdateInner();
+
+        restoreModsConfigMenuOnConfigClose();
 
         // always paired with FrameBegin, even when the inner update returned early
         api::core::invokeFramePhase(FramePhase::FrameEnd);
@@ -255,8 +330,8 @@ namespace frik
         logger::trace("Update Pipboy...");
         _pipboy->onFrameUpdate();
 
-        FrameUpdateContext context;
-        vrui::g_uiManager->onFrameUpdate(&context);
+        // run here, in place of the framework's own call after this update, so the UI is laid out before the config modes and the final world update
+        vrui::g_uiManager->onFrameUpdate();
 
         _mainConfigMode.onFrameUpdate();
 
@@ -493,6 +568,41 @@ namespace frik
     }
 
     /**
+     * Apply again the config values FRIK reads only as it sets something up, when a load of the config changes them:
+     * a change of the file, Mods Config FO4 VR's live preview, devbench's set. The rest are read every frame.
+     */
+    void FRIK::subscribeToConfigChanges()
+    {
+        g_config.subscribeForConfigChangedEvent("FRIK.vrScale",
+            { { CONFIG_SECTION_MAIN, "setScale" }, { CONFIG_SECTION_MAIN, "fVrScale" } },
+            [](const std::vector<config::ConfigKey>&) {
+                configureGameVars();
+            });
+
+        g_config.subscribeForConfigChangedEvent("FRIK.pipboyModel",
+            { { CONFIG_SECTION_MAIN, "HoloPipBoyEnabled" }, { CONFIG_SECTION_MAIN, "HoloPipBoyKeepWristModel" } },
+            [this](const std::vector<config::ConfigKey>&) {
+                if (_pipboy) {
+                    _pipboy->reloadModel();
+                }
+            });
+
+        g_config.subscribeForConfigChangedEvent("FRIK.pipboyScale", { { CONFIG_SECTION_MAIN, "PipboyScale" } }, [this](const std::vector<config::ConfigKey>&) {
+            if (_pipboy) {
+                _pipboy->applyModelScale();
+            }
+        });
+
+        g_config.subscribeForConfigChangedEvent("FRIK.hideGeometry",
+            { { CONFIG_SECTION_MAIN, "bHidePlayerHead" }, { CONFIG_SECTION_MAIN, "bHidePlayerSkin" } },
+            [this](const std::vector<config::ConfigKey>&) {
+                if (_skelly) {
+                    _skelly->resetHideGeometry();
+                }
+            });
+    }
+
+    /**
      * If to add embedded flashlight to the game.
      */
     void FRIK::addEmbeddedFlashlightKeywordIfNeeded()
@@ -584,7 +694,7 @@ namespace frik
     }
 
     /**
-     * Dump game data if requested in "sDebugDumpDataOnceNames" flag in INI config.
+     * Dump game data if requested in the "aDumpDataOnce" names of the config.
      */
     void FRIK::checkDebugDump() const
     {

@@ -3,22 +3,23 @@
 #include <Version.h>
 #include <optional>
 
-#include "ConfigBase.h"
 #include "common/CommonUtils.h"
+#include "config/ConfigBase.h"
 #include "f4vr/WandActivationSphere.h"
 #include "resources.h"
 #include "vrcf/VRControllersManager.h"
+#include "weapon-position/GripMode.h"
 
 namespace frik
 {
-    constexpr auto INI_SECTION_MAIN = "Fallout4VRBody";
-    constexpr auto INI_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
+    constexpr auto CONFIG_SECTION_MAIN = "Fallout4VRBody";
+    constexpr auto CONFIG_SECTION_SMOOTH_MOVEMENT = "SmoothMovementVR";
     // Activation-sphere section for the Fallout London VR Attaboy grab gesture.
-    constexpr auto INI_SECTION_ATTABOY_GRAB = "FRIK_AttaboyActivationSphere";
+    constexpr auto CONFIG_SECTION_ATTABOY_GRAB = "FRIK_AttaboyActivationSphere";
 
     static const auto BASE_PATH = common::getRelativePathInDocuments(R"(\My Games\Fallout4VR\FRIK_Config)");
-    static const auto FRIK_INI_PATH = BASE_PATH + R"(\FRIK.ini)";
-    static const auto FRIK_FOLVR_INI_PATH = BASE_PATH + R"(\FRIK_FOLVR.ini)";
+    static const auto FRIK_CONFIG_PATH = BASE_PATH + R"(\FRIK.toml)";
+    static const auto FRIK_FOLVR_CONFIG_PATH = BASE_PATH + R"(\FRIK_FOLVR.toml)";
     static const auto MESH_HIDE_FACE_INI_PATH = BASE_PATH + R"(\Mesh_Hide\face.ini)";
     static const auto MESH_HIDE_SKINS_INI_PATH = BASE_PATH + R"(\Mesh_Hide\skins.ini)";
     static const auto MESH_HIDE_SLOTS_INI_PATH = BASE_PATH + R"(\Mesh_Hide\slots.ini)";
@@ -62,18 +63,19 @@ namespace frik
 
     /**
      * Holds all the configuration variables used in the mod.
-     * Most of the configuration variables are loaded from the FRIK.ini file.
-     * Some values can be changed in-game and persisted into the FRIK.ini file.
+     * Most of the configuration variables are loaded from the FRIK.toml file.
+     * Some values can be changed in-game and persisted into the FRIK.toml file.
      */
     class Config : public ConfigBase
     {
     public:
         explicit Config()
-            : ConfigBase(Version::PROJECT, FRIK_INI_PATH, IDR_FRIK_INI)
+            : ConfigBase(Version::PROJECT, FRIK_CONFIG_PATH, IDR_FRIK_CONFIG)
         {}
 
         virtual void load() override;
-        void loadIniOnly();
+        virtual void save() override;
+        void loadConfigOnly();
 
         void reloadForFalloutLondonVR();
         void setFlashlightLocation(FlashlightLocation location);
@@ -85,6 +87,7 @@ namespace frik
         void saveIsPlayingSeated(bool iIsPlayingSeated);
         void saveHideHeadEquipment(bool hide);
         void saveDampenHands(bool iDampenHands);
+        void setTwoHandedGripMode(TwoHandedGripMode mode);
 
         float getPlayerBodyOffsetUp() const;
         void setPlayerBodyOffsetUp(float value);
@@ -103,7 +106,7 @@ namespace frik
         bool saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
         void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool replaceWithEmbedded);
 
-        // Config variables: See FRIK.ini for descriptions.
+        // Config variables: See FRIK.toml for descriptions.
 
         // Player/Skeleton
         bool setScale = true;
@@ -111,7 +114,7 @@ namespace frik
         float playerHeight = 0;
         float armLength = 0;
 
-        // Arm solver (see FRIK.ini; 0 on the angle keys keeps the pre-0.79.1 behaviour)
+        // Arm solver (see FRIK.toml; 0 on the angle keys keeps the pre-0.79.1 behaviour)
         float armElbowMinFlexionDeg = 0;
         float armElbowMaxFlexionDeg = 0;
         float armTwistWindowMinDeg = 0;
@@ -193,8 +196,6 @@ namespace frik
         vrcf::InputBinding pipboyCloseBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
         // Controller input that must be held to move the holo Pipboy screen (see DampenPipboyScreenMode::HoldInPlace).
         vrcf::InputBinding holdPipboyScreenBinding;
-        // Controller input that enters the wrist-Pipboy configuration mode (long-press the favorites button).
-        vrcf::InputBinding enterPipboyConfigBinding;
 
         // Pipboy Torch/Flashlight
         bool removeFlashlight = false;
@@ -205,14 +206,12 @@ namespace frik
         vrcf::InputBinding switchTorchRightBinding{ vrcf::Hand::Right, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
 
         // Fallout London VR support: grab the Attaboy off the belt (a proximity gesture) to toggle the Pipboy.
-        // Loaded from the [AttaboyGrab] activation-sphere section; disable by setting sPrimaryBinding = none.
+        // Loaded from the [AttaboyGrab] activation-sphere section; disable by setting kPrimaryBinding = { type = "none" }.
         f4vr::WandActivationConfig attaboyGrab;
 
         // Weapon offhand grip
         bool enableOffHandGripping = false;
-        bool enableGripButtonToGrap = false;
-        bool enableGripButtonToLetGo = false;
-        bool onePressGripButton = false;
+        TwoHandedGripMode twoHandedGripMode = TwoHandedGripMode::Mode3;
         float gripLetGoThreshold = 0;
         // Offhand input that grips / releases a two-handed weapon (press = grab and release toggle, modes 2/3/4).
         vrcf::InputBinding offhandGripBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Press, vr::k_EButton_Grip };
@@ -260,9 +259,8 @@ namespace frik
         bool ignoreFalloutLondonVR = false;
 
     protected:
-        virtual void loadIniConfigInternal(const CSimpleIniA& ini) override;
-        virtual void saveIniConfigInternal(CSimpleIniA& ini) override;
-        virtual void updateIniConfigToLatestVersionCustom(int currentVersion, int latestVersion, const CSimpleIniA& oldIni, CSimpleIniA& newIni) const override;
+        virtual void loadConfigInternal(const toml::table& config) override;
+        void updateConfigToLatestVersionCustom(int currentVersion, int latestVersion, const toml::table& old, common::TomlEditor& latest) const override;
 
     private:
         void loadHideMeshes();
@@ -270,7 +268,6 @@ namespace frik
         void loadPipboyOffsets();
         void loadWeaponsOffsets();
         static void setupFolders();
-        static void migrateConfigFilesIfNeeded();
         static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool leftHanded);
         std::string getPipboyOffsetKey() const;
         std::string getPipboyOffsetPath() const;

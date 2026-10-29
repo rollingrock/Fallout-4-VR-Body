@@ -1,3 +1,17 @@
+## v0.80.0
+
+- Config: All of FRIK's settings can be changed in the Mods Config FO4 VR menu, previewed live, including controller bindings and the game's Pip-Boy location, with a quick launch entry and buttons that open FRIK's in-game configs.
+- Config: `FRIK.toml` replaces `FRIK.ini`. Your `FRIK.ini` (and `FRIK_FOLVR.ini`) is moved into it on the first run and kept as a backup.
+- Config: Removed the move of config files from the pre-v0.73 location.
+- Config menu: The in-game config screens are rebuilt on the framework's VR UI, with footers showing the bound controls, the height values shown while adjusting body height, and buttons pressed only from their front while you look at them.
+- Pip-Boy: Removed the long-press of the primary thumbstick (`kEnterPipboyConfigButton`) that opened the Pip-Boy config. Open it from the main config menu.
+- Pip-Boy: Fixed the screen missing after swapping the Pip-Boy model while it is open.
+- Pip-Boy: After moving the Pip-Boy off the wrist, the game's model no longer shows in front while it is closed.
+- Fallout London VR: The Attaboy grab zone shows the hand icon instead of a sphere.
+- Scopes: BetterScopesVR is detected by its F4SE plugin, so the scope integration no longer needs `3dscopes-replacer.esp`.
+- API: A config override is owned by the mod that set it.
+- API: `setConfigValueOverride` refuses a value of the wrong type; `getConfigValue` returns TOML text (`71.0`, `false`).
+
 ## v0.79.2
 
 - Scopes: A new game session forgets what every scope provider published about looking through a scope, keeping the registrations. A provider that missed its own exit edge used to leave FRIK scoped for the rest of the run - damping on the in-scope pair, the Pip-Boy's gesture paths gated, and a mode-1 two-handed grip that could not be let go by moving the hand away - and reloading was the one thing that could not clear it.

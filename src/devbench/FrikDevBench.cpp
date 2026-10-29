@@ -286,7 +286,7 @@ namespace frik::devbench
             "FRIK (Fallout 4 VR Body): the player's full body in VR - body, arm and leg IK, hand and finger poses, the wrist and holo Pip-Boy, "
             "weapon positioning and two-handed grips, scopes, the flashlight and smooth movement - and the API other mods drive it through "
             "(hand claims, frame phases, grips, weapon node ownership).");
-        f4cf::devbench::setDefaultConfigSection(INI_SECTION_MAIN);
+        f4cf::devbench::setDefaultConfigSection(CONFIG_SECTION_MAIN);
         f4cf::devbench::setStateProvider<FrikState>(stateDescription(), &captureState, &stateToJson);
         f4cf::devbench::addAction({ "probe", PROBE_DESCRIPTION, probeArguments(), &runProbe });
     }

@@ -154,14 +154,45 @@ namespace frik
     void Pipboy::swapModel()
     {
         g_config.toggleIsHoloPipboy();
+        reloadModel();
+    }
+
+    /**
+     * Replace the on-wrist Pipboy model with the one of the config's screen type and wrist model, open or closed as it was.
+     * Nothing while no model is replaced (not on wrist, in power armor): the frame update sets one up from the config.
+     */
+    void Pipboy::reloadModel()
+    {
+        if (!_newPipboyRootNifOnlyNode) {
+            return;
+        }
+
         turnPipBoyOnOff(false);
         detachReplacedPipboyRootNif();
         updateSetupPipboyNodes();
         const auto pn = f4vr::getVRPlayerNodes();
-        pn->pipboyRootNIFOnlyNode->local.scale = 1;
+        pn->pipboyRootNIFOnlyNode->local.scale = _isOpen ? 1.0f : 0.0f;
+        // the loader hands back the cached nif, its screen still shown/hidden as the last open/close of that model left it
+        f4vr::setNodeVisibility(pn->screenNode, _isOpen);
         pn->screenNode->local = g_config.getPipboyOffset();
         _pipboyScreenPrevFrame.clear();
-        turnPipBoyOnOff(true);
+        if (_isOpen) {
+            turnPipBoyOnOff(true);
+        }
+    }
+
+    /**
+     * Set the Pipboy model on the arm to the config's scale. A hidden model keeps its zero scale, and gets the config's
+     * as it is shown.
+     */
+    void Pipboy::applyModelScale() const
+    {
+        if (g_config.hidePipboy || g_config.isFalloutLondonVR) {
+            return;
+        }
+        if (const auto pipboy = getPipboyModelOnArmNode()) {
+            pipboy->local.scale = g_config.pipBoyScale;
+        }
     }
 
     /**
@@ -282,7 +313,7 @@ namespace frik
     }
 
     /**
-     * Restore the default Pipboy nif model to be used by in-front Pipboy.
+     * Restore the default Pipboy nif model to be used by in-front Pipboy, hidden as the game has it while closed.
      * Only need to restore if original was replaced, only happens once.
      */
     void Pipboy::restoreDefaultPipboyModelIfNeeded()
@@ -297,6 +328,11 @@ namespace frik
         logger::info("Restoring original Pipboy model...");
         _originalPipboyRootNifOnlyNode->local.scale = 1;
         pn->pipboyRootNIFOnlyNode = _originalPipboyRootNifOnlyNode;
+        // the game hides PipboyParent while an in-front or projected Pipboy is closed, and shows it as one opens; on the
+        // wrist it stays shown, so a closed Pipboy would show its whole model in front until the game opens and closes it
+        if (pn->pipboyParentNode && !isAnyPipboyOpen()) {
+            f4vr::setNodeVisibility(pn->pipboyParentNode, false);
+        }
         if (const auto screenNode = f4vr::findNode(_originalPipboyRootNifOnlyNode, "Screen")) {
             pn->screenNode = screenNode;
         } else {

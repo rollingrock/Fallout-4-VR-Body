@@ -1,8 +1,9 @@
 #pragma once
 
-#include "vrui/UIButton.h"
+#include "vrui/UIButtonPanel.h"
 #include "vrui/UIContainer.h"
-#include "vrui/UIToggleButton.h"
+#include "vrui/UITextPanel.h"
+#include "vrui/UIToggleButtonPanel.h"
 
 namespace frik
 {
@@ -76,17 +77,17 @@ namespace frik
 
         // configuration UI
         std::shared_ptr<vrui::UIContainer> _configUI;
-        std::shared_ptr<vrui::UIWidget> _complexAdjustFooter;
-        std::shared_ptr<vrui::UIWidget> _throwableAdjustFooter;
-        std::shared_ptr<vrui::UIWidget> _simpleAdjustFooter;
-        std::shared_ptr<vrui::UIToggleButton> _weaponModeButton;
-        std::shared_ptr<vrui::UIToggleButton> _primaryHandModeButton;
-        std::shared_ptr<vrui::UIToggleButton> _offhandModeButton;
-        std::shared_ptr<vrui::UIToggleButton> _throwableUIButton;
-        std::shared_ptr<vrui::UIWidget> _emptyHandsMessageBox;
-        std::shared_ptr<vrui::UIToggleButton> _betterScopesModeButton;
-        std::shared_ptr<vrui::UIButton> _saveButton;
-        std::shared_ptr<vrui::UIButton> _resetButton;
-        std::shared_ptr<vrui::UIWidget> _throwableNotEquippedMessageBox;
+        std::shared_ptr<vrui::UITextPanel> _complexAdjustFooter;
+        std::shared_ptr<vrui::UITextPanel> _throwableAdjustFooter;
+        std::shared_ptr<vrui::UITextPanel> _simpleAdjustFooter;
+        std::shared_ptr<vrui::UIToggleButtonPanel> _weaponModeButton;
+        std::shared_ptr<vrui::UIToggleButtonPanel> _primaryHandModeButton;
+        std::shared_ptr<vrui::UIToggleButtonPanel> _offhandModeButton;
+        std::shared_ptr<vrui::UIToggleButtonPanel> _throwableUIButton;
+        std::shared_ptr<vrui::UIButtonPanel> _emptyHandsMessageBox;
+        std::shared_ptr<vrui::UIToggleButtonPanel> _betterScopesModeButton;
+        std::shared_ptr<vrui::UIButtonPanel> _saveButton;
+        std::shared_ptr<vrui::UIButtonPanel> _resetButton;
+        std::shared_ptr<vrui::UIButtonPanel> _throwableNotEquippedMessageBox;
     };
 }

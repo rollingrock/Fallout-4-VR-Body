@@ -9,15 +9,10 @@
     "xbyak",
     "nlohmann-json",
     "simpleini",
+    "tomlplusplus",
     "thomasmonkman-filewatch",
     "cpptrace",
     "catch2"
   ],
-  "builtin-baseline": "b4a3d89125e45bc8f80fb94bef9761d4f4e14fb9",
-  "overrides": [
-    {
-      "name": "cpptrace",
-      "version": "1.0.0"
-    }
-  ]
+  "builtin-baseline": "5cd4931b18d49c77074703cf293a7837ac7506fa"
 }

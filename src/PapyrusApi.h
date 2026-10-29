@@ -21,7 +21,7 @@ namespace frik::api
 
     static void openFrikIniFile(std::monostate)
     {
-        logger::info("Open FRIK.ini file in notepad...");
+        logger::info("Open FRIK.toml file in notepad...");
         Config::openInNotepad();
     }
 

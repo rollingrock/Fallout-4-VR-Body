@@ -3,18 +3,94 @@
 #include "Config.h"
 #include "FRIK.h"
 #include "common/MatrixUtils.h"
+#include "config-mode/ConfigUIStyle.h"
 #include "skeleton/Skeleton.h"
 #include "utils.h"
 #include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
-#include "vrui/UIButton.h"
+#include "vrui/BindingPrompt.h"
 #include "vrui/UIContainer.h"
 #include "vrui/UIManager.h"
-#include "vrui/UIToggleButton.h"
 #include "vrui/UIToggleGroupContainer.h"
 
 using namespace vrui;
 using namespace common;
+
+namespace
+{
+    /**
+     * A reposition-target toggle: the label's two lines around the target's icon under Textures\FRIK\vrui\weapon\.
+     */
+    std::shared_ptr<UIToggleButtonPanel> createModeButton(const std::string& name, std::string topText, const std::string_view icon, std::string bottomText)
+    {
+        const auto button = std::make_shared<UIToggleButtonPanel>(name);
+        button->setTopText(std::move(topText));
+        button->setImage(std::format("vrui\\weapon\\{}.dds", icon));
+        button->setBottomText(std::move(bottomText));
+        return button;
+    }
+
+    /**
+     * A box telling the player what to do before there is anything to adjust, in the place of the buttons that need it.
+     * A button with no press handler, so it is as high as the buttons beside it, its lines centred in that height,
+     * and as wide as its text; without a handler the finger neither points at it nor pushes it.
+     */
+    std::shared_ptr<UIButtonPanel> createMessageBox(const std::string& name, std::string topText, std::string middleText, std::string bottomText)
+    {
+        const auto box = std::make_shared<UIButtonPanel>(name);
+        box->setFitWidth(true);
+        box->setTopText(std::move(topText));
+        box->setMiddleText(std::move(middleText));
+        box->setBottomText(std::move(bottomText));
+        return box;
+    }
+
+    std::shared_ptr<UITextPanel> createFooter(const std::string& name, TextRowsCallback content)
+    {
+        const auto footer = std::make_shared<UITextPanel>(name);
+        footer->setStyle(F4VR_PANEL_STYLE);
+        footer->setTextHeight(frik::CONFIG_FOOTER_TEXT_HEIGHT);
+        footer->setContent(std::move(content));
+        return footer;
+    }
+
+    vrcf::InputBinding stick(const vrcf::Hand hand)
+    {
+        return vrcf::InputBinding{ .hand = hand, .button = vr::k_EButton_SteamVR_Touchpad };
+    }
+
+    /**
+     * The footer row of the sticks that move the target: the primary one, and the offhand one too when it moves
+     * the target as well.
+     */
+    void appendAdjustRow(std::vector<TextRow>& rows, const bool bothSticks)
+    {
+        rows.push_back({ .spans = { { .text = "ADJUST:  " } } });
+        appendBindingPrompt(rows.back().spans, stick(vrcf::Hand::Primary), frik::CONFIG_FOOTER_PROMPT_STYLE);
+        if (bothSticks) {
+            rows.back().spans.push_back({ .text = " / " });
+            appendBindingPrompt(rows.back().spans, stick(vrcf::Hand::Offhand), frik::CONFIG_FOOTER_PROMPT_STYLE);
+        }
+    }
+
+    /**
+     * The footer row of the offhand buttons that turn the sticks to rotating the target, and to scaling it when
+     * the target scales.
+     */
+    void appendRotationRow(std::vector<TextRow>& rows, const bool withScale)
+    {
+        rows.push_back({ .spans = { { .text = "+ROTATION: " } } });
+        appendBindingPrompt(rows.back().spans,
+            { .hand = vrcf::Hand::Offhand, .type = vrcf::ActivationType::HoldDown, .button = vr::k_EButton_Grip },
+            frik::CONFIG_FOOTER_PROMPT_STYLE);
+        if (withScale) {
+            rows.back().spans.push_back({ .text = "  +SCALE: " });
+            appendBindingPrompt(rows.back().spans,
+                { .hand = vrcf::Hand::Offhand, .type = vrcf::ActivationType::HoldDown, .button = vr::k_EButton_A },
+                frik::CONFIG_FOOTER_PROMPT_STYLE);
+        }
+    }
+}
 
 namespace frik
 {
@@ -493,29 +569,29 @@ namespace frik
      */
     void WeaponPositionConfigMode::createConfigUI()
     {
-        _weaponModeButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-weapon.nif");
+        _weaponModeButton = createModeButton("Weapon", "WEAPON", "weapon", "OFFSET");
         _weaponModeButton->setToggleState(true);
-        _weaponModeButton->setOnToggleHandler([this](UIWidget*, bool) {
+        _weaponModeButton->setOnToggleHandler([this](UIToggleButtonPanel*, bool) {
             _repositionTarget = RepositionTarget::Weapon;
         });
 
-        _primaryHandModeButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-primary-hand.nif");
-        _primaryHandModeButton->setOnToggleHandler([this](UIWidget*, bool) {
+        _primaryHandModeButton = createModeButton("PrimaryHand", "PRIMARY", "primary-hand", "HAND GRIP");
+        _primaryHandModeButton->setOnToggleHandler([this](UIToggleButtonPanel*, bool) {
             _repositionTarget = RepositionTarget::PrimaryHand;
         });
 
-        _offhandModeButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-offhand.nif");
-        _offhandModeButton->setOnToggleHandler([this](UIWidget*, bool) {
+        _offhandModeButton = createModeButton("Offhand", "OFFHAND", "offhand", "GRIP");
+        _offhandModeButton->setOnToggleHandler([this](UIToggleButtonPanel*, bool) {
             _repositionTarget = RepositionTarget::Offhand;
         });
 
-        _throwableUIButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-throwable.nif");
-        _throwableUIButton->setOnToggleHandler([this](UIWidget*, bool) {
+        _throwableUIButton = createModeButton("Throwable", "THROWABLE", "throwable", "OFFSET");
+        _throwableUIButton->setOnToggleHandler([this](UIToggleButtonPanel*, bool) {
             _repositionTarget = RepositionTarget::Throwable;
         });
 
-        const auto backOfHandUIButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-back-of-hand-ui.nif");
-        backOfHandUIButton->setOnToggleHandler([this](UIWidget*, bool) {
+        const auto backOfHandUIButton = createModeButton("BackOfHandUI", "BACK OF", "back-of-hand-ui", "HAND UI");
+        backOfHandUIButton->setOnToggleHandler([this](UIToggleButtonPanel*, bool) {
             _repositionTarget = RepositionTarget::BackOfHandUI;
         });
 
@@ -526,36 +602,42 @@ namespace frik
         firstRowContainerInner->addElement(_throwableUIButton);
         firstRowContainerInner->addElement(backOfHandUIButton);
 
-        if (isBetterScopesVRModLoaded()) {
-            _betterScopesModeButton = std::make_shared<UIToggleButton>("ui-config-weapon\\btn-better-scopes-vr.nif");
-            _betterScopesModeButton->setOnToggleHandler([this](UIWidget*, bool) {
+        if (g_frik.isBetterScopesVRLoaded()) {
+            _betterScopesModeButton = createModeButton("BetterScopes", "BETTER", "better-scopes-vr", "SCOPES VR");
+            _betterScopesModeButton->setOnToggleHandler([this](UIToggleButtonPanel*, bool) {
                 _repositionTarget = RepositionTarget::BetterScopes;
             });
             firstRowContainerInner->addElement(_betterScopesModeButton);
         }
 
-        _emptyHandsMessageBox = std::make_shared<UIWidget>("ui-config-weapon\\msg-empty-hands.nif", 1.5f);
+        _emptyHandsMessageBox = createMessageBox("EmptyHandsMsg", "EQUIP WEAPON", "", "TO ADJUST");
 
         const auto firstRowContainer = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.3f);
         firstRowContainer->addElement(_emptyHandsMessageBox);
         firstRowContainer->addElement(firstRowContainerInner);
 
-        _saveButton = std::make_shared<UIButton>("ui-common\\btn-save.nif");
-        _saveButton->setOnPressHandler([this](UIWidget*) {
+        _saveButton = std::make_shared<UIButtonPanel>("Save");
+        _saveButton->setImage("f4cf\\vrui\\save.DDS");
+        _saveButton->setBottomText("SAVE");
+        _saveButton->setOnPressHandler([this](UIButtonPanel*) {
             saveConfig();
         });
 
-        _resetButton = std::make_shared<UIButton>("ui-common\\btn-reset.nif");
-        _resetButton->setOnPressHandler([this](UIWidget*) {
+        _resetButton = std::make_shared<UIButtonPanel>("Reset");
+        _resetButton->setImage("f4cf\\vrui\\reset.DDS");
+        _resetButton->setBottomText("RESET");
+        _resetButton->setOnPressHandler([this](UIButtonPanel*) {
             resetConfig();
         });
 
-        const auto exitButton = std::make_shared<UIButton>("ui-common\\btn-exit.nif");
-        exitButton->setOnPressHandler([this](UIWidget*) {
+        const auto exitButton = std::make_shared<UIButtonPanel>("Exit");
+        exitButton->setImage("f4cf\\vrui\\exit.DDS");
+        exitButton->setBottomText("EXIT");
+        exitButton->setOnPressHandler([this](UIButtonPanel*) {
             _adjuster->toggleWeaponRepositionMode();
         });
 
-        _throwableNotEquippedMessageBox = std::make_shared<UIWidget>("ui-config-weapon\\msg-throwable-empty-hands.nif", 1.5f);
+        _throwableNotEquippedMessageBox = createMessageBox("ThrowableNotEquippedMsg", "PRIME & HOLD", "THROWABLE", "TO ADJUST");
 
         const auto secondRowContainer = std::make_shared<UIContainer>("Row2", UIContainerLayout::HorizontalCenter, 0.3f);
         secondRowContainer->addElement(_saveButton);
@@ -563,10 +645,33 @@ namespace frik
         secondRowContainer->addElement(_throwableNotEquippedMessageBox);
         secondRowContainer->addElement(exitButton);
 
-        const auto header = std::make_shared<UIWidget>("ui-config-weapon\\title.nif", 1.7f);
-        _complexAdjustFooter = std::make_shared<UIWidget>("ui-config-weapon\\msg-footer.nif");
-        _throwableAdjustFooter = std::make_shared<UIWidget>("ui-config-weapon\\msg-footer-throwable.nif");
-        _simpleAdjustFooter = std::make_shared<UIWidget>("ui-config-weapon\\msg-footer-simple.nif");
+        const auto header = std::make_shared<UITextPanel>("Title");
+        header->setStyle(UIPanelStyle{ .color = F4VR_PANEL_STYLE.color });
+        header->setTextHeight(0.5f);
+        header->setContent([](std::vector<TextRow>& rows) {
+            rows.emplace_back("FRIK: WEAPON ADJUSTMENT", std::nullopt, render::TextDecoration::Underline);
+        });
+
+        // the footers name the controls each target's handle*Reposition reads; showHideUIElements shows the one that applies
+        _complexAdjustFooter = createFooter("ComplexAdjustFooter", [](std::vector<TextRow>& rows) {
+            appendAdjustRow(rows, true);
+            appendRotationRow(rows, true);
+        });
+        _throwableAdjustFooter = createFooter("ThrowableAdjustFooter", [](std::vector<TextRow>& rows) {
+            appendAdjustRow(rows, true);
+            appendRotationRow(rows, true);
+            rows.emplace_back("TIP: OPEN \"PAUSE\" MENU TO CANCEL THROW");
+        });
+        // shared by the hands and BetterScopes; the primary hand's grip also turns the stick to pitching the hand
+        _simpleAdjustFooter = createFooter("SimpleAdjustFooter", [this](std::vector<TextRow>& rows) {
+            appendAdjustRow(rows, false);
+            if (_repositionTarget == RepositionTarget::PrimaryHand) {
+                rows.push_back({ .spans = { { .text = "+PITCH: " } } });
+                appendBindingPrompt(rows.back().spans,
+                    { .hand = vrcf::Hand::Offhand, .type = vrcf::ActivationType::HoldDown, .button = vr::k_EButton_Grip },
+                    CONFIG_FOOTER_PROMPT_STYLE);
+            }
+        });
         _simpleAdjustFooter->setVisibility(false);
 
         const auto mainContainer = std::make_shared<UIContainer>("Main", UIContainerLayout::VerticalCenter, 0.3f);

@@ -102,6 +102,12 @@ namespace frik
 
         static float getAdjustedPlayerHMDOffset();
 
+        // The face and skin geometries to hide are found again on the next frame, for a change of what to hide
+        void resetHideGeometry()
+        {
+            _cullGeometry.resetHideGeometryIndexes();
+        }
+
         void onFrameUpdate();
 
     private:

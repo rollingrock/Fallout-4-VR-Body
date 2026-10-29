@@ -1,6 +1,7 @@
 #include "PipboyConfigMode.h"
 
 #include "Config.h"
+#include "ConfigUIStyle.h"
 #include "FRIK.h"
 #include "common/MatrixUtils.h"
 #include "f4vr/F4VRUtils.h"
@@ -10,11 +11,9 @@
 #include "vrcf/VRControllersHaptic.h"
 #include "vrcf/VRControllersManager.h"
 #include "vrcf/VRControllersSuppressor.h"
-#include "vrui/UIButton.h"
+#include "vrui/BindingPrompt.h"
 #include "vrui/UIManager.h"
-#include "vrui/UIMultiStateToggleButton.h"
-#include "vrui/UIToggleButton.h"
-#include "vrui/UIWidget.h"
+#include "vrui/UIMultiStateToggleButtonPanel.h"
 
 using namespace vrui;
 using namespace common;
@@ -53,11 +52,6 @@ namespace frik
             return;
         }
 
-        // Enter Pipboy Config Mode by long-pressing the configured binding (favorites button by default).
-        if (!isPipBoyConfigModeActive() && f4vr::isPipboyOnWrist() && g_frik.isPipboyOn() && vrcf::VRControllers.check(g_config.enterPipboyConfigBinding)) {
-            enterPipboyConfigMode();
-        }
-
         if (!isPipBoyConfigModeActive()) {
             return;
         }
@@ -80,19 +74,7 @@ namespace frik
         _swapModelBtn->setVisibility(onWrist);
         _row2Container->setVisibility(onWrist);
 
-        // show the footer matching the current adjust target
-        _footerMain->setVisibility(_adjustTarget == PipboyAdjustTarget::None);
-        _footerScreenAdjust->setVisibility(_adjustTarget == PipboyAdjustTarget::ScreenAdjust);
-        _footerModelScale->setVisibility(_adjustTarget == PipboyAdjustTarget::ModelScale);
-
         handleAdjustment();
-
-        // save on long press of the primary A button (same shortcut as weapon reposition mode)
-        if (vrcf::VRControllers.isLongPressed(vrcf::Hand::Primary, vr::EVRButtonId::k_EButton_A)) {
-            if (saveConfig()) {
-                vrcf::VRHaptics.trigger(vrcf::Hand::Primary, vrcf::HapticPattern::Success);
-            }
-        }
     }
 
     /**
@@ -283,6 +265,41 @@ namespace frik
     }
 
     /**
+     * The footer's rows for the current adjust target: how to begin, or the controls of the adjustment.
+     * The adjustments read the controllers directly (see handleScreenAdjust, handleModelScaleAdjust and
+     * the save in onFrameUpdate), so the prompts are built from bindings describing exactly those reads.
+     */
+    void PipboyConfigMode::appendFooterRows(std::vector<TextRow>& rows) const
+    {
+        const auto stick = [](const vrcf::Hand hand) {
+            return vrcf::InputBinding{ .hand = hand, .button = vr::k_EButton_SteamVR_Touchpad };
+        };
+
+        switch (_adjustTarget) {
+        case PipboyAdjustTarget::None:
+            rows.emplace_back("SELECT ADJUST SCREEN");
+            rows.emplace_back("OR SCALE MODEL TO BEGIN");
+            break;
+        case PipboyAdjustTarget::ScreenAdjust:
+            rows.push_back({ .spans = { { .text = "ADJUST:  " } } });
+            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Primary) }, CONFIG_FOOTER_PROMPT_STYLE);
+            rows.back().spans.push_back({ .text = " / " });
+            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Offhand) }, CONFIG_FOOTER_PROMPT_STYLE);
+            rows.push_back({ .spans = { { .text = "+ROTATION: " } } });
+            appendBindingPrompt(rows.back().spans,
+                { .hand = vrcf::Hand::Offhand, .type = vrcf::ActivationType::HoldDown, .button = vr::k_EButton_Grip },
+                CONFIG_FOOTER_PROMPT_STYLE);
+            rows.back().spans.push_back({ .text = "  +SCALE: " });
+            appendBindingPrompt(rows.back().spans, { .hand = vrcf::Hand::Offhand, .type = vrcf::ActivationType::HoldDown, .button = vr::k_EButton_A }, CONFIG_FOOTER_PROMPT_STYLE);
+            break;
+        case PipboyAdjustTarget::ModelScale:
+            rows.push_back({ .spans = { { .text = "ADJUST:  " } } });
+            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Primary) }, CONFIG_FOOTER_PROMPT_STYLE);
+            break;
+        }
+    }
+
+    /**
      * Get the 3rd-person Pipboy model node (on the arm the Pipboy is worn on), or null if not present
      * (e.g. Fallout London has no Pipboy on the arm).
      */
@@ -299,13 +316,19 @@ namespace frik
     {
         // Row of mutually-exclusive adjustment-mode toggles; the selected one drives the thumbstick in handleAdjustment().
         // Screen move/rotate/scale are all done from the single "Adjust Screen" mode via stick + button combinations.
-        _adjustScreenBtn = std::make_shared<UIToggleButton>("ui-config-pipboy\\btn-adjust-screen.nif");
-        _adjustScreenBtn->setOnToggleHandler([this](UIWidget*, const bool on) {
+        _adjustScreenBtn = std::make_shared<UIToggleButtonPanel>("AdjustScreen");
+        _adjustScreenBtn->setTopText("ADJUST");
+        _adjustScreenBtn->setImage("vrui\\pipboy\\adjust-screen.dds");
+        _adjustScreenBtn->setBottomText("SCREEN");
+        _adjustScreenBtn->setOnToggleHandler([this](UIToggleButtonPanel*, const bool on) {
             _adjustTarget = on ? PipboyAdjustTarget::ScreenAdjust : PipboyAdjustTarget::None;
         });
 
-        const auto scaleModelBtn = std::make_shared<UIToggleButton>("ui-config-pipboy\\btn-scale-model.nif");
-        scaleModelBtn->setOnToggleHandler([this](UIWidget*, const bool on) {
+        const auto scaleModelBtn = std::make_shared<UIToggleButtonPanel>("ScaleModel");
+        scaleModelBtn->setTopText("SCALE");
+        scaleModelBtn->setImage("vrui\\pipboy\\scale-model.dds");
+        scaleModelBtn->setBottomText("MODEL");
+        scaleModelBtn->setOnToggleHandler([this](UIToggleButtonPanel*, const bool on) {
             _adjustTarget = on ? PipboyAdjustTarget::ModelScale : PipboyAdjustTarget::None;
         });
 
@@ -316,8 +339,11 @@ namespace frik
         _adjustScreenBtn->setUnToggleAllowed(true);
         scaleModelBtn->setUnToggleAllowed(true);
 
-        _swapModelBtn = std::make_shared<UIButton>("ui-config-pipboy\\btn-swap-model.nif");
-        _swapModelBtn->setOnPressHandler([this](UIWidget*) {
+        _swapModelBtn = std::make_shared<UIButtonPanel>("SwapModel");
+        _swapModelBtn->setTopText("SWAP");
+        _swapModelBtn->setImage("vrui\\pipboy\\swap-model.dds");
+        _swapModelBtn->setBottomText("MODEL");
+        _swapModelBtn->setOnPressHandler([this](UIButtonPanel*) {
             if (!g_config.isFalloutLondonVR) {
                 g_frik.swapPipboyModel();
                 // swapping reloads the screen offset for the new model, so any active adjust selection is now stale
@@ -327,7 +353,12 @@ namespace frik
         });
 
         // Shown to the left of the mode group when the Pipboy isn't on the wrist (only model scale stays relevant).
-        _notOnWristMsg = std::make_shared<UIWidget>("ui-config-pipboy\\msg-not-on-wrist.nif");
+        _notOnWristMsg = std::make_shared<UITextPanel>("NotOnWristMsg", 2.0f, 2.0f);
+        _notOnWristMsg->setStyle(F4VR_PANEL_STYLE);
+        _notOnWristMsg->setTextHeight(0.2f);
+        _notOnWristMsg->setContent([](std::vector<TextRow>& rows) {
+            rows.emplace_back("ENABLE PIPBOY ON-WRIST FOR FULL EXPERIENCE");
+        });
         _notOnWristMsg->setVisibility(false);
 
         // First row: not-on-wrist message, the adjust-mode toggle group, then the swap-model action button.
@@ -337,24 +368,34 @@ namespace frik
         row1Container->addElement(_swapModelBtn);
 
         // Row of independent toggles.
-        const auto glanceBtn = std::make_shared<UIToggleButton>("ui-config-pipboy\\btn-open-look-at.nif");
+        const auto glanceBtn = std::make_shared<UIToggleButtonPanel>("OpenWhenLookAt");
+        glanceBtn->setTopText("OPEN");
+        glanceBtn->setImage("vrui\\pipboy\\open-look-at.dds");
+        glanceBtn->setBottomText("LOOK AT");
         glanceBtn->setToggleState(g_config.pipboyOpenWhenLookAt);
-        glanceBtn->setOnToggleHandler([](UIWidget*, const bool on) {
+        glanceBtn->setOnToggleHandler([](UIToggleButtonPanel*, const bool on) {
             onOpenWhenLookAtToggled(on);
         });
 
-        const auto closeLookAwayBtn = std::make_shared<UIToggleButton>("ui-config-pipboy\\btn-close-look-away.nif");
+        const auto closeLookAwayBtn = std::make_shared<UIToggleButtonPanel>("CloseWhenLookAway");
+        closeLookAwayBtn->setTopText("CLOSE");
+        closeLookAwayBtn->setImage("vrui\\pipboy\\close-look-away.dds");
+        closeLookAwayBtn->setBottomText("LOOK AWAY");
         closeLookAwayBtn->setToggleState(g_config.pipboyCloseWhenLookAway);
-        closeLookAwayBtn->setOnToggleHandler([](UIWidget*, const bool on) {
+        closeLookAwayBtn->setOnToggleHandler([](UIToggleButtonPanel*, const bool on) {
             onCloseWhenLookAwayToggled(on);
         });
 
-        const auto dampenModesMap = std::map<DampenPipboyScreenMode, std::string>{ { DampenPipboyScreenMode::None, "ui-config-pipboy\\btn-dampen-off.nif" },
-            { DampenPipboyScreenMode::Movement, "ui-config-pipboy\\btn-dampen-smooth.nif" },
-            { DampenPipboyScreenMode::HoldInPlace, "ui-config-pipboy\\btn-dampen-hold.nif" } };
-        const auto dampenBtn = std::make_shared<UIMultiStateToggleButton<DampenPipboyScreenMode>>(dampenModesMap);
+        // one icon for every state; the bottom line names the mode
+        const auto dampenState = [](const char* mode) {
+            return UIButtonPanelContent{ .topText = "DAMPEN SCREEN", .bottomText = mode, .image = "vrui\\pipboy\\dampen-screen.dds" };
+        };
+        const auto dampenBtn = std::make_shared<UIMultiStateToggleButtonPanel<DampenPipboyScreenMode>>("DampenScreen",
+            std::map<DampenPipboyScreenMode, UIButtonPanelContent>{ { DampenPipboyScreenMode::None, dampenState("OFF") },
+                { DampenPipboyScreenMode::Movement, dampenState("SMOOTH") },
+                { DampenPipboyScreenMode::HoldInPlace, dampenState("HOLD") } });
         dampenBtn->setState(g_config.dampenPipboyScreenMode);
-        dampenBtn->setOnStateChangedHandler([this](UIWidget*, const DampenPipboyScreenMode) {
+        dampenBtn->setOnStateChangedHandler([](UIMultiStateToggleButtonPanel<DampenPipboyScreenMode>*, const DampenPipboyScreenMode) {
             g_config.toggleDampenPipboyScreen();
             onDampenScreenModeChanged();
         });
@@ -366,20 +407,26 @@ namespace frik
 
         // Row of save / reset / exit. Save and reset are only enabled while actively adjusting a target
         // (toggled each frame in onFrameUpdate); exit is always available.
-        _saveBtn = std::make_shared<UIButton>("ui-common\\btn-save.nif");
-        _saveBtn->setOnPressHandler([this](UIWidget*) {
+        _saveBtn = std::make_shared<UIButtonPanel>("Save");
+        _saveBtn->setImage("f4cf\\vrui\\save.DDS");
+        _saveBtn->setBottomText("SAVE");
+        _saveBtn->setOnPressHandler([this](UIButtonPanel*) {
             saveConfig();
         });
         _saveBtn->setDisabled(true);
 
-        _resetBtn = std::make_shared<UIButton>("ui-common\\btn-reset.nif");
-        _resetBtn->setOnPressHandler([this](UIWidget*) {
+        _resetBtn = std::make_shared<UIButtonPanel>("Reset");
+        _resetBtn->setImage("f4cf\\vrui\\reset.DDS");
+        _resetBtn->setBottomText("RESET");
+        _resetBtn->setOnPressHandler([this](UIButtonPanel*) {
             resetConfig();
         });
         _resetBtn->setDisabled(true);
 
-        const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-exit.nif");
-        exitBtn->setOnPressHandler([this](UIWidget*) {
+        const auto exitBtn = std::make_shared<UIButtonPanel>("Exit");
+        exitBtn->setImage("f4cf\\vrui\\exit.DDS");
+        exitBtn->setBottomText("EXIT");
+        exitBtn->setOnPressHandler([this](UIButtonPanel*) {
             exitPBConfig();
         });
 
@@ -388,19 +435,24 @@ namespace frik
         row3Container->addElement(_resetBtn);
         row3Container->addElement(exitBtn);
 
-        const auto header = std::make_shared<UIWidget>("ui-config-pipboy\\title.nif", 1.7f);
+        const auto header = std::make_shared<UITextPanel>("Title");
+        header->setStyle(UIPanelStyle{ .color = F4VR_PANEL_STYLE.color });
+        header->setTextHeight(0.5f);
+        header->setContent([](std::vector<TextRow>& rows) {
+            rows.emplace_back("FRIK: PIPBOY CONFIGURATION", std::nullopt, render::TextDecoration::Underline);
+        });
 
-        // Footers - only one visible at a time based on the current adjust target (updated each frame in onFrameUpdate).
-        _footerMain = std::make_shared<UIWidget>("ui-config-pipboy\\msg-footer-main.nif");
-        _footerScreenAdjust = std::make_shared<UIWidget>("ui-config-pipboy\\msg-footer-adjust.nif");
-        _footerModelScale = std::make_shared<UIWidget>("ui-config-pipboy\\msg-footer-adjust-simple.nif");
-        _footerScreenAdjust->setVisibility(false);
-        _footerModelScale->setVisibility(false);
+        // One footer whose rows follow the current adjust target. Its rows are only asked for while the UI
+        // is attached, and the UI is detached before this config mode goes.
+        const auto footer = std::make_shared<UITextPanel>("Footer");
+        footer->setStyle(F4VR_PANEL_STYLE);
+        footer->setTextHeight(CONFIG_FOOTER_TEXT_HEIGHT);
+        footer->setContent([this](std::vector<TextRow>& rows) {
+            appendFooterRows(rows);
+        });
 
-        const auto footerContainer = std::make_shared<UIContainer>("Footer", UIContainerLayout::HorizontalCenter, 0.3f);
-        footerContainer->addElement(_footerMain);
-        footerContainer->addElement(_footerScreenAdjust);
-        footerContainer->addElement(_footerModelScale);
+        const auto footerContainer = std::make_shared<UIContainer>("FooterRow", UIContainerLayout::HorizontalCenter, 0.3f);
+        footerContainer->addElement(footer);
 
         _configUI = std::make_shared<UIContainer>("PipboyConfig", UIContainerLayout::VerticalUp, 0.35f, 1.7f);
         _configUI->addElement(footerContainer);

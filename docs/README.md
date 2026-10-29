@@ -28,8 +28,8 @@ FRIK brings the full player body to life in VR! Inspired by VRIK from Skyrim VR,
 
 ## Shortcuts
 
-- Open Main Configuration - Press and hold both thumbsticks (the `Sprint` and `Favorites` buttons) for ~1.5 seconds. The hold time is configurable via `sOpenConfigButton` in `FRIK.ini`.
-- Open Pip-Boy Configuration - While the Pip-Boy is open, press and hold the primary-hand thumbstick (the `Favorites` button) for ~2 seconds.
+- Open Main Configuration - Press and hold both thumbsticks (the `Sprint` and `Favorites` buttons) for ~1.5 seconds. The hold time is the `duration` of `kOpenConfigButton` in `FRIK.toml`.
+- Open Pip-Boy Configuration - From the main configuration menu.
 - These can also be opened via the FRIK Settings holotape.
 
 ## Body Adjustments
@@ -51,9 +51,9 @@ Use this mode to adjust the primary-hand weapon grip position, offhand grip posi
 Vanilla weapons should all be properly positioned (unless VR scale was changed).
 Use it to fix positions for new modded weapons.
 
-## Advanced Configuration in FRIK.ini
+## Advanced Configuration in FRIK.toml
 
-Most configuration is stored in the FRIK.ini file, including many settings that are not exposed through the in-game configuration interfaces.
-Changes made to `FRIK.ini` are live-loaded into the running game.
+Most configuration is stored in the FRIK.toml file, including many settings that are not exposed through the in-game configuration interfaces.
+Changes made to `FRIK.toml` are live-loaded into the running game. A `FRIK.ini` from a version before 0.79.3 is moved into `FRIK.toml` on the first run, with its values, and kept beside it as a backup.
 
 _Location_: `%USERPROFILE%\Documents\My Games\Fallout4VR\FRIK_Config`

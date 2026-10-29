@@ -401,10 +401,11 @@ namespace frik::api
          * Supported since FRIK API v4.
          * Read the current effective value for a FRIK config section/key into the caller-provided buffer.
          * The value returned is the active session override if one is set (see setConfigValueOverride),
-         * otherwise the on-disk FRIK.ini value, otherwise defaultValue. The value is returned as a raw
-         * string; the caller parses it to the type it expects (e.g. std::strtof / std::atoi).
+         * otherwise the on-disk FRIK.toml value, otherwise defaultValue. A string value is returned as its
+         * text, and any other value as its TOML text ("true", "1.5", "71.0"); the caller parses it to the
+         * type it expects (e.g. std::strtof / std::atoi).
          * Always null-terminates outBuf when bufLen > 0; writes at most bufLen-1 characters plus the null.
-         * Note: when the key is absent from the .ini the caller's defaultValue is returned, which may
+         * Note: when the key is absent from FRIK.toml the caller's defaultValue is returned, which may
          * differ from FRIK's own built-in default for that key.
          * @param defaultValue value returned when the key is missing; may be null (treated as empty).
          * @return the full value length excluding the null terminator; if >= bufLen the value was truncated.
@@ -420,22 +421,28 @@ namespace frik::api
         /**
          * Supported since FRIK API v4.
          * Set an in-memory override for a FRIK config section/key for the rest of this game session.
-         * The override is re-applied on every config (re)load, so it survives FRIK.ini live-reload, and
-         * is never written to disk (cleared on game restart). The value is given as a string and parsed
-         * by the type-appropriate reader when the config is loaded, so it works for any config value
-         * (bool/int/float/string and the compound transform/binding/hand-pose values). FRIK reloads its
-         * config immediately so the change takes effect right away.
-         * @param caller name of the calling mod, used only for FRIK logging.
-         * @return true if section, key, and value are all non-null.
+         * The override is re-applied on every config (re)load, so it survives FRIK.toml live-reload, and
+         * is never written to disk (cleared on game restart). The value is given as a string and taken in
+         * the type FRIK.toml has for the key ("no" for a bool, "2" for a float), so it works for any config
+         * value (bool/int/float/string, and a transform, binding or hand pose as the TOML text of its table,
+         * "{ pos = [1, 2, 3] }"; a binding also takes its line, "offhand tap grip" or "none"). A key renamed
+         * when its type changed is reached by its old name ("sOpenConfigButton" sets "kOpenConfigButton").
+         * getConfigValue then returns it as it applies ("false", "2.0"). FRIK reloads its config
+         * immediately so the change takes effect right away.
+         * @param caller name of the calling mod: the owner of the override, and used for FRIK logging.
+         *        When two owners override the same key, the one set last applies.
+         * @return true if section, key, and value are all non-null and the value is of the key's type;
+         *         false sets nothing.
          */
         bool(FRIK_CALL* setConfigValueOverride)(const char* caller, const char* section, const char* key, const char* value);
 
         /**
          * Supported since FRIK API v4.
          * Remove a previously set session override for section/key; FRIK reloads so the value reverts to
-         * its on-disk FRIK.ini value.
-         * @param caller name of the calling mod, used only for FRIK logging.
-         * @return true if an override was set for that key and has been removed.
+         * its on-disk FRIK.toml value.
+         * @param caller name of the calling mod: only an override set under the same name is removed.
+         *        An override another owner holds on the key stays, and applies again.
+         * @return true if the caller had an override for that key and it has been removed.
          */
         bool(FRIK_CALL* clearConfigValueOverride)(const char* caller, const char* section, const char* key);
 

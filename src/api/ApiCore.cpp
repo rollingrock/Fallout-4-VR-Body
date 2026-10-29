@@ -458,7 +458,8 @@ namespace frik::api::core
     }
 
     /**
-     * Set a session-only override for a config section/key (string parsed by the type-appropriate reader).
+     * Set a session-only override for a config section/key, taken in the type FRIK.toml has for the key; a value not
+     * of that type is refused.
      */
     bool FRIK_CORE_CALL setConfigValueOverride(const char* caller, const char* section, const char* key, const char* value)
     {
@@ -466,8 +467,7 @@ namespace frik::api::core
             return false;
         }
         logger::sample("setConfigValueOverride caller:'{}' {}.{} = '{}'", caller ? caller : "?", section, key, value);
-        g_config.setConfigOverride(section, key, value);
-        return true;
+        return g_config.setConfigOverride(caller && *caller ? caller : "FRIKApi", section, key, value).has_value();
     }
 
     /**
@@ -475,12 +475,11 @@ namespace frik::api::core
      */
     bool FRIK_CORE_CALL clearConfigValueOverride(const char* caller, const char* section, const char* key)
     {
-        if (!section || !key || !g_config.hasConfigOverride(section, key)) {
+        if (!section || !key) {
             return false;
         }
         logger::sample("clearConfigValueOverride caller:'{}' {}.{}", caller ? caller : "?", section, key);
-        g_config.clearConfigOverride(section, key);
-        return true;
+        return g_config.clearConfigOverride(caller && *caller ? caller : "FRIKApi", section, key);
     }
 
     void logApiAcquired(const std::string_view apiName, const std::uint32_t apiVersion, const std::size_t tableSize, const void* returnAddress)
@@ -599,8 +598,6 @@ namespace frik::api::core
             logger::sample("setHandPoseCustomLocalTransforms REJECTED tag:'{}' - tag holds no pose override, set one with a setHandPose* call first", tag);
             return false;
         }
-
-        logger::sample("setHandPoseCustomLocalTransforms tag:'{}' hand={} enabledMask=0x{:04x} priority={}", tag, isLeft ? "Left" : "Right", enabledMask, priority);
         return true;
     }
 

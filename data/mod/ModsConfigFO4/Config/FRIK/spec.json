@@ -1,0 +1,1529 @@
+{
+  "minSchemaVersion": 1,
+  "modName": "FRIK",
+  "displayName": "FRIK",
+  "help": "Your full body in VR: its size and posture, the Pip-Boy, the flashlight, two-handed weapons, and smooth movement.",
+  "specVersion": 1,
+  "f4sePluginRequirements": ["F4VRBody"],
+  "files": {
+    "config": {
+      "format": "toml",
+      "root": "myGames",
+      "path": "FRIK_Config/FRIK.toml",
+      "pathFromClientState": "configFile"
+    },
+    "frikToml": {
+      "format": "toml",
+      "root": "myGames",
+      "path": "FRIK_Config/FRIK.toml"
+    }
+  },
+  "defaultFile": "config",
+  "applies": "live",
+  "content": [
+    {
+      "type": "image",
+      "texture": "FRIK/config/banner.dds",
+      "width": 700
+    },
+    {
+      "type": "text",
+      "text": "<font color='#AAAAAA' size=13>Version: {clientState:modVersion}</font>",
+      "html": true
+    },
+    {
+      "type": "section",
+      "text": "About",
+      "content": [
+        {
+          "type": "text",
+          "text": "FRIK brings your full body to Fallout 4 VR. Full-body inverse kinematics move the arms and legs from where your headset and controllers are, so you see your own body, in power armor too."
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "text": "Help",
+      "content": [
+        {
+          "type": "button",
+          "text": "FRIK wiki",
+          "help": "Opens the FRIK wiki in your browser. Take off the headset to read it on your monitor.",
+          "buttonText": "Open",
+          "action": {
+            "type": "OpenURL",
+            "url": "https://github.com/rollingrock/Fallout-4-VR-Body/blob/main/docs/README.md"
+          }
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "pageDisplayName": "Body",
+      "help": "Your body under the headset: its posture, what of it is hidden, the arms, and the world scale.",
+      "content": [
+        {
+          "type": "switcher",
+          "valueType": "bool",
+          "text": "Playing seated",
+          "help": "Uses the seated postures below in place of the standing ones. Turn it on when you play sitting down.",
+          "default": false,
+          "storage": { "path": ["Fallout4VRBody", "bIsPlayingSeated"] }
+        },
+        {
+          "type": "section",
+          "text": "Posture",
+          "help": "Where your body is under the headset. Standing, seated, and both in power armor each keep their own values.",
+          "content": [
+            {
+              "type": "button",
+              "text": "Adjust the body in the game",
+              "help": "Opens FRIK's body adjustment in the game, to set the posture you are in now while you see your body.",
+              "buttonText": "Open",
+              "action": {
+                "type": "CallNativeFunction",
+                "function": "openBodyAdjustmentConfig"
+              }
+            },
+            {
+              "type": "section",
+              "text": "Standing",
+              "isCollapsible": true,
+              "collapsed": true,
+              "content": [
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Headset up",
+                  "help": "How high the headset is above the body. Higher lowers the body under your view.",
+                  "default": 8.6,
+                  "valueOptions": {
+                    "min": -20.0,
+                    "max": 60.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerHMDOffsetUpStanding"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Body up",
+                  "help": "Raises or lowers the body under the headset.",
+                  "default": -4.2,
+                  "valueOptions": {
+                    "min": -30.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerBodyOffsetUpStanding"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Leg slack",
+                  "help": "How much the knees bend. Higher bends them more.",
+                  "default": 0.0,
+                  "valueOptions": {
+                    "min": -10.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerLegSlackAdjustOffsetStanding"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Body forward",
+                  "help": "Moves the body forward or back. Lower moves it back, so you do not see into your chest.",
+                  "default": -3.0,
+                  "valueOptions": {
+                    "min": -30.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerBodyOffsetForwardStanding"]
+                  }
+                }
+              ]
+            },
+            {
+              "type": "section",
+              "text": "Standing in power armor",
+              "isCollapsible": true,
+              "collapsed": true,
+              "content": [
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Headset up",
+                  "help": "How high the headset is above the body. Higher lowers the body under your view.",
+                  "default": 23.0,
+                  "valueOptions": {
+                    "min": -20.0,
+                    "max": 80.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerHMDOffsetUpStandingInPA"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Body up",
+                  "help": "Raises or lowers the body under the headset.",
+                  "default": -8.0,
+                  "valueOptions": {
+                    "min": -30.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerBodyOffsetUpStandingInPA"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Leg slack",
+                  "help": "How much the knees bend. Higher bends them more.",
+                  "default": 0.0,
+                  "valueOptions": {
+                    "min": -10.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerLegSlackAdjustOffsetStandingInPA"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Body forward",
+                  "help": "Moves the body forward or back. Lower moves it back, so you do not see into your chest.",
+                  "default": -15.0,
+                  "valueOptions": {
+                    "min": -30.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerBodyOffsetForwardStandingInPA"]
+                  }
+                }
+              ]
+            },
+            {
+              "type": "section",
+              "text": "Seated",
+              "isCollapsible": true,
+              "collapsed": true,
+              "content": [
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Headset up",
+                  "help": "How high the headset is above the body. Higher lowers the body under your view.",
+                  "default": 35.0,
+                  "valueOptions": {
+                    "min": -20.0,
+                    "max": 80.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerHMDOffsetUpSitting"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Body up",
+                  "help": "Raises or lowers the body under the headset.",
+                  "default": -5.0,
+                  "valueOptions": {
+                    "min": -30.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerBodyOffsetUpSitting"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Leg slack",
+                  "help": "How much the knees bend. Higher bends them more.",
+                  "default": 12.0,
+                  "valueOptions": {
+                    "min": -10.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerLegSlackAdjustOffsetSitting"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Body forward",
+                  "help": "Moves the body forward or back. Lower moves it back, so you do not see into your chest.",
+                  "default": -3.0,
+                  "valueOptions": {
+                    "min": -30.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerBodyOffsetForwardSitting"]
+                  }
+                }
+              ]
+            },
+            {
+              "type": "section",
+              "text": "Seated in power armor",
+              "isCollapsible": true,
+              "collapsed": true,
+              "content": [
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Headset up",
+                  "help": "How high the headset is above the body. Higher lowers the body under your view.",
+                  "default": 53.0,
+                  "valueOptions": {
+                    "min": -20.0,
+                    "max": 80.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerHMDOffsetUpSittingInPA"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Body up",
+                  "help": "Raises or lowers the body under the headset.",
+                  "default": -7.0,
+                  "valueOptions": {
+                    "min": -30.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerBodyOffsetUpSittingInPA"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Leg slack",
+                  "help": "How much the knees bend. Higher bends them more.",
+                  "default": 0.0,
+                  "valueOptions": {
+                    "min": -10.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerLegSlackAdjustOffsetSittingInPA"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Body forward",
+                  "help": "Moves the body forward or back. Lower moves it back, so you do not see into your chest.",
+                  "default": -9.0,
+                  "valueOptions": {
+                    "min": -30.0,
+                    "max": 30.0,
+                    "step": 0.1
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fPlayerBodyOffsetForwardSittingInPA"]
+                  }
+                }
+              ]
+            },
+            {
+              "type": "section",
+              "text": "Advanced",
+              "help": "The body's height, the knee bend the body adjustment aims for, and comfort sneak.",
+              "isCollapsible": true,
+              "collapsed": true,
+              "content": [
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Body height",
+                  "help": "The height of your body. It scales the skeleton, so a change moves your hands away from where weapons are aligned to them.",
+                  "default": 120.482803,
+                  "valueOptions": { "min": 90.0, "max": 150.0, "step": 0.5 },
+                  "display": { "decimals": 1 },
+                  "warnings": [
+                    {
+                      "when": {
+                        "setting": "PlayerHeight:Fallout4VRBody",
+                        "notEquals": 120.482803
+                      },
+                      "text": "Weapons are aligned to the default height."
+                    }
+                  ],
+                  "storage": { "path": ["Fallout4VRBody", "PlayerHeight"] }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Leg slack target",
+                  "help": "The knee bend the body adjustment keeps as it sets the leg slack, so the legs are never straight.",
+                  "default": 2.0,
+                  "valueOptions": { "min": 0.0, "max": 10.0, "step": 0.1 },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fSkeletonLegSlackTarget"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Comfort sneak body pitch",
+                  "help": "Holds the body at this pitch while comfort sneak lowers you, so the body and what is on it stay in place. 0 for the regular pitch.",
+                  "default": 10.0,
+                  "valueOptions": { "min": 0.0, "max": 45.0, "step": 1.0 },
+                  "display": { "unit": "°" },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fComfortSneakHackStaticBodyPitchAngle"]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        { "type": "spacer" },
+        {
+          "type": "section",
+          "text": "Head",
+          "help": "What of your head is hidden or moved, so it does not block your view. Hiding a part does not change where you can be hit.",
+          "content": [
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Hide head equipment",
+              "help": "Hides what you wear on your head, as hats and helmets, by the slots Mesh_Hide\\slots.ini names.",
+              "default": true,
+              "storage": {
+                "path": ["Fallout4VRBody", "bHidePlayerHeadEquipment"]
+              }
+            },
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Show all in selfie mode",
+              "help": "In selfie mode, shows what the settings of this section hide or move.",
+              "default": true,
+              "storage": {
+                "path": ["Fallout4VRBody", "bSelfieIgnoreHideFlags"]
+              }
+            },
+            {
+              "type": "section",
+              "text": "Advanced",
+              "help": "Hiding the head and the skin, and moving the head back.",
+              "isCollapsible": true,
+              "collapsed": true,
+              "content": [
+                {
+                  "type": "switcher",
+                  "valueType": "bool",
+                  "text": "Hide the head",
+                  "help": "Hides the head, as Mesh_Hide\\face.ini names its parts. Your shadow is headless then: Head back offset keeps it.",
+                  "default": false,
+                  "storage": { "path": ["Fallout4VRBody", "bHidePlayerHead"] }
+                },
+
+                {
+                  "type": "switcher",
+                  "valueType": "bool",
+                  "text": "Hide skin and clothes",
+                  "help": "Hides skin and clothes, as Mesh_Hide\\skins.ini names them.",
+                  "default": false,
+                  "storage": { "path": ["Fallout4VRBody", "bHidePlayerSkin"] }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Head back offset",
+                  "help": "Moves the head back so it does not block your view. Unlike hiding it, it keeps the head's shadow.",
+                  "default": 5.0,
+                  "valueOptions": { "min": 0.0, "max": 15.0, "step": 0.5 },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fHeadBackPositionOffset"]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        { "type": "spacer" },
+        {
+          "type": "section",
+          "text": "Arms",
+          "help": "How long the arms are, how the elbow bends, and how the shoulder follows the hand.",
+          "content": [
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Arm length",
+              "help": "The length of the arms. Set it so your arms in the game straighten when your own do.",
+              "default": 36.0,
+              "valueOptions": { "min": 25.0, "max": 50.0, "step": 0.5 },
+              "storage": { "path": ["Fallout4VRBody", "armLength"] }
+            },
+            {
+              "type": "section",
+              "text": "Advanced",
+              "help": "How the arm solver bends the elbow, moves the shoulder, and twists the forearm.",
+              "isCollapsible": true,
+              "collapsed": true,
+              "content": [
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Least elbow bend",
+                  "help": "The elbow keeps at least this bend at full reach, so it does not spin when the arm is straight. Try 6 to 14.",
+                  "default": 10.0,
+                  "valueOptions": { "min": 0.0, "max": 30.0, "step": 1.0 },
+                  "display": { "unit": "°" },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fArmElbowMinFlexionDeg"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Most elbow bend",
+                  "help": "The elbow bends at most this much as the hand comes near the shoulder. Past it the upper arm shortens, so the arm does not flip.",
+                  "default": 145.0,
+                  "valueOptions": { "min": 90.0, "max": 170.0, "step": 1.0 },
+                  "display": { "unit": "°" },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fArmElbowMaxFlexionDeg"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Elbow twist window",
+                  "help": "The least width of the range in which the wrist's twist steers the elbow, so it still does in a low-ready or a reload.",
+                  "default": 15.0,
+                  "valueOptions": { "min": 0.0, "max": 45.0, "step": 1.0 },
+                  "display": { "unit": "°" },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fArmTwistWindowMinDeg"]
+                  }
+                },
+                {
+                  "type": "switcher",
+                  "valueType": "bool",
+                  "text": "Smooth blends",
+                  "help": "Blends the elbow where its rules switch, so it does not jump.",
+                  "default": true,
+                  "storage": { "path": ["Fallout4VRBody", "bArmSmoothBlends"] }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Shoulder reach",
+                  "help": "How far the shoulder moves toward the hand at full reach, as a part of the arm's length. 0.08 is the original, 0.225 Skyrim VRIK.",
+                  "default": 0.15,
+                  "valueOptions": { "min": 0.0, "max": 0.3, "step": 0.005 },
+                  "display": { "decimals": 3 },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fArmShoulderReachFraction"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Shoulder downward reach",
+                  "help": "Scales how far the shoulder moves down toward the hand. 1 is the original, 0.4 Skyrim VRIK.",
+                  "default": 0.4,
+                  "valueOptions": { "min": 0.0, "max": 1.0, "step": 0.05 },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fArmShoulderDownwardDamp"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Upper arm twist split",
+                  "help": "Experimental: the part of the upper arm's roll moved to the shoulder's twist bone. Leave at 0 unless you are testing it.",
+                  "default": 0.0,
+                  "valueOptions": { "min": 0.0, "max": 1.0, "step": 0.05 },
+                  "warnings": [
+                    {
+                      "when": {
+                        "setting": "fArmUpperTwistSplit:Fallout4VRBody",
+                        "greaterThan": 0.0
+                      },
+                      "text": "Experimental: it can disturb what other mods read of the body."
+                    }
+                  ],
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fArmUpperTwistSplit"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Forearm twist at the elbow",
+                  "help": "The part of the forearm's roll the bone at the elbow takes. A taper from the elbow, as 0.1, 0.35, 0.55, twists the skin more evenly.",
+                  "default": 0.0,
+                  "valueOptions": { "min": 0.0, "max": 1.0, "step": 0.05 },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fArmForearmTwistWeight1"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Forearm twist in the middle",
+                  "help": "The part of the forearm's roll the middle bone takes.",
+                  "default": 0.5,
+                  "valueOptions": { "min": 0.0, "max": 1.0, "step": 0.05 },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fArmForearmTwistWeight2"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Forearm twist at the wrist",
+                  "help": "The part of the forearm's roll the bone at the wrist takes.",
+                  "default": 0.5,
+                  "valueOptions": { "min": 0.0, "max": 1.0, "step": 0.05 },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "fArmForearmTwistWeight3"]
+                  }
+                },
+                {
+                  "type": "switcher",
+                  "valueType": "bool",
+                  "text": "Smoothing at any frame rate",
+                  "help": "Hand damping and elbow smoothing feel the same at any frame rate. Off, they lag more when reprojection halves the frame rate.",
+                  "default": true,
+                  "storage": {
+                    "path": ["Fallout4VRBody", "bArmFrameRateIndependentSmoothing"]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        { "type": "spacer" },
+        {
+          "type": "section",
+          "text": "World scale",
+          "help": "How large the world looks to you, which FRIK sets as the game starts.",
+          "content": [
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Set the world scale",
+              "help": "Sets the world scale below as the game starts. Off leaves fVrScale as Fallout4Custom.ini has it.",
+              "default": true,
+              "applies": "restart",
+              "storage": { "path": ["Fallout4VRBody", "setScale"] }
+            },
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "World scale",
+              "help": "How large the world looks, as fVrScale. Higher makes the world look smaller.",
+              "default": 71.0,
+              "valueOptions": { "min": 50.0, "max": 90.0, "step": 0.5 },
+              "visibleWhen": {
+                "setting": "setScale:Fallout4VRBody",
+                "equals": true
+              },
+              "storage": { "path": ["Fallout4VRBody", "fVrScale"] }
+            }
+          ]
+        },
+        { "type": "spacer" },
+        {
+          "type": "section",
+          "text": "Other",
+          "help": "Selfie mode and the power armor HUD.",
+          "content": [
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Selfie distance",
+              "help": "How far in front of you your body is in selfie mode.",
+              "default": 120.0,
+              "valueOptions": { "min": 50.0, "max": 300.0, "step": 5.0 },
+              "storage": {
+                "path": ["Fallout4VRBody", "selfieOutFrontDistance"]
+              }
+            },
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "HUD in power armor",
+              "help": "Shows the power armor's HUD. Off hides it.",
+              "default": true,
+              "storage": { "path": ["Fallout4VRBody", "showPAHUD"] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pageDisplayName": "Pip-Boy",
+      "help": "The Pip-Boy on your wrist: its model and screen, how it opens and closes, and how you operate it.",
+      "content": [
+        {
+          "type": "section",
+          "text": "Wrist model",
+          "help": "The Pip-Boy model on your wrist.",
+          "content": [
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Model scale",
+              "help": "The size of the Pip-Boy model on your wrist.",
+              "default": 1.0,
+              "valueOptions": { "min": 0.5, "max": 1.5, "step": 0.01 },
+              "display": { "decimals": 2 },
+              "storage": { "path": ["Fallout4VRBody", "PipboyScale"] }
+            },
+            {
+              "type": "section",
+              "text": "Advanced",
+              "help": "Hiding the model, and the model kept with the holo screen.",
+              "isCollapsible": true,
+              "collapsed": true,
+              "content": [
+                {
+                  "type": "switcher",
+                  "valueType": "bool",
+                  "text": "Hide model",
+                  "help": "Hides the Pip-Boy model on your wrist.",
+                  "default": false,
+                  "storage": { "path": ["Fallout4VRBody", "hidePipboy"] }
+                },
+                {
+                  "type": "switcher",
+                  "valueType": "bool",
+                  "text": "Keep the regular model",
+                  "help": "With the holo screen, keeps the regular Pip-Boy model on your wrist in place of the holo emitter. The holo screen still opens.",
+                  "default": false,
+                  "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 },
+                  "enabledWhen": {
+                    "setting": "HoloPipBoyEnabled:Fallout4VRBody",
+                    "equals": true
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "HoloPipBoyKeepWristModel"]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        { "type": "spacer" },
+        {
+          "type": "stepper",
+          "valueType": "int",
+          "text": "Game Pip-Boy location",
+          "help": "Where the Pip-Boy opens. It is the game's own VR setting, set here for you. FRIK's Pip-Boy is the one on the wrist.",
+          "default": 0,
+          "applies": "live",
+          "valueOptions": {
+            "options": [
+              { "value": 0, "text": "Wrist", "help": "On your wrist, with FRIK's screen, finger use, and the settings below." },
+              { "value": 1, "text": "In front", "help": "The whole Pip-Boy opens in front of you." },
+              { "value": 2, "text": "Projected", "help": "Only the Pip-Boy's screen opens in front of you." }
+            ]
+          },
+          "storage": { "clientState": "pipboyPlacement" }
+        },
+        { "type": "spacer" },
+        {
+          "type": "text",
+          "text": "FRIK's Pip-Boy settings are for the Pip-Boy on the wrist. Set the location to Wrist to change them.",
+          "visibleWhen": { "clientState": "pipboyPlacement", "notEquals": 0 }
+        },
+        {
+          "type": "section",
+          "text": "Screen",
+          "help": "Where the Pip-Boy's screen is when it opens.",
+          "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 },
+          "content": [
+            {
+              "type": "stepper",
+              "valueType": "bool",
+              "text": "Screen type",
+              "help": "Regular is the screen on the Pip-Boy. Holo is a larger screen that floats above your wrist.",
+              "default": true,
+              "valueOptions": {
+                "options": [
+                  { "value": false, "text": "Regular" },
+                  { "value": true, "text": "Holo" }
+                ]
+              },
+              "storage": { "path": ["Fallout4VRBody", "HoloPipBoyEnabled"] }
+            },
+            {
+              "type": "button",
+              "text": "Adjust the screen in the game",
+              "help": "Opens FRIK's Pip-Boy config in the game, to move the screen and scale the model. Open the Pip-Boy on your wrist first.",
+              "buttonText": "Open",
+              "action": {
+                "type": "CallNativeFunction",
+                "function": "openPipboyScreenAdjustmentConfig"
+              }
+            }
+          ]
+        },
+        { "type": "spacer", "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 } },
+        {
+          "type": "section",
+          "text": "Opening and closing",
+          "help": "When the Pip-Boy opens and closes: as you look at it, or with a button.",
+          "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 },
+          "content": [
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Open when looked at",
+              "help": "Opens the Pip-Boy when you look at it on your wrist.",
+              "default": true,
+              "storage": { "path": ["Fallout4VRBody", "PipBoyOpenWhenLookAt"] }
+            },
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Close when looked away",
+              "help": "Closes the Pip-Boy when you look away from it.",
+              "default": true,
+              "storage": {
+                "path": ["Fallout4VRBody", "PipBoyCloseWhenLookAway"]
+              }
+            },
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Open button only when looked at",
+              "help": "The open button works only while you look at the Pip-Boy, so it is not opened by accident.",
+              "default": true,
+              "storage": {
+                "path": ["Fallout4VRBody", "PipBoyOpenWithButtonOnlyWhenLookingAt"]
+              }
+            },
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Close by moving",
+              "help": "Moving while you do not look at the Pip-Boy closes it at once, without the close delay.",
+              "default": true,
+              "storage": {
+                "path": ["Fallout4VRBody", "AllowMovementWhenNotLookingAtPipboy"]
+              }
+            },
+            {
+              "type": "section",
+              "text": "Advanced",
+              "help": "How directly you look, and for how long, for the Pip-Boy to open and close.",
+              "isCollapsible": true,
+              "collapsed": true,
+              "content": [
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Look-at threshold",
+                  "help": "How directly you look at the Pip-Boy for it to open. Higher needs a more direct look.",
+                  "default": 0.75,
+                  "valueOptions": { "min": 0.3, "max": 1.0, "step": 0.05 },
+                  "enabledWhen": {
+                    "setting": "PipBoyOpenWhenLookAt:Fallout4VRBody",
+                    "equals": true
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "PipBoyLookAtThreshold"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Look-away threshold",
+                  "help": "How far you look away from the Pip-Boy for it to close. Lower needs you to look farther away.",
+                  "default": 0.6,
+                  "valueOptions": { "min": 0.1, "max": 1.0, "step": 0.05 },
+                  "enabledWhen": {
+                    "setting": "PipBoyCloseWhenLookAway:Fallout4VRBody",
+                    "equals": true
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "PipBoyLookAwayThreshold"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "int",
+                  "text": "Open delay",
+                  "help": "How long you look at the Pip-Boy before it opens.",
+                  "default": 400,
+                  "valueOptions": { "min": 0, "max": 2000, "step": 50 },
+                  "display": { "unit": "ms" },
+                  "enabledWhen": {
+                    "setting": "PipBoyOpenWhenLookAt:Fallout4VRBody",
+                    "equals": true
+                  },
+                  "storage": { "path": ["Fallout4VRBody", "PipBoyOnDelay"] }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "int",
+                  "text": "Close delay",
+                  "help": "How long you look away from the Pip-Boy before it closes.",
+                  "default": 1000,
+                  "valueOptions": { "min": 0, "max": 3000, "step": 50 },
+                  "display": { "unit": "ms" },
+                  "enabledWhen": {
+                    "setting": "PipBoyCloseWhenLookAway:Fallout4VRBody",
+                    "equals": true
+                  },
+                  "storage": { "path": ["Fallout4VRBody", "PipBoyOffDelay"] }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Open button look-at threshold",
+                  "help": "How directly you look at the Pip-Boy for the open button to work. Keep it below the look-at threshold.",
+                  "default": 0.6,
+                  "valueOptions": { "min": 0.3, "max": 1.0, "step": 0.05 },
+                  "enabledWhen": {
+                    "setting": "PipBoyOpenWithButtonOnlyWhenLookingAt:Fallout4VRBody",
+                    "equals": true
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "PipBoyButtonLookAtThreshold"]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        { "type": "spacer", "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 } },
+        {
+          "type": "section",
+          "text": "Screen dampening",
+          "help": "Steadies the Pip-Boy's screen against the shake of your arm.",
+          "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 },
+          "content": [
+            {
+              "type": "stepper",
+              "valueType": "int",
+              "text": "Mode",
+              "help": "How the screen is steadied.",
+              "default": 1,
+              "valueOptions": {
+                "options": [
+                  { "value": 0, "text": "Off", "help": "The screen moves with your wrist, shake and all." },
+                  { "value": 1, "text": "Smooth", "help": "The screen follows your wrist with less shake." },
+                  {
+                    "value": 2,
+                    "text": "Hold in place",
+                    "help": "The screen stays where it opened. Hold the hold button to move it."
+                  }
+                ]
+              },
+              "storage": {
+                "path": ["Fallout4VRBody", "iDampenPipboyScreenMode"]
+              }
+            },
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Snap distance",
+              "help": "When the Pip-Boy moves more than this in a frame, the screen jumps to it in place of lagging behind.",
+              "default": 1.0,
+              "valueOptions": { "min": 0.1, "max": 5.0, "step": 0.1 },
+              "enabledWhen": {
+                "setting": "iDampenPipboyScreenMode:Fallout4VRBody",
+                "equals": 1
+              },
+              "storage": {
+                "path": ["Fallout4VRBody", "fDampenPipboyThreshold"]
+              }
+            },
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Strength",
+              "help": "How much the screen's movement is smoothed. Higher is steadier, and lags more.",
+              "default": 0.7,
+              "valueOptions": { "min": 0.0, "max": 0.95, "step": 0.05 },
+              "enabledWhen": {
+                "setting": "iDampenPipboyScreenMode:Fallout4VRBody",
+                "equals": 1
+              },
+              "storage": {
+                "path": ["Fallout4VRBody", "fDampenPipboyMultiplier"]
+              }
+            }
+          ]
+        },
+        { "type": "spacer", "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 } },
+        {
+          "type": "section",
+          "text": "Operating",
+          "help": "Using the Pip-Boy with your primary hand: its controller, or your finger.",
+          "visibleWhen": { "clientState": "pipboyPlacement", "equals": 0 },
+          "content": [
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Primary hand controller",
+              "help": "Scroll and select in the Pip-Boy with the primary hand's controller. The off hand works either way.",
+              "default": true,
+              "storage": {
+                "path": ["Fallout4VRBody", "PipboyUIPrimaryController"]
+              }
+            },
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Holster the weapon to use the finger",
+              "help": "Holsters the weapon when you look at the Pip-Boy with the finger in range. Off, holster it yourself, and you need not look.",
+              "default": false,
+              "warnings": [
+                {
+                  "when": {
+                    "setting": "bHolsterWeaponForOperation:Fallout4VRBody",
+                    "equals": true
+                  },
+                  "text": "Players report the weapon holstered by accident, in combat too."
+                }
+              ],
+              "storage": {
+                "path": ["Fallout4VRBody", "bHolsterWeaponForOperation"]
+              }
+            },
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Finger detection range",
+              "help": "How near the primary hand comes to the Pip-Boy to point a finger and touch it. 0 turns it off.",
+              "default": 12.0,
+              "valueOptions": { "min": 0.0, "max": 30.0, "step": 0.5 },
+              "storage": {
+                "path": ["Fallout4VRBody", "fPipboyOperationFingerDetectionRange"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pageDisplayName": "Weapons",
+      "help": "Holding a weapon with both hands, steadying the hands, and scopes.",
+      "content": [
+        {
+          "type": "section",
+          "text": "Two-handed grip",
+          "help": "Holding a weapon's barrel with your off hand.",
+          "content": [
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Enabled",
+              "help": "Grip the weapon with your off hand to aim it with both hands.",
+              "default": true,
+              "storage": { "path": ["Fallout4VRBody", "EnableOffHandGripping"] }
+            },
+            {
+              "type": "stepper",
+              "valueType": "int",
+              "text": "Grip mode",
+              "help": "How your off hand grips the barrel and lets go.",
+              "default": 3,
+              "valueOptions": {
+                "options": [
+                  {
+                    "value": 1,
+                    "text": "1: Auto / move away",
+                    "help": "The hand grips automatically when near the barrel. Move it away quickly to let go."
+                  },
+                  {
+                    "value": 2,
+                    "text": "2: Auto / press",
+                    "help": "The hand grips automatically when near the barrel. Press the grip button to let go."
+                  },
+                  {
+                    "value": 3,
+                    "text": "3: Hold / release",
+                    "help": "Hold the grip button to grip the barrel. Release it to let go."
+                  },
+                  {
+                    "value": 4,
+                    "text": "4: Press / press",
+                    "help": "Press the grip button to grip the barrel. Press it again to let go."
+                  }
+                ]
+              },
+              "enabledWhen": {
+                "setting": "EnableOffHandGripping:Fallout4VRBody",
+                "equals": true
+              },
+              "storage": { "path": ["Fallout4VRBody", "iTwoHandedGripMode"] }
+            },
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Let-go threshold",
+              "help": "How quickly the hand moves away from the barrel to let go. Higher needs a quicker move.",
+              "default": 2.5,
+              "valueOptions": { "min": 0.5, "max": 10.0, "step": 0.1 },
+              "enabledWhen": {
+                "all": [
+                  { "setting": "EnableOffHandGripping:Fallout4VRBody", "equals": true },
+                  { "setting": "iTwoHandedGripMode:Fallout4VRBody", "equals": 1 }
+                ]
+              },
+              "storage": { "path": ["Fallout4VRBody", "GripLetGoThreshold"] }
+            }
+          ]
+        },
+        { "type": "spacer" },
+        {
+          "type": "section",
+          "text": "Dampen hands",
+          "help": "Steadies your hands, so the weapon shakes less.",
+          "content": [
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Enabled",
+              "help": "Steadies the movement of your hands.",
+              "default": true,
+              "storage": { "path": ["Fallout4VRBody", "DampenHands"] }
+            },
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Also in a scope",
+              "help": "Steadies the hands in the game's scope too. Fine aiming is harder then.",
+              "default": false,
+              "enabledWhen": {
+                "setting": "DampenHands:Fallout4VRBody",
+                "equals": true
+              },
+              "storage": {
+                "path": ["Fallout4VRBody", "DampenHandsInVanillaScope"]
+              }
+            },
+            {
+              "type": "section",
+              "text": "Advanced",
+              "help": "How strongly the hands are steadied, out of and in a scope. 0 is none.",
+              "isCollapsible": true,
+              "collapsed": true,
+              "enabledWhen": {
+                "setting": "DampenHands:Fallout4VRBody",
+                "equals": true
+              },
+              "content": [
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Rotation",
+                  "help": "How strongly the turning of your hands is steadied. Higher is steadier, and lags more.",
+                  "default": 0.6,
+                  "valueOptions": { "min": 0.0, "max": 0.95, "step": 0.05 },
+                  "storage": { "path": ["Fallout4VRBody", "DampenHandsRotation"] }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Movement",
+                  "help": "How strongly the movement of your hands is steadied. Higher is steadier, and lags more.",
+                  "default": 0.6,
+                  "valueOptions": { "min": 0.0, "max": 0.95, "step": 0.05 },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "DampenHandsTranslation"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Rotation in a scope",
+                  "help": "How strongly the turning of your hands is steadied in the game's scope.",
+                  "default": 0.2,
+                  "valueOptions": { "min": 0.0, "max": 0.95, "step": 0.05 },
+                  "enabledWhen": {
+                    "setting": "DampenHandsInVanillaScope:Fallout4VRBody",
+                    "equals": true
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "DampenHandsRotationInVanillaScope"]
+                  }
+                },
+                {
+                  "type": "slider",
+                  "valueType": "float",
+                  "text": "Movement in a scope",
+                  "help": "How strongly the movement of your hands is steadied in the game's scope.",
+                  "default": 0.2,
+                  "valueOptions": { "min": 0.0, "max": 0.95, "step": 0.05 },
+                  "enabledWhen": {
+                    "setting": "DampenHandsInVanillaScope:Fallout4VRBody",
+                    "equals": true
+                  },
+                  "storage": {
+                    "path": ["Fallout4VRBody", "DampenHandsTranslationInVanillaScope"]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        { "type": "spacer" },
+        {
+          "type": "section",
+          "text": "Scopes",
+          "help": "Looking through the game's own scopes.",
+          "content": [
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Hide the body in a scope",
+              "help": "Hides your body as you look through the game's scope. A scope mod that keeps the body shown, as True Scopes, overrides it.",
+              "default": true,
+              "storage": {
+                "path": ["Fallout4VRBody", "HideBodyInVanillaScope"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pageDisplayName": "Flashlight",
+      "help": "FRIK's flashlight: whether it is used, and where it is on you.",
+      "visibleWhen": { "not": { "f4sePlugin": "ImmersiveFlashlightVR" } },
+      "content": [
+        {
+          "type": "switcher",
+          "valueType": "bool",
+          "text": "Remove FRIK's flashlight",
+          "help": "Turns off FRIK's flashlight, for the game's own or another flashlight mod.",
+          "default": false,
+          "applies": "restart",
+          "storage": { "path": ["Fallout4VRBody", "bRemoveFlashlight"] }
+        },
+        {
+          "type": "dropdown",
+          "valueType": "int",
+          "text": "Position",
+          "help": "Where the flashlight is. In the game, press grip with a hand near the top of your head to move it to that hand.",
+          "default": 0,
+          "valueOptions": {
+            "options": [
+              { "value": 0, "text": "Head" },
+              { "value": 1, "text": "Left arm" },
+              { "value": 2, "text": "Right arm" }
+            ]
+          },
+          "enabledWhen": {
+            "setting": "bRemoveFlashlight:Fallout4VRBody",
+            "equals": false
+          },
+          "storage": { "path": ["Fallout4VRBody", "iFlashlightLocation"] }
+        }
+      ]
+    },
+    {
+      "pageDisplayName": "Smooth movement",
+      "help": "Smooths the camera's stutter as you move, up and down and from side to side.",
+      "content": [
+        {
+          "type": "switcher",
+          "valueType": "bool",
+          "text": "Turn off smooth movement",
+          "help": "The camera follows the game's movement as it is, without smoothing.",
+          "default": false,
+          "storage": { "path": ["SmoothMovementVR", "DisableSmoothMovement"] }
+        },
+        {
+          "type": "section",
+          "text": "Up and down",
+          "help": "Smoothing of your height, as on stairs and uneven ground.",
+          "visibleWhen": {
+            "setting": "DisableSmoothMovement:SmoothMovementVR",
+            "equals": false
+          },
+          "content": [
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Smoothing",
+              "help": "Higher hides more stutter, and takes longer to come back to your height.",
+              "default": 5.0,
+              "valueOptions": { "min": 0.1, "max": 20.0, "step": 0.1 },
+              "storage": { "path": ["SmoothMovementVR", "SmoothAmount"] }
+            },
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Damping",
+              "help": "Higher takes longer to come back to your height.",
+              "default": 1.0,
+              "valueOptions": { "min": 0.1, "max": 10.0, "step": 0.1 },
+              "storage": { "path": ["SmoothMovementVR", "Damping"] }
+            },
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Stopping",
+              "help": "How quickly you come back to your height when you stop. Lower is quicker.",
+              "default": 0.5,
+              "valueOptions": { "min": 0.01, "max": 1.0, "step": 0.01 },
+              "storage": { "path": ["SmoothMovementVR", "StoppingMultiplier"] }
+            },
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Off indoors",
+              "help": "Turns it off indoors, where some players see more jitter.",
+              "default": false,
+              "storage": {
+                "path": ["SmoothMovementVR", "DisableInteriorSmoothing"]
+              }
+            }
+          ]
+        },
+        {
+          "type": "section",
+          "text": "Side to side",
+          "help": "Smoothing as you move from side to side.",
+          "visibleWhen": {
+            "setting": "DisableSmoothMovement:SmoothMovementVR",
+            "equals": false
+          },
+          "content": [
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Smoothing",
+              "help": "Higher hides more stutter, and slides more when you strafe.",
+              "default": 5.0,
+              "valueOptions": { "min": 0.0, "max": 20.0, "step": 0.1 },
+              "storage": {
+                "path": ["SmoothMovementVR", "SmoothAmountHorizontal"]
+              }
+            },
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Damping",
+              "help": "Higher takes longer to come back in line. 0 turns smoothing from side to side off.",
+              "default": 1.0,
+              "valueOptions": { "min": 0.0, "max": 10.0, "step": 0.1 },
+              "storage": { "path": ["SmoothMovementVR", "DampingHorizontal"] }
+            },
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "Stopping",
+              "help": "How quickly you come back in line when you stop. Lower is quicker.",
+              "default": 0.6,
+              "valueOptions": { "min": 0.01, "max": 1.0, "step": 0.01 },
+              "storage": {
+                "path": ["SmoothMovementVR", "StoppingMultiplierHorizontal"]
+              }
+            },
+            {
+              "type": "switcher",
+              "valueType": "bool",
+              "text": "Off indoors",
+              "help": "Turns it off indoors.",
+              "default": false,
+              "storage": {
+                "path": ["SmoothMovementVR", "DisableInteriorSmoothingHorizontal"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pageDisplayName": "Fallout London VR",
+      "help": "With Fallout London VR, FRIK keeps its settings in FRIK_FOLVR.toml, and the pages here edit that file. Ignore Fallout London VR stays in FRIK.toml.",
+      "visibleWhen": { "plugin": "Fallout London VR.esp" },
+      "content": [
+        {
+          "type": "switcher",
+          "valueType": "bool",
+          "text": "Ignore Fallout London VR",
+          "help": "Plays as Fallout 4: FRIK's Pip-Boy works, and FRIK reads FRIK.toml in place of FRIK_FOLVR.toml. It is kept in FRIK.toml.",
+          "default": false,
+          "applies": "restart",
+          "storage": {
+            "file": "frikToml",
+            "path": ["Fallout4VRBody", "bIgnoreFalloutLondonVR"]
+          }
+        },
+
+        {
+          "type": "activationSphere",
+          "text": "Attaboy grab zone",
+          "help": "Grab the Attaboy off your belt to open and close the Pip-Boy.",
+          "storage": {
+            "file": "config",
+            "section": "FRIK_AttaboyActivationSphere"
+          }
+        },
+        {
+          "type": "cf.inputBinding",
+          "text": "Grab button",
+          "help": "Pressed with the hand in the zone to open or close the Pip-Boy. Off, the Attaboy opens with the open button anywhere.",
+          "default": { "hand": "left", "type": "tap", "button": "grip", "suppress": true },
+          "valueOptions": { "suppress": true },
+          "storage": {
+            "path": ["FRIK_AttaboyActivationSphere", "kPrimaryBinding"]
+          }
+        }
+      ]
+    },
+    {
+      "pageDisplayName": "Input bindings",
+      "help": "The controller buttons FRIK listens for.",
+      "content": [
+        {
+          "type": "section",
+          "text": "Pip-Boy",
+          "help": "Opening, closing and configuring the Pip-Boy on the wrist.",
+          "enabledWhen": { "clientState": "pipboyPlacement", "equals": 0 },
+          "content": [
+            {
+              "type": "cf.inputBinding",
+              "text": "Open button",
+              "help": "Opens the Pip-Boy.",
+              "default": { "hand": "offhand", "type": "tap", "button": "trigger" },
+              "storage": { "path": ["Fallout4VRBody", "kPipboyOpenButton"] }
+            },
+            {
+              "type": "cf.inputBinding",
+              "text": "Close button",
+              "help": "Closes the Pip-Boy.",
+              "default": { "hand": "offhand", "type": "tap", "button": "grip" },
+              "storage": { "path": ["Fallout4VRBody", "kPipboyCloseButton"] }
+            },
+            {
+              "type": "cf.inputBinding",
+              "text": "Hold button",
+              "help": "Held to move the screen while screen dampening holds it in place.",
+              "default": { "hand": "offhand", "type": "hold", "button": "grip", "duration": 0.3 },
+              "enabledWhen": {
+                "setting": "iDampenPipboyScreenMode:Fallout4VRBody",
+                "equals": 2
+              },
+              "storage": {
+                "path": ["Fallout4VRBody", "kHoldPipboyScreenButton"]
+              }
+            }
+          ]
+        },
+        {
+          "type": "section",
+          "text": "Two-handed grip",
+          "help": "Gripping a weapon's barrel with your off hand.",
+          "content": [
+            {
+              "type": "cf.inputBinding",
+              "text": "Grip button",
+              "help": "Pressed to grip the barrel, and to let go in grip modes 2 and 4.",
+              "default": { "hand": "offhand", "type": "press", "button": "grip" },
+              "storage": { "path": ["Fallout4VRBody", "kGripButton"] }
+            },
+            {
+              "type": "cf.inputBinding",
+              "text": "Grip hold button",
+              "help": "Held to keep the grip in grip mode 3.",
+              "default": { "hand": "offhand", "type": "hold", "button": "grip" },
+              "storage": { "path": ["Fallout4VRBody", "kGripHoldButton"] }
+            }
+          ]
+        },
+        {
+          "type": "section",
+          "text": "Flashlight",
+          "help": "Moving the flashlight between your head and a hand.",
+          "visibleWhen": { "not": { "f4sePlugin": "ImmersiveFlashlightVR" } },
+          "content": [
+            {
+              "type": "cf.inputBinding",
+              "text": "Move with the left hand",
+              "help": "Pressed with the left hand near your head to move the flashlight between your head and that hand.",
+              "default": { "hand": "left", "type": "tap", "button": "grip" },
+              "storage": {
+                "path": ["Fallout4VRBody", "kSwitchTorchLeftButton"]
+              }
+            },
+            {
+              "type": "cf.inputBinding",
+              "text": "Move with the right hand",
+              "help": "Pressed with the right hand near your head to move the flashlight between your head and that hand.",
+              "default": { "hand": "right", "type": "tap", "button": "grip" },
+              "storage": {
+                "path": ["Fallout4VRBody", "kSwitchTorchRightButton"]
+              }
+            }
+          ]
+        },
+        {
+          "type": "section",
+          "text": "Other",
+          "help": "Opening FRIK's config, and selfie mode.",
+          "content": [
+            {
+              "type": "cf.inputBinding",
+              "text": "Config button",
+              "help": "Opens FRIK's own config in the game. Mods Config FO4 VR takes the button while it is installed.",
+              "default": {
+                "hand": "primary",
+                "type": "longpress",
+                "button": "thumbstick",
+                "duration": 1.5,
+                "modifier": { "hand": "offhand", "button": "thumbstick" }
+              },
+              "storage": { "path": ["Fallout4VRBody", "kOpenConfigButton"] }
+            },
+            {
+              "type": "cf.inputBinding",
+              "text": "Selfie button",
+              "help": "Turns selfie mode on and off while the Pip-Boy is off.",
+              "default": { "hand": "primary", "type": "tap", "button": "a" },
+              "storage": { "path": ["Fallout4VRBody", "kToggleSelfieButton"] }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -11,6 +11,8 @@ Check the video: https://www.youtube.com/watch?v=-ckofGjqbhY
 
 Press and hold both the `Sprint` and `Favorites` buttons until the UI is shown.
 
+With Mods Config FO4 VR installed, that gesture opens its menu instead: open FRIK's configuration from **FRIK Configuration** in its front page's Quick launch section. The menu is minimized while FRIK's configuration is open, and comes back when it closes.
+
 ### Play Seated Mode
 
 - Toggle this if you are playing seated for the best body position.
@@ -22,10 +24,14 @@ Press and hold both the `Sprint` and `Favorites` buttons until the UI is shown.
 
 ### Advanced Config and Help
 
-- **Advanced config** — opens `FRIK.ini` in Notepad on the PC for the many settings not exposed in the in-VR menu. Saved changes apply live via the INI file watcher.
+- **Advanced config** — opens `FRIK.toml` in Notepad on the PC for the many settings not exposed in the in-VR menu. Saved changes apply live via the config file watcher.
 - **Help** — opens the FRIK documentation in your web browser.
 
 ### Weapon Grip Modes
+
+The main FRIK menu button and the Mods Config FO4 VR **Grip mode** stepper use the same `iTwoHandedGripMode` setting in `FRIK.toml` (1–4, default 3).
+A `FRIK.ini` from an older FRIK is imported with its mode taken from the three legacy grip flags. Unrecognized flag combinations use mode 3, matching the old menu's fallback.
+The **Let-go threshold** applies only to mode 1.
 
 - Mode 1: The hand automatically snaps to the barrel when in range; move your hand quickly to let go.
 - Mode 2: The hand automatically snaps to the barrel when in range; press the grip button to let go.
@@ -45,7 +51,7 @@ Your fingers curl dynamically from the controller instead of snapping between fi
 
 ![pipboy config mode](assets/pipboy-config-mode.jpg)
 
-- **Activation**: Press and hold the `Favorites` button with the Pip-Boy open
+- **Activation**: Open it from the main configuration menu
 - **To Cancel Changes**: Exit the Pip-Boy without using the UI
 - **To Save Changes**: Use the UI save button
 

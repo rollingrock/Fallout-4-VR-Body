@@ -54,7 +54,7 @@ Manual setup, including the required `Fallout4Custom.ini` edits, is covered in t
 
 ## Usage
 
-Once installed, FRIK shows your full body in VR automatically. Open the in-game configuration to fine-tune the body and camera (hold both thumbsticks for ~1.5 seconds), reposition weapons, and adjust the Pip-Boy. Most settings apply live, and advanced options live in `FRIK.ini`.
+Once installed, FRIK shows your full body in VR automatically. Open the in-game configuration to fine-tune the body and camera (hold both thumbsticks for ~1.5 seconds), reposition weapons, and adjust the Pip-Boy. Most settings apply live, and advanced options live in `FRIK.toml`.
 
 See the **[documentation](docs/README.md)** for shortcuts, body and Pip-Boy configuration, weapon adjustment, and advanced INI settings.
 

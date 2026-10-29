@@ -1,19 +1,34 @@
 #include "BodyAdjustmentSubConfigMode.h"
 
 #include "Config.h"
+#include "ConfigUIStyle.h"
 #include "f4vr/F4VRUtils.h"
 #include "f4vr/PlayerNodes.h"
 #include "utils.h"
-#include "vrui/UIButton.h"
+#include "vrui/BindingPrompt.h"
 #include "vrui/UIManager.h"
+#include "vrui/UIToggleButtonPanel.h"
 #include "vrui/UIToggleGroupContainer.h"
-#include "vrui/UIWidget.h"
 
 using namespace vrui;
 using namespace common;
 
 namespace
 {
+    // how long a value the height adjustment just changed stays highlighted in the values panel
+    constexpr uint64_t CHANGED_VALUE_HIGHLIGHT_MS = 1500;
+
+    // as tall as the target buttons beside it; the width follows the text
+    constexpr float HEIGHT_VALUES_PANEL_HEIGHT = 2.0f;
+
+    constexpr float HEIGHT_VALUES_TEXT_HEIGHT = 0.22f;
+
+    // the rows spread out to fill the height of the box
+    constexpr float HEIGHT_VALUES_LINE_SPACING = 2.4f;
+
+    // where a value starts, measured from the start of its row, so the three line up in a column
+    constexpr float HEIGHT_VALUES_TAB_WIDTH = 2.5f;
+
     void updateVRScaleGameConfig()
     {
         const auto set = RE::GetINISetting("fVrScale:VR");
@@ -27,6 +42,12 @@ namespace frik
         : _onClose(onClose)
     {
         createConfigUI();
+
+        // start from the current values, so opening the screen does not highlight all of them
+        trackHeightValues();
+        _hmdOffsetUp.changedTime = 0;
+        _bodyOffsetUp.changedTime = 0;
+        _legSlackAdjustOffset.changedTime = 0;
     }
 
     /**
@@ -36,7 +57,7 @@ namespace frik
     BodyAdjustmentSubConfigMode::~BodyAdjustmentSubConfigMode()
     {
         // reload config to revert unsaved values
-        g_config.loadIniOnly();
+        g_config.loadConfigOnly();
 
         // redo VR Scale if changed
         updateVRScaleGameConfig();
@@ -46,15 +67,9 @@ namespace frik
         }
     }
 
-    void BodyAdjustmentSubConfigMode::onFrameUpdate() const
+    void BodyAdjustmentSubConfigMode::onFrameUpdate()
     {
         _configUI->setPosition(0, 0, f4vr::isNodeVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
-
-        _noneMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::None);
-        _heightMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::BodyHeight);
-        _forwardMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::BodyForwardOffset);
-        _armsLengthMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::BodyArmsLength);
-        _vrScaleMsg->setVisibility(_configTarget == BodyAdjustmentConfigTarget::VRScale);
 
         // save/reset only make sense once an adjustment target is selected
         const bool noTarget = _configTarget == BodyAdjustmentConfigTarget::None;
@@ -62,6 +77,52 @@ namespace frik
         _resetBtn->setDisabled(noTarget);
 
         handleAdjustment();
+
+        trackHeightValues();
+        updateHeightValuesPanelVisibility();
+    }
+
+    /**
+     * Note which of the three values the height adjustment changes moved since the last frame. Every
+     * frame, not only while height is selected, since the leg slack follows the skeleton on its own and
+     * a reset changes them too.
+     */
+    void BodyAdjustmentSubConfigMode::trackHeightValues()
+    {
+        const auto now = nowMillis();
+        const auto track = [now](TrackedValue& tracked, const float value) {
+            if (fNotEqual(tracked.value, value)) {
+                tracked.value = value;
+                tracked.changedTime = now;
+            }
+        };
+        track(_hmdOffsetUp, g_config.getPlayerHMDOffsetUp());
+        track(_bodyOffsetUp, g_config.getPlayerBodyOffsetUp());
+        track(_legSlackAdjustOffset, g_config.getPlayerLegSlackAdjustOffset());
+    }
+
+    /**
+     * While height is the target the other three target buttons give their place in the row to the
+     * height values panel: the values are what the thumbsticks are changing.
+     */
+    void BodyAdjustmentSubConfigMode::updateHeightValuesPanelVisibility() const
+    {
+        const auto adjustingHeight = _configTarget == BodyAdjustmentConfigTarget::BodyHeight;
+        _heightValuesPanel->setVisibility(adjustingHeight);
+        for (const auto& btn : _nonHeightTargetBtns) {
+            btn->setVisibility(!adjustingHeight);
+        }
+    }
+
+    /**
+     * One row of the height values panel: the value's name, then the value itself at the tab stop so the
+     * three line up, highlighted while it is changing.
+     */
+    TextRow BodyAdjustmentSubConfigMode::heightValueRow(const std::string_view label, const TrackedValue& value)
+    {
+        const auto highlighted = nowMillis() - value.changedTime < CHANGED_VALUE_HIGHLIGHT_MS;
+        return { .spans = { { .text = std::format("{}\t", label) },
+                     { .text = std::format("{:.1f}", value.value), .color = highlighted ? std::optional(render::colors::Yellow) : std::nullopt } } };
     }
 
     /**
@@ -69,39 +130,57 @@ namespace frik
      */
     void BodyAdjustmentSubConfigMode::createConfigUI()
     {
-        const auto playSeattedBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-play-seated.nif");
-        playSeattedBtn->setToggleState(g_config.isPlayingSeated);
-        playSeattedBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+        const auto playSeatedBtn = std::make_shared<UIToggleButtonPanel>("PlaySeated");
+        playSeatedBtn->setTopText("PLAY");
+        playSeatedBtn->setImage("vrui\\body\\play-seated.dds");
+        playSeatedBtn->setBottomText("SEATED");
+        playSeatedBtn->setToggleState(g_config.isPlayingSeated);
+        playSeatedBtn->setOnToggleHandler([this](UIToggleButtonPanel*, const bool enabled) {
             togglePlayingSeated(enabled);
         });
 
-        const auto hideHeadBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-hide-head.nif");
+        const auto hideHeadBtn = std::make_shared<UIToggleButtonPanel>("HideHeadGear");
+        hideHeadBtn->setTopText("HIDE");
+        hideHeadBtn->setImage("vrui\\body\\hide-head.dds");
+        hideHeadBtn->setBottomText("HEAD GEAR");
         hideHeadBtn->setToggleState(g_config.hideHeadEquipment);
-        hideHeadBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+        hideHeadBtn->setOnToggleHandler([this](UIToggleButtonPanel*, const bool enabled) {
             toggleHideHeadEquipment(enabled);
         });
 
         const auto row1Container = std::make_shared<UIContainer>("Row1", UIContainerLayout::HorizontalCenter, 0.5f);
-        row1Container->addElement(playSeattedBtn);
+        row1Container->addElement(playSeatedBtn);
         row1Container->addElement(hideHeadBtn);
 
-        const auto heightToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-body-vertical.nif");
-        heightToggleBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+        const auto heightToggleBtn = std::make_shared<UIToggleButtonPanel>("BodyHeight");
+        heightToggleBtn->setTopText("HMD / BODY");
+        heightToggleBtn->setImage("vrui\\body\\body-height.dds");
+        heightToggleBtn->setBottomText("UP / DOWN");
+        heightToggleBtn->setOnToggleHandler([this](UIToggleButtonPanel*, const bool enabled) {
             _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyHeight : BodyAdjustmentConfigTarget::None;
         });
 
-        const auto forwardToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-body-forward.nif");
-        forwardToggleBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+        const auto forwardToggleBtn = std::make_shared<UIToggleButtonPanel>("BodyForward");
+        forwardToggleBtn->setTopText("BODY");
+        forwardToggleBtn->setImage("vrui\\body\\body-forward.dds");
+        forwardToggleBtn->setBottomText("IN / OUT");
+        forwardToggleBtn->setOnToggleHandler([this](UIToggleButtonPanel*, const bool enabled) {
             _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyForwardOffset : BodyAdjustmentConfigTarget::None;
         });
 
-        const auto armsLengthToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-arms-length.nif");
-        armsLengthToggleBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+        const auto armsLengthToggleBtn = std::make_shared<UIToggleButtonPanel>("ArmsLength");
+        armsLengthToggleBtn->setTopText("ARMS");
+        armsLengthToggleBtn->setImage("vrui\\body\\arms-length.dds");
+        armsLengthToggleBtn->setBottomText("LENGTH");
+        armsLengthToggleBtn->setOnToggleHandler([this](UIToggleButtonPanel*, const bool enabled) {
             _configTarget = enabled ? BodyAdjustmentConfigTarget::BodyArmsLength : BodyAdjustmentConfigTarget::None;
         });
 
-        const auto vrScaleToggleBtn = std::make_shared<UIToggleButton>("ui-config-main\\btn-vr-scale.nif");
-        vrScaleToggleBtn->setOnToggleHandler([this](UIWidget*, const bool enabled) {
+        const auto vrScaleToggleBtn = std::make_shared<UIToggleButtonPanel>("VRScale");
+        vrScaleToggleBtn->setTopText("VR");
+        vrScaleToggleBtn->setImage("vrui\\body\\vr-scale.dds");
+        vrScaleToggleBtn->setBottomText("SCALE");
+        vrScaleToggleBtn->setOnToggleHandler([this](UIToggleButtonPanel*, const bool enabled) {
             _configTarget = enabled ? BodyAdjustmentConfigTarget::VRScale : BodyAdjustmentConfigTarget::None;
         });
 
@@ -117,47 +196,81 @@ namespace frik
         armsLengthToggleBtn->setUnToggleAllowed(true);
         vrScaleToggleBtn->setUnToggleAllowed(true);
 
-        _saveBtn = std::make_shared<UIButton>("ui-common\\btn-save.nif");
-        _saveBtn->setOnPressHandler([this](UIWidget*) {
+        _nonHeightTargetBtns = { forwardToggleBtn, armsLengthToggleBtn, vrScaleToggleBtn };
+
+        // no bottom padding: the last row's descender room already keeps it off the bottom edge
+        auto valuesStyle = F4VR_PANEL_STYLE;
+        valuesStyle.padding = { .top = 0.3f, .right = 0.3f, .bottom = 0.0f, .left = 0.3f };
+        _heightValuesPanel = std::make_shared<UITextPanel>("HeightValues", 0.0f, HEIGHT_VALUES_PANEL_HEIGHT);
+        _heightValuesPanel->setSizing(UIPanelSizing::FixedHeight);
+        _heightValuesPanel->setStyle(valuesStyle);
+        _heightValuesPanel->setTextHeight(HEIGHT_VALUES_TEXT_HEIGHT);
+        _heightValuesPanel->setLineSpacing(HEIGHT_VALUES_LINE_SPACING);
+        _heightValuesPanel->setTabWidth(HEIGHT_VALUES_TAB_WIDTH);
+        _heightValuesPanel->setContent([this](std::vector<TextRow>& rows) {
+            rows.push_back(heightValueRow("HMD HEIGHT", _hmdOffsetUp));
+            rows.push_back(heightValueRow("BODY OFFSET", _bodyOffsetUp));
+            rows.push_back(heightValueRow("LEG SLACK", _legSlackAdjustOffset));
+        });
+
+        updateHeightValuesPanelVisibility();
+
+        // the target buttons and the values panel share the row, the three non-height buttons or the panel showing
+        const auto row2WithValuesContainer = std::make_shared<UIContainer>("Row2WithValues", UIContainerLayout::HorizontalCenter, 0.3f);
+        row2WithValuesContainer->addElement(_row2Container);
+        row2WithValuesContainer->addElement(_heightValuesPanel);
+
+        _saveBtn = std::make_shared<UIButtonPanel>("Save");
+        _saveBtn->setImage("f4cf\\vrui\\save.DDS");
+        _saveBtn->setBottomText("SAVE");
+        _saveBtn->setOnPressHandler([this](UIButtonPanel*) {
             saveConfig();
         });
 
-        _resetBtn = std::make_shared<UIButton>("ui-common\\btn-reset.nif");
-        _resetBtn->setOnPressHandler([this](UIWidget*) {
+        _resetBtn = std::make_shared<UIButtonPanel>("Reset");
+        _resetBtn->setImage("f4cf\\vrui\\reset.DDS");
+        _resetBtn->setBottomText("RESET");
+        _resetBtn->setOnPressHandler([this](UIButtonPanel*) {
             resetConfig();
         });
 
-        const auto exitBtn = std::make_shared<UIButton>("ui-common\\btn-back.nif");
-        exitBtn->setOnPressHandler([this](UIWidget*) {
+        const auto backBtn = std::make_shared<UIButtonPanel>("Back");
+        backBtn->setImage("f4cf\\vrui\\exit.DDS");
+        backBtn->setBottomText("BACK");
+        backBtn->setOnPressHandler([this](UIButtonPanel*) {
             closeConfig();
         });
 
         const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
         row3Container->addElement(_saveBtn);
         row3Container->addElement(_resetBtn);
-        row3Container->addElement(exitBtn);
+        row3Container->addElement(backBtn);
 
-        _noneMsg = std::make_shared<UIWidget>("ui-config-main\\msg-node-selected.nif");
-        _heightMsg = std::make_shared<UIWidget>("ui-config-main\\msg-body-vertical.nif");
-        _forwardMsg = std::make_shared<UIWidget>("ui-config-main\\msg-body-forward.nif");
-        _armsLengthMsg = std::make_shared<UIWidget>("ui-config-main\\msg-arms-length.nif");
-        _vrScaleMsg = std::make_shared<UIWidget>("ui-config-main\\msg-vr-scale.nif");
-        const auto toggleSelfieMsg = std::make_shared<UIWidget>("ui-config-main\\msg-toggle-selfie.nif");
+        // One footer whose rows follow the current target. Its rows are only asked for while the UI is
+        // attached, and the UI is detached before this sub-config goes.
+        const auto footer = std::make_shared<UITextPanel>("Footer");
+        footer->setStyle(F4VR_PANEL_STYLE);
+        footer->setTextHeight(CONFIG_FOOTER_TEXT_HEIGHT);
+        footer->setContent([this](std::vector<TextRow>& rows) {
+            appendFooterRows(rows);
+        });
 
+        // the selfie toggle works on every target, so it has its own box beside the footer
         const auto row4Container = std::make_shared<UIContainer>("Row4", UIContainerLayout::HorizontalCenter, 0.3f);
-        row4Container->addElement(_noneMsg);
-        row4Container->addElement(_heightMsg);
-        row4Container->addElement(_forwardMsg);
-        row4Container->addElement(_armsLengthMsg);
-        row4Container->addElement(_vrScaleMsg);
-        row4Container->addElement(toggleSelfieMsg);
+        row4Container->addElement(footer);
+        row4Container->addElement(createToggleSelfieMsg(footer));
 
-        const auto header = std::make_shared<UIWidget>("ui-config-main\\title-body-adjust.nif", 1.7f);
+        const auto header = std::make_shared<UITextPanel>("Title");
+        header->setStyle(UIPanelStyle{ .color = F4VR_PANEL_STYLE.color });
+        header->setTextHeight(0.5f);
+        header->setContent([](std::vector<TextRow>& rows) {
+            rows.emplace_back("FRIK: BODY ADJUSTMENT", std::nullopt, render::TextDecoration::Underline);
+        });
 
         _configUI = std::make_shared<UIContainer>("BodyAdjustConfig", UIContainerLayout::VerticalUp, 0.35f, 1.7f);
         _configUI->addElement(row4Container);
         _configUI->addElement(row3Container);
-        _configUI->addElement(_row2Container);
+        _configUI->addElement(row2WithValuesContainer);
         _configUI->addElement(row1Container);
         _configUI->addElement(header);
 
@@ -219,6 +332,49 @@ namespace frik
             handleVRScaleAdjustment();
             break;
         case BodyAdjustmentConfigTarget::None:
+            break;
+        }
+    }
+
+    /**
+     * The footer's rows for the current target: what the adjustment is for and the sticks that drive it
+     * (see the handle*Adjustment functions).
+     */
+    void BodyAdjustmentSubConfigMode::appendFooterRows(std::vector<TextRow>& rows) const
+    {
+        const auto stick = [](const vrcf::Hand hand) {
+            return vrcf::InputBinding{ .hand = hand, .button = vr::k_EButton_SteamVR_Touchpad };
+        };
+
+        switch (_configTarget) {
+        case BodyAdjustmentConfigTarget::None:
+            rows.emplace_back("BODY ADJUSTMENTS ARE SAVED SEPARATELY");
+            rows.emplace_back("FOR SEATED / STANDING MODE");
+            rows.emplace_back("AND IN / OUT OF POWER ARMOR");
+            break;
+        case BodyAdjustmentConfigTarget::BodyHeight:
+            rows.push_back({ .spans = { { .text = "HMD UP / DOWN:  " } } });
+            appendBindingPrompt(rows.back().spans, stick(vrcf::Hand::Primary), CONFIG_FOOTER_PROMPT_STYLE);
+            rows.back().spans.push_back({ .text = "  BODY UP / DOWN:  " });
+            appendBindingPrompt(rows.back().spans, stick(vrcf::Hand::Offhand), CONFIG_FOOTER_PROMPT_STYLE);
+            rows.emplace_back("ADJUST BODY SO FEET ARE ON THE GROUND");
+            rows.emplace_back("THEN ADJUST HMD TO BE AT PLAYER EYE LEVEL");
+            break;
+        case BodyAdjustmentConfigTarget::BodyForwardOffset:
+            rows.push_back({ .spans = { { .text = "MOVE BODY FORWARD / BACKWARDS:  " } } });
+            appendBindingPrompt(rows.back().spans, stick(vrcf::Hand::Primary), CONFIG_FOOTER_PROMPT_STYLE);
+            rows.emplace_back("SET THE BODY JUST UNDER YOU");
+            rows.emplace_back("TRY HIDE HEAD GEAR TO REMOVE CLIPPING");
+            break;
+        case BodyAdjustmentConfigTarget::BodyArmsLength:
+            rows.push_back({ .spans = { { .text = "ADJUST ARMS LENGTH:  " } } });
+            appendBindingPrompt(rows.back().spans, stick(vrcf::Hand::Primary), CONFIG_FOOTER_PROMPT_STYLE);
+            break;
+        case BodyAdjustmentConfigTarget::VRScale:
+            rows.push_back({ .spans = { { .text = "ADJUST VR SCALE:  " } } });
+            appendBindingPrompt(rows.back().spans, stick(vrcf::Hand::Primary), CONFIG_FOOTER_PROMPT_STYLE);
+            rows.emplace_back("AFFECTS THE GAME VR SCALE");
+            rows.emplace_back("MAKING THE WORLD BIGGER / SMALLER");
             break;
         }
     }
