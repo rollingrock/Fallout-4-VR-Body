@@ -1,18 +1,16 @@
-## v0.79.3
+## v0.80.0
 
+- Config: All of FRIK's settings can be changed in the Mods Config FO4 VR menu, previewed live, including controller bindings and the game's Pip-Boy location, with a quick launch entry and buttons that open FRIK's in-game configs.
 - Config: `FRIK.toml` replaces `FRIK.ini`. Your `FRIK.ini` (and `FRIK_FOLVR.ini`) is moved into it on the first run and kept as a backup.
-- Config: Text values are written in quotes, and a controller binding is a table: `kGripButton = { hand = "offhand", type = "press", button = "grip" }`. Your `FRIK.ini` bindings are moved into it.
-- Config: In-game saves keep the file's comments and layout.
-- Config: An invalid `FRIK.toml` is reported in FRIK.log with its line, and FRIK keeps its values until it is fixed.
-- Config: An invalid controller binding is reported in FRIK.log with the key or word that is wrong and what fits there. A typo is no longer skipped: `duration = "1.2s"` is invalid, where it lost its duration, and FRIK uses the default binding until it is fixed.
 - Config: Removed the move of config files from the pre-v0.73 location.
-- Config menu: A finger presses a button only from its front, while you look at it.
+- Config menu: The in-game config screens are rebuilt on the framework's VR UI, with footers showing the bound controls, the height values shown while adjusting body height, and buttons pressed only from their front while you look at them.
 - Pip-Boy: Removed the long-press of the primary thumbstick (`kEnterPipboyConfigButton`) that opened the Pip-Boy config. Open it from the main config menu.
-- Log: The log level is written as a word.
+- Pip-Boy: Fixed the screen missing after swapping the Pip-Boy model while it is open.
+- Pip-Boy: After moving the Pip-Boy off the wrist, the game's model no longer shows in front while it is closed.
+- Fallout London VR: The Attaboy grab zone shows the hand icon instead of a sphere.
+- Scopes: BetterScopesVR is detected by its F4SE plugin, so the scope integration no longer needs `3dscopes-replacer.esp`.
 - API: A config override is owned by the mod that set it.
 - API: `setConfigValueOverride` refuses a value of the wrong type; `getConfigValue` returns TOML text (`71.0`, `false`).
-- Dev: Hand pose overrides are logged only when they change.
-- Dev: The one-shot `[Debug]` keys are TOML arrays: `aDumpDataOnce = ["skelly", "weapon_pos"]`, and `aAddItemsOnce` takes a request per table, `{ op = "print", category = "weapons", keyword = "laser" }`, naming the key that is wrong in an invalid one.
 
 ## v0.79.2
 
