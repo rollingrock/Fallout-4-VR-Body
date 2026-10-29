@@ -172,6 +172,8 @@ namespace frik
         updateSetupPipboyNodes();
         const auto pn = f4vr::getVRPlayerNodes();
         pn->pipboyRootNIFOnlyNode->local.scale = _isOpen ? 1.0f : 0.0f;
+        // the loader hands back the cached nif, its screen still shown/hidden as the last open/close of that model left it
+        f4vr::setNodeVisibility(pn->screenNode, _isOpen);
         pn->screenNode->local = g_config.getPipboyOffset();
         _pipboyScreenPrevFrame.clear();
         if (_isOpen) {
