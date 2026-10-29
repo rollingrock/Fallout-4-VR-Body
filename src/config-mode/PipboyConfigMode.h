@@ -25,8 +25,8 @@ namespace frik
      * In-VR Pipboy configuration menu.
      * Allows configuration of the holo-screen position/scale/rotation, the 3rd-person Pipboy model
      * scale, swapping the Pipboy model, "open on glance" and "dampen screen" toggles, and saving.
-     * Entered by long-pressing the configured binding while the Pipboy is on the wrist and open, or
-     * from the main config menu. Built from vrui panels (text and icons drawn at runtime, no NIFs); the
+     * Opened from the main config menu, Papyrus, or Mods Config FO4 VR's Pip-Boy page, with the Pipboy
+     * on the wrist opened for it. Built from vrui panels (text and icons drawn at runtime, no NIFs); the
      * UI is attached above the primary wand while active and torn down on exit.
      */
     class PipboyConfigMode

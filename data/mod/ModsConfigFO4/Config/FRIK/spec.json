@@ -1417,7 +1417,8 @@
         {
           "type": "section",
           "text": "Pip-Boy",
-          "help": "Opening, closing and configuring the Pip-Boy.",
+          "help": "Opening, closing and configuring the Pip-Boy on the wrist.",
+          "enabledWhen": { "clientState": "pipboyPlacement", "equals": 0 },
           "content": [
             {
               "type": "cf.inputBinding",

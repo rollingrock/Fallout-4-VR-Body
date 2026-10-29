@@ -57,63 +57,6 @@ namespace frik
     }
 
     /**
-     * The game's two VR settings that place the Pip-Boy, in Fallout4Prefs.ini: in front (bAttachPipboyToHMD) wins over
-     * projected, and neither is the wrist. Null while the game has not loaded its settings.
-     */
-    static std::pair<RE::Setting*, RE::Setting*> getPipboyPlacementSettings()
-    {
-        static RE::Setting* projected = nullptr;
-        static RE::Setting* inFront = nullptr;
-        if (!projected || !inFront) {
-            projected = RE::GetINISetting("bAlwaysUseProjectedPipboy:VR");
-            inFront = RE::GetINISetting("bAttachPipboyToHMD:VR");
-        }
-        return { projected, inFront };
-    }
-
-    /**
-     * Where the game puts the Pip-Boy now, as the game's settings menu reads it.
-     */
-    PipboyPlacement getPipboyPlacement()
-    {
-        const auto [projected, inFront] = getPipboyPlacementSettings();
-        if (inFront && inFront->GetBinary()) {
-            return PipboyPlacement::InFront;
-        }
-        return projected && projected->GetBinary() ? PipboyPlacement::Projected : PipboyPlacement::Wrist;
-    }
-
-    /**
-     * Set where the game puts the Pip-Boy, as the game's settings menu does: write both settings, tell the game of each
-     * (SettingHandlerMap::SettingUpdated runs the handlers the game installed on them), and save Fallout4Prefs.ini.
-     * Game thread only. Returns false if the game's settings are not found.
-     */
-    bool setPipboyPlacement(const PipboyPlacement placement)
-    {
-        const auto [projected, inFront] = getPipboyPlacementSettings();
-        if (!projected || !inFront) {
-            logger::warn("Pip-Boy placement settings not found");
-            return false;
-        }
-
-        // SettingHandlerMap::SettingUpdated(Setting&), ID 1267051
-        using SettingUpdated_t = void (*)(RE::Setting&);
-        static REL::Relocation<SettingUpdated_t> settingUpdated{ REL::Offset(0x1d11c30) };
-
-        logger::info("Set Pip-Boy placement to {}", static_cast<int>(placement));
-        projected->SetBinary(placement == PipboyPlacement::Projected);
-        settingUpdated(*projected);
-        inFront->SetBinary(placement == PipboyPlacement::InFront);
-        settingUpdated(*inFront);
-
-        if (const auto prefs = RE::INIPrefSettingCollection::GetSingleton(); prefs && prefs->Open(true)) {
-            prefs->WriteSettings();
-            prefs->Close();
-        }
-        return true;
-    }
-
-    /**
      * @return muzzle flash class only if it's fully loaded with fire and projectile nodes.
      */
     f4vr::MuzzleFlash* getMuzzleFlashNodes()

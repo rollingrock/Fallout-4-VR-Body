@@ -81,8 +81,6 @@ namespace frik
      */
     void FRIK::registerModsConfigEntry()
     {
-        // TODO: Fallout London VR: FRIK switches to FRIK_FOLVR.toml, but the config spec is of FRIK.toml, so its live
-        // settings are not previewed (the framework previews the file FRIK loaded) and a Save writes a file FRIK does not read.
         using namespace mods_config::api;
         const auto openConfig = [this](const auto& open) {
             if (!isSkeletonReady()) {
@@ -127,18 +125,18 @@ namespace frik
         client.addState(
             "pipboyPlacement",
             [] {
-                return std::optional<Value>(static_cast<int>(getPipboyPlacement()));
+                return std::optional<Value>(static_cast<int>(f4vr::getPipboyPlacement()));
             },
             [this](const Value& value) {
                 const auto placement = std::get_if<int>(&value);
-                if (!placement || *placement < static_cast<int>(PipboyPlacement::Wrist) || *placement > static_cast<int>(PipboyPlacement::Projected)) {
+                if (!placement || *placement < static_cast<int>(f4vr::PipboyPlacement::Wrist) || *placement > static_cast<int>(f4vr::PipboyPlacement::Projected)) {
                     logger::warn("Mods Config FO4 VR gave an unknown Pip-Boy placement");
                     return;
                 }
-                if (static_cast<PipboyPlacement>(*placement) != getPipboyPlacement()) {
+                if (static_cast<f4vr::PipboyPlacement>(*placement) != f4vr::getPipboyPlacement()) {
                     // close the wrist Pip-Boy first: once the game no longer puts it on the wrist, the close is ignored
                     closePipboy();
-                    setPipboyPlacement(static_cast<PipboyPlacement>(*placement));
+                    f4vr::setPipboyPlacement(static_cast<f4vr::PipboyPlacement>(*placement));
                 }
             });
     }
