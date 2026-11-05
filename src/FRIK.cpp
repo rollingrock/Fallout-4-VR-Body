@@ -73,7 +73,7 @@ namespace frik
 
     /**
      * Adds FRIK's main config to the quick launch section of Mods Config FO4 VR's front page, and the functions of the config
-     * spec's buttons that open the body adjustment and the Pip-Boy config, and the state the game's Pip-Boy placement is
+     * spec's buttons that open the body adjustment, the Pip-Boy config and the weapon adjustment, and the state the game's Pip-Boy placement is
      * kept in for the Pip-Boy page. The framework connects the client at kPostLoad, and nothing is called while Mods Config
      * FO4 VR is not installed. The menu calls a press on the game thread, which opens the config at once, unless a config
      * of FRIK is open already, as FRIK builds another main config UI on every open. The menu is minimized while a config
@@ -117,6 +117,15 @@ namespace frik
             }
             return openConfig([this] {
                 openPipboyConfigurationModeActive();
+            });
+        });
+
+        client.addFunction("openWeaponAdjustmentConfig", [this, openConfig](const Params&) {
+            if (!isWeaponPositionEnabled()) {
+                return FunctionResult{ .done = false, .message = "FRIK's weapon positioning is turned off by another mod." };
+            }
+            return openConfig([this] {
+                toggleWeaponRepositionMode();
             });
         });
 

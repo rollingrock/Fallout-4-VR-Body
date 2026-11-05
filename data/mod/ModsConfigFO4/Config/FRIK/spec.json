@@ -1102,8 +1102,21 @@
     },
     {
       "pageDisplayName": "Weapons",
-      "help": "Holding a weapon with both hands, steadying the hands, and scopes.",
+      "help": "Where weapons sit in your hands, holding a weapon with both hands, steadying the hands, and scopes.",
       "content": [
+        {
+          "type": "button",
+          "text": "Adjust the weapon in the game",
+          "help": "Opens FRIK's weapon adjustment in the game, to place the weapon you hold in your hand and where your offhand grips it. Each weapon keeps its own place. Draw the weapon first.",
+          "buttonText": "Open",
+          "style": "important",
+          "icon": "hand",
+          "action": {
+            "type": "CallNativeFunction",
+            "function": "openWeaponAdjustmentConfig"
+          }
+        },
+        { "type": "spacer" },
         {
           "type": "section",
           "text": "Two-handed grip",
