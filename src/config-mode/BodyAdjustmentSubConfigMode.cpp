@@ -342,8 +342,9 @@ namespace frik
      */
     void BodyAdjustmentSubConfigMode::appendFooterRows(std::vector<TextRow>& rows) const
     {
+        // every adjustment reads only the sticks' up / down
         const auto stick = [](const vrcf::Hand hand) {
-            return vrcf::InputBinding{ .hand = hand, .button = vr::k_EButton_SteamVR_Touchpad };
+            return vrcf::InputBinding{ .hand = hand, .type = vrcf::ActivationType::AxisDirection, .axis = vrcf::Axis::Thumbstick, .direction = vrcf::Direction::UpDown };
         };
 
         switch (_configTarget) {

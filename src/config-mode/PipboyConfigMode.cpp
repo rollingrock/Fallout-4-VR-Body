@@ -271,8 +271,9 @@ namespace frik
      */
     void PipboyConfigMode::appendFooterRows(std::vector<TextRow>& rows) const
     {
-        const auto stick = [](const vrcf::Hand hand) {
-            return vrcf::InputBinding{ .hand = hand, .button = vr::k_EButton_SteamVR_Touchpad };
+        // the screen moves with the sticks every way, the model scales with the primary stick's up / down
+        const auto stick = [](const vrcf::Hand hand, const vrcf::Direction direction) {
+            return vrcf::InputBinding{ .hand = hand, .type = vrcf::ActivationType::AxisDirection, .axis = vrcf::Axis::Thumbstick, .direction = direction };
         };
 
         switch (_adjustTarget) {
@@ -282,9 +283,9 @@ namespace frik
             break;
         case PipboyAdjustTarget::ScreenAdjust:
             rows.push_back({ .spans = { { .text = "ADJUST:  " } } });
-            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Primary) }, CONFIG_FOOTER_PROMPT_STYLE);
+            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Primary, vrcf::Direction::Any) }, CONFIG_FOOTER_PROMPT_STYLE);
             rows.back().spans.push_back({ .text = " / " });
-            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Offhand) }, CONFIG_FOOTER_PROMPT_STYLE);
+            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Offhand, vrcf::Direction::Any) }, CONFIG_FOOTER_PROMPT_STYLE);
             rows.push_back({ .spans = { { .text = "+ROTATION: " } } });
             appendBindingPrompt(rows.back().spans,
                 { .hand = vrcf::Hand::Offhand, .type = vrcf::ActivationType::HoldDown, .button = vr::k_EButton_Grip },
@@ -294,7 +295,7 @@ namespace frik
             break;
         case PipboyAdjustTarget::ModelScale:
             rows.push_back({ .spans = { { .text = "ADJUST:  " } } });
-            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Primary) }, CONFIG_FOOTER_PROMPT_STYLE);
+            appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Primary, vrcf::Direction::UpDown) }, CONFIG_FOOTER_PROMPT_STYLE);
             break;
         }
     }
