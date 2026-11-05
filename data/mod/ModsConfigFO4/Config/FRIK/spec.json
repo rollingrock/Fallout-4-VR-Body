@@ -38,9 +38,22 @@
         {
           "type": "text",
           "text": "FRIK brings your full body to Fallout 4 VR. Full-body inverse kinematics move the arms and legs from where your headset and controllers are, so you see your own body, in power armor too."
+        },
+        {
+          "type": "button",
+          "text": "FRIK's configuration in the world",
+          "help": "Opens FRIK's own configuration in the world: body height, arm length, and the weapon and Pip-Boy positions.",
+          "buttonText": "Open",
+          "style": "important",
+          "icon": "hand",
+          "action": {
+            "type": "CallNativeFunction",
+            "function": "openMainConfig"
+          }
         }
       ]
     },
+    { "type": "spacer" },
     {
       "type": "section",
       "text": "Help",
@@ -54,6 +67,50 @@
             "type": "OpenURL",
             "url": "https://github.com/rollingrock/Fallout-4-VR-Body/blob/main/docs/README.md"
           }
+        },
+        { "type": "spacer" },
+        {
+          "type": "text",
+          "text": "<font color='#10FA78'>Your body:</font> set where it is under the headset with Adjust the body in the game, on the Body page. While you adjust it, A on your primary hand (X when left-handed) shows you in selfie mode.<br><font color='#10FA78'>Pip-Boy on the wrist:</font> when the Pip-Boy page has the game's Pip-Boy on your wrist, look at your wrist to open it, or tap the offhand trigger while you look at it. Look away, or tap the offhand grip, to close it. Holster your weapon and bring your primary hand to it: the hand points a finger to press its buttons and screen, and its thumbstick and trigger work it too.<br><font color='#10FA78'>Two hands on a weapon:</font> bring your offhand to the weapon's barrel and hold its grip button to aim with both hands. Let go of the button to let go of the weapon.<br><font color='#10FA78'>Smooth movement:</font> the camera is smoothed as you walk, so stairs and uneven ground do not shake it. The Smooth movement page tunes it or turns it off.",
+          "html": true
+        },
+        {
+          "type": "text",
+          "text": "<font color='#10FA78'>Flashlight:</font> with the light on, bring a hand to your head until you feel a tick, then tap its grip to take the light into that hand. Do it again to put it back on your head.",
+          "html": true,
+          "visibleWhen": { "not": { "f4sePlugin": "ImmersiveFlashlightVR" } }
+        }
+      ]
+    },
+    { "type": "spacer" },
+    {
+      "type": "section",
+      "text": "Developer",
+      "isCollapsible": true,
+      "collapsed": true,
+      "content": [
+        {
+          "type": "stepper",
+          "valueType": "int",
+          "text": "Log level",
+          "help": "How much FRIK writes to FRIK.log.",
+          "default": 2,
+          "valueOptions": {
+            "options": [
+              { "value": 2, "text": "Info", "help": "The basic log." },
+              { "value": 1, "text": "Debug", "help": "More logs, to find a problem." },
+              { "value": 0, "text": "Trace", "help": "A lot of logs, every frame. Slows the game." }
+            ]
+          },
+          "storage": { "path": ["Debug", "iLogLevel"] }
+        },
+        {
+          "type": "switcher",
+          "valueType": "bool",
+          "text": "VR UI dev layout",
+          "help": "Tunes the placement of FRIK's in-world config UI through a dev layout file while the game runs.",
+          "default": false,
+          "storage": { "path": ["Debug", "bVRUIDevLayout"] }
         }
       ]
     }
@@ -81,6 +138,8 @@
               "text": "Adjust the body in the game",
               "help": "Opens FRIK's body adjustment in the game, to set the posture you are in now while you see your body.",
               "buttonText": "Open",
+              "style": "important",
+              "icon": "hand",
               "action": {
                 "type": "CallNativeFunction",
                 "function": "openBodyAdjustmentConfig"
@@ -792,6 +851,8 @@
               "text": "Adjust the screen in the game",
               "help": "Opens FRIK's Pip-Boy config in the game, to move the screen and scale the model. Open the Pip-Boy on your wrist first.",
               "buttonText": "Open",
+              "style": "important",
+              "icon": "hand",
               "action": {
                 "type": "CallNativeFunction",
                 "function": "openPipboyScreenAdjustmentConfig"
@@ -1217,6 +1278,18 @@
               "storage": {
                 "path": ["Fallout4VRBody", "HideBodyInVanillaScope"]
               }
+            },
+            {
+              "type": "slider",
+              "valueType": "float",
+              "text": "BetterScopesVR zoom reach",
+              "help": "How near the offhand comes to the scope for A or X to change its zoom.",
+              "default": 15.0,
+              "valueOptions": { "min": 5.0, "max": 40.0, "step": 0.5 },
+              "visibleWhen": { "f4sePlugin": "FO4VRBETTERSCOPES" },
+              "storage": {
+                "path": ["Fallout4VRBody", "ScopeAdjustDistance"]
+              }
             }
           ]
         }
@@ -1388,24 +1461,23 @@
             "path": ["Fallout4VRBody", "bIgnoreFalloutLondonVR"]
           }
         },
-
         {
-          "type": "activationSphere",
-          "text": "Attaboy grab zone",
-          "help": "Grab the Attaboy off your belt to open and close the Pip-Boy.",
-          "storage": {
-            "file": "config",
-            "section": "FRIK_AttaboyActivationSphere"
-          }
-        },
-        {
-          "type": "cf.inputBinding",
-          "text": "Grab button",
-          "help": "Pressed with the hand in the zone to open or close the Pip-Boy. Off, the Attaboy opens with the open button anywhere.",
-          "default": { "hand": "left", "type": "tap", "button": "grip", "suppress": true },
-          "valueOptions": { "suppress": true },
-          "storage": {
-            "path": ["FRIK_AttaboyActivationSphere", "kPrimaryBinding"]
+          "type": "cf.activationSphere",
+          "text": "Attaboy grab",
+          "help": "Reach a hand to the Attaboy on your belt to open and close the Pip-Boy.",
+          "storage": { "path": ["FRIK_AttaboyActivationSphere"] },
+          "keys": {
+            "kPrimaryBinding": {
+              "text": "Grab button",
+              "help": "Pressed with the hand in the zone to open or close the Pip-Boy. Off, the Attaboy opens with the open button anywhere.",
+              "default": { "hand": "left", "type": "tap", "button": "grip", "suppress": true }
+            },
+            "kSecondaryBinding": false,
+            "sEntryHaptic": { "default": "Tick" },
+            "tZone": {
+              "default": { "pos": [5.0, -2.0, 1.0], "scale": 24.0 },
+              "valueOptions": { "position": { "min": -20, "max": 20, "step": 0.1 }, "rotation": false, "scale": { "min": 5, "max": 60, "step": 0.5 } }
+            }
           }
         }
       ]
@@ -1517,7 +1589,7 @@
             {
               "type": "cf.inputBinding",
               "text": "Selfie button",
-              "help": "Turns selfie mode on and off while the Pip-Boy is off.",
+              "help": "Turns selfie mode on and off while FRIK's own config is open and the Pip-Boy is closed.",
               "default": { "hand": "primary", "type": "tap", "button": "a" },
               "storage": { "path": ["Fallout4VRBody", "kToggleSelfieButton"] }
             }
