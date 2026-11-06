@@ -48,6 +48,11 @@ namespace frik
         _hmdOffsetUp.changedTime = 0;
         _bodyOffsetUp.changedTime = 0;
         _legSlackAdjustOffset.changedTime = 0;
+
+        // the menu has these already: the config has its pending ones as previews
+        if (g_config.isEditingForModsConfig()) {
+            _handedOver = g_config.bodyAdjustmentValues();
+        }
     }
 
     /**
@@ -77,9 +82,44 @@ namespace frik
         _resetBtn->setDisabled(noTarget);
 
         handleAdjustment();
+        handOverChanges();
 
         trackHeightValues();
         updateHeightValuesPanelVisibility();
+    }
+
+    /**
+     * Opened from Mods Config FO4 VR, hand each body value changed since the last hand-over to its menu, every frame, so
+     * it shows them as they are adjusted, and nothing is written to FRIK.toml. Runs after this frame's adjustment and
+     * button presses, so nothing is left to hand over at close. A value the menu refuses, as one past the end of its
+     * slider, is put back to the last one it took, so the adjustment stops at the slider's end.
+     */
+    void BodyAdjustmentSubConfigMode::handOverChanges()
+    {
+        if (!g_config.isEditingForModsConfig()) {
+            return;
+        }
+
+        bool refused = false;
+        const auto current = g_config.bodyAdjustmentValues();
+        for (std::size_t i = 0; i < current.size() && i < _handedOver.size(); ++i) {
+            const auto& [key, value] = current[i];
+            const auto handedOver = std::get<float>(_handedOver[i].second);
+            if (fEqual(std::get<float>(value), handedOver)) {
+                continue;
+            }
+            if (g_config.saveMainValues({ current[i] })) {
+                _handedOver[i] = current[i];
+            } else {
+                g_config.setBodyAdjustmentValue(key, handedOver);
+                refused = true;
+            }
+        }
+
+        // the world scale is the game's setting as well
+        if (refused) {
+            updateVRScaleGameConfig();
+        }
     }
 
     /**
@@ -241,8 +281,11 @@ namespace frik
             closeConfig();
         });
 
+        // opened from Mods Config FO4 VR, the menu's Save keeps the adjustment, which is handed to it as it changes
         const auto row3Container = std::make_shared<UIContainer>("Row3", UIContainerLayout::HorizontalCenter, 0.3f);
-        row3Container->addElement(_saveBtn);
+        if (!g_config.isEditingForModsConfig()) {
+            row3Container->addElement(_saveBtn);
+        }
         row3Container->addElement(_resetBtn);
         row3Container->addElement(backBtn);
 
@@ -305,7 +348,7 @@ namespace frik
 
     /**
      * On close of the body adjustment UI notify the parent config, which drops this sub-config.
-     * The actual cleanup happens in the destructor.
+     * The actual cleanup happens in the destructor, which drops what was not kept.
      */
     void BodyAdjustmentSubConfigMode::closeConfig()
     {
@@ -352,6 +395,9 @@ namespace frik
             rows.emplace_back("BODY ADJUSTMENTS ARE SAVED SEPARATELY");
             rows.emplace_back("FOR SEATED / STANDING MODE");
             rows.emplace_back("AND IN / OUT OF POWER ARMOR");
+            if (g_config.isEditingForModsConfig()) {
+                rows.emplace_back("CHANGES GO TO MODS CONFIG: SAVE THERE");
+            }
             break;
         case BodyAdjustmentConfigTarget::BodyHeight:
             rows.push_back({ .spans = { { .text = "HMD UP / DOWN:  " } } });
@@ -419,8 +465,8 @@ namespace frik
 
     void BodyAdjustmentSubConfigMode::saveConfig()
     {
-        f4vr::showNotification("Saving all body adjustment configs");
-        g_config.save();
+        f4vr::showNotification("Saved all body adjustment configs");
+        g_config.saveBodyAdjustment();
         clearConfigTarget();
     }
 

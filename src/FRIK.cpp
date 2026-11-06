@@ -73,23 +73,27 @@ namespace frik
 
     /**
      * Adds FRIK's main config to the quick launch section of Mods Config FO4 VR's front page, and the functions of the config
-     * spec's buttons that open the body adjustment, the Pip-Boy config and the weapon adjustment, and the state the game's Pip-Boy placement is
-     * kept in for the Pip-Boy page. The framework connects the client at kPostLoad, and nothing is called while Mods Config
-     * FO4 VR is not installed. The menu calls a press on the game thread, which opens the config at once, unless a config
-     * of FRIK is open already, as FRIK builds another main config UI on every open. The menu is minimized while a config
-     * of FRIK is open, and shown again as the last of them closes. One opens only while the skeleton is ready.
+     * spec's buttons that open the body adjustment, the Pip-Boy config and the weapon adjustment, and the state the game's
+     * Pip-Boy placement is kept in for the Pip-Boy page. The framework connects the client at kPostLoad, and nothing is
+     * called while Mods Config FO4 VR is not installed. The menu calls a press on the game thread, which opens the config at
+     * once, unless a config of FRIK is open already, as FRIK builds another main config UI on every open. The menu is
+     * minimized while a config of FRIK is open, and shown again as the last of them closes. An adjustment opened from its
+     * page hands its changes to the menu (Config::setEditingForModsConfig). One opens only while the skeleton is ready.
      */
     void FRIK::registerModsConfigEntry()
     {
         using namespace mods_config::api;
-        const auto openConfig = [this](const auto& open) {
+        // handOver: an adjustment opened from its page, whose changes go to the menu, which shows FRIK; FRIK's own config
+        // opens from the menu's quick launch entry, and saves as it does without Mods Config FO4 VR
+        const auto openConfig = [this](const auto& open, const bool handOver) {
             if (!isSkeletonReady()) {
                 return FunctionResult{ .done = false, .message = "FRIK's configuration opens once a game is loaded." };
             }
             if (!api::core::isConfigOpen()) {
+                g_config.setEditingForModsConfig(handOver);
                 open();
             }
-            _openedFromModsConfig = true;
+            _minimizedModsConfig = true;
             ModsConfigFO4Client::get().minimizeMenu();
             return FunctionResult{ .done = true, .message = {} };
         };
@@ -100,33 +104,41 @@ namespace frik
                 .help = "Opens FRIK's own configuration in the world: body height, arm length, and the weapon and Pip-Boy positions.",
                 .buttonText = {} },
             [this, openConfig](const Params&) {
-                return openConfig([this] {
-                    _mainConfigMode.openConfigMode();
-                });
+                return openConfig(
+                    [this] {
+                        _mainConfigMode.openConfigMode();
+                    },
+                    false);
             });
 
         client.addFunction("openBodyAdjustmentConfig", [this, openConfig](const Params&) {
-            return openConfig([this] {
-                _mainConfigMode.openBodyAdjustmentConfigMode();
-            });
+            return openConfig(
+                [this] {
+                    _mainConfigMode.openBodyAdjustmentConfigMode();
+                },
+                true);
         });
 
         client.addFunction("openPipboyScreenAdjustmentConfig", [this, openConfig](const Params&) {
             if (!isPipboyEnabled()) {
                 return FunctionResult{ .done = false, .message = "FRIK's Pip-Boy is turned off by another mod." };
             }
-            return openConfig([this] {
-                openPipboyConfigurationModeActive();
-            });
+            return openConfig(
+                [this] {
+                    openPipboyConfigurationModeActive();
+                },
+                true);
         });
 
         client.addFunction("openWeaponAdjustmentConfig", [this, openConfig](const Params&) {
             if (!isWeaponPositionEnabled()) {
                 return FunctionResult{ .done = false, .message = "FRIK's weapon positioning is turned off by another mod." };
             }
-            return openConfig([this] {
-                toggleWeaponRepositionMode();
-            });
+            return openConfig(
+                [this] {
+                    toggleWeaponRepositionMode();
+                },
+                true);
         });
 
         // the game's Pip-Boy placement, which the Pip-Boy page's stepper sets and its rows key on. The menu calls the setter
@@ -156,8 +168,9 @@ namespace frik
      */
     void FRIK::restoreModsConfigMenuOnConfigClose()
     {
-        if (_openedFromModsConfig && !api::core::isConfigOpen()) {
-            _openedFromModsConfig = false;
+        if (_minimizedModsConfig && !api::core::isConfigOpen()) {
+            _minimizedModsConfig = false;
+            g_config.setEditingForModsConfig(false);
             mods_config::api::ModsConfigFO4Client::get().restoreMenu();
         }
     }

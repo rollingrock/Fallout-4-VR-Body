@@ -27,6 +27,15 @@ namespace frik
             transform.translate.z = -transform.translate.z;
             return transform;
         }
+
+        config::ConfigValue toConfigValue(const mods_config::api::Value& value)
+        {
+            return std::visit(
+                [](const auto& typed) {
+                    return config::ConfigValue(typed);
+                },
+                value);
+        }
     }
 
     /**
@@ -72,55 +81,64 @@ namespace frik
     void Config::setFlashlightLocation(const FlashlightLocation location)
     {
         flashlightLocation = location;
-        saveConfigValue(CONFIG_SECTION_MAIN, "iFlashlightLocation", static_cast<int>(flashlightLocation));
+        saveMainValues({ { "iFlashlightLocation", static_cast<int>(flashlightLocation) } });
     }
 
     void Config::toggleIsHoloPipboy()
     {
         isHoloPipboy = !isHoloPipboy;
-        saveConfigValue(CONFIG_SECTION_MAIN, "HoloPipBoyEnabled", isHoloPipboy);
+        saveMainValues({ { "HoloPipBoyEnabled", isHoloPipboy } });
     }
 
     void Config::toggleDampenPipboyScreen()
     {
         dampenPipboyScreenMode = static_cast<DampenPipboyScreenMode>((static_cast<uint8_t>(dampenPipboyScreenMode) + 1) % 3);
-        saveConfigValue(CONFIG_SECTION_MAIN, "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode));
+        saveMainValues({ { "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode) } });
     }
 
     void Config::togglePipBoyOpenWhenLookAt()
     {
         pipboyOpenWhenLookAt = !pipboyOpenWhenLookAt;
-        saveConfigValue(CONFIG_SECTION_MAIN, "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt);
+        saveMainValues({ { "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt } });
     }
 
     void Config::togglePipBoyCloseWhenLookAway()
     {
         pipboyCloseWhenLookAway = !pipboyCloseWhenLookAway;
-        saveConfigValue(CONFIG_SECTION_MAIN, "PipBoyCloseWhenLookAway", pipboyCloseWhenLookAway);
+        saveMainValues({ { "PipBoyCloseWhenLookAway", pipboyCloseWhenLookAway } });
     }
 
-    void Config::savePipboyScale(const float scale)
+    /**
+     * Keep the Pip-Boy model scale the Pip-Boy config set, see saveMainValues. One Mods Config FO4 VR's menu refuses, as
+     * one outside its slider, leaves the scale as it was and returns false.
+     */
+    bool Config::savePipboyScale(const float scale)
     {
+        const auto kept = pipBoyScale;
         pipBoyScale = scale;
-        saveConfigValue(CONFIG_SECTION_MAIN, "PipboyScale", pipBoyScale);
+        if (!saveMainValues({ { "PipboyScale", pipBoyScale } })) {
+            pipBoyScale = kept;
+            return false;
+        }
+        return true;
     }
 
     void Config::saveIsPlayingSeated(const bool iIsPlayingSeated)
     {
         this->isPlayingSeated = iIsPlayingSeated;
-        saveConfigValue(CONFIG_SECTION_MAIN, "bIsPlayingSeated", iIsPlayingSeated);
+        saveMainValues({ { "bIsPlayingSeated", iIsPlayingSeated } });
     }
 
     void Config::saveHideHeadEquipment(const bool hide)
     {
         hideHeadEquipment = hide;
-        saveConfigValue(CONFIG_SECTION_MAIN, "bHidePlayerHeadEquipment", hide);
+        saveMainValues({ { "bHidePlayerHeadEquipment", hide } });
     }
 
     void Config::saveDampenHands(const bool iDampenHands)
     {
         this->dampenHands = iDampenHands;
-        saveConfigValue(CONFIG_SECTION_MAIN, "DampenHands", iDampenHands);
+        saveMainValues({ { "DampenHands", iDampenHands } });
     }
 
     /**
@@ -129,7 +147,39 @@ namespace frik
     void Config::setTwoHandedGripMode(const TwoHandedGripMode mode)
     {
         twoHandedGripMode = mode;
-        saveConfigValue(CONFIG_SECTION_MAIN, "iTwoHandedGripMode", static_cast<int>(twoHandedGripMode));
+        saveMainValues({ { "iTwoHandedGripMode", static_cast<int>(twoHandedGripMode) } });
+    }
+
+    /**
+     * Keep values of [Fallout4VRBody] an in-game config changed, which the caller has set in memory already. While an
+     * adjustment opened from Mods Config FO4 VR's page is open, each is handed to its menu as a pending edit, which its
+     * Save writes and its Discard takes back, and nothing is written: the menu's preview of it only records the value, it
+     * reloads nothing. Returns false when the menu refuses one, as one outside its slider: the caller puts it back.
+     * Otherwise they are written to FRIK.toml, and the menu reads FRIK's values again.
+     */
+    bool Config::saveMainValues(const MainValues& values)
+    {
+        auto& modsConfig = mods_config::api::ModsConfigFO4Client::get();
+        if (_editingForModsConfig) {
+            bool all = true;
+            for (const auto& [key, value] : values) {
+                // a setting of FRIK's config spec with no id of its own is named by its key and its section
+                if (!modsConfig.setPendingValue(std::format("{}:{}", key, CONFIG_SECTION_MAIN), value)) {
+                    // an adjustment held at the end of a slider is refused every frame
+                    logger::sampleDebug("Mods Config FO4 VR refused '{}', which is not kept", key);
+                    all = false;
+                }
+            }
+            return all;
+        }
+
+        std::vector<config::ConfigEntry> entries;
+        for (const auto& [key, value] : values) {
+            entries.push_back(config::ConfigEntry{ CONFIG_SECTION_MAIN, key, toConfigValue(value) });
+        }
+        saveConfigValues(entries);
+        modsConfig.reloadValues();
+        return true;
     }
 
     /**
@@ -502,49 +552,67 @@ namespace frik
         disableInteriorSmoothingHorizontal = smoothMovement["DisableInteriorSmoothingHorizontal"].value_or(true);
     }
 
-    /**
-     * Save the values the in-game config menus change, all with one write of FRIK.toml.
-     */
-    void Config::save()
+    namespace
     {
-        saveConfigValues(CONFIG_SECTION_MAIN,
-            {
-                { "bIsPlayingSeated", isPlayingSeated },
-                { "fVrScale", fVrScale },
-                { "bHidePlayerHead", hideHead },
-                { "bHidePlayerHeadEquipment", hideHeadEquipment },
+        // the values the body adjustment changes with the sticks, by their keys of [Fallout4VRBody]: the world scale, the
+        // arm length, and the posture of all four modes; its two toggles keep themselves as they change
+        constexpr std::array<std::pair<std::string_view, float Config::*>, 18> BODY_ADJUSTMENT_VALUES{ {
+            { "fVrScale", &Config::fVrScale },
+            { "armLength", &Config::armLength },
 
-                { "fPlayerBodyOffsetUpStanding", playerBodyOffsetUpStanding },
-                { "fPlayerBodyOffsetForwardStanding", playerBodyOffsetForwardStanding },
-                { "fPlayerHMDOffsetUpStanding", playerHMDOffsetUpStanding },
-                { "fPlayerLegSlackAdjustOffsetStanding", playerLegSlackAdjustOffsetStanding },
-                { "fPlayerBodyOffsetUpSitting", playerBodyOffsetUpSitting },
-                { "fPlayerBodyOffsetForwardSitting", playerBodyOffsetForwardSitting },
-                { "fPlayerHMDOffsetUpSitting", playerHMDOffsetUpSitting },
-                { "fPlayerLegSlackAdjustOffsetSitting", playerLegSlackAdjustOffsetSitting },
+            { "fPlayerBodyOffsetUpStanding", &Config::playerBodyOffsetUpStanding },
+            { "fPlayerBodyOffsetForwardStanding", &Config::playerBodyOffsetForwardStanding },
+            { "fPlayerHMDOffsetUpStanding", &Config::playerHMDOffsetUpStanding },
+            { "fPlayerLegSlackAdjustOffsetStanding", &Config::playerLegSlackAdjustOffsetStanding },
+            { "fPlayerBodyOffsetUpSitting", &Config::playerBodyOffsetUpSitting },
+            { "fPlayerBodyOffsetForwardSitting", &Config::playerBodyOffsetForwardSitting },
+            { "fPlayerHMDOffsetUpSitting", &Config::playerHMDOffsetUpSitting },
+            { "fPlayerLegSlackAdjustOffsetSitting", &Config::playerLegSlackAdjustOffsetSitting },
 
-                { "fPlayerBodyOffsetUpStandingInPA", playerBodyOffsetUpStandingInPA },
-                { "fPlayerBodyOffsetForwardStandingInPA", playerBodyOffsetForwardStandingInPA },
-                { "fPlayerHMDOffsetUpStandingInPA", playerHMDOffsetUpStandingInPA },
-                { "fPlayerLegSlackAdjustOffsetStandingInPA", playerLegSlackAdjustOffsetStandingInPA },
-                { "fPlayerBodyOffsetUpSittingInPA", playerBodyOffsetUpSittingInPA },
-                { "fPlayerBodyOffsetForwardSittingInPA", playerBodyOffsetForwardSittingInPA },
-                { "fPlayerHMDOffsetUpSittingInPA", playerHMDOffsetUpSittingInPA },
-                { "fPlayerLegSlackAdjustOffsetSittingInPA", playerLegSlackAdjustOffsetSittingInPA },
+            { "fPlayerBodyOffsetUpStandingInPA", &Config::playerBodyOffsetUpStandingInPA },
+            { "fPlayerBodyOffsetForwardStandingInPA", &Config::playerBodyOffsetForwardStandingInPA },
+            { "fPlayerHMDOffsetUpStandingInPA", &Config::playerHMDOffsetUpStandingInPA },
+            { "fPlayerLegSlackAdjustOffsetStandingInPA", &Config::playerLegSlackAdjustOffsetStandingInPA },
+            { "fPlayerBodyOffsetUpSittingInPA", &Config::playerBodyOffsetUpSittingInPA },
+            { "fPlayerBodyOffsetForwardSittingInPA", &Config::playerBodyOffsetForwardSittingInPA },
+            { "fPlayerHMDOffsetUpSittingInPA", &Config::playerHMDOffsetUpSittingInPA },
+            { "fPlayerLegSlackAdjustOffsetSittingInPA", &Config::playerLegSlackAdjustOffsetSittingInPA },
+        } };
+    }
 
-                { "fSkeletonLegSlackTarget", skeletonLegSlackTarget },
-                { "armLength", armLength },
-                { "hidePipboy", hidePipboy },
-                { "PipboyScale", pipBoyScale },
-                { "HoloPipBoyEnabled", isHoloPipboy },
-                { "HoloPipBoyKeepWristModel", holoPipboyKeepWristModel },
-                { "iFlashlightLocation", static_cast<int>(flashlightLocation) },
-                { "iDampenPipboyScreenMode", static_cast<int>(dampenPipboyScreenMode) },
-                { "PipBoyOpenWhenLookAt", pipboyOpenWhenLookAt },
-                { "DampenHands", dampenHands },
+    /**
+     * Write what the body adjustment changed with the sticks, on its Save, see bodyAdjustmentValues.
+     */
+    void Config::saveBodyAdjustment()
+    {
+        saveMainValues(bodyAdjustmentValues());
+    }
 
-                { "iTwoHandedGripMode", static_cast<int>(twoHandedGripMode) },
-            });
+    /**
+     * The values the body adjustment changes with the sticks, by their keys of [Fallout4VRBody], all floats. Always in
+     * the same order, so two of them compare value by value.
+     */
+    MainValues Config::bodyAdjustmentValues() const
+    {
+        MainValues values;
+        values.reserve(BODY_ADJUSTMENT_VALUES.size());
+        for (const auto& [key, member] : BODY_ADJUSTMENT_VALUES) {
+            values.emplace_back(std::string(key), this->*member);
+        }
+        return values;
+    }
+
+    /**
+     * Set one of bodyAdjustmentValues by its key, as one Mods Config FO4 VR's menu refused is put back.
+     */
+    void Config::setBodyAdjustmentValue(const std::string_view key, const float value)
+    {
+        for (const auto& [valueKey, member] : BODY_ADJUSTMENT_VALUES) {
+            if (valueKey == key) {
+                this->*member = value;
+                return;
+            }
+        }
     }
 
     /**

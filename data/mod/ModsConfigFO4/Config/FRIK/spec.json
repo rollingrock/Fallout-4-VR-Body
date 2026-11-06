@@ -38,18 +38,6 @@
         {
           "type": "text",
           "text": "FRIK brings your full body to Fallout 4 VR. Full-body inverse kinematics move the arms and legs from where your headset and controllers are, so you see your own body, in power armor too."
-        },
-        {
-          "type": "button",
-          "text": "FRIK's configuration in the world",
-          "help": "Opens FRIK's own configuration in the world: body height, arm length, and the weapon and Pip-Boy positions.",
-          "buttonText": "Open",
-          "style": "important",
-          "icon": "hand",
-          "action": {
-            "type": "CallNativeFunction",
-            "function": "openMainConfig"
-          }
         }
       ]
     },

@@ -67,6 +67,9 @@ namespace frik
         _saveBtn->setDisabled(!adjusting);
         _resetBtn->setDisabled(!adjusting);
 
+        // opened from Mods Config FO4 VR, the model scale is handed to its menu as it changes, and its Save keeps it
+        _saveBtn->setVisibility(!(_adjustTarget == PipboyAdjustTarget::ModelScale && g_config.isEditingForModsConfig()));
+
         // when the Pipboy isn't on the wrist, only model scale is relevant: hide the rest and show the message
         const bool onWrist = f4vr::isPipboyOnWrist();
         _notOnWristMsg->setVisibility(!onWrist);
@@ -180,7 +183,18 @@ namespace frik
             return;
         }
         if (const auto pipboyModel = getPipboyModelNode()) {
-            pipboyModel->local.scale += correctAdjustmentValue(primAxisY, 65);
+            setModelScale(pipboyModel, pipboyModel->local.scale + correctAdjustmentValue(primAxisY, 65));
+        }
+    }
+
+    /**
+     * Show the Pipboy model at the given scale. Opened from Mods Config FO4 VR, the scale is handed to its menu as it
+     * changes, and one the menu refuses, as one past the end of its slider, is not shown, so the scale stops there.
+     */
+    void PipboyConfigMode::setModelScale(RE::NiAVObject* pipboyModel, const float scale)
+    {
+        if (!g_config.isEditingForModsConfig() || g_config.savePipboyScale(scale)) {
+            pipboyModel->local.scale = scale;
         }
     }
 
@@ -196,8 +210,8 @@ namespace frik
             f4vr::showNotification("Saved Pipboy screen position");
             return true;
         case PipboyAdjustTarget::ModelScale:
+            // 3rd person Pipboy is null for Fallout London as there is no Pipboy on the arm
             if (const auto pipboyModel = getPipboyModelNode()) {
-                // 3rd person Pipboy is null for Fallout London as there is no Pipboy on the arm
                 g_config.savePipboyScale(pipboyModel->local.scale);
             }
             f4vr::showNotification("Saved Pipboy model scale");
@@ -222,7 +236,7 @@ namespace frik
         case PipboyAdjustTarget::ModelScale:
             f4vr::showNotification("Reset Pipboy model scale to default");
             if (const auto pipboyModel = getPipboyModelNode()) {
-                pipboyModel->local.scale = 1.0f;
+                setModelScale(pipboyModel, 1.0f);
             }
             break;
         case PipboyAdjustTarget::None:
@@ -296,6 +310,9 @@ namespace frik
         case PipboyAdjustTarget::ModelScale:
             rows.push_back({ .spans = { { .text = "ADJUST:  " } } });
             appendBindingPrompt(rows.back().spans, { stick(vrcf::Hand::Primary, vrcf::Direction::UpDown) }, CONFIG_FOOTER_PROMPT_STYLE);
+            if (g_config.isEditingForModsConfig()) {
+                rows.emplace_back("CHANGES GO TO MODS CONFIG: SAVE THERE");
+            }
             break;
         }
     }

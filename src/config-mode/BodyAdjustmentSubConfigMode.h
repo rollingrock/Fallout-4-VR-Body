@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Config.h"
 #include "vrui/UIButtonPanel.h"
 #include "vrui/UIContainer.h"
 #include "vrui/UITextPanel.h"
@@ -61,6 +62,7 @@ namespace frik
         static void handleVRScaleAdjustment();
         void saveConfig();
         void resetConfig();
+        void handOverChanges();
 
         // roundabout way to recalculate the leg slack adjust offset by knowing the skeleton leg slack value
         inline static float _skeletonLegSlack;
@@ -82,5 +84,8 @@ namespace frik
         TrackedValue _hmdOffsetUp;
         TrackedValue _bodyOffsetUp;
         TrackedValue _legSlackAdjustOffset;
+
+        // opened from Mods Config FO4 VR: the body values as its menu last took them
+        MainValues _handedOver;
     };
 }
