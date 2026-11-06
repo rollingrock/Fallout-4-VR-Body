@@ -99,6 +99,18 @@
           "help": "Tunes the placement of FRIK's in-world config UI through a dev layout file while the game runs.",
           "default": false,
           "storage": { "path": ["Debug", "bVRUIDevLayout"] }
+        },
+        {
+          "type": "button",
+          "text": "Dev layout file",
+          "help": "Opens the dev layout file on your desktop. Take off the headset to edit it; a saved edit shows in the game at once.",
+          "buttonText": "Open",
+          "icon": "window",
+          "action": {
+            "type": "CallNativeFunction",
+            "function": "openDevLayoutFile"
+          },
+          "enabledWhen": { "setting": "bVRUIDevLayout:Debug", "equals": true }
         }
       ]
     }
