@@ -59,14 +59,38 @@
         { "type": "spacer" },
         {
           "type": "text",
-          "text": "<font color='#10FA78'>Your body:</font> set where it is under the headset with Adjust the body in the game, on the Body page. While you adjust it, A on your primary hand (X when left-handed) shows you in selfie mode.<br><font color='#10FA78'>Pip-Boy on the wrist:</font> when the Pip-Boy page has the game's Pip-Boy on your wrist, look at your wrist to open it, or tap the offhand trigger while you look at it. Look away, or tap the offhand grip, to close it. Holster your weapon and bring your primary hand to it: the hand points a finger to press its buttons and screen, and its thumbstick and trigger work it too.<br><font color='#10FA78'>Two hands on a weapon:</font> bring your offhand to the weapon's barrel and hold its grip button to aim with both hands. Let go of the button to let go of the weapon.<br><font color='#10FA78'>Smooth movement:</font> the camera is smoothed as you walk, so stairs and uneven ground do not shake it. The Smooth movement page tunes it or turns it off.",
+          "text": "<font color='#10FA78'>Your body:</font> On the Body page, select \"Adjust the body in the game\" to align your virtual body with your headset. While adjusting, press A on your primary hand (X when left-handed) to see yourself in selfie mode.",
           "html": true
         },
         {
           "type": "text",
-          "text": "<font color='#10FA78'>Flashlight:</font> with the light on, bring a hand to your head until you feel a tick, then tap its grip to take the light into that hand. Do it again to put it back on your head.",
+          "text": "<font color='#10FA78'>Wrist Pip-Boy:</font> Set the game's Pip-Boy location to Wrist. Look at your wrist to open it, or tap your offhand trigger while looking at it. Look away or tap your offhand grip to close it.",
+          "html": true
+        },
+        {
+          "type": "text",
+          "text": "<font color='#10FA78'>Weapon alignment:</font> Draw a weapon, then select \"Adjust the weapon in the game\" on the Weapons page to fine-tune its position in your hand and where your offhand grips it. Settings are saved separately for each weapon.",
+          "html": true
+        },
+        {
+          "type": "text",
+          "text": "<font color='#10FA78'>Two-handed weapons:</font> Bring your offhand to the weapon's barrel and hold the grip button to aim with both hands. Release the button to let go.",
+          "html": true
+        },
+        {
+          "type": "text",
+          "text": "<font color='#10FA78'>Flashlight:</font> With the light on, bring a hand to your head until you feel a vibration, then tap that hand's grip button to take the light. Bring it back to your head and tap grip again to return it.",
           "html": true,
-          "visibleWhen": { "not": { "f4sePlugin": "ImmersiveFlashlightVR" } }
+          "visibleWhen": {
+            "not": {
+              "f4sePlugin": "ImmersiveFlashlightVR"
+            }
+          }
+        },
+        {
+          "type": "text",
+          "text": "<font color='#10FA78'>Camera smoothing:</font> Reduces camera shaking when walking over stairs and uneven ground. Adjust it or turn it off on the Smooth movement page.",
+          "html": true
         }
       ]
     },
