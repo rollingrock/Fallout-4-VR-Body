@@ -1,18 +1,6 @@
 {
   "name": "frik",
   "version": "1",
-  "dependencies": [
-    "args",
-    "rapidcsv",
-    "rsm-mmio",
-    "spdlog",
-    "xbyak",
-    "nlohmann-json",
-    "simpleini",
-    "tomlplusplus",
-    "thomasmonkman-filewatch",
-    "cpptrace",
-    "catch2"
-  ],
+  "dependencies": ["args", "rapidcsv", "rsm-mmio", "spdlog", "xbyak", "nlohmann-json", "simpleini", "tomlplusplus", "thomasmonkman-filewatch", "cpptrace", "catch2"],
   "builtin-baseline": "5cd4931b18d49c77074703cf293a7837ac7506fa"
 }

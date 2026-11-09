@@ -1,8 +1,6 @@
 {
   "permissions": {
     "defaultMode": "acceptEdits",
-    "allow": [
-      "Bash"
-    ]
+    "allow": ["Bash"]
   }
 }
