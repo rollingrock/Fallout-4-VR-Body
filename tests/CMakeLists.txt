@@ -3,8 +3,9 @@
 # - The files of this folder test sources under src/ that are plain std: each is compiled here by itself, with no
 #   PCH, F4SE or CommonLibF4. Keep pure logic in such headers and standalone .cpp files, so it is tested this way.
 # - The files of linked/ test code that needs the framework and CommonLibF4, and not the game to run.
-# Test files sit in a folder per src/ area (weapon-position/, ...), and the folder starts each test's CTest name
-# ("weapon-position: Grip mode: ..."). A test file is named *Tests.cpp, and its name is unique across the folders.
+# Test files sit in a folder per src/ area (weapon-position/, ...), and "FRIK" and the folder start each test's
+# CTest name ("FRIK: weapon-position: Grip mode: ..."), a tree of their own beside the framework's ("framework: ...").
+# A test file is named *Tests.cpp, and its name is unique across the folders.
 
 if(NOT TARGET F4VRCommon::test_main)
   message(FATAL_ERROR ">> Catch2 not found for the unit tests. Add \"catch2\" to vcpkg.json, or configure with -DFRIK_BUILD_TESTS=OFF.")
@@ -38,7 +39,7 @@ target_include_directories(FRIK_tests SYSTEM PRIVATE ${TOMLPLUSPLUS_INCLUDE_DIR}
 target_compile_options(FRIK_tests PRIVATE /utf-8 /permissive- /W4 /external:anglebrackets /external:W0)
 target_link_libraries(FRIK_tests PRIVATE F4VRCommon::test_main)
 
-f4cf_discover_tests_by_folder(FRIK_tests)
+f4cf_discover_tests_by_folder(FRIK_tests PREFIX FRIK)
 
 
 # >>> The tests of linked/, linked with the framework and CommonLibF4. There is no game in the process:
@@ -65,4 +66,4 @@ target_link_libraries(FRIK_linked_tests PRIVATE F4VRCommon::framework F4VRCommon
 # loaded on its first call, which no test makes. Release drops the unused import whole, hence the ignored warning.
 target_link_options(FRIK_linked_tests PRIVATE /DELAYLOAD:openvr_api.dll /IGNORE:4199)
 
-f4cf_discover_tests_by_folder(FRIK_linked_tests)
+f4cf_discover_tests_by_folder(FRIK_linked_tests PREFIX FRIK)
