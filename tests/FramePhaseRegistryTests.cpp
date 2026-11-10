@@ -43,7 +43,7 @@ namespace
     char tagC[] = "c";
 }
 
-TEST_CASE("FramePhaseRegistry validates registrations")
+TEST_CASE("FramePhaseRegistry: validates registrations")
 {
     FramePhaseRegistry registry;
     REQUIRE(registry.set("", 0, &record, nullptr, 0) == Result::BadTag);
@@ -55,7 +55,7 @@ TEST_CASE("FramePhaseRegistry validates registrations")
     REQUIRE(registry.remove("unknown"));
 }
 
-TEST_CASE("FramePhaseRegistry runs by priority then registration order")
+TEST_CASE("FramePhaseRegistry: runs by priority then registration order")
 {
     FramePhaseRegistry registry;
     const auto p = phase(FramePhase::BeforeArmSolve);
@@ -73,7 +73,7 @@ TEST_CASE("FramePhaseRegistry runs by priority then registration order")
     REQUIRE(registry.invoke(FRAME_PHASE_COUNT) == 0);
 }
 
-TEST_CASE("FramePhaseRegistry keeps a re-set entry in place and drops every phase of a tag")
+TEST_CASE("FramePhaseRegistry: keeps a re-set entry in place and drops every phase of a tag")
 {
     FramePhaseRegistry registry;
     REQUIRE(registry.set("a", 1, &record, tagA, 0) == Result::Registered);
@@ -99,7 +99,7 @@ TEST_CASE("FramePhaseRegistry keeps a re-set entry in place and drops every phas
     REQUIRE(registry.count(2) == 0);
 }
 
-TEST_CASE("FramePhaseRegistry refuses mutation and nesting from inside a callback")
+TEST_CASE("FramePhaseRegistry: refuses mutation and nesting from inside a callback")
 {
     FramePhaseRegistry registry;
     g_reentrant = &registry;
@@ -111,7 +111,7 @@ TEST_CASE("FramePhaseRegistry refuses mutation and nesting from inside a callbac
     REQUIRE(registry.count() == 1);
 }
 
-TEST_CASE("FramePhaseRegistry times each callback as a perf site under the site open when its phase runs")
+TEST_CASE("FramePhaseRegistry: times each callback as a perf site under the site open when its phase runs")
 {
     perf::setEnabled(true);
     perf::reset();
@@ -138,7 +138,7 @@ TEST_CASE("FramePhaseRegistry times each callback as a perf site under the site 
     REQUIRE(site.read().durations.count == 3);
 }
 
-TEST_CASE("FramePhaseRegistry names every phase")
+TEST_CASE("FramePhaseRegistry: names every phase")
 {
     REQUIRE(frik::framePhaseName(phase(FramePhase::NativeGraphOutput)) == "NativeGraphOutput");
     REQUIRE(frik::framePhaseName(phase(FramePhase::AfterArmSolve)) == "AfterArmSolve");
@@ -146,7 +146,7 @@ TEST_CASE("FramePhaseRegistry names every phase")
     REQUIRE(frik::framePhaseName(FRAME_PHASE_COUNT) == "Unknown");
 }
 
-TEST_CASE("FramePhaseRegistry is bounded and clears")
+TEST_CASE("FramePhaseRegistry: is bounded and clears")
 {
     FramePhaseRegistry registry;
     for (std::size_t i = 0; i < FramePhaseRegistry::CAPACITY; ++i) {
