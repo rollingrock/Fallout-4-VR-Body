@@ -62,6 +62,7 @@ namespace frik
         void handleAdjustment() const;
         static void handleScreenAdjust();
         void handleModelScaleAdjust() const;
+        static void setModelScale(RE::NiAVObject* pipboyModel, float scale);
         bool saveConfig() const;
         void resetConfig() const;
         static void onOpenWhenLookAtToggled(bool on);

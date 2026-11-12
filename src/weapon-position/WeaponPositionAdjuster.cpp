@@ -395,8 +395,10 @@ namespace frik
 
         if (carried) {
             if (scopeCamera->parent != weapon) {
-                // the camera base is authored in the offset node's frame; re-express it for the weapon so the view keeps its roll
-                _scopeCameraCarryBaseMatrix = _scopeCameraBaseMatrix * scopeCamera->parent->world.rotate * weapon->world.rotate.Transpose();
+                // the camera base is authored in the offset node's frame; re-express it for the weapon so the view keeps its roll.
+                // Taken from the offset node itself, not the camera's parent: a first-person skeleton rebuilt mid-carry (power
+                // armor, 3D reset) frees the weapon node the camera hung on and leaves the camera with no parent.
+                _scopeCameraCarryBaseMatrix = _scopeCameraBaseMatrix * pn->primaryWeaponOffsetNode->world.rotate * weapon->world.rotate.Transpose();
             }
             if (widgetUnderOffhandWand) {
                 reparent(scopeParent, pn->secondaryWandNode, nullptr);

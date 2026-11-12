@@ -4,21 +4,21 @@
 
 using frik::TagBlockSet;
 
-TEST_CASE("TagBlockSet is unblocked when empty")
+TEST_CASE("TagBlockSet: is unblocked when empty")
 {
     TagBlockSet set;
     REQUIRE_FALSE(set.isBlocked());
     REQUIRE(set.blockingCount() == 0);
 }
 
-TEST_CASE("TagBlockSet rejects an empty tag")
+TEST_CASE("TagBlockSet: rejects an empty tag")
 {
     TagBlockSet set;
     REQUIRE_FALSE(set.setBlocked("", true));
     REQUIRE_FALSE(set.isBlocked());
 }
 
-TEST_CASE("TagBlockSet stays blocked until every tag releases")
+TEST_CASE("TagBlockSet: stays blocked until every tag releases")
 {
     TagBlockSet set;
     REQUIRE(set.setBlocked("a", true));
@@ -32,7 +32,7 @@ TEST_CASE("TagBlockSet stays blocked until every tag releases")
     REQUIRE_FALSE(set.isBlocked());
 }
 
-TEST_CASE("TagBlockSet reports whether a call changed the set")
+TEST_CASE("TagBlockSet: reports whether a call changed the set")
 {
     TagBlockSet set;
     bool changed = false;
@@ -48,7 +48,7 @@ TEST_CASE("TagBlockSet reports whether a call changed the set")
     REQUIRE(set.blockingCount() == 1);
 }
 
-TEST_CASE("TagBlockSet clear drops every tag")
+TEST_CASE("TagBlockSet: clear drops every tag")
 {
     TagBlockSet set;
     set.setBlocked("a", true);

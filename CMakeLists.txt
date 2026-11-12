@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 4.2)
 # >>> Project
 set(NAME "FRIK")
 set(FRIENDLY_NAME "FRIK")
-set(VERSION 0.80.0)
+set(VERSION 0.80.1)
 
 message(">>> Start build for '${NAME}' v${VERSION}")
 
@@ -192,7 +192,7 @@ target_link_options(${PROJECT_NAME}
 string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_TRACY "${CMAKE_CXX_FLAGS_TRACY}")
 
-# >>> Unit tests (pure logic only, no game dependency)
+# >>> Unit tests (tests/), with no game: plain-std logic, and FRIK's sources linked with the framework (tests/linked/)
 if(FRIK_BUILD_TESTS)
   add_subdirectory(tests)
 endif()

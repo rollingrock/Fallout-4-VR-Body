@@ -13,7 +13,7 @@ namespace
     }
 }
 
-TEST_CASE("ScopeAuthority falls back to the vanilla scope menu without a publishing provider")
+TEST_CASE("ScopeAuthority: falls back to the vanilla scope menu without a publishing provider")
 {
     ScopeAuthority scope;
     REQUIRE_FALSE(scope.isLookingThroughScope(false));
@@ -21,7 +21,7 @@ TEST_CASE("ScopeAuthority falls back to the vanilla scope menu without a publish
     REQUIRE_FALSE(scope.hasCapability(ScopeCapability::KeepsBodyVisible));
 }
 
-TEST_CASE("ScopeAuthority rejects empty tags and unknown capability bits")
+TEST_CASE("ScopeAuthority: rejects empty tags and unknown capability bits")
 {
     ScopeAuthority scope;
     REQUIRE_FALSE(scope.setProvider("", cap(ScopeCapability::KeepsBodyVisible)));
@@ -30,7 +30,7 @@ TEST_CASE("ScopeAuthority rejects empty tags and unknown capability bits")
     REQUIRE(scope.providerCount() == 0);
 }
 
-TEST_CASE("ScopeAuthority publishing provider replaces the vanilla state")
+TEST_CASE("ScopeAuthority: publishing provider replaces the vanilla state")
 {
     ScopeAuthority scope;
     bool changed = false;
@@ -44,7 +44,7 @@ TEST_CASE("ScopeAuthority publishing provider replaces the vanilla state")
     REQUIRE_FALSE(scope.hasCapability(ScopeCapability::OwnsScopeCamera));
 }
 
-TEST_CASE("ScopeAuthority only a publishing provider may set the flag")
+TEST_CASE("ScopeAuthority: only a publishing provider may set the flag")
 {
     ScopeAuthority scope;
     REQUIRE(scope.setProvider("camera", cap(ScopeCapability::OwnsScopeCamera)));
@@ -53,7 +53,7 @@ TEST_CASE("ScopeAuthority only a publishing provider may set the flag")
     REQUIRE(scope.isLookingThroughScope(true));
 }
 
-TEST_CASE("ScopeAuthority unions capabilities and drops the flag when the publisher leaves")
+TEST_CASE("ScopeAuthority: unions capabilities and drops the flag when the publisher leaves")
 {
     ScopeAuthority scope;
     REQUIRE(scope.setProvider("a", cap(ScopeCapability::PublishesLookingThrough)));
@@ -75,7 +75,7 @@ TEST_CASE("ScopeAuthority unions capabilities and drops the flag when the publis
     REQUIRE(scope.providerCount() == 1);
 }
 
-TEST_CASE("ScopeAuthority re-registering a tag replaces its capabilities")
+TEST_CASE("ScopeAuthority: re-registering a tag replaces its capabilities")
 {
     ScopeAuthority scope;
     bool changed = false;
@@ -89,7 +89,7 @@ TEST_CASE("ScopeAuthority re-registering a tag replaces its capabilities")
     REQUIRE(scope.providerCount() == 1);
 }
 
-TEST_CASE("ScopeAuthority a publisher leaving or flipping cannot strand another publisher's state")
+TEST_CASE("ScopeAuthority: a publisher leaving or flipping cannot strand another publisher's state")
 {
     frik::ScopeAuthority scope;
     const auto publishes = static_cast<std::uint32_t>(frik::ScopeCapability::PublishesLookingThrough);
@@ -116,7 +116,7 @@ TEST_CASE("ScopeAuthority a publisher leaving or flipping cannot strand another 
     REQUIRE_FALSE(scope.isLookingThroughScope(false));
 }
 
-TEST_CASE("ScopeAuthority a new game session forgets what every provider published")
+TEST_CASE("ScopeAuthority: a new game session forgets what every provider published")
 {
     frik::ScopeAuthority scope;
     const auto publishes = static_cast<std::uint32_t>(frik::ScopeCapability::PublishesLookingThrough);
@@ -141,7 +141,7 @@ TEST_CASE("ScopeAuthority a new game session forgets what every provider publish
     REQUIRE_FALSE(idle.clearPublishedLookingThrough());
 }
 
-TEST_CASE("ScopeAuthority clearing a provider and re-adding it starts from not looking through")
+TEST_CASE("ScopeAuthority: clearing a provider and re-adding it starts from not looking through")
 {
     // The recovery for a provider that wants its capabilities dropped as well as its published state. A bare
     // re-registration is the simpler route and is pinned by the test above; this one additionally holds whatever

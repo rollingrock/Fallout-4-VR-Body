@@ -327,7 +327,7 @@ namespace frik
         std::uint32_t _skeletonGeneration = 0;
 
         // a config of FRIK was opened from Mods Config FO4 VR, whose menu is shown again as the last of them closes
-        bool _openedFromModsConfig = false;
+        bool _minimizedModsConfig = false;
 
         // Feature enable/disable flags toggled via the public API (see blockFeature). Default: enabled.
         bool _flashlightEnabled = true;

@@ -6,11 +6,20 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v18.1.8
+    rev: v23.1.5
     hooks:
       - id: clang-format
         types_or: [c++, c]
         args: [--style=file]
+
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.7.4
+    hooks:
+      - id: prettier
+        language_version: "26.13.0"
+        types: [json]
+        # Game-exported offsets retain their native layout.
+        exclude: ^data/config/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

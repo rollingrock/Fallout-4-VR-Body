@@ -54,9 +54,12 @@ namespace
         return footer;
     }
 
+    /**
+     * The prompt of a stick moved every way, as every reposition reads both of its axes.
+     */
     vrcf::InputBinding stick(const vrcf::Hand hand)
     {
-        return vrcf::InputBinding{ .hand = hand, .button = vr::k_EButton_SteamVR_Touchpad };
+        return vrcf::InputBinding{ .hand = hand, .type = vrcf::ActivationType::AxisDirection, .axis = vrcf::Axis::Thumbstick, .direction = vrcf::Direction::Any };
     }
 
     /**

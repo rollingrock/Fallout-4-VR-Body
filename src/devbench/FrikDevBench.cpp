@@ -87,7 +87,7 @@ namespace frik::devbench
         {
             const char* group;
             const char* name;
-            bool FrikState::*value;
+            bool FrikState::* value;
         };
 
         /**

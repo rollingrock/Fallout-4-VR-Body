@@ -6,6 +6,7 @@
 #include "common/CommonUtils.h"
 #include "config/ConfigBase.h"
 #include "f4vr/WandActivationSphere.h"
+#include "modsconfig/ModsConfigFO4Api.h"
 #include "resources.h"
 #include "vrcf/VRControllersManager.h"
 #include "weapon-position/GripMode.h"
@@ -61,6 +62,9 @@ namespace frik
         HoldInPlace
     };
 
+    // values of [Fallout4VRBody] by their keys, as an in-game config keeps them (Config::saveMainValues)
+    using MainValues = std::vector<std::pair<std::string, mods_config::api::Value>>;
+
     /**
      * Holds all the configuration variables used in the mod.
      * Most of the configuration variables are loaded from the FRIK.toml file.
@@ -74,8 +78,27 @@ namespace frik
         {}
 
         virtual void load() override;
-        virtual void save() override;
         void loadConfigOnly();
+
+        /**
+         * FRIK's in-game configs were opened from Mods Config FO4 VR's page of FRIK: their changes are handed to its menu
+         * as pending edits, which its Save writes, instead of FRIK writing FRIK.toml. Set as an adjustment opens from its
+         * page, and cleared as the last config closes.
+         */
+        void setEditingForModsConfig(const bool editing)
+        {
+            _editingForModsConfig = editing;
+        }
+
+        bool isEditingForModsConfig() const
+        {
+            return _editingForModsConfig;
+        }
+
+        void saveBodyAdjustment();
+        MainValues bodyAdjustmentValues() const;
+        void setBodyAdjustmentValue(std::string_view key, float value);
+        bool saveMainValues(const MainValues& values);
 
         void reloadForFalloutLondonVR();
         void setFlashlightLocation(FlashlightLocation location);
@@ -83,7 +106,7 @@ namespace frik
         void toggleDampenPipboyScreen();
         void togglePipBoyOpenWhenLookAt();
         void togglePipBoyCloseWhenLookAway();
-        void savePipboyScale(float scale);
+        bool savePipboyScale(float scale);
         void saveIsPlayingSeated(bool iIsPlayingSeated);
         void saveHideHeadEquipment(bool hide);
         void saveDampenHands(bool iDampenHands);
@@ -271,6 +294,8 @@ namespace frik
         static std::string getWeaponNameWithMode(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool leftHanded);
         std::string getPipboyOffsetKey() const;
         std::string getPipboyOffsetPath() const;
+
+        bool _editingForModsConfig = false;
 
         // hide meshes
         std::vector<std::string> _faceGeometry;
