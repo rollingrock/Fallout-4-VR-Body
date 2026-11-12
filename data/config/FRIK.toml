@@ -283,6 +283,8 @@ kOpenConfigButton = { hand = "primary", type = "longpress", button = "thumbstick
 # Only active in Fallout London VR, once the on-belt Attaboy exists. This is an "activation sphere":
 # a spherical zone anchored to the Attaboy on the belt; while the bound hand is inside it.
 # To disable and have Attaboy open globally set kPrimaryBinding to { type = "none" }.
+# The binding icon (sShowBindingIcon) shows the grab button's icon while the hand is in the zone; tBindingIcon
+# places it from the zone's center, { pos = [right, up, toward you], scale = size }.
 # https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/input-binding.md
 [FRIK_AttaboyActivationSphere]
 tZone = { pos = [5.0, -2.0, 1.0], scale = 24.0 }
@@ -290,7 +292,9 @@ kPrimaryBinding = { hand = "left", type = "tap", button = "grip", suppress = tru
 sEntryHaptic = "tick"
 sPrimaryHaptic = "DoubleClick"
 sShowIcon = "wheninside"
-fIconSize = 1.0
+fIconSize = 1.5
+sShowBindingIcon = "wheninside"
+tBindingIcon = { pos = [0.65, -0.65, 0.0], scale = 1.2 }
 sShowSphere = "never"
 
 
@@ -369,6 +373,9 @@ aDumpDataOnce = []
 # Example: [{ op = "print", category = "weapons", keyword = "laser" }, { op = "get", category = ["ammo", "aid"] }]
 # Guide: https://github.com/ArthurHub/F4VR-CommonFramework/blob/main/docs/debug-config.md
 aAddItemsOnce = []
+
+# Tunes the placement of FRIK's in-world config UI live, through a dev layout file written while this is true.
+bVRUIDevLayout = false
 
 # Internal use for versioning
 iVersion = 1

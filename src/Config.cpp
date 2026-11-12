@@ -390,9 +390,9 @@ namespace frik
 
         // Player/Skeleton
         setScale = mainSection["setScale"].value_or(true);
-        fVrScale = mainSection["fVrScale"].value_or(70.0f);
-        playerHeight = mainSection["PlayerHeight"].value_or(120.4828f);
-        armLength = mainSection["armLength"].value_or(36.74f);
+        fVrScale = mainSection["fVrScale"].value_or(71.0f);
+        playerHeight = mainSection["PlayerHeight"].value_or(120.482803f);
+        armLength = mainSection["armLength"].value_or(36.0f);
 
         // Arm solver
         armElbowMinFlexionDeg = mainSection["fArmElbowMinFlexionDeg"].value_or(10.0f);
@@ -409,21 +409,21 @@ namespace frik
 
         // Head Geometry Hide
         hideHead = mainSection["bHidePlayerHead"].value_or(false);
-        hideHeadEquipment = mainSection["bHidePlayerHeadEquipment"].value_or(false);
+        hideHeadEquipment = mainSection["bHidePlayerHeadEquipment"].value_or(true);
         hideSkin = mainSection["bHidePlayerSkin"].value_or(false);
 
         // is the player playing standing or sitting
         isPlayingSeated = mainSection["bIsPlayingSeated"].value_or(false);
 
         // HMD, body, and leg slack adjust offsets
-        playerHMDOffsetUpStanding = mainSection["fPlayerHMDOffsetUpStanding"].value_or(8.0f);
-        playerBodyOffsetUpStanding = mainSection["fPlayerBodyOffsetUpStanding"].value_or(-3.0f);
+        playerHMDOffsetUpStanding = mainSection["fPlayerHMDOffsetUpStanding"].value_or(8.6f);
+        playerBodyOffsetUpStanding = mainSection["fPlayerBodyOffsetUpStanding"].value_or(-4.2f);
         playerLegSlackAdjustOffsetStanding = mainSection["fPlayerLegSlackAdjustOffsetStanding"].value_or(0.0f);
         playerBodyOffsetForwardStanding = mainSection["fPlayerBodyOffsetForwardStanding"].value_or(-3.0f);
-        playerHMDOffsetUpSitting = mainSection["fPlayerHMDOffsetUpSitting"].value_or(31.0f);
-        playerBodyOffsetUpSitting = mainSection["fPlayerBodyOffsetUpSitting"].value_or(-4.0f);
-        playerLegSlackAdjustOffsetSitting = mainSection["fPlayerLegSlackAdjustOffsetSitting"].value_or(0.0f);
-        playerBodyOffsetForwardSitting = mainSection["fPlayerBodyOffsetForwardSitting"].value_or(2.0f);
+        playerHMDOffsetUpSitting = mainSection["fPlayerHMDOffsetUpSitting"].value_or(35.0f);
+        playerBodyOffsetUpSitting = mainSection["fPlayerBodyOffsetUpSitting"].value_or(-5.0f);
+        playerLegSlackAdjustOffsetSitting = mainSection["fPlayerLegSlackAdjustOffsetSitting"].value_or(12.0f);
+        playerBodyOffsetForwardSitting = mainSection["fPlayerBodyOffsetForwardSitting"].value_or(-3.0f);
 
         playerHMDOffsetUpStandingInPA = mainSection["fPlayerHMDOffsetUpStandingInPA"].value_or(23.0f);
         playerBodyOffsetUpStandingInPA = mainSection["fPlayerBodyOffsetUpStandingInPA"].value_or(-8.0f);
@@ -434,10 +434,10 @@ namespace frik
         playerLegSlackAdjustOffsetSittingInPA = mainSection["fPlayerLegSlackAdjustOffsetSittingInPA"].value_or(0.0f);
         playerBodyOffsetForwardSittingInPA = mainSection["fPlayerBodyOffsetForwardSittingInPA"].value_or(-9.0f);
 
-        headBackPositionOffset = mainSection["fHeadBackPositionOffset"].value_or(4.0f);
-        skeletonLegSlackTarget = mainSection["fSkeletonLegSlackTarget"].value_or(2.5f);
+        headBackPositionOffset = mainSection["fHeadBackPositionOffset"].value_or(5.0f);
+        skeletonLegSlackTarget = mainSection["fSkeletonLegSlackTarget"].value_or(2.0f);
 
-        comfortSneakHackStaticBodyPitchAngle = mainSection["fComfortSneakHackStaticBodyPitchAngle"].value_or(30.0f);
+        comfortSneakHackStaticBodyPitchAngle = mainSection["fComfortSneakHackStaticBodyPitchAngle"].value_or(10.0f);
 
         // Pipboy
         pipBoyScale = mainSection["PipboyScale"].value_or(1.0f);
@@ -446,14 +446,14 @@ namespace frik
         holoPipboyKeepWristModel = mainSection["HoloPipBoyKeepWristModel"].value_or(false);
         leftHandedPipBoy = mainSection["PipboyRightArmLeftHandedMode"].value_or(false);
         enablePrimaryControllerPipboyUse = mainSection["PipboyUIPrimaryController"].value_or(true);
-        pipboyOpenWhenLookAt = mainSection["PipBoyOpenWhenLookAt"].value_or(false);
-        pipboyOpenWithButtonOnlyWhenLookingAt = mainSection["PipBoyOpenWithButtonOnlyWhenLookingAt"].value_or(false);
-        pipboyCloseWhenLookAway = mainSection["PipBoyCloseWhenLookAway"].value_or(false);
+        pipboyOpenWhenLookAt = mainSection["PipBoyOpenWhenLookAt"].value_or(true);
+        pipboyOpenWithButtonOnlyWhenLookingAt = mainSection["PipBoyOpenWithButtonOnlyWhenLookingAt"].value_or(true);
+        pipboyCloseWhenLookAway = mainSection["PipBoyCloseWhenLookAway"].value_or(true);
         pipboyCloseWhenMovingWhileLookingAway = mainSection["AllowMovementWhenNotLookingAtPipboy"].value_or(true);
         pipboyHolsterWeaponForOperation = mainSection["bHolsterWeaponForOperation"].value_or(false);
         pipboyLookAtThreshold = mainSection["PipBoyLookAtThreshold"].value_or(0.75f);
-        pipboyLookAwayThreshold = mainSection["PipBoyLookAwayThreshold"].value_or(0.3f);
-        pipboyButtonLookAtThreshold = mainSection["PipBoyButtonLookAtThreshold"].value_or(0.5f);
+        pipboyLookAwayThreshold = mainSection["PipBoyLookAwayThreshold"].value_or(0.6f);
+        pipboyButtonLookAtThreshold = mainSection["PipBoyButtonLookAtThreshold"].value_or(0.6f);
         pipboyOperationFingerDetectionRange = mainSection["fPipboyOperationFingerDetectionRange"].value_or(12.0f);
         pipBoyOnDelay = mainSection["PipBoyOnDelay"].value_or(400);
         pipBoyOffDelay = mainSection["PipBoyOffDelay"].value_or(1000);
@@ -486,11 +486,17 @@ namespace frik
         static const f4vr::WandActivationConfig attaboyGrabDefaults = [] {
             f4vr::WandActivationConfig cfg;
             cfg.zone.MakeIdentity();
-            cfg.zone.scale = 30.0f; // sphere diameter in game units (radius = scale * beltNodeWorldScale * 0.5)
-            cfg.primary = vrcf::InputBinding{ vrcf::Hand::Left, vrcf::ActivationType::Tap, vr::k_EButton_Grip };
-            cfg.entryHaptic = vrcf::HapticPattern::Click; // matches the previous "hand entered the grab zone" haptic
+            cfg.zone.translate = RE::NiPoint3(5.0f, -2.0f, 1.0f);
+            cfg.zone.scale = 24.0f; // sphere diameter in game units (radius = scale * beltNodeWorldScale * 0.5)
+            cfg.primary = vrcf::InputBinding{ .hand = vrcf::Hand::Left, .type = vrcf::ActivationType::Tap, .button = vr::k_EButton_Grip, .suppress = true };
+            cfg.entryHaptic = vrcf::HapticPattern::Tick;
             cfg.primaryHaptic = vrcf::HapticPattern::DoubleClick;
             cfg.showSphere = f4vr::ActivationSphereVisibility::Never;
+            cfg.iconStyle.size = 1.5f;
+            // the binding icon at the icon's lower right
+            cfg.showBindingIcon = f4vr::ActivationSphereVisibility::WhenInside;
+            cfg.bindingIconStyle.transform.translate = RE::NiPoint3(0.65f, -0.65f, 0.0f);
+            cfg.bindingIconStyle.transform.scale = 1.2f;
             return cfg;
         }();
         attaboyGrab = loadWandActivationConfig(config, CONFIG_SECTION_ATTABOY_GRAB, attaboyGrabDefaults);
@@ -499,7 +505,7 @@ namespace frik
         enableOffHandGripping = mainSection["EnableOffHandGripping"].value_or(true);
         const auto gripMode = mainSection["iTwoHandedGripMode"].value_or(3);
         twoHandedGripMode = gripMode >= 1 && gripMode <= 4 ? static_cast<TwoHandedGripMode>(gripMode) : TwoHandedGripMode::Mode3;
-        gripLetGoThreshold = mainSection["GripLetGoThreshold"].value_or(15.0f);
+        gripLetGoThreshold = mainSection["GripLetGoThreshold"].value_or(2.5f);
         offhandGripBinding =
             getInputBindingValue(config, CONFIG_SECTION_MAIN, "kGripButton", vrcf::InputBinding{ vrcf::Hand::Offhand, vrcf::ActivationType::Press, vr::k_EButton_Grip });
         offhandGripHoldBinding =
@@ -507,20 +513,20 @@ namespace frik
 
         // Dampen hands
         dampenHands = mainSection["DampenHands"].value_or(true);
-        dampenHandsInVanillaScope = mainSection["DampenHandsInVanillaScope"].value_or(true);
+        dampenHandsInVanillaScope = mainSection["DampenHandsInVanillaScope"].value_or(false);
         hideBodyInVanillaScope = mainSection["HideBodyInVanillaScope"].value_or(true);
-        dampenHandsRotation = mainSection["DampenHandsRotation"].value_or(0.7f);
-        dampenHandsTranslation = mainSection["DampenHandsTranslation"].value_or(0.7f);
+        dampenHandsRotation = mainSection["DampenHandsRotation"].value_or(0.6f);
+        dampenHandsTranslation = mainSection["DampenHandsTranslation"].value_or(0.6f);
         dampenHandsRotationInVanillaScope = mainSection["DampenHandsRotationInVanillaScope"].value_or(0.2f);
         dampenHandsTranslationInVanillaScope = mainSection["DampenHandsTranslationInVanillaScope"].value_or(0.2f);
 
         // Dampen Pipboy
         dampenPipboyScreenMode = static_cast<DampenPipboyScreenMode>(mainSection["iDampenPipboyScreenMode"].value_or(1));
-        dampenPipboyThreshold = mainSection["fDampenPipboyThreshold"].value_or(1.1f);
+        dampenPipboyThreshold = mainSection["fDampenPipboyThreshold"].value_or(1.0f);
         dampenPipboyMultiplier = mainSection["fDampenPipboyMultiplier"].value_or(0.7f);
 
         // Misc
-        showPAHUD = mainSection["showPAHUD"].value_or(false);
+        showPAHUD = mainSection["showPAHUD"].value_or(true);
         selfieOutFrontDistance = mainSection["selfieOutFrontDistance"].value_or(120.0f);
         selfieIgnoreHideFlags = mainSection["bSelfieIgnoreHideFlags"].value_or(true);
         toggleSelfieBinding =
@@ -538,18 +544,18 @@ namespace frik
             });
 
         // special disable of Fallout London so Pipboy can be used - a hacky hack for a specific player
-        ignoreFalloutLondonVR = mainSection["bIgnoreFalloutLondonVR"].value_or(true);
+        ignoreFalloutLondonVR = mainSection["bIgnoreFalloutLondonVR"].value_or(false);
 
         //Smooth Movement
         disableSmoothMovement = smoothMovement["DisableSmoothMovement"].value_or(false);
-        smoothingAmount = smoothMovement["SmoothAmount"].value_or(15.0f);
+        smoothingAmount = smoothMovement["SmoothAmount"].value_or(5.0f);
         smoothingAmountHorizontal = smoothMovement["SmoothAmountHorizontal"].value_or(5.0f);
         dampingMultiplier = smoothMovement["Damping"].value_or(1.0f);
         dampingMultiplierHorizontal = smoothMovement["DampingHorizontal"].value_or(1.0f);
-        stoppingMultiplier = smoothMovement["StoppingMultiplier"].value_or(0.6f);
+        stoppingMultiplier = smoothMovement["StoppingMultiplier"].value_or(0.5f);
         stoppingMultiplierHorizontal = smoothMovement["StoppingMultiplierHorizontal"].value_or(0.6f);
-        disableInteriorSmoothing = smoothMovement["DisableInteriorSmoothing"].value_or(true);
-        disableInteriorSmoothingHorizontal = smoothMovement["DisableInteriorSmoothingHorizontal"].value_or(true);
+        disableInteriorSmoothing = smoothMovement["DisableInteriorSmoothing"].value_or(false);
+        disableInteriorSmoothingHorizontal = smoothMovement["DisableInteriorSmoothingHorizontal"].value_or(false);
     }
 
     namespace
