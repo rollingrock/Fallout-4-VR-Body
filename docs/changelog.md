@@ -1,3 +1,8 @@
+## v0.80.2
+
+- Config: A setting another mod overrides, as ROCK sets the Pip-Boy button, is marked in Mods Config FO4 VR, with the mod and the value in effect. A change of it is saved, and applies once the override ends.
+- API: `setConfigValueOverride`'s `caller` is shown to the player in Mods Config FO4 VR as who overrides the setting.
+
 ## v0.80.0
 
 - Config: All of FRIK's settings can be changed in the Mods Config FO4 VR menu, previewed live, including controller bindings and the game's Pip-Boy location, with a quick launch entry and buttons that open FRIK's in-game configs.
