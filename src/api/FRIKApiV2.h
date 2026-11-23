@@ -738,7 +738,8 @@ namespace frik::api
          * when its type changed is reached by its old name ("sOpenConfigButton" sets "kOpenConfigButton").
          * getConfigValue then returns it as it applies ("false", "2.0"). FRIK reloads its config
          * immediately so the change takes effect right away.
-         * @param caller name of the calling mod: the owner of the override, and used for FRIK logging.
+         * @param caller name of the calling mod: the owner of the override, used for FRIK logging and shown to
+         *        the player by Mods Config FO4 VR as who overrides the setting, so give the mod's readable name.
          *        When two owners override the same key, the one set last applies.
          * @return true if section, key, and value are all non-null and the value is of the key's type;
          *         false sets nothing.
