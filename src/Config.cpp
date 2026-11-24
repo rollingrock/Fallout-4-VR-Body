@@ -347,7 +347,7 @@ namespace frik
         const auto found = [this](const std::string& key) {
             return WeaponOffsetLookup{ .transform = _weaponsOffsets.at(key), .builtIn = !_weaponsSavedOffsetKeys.contains(key) };
         };
-        const bool leftHanded = f4vr::isLeftHandedMode();
+        const bool leftHanded = RE::VRSettings::IsLeftHandedMode();
         const auto key = getWeaponNameWithMode(name, mode, inPA, leftHanded);
         if (_weaponsOffsets.contains(key)) {
             return found(key);
@@ -371,7 +371,7 @@ namespace frik
      */
     bool Config::saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, const bool inPA)
     {
-        const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
+        const auto fullName = getWeaponNameWithMode(name, mode, inPA, RE::VRSettings::IsLeftHandedMode());
         _weaponsOffsets[fullName] = transform;
         _weaponsSavedOffsetKeys.insert(fullName);
         const auto offsetFilePath = fs::path{ WEAPONS_OFFSETS_PATH } / (sanitizePathWindows(fullName) + ".json");
@@ -383,7 +383,7 @@ namespace frik
      */
     void Config::removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA, const bool replaceWithEmbedded)
     {
-        const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
+        const auto fullName = getWeaponNameWithMode(name, mode, inPA, RE::VRSettings::IsLeftHandedMode());
         _weaponsOffsets.erase(fullName);
         _weaponsSavedOffsetKeys.erase(fullName);
         if (replaceWithEmbedded && _weaponsEmbeddedOffsets.contains(fullName)) {

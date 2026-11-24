@@ -76,7 +76,7 @@ namespace frik
 
         _savedLocal = _node->local;
         _node->local.MakeIdentity();
-        updateTransformsDown(_node, true);
+        RE::NiNodeUtils::UpdateTransformsDown(_node, true);
         _active = true;
     }
 
@@ -89,7 +89,7 @@ namespace frik
             return;
         }
         _node->local = _savedLocal;
-        updateTransformsDown(_node, true);
+        RE::NiNodeUtils::UpdateTransformsDown(_node, true);
     }
 
     /**
@@ -207,7 +207,7 @@ namespace frik
         // The native kick is authored in the current game-primary wand frame.
         // Mirror that rigid relation only when the selected physical hand is
         // the current game-offhand (including ROCK's external-left carry).
-        const bool nativePrimaryIsLeft = isLeftHandedMode();
+        const bool nativePrimaryIsLeft = RE::VRSettings::IsLeftHandedMode();
         if (isLeft != nativePrimaryIsLeft) {
             auto* const nativePrimaryWand = _playerNodes->primaryWandNode;
             auto* const nativeOffhandWand = _playerNodes->secondaryWandNode;

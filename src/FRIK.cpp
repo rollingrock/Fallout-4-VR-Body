@@ -146,18 +146,19 @@ namespace frik
         client.addState(
             "pipboyPlacement",
             [] {
-                return std::optional<Value>(static_cast<int>(f4vr::getPipboyPlacement()));
+                return std::optional<Value>(static_cast<int>(RE::VRSettings::GetPipboyPlacement()));
             },
             [this](const Value& value) {
                 const auto placement = std::get_if<int>(&value);
-                if (!placement || *placement < static_cast<int>(f4vr::PipboyPlacement::Wrist) || *placement > static_cast<int>(f4vr::PipboyPlacement::Projected)) {
+                if (!placement || *placement < static_cast<int>(RE::VRSettings::PipboyPlacement::kWrist) ||
+                    *placement > static_cast<int>(RE::VRSettings::PipboyPlacement::kProjected)) {
                     logger::warn("Mods Config FO4 VR gave an unknown Pip-Boy placement");
                     return;
                 }
-                if (static_cast<f4vr::PipboyPlacement>(*placement) != f4vr::getPipboyPlacement()) {
+                if (static_cast<RE::VRSettings::PipboyPlacement>(*placement) != RE::VRSettings::GetPipboyPlacement()) {
                     // close the wrist Pip-Boy first: once the game no longer puts it on the wrist, the close is ignored
                     closePipboy();
-                    f4vr::setPipboyPlacement(static_cast<f4vr::PipboyPlacement>(*placement));
+                    RE::VRSettings::SetPipboyPlacement(static_cast<RE::VRSettings::PipboyPlacement>(*placement));
                 }
             });
     }
@@ -446,10 +447,10 @@ namespace frik
         const auto worldRootNode = f4vr::getWorldRootNode();
         const auto commonNode = f4vr::getCommonNode();
         const auto playerNodes = f4vr::getVRPlayerNodes();
-        const auto flattenedTree = f4vr::getFlattenedBoneTree();
+        const auto flattenedTree = RE::PlayerCharacter::GetSingleton()->GetBoneTree();
         const auto firstPersonSkeleton = f4vr::getFirstPersonSkeleton();
-        const auto rightHand = firstPersonSkeleton ? f4vr::findNode(firstPersonSkeleton, "RArm_Hand") : nullptr;
-        const auto leftHand = firstPersonSkeleton ? f4vr::findNode(firstPersonSkeleton, "LArm_Hand") : nullptr;
+        const auto rightHand = firstPersonSkeleton ? RE::NiNodeUtils::FindNode(firstPersonSkeleton, "RArm_Hand") : nullptr;
+        const auto leftHand = firstPersonSkeleton ? RE::NiNodeUtils::FindNode(firstPersonSkeleton, "LArm_Hand") : nullptr;
         const auto weaponNode = f4vr::getWeaponNode();
         const auto camera = f4vr::getPlayerCamera();
         const auto cameraRoot = camera && camera->cameraRoot ? camera->cameraRoot.get() : nullptr;
@@ -569,10 +570,11 @@ namespace frik
         F4CF_PERF_FUNCTION();
 
         const auto worldRootNode = f4vr::getWorldRootNode();
-        f4vr::BSFadeNode_MergeWorldBounds(worldRootNode);
-        f4vr::BSFlattenedBoneTree_UpdateBoneArray(f4vr::getRootNode());
+        const auto worldRootFadeNode = static_cast<RE::BSFadeNode*>(worldRootNode);
+        worldRootFadeNode->MergeWorldBounds();
+        static_cast<RE::BSFlattenedBoneTree*>(f4vr::getRootNode())->UpdateBoneArray();
         // just in case any transforms missed because they are not in the tree do a full flat bone array update
-        f4vr::BSFadeNode_UpdateGeomArray(worldRootNode, 1);
+        worldRootFadeNode->UpdateGeomArray(1);
     }
 
     void FRIK::configureGameVars()
@@ -727,8 +729,8 @@ namespace frik
         }
         if (g_config.checkDebugDumpDataOnceFor("weapon_muzzle")) {
             if (const auto muzzle = getMuzzleFlashNodes()) {
-                f4vr::DebugDump::printNodes(muzzle->fireNode);
-                f4vr::DebugDump::printNodes(muzzle->projectileNode);
+                f4vr::DebugDump::printNodes(muzzle->flash3D.get());
+                f4vr::DebugDump::printNodes(muzzle->fireNode.get());
             }
         }
     }

@@ -34,7 +34,7 @@ namespace frik
                 return;
             }
         } else {
-            if (f4vr::isWeaponDrawn() && !f4vr::isLeftHandedMode()) {
+            if (f4vr::isWeaponDrawn() && !RE::VRSettings::IsLeftHandedMode()) {
                 // no physical Pipboy operation if the player has a weapon equipped
                 updatePipboyPhysicalElements(lastPipboyPage);
                 updateIsOperatingPipboy(false);
@@ -45,9 +45,9 @@ namespace frik
         const auto fingerPos = f4vr::Skelly::getBoneWorldTransform(g_config.leftHandedPipBoy ? "LArm_Finger23" : "RArm_Finger23").translate;
 
         const auto arm = getPipboyArmNode();
-        const auto powerButton = arm ? f4vr::findNode(arm, "PowerDetect") : nullptr;
-        const auto lightButton = arm ? f4vr::findNode(arm, "LightDetect") : nullptr;
-        const auto radioButton = arm ? f4vr::findNode(arm, "RadioDetect") : nullptr;
+        const auto powerButton = arm ? RE::NiNodeUtils::FindNode(arm, "PowerDetect") : nullptr;
+        const auto lightButton = arm ? RE::NiNodeUtils::FindNode(arm, "LightDetect") : nullptr;
+        const auto radioButton = arm ? RE::NiNodeUtils::FindNode(arm, "RadioDetect") : nullptr;
         if (!powerButton || !lightButton || !radioButton) {
             return;
         }
@@ -55,7 +55,7 @@ namespace frik
         checkHandStateToOperatePipboy(fingerPos, powerButton, lightButton, radioButton);
 
         // operate buttons not requiring Pipboy to be on
-        if (f4vr::isPipboyOnWrist()) {
+        if (RE::VRSettings::IsPipboyOnWrist()) {
             operatePowerButton(fingerPos, powerButton);
         }
         operateLightButton(fingerPos, lightButton);
@@ -112,7 +112,7 @@ namespace frik
             // Remove any stuck helper orbs if Pipboy times out for any reason.
             const auto arm = getPipboyArmNode();
             for (const auto& orbIdx : ORBS_NAMES) {
-                if (const auto orb = f4vr::findAVObject(arm, orbIdx)) {
+                if (const auto orb = RE::NiNodeUtils::FindObject(arm, orbIdx)) {
                     orb->local.scale = std::min<float>(orb->local.scale, 0);
                 }
             }
@@ -125,7 +125,7 @@ namespace frik
      */
     void PipboyPhysicalHandler::operatePowerButton(const RE::NiPoint3 fingerPos, const RE::NiNode* powerButton)
     {
-        const auto powerTranslate = f4vr::findAVObject(getPipboyArmNode(), "PowerTranslate");
+        const auto powerTranslate = RE::NiNodeUtils::FindObject(getPipboyArmNode(), "PowerTranslate");
 
         const float distance = MatrixUtils::vec3Len(fingerPos - powerButton->world.translate);
         if (distance > 3) {
@@ -152,7 +152,7 @@ namespace frik
      */
     void PipboyPhysicalHandler::operateLightButton(const RE::NiPoint3 fingerPos, const RE::NiNode* lightButton)
     {
-        const auto lightTranslate = f4vr::findAVObject(getPipboyArmNode(), "LightTranslate");
+        const auto lightTranslate = RE::NiNodeUtils::FindObject(getPipboyArmNode(), "LightTranslate");
 
         const float distance = MatrixUtils::vec3Len(fingerPos - lightButton->world.translate);
         if (distance > 2.0) {
@@ -170,7 +170,7 @@ namespace frik
             _stickyLight = true;
             vrcf::VRHaptics.trigger(g_config.leftHandedPipBoy ? vrcf::Hand::Left : vrcf::Hand::Right, vrcf::HapticPattern::Click);
             if (!_pipboy->isOpen()) {
-                f4vr::togglePipboyLight(f4vr::getPlayer());
+                f4vr::getPlayer()->TogglePipBoyLight(false); // VR's toggle ignores the flag
             }
         }
     }
@@ -182,7 +182,7 @@ namespace frik
     void PipboyPhysicalHandler::operateRadioButton(const RE::NiPoint3 fingerPos, const RE::NiNode* radioButton)
     {
         const auto arm = getPipboyArmNode();
-        const auto lightTranslate = f4vr::findAVObject(arm, "RadioTranslate");
+        const auto lightTranslate = RE::NiNodeUtils::FindObject(arm, "RadioTranslate");
 
         const float distance = MatrixUtils::vec3Len(fingerPos - radioButton->world.translate);
         if (distance > 2.0) {
@@ -198,7 +198,7 @@ namespace frik
             logger::info("Radio button pressed");
             _stickyRadio = true;
             vrcf::VRHaptics.trigger(g_config.leftHandedPipBoy ? vrcf::Hand::Left : vrcf::Hand::Right, vrcf::HapticPattern::Click);
-            if (f4vr::isPlayerRadioEnabled()) {
+            if (RE::RadioManager::QPlayerRadioEnabled()) {
                 turnPlayerRadioOn(false);
             } else {
                 turnPlayerRadioOn(true);
@@ -212,20 +212,20 @@ namespace frik
     void PipboyPhysicalHandler::updatePipboyPhysicalElements(const PipboyPage lastPipboyPage)
     {
         const auto arm = getPipboyArmNode();
-        const auto pageKnob = f4vr::findAVObject(arm, "ModeKnobDuplicate");
-        const auto pageKnob2 = f4vr::findAVObject(arm, "ModeKnob02");
-        const auto powerOn = f4vr::findAVObject(arm, "PowerButton_mesh:2");
-        const auto powerOff = f4vr::findAVObject(arm, "PowerButton_mesh:off");
-        const auto lightOn = f4vr::findAVObject(arm, "LightButton_mesh:2");
-        const auto lightOff = f4vr::findAVObject(arm, "LightButton_mesh:off");
-        const auto radioOn = f4vr::findAVObject(arm, "RadioOn");
-        const auto radioOff = f4vr::findAVObject(arm, "RadioOff");
-        const auto radioNeedle = f4vr::findAVObject(arm, "RadioNeedle_mesh");
+        const auto pageKnob = RE::NiNodeUtils::FindObject(arm, "ModeKnobDuplicate");
+        const auto pageKnob2 = RE::NiNodeUtils::FindObject(arm, "ModeKnob02");
+        const auto powerOn = RE::NiNodeUtils::FindObject(arm, "PowerButton_mesh:2");
+        const auto powerOff = RE::NiNodeUtils::FindObject(arm, "PowerButton_mesh:off");
+        const auto lightOn = RE::NiNodeUtils::FindObject(arm, "LightButton_mesh:2");
+        const auto lightOff = RE::NiNodeUtils::FindObject(arm, "LightButton_mesh:off");
+        const auto radioOn = RE::NiNodeUtils::FindObject(arm, "RadioOn");
+        const auto radioOff = RE::NiNodeUtils::FindObject(arm, "RadioOff");
+        const auto radioNeedle = RE::NiNodeUtils::FindObject(arm, "RadioNeedle_mesh");
         if (!powerOn || !powerOff || !lightOn || !lightOff || !radioOn || !radioOff || !radioNeedle || !pageKnob) {
             return;
         }
 
-        if (f4vr::isPipboyOnWrist()) {
+        if (RE::VRSettings::IsPipboyOnWrist()) {
             if (lastPipboyPage == PipboyPage::RADIO) {
                 // fixes broken 'Mode Knob' position when radio tab is selected
                 float rotx;
@@ -248,21 +248,21 @@ namespace frik
         }
 
         // Controls light on & off indicators
-        const bool isLightOn = f4vr::isPipboyLightOn(f4vr::getPlayer());
+        const bool isLightOn = f4vr::getPlayer()->IsPipboyLightOn();
         isLightOn ? lightOn->flags.flags &= 0xfffffffffffffffe : lightOff->flags.flags &= 0xfffffffffffffffe;
         isLightOn ? lightOn->local.scale = 1 : lightOff->local.scale = 1;
         isLightOn ? lightOff->flags.flags |= 0x1 : lightOn->flags.flags |= 0x1;
         isLightOn ? lightOff->local.scale = 0 : lightOn->local.scale = 0;
 
         // Controls radio on & off indicators
-        const bool isRadioOn = f4vr::isPlayerRadioEnabled();
+        const bool isRadioOn = RE::RadioManager::QPlayerRadioEnabled();
         isRadioOn ? radioOn->flags.flags &= 0xfffffffffffffffe : radioOff->flags.flags &= 0xfffffffffffffffe;
         isRadioOn ? radioOn->local.scale = 1 : radioOff->local.scale = 1;
         isRadioOn ? radioOff->flags.flags |= 0x1 : radioOn->flags.flags |= 0x1;
         isRadioOn ? radioOff->local.scale = 0 : radioOn->local.scale = 0;
 
         // Controls Radio Needle Position.
-        const float radioFreq = f4vr::getPlayerRadioFreq() - 23;
+        const float radioFreq = RE::RadioManager::QCurrentPlayerFreq() - 23;
         if (isRadioOn && fNotEqual(radioFreq, _lastRadioFreq)) {
             const float x = -1 * (radioFreq - _lastRadioFreq);
             radioNeedle->local.rotate = radioNeedle->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(x), 0);
@@ -273,7 +273,7 @@ namespace frik
             _lastRadioFreq = 0.0;
         }
 
-        if (g_frik.isPipboyConfigurationModeAdjusting() || !g_config.enablePrimaryControllerPipboyUse || !f4vr::isPipboyOnWrist() || !g_frik.isPipboyOn()) {
+        if (g_frik.isPipboyConfigurationModeAdjusting() || !g_config.enablePrimaryControllerPipboyUse || !RE::VRSettings::IsPipboyOnWrist() || !g_frik.isPipboyOn()) {
             return;
         }
 
@@ -282,7 +282,7 @@ namespace frik
         const auto secondaryTrigger = vrcf::VRControllers.getAxisValue(vrcf::Hand::Offhand, vrcf::Axis::Trigger);
 
         // Move Pipboy trigger mesh with controller trigger position.
-        if (const auto trans = f4vr::findAVObject(arm, "SelectRotate")) {
+        if (const auto trans = RE::NiNodeUtils::FindObject(arm, "SelectRotate")) {
             if (doinantTrigger.x > 0.00 && secondaryTrigger.x == 0.0) {
                 trans->local.translate.z = doinantTrigger.x / 3 * -1;
             } else if (secondaryTrigger.x > 0.00 && doinantTrigger.x == 0.0) {
@@ -294,7 +294,7 @@ namespace frik
 
         const bool isPBMessageBoxVisible = PipboyOperationHandler::isMessageHolderVisible(PipboyOperationHandler::getPipboyMenuRoot());
         if (lastPipboyPage != PipboyPage::MAP || isPBMessageBoxVisible) {
-            const auto scrollKnob = f4vr::findAVObject(arm, "ScrollItemsKnobRot");
+            const auto scrollKnob = RE::NiNodeUtils::FindObject(arm, "ScrollItemsKnobRot");
             if (doinantHandStick.y > 0.85) {
                 scrollKnob->local.rotate = scrollKnob->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(0.4f), 0);
             }
@@ -311,8 +311,8 @@ namespace frik
     {
         const int opIdx = static_cast<int>(operation);
         const auto armBone = (g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm()).forearm3;
-        const auto bone = f4vr::findAVObject(armBone, BONES_NAMES[opIdx]);
-        const auto trans = f4vr::findAVObject(armBone, TRANS_NAMES[opIdx]);
+        const auto bone = RE::NiNodeUtils::FindObject(armBone, BONES_NAMES[opIdx]);
+        const auto trans = RE::NiNodeUtils::FindObject(armBone, TRANS_NAMES[opIdx]);
         const auto orbName = ORBS_NAMES[opIdx];
         const float boneDistance = BONES_DISTANCES[opIdx];
         const float transDistance = TRANS_DISTANCES[opIdx];
@@ -324,15 +324,17 @@ namespace frik
             if (distance > boneDistance) {
                 trans->local.translate.z = 0.0;
                 controlSticky = false;
-                RE::NiAVObject* orb = g_config.leftHandedPipBoy ? f4vr::findAVObject(_skelly->getRightArm().forearm3, orbName)
-                                                                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, orbName); //Hide helper Orbs when not near a control surface
+                RE::NiAVObject* orb = g_config.leftHandedPipBoy
+                                          ? RE::NiNodeUtils::FindObject(_skelly->getRightArm().forearm3, orbName)
+                                          : RE::NiNodeUtils::FindObject(_skelly->getLeftArm().forearm3, orbName); //Hide helper Orbs when not near a control surface
                 if (orb != nullptr) {
                     orb->local.scale = std::min<float>(orb->local.scale, 0);
                 }
             } else if (distance <= boneDistance) {
                 const float fz = boneDistance - distance;
-                RE::NiAVObject* orb = g_config.leftHandedPipBoy ? f4vr::findAVObject(_skelly->getRightArm().forearm3, orbName)
-                                                                : f4vr::findAVObject(_skelly->getLeftArm().forearm3, orbName); //Show helper Orbs when not near a control surface
+                RE::NiAVObject* orb = g_config.leftHandedPipBoy
+                                          ? RE::NiNodeUtils::FindObject(_skelly->getRightArm().forearm3, orbName)
+                                          : RE::NiNodeUtils::FindObject(_skelly->getLeftArm().forearm3, orbName); //Show helper Orbs when not near a control surface
                 if (orb != nullptr) {
                     orb->local.scale = std::max<float>(orb->local.scale, 1);
                 }
@@ -341,15 +343,15 @@ namespace frik
                     if (operation == PipboyOperation::MOVE_LIST_SELECTION_UP) {
                         // Move Scroll Knob Anti-Clockwise when near control surface
                         static std::string KnobNode = "ScrollItemsKnobRot";
-                        RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
-                                                                               : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
+                        RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy ? RE::NiNodeUtils::FindObject(_skelly->getRightArm().forearm3, KnobNode)
+                                                                               : RE::NiNodeUtils::FindObject(_skelly->getLeftArm().forearm3, KnobNode);
                         ScrollKnob->local.rotate = ScrollKnob->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(fz), 0);
                     } else if (operation == PipboyOperation::MOVE_LIST_SELECTION_DOWN) {
                         // Move Scroll Knob Clockwise when near control surface
                         const float roty = fz * -1;
                         static std::string KnobNode = "ScrollItemsKnobRot";
-                        RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy ? f4vr::findAVObject(_skelly->getRightArm().forearm3, KnobNode)
-                                                                               : f4vr::findAVObject(_skelly->getLeftArm().forearm3, KnobNode);
+                        RE::NiAVObject* ScrollKnob = g_config.leftHandedPipBoy ? RE::NiNodeUtils::FindObject(_skelly->getRightArm().forearm3, KnobNode)
+                                                                               : RE::NiNodeUtils::FindObject(_skelly->getLeftArm().forearm3, KnobNode);
                         ScrollKnob->local.rotate = ScrollKnob->local.rotate * MatrixUtils::getMatrixFromEulerAngles(0, MatrixUtils::degreesToRads(roty), 0);
                     }
                 }

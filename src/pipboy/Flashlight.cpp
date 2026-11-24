@@ -22,7 +22,7 @@ namespace frik
     {
         F4CF_PERF_FUNCTION();
 
-        if (!g_config.flashlightEnabled || !g_frik.isFlashlightEnabled() || !f4vr::isPipboyLightOn(f4vr::getPlayer())) {
+        if (!g_config.flashlightEnabled || !g_frik.isFlashlightEnabled() || !f4vr::getPlayer()->IsPipboyLightOn()) {
             return;
         }
 
@@ -78,7 +78,7 @@ namespace frik
      */
     void Flashlight::adjustFlashlightTransformToHandOrHead() const
     {
-        const auto lightNode = f4vr::getFirstChild(f4vr::getVRPlayerNodes()->headLightParentNode);
+        const auto lightNode = RE::NiNodeUtils::GetFirstChild(f4vr::getVRPlayerNodes()->headLightParentNode);
         if (!lightNode) {
             return;
         }
@@ -89,11 +89,11 @@ namespace frik
 
         if (g_config.flashlightLocation != FlashlightLocation::Head) {
             // update world transforms after reverting to original
-            f4vr::updateTransforms(lightNode);
+            RE::NiNodeUtils::UpdateTransformFromParent(lightNode);
 
             // use the right arm node
-            const auto armNode = g_config.flashlightLocation == FlashlightLocation::LeftArm ? f4vr::findNode(_skelly->getLeftArm().shoulder, "LArm_Hand")
-                                                                                            : f4vr::findNode(_skelly->getRightArm().shoulder, "RArm_Hand");
+            const auto armNode = g_config.flashlightLocation == FlashlightLocation::LeftArm ? RE::NiNodeUtils::FindNode(_skelly->getLeftArm().shoulder, "LArm_Hand")
+                                                                                            : RE::NiNodeUtils::FindNode(_skelly->getRightArm().shoulder, "RArm_Hand");
 
             // calculate relocation transform and set to local
             lightNode->local = MatrixUtils::calculateRelocation(lightNode, armNode);

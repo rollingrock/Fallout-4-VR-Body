@@ -2,7 +2,6 @@
 
 #include <cmath>
 
-#include "f4vr/MiscStructs.h"
 #include "vrcf/VRControllersManager.h"
 
 namespace frik
@@ -43,7 +42,7 @@ namespace frik
 
     bool isFalloutLondonVRModLoaded();
 
-    f4vr::MuzzleFlash* getMuzzleFlashNodes();
+    RE::MuzzleFlash* getMuzzleFlashNodes();
 
     float correctAdjustmentValue(float value, float sensitivityFactor);
 }

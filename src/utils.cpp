@@ -58,13 +58,13 @@ namespace frik
     /**
      * @return muzzle flash class only if it's fully loaded with fire and projectile nodes.
      */
-    f4vr::MuzzleFlash* getMuzzleFlashNodes()
+    RE::MuzzleFlash* getMuzzleFlashNodes()
     {
         if (const auto equipWeaponData = f4vr::getEquippedWeaponData()) {
             const auto vfunc = reinterpret_cast<uint64_t*>(equipWeaponData);
-            if ((*vfunc & 0xFFFF) == (f4vr::EquippedWeaponData_vfunc.get() & 0xFFFF)) {
-                const auto muzzle = reinterpret_cast<f4vr::MuzzleFlash*>(equipWeaponData->muzzleFlash);
-                if (muzzle && muzzle->fireNode && muzzle->projectileNode) {
+            if ((*vfunc & 0xFFFF) == (RE::VTABLE::EquippedWeaponData[0].address() & 0xFFFF)) {
+                const auto muzzle = equipWeaponData->muzzleFlash;
+                if (muzzle && muzzle->flash3D && muzzle->fireNode) {
                     return muzzle;
                 }
             }

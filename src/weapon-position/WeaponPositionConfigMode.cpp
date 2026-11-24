@@ -121,7 +121,7 @@ namespace frik
         RE::NiMatrix3 rot;
         RE::NiTransform transform;
         transform.scale = originalTransform.scale;
-        if (f4vr::isLeftHandedMode()) {
+        if (RE::VRSettings::IsLeftHandedMode()) {
             transform.translate = RE::NiPoint3(5.5f, -2.2f, 1);
             rot = MatrixUtils::getMatrixFromEulerAngles(MatrixUtils::degreesToRads(95), MatrixUtils::degreesToRads(60), 0);
         } else {
@@ -140,9 +140,9 @@ namespace frik
         RE::NiTransform transform;
         transform.scale = originalTransform.scale;
         transform.rotate = originalTransform.rotate;
-        transform.translate = f4vr::isLeftHandedMode() ? (inPA ? RE::NiPoint3(-2.5f, 7.5f, -1) : RE::NiPoint3(-3, 4, 0))
-                              : inPA                   ? RE::NiPoint3(-0.5f, 6, 2)
-                                                       : RE::NiPoint3(-2, 3, 1);
+        transform.translate = RE::VRSettings::IsLeftHandedMode() ? (inPA ? RE::NiPoint3(-2.5f, 7.5f, -1) : RE::NiPoint3(-3, 4, 0))
+                              : inPA                             ? RE::NiPoint3(-0.5f, 6, 2)
+                                                                 : RE::NiPoint3(-2, 3, 1);
         return transform;
     }
 
@@ -153,7 +153,7 @@ namespace frik
     {
         RE::NiTransform transform;
         transform.scale = originalTransform.scale;
-        if (f4vr::isLeftHandedMode()) {
+        if (RE::VRSettings::IsLeftHandedMode()) {
             transform.rotate = MatrixUtils::getMatrixFromEulerAngles(MatrixUtils::degreesToRads(180), 0, MatrixUtils::degreesToRads(180));
             transform.translate = inPA ? RE::NiPoint3(5, 6.5f, -11) : RE::NiPoint3(6.2f, 4.8f, -12.2f);
         } else {
@@ -267,7 +267,7 @@ namespace frik
         }
 
         auto& transform = _adjuster->_weaponOffsetTransform;
-        const float leftHandedMult = f4vr::isLeftHandedMode() ? -1.f : 1.f;
+        const float leftHandedMult = RE::VRSettings::IsLeftHandedMode() ? -1.f : 1.f;
 
         // Update the weapon transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
@@ -343,7 +343,7 @@ namespace frik
         }
 
         auto& transform = _adjuster->_throwableWeaponOffsetTransform;
-        const float leftHandedMult = f4vr::isLeftHandedMode() ? -1.f : 1.f;
+        const float leftHandedMult = RE::VRSettings::IsLeftHandedMode() ? -1.f : 1.f;
 
         // Update the transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.
@@ -380,7 +380,7 @@ namespace frik
         }
 
         auto& transform = _adjuster->_backOfHandUIOffsetTransform;
-        const float leftHandedMult = f4vr::isLeftHandedMode() ? -1.f : 1.f;
+        const float leftHandedMult = RE::VRSettings::IsLeftHandedMode() ? -1.f : 1.f;
 
         // Update the transform by player thumbstick and buttons input.
         // Depending on buttons pressed can horizontal/vertical position or rotation.

@@ -46,13 +46,13 @@ namespace frik
         if (_weaponHidden) {
             _weaponHidden = false;
             logger::info("reset weapon visibility for Pipboy operation with finger");
-            f4vr::setNodeVisibility(f4vr::get1StChildNode(f4vr::getWeaponNode()), true);
+            RE::NiNodeUtils::SetVisible(RE::NiNodeUtils::GetFirstChild(f4vr::getWeaponNode()), true);
         }
 
         if (_disabledInput) {
             logger::info("reset disable player input");
             if (const auto player = RE::PlayerCharacter::GetSingleton()) {
-                f4vr::SetActorRestrained(player, false);
+                player->SetRestrained(false);
             }
             if (const auto inputManager = RE::BSInputEnableManager::GetSingleton()) {
                 inputManager->forceEnableInputUserEventsFlags = _lastFlags;
@@ -76,7 +76,7 @@ namespace frik
         reset();
 
         if (const auto player = RE::PlayerCharacter::GetSingleton()) {
-            f4vr::SetActorRestrained(player, false);
+            player->SetRestrained(false);
         }
     }
 
@@ -117,16 +117,16 @@ namespace frik
      */
     inline void PlayerControlsHandler::checkWeaponHideForPipboyOperationWIthFinger(const Pipboy* pipboy, const WeaponPositionAdjuster* weaponPosition)
     {
-        if (!f4vr::isLeftHandedMode() && pipboy->isOperatingWithFinger() && weaponPosition->isWeaponDrawn()) {
+        if (!RE::VRSettings::IsLeftHandedMode() && pipboy->isOperatingWithFinger() && weaponPosition->isWeaponDrawn()) {
             if (!_weaponHidden) {
                 _weaponHidden = true;
                 logger::debug("Hide weapon for Pipboy operation with finger");
-                f4vr::setNodeVisibility(f4vr::get1StChildNode(f4vr::getWeaponNode()), false);
+                RE::NiNodeUtils::SetVisible(RE::NiNodeUtils::GetFirstChild(f4vr::getWeaponNode()), false);
             }
         } else if (_weaponHidden) {
             _weaponHidden = false;
             logger::debug("Show weapon for Pipboy operation with finger");
-            f4vr::setNodeVisibility(f4vr::get1StChildNode(f4vr::getWeaponNode()), true);
+            RE::NiNodeUtils::SetVisible(RE::NiNodeUtils::GetFirstChild(f4vr::getWeaponNode()), true);
         }
     }
 
@@ -141,7 +141,7 @@ namespace frik
         _disabledInput = false;
 
         logger::info("Player controls - Enabled");
-        f4vr::SetActorRestrained(RE::PlayerCharacter::GetSingleton(), false);
+        RE::PlayerCharacter::GetSingleton()->SetRestrained(false);
 
         // restore the force flags. clearing is incorrect as it seems the default is to have all of them force enabled
         // restoring original instead of forcing all enabled in case other mod set some restrictions
@@ -167,7 +167,7 @@ namespace frik
         logger::info("Player controls - Disabled");
 
         // restrict movement, rotation, and weapon use
-        f4vr::SetActorRestrained(RE::PlayerCharacter::GetSingleton(), true);
+        RE::PlayerCharacter::GetSingleton()->SetRestrained(true);
 
         // store the current force enable flags to restore them when enabling
         _lastFlags = RE::BSInputEnableManager::GetSingleton()->forceEnableInputUserEventsFlags;

@@ -74,7 +74,7 @@ namespace frik
 
     void BodyAdjustmentSubConfigMode::onFrameUpdate()
     {
-        _configUI->setPosition(0, 0, f4vr::isNodeVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
+        _configUI->setPosition(0, 0, RE::NiNodeUtils::IsVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
 
         // save/reset only make sense once an adjustment target is selected
         const bool noTarget = _configTarget == BodyAdjustmentConfigTarget::None;

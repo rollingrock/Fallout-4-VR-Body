@@ -41,7 +41,7 @@ namespace frik::api
     static bool isLeftHandedMode(std::monostate)
     {
         logger::info("Is Left Handed Mode");
-        return f4vr::isLeftHandedMode();
+        return RE::VRSettings::IsLeftHandedMode();
     }
 
     static void setSelfieMode(std::monostate, const bool isSelfieMode)

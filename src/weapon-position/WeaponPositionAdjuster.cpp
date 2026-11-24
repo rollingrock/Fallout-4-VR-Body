@@ -140,7 +140,7 @@ namespace frik
     void WeaponPositionAdjuster::handlePrimaryWeapon()
     {
         const auto weapon = f4vr::getWeaponNode();
-        if (!f4vr::isNodeVisible(weapon)) {
+        if (!RE::NiNodeUtils::IsVisible(weapon)) {
             if (_configMode) {
                 _configMode->onFrameUpdate(nullptr);
             }
@@ -173,7 +173,7 @@ namespace frik
         // override the weapon transform to the saved offset
         weapon->local = _weaponOffsetTransform;
         // update world transform for later calculations
-        f4vr::updateTransforms(weapon);
+        RE::NiNodeUtils::UpdateTransformFromParent(weapon);
 
         if (_configMode) {
             _configMode->onFrameUpdate(weapon);
@@ -190,7 +190,7 @@ namespace frik
         handleBetterScopes(weapon);
 
         // update all the nodes world transforms by local transform changes recursively down the tree
-        f4vr::updateTransformsDown(weapon, true);
+        RE::NiNodeUtils::UpdateTransformsDown(weapon, true);
 
         fixMuzzleFlashPosition();
 
@@ -337,7 +337,7 @@ namespace frik
         // need to update default transform for later world rotation use
         const auto& baseMatrix = _scopeRigCarried ? _scopeCameraCarryBaseMatrix : _scopeCameraBaseMatrix;
         scopeCamera->local.rotate = baseMatrix;
-        f4vr::updateTransforms(scopeCamera);
+        RE::NiNodeUtils::UpdateTransformFromParent(scopeCamera);
 
         const auto weaponForwardVec = RE::NiPoint3(weapon->world.rotate.entry[1][0], weapon->world.rotate.entry[1][1], weapon->world.rotate.entry[1][2]);
 
@@ -377,7 +377,7 @@ namespace frik
             }
             return;
         }
-        const bool naturallyCarried = g_frik.isWeaponInLeftHand() != f4vr::isLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera);
+        const bool naturallyCarried = g_frik.isWeaponInLeftHand() != RE::VRSettings::IsLeftHandedMode() && !g_scopeAuthority.hasCapability(ScopeCapability::OwnsScopeCamera);
         const bool carried = _scopeRigOverride == ScopeRigOverride::None ? naturallyCarried : _scopeRigOverride != ScopeRigOverride::Wand;
         // the scope widget is not drawn while ScopeParent hangs under the first-person skeleton, so for a provider that places its
         // own widget the widget parent rides the wand of the hand that holds the carried weapon instead (the game's secondary wand
@@ -457,7 +457,7 @@ namespace frik
         newParent->AttachChild(node, true);
         if (local) {
             node->local = *local;
-            f4vr::updateTransforms(node);
+            RE::NiNodeUtils::UpdateTransformFromParent(node);
             return true;
         }
         const auto& parent = newParent->world;
@@ -567,9 +567,9 @@ namespace frik
         // rotation after that transfer would contaminate the controller hand
         // basis used by the external alignment solve.
         if (_hasPrimaryHandOffset && !g_externalAuthority.isPrimaryWeaponPoseBlocked()) {
-            const auto primaryHand = f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
+            const auto primaryHand = RE::VRSettings::IsLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
             primaryHand->local.rotate = _primaryHandOffsetRot * primaryHand->local.rotate;
-            f4vr::updateTransformsDown(primaryHand, true, weapon->name.c_str());
+            RE::NiNodeUtils::UpdateTransformsDown(primaryHand, true, weapon->name.c_str());
         }
     }
 
@@ -620,18 +620,18 @@ namespace frik
         const auto originalGripPos = _weaponOffsetTransform.rotate.Transpose() * (gripPivotLocal);
         weapon->local.translate = _weaponOffsetTransform.translate + (originalGripPos - rotatedGripPos);
 
-        f4vr::updateTransforms(weapon);
+        RE::NiNodeUtils::UpdateTransformFromParent(weapon);
 
         // -- Handle primary hand rotation:
 
         // Apply the same world rotation delta the weapon got to the primary hand, so the hand keeps its exact
         // relation to the stock (world = local * parent, so hand-in-weapon is H * W^T and is preserved by H * W0^T * W1)
-        const auto primaryHand = (f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand);
+        const auto primaryHand = (RE::VRSettings::IsLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand);
         const auto handWorldRot = primaryHand->world.rotate * weaponWorldRotBefore.Transpose() * weapon->world.rotate;
         primaryHand->local.rotate = primaryHand->parent ? handWorldRot * primaryHand->parent->world.rotate.Transpose() : handWorldRot;
 
         // update all the fingers to match the hand rotation
-        f4vr::updateTransformsDown(primaryHand, true, weapon->name.c_str());
+        RE::NiNodeUtils::UpdateTransformsDown(primaryHand, true, weapon->name.c_str());
     }
 
     /**
@@ -659,7 +659,7 @@ namespace frik
         static auto offhandFingerBonePos = RE::NiPoint3(0, 0, 0);
         static float avgHandV[3] = { 0.0f, 0.0f, 0.0f };
         static int fc = 0;
-        const auto offHandBone = f4vr::isLeftHandedMode() ? "RArm_Finger31" : "LArm_Finger31";
+        const auto offHandBone = RE::VRSettings::IsLeftHandedMode() ? "RArm_Finger31" : "LArm_Finger31";
 
         const auto currentPos = f4vr::getCameraPosition();
         const float handFrameMovement = MatrixUtils::vec3Len(f4vr::Skelly::getBoneWorldTransform(offHandBone).translate - offhandFingerBonePos);
@@ -684,7 +684,7 @@ namespace frik
      */
     RE::NiPoint3 WeaponPositionAdjuster::getPrimaryHandPosition() const
     {
-        const auto primaryHandNode = f4vr::isLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
+        const auto primaryHandNode = RE::VRSettings::IsLeftHandedMode() ? _skelly->getLeftArm().hand : _skelly->getRightArm().hand;
         return primaryHandNode->world.translate;
     }
 
@@ -693,7 +693,7 @@ namespace frik
      */
     RE::NiPoint3 WeaponPositionAdjuster::getOffhandPosition()
     {
-        const auto offHandBone = f4vr::isLeftHandedMode() ? "RArm_Finger31" : "LArm_Finger31";
+        const auto offHandBone = RE::VRSettings::IsLeftHandedMode() ? "RArm_Finger31" : "LArm_Finger31";
         return f4vr::Skelly::getBoneWorldTransform(offHandBone).translate;
     }
 
@@ -708,7 +708,7 @@ namespace frik
             return;
         }
 
-        const RE::NiAVObject* scopeRet = f4vr::findAVObject(weapon, "ReticleNode");
+        const RE::NiAVObject* scopeRet = RE::NiNodeUtils::FindObject(weapon, "ReticleNode");
         if (!scopeRet) {
             return;
         }
@@ -736,10 +736,10 @@ namespace frik
             return;
         }
 
-        // shockingly the projectile world location is exactly what we need to set of the muzzle flash node
-        muzzle->fireNode->local = muzzle->projectileNode->world;
-        // critical to move all muzzle flash effects to the projectile node
-        f4vr::updateTransformsDown(muzzle->fireNode, true);
+        // shockingly the fire node's world location is exactly what we need to set on the muzzle flash's 3D
+        muzzle->flash3D->local = muzzle->fireNode->world;
+        // critical to move all muzzle flash effects to the fire node
+        RE::NiNodeUtils::UpdateTransformsDown(muzzle->flash3D.get(), true);
     }
 
     /**

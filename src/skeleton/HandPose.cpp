@@ -12,7 +12,6 @@
 #include "HandPoseMath.h"
 #include "common/MatrixUtils.h"
 #include "common/Quaternion.h"
-#include "f4vr/BSFlattenedBoneTree.h"
 #include "f4vr/F4VRSkelly.h"
 #include "f4vr/F4VRUtils.h"
 #include "perf/Perf.h"
@@ -84,7 +83,7 @@ namespace
     /**
      * Refresh one flattened bone transform after its local transform changes.
      */
-    void refreshFlattenedBoneTransform(const BSFlattenedBoneTree* const boneTree, const int pos)
+    void refreshFlattenedBoneTransform(const RE::BSFlattenedBoneTree* const boneTree, const int pos)
     {
         auto& transform = boneTree->transforms[pos];
         if (transform.refNode) {
@@ -331,9 +330,9 @@ namespace frik
     void HandPose::setForceHandPointingPose(const bool primaryHand, const bool forcePointing)
     {
         if (forcePointing) {
-            setHandPoseOverrideIntr(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG, getPointingPose(), HandPose::PRIORITY_FRIK_INTERNAL);
+            setHandPoseOverrideIntr(primaryHand == RE::VRSettings::IsLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG, getPointingPose(), HandPose::PRIORITY_FRIK_INTERNAL);
         } else {
-            clearHandPoseOverrideIntr(primaryHand == isLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG);
+            clearHandPoseOverrideIntr(primaryHand == RE::VRSettings::IsLeftHandedMode(), FORCE_POINTING_HAND_POSE_TAG);
         }
     }
 
@@ -343,9 +342,9 @@ namespace frik
     void HandPose::setOffhandGripHandPose(const bool toSet)
     {
         if (toSet) {
-            setHandPoseOverrideIntr(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG, getOffhandWeaponGripPose(), HandPose::PRIORITY_FRIK_INTERNAL);
+            setHandPoseOverrideIntr(!RE::VRSettings::IsLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG, getOffhandWeaponGripPose(), HandPose::PRIORITY_FRIK_INTERNAL);
         } else {
-            clearHandPoseOverrideIntr(!isLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG);
+            clearHandPoseOverrideIntr(!RE::VRSettings::IsLeftHandedMode(), OFFHAND_GRIP_HAND_POSE_TAG);
         }
     }
 
@@ -383,7 +382,7 @@ namespace frik
         const auto leftHandSource = resolveHandPoseSource(true);
         const auto rightHandSource = resolveHandPoseSource(false);
 
-        const auto rt = reinterpret_cast<BSFlattenedBoneTree*>(root);
+        const auto rt = reinterpret_cast<RE::BSFlattenedBoneTree*>(root);
         applyPalmPose(rt, true, leftHandSource, _leftPalmBlend, frameTime);
         applyPalmPose(rt, false, rightHandSource, _rightPalmBlend, frameTime);
 
@@ -442,16 +441,16 @@ namespace frik
      */
     HandPose::HandPoseSource HandPose::resolveHandPoseSource(const bool isLeft)
     {
-        const bool isPrimaryHand = isLeft == isLeftHandedMode();
+        const bool isPrimaryHand = isLeft == RE::VRSettings::IsLeftHandedMode();
         const bool shouldUseWeaponPoseForPrimaryHand =
-            isWeaponDrawn() && !g_externalAuthority.isPrimaryWeaponPoseBlocked() && (isLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
+            isWeaponDrawn() && !g_externalAuthority.isPrimaryWeaponPoseBlocked() && (RE::VRSettings::IsLeftHandedMode() || !g_frik.isPipboyOperatingWithFinger());
 
-        if (shouldUseWeaponPoseForPrimaryHand && isLeftHandedMode() && isUnarmedWeaponDrawn()) {
+        if (shouldUseWeaponPoseForPrimaryHand && RE::VRSettings::IsLeftHandedMode() && isUnarmedWeaponDrawn()) {
             // Left-handed unarmed is a special authored fist case that applies to both hands.
             return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = &getFistPose() };
         }
 
-        if (isLeft && !isLeftHandedMode() && isWeaponDrawn() && !g_frik.isPipboyOperatingWithFinger() && g_frik.isWeaponInLeftHand() &&
+        if (isLeft && !RE::VRSettings::IsLeftHandedMode() && isWeaponDrawn() && !g_frik.isPipboyOperatingWithFinger() && g_frik.isWeaponInLeftHand() &&
             !g_externalAuthority.isPrimaryWeaponPoseBlocked()) {
             return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = nullptr };
         }
@@ -459,7 +458,7 @@ namespace frik
         if (isPrimaryHand && shouldUseWeaponPoseForPrimaryHand) {
             // Right-handed mode can copy the first-person hand transform directly. Left-handed mode
             // cannot, so it uses the fixed authored weapon pose instead.
-            return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = isLeftHandedMode() ? &HandPose::getFixedPrimaryWeaponPose() : nullptr };
+            return HandPoseSource{ .kind = HandPoseSourceKind::PrimaryWeaponPose, .pose = RE::VRSettings::IsLeftHandedMode() ? &HandPose::getFixedPrimaryWeaponPose() : nullptr };
         }
 
         if (const auto* activeOverride = getActiveHandPoseOverride(isLeft)) {
@@ -484,7 +483,7 @@ namespace frik
     /**
      * Blend and apply the authored palm offset from the active hand source to one hand root transform.
      */
-    void HandPose::applyPalmPose(BSFlattenedBoneTree* const boneTree, const bool isLeft, const HandPoseSource& source, PalmBlendState& blendState, const float frameTime)
+    void HandPose::applyPalmPose(RE::BSFlattenedBoneTree* const boneTree, const bool isLeft, const HandPoseSource& source, PalmBlendState& blendState, const float frameTime)
     {
         const int pos = boneTree->GetBoneIndex(isLeft ? "LArm_Hand" : "RArm_Hand");
         if (pos < 0) {
@@ -533,7 +532,7 @@ namespace frik
             bone.rotate = HandPoseMath::getPoseBoneRotation(boneName, *source.pose);
             bone.scale = 1.0f;
         } else if (HandPoseMath::isLeftHandBone(boneName)) {
-            const auto fpTree = getFirstPersonBoneTree();
+            const auto fpTree = RE::PlayerCharacter::GetSingleton()->GetFirstPersonBoneTree();
             const std::string rightBoneName = "RArm_" + boneName.substr(5);
             const int pos = fpTree ? fpTree->GetBoneIndex(rightBoneName) : -1;
             if (pos < 0) {
@@ -548,7 +547,7 @@ namespace frik
             bone.rotate = *mirroredRotation;
             bone.scale = 1.0f;
         } else {
-            const auto fpTree = getFirstPersonBoneTree();
+            const auto fpTree = RE::PlayerCharacter::GetSingleton()->GetFirstPersonBoneTree();
             const int pos = fpTree ? fpTree->GetBoneIndex(boneName) : -1;
             if (pos >= 0) {
                 _handBones[boneName] = fpTree->transforms[pos].refNode ? fpTree->transforms[pos].refNode->local : fpTree->transforms[pos].local;
@@ -595,7 +594,8 @@ namespace frik
         } else {
             constexpr float DYNAMIC_CURL_ON_TOUCH = 0.35f;
             const auto button = getTrackedButton(boneName);
-            const bool rightTriggerIdentityRemapped = boneHand == Hand::Right && button == k_EButton_SteamVR_Trigger && !isLeftHandedMode() && g_frik.isWeaponInLeftHand();
+            const bool rightTriggerIdentityRemapped =
+                boneHand == Hand::Right && button == k_EButton_SteamVR_Trigger && !RE::VRSettings::IsLeftHandedMode() && g_frik.isWeaponInLeftHand();
             if (!rightTriggerIdentityRemapped) {
                 const auto axis = getTrackedButtonAxis(button);
                 const float axisVal = axis ? VRControllers.getAxisValue(boneHand, *axis).x : 0.0f;
