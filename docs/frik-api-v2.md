@@ -66,7 +66,7 @@ void onFrame()
 
 ## Versioning and compatibility
 
-`FRIK_API_V2_VERSION` (currently **4**) identifies the v2 contract — this page documents v2.4. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
+`FRIK_API_V2_VERSION` (currently **5**) identifies the v2 contract — this page documents v2.5. It is independent of `FRIK_API_VERSION`, which counts the revisions of the [v1.\*](frik-api.md) table: a v2 client never reads that table and vice versa.
 
 Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end and bumps `FRIK_API_V2_VERSION`, so a header you copied today keeps working against every newer FRIK. `initialize(minVersion)` checks `getVersion() >= minVersion` and that FRIK's table is at least as large as `minVersion` implies (code `5` otherwise). To also run against an older FRIK, pass the oldest version you can live with and gate every newer entry on `getVersion()`; each entry below is documented with the version that introduced it.
 
@@ -76,6 +76,7 @@ Since v2.2 the table is **append-only**: FRIK only ever adds entries at the end 
 | `2` | 0.79 | Append-only rule; `getSkeletonGeneration`, `isInPowerArmor`; lifecycle messages carry `SkeletonLifecycleData`; scope providers: `setScopeProvider`, `clearScopeProvider`, `setLookingThroughScope`, `isLookingThroughScope`; `kScopeEnter` / `kScopeExit` events. |
 | `3` | 0.79 | Frame phases: `registerFrameCallback`, `unregisterFrameCallback`; a hand transform published in `BeforeArmSolve` is solved in the same frame. Body reads: `getTrackedHandTransform`, `getBoneWorldTransform`, `getArmChain`; `getHandSolveResult`; `setOffHandGripping`; `setWeaponNodeParentHand` / `clearWeaponNodeParentHand` (and `blockPrimaryWeaponNodeOwnership` no longer flips the parent hand). |
 | `4` | 0.79.1 | Scope providers: the `PlacesScopeWidget` capability, and the scope rig (`ScopeParent`, scope camera) is carried with a weapon another mod holds in the other hand. No new table entries, so a v2.3 client needs no change. |
+| `5` | 0.80.2 | Weapon adjustment and offsets: `isWeaponRepositionModeOpen`, `getWeaponOffset`. |
 
 > A client built against the v2.1 header refuses any FRIK from 0.79 on (its exact-size check fails with code `5`). Recopy the header once; after that no further recopy is ever forced.
 
@@ -262,6 +263,14 @@ While the weapon is parented under the hand the game does not consider primary, 
 `bool setOffHandGripping(const char* tag, bool active, Hand supportHand, const RE::NiTransform* supportWorld)` (v2.3)
 
 Report your own two-handed grip so `isOffHandGrippingWeapon()` and every FRIK consumer of it (the Pip-Boy guards among them) treat the weapon as gripped. `supportHand` is the physical hand on the weapon, `supportWorld` its world transform or null. The grip is tied to the current weapon: FRIK drops it when the drawn weapon changes and on skeleton release, so re-report after `kSkeletonReady`. Pass `active = false` to release.
+
+`bool isWeaponRepositionModeOpen()` (v2.5)
+
+FRIK's weapon adjustment is open. It adjusts only a weapon FRIK places, so a mod that owns the weapon node releases `blockPrimaryWeaponNodeOwnership` (and any hand it holds on the weapon) while this is true, and takes nothing new until it closes. Blocking the node while the adjustment is open closes it, because FRIK resets its weapon state whenever another mod takes the node.
+
+`WeaponOffsetSource getWeaponOffset(const char* weaponName, WeaponOffsetMode mode, bool inPowerArmor, RE::NiTransform* outTransform)` (v2.5)
+
+The offset FRIK uses for a weapon, found the way FRIK finds its own: a saved offset over a built-in one, the power armor offset falling back to the plain one, and in left-handed mode the left-handed weapon offset falling back to the right-handed one mirrored. `weaponName` is FRIK's name for the weapon: its display name, plus `" Rifle"` for the weapons FRIK splits into pistol and rifle by their stock. `mode` picks the stored offset: `Weapon` (the weapon node's local transform under the primary hand, scale included), `PrimaryHand` (the primary hand's rotation on the stock), `OffHand`, `Throwable` or `BackOfHandUI`. The result says where the offset comes from: `None` (nothing found; `outTransform` is left as it was), `BuiltIn` (a default FRIK ships with) or `Saved` (saved in FRIK's weapon adjustment, or a file in `FRIK_Config\Weapons_Offsets`). Call it on the game thread; it is cheap enough to call every frame, so a save in the weapon adjustment is seen on the next call.
 
 ## Weapon hand recoil
 

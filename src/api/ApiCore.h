@@ -194,6 +194,7 @@ namespace frik::api::core
     bool FRIK_CORE_CALL unregisterFrameCallback(const char* tag);
     bool FRIK_CORE_CALL getBoneWorldTransform(const char* boneName, RE::NiTransform* outTransform);
     bool FRIK_CORE_CALL clearWeaponNodeParentHand(const char* tag);
+    bool FRIK_CORE_CALL isWeaponRepositionModeOpen();
     bool FRIK_CORE_CALL isConfigOpen();
     bool FRIK_CORE_CALL isSelfieModeOn();
     void FRIK_CORE_CALL setSelfieModeOn(bool setOn);
@@ -269,6 +270,18 @@ namespace frik::api::core
     HandSolveState getHandSolveResult(bool isLeft, RE::NiTransform& outWrist);
     bool setOffHandGripping(std::string_view tag, bool active, bool supportIsLeft, const RE::NiTransform* supportWorld);
     bool setWeaponNodeParentHand(std::string_view tag, bool isLeft);
+
+    /**
+     * Where a weapon offset comes from. Every published version declares its selector with the same values.
+     */
+    enum class WeaponOffsetSource : std::uint8_t
+    {
+        None = 0,
+        BuiltIn = 1,
+        Saved = 2,
+    };
+
+    WeaponOffsetSource getWeaponOffset(const char* weaponName, std::uint8_t mode, bool inPowerArmor, RE::NiTransform* outTransform);
 
     RE::NiPoint3 getIndexFingerTipPosition(Hand hand);
 

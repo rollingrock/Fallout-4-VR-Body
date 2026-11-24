@@ -2,6 +2,7 @@
 
 #include <Version.h>
 #include <optional>
+#include <unordered_set>
 
 #include "common/CommonUtils.h"
 #include "config/ConfigBase.h"
@@ -125,7 +126,19 @@ namespace frik
         RE::NiTransform getPipboyOffset();
         RE::NiTransform getDefaultPipboyOffset();
         bool savePipboyOffset(const RE::NiTransform& transform);
+
+        /**
+         * A weapon offset found by lookupWeaponOffsets, and whether it is one of the built-in defaults.
+         */
+        struct WeaponOffsetLookup
+        {
+            RE::NiTransform transform;
+            bool builtIn = false;
+        };
+
         std::optional<RE::NiTransform> getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA) const;
+        std::optional<WeaponOffsetLookup> lookupWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA) const;
+
         bool saveWeaponOffsets(const std::string& name, const RE::NiTransform& transform, const WeaponOffsetsMode& mode, bool inPA);
         void removeWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, bool inPA, bool replaceWithEmbedded);
 
@@ -306,6 +319,8 @@ namespace frik
         std::unordered_map<std::string, RE::NiTransform> _pipboyOffsets;
         std::unordered_map<std::string, RE::NiTransform> _weaponsOffsets;
         std::unordered_map<std::string, RE::NiTransform> _weaponsEmbeddedOffsets;
+        // keys of _weaponsOffsets that come from a file the player saved, not from the built-in defaults
+        std::unordered_set<std::string> _weaponsSavedOffsetKeys;
     };
 
     // Global singleton for easy access
