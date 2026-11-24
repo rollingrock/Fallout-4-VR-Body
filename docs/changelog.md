@@ -2,6 +2,7 @@
 
 - Config: A setting another mod overrides, as ROCK sets the Pip-Boy button, is marked in Mods Config FO4 VR, with the mod and the value in effect. A change of it is saved, and applies once the override ends.
 - API: `setConfigValueOverride`'s `caller` is shown to the player in Mods Config FO4 VR as who overrides the setting.
+- API: **FRIK API v2.5**. `isWeaponRepositionModeOpen` tells a mod that owns the weapon when FRIK's weapon adjustment is open, so it can hand the weapon back, and `getWeaponOffset` reads FRIK's offset for a weapon, built-in or saved.
 
 ## v0.80.0
 

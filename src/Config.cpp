@@ -334,21 +334,36 @@ namespace frik
      */
     std::optional<RE::NiTransform> Config::getWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const
     {
+        const auto lookup = lookupWeaponOffsets(name, mode, inPA);
+        return lookup ? std::optional{ lookup->transform } : std::nullopt;
+    }
+
+    /**
+     * Get weapon offsets for given weapon name and mode, and whether the entry found is a built-in default rather than
+     * one the player saved. Use non-PA mode if PA mode offsets not found.
+     */
+    std::optional<Config::WeaponOffsetLookup> Config::lookupWeaponOffsets(const std::string& name, const WeaponOffsetsMode& mode, const bool inPA) const
+    {
+        const auto found = [this](const std::string& key) {
+            return WeaponOffsetLookup{ .transform = _weaponsOffsets.at(key), .builtIn = !_weaponsSavedOffsetKeys.contains(key) };
+        };
         const bool leftHanded = f4vr::isLeftHandedMode();
-        const auto it = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, leftHanded));
-        if (it != _weaponsOffsets.end()) {
-            return it->second;
+        const auto key = getWeaponNameWithMode(name, mode, inPA, leftHanded);
+        if (_weaponsOffsets.contains(key)) {
+            return found(key);
         }
         // a left-handed player without a left-handed weapon entry gets the right-handed one mirrored, not as is (that held
         // the gun upside down); the hand-pose modes have no such relation between their pairs, so they still get none
         if (leftHanded && mode == WeaponOffsetsMode::Weapon) {
-            const auto rightIt = _weaponsOffsets.find(getWeaponNameWithMode(name, mode, inPA, false));
-            if (rightIt != _weaponsOffsets.end()) {
-                return mirroredForLeftHand(rightIt->second);
+            const auto rightKey = getWeaponNameWithMode(name, mode, inPA, false);
+            if (_weaponsOffsets.contains(rightKey)) {
+                auto lookup = found(rightKey);
+                lookup.transform = mirroredForLeftHand(lookup.transform);
+                return lookup;
             }
         }
         // Check without PA (historic)
-        return inPA ? getWeaponOffsets(name, mode, false) : std::nullopt;
+        return inPA ? lookupWeaponOffsets(name, mode, false) : std::nullopt;
     }
 
     /**
@@ -358,6 +373,7 @@ namespace frik
     {
         const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
         _weaponsOffsets[fullName] = transform;
+        _weaponsSavedOffsetKeys.insert(fullName);
         const auto offsetFilePath = fs::path{ WEAPONS_OFFSETS_PATH } / (sanitizePathWindows(fullName) + ".json");
         return saveOffsetsToJsonFile(fullName, transform, offsetFilePath.string());
     }
@@ -369,6 +385,7 @@ namespace frik
     {
         const auto fullName = getWeaponNameWithMode(name, mode, inPA, f4vr::isLeftHandedMode());
         _weaponsOffsets.erase(fullName);
+        _weaponsSavedOffsetKeys.erase(fullName);
         if (replaceWithEmbedded && _weaponsEmbeddedOffsets.contains(fullName)) {
             _weaponsOffsets[fullName] = _weaponsEmbeddedOffsets[fullName];
         }
@@ -681,12 +698,14 @@ namespace frik
     void Config::loadWeaponsOffsets()
     {
         _weaponsOffsets.clear();
+        _weaponsSavedOffsetKeys.clear();
         _weaponsEmbeddedOffsets = loadEmbeddedOffsets(200, 600);
         _weaponsOffsets.insert(_weaponsEmbeddedOffsets.begin(), _weaponsEmbeddedOffsets.end());
 
         const auto weaponCustomOffsets = loadOffsetsFromFilesystem(WEAPONS_OFFSETS_PATH);
         for (auto& [key, value] : weaponCustomOffsets) {
             _weaponsOffsets.insert_or_assign(key, value);
+            _weaponsSavedOffsetKeys.insert(key);
         }
         logger::info("Loaded weapon offsets ; Total:{}, Embedded:{}, Custom:{}", _weaponsOffsets.size(), _weaponsEmbeddedOffsets.size(), weaponCustomOffsets.size());
     }

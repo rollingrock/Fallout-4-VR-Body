@@ -325,6 +325,31 @@ namespace frik::api::core
         return true;
     }
 
+    /**
+     * Is FRIK's weapon adjustment (weapon reposition mode) open.
+     */
+    bool FRIK_CORE_CALL isWeaponRepositionModeOpen()
+    {
+        return g_frik.inWeaponRepositionMode();
+    }
+
+    /**
+     * FRIK's offset for a weapon name and offset mode (WeaponOffsetsMode's values), found as FRIK finds its own.
+     * Writes outTransform only when found; a null name or transform, or an unknown mode, finds nothing.
+     */
+    WeaponOffsetSource getWeaponOffset(const char* weaponName, const std::uint8_t mode, const bool inPowerArmor, RE::NiTransform* outTransform)
+    {
+        if (!weaponName || !outTransform || mode > static_cast<std::uint8_t>(WeaponOffsetsMode::BackOfHandUI)) {
+            return WeaponOffsetSource::None;
+        }
+        const auto lookup = g_config.lookupWeaponOffsets(weaponName, static_cast<WeaponOffsetsMode>(mode), inPowerArmor);
+        if (!lookup) {
+            return WeaponOffsetSource::None;
+        }
+        *outTransform = lookup->transform;
+        return lookup->builtIn ? WeaponOffsetSource::BuiltIn : WeaponOffsetSource::Saved;
+    }
+
     bool getArmChain(const bool isLeft, ArmChainTransforms& outChain)
     {
         const auto* skelly = g_frik.getSkeleton();
