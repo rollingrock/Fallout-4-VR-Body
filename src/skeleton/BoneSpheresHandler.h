@@ -3,8 +3,6 @@
 #include <string>
 #include <vector>
 
-#include "f4sevr/PapyrusNativeFunctions.h"
-
 namespace frik
 {
     constexpr auto BONE_SPHERE_EVEN_NAME = "OnBoneSphereEvent";
@@ -76,11 +74,11 @@ namespace frik
         // the skeleton nodes the spheres hang on are going away; forget them and re-resolve on the next frame that has them
         void onSkeletonReleased();
 
-        std::uint32_t registerBoneSphere(float radius, const F4SEVR::BSFixedString& bone);
-        std::uint32_t registerBoneSphereOffset(float radius, const F4SEVR::BSFixedString& bone, F4SEVR::VMArray<float> pos);
+        std::uint32_t registerBoneSphere(float radius, const RE::BSFixedString& bone);
+        std::uint32_t registerBoneSphereOffset(float radius, const RE::BSFixedString& bone, const std::vector<float>& pos);
         void destroyBoneSphere(std::uint32_t handle);
-        void registerForBoneSphereEvents(F4SEVR::VMObject* scriptObj);
-        void unRegisterForBoneSphereEvents(F4SEVR::VMObject* scriptObj);
+        void registerForBoneSphereEvents(const RE::BSScript::Object* scriptObj);
+        void unRegisterForBoneSphereEvents(const RE::BSScript::Object* scriptObj);
         void toggleDebugBoneSpheres(bool turnOn) const;
         void toggleDebugBoneSpheresAtBone(std::uint32_t handle, bool turnOn);
 
@@ -98,13 +96,13 @@ namespace frik
         std::vector<SphereInfo> getSphereInfos() const;
 
     private:
-        static std::uint32_t registerBoneSphereFunc(F4SEVR::StaticFunctionTag* base, float radius, F4SEVR::BSFixedString bone);
-        static std::uint32_t registerBoneSphereOffsetFunc(F4SEVR::StaticFunctionTag* base, float radius, F4SEVR::BSFixedString bone, F4SEVR::VMArray<float> pos);
-        static void destroyBoneSphereFunc(F4SEVR::StaticFunctionTag* base, std::uint32_t handle);
-        static void registerForBoneSphereEventsFunc(F4SEVR::StaticFunctionTag* base, F4SEVR::VMObject* scriptObj);
-        static void unRegisterForBoneSphereEventsFunc(F4SEVR::StaticFunctionTag* base, F4SEVR::VMObject* scriptObj);
-        static void toggleDebugBoneSpheresFunc(F4SEVR::StaticFunctionTag* base, bool turnOn);
-        static void toggleDebugBoneSpheresAtBoneFunc(F4SEVR::StaticFunctionTag* base, std::uint32_t handle, bool turnOn);
+        static std::uint32_t registerBoneSphereFunc(std::monostate, float radius, RE::BSFixedString bone);
+        static std::uint32_t registerBoneSphereOffsetFunc(std::monostate, float radius, RE::BSFixedString bone, std::vector<float> pos);
+        static void destroyBoneSphereFunc(std::monostate, std::uint32_t handle);
+        static void registerForBoneSphereEventsFunc(std::monostate, RE::BSTSmartPointer<RE::BSScript::Object> scriptObj);
+        static void unRegisterForBoneSphereEventsFunc(std::monostate, RE::BSTSmartPointer<RE::BSScript::Object> scriptObj);
+        static void toggleDebugBoneSpheresFunc(std::monostate, bool turnOn);
+        static void toggleDebugBoneSpheresAtBoneFunc(std::monostate, std::uint32_t handle, bool turnOn);
         void sendPapyrusEventToRegisteredScripts(BoneSphereEvent event, std::uint32_t handle, std::uint32_t device);
 
         void detectBoneSphere();
