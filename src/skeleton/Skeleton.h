@@ -50,7 +50,7 @@ namespace frik
 
         RE::NiNode* getWandNode(const bool isLeft) const
         {
-            return isLeft ? f4vr::getLeftHandNode() : f4vr::getRightHandNode();
+            return isLeft ? RE::PlayerCharacter::GetSingleton()->GetLeftHandWandNode() : RE::PlayerCharacter::GetSingleton()->GetRightHandWandNode();
         }
 
         /**
@@ -58,7 +58,7 @@ namespace frik
          */
         RE::NiNode* getWeaponOffsetNode(const bool isLeft) const
         {
-            return (f4vr::isLeftHandedMode() ^ isLeft) ? _playerNodes->secondaryMeleeWeaponOffsetNode : _playerNodes->primaryWeaponOffsetNode;
+            return (RE::VRSettings::IsLeftHandedMode() ^ isLeft) ? _playerNodes->secondaryMeleeWeaponOffsetNode : _playerNodes->primaryWeaponOffsetNode;
         }
 
         /**

@@ -665,7 +665,7 @@ namespace frik::devbench
             RE::NiTransform world;
             out["treeWorld"] = core::getBoneWorldTransform(name.c_str(), &world) ? transformJson(world) : json(nullptr);
             if (const auto* skeleton = g_frik.getSkeleton(); skeleton) {
-                if (auto* node = f4vr::findAVObject(f4vr::getCommonNode(), name.c_str())) {
+                if (auto* node = RE::NiNodeUtils::FindObject(f4vr::getCommonNode(), name.c_str())) {
                     out["node"] = { { "parent", node->parent ? node->parent->name.c_str() : "" },
                         { "local", transformJson(node->local) },
                         { "world", transformJson(node->world) } };
@@ -860,7 +860,7 @@ namespace frik::devbench
                 { "primaryMeleeOffset", nodeJson(pn ? pn->primaryMeleeWeaponOffsetNode : nullptr) },
                 { "secondaryMeleeOffset", nodeJson(pn ? pn->secondaryMeleeWeaponOffsetNodeInUse : nullptr) },
                 { "secondaryAim", nodeJson(pn ? pn->secondaryAimNode : nullptr) },
-                { "rForeArm3", nodeJson(fp ? f4vr::findNode(fp, "RArm_ForeArm3") : nullptr) },
+                { "rForeArm3", nodeJson(fp ? RE::NiNodeUtils::FindNode(fp, "RArm_ForeArm3") : nullptr) },
                 // the first-person skeleton root and the player world chain, for the save-load displacement (ROCK-021)
                 { "fpRoot", nodeJson(fp) },
                 { "fpBoneTree", nodeJson(fp && !fp->children.empty() ? fp->children[0].get() : nullptr) },
@@ -868,20 +868,21 @@ namespace frik::devbench
                 { "roomNode", nodeJson(pn ? pn->roomNode : nullptr) },
                 { "hmd", nodeJson(pn ? pn->hmdNode : nullptr) },
                 { "bodyRoot", nodeJson(root) },
-                { "lForeArm3", nodeJson(fp ? f4vr::findNode(fp, "LArm_ForeArm3") : nullptr) },
+                { "lForeArm3", nodeJson(fp ? RE::NiNodeUtils::FindNode(fp, "LArm_ForeArm3") : nullptr) },
                 { "primaryWeaponOffset", nodeJson(pn ? pn->primaryWeaponOffsetNode : nullptr) },
                 { "secondaryMeleeOffset2", nodeJson(pn ? pn->secondaryMeleeWeaponOffsetNode : nullptr) },
                 { "scopeCamera", nodeJson(pn ? pn->primaryWeaponScopeCamera : nullptr) },
                 // the scope shape a scope mod places its widget on, wherever it hangs (it should be a descendant of the Weapon node)
-                { "scopeShape", nodeJson(weapon ? f4vr::findAVObjectStartsWith(weapon, "P-Scope") : nullptr) },
-                { "scopeShapeUnderRoot", nodeJson(root && !(weapon && f4vr::findAVObjectStartsWith(weapon, "P-Scope")) ? f4vr::findAVObjectStartsWith(root, "P-Scope") : nullptr) },
-                { "rHand", nodeJson(fp ? f4vr::findNode(fp, "RArm_Hand") : nullptr) },
-                { "lHand", nodeJson(fp ? f4vr::findNode(fp, "LArm_Hand") : nullptr) },
+                { "scopeShape", nodeJson(weapon ? RE::NiNodeUtils::FindObjectStartsWith(weapon, "P-Scope") : nullptr) },
+                { "scopeShapeUnderRoot",
+                    nodeJson(root && !(weapon && RE::NiNodeUtils::FindObjectStartsWith(weapon, "P-Scope")) ? RE::NiNodeUtils::FindObjectStartsWith(root, "P-Scope") : nullptr) },
+                { "rHand", nodeJson(fp ? RE::NiNodeUtils::FindNode(fp, "RArm_Hand") : nullptr) },
+                { "lHand", nodeJson(fp ? RE::NiNodeUtils::FindNode(fp, "LArm_Hand") : nullptr) },
                 // the first-person hand nodes the skeleton itself holds (found once at build), to catch a second node of the same name
                 { "rHandFrik", g_frik.getSkeleton() ? nodeJson(g_frik.getSkeleton()->getFirstPersonHandNode(false)) : json(nullptr) },
                 { "lHandFrik", g_frik.getSkeleton() ? nodeJson(g_frik.getSkeleton()->getFirstPersonHandNode(true)) : json(nullptr) },
                 { "lHandSameNode",
-                    fp && g_frik.getSkeleton() ? json(static_cast<const RE::NiAVObject*>(f4vr::findNode(fp, "LArm_Hand")) ==
+                    fp && g_frik.getSkeleton() ? json(static_cast<const RE::NiAVObject*>(RE::NiNodeUtils::FindNode(fp, "LArm_Hand")) ==
                                                       static_cast<const RE::NiAVObject*>(g_frik.getSkeleton()->getFirstPersonHandNode(true)))
                                                : json(nullptr) },
                 // ScopeParent's world as the engine would compose it from its live parent and its own local, and the gap to the world it actually

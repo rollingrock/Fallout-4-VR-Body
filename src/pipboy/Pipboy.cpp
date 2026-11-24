@@ -50,7 +50,7 @@ namespace frik
           _physicalHandler(skelly, this)
     {
         // force hide if was open before like when fast traveling (force show if not wrist to allow changing mid-game)
-        f4vr::getVRPlayerNodes()->pipboyRootNIFOnlyNode->local.scale = f4vr::isPipboyOnWrist() ? 0.0f : 1.0f;
+        f4vr::getVRPlayerNodes()->pipboyRootNIFOnlyNode->local.scale = RE::VRSettings::IsPipboyOnWrist() ? 0.0f : 1.0f;
 
         // if skeleton changed we need to re-attach the pipboy root nif
         detachReplacedPipboyRootNif();
@@ -86,7 +86,7 @@ namespace frik
     void Pipboy::openClose(const bool open)
     {
         // ignore if Pipboy is not on wrist game config
-        if (!f4vr::isPipboyOnWrist()) {
+        if (!RE::VRSettings::IsPipboyOnWrist()) {
             return;
         }
 
@@ -109,7 +109,7 @@ namespace frik
         _isOpen = open;
 
         const auto pn = f4vr::getVRPlayerNodes();
-        f4vr::setNodeVisibility(pn->screenNode, open);
+        RE::NiNodeUtils::SetVisible(pn->screenNode, open);
         pn->pipboyRootNIFOnlyNode->local.scale = open ? 1.0f : 0.0f;
         turnPipBoyOnOff(open);
 
@@ -130,7 +130,7 @@ namespace frik
             HandPose::setAttaboyHandPose(open);
             if (_attaboyOnBeltNode && _attaboyOnBeltNode->parent && _attaboyOnBeltNode->parent->parent) {
                 // show/hide the Attaboy on belt model depending if it's on as it's grabbed by the player
-                f4vr::setNodeVisibility(_attaboyOnBeltNode->parent->parent, !open);
+                RE::NiNodeUtils::SetVisible(_attaboyOnBeltNode->parent->parent, !open);
             }
         }
     }
@@ -173,7 +173,7 @@ namespace frik
         const auto pn = f4vr::getVRPlayerNodes();
         pn->pipboyRootNIFOnlyNode->local.scale = _isOpen ? 1.0f : 0.0f;
         // the loader hands back the cached nif, its screen still shown/hidden as the last open/close of that model left it
-        f4vr::setNodeVisibility(pn->screenNode, _isOpen);
+        RE::NiNodeUtils::SetVisible(pn->screenNode, _isOpen);
         pn->screenNode->local = g_config.getPipboyOffset();
         _pipboyScreenPrevFrame.clear();
         if (_isOpen) {
@@ -226,7 +226,7 @@ namespace frik
 
         _physicalHandler.operate(_lastPipboyPage);
 
-        if (!f4vr::isPipboyOnWrist()) {
+        if (!RE::VRSettings::IsPipboyOnWrist()) {
             restoreDefaultPipboyModelIfNeeded();
             return;
         }
@@ -274,14 +274,14 @@ namespace frik
     {
         if (set) {
             // set Pipboy to open
-            if (f4vr::isPipboyOnWrist()) {
+            if (RE::VRSettings::IsPipboyOnWrist()) {
                 turnPipBoyOnOff(true);
                 _exitPowerArmorFixFirstFrame = true;
             }
         } else {
             // Close the Pipboy on first frame if existed PA
             if (_exitPowerArmorFixFirstFrame) {
-                if (f4vr::isPipboyOnWrist() && !f4vr::isInPowerArmor())
+                if (RE::VRSettings::IsPipboyOnWrist() && !f4vr::isInPowerArmor())
                     turnPipBoyOnOff(false);
                 _exitPowerArmorFixFirstFrame = false;
             }
@@ -304,11 +304,11 @@ namespace frik
         if (g_config.hidePipboy || g_config.isFalloutLondonVR) {
             if (pipboy->local.scale != 0.0) {
                 pipboy->local.scale = 0.0;
-                f4vr::setNodeVisibilityDeep(pipboy, false);
+                RE::NiNodeUtils::SetVisibleDeep(pipboy, false);
             }
         } else if (fEqual(pipboy->local.scale, 0)) {
             pipboy->local.scale = g_config.pipBoyScale;
-            f4vr::setNodeVisibilityDeep(pipboy, true);
+            RE::NiNodeUtils::SetVisibleDeep(pipboy, true);
         }
     }
 
@@ -331,9 +331,9 @@ namespace frik
         // the game hides PipboyParent while an in-front or projected Pipboy is closed, and shows it as one opens; on the
         // wrist it stays shown, so a closed Pipboy would show its whole model in front until the game opens and closes it
         if (pn->pipboyParentNode && !isAnyPipboyOpen()) {
-            f4vr::setNodeVisibility(pn->pipboyParentNode, false);
+            RE::NiNodeUtils::SetVisible(pn->pipboyParentNode, false);
         }
-        if (const auto screenNode = f4vr::findNode(_originalPipboyRootNifOnlyNode, "Screen")) {
+        if (const auto screenNode = RE::NiNodeUtils::FindNode(_originalPipboyRootNifOnlyNode, "Screen")) {
             pn->screenNode = screenNode;
         } else {
             logger::error("Failed to find Pipboy screen node in original nif!");
@@ -386,7 +386,7 @@ namespace frik
                 _attaboyOnBeltNode = nullptr;
             }
         } else {
-            const auto node = f4vr::findNode(f4vr::getCommonNode(), "PipboyBody", 5);
+            const auto node = RE::NiNodeUtils::FindNode(f4vr::getCommonNode(), "PipboyBody", 5);
             _attaboyOnBeltNode = node ? node->IsNode() : nullptr;
             if (_attaboyOnBeltNode) {
                 logger::info("Attaboy on belt node found");
@@ -415,7 +415,7 @@ namespace frik
         const auto pipboyReplacementNifPath = getPipboyReplacementNifPath();
         logger::info("Loading pipboy replacement nif '{}'", pipboyReplacementNifPath);
         const auto newPipboyRootNifOnlyNode = f4vr::loadNifFromFile(pipboyReplacementNifPath);
-        const auto newScreen = f4vr::findNode(newPipboyRootNifOnlyNode, "Screen");
+        const auto newScreen = RE::NiNodeUtils::FindNode(newPipboyRootNifOnlyNode, "Screen");
         if (!newScreen) {
             logger::error("Failed to find Pipboy screen node in the loaded nif!");
             return;
@@ -445,12 +445,12 @@ namespace frik
         if (const auto pipboy3Rd = getPipboyModelOnArmNode()) {
             pipboy3Rd->local.scale = g_config.pipBoyScale;
 
-            if (const auto hideNode = f4vr::findNode(pipboy3Rd, itemHide.c_str())) {
-                f4vr::setNodeVisibility(hideNode, false);
+            if (const auto hideNode = RE::NiNodeUtils::FindNode(pipboy3Rd, itemHide.c_str())) {
+                RE::NiNodeUtils::SetVisible(hideNode, false);
                 hideNode->local.scale = 0;
             }
-            if (const auto showNode = f4vr::findNode(pipboy3Rd, itemShow.c_str())) {
-                f4vr::setNodeVisibility(showNode, true);
+            if (const auto showNode = RE::NiNodeUtils::FindNode(pipboy3Rd, itemShow.c_str())) {
+                RE::NiNodeUtils::SetVisible(showNode, true);
                 showNode->local.scale = 1;
             }
             logger::info("Pipboy Meshes replaced! Hide: {}, Show: {}", itemHide.c_str(), itemShow.c_str());
@@ -652,7 +652,7 @@ namespace frik
             _pipboyScreenStableFrame = pipboyScreen->world;
         } else {
             pipboyScreen->world = _pipboyScreenStableFrame;
-            f4vr::updateTransformsDown(pipboyScreen, false);
+            RE::NiNodeUtils::UpdateTransformsDown(pipboyScreen, false);
         }
     }
 
@@ -686,7 +686,7 @@ namespace frik
         _pipboyScreenStableFrame = pipboyScreen->world;
         _pipboyScreenStableFrame.translate += dampeningDelta * (1 - g_config.dampenPipboyMultiplier);
 
-        f4vr::updateTransformsDown(pipboyScreen, false);
+        RE::NiNodeUtils::UpdateTransformsDown(pipboyScreen, false);
     }
 
     /**
@@ -705,10 +705,10 @@ namespace frik
     void Pipboy::leftHandedModePipboy() const
     {
         if (g_config.leftHandedPipBoy) {
-            auto pipbone = f4vr::findNode(_skelly->getRightArm().forearm1, "PipboyBone");
+            auto pipbone = RE::NiNodeUtils::FindNode(_skelly->getRightArm().forearm1, "PipboyBone");
 
             if (!pipbone) {
-                pipbone = f4vr::findNode(_skelly->getLeftArm().forearm1, "PipboyBone");
+                pipbone = RE::NiNodeUtils::FindNode(_skelly->getLeftArm().forearm1, "PipboyBone");
 
                 if (!pipbone) {
                     return;
@@ -729,7 +729,7 @@ namespace frik
             return nullptr;
         }
         const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-        if (const auto boneNode = arm.forearm3 ? f4vr::findAVObject(arm.forearm3, "PipboyBone") : nullptr) {
+        if (const auto boneNode = arm.forearm3 ? RE::NiNodeUtils::FindObject(arm.forearm3, "PipboyBone") : nullptr) {
             return boneNode->IsNode();
         }
         if (arm.forearm3) {

@@ -532,9 +532,9 @@ namespace frik::api::core
     {
         switch (hand) {
         case Hand::Primary:
-            return f4vr::isLeftHandedMode();
+            return RE::VRSettings::IsLeftHandedMode();
         case Hand::Offhand:
-            return !f4vr::isLeftHandedMode();
+            return !RE::VRSettings::IsLeftHandedMode();
         case Hand::Right:
             return false;
         case Hand::Left:

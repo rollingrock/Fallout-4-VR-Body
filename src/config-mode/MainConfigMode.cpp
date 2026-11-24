@@ -88,7 +88,7 @@ namespace frik
             return;
         }
 
-        _configUI->setPosition(0, 0, f4vr::isNodeVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
+        _configUI->setPosition(0, 0, RE::NiNodeUtils::IsVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
 
         // toggle selfie if Pipboy is not open as it uses the same button
         if (!g_frik.isPipboyOn() && vrcf::VRControllers.check(g_config.toggleSelfieBinding)) {

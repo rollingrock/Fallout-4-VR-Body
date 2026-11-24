@@ -48,7 +48,7 @@ namespace frik
     {
         F4CF_PERF_FUNCTION();
 
-        if (!g_frik.isPipboyOn() && f4vr::isPipboyOnWrist()) {
+        if (!g_frik.isPipboyOn() && RE::VRSettings::IsPipboyOnWrist()) {
             return;
         }
 
@@ -57,7 +57,7 @@ namespace frik
         }
 
         // push the panel forward when a weapon is drawn so it doesn't overlap, like the other wand-top configs
-        _configUI->setPosition(0, 0, f4vr::isNodeVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
+        _configUI->setPosition(0, 0, RE::NiNodeUtils::IsVisible(f4vr::getWeaponNode()) ? 6.0f : 0.0f);
 
         // while adjusting, hide controllers from the game so it doesn't also navigate the Pipboy menus
         const bool adjusting = _adjustTarget != PipboyAdjustTarget::None;
@@ -71,7 +71,7 @@ namespace frik
         _saveBtn->setVisibility(!(_adjustTarget == PipboyAdjustTarget::ModelScale && g_config.isEditingForModsConfig()));
 
         // when the Pipboy isn't on the wrist, only model scale is relevant: hide the rest and show the message
-        const bool onWrist = f4vr::isPipboyOnWrist();
+        const bool onWrist = RE::VRSettings::IsPipboyOnWrist();
         _notOnWristMsg->setVisibility(!onWrist);
         _adjustScreenBtn->setVisibility(onWrist);
         _swapModelBtn->setVisibility(onWrist);
@@ -324,7 +324,7 @@ namespace frik
     RE::NiAVObject* PipboyConfigMode::getPipboyModelNode() const
     {
         const auto arm = g_config.leftHandedPipBoy ? _skelly->getRightArm() : _skelly->getLeftArm();
-        return arm.forearm3 ? f4vr::findAVObject(arm.forearm3, "PipboyBone") : nullptr;
+        return arm.forearm3 ? RE::NiNodeUtils::FindObject(arm.forearm3, "PipboyBone") : nullptr;
     }
 
     /**

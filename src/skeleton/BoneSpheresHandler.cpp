@@ -99,22 +99,22 @@ namespace frik
     {
         if (inPlayerTree) {
             // the skeleton FRIK just built first: while power armor is swapped the player's 3D can still hold the outgoing tree
-            if (const auto bone = f4vr::findNode(f4vr::getRootNode(), name)) {
+            if (const auto bone = RE::NiNodeUtils::FindNode(f4vr::getRootNode(), name)) {
                 return bone;
             }
-            return f4vr::findNode(f4vr::getWorldRootNode(), name);
+            return RE::NiNodeUtils::FindNode(f4vr::getWorldRootNode(), name);
         }
         auto n = f4vr::getWorldRootNode();
         if (!n) {
             return nullptr;
         }
-        if (const auto bone = f4vr::findNode(n, name)) {
+        if (const auto bone = RE::NiNodeUtils::FindNode(n, name)) {
             return bone;
         }
         while (n->parent) {
             n = n->parent;
         }
-        return f4vr::findNode(n, name); // ObjectLODRoot
+        return RE::NiNodeUtils::FindNode(n, name); // ObjectLODRoot
     }
 
     RE::NiNode* BoneSpheresHandler::liveBone(BoneSphere& sphere)
@@ -140,7 +140,7 @@ namespace frik
             return 0;
         }
 
-        const auto boneNode = f4vr::findNode(f4vr::getWorldRootNode(), bone.c_str());
+        const auto boneNode = RE::NiNodeUtils::FindNode(f4vr::getWorldRootNode(), bone.c_str());
         if (!boneNode) {
             logger::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
             return 0;
@@ -170,7 +170,7 @@ namespace frik
         }
 
         auto n = f4vr::getWorldRootNode();
-        auto boneNode = f4vr::findNode(n, bone.c_str());
+        auto boneNode = RE::NiNodeUtils::FindNode(n, bone.c_str());
         const bool inPlayerTree = boneNode != nullptr;
 
         if (!boneNode) {
@@ -178,7 +178,7 @@ namespace frik
                 n = n->parent;
             }
 
-            boneNode = f4vr::findNode(n, bone.c_str()); // ObjectLODRoot
+            boneNode = RE::NiNodeUtils::FindNode(n, bone.c_str()); // ObjectLODRoot
 
             if (!boneNode) {
                 logger::info("RegisterBoneSphere: BONE DOES NOT EXIST!!");
@@ -273,15 +273,15 @@ namespace frik
 
         // prefer to use fingers but these aren't always rendered.    so default to hand if nothing else
 
-        const RE::NiAVObject* rFinger = f4vr::findNode(fpSkeleton, "RArm_Finger22");
-        const RE::NiAVObject* lFinger = f4vr::findNode(fpSkeleton, "LArm_Finger22");
+        const RE::NiAVObject* rFinger = RE::NiNodeUtils::FindNode(fpSkeleton, "RArm_Finger22");
+        const RE::NiAVObject* lFinger = RE::NiNodeUtils::FindNode(fpSkeleton, "LArm_Finger22");
 
         if (rFinger == nullptr) {
-            rFinger = f4vr::findNode(fpSkeleton, "RArm_Hand");
+            rFinger = RE::NiNodeUtils::FindNode(fpSkeleton, "RArm_Hand");
         }
 
         if (lFinger == nullptr) {
-            lFinger = f4vr::findNode(fpSkeleton, "LArm_Hand");
+            lFinger = RE::NiNodeUtils::FindNode(fpSkeleton, "LArm_Hand");
         }
 
         if (lFinger == nullptr || rFinger == nullptr) {

@@ -37,7 +37,7 @@ namespace frik
         // re-show only the geometries this handler hid; anything another mod hid stays hidden
         for (const auto idx : _hideFaceSkinGeometryIndexes) {
             if (std::cmp_less(idx, rn->geomArray.size()) && rn->geomArray[idx].geometry) {
-                f4vr::setNodeVisibility(rn->geomArray[idx].geometry.get(), true);
+                RE::NiNodeUtils::SetVisible(rn->geomArray[idx].geometry.get(), true);
             }
         }
         _hideFaceSkinGeometryIndexes.clear();
@@ -96,7 +96,7 @@ namespace frik
             _isAllCulled = true;
             _isGeometryCulled = true;
             for (auto& i : rn->geomArray) {
-                f4vr::setNodeVisibility(i.geometry.get(), false);
+                RE::NiNodeUtils::SetVisible(i.geometry.get(), false);
             }
             return;
         }
@@ -111,7 +111,7 @@ namespace frik
             _isGeometryCulled = true;
             preProcessHideGeometryIndexes(rn);
             for (const uint32_t idx : _hideFaceSkinGeometryIndexes) {
-                f4vr::setNodeVisibility(rn->geomArray[idx].geometry.get(), false);
+                RE::NiNodeUtils::SetVisible(rn->geomArray[idx].geometry.get(), false);
             }
         } else {
             restoreGeometry();
@@ -141,7 +141,7 @@ namespace frik
         //Face and Skin
         if (const auto rn = reinterpret_cast<RE::BSFadeNode*>(f4vr::getWorldRootNode())) {
             for (auto& i : rn->geomArray) {
-                f4vr::setNodeVisibility(i.geometry.get(), true);
+                RE::NiNodeUtils::SetVisible(i.geometry.get(), true);
             }
         }
     }
@@ -188,6 +188,6 @@ namespace frik
             return;
         }
 
-        f4vr::setNodeVisibility(slot.partClone.get(), !toHide);
+        RE::NiNodeUtils::SetVisible(slot.partClone.get(), !toHide);
     }
 }

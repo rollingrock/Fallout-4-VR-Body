@@ -36,7 +36,7 @@ namespace frik
         root->local.translate.y += g_config.selfieOutFrontDistance;
         root->local.translate.z = z;
 
-        f4vr::updateTransformsDown(root, true);
+        RE::NiNodeUtils::UpdateTransformsDown(root, true);
     }
 
     void SelfieHandler::testSelfie()
@@ -66,8 +66,8 @@ namespace frik
         logger::sample("Diff: {:.2f}, {:.2f}, {:.2f}", diff.x, diff.y, diff.z);
         root->parent->local.translate -= diff;
 
-        // f4vr::updateDown(pWorldNode, true);
-        f4vr::updateDown(f4vr::getRootNode()->parent, true);
+        // RE::NiNodeUtils::UpdateWorldDataDown(pWorldNode, true);
+        RE::NiNodeUtils::UpdateWorldDataDown(f4vr::getRootNode()->parent, true);
         // f4vr::updateDownFromRoot();
     }
 
@@ -105,7 +105,7 @@ namespace frik
         // pWorldNode->local.translate += RE::NiPoint3(0, 1, 0) * g_config.selfieOutFrontDistance;
         //
         // // getPlayerCamera()->cameraNode->local.translate += RE::NiPoint3(0, 1, 0) * g_config.selfieOutFrontDistance;
-        // // updateDown(getPlayerCamera()->cameraNode, true);
+        // // RE::NiNodeUtils::UpdateWorldDataDown(getPlayerCamera()->cameraNode, true);
         //
         // const auto playerCamera = RE::PlayerCamera::GetSingleton();
         // const auto cameraNode = playerCamera->cameraRoot.get();
@@ -114,7 +114,7 @@ namespace frik
         //
         // auto& playerLocalTransformPos = pWorldNode->local.translate;
         //
-        // // updateUpTo(cameraNode->parent->parent->parent, cameraNode, true);
+        // // RE::NiNodeUtils::UpdateWorldDataUpTo(cameraNode->parent->parent->parent, cameraNode, true);
         //
         // // RE::NiUpdateData* ud = nullptr;
         // // cameraNode->Update(*ud);

@@ -201,7 +201,7 @@ namespace frik
         bool isWeaponInLeftHand() const
         {
             bool isLeft = false;
-            return g_externalAuthority.getWeaponNodeParentIsLeft(isLeft) ? isLeft : f4vr::isLeftHandedMode();
+            return g_externalAuthority.getWeaponNodeParentIsLeft(isLeft) ? isLeft : RE::VRSettings::IsLeftHandedMode();
         }
 
         // FRIK's own two-handed grip or one reported by an external mod (setOffHandGripping)

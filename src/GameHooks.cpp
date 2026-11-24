@@ -63,26 +63,29 @@ namespace
         return true;
     }
 
+    // the 3D the player's power armor change needs rebuilt
+    constexpr auto POWER_ARMOR_3D_UPDATE_FLAGS = static_cast<RE::RESET_3D_FLAGS>(0x520);
+
     // fix power-armor 3d mesh hooks
     void fixPA3D()
     {
         const auto player = f4vr::getPlayer();
-        f4vr::Actor_ReEquipAll(player);
-        f4vr::AIProcess_Set3DUpdateFlags(player->currentProcess, 0x520);
+        player->ReEquipAll();
+        player->currentProcess->Set3DUpdateFlag(POWER_ARMOR_3D_UPDATE_FLAGS);
     }
 
-    void fixPA3DEnter(const std::uint64_t rcx, const std::uint64_t rdx)
+    void fixPA3DEnter(RE::ExtraDataList* extraList, RE::TESObjectREFR* ref)
     {
         const auto player = f4vr::getPlayer();
-        f4vr::ExtraData_SetMultiBoundRef(rcx, rdx);
-        f4vr::AIProcess_Set3DUpdateFlags(player->currentProcess, 0x520);
+        extraList->SetMultiBoundRef(ref);
+        player->currentProcess->Set3DUpdateFlag(POWER_ARMOR_3D_UPDATE_FLAGS);
     }
 
     // renderer stuff
     void hookSmoothMovement(const uint64_t rcx)
     {
         frik::g_frik.smoothMovement();
-        f4vr::smoothMovementHook(rcx);
+        reinterpret_cast<void (*)(uint64_t)>(RE::VRHookSites::OnIdleVRMovement.callee())(rcx);
     }
 
     void hookMainUpdatePlayer(const uint64_t rcx, const uint64_t rdx)
@@ -98,7 +101,7 @@ namespace
             body->world.translate.y = cameraPos.y;
         }
 
-        f4vr::main_update_player(rcx, rdx);
+        reinterpret_cast<void (*)(uint64_t, uint64_t)>(RE::VRHookSites::PlayerUpdate3D.callee())(rcx, rdx);
     }
 
     /**
@@ -114,7 +117,8 @@ namespace
         if (weapon && frik::g_frik.isSkeletonReady() && frik::g_frik.getSkeleton()->repairEngineArmPlacementForCarry(*weapon)) {
             return nullptr;
         }
-        return f4vr::Update1StPersonArm(pc, weapon, offsetNode);
+        using Update1stPersonArm_t = void* (*)(const RE::PlayerCharacter*, RE::NiNode**, RE::NiNode**);
+        return reinterpret_cast<Update1stPersonArm_t>(RE::VRHookSites::Update1stPersonArm1.callee())(pc, weapon, offsetNode);
     }
 
     /**
@@ -123,11 +127,12 @@ namespace
     void replacePrimaryWandNif()
     {
         const auto mesh = R"(Data\Meshes\FRIK\_primaryWand.nif)";
-        if (!verifyPatchBytes("wandMesh", f4vr::wandMesh.address(), std::string_view(R"(Data\Meshes\world_primaryWand.nif)"))) {
+        const auto address = RE::VRHookSites::PrimaryWandMeshPath.address();
+        if (!verifyPatchBytes("wandMesh", address, std::string_view(R"(Data\Meshes\world_primaryWand.nif)"))) {
             return;
         }
         for (int i = 0; i < strlen(mesh); ++i) {
-            REL::safe_write(f4vr::wandMesh.address() + i, mesh[i]);
+            REL::safe_write(address + i, mesh[i]);
         }
     }
 
@@ -152,7 +157,7 @@ namespace
     void detourResetBodyPose()
     {
         const int bytesToNOP = 0x1FF;
-        const auto address = f4vr::hookAnimationVFunc.address();
+        const auto address = RE::VRHookSites::PlayerPostAnimGraph.address();
         if (!verifyPatchBytes("resetBodyPose", address, { 0xF6, 0x81, 0x56, 0x12, 0x00, 0x00, 0x10 }) ||
             !verifyPatchBytes("resetBodyPose epilogue", address + bytesToNOP, { 0x48, 0x83, 0xC4, 0x60, 0x5D, 0xC3 })) {
             return;
@@ -305,25 +310,19 @@ namespace frik::hook
         detourResetBodyPose();
 
         auto& trampoline = F4SE::GetTrampoline();
-        if (verifyCallSite("mainUpdatePlayer", f4vr::hook_MainUpdatePlayer.address(), f4vr::main_update_player.address())) {
-            trampoline.write_call<5>(f4vr::hook_MainUpdatePlayer.address(), &hookMainUpdatePlayer);
-        }
-        if (verifyCallSite("smoothMovement", f4vr::hook_smoothMovementHook.address(), f4vr::smoothMovementHook.address())) {
-            trampoline.write_call<5>(f4vr::hook_smoothMovementHook.address(), &hookSmoothMovement);
-        }
-        // the engine's two first-person arm placements in its per-frame update (Weapon, then WeaponLeft)
-        for (const auto site : { REL::Offset(0xef6108).address(), REL::Offset(0xef614b).address() }) {
-            if (verifyCallSite("update1stPersonArm", site, f4vr::Update1StPersonArm.address())) {
-                trampoline.write_call<5>(site, &hookUpdate1stPersonArm);
+        using namespace RE::VRHookSites;
+        const auto hookCall = [&trampoline](const std::string_view name, const CallSite& site, const auto hook) {
+            if (verifyCallSite(name, site.address(), site.callee())) {
+                trampoline.write_call<5>(site.address(), hook);
             }
-        }
-
-        if (verifyCallSite("reEquipAllExit", f4vr::hookActor_ReEquipAllExit.address(), f4vr::Actor_ReEquipAll.address())) {
-            trampoline.write_call<5>(f4vr::hookActor_ReEquipAllExit.address(), &fixPA3D);
-        }
-        if (verifyCallSite("setMultiBoundRef", f4vr::hookExtraData_SetMultiBoundRef.address(), f4vr::ExtraData_SetMultiBoundRef.address())) {
-            trampoline.write_call<5>(f4vr::hookExtraData_SetMultiBoundRef.address(), &fixPA3DEnter);
-        }
+        };
+        hookCall("mainUpdatePlayer", PlayerUpdate3D, &hookMainUpdatePlayer);
+        hookCall("smoothMovement", OnIdleVRMovement, &hookSmoothMovement);
+        // the engine's two first-person arm placements in its per-frame update (Weapon, then WeaponLeft)
+        hookCall("update1stPersonArm", Update1stPersonArm1, &hookUpdate1stPersonArm);
+        hookCall("update1stPersonArm", Update1stPersonArm2, &hookUpdate1stPersonArm);
+        hookCall("reEquipAllExit", PowerArmorExitReEquipAll, &fixPA3D);
+        hookCall("setMultiBoundRef", PowerArmorEnterSetMultiBoundRef, &fixPA3DEnter);
     }
 
     void patchAll()
